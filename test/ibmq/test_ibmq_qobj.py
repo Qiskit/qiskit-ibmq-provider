@@ -5,19 +5,15 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-# pylint: disable=missing-docstring,broad-except
-# pylint: disable=redefined-builtin
-# pylint: disable=too-many-function-args
-
 """IBMQ Remote Backend Qobj Tests"""
 
 import os
 import unittest
-from qiskit import (ClassicalRegister, QuantumCircuit, QuantumRegister, compile)
 
-from qiskit import IBMQ, BasicAer
+from qiskit import (BasicAer, ClassicalRegister, IBMQ, QuantumCircuit, QuantumRegister)
 from qiskit.qasm import pi
-from ..common import requires_qe_access, JobTestCase, slow_test
+from qiskit.tools.compiler import compile
+from ..common import JobTestCase, requires_qe_access, slow_test
 
 
 class TestIBMQQobj(JobTestCase):

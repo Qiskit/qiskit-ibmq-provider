@@ -84,7 +84,7 @@ class QiskitTestCase(unittest.TestCase):
 
     @staticmethod
     def _get_resource_path(filename, path=Path.TEST):
-        """ Get the absolute path to a resource.
+        """Get the absolute path to a resource.
 
         Args:
             filename (string): filename or relative path to the resource.
@@ -95,7 +95,8 @@ class QiskitTestCase(unittest.TestCase):
         return os.path.normpath(os.path.join(path.value, filename))
 
     def assertNoLogs(self, logger=None, level=None):
-        """
+        """Context manager for logging.
+
         Context manager to test that no message is sent to the specified
         logger and level (the opposite of TestCase.assertLogs()).
         """
@@ -103,8 +104,7 @@ class QiskitTestCase(unittest.TestCase):
 
     def assertDictAlmostEqual(self, dict1, dict2, delta=None, msg=None,
                               places=None, default_value=0):
-        """
-        Assert two dictionaries with numeric values are almost equal.
+        """Assert two dictionaries with numeric values are almost equal.
 
         Fail if the two dictionaries are unequal as determined by
         comparing that the difference between values with the same key are
@@ -215,9 +215,7 @@ class _AssertNoLogsContext(unittest.case._AssertLogsContext):
 
     # pylint: disable=inconsistent-return-statements
     def __exit__(self, exc_type, exc_value, tb):
-        """
-        This is a modified version of TestCase._AssertLogsContext.__exit__(...)
-        """
+        """Modified version of TestCase._AssertLogsContext.__exit__(...)."""
         self.logger.handlers = self.old_handlers
         self.logger.propagate = self.old_propagate
         self.logger.setLevel(self.old_level)
@@ -237,8 +235,7 @@ class _AssertNoLogsContext(unittest.case._AssertLogsContext):
 
 
 def slow_test(func):
-    """
-    Decorator that signals that the test takes minutes to run.
+    """Decorator that signals that the test takes minutes to run.
 
     Args:
         func (callable): test function to be decorated.
@@ -259,8 +256,7 @@ def slow_test(func):
 
 
 def _get_credentials(test_object, test_options):
-    """
-    Finds the credentials for a specific test and options.
+    """Finds the credentials for a specific test and options.
 
     Args:
         test_object (QiskitTestCase): The test object asking for credentials
@@ -311,7 +307,8 @@ def _get_credentials(test_object, test_options):
 
 
 def is_cpp_simulator_available():
-    """
+    """Check if the executable for C++ simulator is available.
+
     Check if executable for C++ simulator is available in the expected
     location.
 
@@ -326,8 +323,7 @@ def is_cpp_simulator_available():
 
 
 def requires_cpp_simulator(test_item):
-    """
-    Decorator that skips test if C++ simulator is not available
+    """Decorator that skips test if C++ simulator is not available
 
     Args:
         test_item (callable): function or class to be decorated.
@@ -340,8 +336,9 @@ def requires_cpp_simulator(test_item):
 
 
 def requires_qe_access(func):
-    """
-    Decorator that signals that the test uses the online API:
+    """Decorator that signals that the test uses the online API.
+
+    In detail:
         * determines if the test should be skipped by checking environment
             variables.
         * if the `USE_ALTERNATE_ENV_CREDENTIALS` environment variable is

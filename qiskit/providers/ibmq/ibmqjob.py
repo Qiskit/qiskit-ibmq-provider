@@ -313,9 +313,7 @@ class IBMQJob(BaseJob):
         return self._queue_position
 
     def creation_date(self):
-        """
-        Return creation date.
-        """
+        """Return creation date."""
         return self._creation_date
 
     def job_id(self):
@@ -410,8 +408,6 @@ class IBMQJob(BaseJob):
             try:
                 submit_info = self._future.result(timeout=timeout)
                 if self._future_captured_exception is not None:
-                    # pylint can't see if catch of None type
-                    # pylint: disable=raising-bad-type
                     raise self._future_captured_exception
             except TimeoutError as ex:
                 raise JobTimeoutError(
@@ -597,7 +593,7 @@ def _numpy_type_converter(obj):
     ret = obj
     if isinstance(obj, numpy.integer):
         ret = int(obj)
-    elif isinstance(obj, numpy.floating):  # pylint: disable=no-member
+    elif isinstance(obj, numpy.floating):
         ret = float(obj)
     elif isinstance(obj, numpy.ndarray):
         ret = obj.tolist()

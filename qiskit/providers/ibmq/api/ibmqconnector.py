@@ -22,9 +22,7 @@ CLIENT_APPLICATION = 'qiskit-api-py'
 
 
 def get_job_url(config, hub=None, group=None, project=None):
-    """
-    Util method to get job url
-    """
+    """Return the URL for a job."""
     hub = config.get('hub', hub)
     group = config.get('group', group)
     project = config.get('project', project)
@@ -36,9 +34,7 @@ def get_job_url(config, hub=None, group=None, project=None):
 
 
 def get_backend_properties_url(config, backend_type, hub=None):
-    """
-    Util method to get backend properties url
-    """
+    """Return the URL for a backend's properties."""
     hub = config.get('hub', hub)
 
     if hub:
@@ -47,9 +43,7 @@ def get_backend_properties_url(config, backend_type, hub=None):
 
 
 def get_backends_url(config, hub, group, project):
-    """
-    Util method to get backends url
-    """
+    """Return the URL for a backend."""
     hub = config.get('hub', hub)
     group = config.get('group', group)
     project = config.get('project', project)
@@ -61,9 +55,8 @@ def get_backends_url(config, hub, group, project):
 
 
 class _Credentials:
-    """
-    The Credential class to manage the tokens
-    """
+    """Credentials class that manages the tokens."""
+
     config_base = {'url': 'https://quantumexperience.ng.bluemix.net/api'}
 
     def __init__(self, token, config=None, verify=True, proxy_urls=None,
@@ -172,61 +165,53 @@ class _Credentials:
             raise CredentialsError('invalid token')
 
     def get_token(self):
-        """
-        Get Authenticated Token to connect with QX Platform
-        """
+        """Return the Authenticated Token to connect with QX Platform."""
         return self.data_credentials.get('id', None)
 
     def get_user_id(self):
-        """
-        Get User Id in QX Platform
-        """
+        """Return the user id in QX platform."""
         return self.data_credentials.get('userId', None)
 
     def get_config(self):
-        """
-        Get Configuration setted to connect with QX Platform
-        """
+        """Return the configuration that was set for this Credentials."""
         return self.config
 
     def set_token(self, access_token):
-        """
-        Set Access Token to connect with QX Platform API
-        """
+        """Set the Access Token to connect with QX Platform API."""
         self.data_credentials['id'] = access_token
 
     def set_user_id(self, user_id):
-        """
-        Set Access Token to connect with QX Platform API
-        """
+        """Set the user id to connect with QX Platform API."""
         self.data_credentials['userId'] = user_id
 
 
 class _Request:
+    """Request class that performs the HTTP calls.
+
+    Note:
+        Set the proxy information, if present, from the configuration,
+        with the following format::
+
+        config = {
+            'proxies': {
+                # If using 'urls', assume basic auth or no auth.
+                'urls': {
+                    'http': 'http://user:password@1.2.3.4:5678',
+                    'https': 'http://user:password@1.2.3.4:5678',
+                }
+                # If using 'ntlm', assume NTLM authentication.
+                'username_ntlm': 'domain\\username',
+                'password_ntlm': 'password'
+            }
+        }
     """
-    The Request class to manage the methods
-    """
+
     def __init__(self, token, config=None, verify=True, retries=5,
                  timeout_interval=1.0):
         self.verify = verify
         self.client_application = CLIENT_APPLICATION
         self.config = config
         self.errors_not_retry = [401, 403, 413]
-
-        # Set the proxy information, if present, from the configuration,
-        # with the following format:
-        # config = {
-        #     'proxies': {
-        #         # If using 'urls', assume basic auth or no auth.
-        #         'urls': {
-        #             'http': 'http://user:password@1.2.3.4:5678',
-        #             'https': 'http://user:password@1.2.3.4:5678',
-        #         }
-        #         # If using 'ntlm', assume NTLM authentication.
-        #         'username_ntlm': 'domain\\username',
-        #         'password_ntlm': 'password'
-        #     }
-        # }
 
         # Set the basic proxy settings, if present.
         self.proxy_urls = None
@@ -265,18 +250,14 @@ class _Request:
             r"it can\'t be greater than (\d+).*")
 
     def check_token(self, response):
-        """
-        Check is the user's token is valid
-        """
+        """Check is the user's token is valid."""
         if response.status_code == 401:
             self.credential.obtain_token(config=self.config)
             return False
         return True
 
     def post(self, path, params='', data=None):
-        """
-        POST Method Wrapper of the REST API
-        """
+        """POST Method Wrapper of the REST API."""
         self.result = None
         data = data or {}
         headers = {'Content-Type': 'application/json',
@@ -308,9 +289,7 @@ class _Request:
                        'response from backend.')
 
     def put(self, path, params='', data=None):
-        """
-        PUT Method Wrapper of the REST API
-        """
+        """PUT Method Wrapper of the REST API."""
         self.result = None
         data = data or {}
         headers = {'Content-Type': 'application/json',
@@ -340,9 +319,7 @@ class _Request:
                        'response from backend.')
 
     def get(self, path, params='', with_token=True):
-        """
-        GET Method Wrapper of the REST API
-        """
+        """GET Method Wrapper of the REST API."""
         self.result = None
         access_token = ''
         if with_token:
@@ -373,7 +350,7 @@ class _Request:
                        'response from backend.')
 
     def _sanitize_url(self, url):
-        """Strip any tokens or actual paths from url
+        """Strip any tokens or actual paths from url.
 
         Args:
             url (str): The url to sanitize
@@ -384,7 +361,7 @@ class _Request:
         return parse.urlparse(url).path
 
     def _response_good(self, response):
-        """check response
+        """check response.
 
         Args:
             response (requests.Response): HTTP response.
@@ -436,7 +413,7 @@ class _Request:
         return False
 
     def _parse_response(self, response):
-        """parse text of response for HTTP errors
+        """parse text of response for HTTP errors.
 
         This parses the text of the response to decide whether to
         retry request or raise exception. At the moment this only
@@ -461,8 +438,9 @@ class _Request:
 
 
 class IBMQConnector:
-    """
-    The Connector Class to do request to QX Platform
+    """Connector class that handles the requests to the IBMQ platform.
+
+    This class exposes a Python API for making requests to the IBMQ platform.
     """
     __names_backend_ibmqxv2 = ['ibmqx5qv2', 'ibmqx2', 'qx5qv2', 'qx5q', 'real']
     __names_backend_ibmqxv3 = ['ibmqx3']
@@ -495,9 +473,7 @@ class IBMQConnector:
         self.req = _Request(token, config=config, verify=verify)
 
     def _check_backend(self, backend, endpoint):
-        """
-        Check if the name of a backend is valid to run in QX Platform
-        """
+        """Check if the name of a backend is valid to run in QX Platform."""
         # First check against hacks for old backend names
         original_backend = backend
         backend = backend.lower()
@@ -518,17 +494,13 @@ class IBMQConnector:
         return None
 
     def check_credentials(self):
-        """
-        Check if the user has permission in QX platform
-        """
+        """Check if the user has permission in QX platform."""
         return bool(self.req.credential.get_token())
 
     def run_job(self, job, backend='simulator', shots=1,
                 max_credits=None, seed=None, hub=None, group=None,
                 project=None, hpc=None, access_token=None, user_id=None):
-        """
-        Execute a job
-        """
+        """Execute a job."""
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
@@ -580,9 +552,7 @@ class IBMQConnector:
 
     def get_job(self, id_job, hub=None, group=None, project=None,
                 access_token=None, user_id=None):
-        """
-        Get the information about a job, by its id
-        """
+        """Get the information about a job, by its id."""
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
@@ -619,9 +589,7 @@ class IBMQConnector:
     def get_jobs(self, limit=10, skip=0, backend=None, only_completed=False,
                  filter=None, hub=None, group=None, project=None,
                  access_token=None, user_id=None):
-        """
-        Get the information about the user jobs
-        """
+        """Get the information about the user jobs."""
         # pylint: disable=redefined-builtin
 
         if access_token:
@@ -653,9 +621,7 @@ class IBMQConnector:
 
     def get_status_job(self, id_job, hub=None, group=None, project=None,
                        access_token=None, user_id=None):
-        """
-        Get the status about a job, by its id
-        """
+        """Get the status about a job, by its id."""
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
@@ -678,9 +644,7 @@ class IBMQConnector:
     def get_status_jobs(self, limit=10, skip=0, backend=None, filter=None,
                         hub=None, group=None, project=None, access_token=None,
                         user_id=None):
-        """
-        Get the information about the user jobs
-        """
+        """Get the information about the user jobs."""
         # pylint: disable=redefined-builtin
 
         if access_token:
@@ -714,9 +678,7 @@ class IBMQConnector:
 
     def cancel_job(self, id_job, hub=None, group=None, project=None,
                    access_token=None, user_id=None):
-        """
-        Cancel the information about a job, by its id
-        """
+        """Cancel the information about a job, by its id."""
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
@@ -737,9 +699,7 @@ class IBMQConnector:
         return res
 
     def backend_status(self, backend='ibmqx4', access_token=None, user_id=None):
-        """
-        Get the status of a chip
-        """
+        """Get the status of a chip."""
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
@@ -773,9 +733,7 @@ class IBMQConnector:
 
     def backend_properties(self, backend='ibmqx4', hub=None,
                            access_token=None, user_id=None):
-        """
-        Get the parameters of calibration of a real chip
-        """
+        """Get the parameters of calibration of a real chip."""
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
@@ -802,9 +760,7 @@ class IBMQConnector:
 
     def available_backends(self, hub=None, group=None, project=None,
                            access_token=None, user_id=None):
-        """
-        Get the backends available to use in the QX Platform
-        """
+        """Get the backends available to use in the QX Platform."""
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
@@ -821,18 +777,16 @@ class IBMQConnector:
         return response
 
     def api_version(self):
-        """
-        Get the API Version of the QX Platform
-        """
+        """Get the API Version of the QX Platform."""
         return self.req.get('/version')
 
 
 class ApiError(Exception):
-    """
-    IBMQConnector API error handling base class.
-    """
+    """IBMQConnector API error handling base class."""
+
     def __init__(self, usr_msg=None, dev_msg=None):
-        """
+        """ApiError.
+
         Args:
             usr_msg (str): Short user facing message describing error.
             dev_msg (str or None): More detailed message to assist
@@ -850,11 +804,11 @@ class ApiError(Exception):
 
 
 class BadBackendError(ApiError):
-    """
-    Unavailable backend error.
-    """
+    """Unavailable backend error."""
+
     def __init__(self, backend):
-        """
+        """BadBackendError.
+
         Args:
             backend (str): name of backend.
         """

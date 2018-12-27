@@ -5,26 +5,25 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-# pylint: disable=missing-docstring,broad-except
-
+# pylint: disable=missing-docstring
 
 """IBMQJob states test-suite."""
 
-import unittest
 import time
+import unittest
 from contextlib import suppress
-from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.ibmq.ibmqjob import IBMQJobPreQobj, IBMQJob, API_FINAL_STATES
-from qiskit.providers.ibmq.api import ApiError
+
 from qiskit.providers import JobError, JobTimeoutError
+from qiskit.providers.ibmq.api import ApiError
+from qiskit.providers.ibmq.ibmqjob import API_FINAL_STATES, IBMQJob, IBMQJobPreQobj
+from qiskit.providers.jobstatus import JobStatus
+from .._mockutils import FakeBackend, new_fake_qobj
 from ..common import JobTestCase
-from .._mockutils import new_fake_qobj, FakeBackend
 
 
 class TestIBMQJobStates(JobTestCase):
-    """
-    Test ibmqjob module.
-    """
+    """Test the states of an IBMQJob."""
+
     def setUp(self):
         self._current_api = None
         self._current_qjob = None

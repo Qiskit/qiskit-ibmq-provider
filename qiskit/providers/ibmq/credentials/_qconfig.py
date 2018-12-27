@@ -5,9 +5,7 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-"""
-Utilities for reading credentials from the deprecated `Qconfig.py` file.
-"""
+"""Utilities for reading credentials from the deprecated `Qconfig.py` file."""
 
 import os
 from collections import OrderedDict
@@ -21,8 +19,7 @@ QE_URL = 'https://quantumexperience.ng.bluemix.net/api'
 
 
 def read_credentials_from_qconfig():
-    """
-    Read a `QConfig.py` file and return its credentials.
+    """Read a `QConfig.py` file and return its credentials.
 
     Returns:
         dict: dictionary with the credentials, in the form::

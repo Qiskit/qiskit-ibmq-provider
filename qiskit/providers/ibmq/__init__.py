@@ -19,7 +19,8 @@ IBMQ = IBMQProvider()
 
 
 def least_busy(backends):
-    """
+    """Return the least busy backend from a list.
+
     Return the least busy available backend for those that
     have a `pending_jobs` in their `status`. Backends such as
     local backends that do not have this are not considered.

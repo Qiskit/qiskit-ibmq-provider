@@ -5,10 +5,6 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-# pylint: disable=missing-docstring,broad-except
-
-# pylint: disable=redefined-builtin
-
 """IBMQJob Test."""
 
 import os
@@ -21,7 +17,7 @@ from scipy.stats import chi2_contingency
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit import IBMQ
-from qiskit import compile
+from qiskit.tools.compiler import compile
 from qiskit.providers import JobStatus, JobError
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
@@ -30,9 +26,7 @@ from ..common import requires_qe_access, JobTestCase, slow_test
 
 
 class TestIBMQJob(JobTestCase):
-    """
-    Test ibmqjob module.
-    """
+    """Test ibmqjob module."""
 
     def setUp(self):
         super().setUp()
@@ -40,6 +34,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_qe_access
     def test_run_simulator(self, qe_token, qe_url):
+        """Test running in a simulator."""
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
@@ -77,6 +72,7 @@ class TestIBMQJob(JobTestCase):
     @slow_test
     @requires_qe_access
     def test_run_device(self, qe_token, qe_url):
+        """Test running in a real device."""
         IBMQ.enable_account(qe_token, qe_url)
         backends = IBMQ.backends(simulator=False)
 
@@ -106,6 +102,7 @@ class TestIBMQJob(JobTestCase):
     @slow_test
     @requires_qe_access
     def test_run_async_simulator(self, qe_token, qe_url):
+        """Test running in a simulator asynchronously."""
         IBMQJob._executor = futures.ThreadPoolExecutor(max_workers=2)
 
         IBMQ.enable_account(qe_token, qe_url)
@@ -157,6 +154,7 @@ class TestIBMQJob(JobTestCase):
     @slow_test
     @requires_qe_access
     def test_run_async_device(self, qe_token, qe_url):
+        """Test running in a real device asynchronously."""
         IBMQ.enable_account(qe_token, qe_url)
         backends = IBMQ.backends(simulator=False)
         backend = least_busy(backends)
@@ -205,6 +203,7 @@ class TestIBMQJob(JobTestCase):
     @slow_test
     @requires_qe_access
     def test_cancel(self, qe_token, qe_url):
+        """Test job cancelation."""
         IBMQ.enable_account(qe_token, qe_url)
         backend_name = ('ibmq_20_tokyo'
                         if self.using_ibmq_credentials else 'ibmqx4')
@@ -219,6 +218,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_qe_access
     def test_job_id(self, qe_token, qe_url):
+        """Test getting a job id."""
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
@@ -229,6 +229,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_qe_access
     def test_get_backend_name(self, qe_token, qe_url):
+        """Test getting a backend name."""
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
@@ -238,6 +239,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_qe_access
     def test_get_jobs_from_backend(self, qe_token, qe_url):
+        """Test retrieving jobs from a backend."""
         IBMQ.enable_account(qe_token, qe_url)
         backend = least_busy(IBMQ.backends())
 
@@ -252,6 +254,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_qe_access
     def test_retrieve_job(self, qe_token, qe_url):
+        """Test retrieving a single job."""
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
@@ -268,6 +271,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_qe_access
     def test_retrieve_job_error(self, qe_token, qe_url):
+        """Test retrieving an invalid job."""
         IBMQ.enable_account(qe_token, qe_url)
         backends = IBMQ.backends(simulator=False)
         backend = least_busy(backends)
@@ -276,6 +280,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_qe_access
     def test_get_jobs_filter_job_status(self, qe_token, qe_url):
+        """Test retrieving jobs from a backend filtered by status."""
         IBMQ.enable_account(qe_token, qe_url)
         backends = IBMQ.backends(simulator=False)
         backend = least_busy(backends)
@@ -289,6 +294,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_qe_access
     def test_get_jobs_filter_counts(self, qe_token, qe_url):
+        """Test retrieving jobs from a backend filtered by counts."""
         # TODO: consider generalizing backend name
         # TODO: this tests depends on the previous executions of the user
         IBMQ.enable_account(qe_token, qe_url)
@@ -309,6 +315,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_qe_access
     def test_get_jobs_filter_date(self, qe_token, qe_url):
+        """Test retrieving jobs from a backend filtered by date."""
         IBMQ.enable_account(qe_token, qe_url)
         backends = IBMQ.backends(simulator=False)
         backend = least_busy(backends)
@@ -322,6 +329,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_qe_access
     def test_double_submit_fails(self, qe_token, qe_url):
+        """Test submitting a job twice."""
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 

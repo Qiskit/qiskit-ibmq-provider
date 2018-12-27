@@ -5,16 +5,11 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-# pylint: disable=missing-docstring,broad-except
+"""Test IBMQ online qasm simulator."""
 
-"""Test IBMQ online qasm simulator.
-TODO: Must expand tests. Re-evaluate after Aer."""
-
-from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-# pylint: disable=redefined-builtin
-from qiskit import compile
-from qiskit import IBMQ
-from ..common import requires_qe_access, QiskitTestCase
+from qiskit import ClassicalRegister, IBMQ, QuantumCircuit, QuantumRegister
+from qiskit.tools.compiler import compile
+from ..common import QiskitTestCase, requires_qe_access
 
 
 class TestIbmqQasmSimulator(QiskitTestCase):

@@ -5,9 +5,7 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-"""
-Utilities for reading and writing credentials from and to configuration files.
-"""
+"""Utilities for reading and writing credentials from and to config files."""
 
 import warnings
 import os
@@ -23,8 +21,7 @@ DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
 
 
 def read_credentials_from_qiskitrc(filename=None):
-    """
-    Read a configuration file and return a dict with its sections.
+    """Read a configuration file and return a dict with its sections.
 
     Args:
         filename (str): full path to the qiskitrc file. If `None`, the default
@@ -67,8 +64,7 @@ def read_credentials_from_qiskitrc(filename=None):
 
 
 def write_qiskit_rc(credentials, filename=None):
-    """
-    Write credentials to the configuration file.
+    """Write credentials to the configuration file.
 
     Args:
         credentials (dict): dictionary with the credentials, with the form::
@@ -107,8 +103,7 @@ def write_qiskit_rc(credentials, filename=None):
 
 
 def store_credentials(credentials, overwrite=False, filename=None):
-    """
-    Store the credentials for a single account in the configuration file.
+    """Store the credentials for a single account in the configuration file.
 
     Args:
         credentials (Credentials): credentials instance.

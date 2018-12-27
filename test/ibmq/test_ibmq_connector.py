@@ -25,25 +25,19 @@ class TestIBMQConnector(QiskitTestCase):
 
     @requires_qe_access
     def test_api_auth_token(self, qe_token, qe_url):
-        """
-        Authentication with Quantum Experience Platform
-        """
+        """Authentication with IBMQ Platform."""
         api = self._get_api(qe_token, qe_url)
         credential = api.check_credentials()
         self.assertTrue(credential)
 
     def test_api_auth_token_fail(self):
-        """
-        Authentication with Quantum Experience Platform
-        """
+        """Invalid authentication with IBQM Platform."""
         self.assertRaises(ApiError,
                           IBMQConnector, 'fail')
 
     @requires_qe_access
     def test_api_run_job(self, qe_token, qe_url):
-        """
-        Check run an job by user authenticated
-        """
+        """Test running a job against a simulator."""
         api = self._get_api(qe_token, qe_url)
         backend = 'ibmq_qasm_simulator'
         shots = 1
@@ -55,10 +49,7 @@ class TestIBMQConnector(QiskitTestCase):
 
     @requires_qe_access
     def test_api_run_job_fail_backend(self, qe_token, qe_url):
-        """
-        Check run an job by user authenticated is not run because the backend
-        does not exist
-        """
+        """Test running a job against an invalid backend."""
         api = self._get_api(qe_token, qe_url)
         backend = 'INVALID_BACKEND'
         shots = 1
@@ -67,27 +58,21 @@ class TestIBMQConnector(QiskitTestCase):
 
     @requires_qe_access
     def test_api_get_jobs(self, qe_token, qe_url):
-        """
-        Check get jobs by user authenticated
-        """
+        """Check get jobs by user authenticated."""
         api = self._get_api(qe_token, qe_url)
         jobs = api.get_jobs(2)
         self.assertEqual(len(jobs), 2)
 
     @requires_qe_access
     def test_api_get_status_jobs(self, qe_token, qe_url):
-        """
-        Check get status jobs by user authenticated
-        """
+        """Check get status jobs by user authenticated."""
         api = self._get_api(qe_token, qe_url)
         jobs = api.get_status_jobs(1)
         self.assertEqual(len(jobs), 1)
 
     @requires_qe_access
     def test_api_backend_status(self, qe_token, qe_url):
-        """
-        Check the status of a real chip
-        """
+        """Check the status of a real chip."""
         backend_name = ('ibmq_20_tokyo'
                         if self.using_ibmq_credentials else 'ibmqx4')
         api = self._get_api(qe_token, qe_url)
@@ -96,9 +81,7 @@ class TestIBMQConnector(QiskitTestCase):
 
     @requires_qe_access
     def test_api_backend_properties(self, qe_token, qe_url):
-        """
-        Check the properties of calibration of a real chip
-        """
+        """Check the properties of calibration of a real chip."""
         backend_name = ('ibmq_20_tokyo'
                         if self.using_ibmq_credentials else 'ibmqx4')
         api = self._get_api(qe_token, qe_url)
@@ -108,18 +91,14 @@ class TestIBMQConnector(QiskitTestCase):
 
     @requires_qe_access
     def test_api_backends_available(self, qe_token, qe_url):
-        """
-        Check the backends available
-        """
+        """Check the backends available."""
         api = self._get_api(qe_token, qe_url)
         backends = api.available_backends()
         self.assertGreaterEqual(len(backends), 1)
 
     @requires_qe_access
     def test_register_size_limit_exception(self, qe_token, qe_url):
-        """
-        Check that exceeding register size limit generates exception
-        """
+        """Check that exceeding register size limit generates exception."""
         api = self._get_api(qe_token, qe_url)
         backend = 'ibmq_qasm_simulator'
         shots = 1
@@ -130,9 +109,7 @@ class TestIBMQConnector(QiskitTestCase):
 
     @requires_qe_access
     def test_qx_api_version(self, qe_token, qe_url):
-        """
-        Check the version of the QX API
-        """
+        """Check the version of the QX API."""
         api = self._get_api(qe_token, qe_url)
         version = api.api_version()
         self.assertGreaterEqual(int(version.split(".")[0]), 4)
@@ -144,10 +121,10 @@ class TestIBMQConnector(QiskitTestCase):
 
 
 class TestAuthentication(QiskitTestCase):
-    """
-    Tests for the authentication features. These tests are in a separate
-    TestCase as they need to control the instantiation of
-    `IBMQConnector` directly.
+    """Tests for the authentication features.
+
+    These tests are in a separate TestCase as they need to control the
+    instantiation of `IBMQConnector` directly.
     """
     @requires_qe_access
     def test_url_404(self, qe_token, qe_url):
@@ -163,9 +140,8 @@ class TestAuthentication(QiskitTestCase):
             _ = IBMQConnector('INVALID_TOKEN')
 
     @requires_qe_access
-    def test_url_unreachable(self, qe_token, qe_url):
+    def test_url_unreachable(self, qe_token, _):
         """Test accessing an invalid URL"""
-        # pylint: disable=unused-argument
         with self.assertRaises(ApiError):
             _ = IBMQConnector(qe_token, config={'url': 'INVALID_URL'})
 

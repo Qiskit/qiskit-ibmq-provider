@@ -6,8 +6,7 @@
 # the LICENSE.txt file in the root directory of this source tree.
 
 
-"""
-Supporting fake, stubs and mocking classes.
+"""Supporting fake, stubs and mocking classes.
 
 The module includes, among other, a dummy backend simulator. The purpose of
 this class is to create a Simulator that we can trick for testing purposes:
@@ -61,11 +60,6 @@ class DummySimulator(BaseBackend):
     }
 
     def __init__(self, configuration=None, time_alive=10):
-        """
-        Args:
-            configuration (dict): backend configuration
-            time_alive (int): time to wait before returning result
-        """
         super().__init__(configuration or self.DEFAULT_CONFIGURATION.copy())
         self.time_alive = time_alive
 
@@ -92,8 +86,7 @@ class DummySimulator(BaseBackend):
         job.submit()
         return job
 
-    # pylint: disable=unused-argument
-    def run_job(self, job_id, qobj):
+    def run_job(self, job_id, _):
         """ Main dummy simulator loop """
         time.sleep(self.time_alive)
 
@@ -185,7 +178,7 @@ class FakeBackend:
     """A fake backend."""
 
     def name(self):
-        """ name of fake backend"""
+        """Name of fake backend"""
         return 'qiskit_is_cool'
 
     def configuration(self):

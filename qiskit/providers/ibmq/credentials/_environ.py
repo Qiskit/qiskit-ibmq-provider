@@ -5,9 +5,7 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-"""
-Utilities for reading credentials from environment variables.
-"""
+"""Utilities for reading credentials from environment variables."""
 
 import os
 from collections import OrderedDict
@@ -25,8 +23,7 @@ VARIABLES_MAP = {
 
 
 def read_credentials_from_environ():
-    """
-    Read the environment variables and return its credentials.
+    """Read the environment variables and return its credentials.
 
     Returns:
         dict: dictionary with the credentials, in the form::

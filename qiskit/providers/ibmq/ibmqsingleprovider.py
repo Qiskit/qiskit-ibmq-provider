@@ -30,7 +30,8 @@ class IBMQSingleProvider(BaseProvider):
     present in future releases.
     """
     def __init__(self, credentials, ibmq_provider):
-        """
+        """Return a new IBMQSingleProvider.
+
         Args:
             credentials (Credentials): Quantum Experience or IBMQ credentials.
             ibmq_provider (IBMQProvider): IBMQ main provider.

@@ -6,9 +6,8 @@
 # the LICENSE.txt file in the root directory of this source tree.
 
 
-"""
-Test the registration and credentials features of the wrapper.
-"""
+"""Test the registration and credentials features of the IBMQ module."""
+
 import warnings
 import os
 from contextlib import contextmanager

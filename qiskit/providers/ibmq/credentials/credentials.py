@@ -28,7 +28,8 @@ class Credentials:
 
     def __init__(self, token, url, hub=None, group=None, project=None,
                  proxies=None, verify=True):
-        """
+        """Return new set of credentials.
+
         Args:
             token (str): Quantum Experience or IBMQ API token.
             url (str): URL for Quantum Experience or IBMQ.
