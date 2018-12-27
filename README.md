@@ -8,8 +8,8 @@
 Qiskit is an open-source framework for working with noisy intermediate-scale
 quantum computers (NISQ) at the level of pulses, circuits, and algorithms.
 
-This module contains a provider that allows accessing the quantum devices and
-simulators at the [**IBMQ**](https://www.research.ibm.com/ibm-q/) network.
+This module contains a provider that allows accessing the [**IBM Q**](https://www.research.ibm.com/ibm-q/) quantum devices and
+simulators.
 
 ## Installation
 
