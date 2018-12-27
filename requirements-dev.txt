@@ -1,0 +1,2 @@
+pycodestyle
+pylint>=2.2,<2.3
