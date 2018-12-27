@@ -6,7 +6,7 @@
 .PHONY: lint style test
 
 lint:
-	pylint -rn qiskit test
+	pylint -rn qiskit/providers/ibmq test
 
 style:
 	pycodestyle --max-line-length=100 qiskit test
