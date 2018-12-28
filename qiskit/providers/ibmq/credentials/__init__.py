@@ -12,9 +12,9 @@ import logging
 
 from qiskit.exceptions import QiskitError
 from .credentials import Credentials
-from ._configrc import read_credentials_from_qiskitrc, store_credentials
-from ._environ import read_credentials_from_environ
-from ._qconfig import read_credentials_from_qconfig
+from .configrc import read_credentials_from_qiskitrc, store_credentials
+from .environ import read_credentials_from_environ
+from .qconfig import read_credentials_from_qconfig
 
 logger = logging.getLogger(__name__)
 
