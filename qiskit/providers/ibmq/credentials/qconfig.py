@@ -11,8 +11,8 @@ import os
 from collections import OrderedDict
 from importlib.util import module_from_spec, spec_from_file_location
 
-from qiskit.exceptions import QiskitError
 from .credentials import Credentials
+from .exceptions import CredentialsError
 
 DEFAULT_QCONFIG_FILE = 'Qconfig.py'
 QE_URL = 'https://quantumexperience.ng.bluemix.net/api'
@@ -27,8 +27,8 @@ def read_credentials_from_qconfig():
             {credentials_unique_id: Credentials}
 
     Raises:
-        QiskitError: if the Qconfig.py was not parseable. Please note that this
-            exception is not raised if the file does not exist (instead, an
+        CredentialsError: if the Qconfig.py was not parseable. Please note that
+            this exception is not raised if the file does not exist (instead, an
             empty dict is returned).
     """
     if not os.path.isfile(DEFAULT_QCONFIG_FILE):
@@ -37,7 +37,7 @@ def read_credentials_from_qconfig():
         # Note this is nested inside the else to prevent some tools marking
         # the whole method as deprecated.
         pass
-        # TODO: reintroduce when we decide on deprecatin
+        # TODO: reintroduce when we decide on deprecating
         # warnings.warn(
         #     "Using 'Qconfig.py' for storing the credentials will be deprecated in"
         #     "upcoming versions (>0.6.0). Using .qiskitrc is recommended",
@@ -54,9 +54,8 @@ def read_credentials_from_qconfig():
             credentials = {}
         credentials['token'] = q_config.APItoken
         credentials['url'] = credentials.get('url', QE_URL)
-    except Exception as ex:
-        # pylint: disable=broad-except
-        raise QiskitError('Error loading Qconfig.py: %s' % str(ex))
+    except Exception as ex:  # pylint: disable=broad-except
+        raise CredentialsError('Error loading Qconfig.py: %s' % str(ex))
 
     credentials = Credentials(**credentials)
     return OrderedDict({credentials.unique_id(): credentials})

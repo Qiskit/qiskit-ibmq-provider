@@ -5,7 +5,11 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-"""IBM Q API connector."""
+"""Exception for the Credentials module."""
 
-from .exceptions import ApiError, BadBackendError, RegisterSizeError
-from .ibmqconnector import IBMQConnector
+from ..exceptions import IBMQError
+
+
+class CredentialsError(IBMQError):
+    """Base class for errors raised during credential management."""
+    pass

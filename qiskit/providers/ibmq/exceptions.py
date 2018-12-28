@@ -10,16 +10,21 @@
 from qiskit.exceptions import QiskitError
 
 
-class IBMQAccountError(QiskitError):
+class IBMQError(QiskitError):
+    """Base class for errors raised by the IBMQ provider module."""
+    pass
+
+
+class IBMQAccountError(IBMQError):
     """Base class for errors raised by account management."""
     pass
 
 
-class IBMQBackendError(QiskitError):
+class IBMQBackendError(IBMQError):
     """IBM Q Backend Errors"""
     pass
 
 
-class IBMQBackendValueError(IBMQBackendError, ValueError):
+class IBMQBackendValueError(IBMQError, ValueError):
     """Value errors thrown within IBMQBackend """
     pass
