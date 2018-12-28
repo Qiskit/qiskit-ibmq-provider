@@ -8,9 +8,10 @@
 
 """Tests for all IBMQ backends."""
 
-from qiskit import ClassicalRegister, IBMQ, QuantumCircuit, QuantumRegister
+from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.qobj import QobjHeader
 from qiskit.tools.compiler import compile
+from qiskit.providers.ibmq import IBMQ
 from ..common import QiskitTestCase, requires_qe_access, slow_test
 
 

@@ -10,11 +10,11 @@
 from collections import OrderedDict
 import logging
 
-from qiskit.exceptions import QiskitError
 from .credentials import Credentials
-from ._configrc import read_credentials_from_qiskitrc, store_credentials
-from ._environ import read_credentials_from_environ
-from ._qconfig import read_credentials_from_qconfig
+from .exceptions import CredentialsError
+from .configrc import read_credentials_from_qiskitrc, store_credentials
+from .environ import read_credentials_from_environ
+from .qconfig import read_credentials_from_qconfig
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ def discover_credentials(qiskitrc_filename=None):
             logger.info('Using credentials from %s', display_name)
             if credentials:
                 break
-        except QiskitError as ex:
+        except CredentialsError as ex:
             logger.warning(
                 'Automatic discovery of %s credentials failed: %s',
                 display_name, str(ex))

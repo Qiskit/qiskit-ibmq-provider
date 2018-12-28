@@ -16,6 +16,8 @@ from urllib import parse
 import requests
 from requests_ntlm import HttpNtlmAuth
 
+from .exceptions import (ApiError, CredentialsError, RegisterSizeError,
+                         BadBackendError)
 
 logger = logging.getLogger(__name__)
 CLIENT_APPLICATION = 'qiskit-api-py'
@@ -779,51 +781,3 @@ class IBMQConnector:
     def api_version(self):
         """Get the API Version of the QX Platform."""
         return self.req.get('/version')
-
-
-class ApiError(Exception):
-    """IBMQConnector API error handling base class."""
-
-    def __init__(self, usr_msg=None, dev_msg=None):
-        """ApiError.
-
-        Args:
-            usr_msg (str): Short user facing message describing error.
-            dev_msg (str or None): More detailed message to assist
-                developer with resolving issue.
-        """
-        Exception.__init__(self, usr_msg)
-        self.usr_msg = usr_msg
-        self.dev_msg = dev_msg
-
-    def __repr__(self):
-        return repr(self.dev_msg)
-
-    def __str__(self):
-        return str(self.usr_msg)
-
-
-class BadBackendError(ApiError):
-    """Unavailable backend error."""
-
-    def __init__(self, backend):
-        """BadBackendError.
-
-        Args:
-            backend (str): name of backend.
-        """
-        usr_msg = 'Could not find backend "{0}" available.'.format(backend)
-        dev_msg = ('Backend "{0}" does not exist. Please use '
-                   'available_backends to see options').format(backend)
-        ApiError.__init__(self, usr_msg=usr_msg,
-                          dev_msg=dev_msg)
-
-
-class CredentialsError(ApiError):
-    """Exception associated with bad server credentials."""
-    pass
-
-
-class RegisterSizeError(ApiError):
-    """Exception due to exceeding the maximum number of allowed qubits."""
-    pass

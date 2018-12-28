@@ -140,8 +140,9 @@ class TestAuthentication(QiskitTestCase):
             _ = IBMQConnector('INVALID_TOKEN')
 
     @requires_qe_access
-    def test_url_unreachable(self, qe_token, _):
+    def test_url_unreachable(self, qe_token, qe_url):
         """Test accessing an invalid URL"""
+        # pylint: disable=unused-argument
         with self.assertRaises(ApiError):
             _ = IBMQConnector(qe_token, config={'url': 'INVALID_URL'})
 

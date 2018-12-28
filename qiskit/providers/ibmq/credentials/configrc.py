@@ -13,8 +13,8 @@ from ast import literal_eval
 from collections import OrderedDict
 from configparser import ConfigParser, ParsingError
 
-from qiskit.exceptions import QiskitError
 from .credentials import Credentials
+from .exceptions import CredentialsError
 
 DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
                                      '.qiskit', 'qiskitrc')
@@ -34,7 +34,7 @@ def read_credentials_from_qiskitrc(filename=None):
             {credential_unique_id: Credentials}
 
     Raises:
-        QiskitError: if the file was not parseable. Please note that this
+        CredentialsError: if the file was not parseable. Please note that this
             exception is not raised if the file does not exist (instead, an
             empty dict is returned).
     """
@@ -43,7 +43,7 @@ def read_credentials_from_qiskitrc(filename=None):
     try:
         config_parser.read(filename)
     except ParsingError as ex:
-        raise QiskitError(str(ex))
+        raise CredentialsError(str(ex))
 
     # Build the credentials dictionary.
     credentials_dict = OrderedDict()
@@ -83,7 +83,8 @@ def write_qiskit_rc(credentials, filename=None):
         """Return a string suitable for use as a unique section name."""
         base_name = 'ibmq'
         if credentials_.is_ibmq():
-            base_name = '{}_{}_{}_{}'.format(base_name, *credentials_.unique_id())
+            base_name = '{}_{}_{}_{}'.format(base_name,
+                                             *credentials_.unique_id())
         return base_name
 
     filename = filename or DEFAULT_QISKITRC_FILE
@@ -91,7 +92,8 @@ def write_qiskit_rc(credentials, filename=None):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     unrolled_credentials = {
-        _section_name(credentials_object): _credentials_object_to_dict(credentials_object)
+        _section_name(credentials_object):
+            _credentials_object_to_dict(credentials_object)
         for _, credentials_object in credentials.items()
     }
 
@@ -110,9 +112,6 @@ def store_credentials(credentials, overwrite=False, filename=None):
         overwrite (bool): overwrite existing credentials.
         filename (str): full path to the qiskitrc file. If `None`, the default
             location is used (`HOME/.qiskit/qiskitrc`).
-
-    Raises:
-        QiskitError: if the account_name could not be assigned.
     """
     # Read the current providers stored in the configuration file.
     filename = filename or DEFAULT_QISKITRC_FILE
@@ -121,7 +120,8 @@ def store_credentials(credentials, overwrite=False, filename=None):
     # Check if duplicated credentials are already stored. By convention,
     # we assume (hub, group, project) is always unique.
     if credentials.unique_id() in stored_credentials and not overwrite:
-        warnings.warn('Credentials already present. Set overwrite=True to overwrite.')
+        warnings.warn('Credentials already present. '
+                      'Set overwrite=True to overwrite.')
         return
 
     # Append and write the credentials to file.
@@ -138,8 +138,8 @@ def remove_credentials(credentials, filename=None):
             location is used (`HOME/.qiskit/qiskitrc`).
 
     Raises:
-        QiskitError: If there is no account with that name on the configuration
-            file.
+        CredentialsError: If there is no account with that name on the
+            configuration file.
     """
     # Set the name of the Provider from the class.
     stored_credentials = read_credentials_from_qiskitrc(filename)
@@ -147,6 +147,6 @@ def remove_credentials(credentials, filename=None):
     try:
         del stored_credentials[credentials.unique_id()]
     except KeyError:
-        raise QiskitError('The account "%s" does not exist in the '
-                          'configuration file')
+        raise CredentialsError('The account "%s" does not exist in the '
+                               'configuration file')
     write_qiskit_rc(stored_credentials, filename)

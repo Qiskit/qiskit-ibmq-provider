@@ -7,8 +7,9 @@
 
 """Test IBMQ online qasm simulator."""
 
-from qiskit import ClassicalRegister, IBMQ, QuantumCircuit, QuantumRegister
+from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.tools.compiler import compile
+from qiskit.providers.ibmq import IBMQ
 from ..common import QiskitTestCase, requires_qe_access
 
 
