@@ -9,10 +9,11 @@
 
 import unittest
 
-from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit, BasicAer
+from qiskit import BasicAer, ClassicalRegister, QuantumCircuit, QuantumRegister
+from qiskit.exceptions import QiskitError
+from qiskit.providers.ibmq import IBMQ, least_busy
+from qiskit.test import QiskitTestCase, requires_qe_access, slow_test
 from qiskit.tools.compiler import compile
-from qiskit.providers.ibmq import least_busy, IBMQ
-from qiskit.test import requires_qe_access, QiskitTestCase, slow_test
 
 
 class TestBitReordering(QiskitTestCase):
@@ -91,7 +92,7 @@ class TestBitReordering(QiskitTestCase):
             IBMQ.enable_account(qe_token, qe_url)
             real_backends = IBMQ.backends(simulator=False)
             real_backend = least_busy(real_backends)
-        except Exception:
+        except QiskitError:
             real_backend = None
 
         return sim_backend, real_backend

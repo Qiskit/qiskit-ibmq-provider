@@ -49,9 +49,6 @@ class IBMQProvider(BaseProvider):
 
         Returns:
             list[IBMQBackend]: list of backends available that match the filter
-
-        Raises:
-            IBMQAccountError: if no account matched the filter.
         """
         # pylint: disable=arguments-differ
 
