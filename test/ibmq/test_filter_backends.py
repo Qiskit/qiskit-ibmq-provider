@@ -8,7 +8,7 @@
 """Backends Filtering Test."""
 
 from qiskit.providers.ibmq import IBMQ, least_busy
-from qiskit.test import requires_qe_access, QiskitTestCase
+from qiskit.test import QiskitTestCase, requires_qe_access
 
 
 class TestBackendFilters(QiskitTestCase):

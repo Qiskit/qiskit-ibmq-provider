@@ -8,8 +8,8 @@
 
 """Test the registration and credentials features of the IBMQ module."""
 
-import warnings
 import os
+import warnings
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 from unittest import skipIf
@@ -17,15 +17,13 @@ from unittest.mock import patch
 
 from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.credentials import (
-    configrc, qconfig, discover_credentials, store_credentials, Credentials,
-    read_credentials_from_qiskitrc)
+    Credentials, configrc, discover_credentials, qconfig,
+    read_credentials_from_qiskitrc, store_credentials)
 from qiskit.providers.ibmq.credentials.environ import VARIABLES_MAP
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
 from qiskit.providers.ibmq.ibmqprovider import QE_URL
 from qiskit.providers.ibmq.ibmqsingleprovider import IBMQSingleProvider
-
-from ..common import QiskitTestCase
-
+from qiskit.test import QiskitTestCase
 
 IBMQ_TEMPLATE = 'https://localhost/api/Hubs/{}/Groups/{}/Projects/{}'
 
