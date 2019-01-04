@@ -22,7 +22,7 @@ from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.ibmqjob import IBMQJob
 from qiskit.test import requires_qe_access, slow_test
 from qiskit.tools.compiler import compile
-from .jobtestcase import JobTestCase
+from ..jobtestcase import JobTestCase
 
 
 class TestIBMQJob(JobTestCase):

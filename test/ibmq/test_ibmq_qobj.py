@@ -14,12 +14,11 @@ from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
                     QuantumRegister)
 from qiskit.providers.ibmq import IBMQ
 from qiskit.qasm import pi
-from qiskit.test import requires_qe_access, slow_test
+from qiskit.test import QiskitTestCase, requires_qe_access, slow_test
 from qiskit.tools.compiler import compile
-from .jobtestcase import JobTestCase
 
 
-class TestIBMQQobj(JobTestCase):
+class TestIBMQQobj(QiskitTestCase):
     """Qiskit backend qobj test.
 
     Compares remote simulator as configured in environment variables
