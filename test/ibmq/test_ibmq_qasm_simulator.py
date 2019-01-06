@@ -8,9 +8,9 @@
 """Test IBMQ online qasm simulator."""
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.tools.compiler import compile
 from qiskit.providers.ibmq import IBMQ
-from ..common import QiskitTestCase, requires_qe_access
+from qiskit.test import QiskitTestCase, requires_qe_access
+from qiskit.tools.compiler import compile
 
 
 class TestIbmqQasmSimulator(QiskitTestCase):
@@ -18,10 +18,7 @@ class TestIbmqQasmSimulator(QiskitTestCase):
 
     @requires_qe_access
     def test_execute_one_circuit_simulator_online(self, qe_token, qe_url):
-        """Test execute_one_circuit_simulator_online.
-
-        If all correct should return correct counts.
-        """
+        """Test execute_one_circuit_simulator_online."""
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
@@ -41,10 +38,7 @@ class TestIbmqQasmSimulator(QiskitTestCase):
 
     @requires_qe_access
     def test_execute_several_circuits_simulator_online(self, qe_token, qe_url):
-        """Test execute_several_circuits_simulator_online.
-
-        If all correct should return correct counts.
-        """
+        """Test execute_several_circuits_simulator_online."""
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
@@ -74,10 +68,7 @@ class TestIbmqQasmSimulator(QiskitTestCase):
 
     @requires_qe_access
     def test_online_qasm_simulator_two_registers(self, qe_token, qe_url):
-        """Test online_qasm_simulator_two_registers.
-
-        If all correct should return correct counts.
-        """
+        """Test online_qasm_simulator_two_registers."""
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
