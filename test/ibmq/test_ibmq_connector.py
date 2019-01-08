@@ -23,6 +23,11 @@ class TestIBMQConnector(QiskitTestCase):
         self.qasms = [{'qasm': SAMPLE_QASM_1},
                       {'qasm': SAMPLE_QASM_2}]
 
+    @staticmethod
+    def _get_api(qe_token, qe_url):
+        """Helper for instantating an IBMQConnector."""
+        return IBMQConnector(qe_token, config={'url': qe_url})
+
     @requires_qe_access
     def test_api_auth_token(self, qe_token, qe_url):
         """Authentication with IBMQ Platform."""
@@ -114,10 +119,21 @@ class TestIBMQConnector(QiskitTestCase):
         version = api.api_version()
         self.assertGreaterEqual(int(version.split(".")[0]), 4)
 
-    @staticmethod
-    def _get_api(qe_token, qe_url):
-        """Helper for instantating an IBMQConnector."""
-        return IBMQConnector(qe_token, config={'url': qe_url})
+    @requires_qe_access
+    def test_get_job_includes(self, qe_token, qe_url):
+        """Check the field includes parameter for get_job."""
+        api = self._get_api(qe_token, qe_url)
+
+        # Run a job and get its id.
+        backend = 'ibmq_qasm_simulator'
+        shots = 1
+        job = api.run_job(self.qasms, backend, shots)
+        job_id = job['id']
+
+        # Get the job, excluding a parameter.
+        self.assertIn('userId', job)
+        job_excluded = api.get_job(job_id, exclude_fields=['userId'])
+        self.assertNotIn('userId', job_excluded)
 
 
 class TestAuthentication(QiskitTestCase):

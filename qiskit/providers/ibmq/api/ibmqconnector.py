@@ -553,8 +553,29 @@ class IBMQConnector:
         return job
 
     def get_job(self, id_job, hub=None, group=None, project=None,
+                exclude_fields=None, include_fields=None,
                 access_token=None, user_id=None):
         """Get the information about a job, by its id."""
+
+        def build_url_filter(excluded_fields, included_fields):
+            """Return a URL filter based on included and excluded fields."""
+            excluded_fields = excluded_fields or []
+            included_fields = included_fields or []
+            fields_bool = {}
+
+            # Build a map of fields to bool.
+            for field_ in excluded_fields:
+                fields_bool[field_] = False
+            for field_ in included_fields:
+                fields_bool[field_] = True
+
+            if 'properties' in fields_bool:
+                fields_bool['calibration'] = fields_bool.pop('properties')
+
+            if fields_bool:
+                return '&filter=' + json.dumps({'fields': fields_bool})
+            return ''
+
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
@@ -570,7 +591,11 @@ class IBMQConnector:
 
         url += '/' + id_job
 
-        job = self.req.get(url)
+        job = self.req.get(url, params=build_url_filter(exclude_fields,
+                                                        include_fields))
+
+        if 'calibration' in job:
+            job['properties'] = job.pop('calibration')
 
         if 'qObjectResult' in job:
             # If the job is using Qobj, return the qObjectResult directly,
@@ -619,6 +644,10 @@ class IBMQConnector:
 
         url_filter = url_filter + json.dumps(query)
         jobs = self.req.get(url, url_filter)
+        for job in jobs:
+            if 'calibration' in job:
+                job['properties'] = job.pop('calibration')
+
         return jobs
 
     def get_status_job(self, id_job, hub=None, group=None, project=None,
