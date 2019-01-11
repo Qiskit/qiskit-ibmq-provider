@@ -382,7 +382,3 @@ def _bell_circuit():
     qc.cx(qr[0], qr[1])
     qc.measure(qr, cr)
     return qc
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

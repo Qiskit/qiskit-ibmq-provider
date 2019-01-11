@@ -11,7 +11,7 @@ from setuptools import setup
 
 requirements = [
     "qiskit-terra>=0.7,<0.8",
-    "marshmallow>=2.16.3,<3",
+    "marshmallow>=2.17.0,<3",
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
 ]
