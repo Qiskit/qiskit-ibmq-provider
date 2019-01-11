@@ -146,7 +146,3 @@ class TestCompiler(QiskitTestCase):
         job = execute([qc, qc_extra], backend, seed=TestCompiler.seed)
         results = job.result()
         self.assertIsInstance(results, Result)
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

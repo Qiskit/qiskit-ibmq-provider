@@ -96,7 +96,3 @@ class TestBitReordering(QiskitTestCase):
             real_backend = None
 
         return sim_backend, real_backend
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

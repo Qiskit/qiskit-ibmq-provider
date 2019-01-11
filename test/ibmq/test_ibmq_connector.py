@@ -195,7 +195,3 @@ h q[44];
 measure q[0] -> c[0];
 measure q[44] -> c[44];
 """
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

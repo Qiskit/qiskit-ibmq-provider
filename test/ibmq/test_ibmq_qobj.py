@@ -227,7 +227,3 @@ class TestIBMQQobj(QiskitTestCase):
         result_local = self._local_backend.run(qobj).result()
         self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                    result_local.get_counts(circuit), delta=50)
-
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)
