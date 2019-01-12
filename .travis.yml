@@ -1,0 +1,139 @@
+# Copyright 2018, IBM.
+#
+# This source code is licensed under the Apache License, Version 2.0 found in
+# the LICENSE.txt file in the root directory of this source tree.
+
+notifications:
+  email: false
+
+cache: pip
+sudo: false
+
+###############################################################################
+# Anchored and aliased definitions.
+###############################################################################
+
+# These are used for avoiding repeating code, and due to problems with
+# overriding some keys (in particular, "os" and "language: ptyhon") when using
+# the standard travis matrix with stages.
+#
+# This allows re-using different "sets" of configurations in the stages
+# matrix, mimicking a hierarchy:
+# * stage_generic
+#   * stage_linux
+#   * stage_osx
+
+stage_generic: &stage_generic
+  install:
+    # Install step for jobs that require compilation and qa.
+    # TODO: until the split is complete, install a terra branch.
+    # - pip install -U -r requirements.txt
+    - git clone --single-branch --branch feature/remove-ibmq git@github.com:diego-plan9/qiskit-sdk-py.git
+    - pip install -e qiskit-sdk-py
+    - pip install "requests>=2.19"
+    - pip install "requests-ntlm>=1.1.0"
+    - pip install -U -r requirements-dev.txt
+  script:
+    # Run the tests.
+    - make test
+
+stage_linux: &stage_linux
+  <<: *stage_generic
+  os: linux
+  dist: trusty
+  language: python
+  python: 3.5
+
+stage_osx: &stage_osx
+  <<: *stage_generic
+  os: osx
+  osx_image: xcode9.2
+  language: generic
+  env: MPLBACKEND=ps
+  addons:
+    homebrew:
+      packages:
+      - pyenv
+      - freetype
+      - pkg-config
+      update: true
+  before_install:
+    # Travis does not provide support for Python 3 under osx - it needs to be
+    # installed manually.
+    |
+    if [ ${TRAVIS_OS_NAME} = "osx" ]; then
+      pyenv install 3.6.5
+      virtualenv --python ~/.pyenv/versions/3.6.5/bin/python venv
+      source venv/bin/activate
+    fi
+
+stage_osx_python3_7: &stage_osx_python3_7
+  <<: *stage_osx
+  before_install:
+    |
+    if [ ${TRAVIS_OS_NAME} = "osx" ]; then
+      pyenv install 3.7.0
+      virtualenv --python ~/.pyenv/versions/3.7.0/bin/python venv
+      source venv/bin/activate
+    fi
+
+###############################################################################
+# Stage-related definitions
+###############################################################################
+
+# Define the order of the stages.
+stages:
+  - lint and pure python test
+  - test
+  - ibmq
+
+# Define the job matrix explicitly, as matrix expansion causes issues when
+# using it with stages and some variables/sections cannot be overridden.
+jobs:
+  include:
+    # "lint and and pure python test" stage
+    ###########################################################################
+    # Linter and style check (GNU/Linux, Python 3.5)
+    - stage: lint and pure python test
+      <<: *stage_linux
+      script: make style && make lint
+
+    # Run the tests against without compilation (GNU/Linux, Python 3.5)
+    - stage: lint and pure python test
+      <<: *stage_linux
+
+#    # "test" stage
+#    ###########################################################################
+#
+#    # GNU/Linux, Python 3.6
+#    - stage: test
+#      <<: *stage_linux
+#      python: 3.6
+#
+#    # GNU/Linux, Python 3.7
+#    - stage: test
+#      <<: *stage_linux
+#      # Compiling Python 3.7 requires an Ubuntu Xenial distribution
+#      # and sudo set to true
+#      # Fix when this is solved:
+#      # https://github.com/travis-ci/travis-ci/issues/9815
+#      dist: xenial
+#      python: 3.7
+#      sudo: true
+#
+#    # OSX, Python 3.6.5 (via pyenv)
+#    - stage: test
+#      <<: *stage_osx
+#
+#    # OSX, Python 3.7 (via pyenv)
+#    - stage: test
+#      <<: *stage_osx_python3_7
+#
+#    # "ibmq" stage
+#    ###########################################################################
+#    # GNU/Linux, Python 3.6, against IBM Q
+#    - stage: ibmq
+#      <<: *stage_linux
+#      if: branch = master and repo = Qiskit/qiskit-terra and type = push
+#      python: 3.6
+#      env: USE_ALTERNATE_ENV_CREDENTIALS=True
