@@ -49,11 +49,11 @@ stage_osx: &stage_osx
   os: osx
   osx_image: xcode9.2
   language: generic
-  env: MPLBACKEND=ps
   addons:
     homebrew:
       packages:
       - pyenv
+      update: true
   before_install:
     # Travis does not provide support for Python 3 under osx - it needs to be
     # installed manually.
