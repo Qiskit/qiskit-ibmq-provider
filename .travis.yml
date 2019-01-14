@@ -132,6 +132,6 @@ jobs:
     # GNU/Linux, Python 3.6, against IBM Q
     - stage: ibmq
       <<: *stage_linux
-      if: branch = master and repo = Qiskit/qiskit-terra and type = push
+      if: branch = master and repo = Qiskit/qiskit-ibmq-provider and type = push
       python: 3.6
       env: USE_ALTERNATE_ENV_CREDENTIALS=True
