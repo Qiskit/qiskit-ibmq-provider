@@ -7,8 +7,6 @@
 
 """IBMQ provider integration tests (compile and run)."""
 
-import unittest
-
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQ, least_busy
 from qiskit.result import Result

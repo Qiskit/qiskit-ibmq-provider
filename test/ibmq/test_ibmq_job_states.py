@@ -10,7 +10,6 @@
 """IBMQJob states test-suite."""
 
 import time
-import unittest
 from contextlib import suppress
 
 from qiskit.test.mock import new_fake_qobj, FakeRueschlikon

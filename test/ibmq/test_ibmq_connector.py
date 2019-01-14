@@ -8,7 +8,6 @@
 """Test IBMQConnector."""
 
 import re
-import unittest
 
 from qiskit.providers.ibmq.api import (ApiError, BadBackendError,
                                        IBMQConnector, RegisterSizeError)
