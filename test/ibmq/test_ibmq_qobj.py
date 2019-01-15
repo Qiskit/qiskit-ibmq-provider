@@ -8,7 +8,6 @@
 """IBMQ Remote Backend Qobj Tests."""
 
 import os
-import unittest
 
 from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
                     QuantumRegister)
