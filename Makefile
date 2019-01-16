@@ -12,4 +12,4 @@ style:
 	pycodestyle --max-line-length=100 qiskit test
 
 test:
-	python -m unittest
+	python -m unittest -v

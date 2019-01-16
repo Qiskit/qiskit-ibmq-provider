@@ -49,13 +49,10 @@ stage_osx: &stage_osx
   os: osx
   osx_image: xcode9.2
   language: generic
-  env: MPLBACKEND=ps
   addons:
     homebrew:
       packages:
       - pyenv
-      - freetype
-      - pkg-config
       update: true
   before_install:
     # Travis does not provide support for Python 3 under osx - it needs to be
@@ -67,15 +64,6 @@ stage_osx: &stage_osx
       source venv/bin/activate
     fi
 
-stage_osx_python3_7: &stage_osx_python3_7
-  <<: *stage_osx
-  before_install:
-    |
-    if [ ${TRAVIS_OS_NAME} = "osx" ]; then
-      pyenv install 3.7.0
-      virtualenv --python ~/.pyenv/versions/3.7.0/bin/python venv
-      source venv/bin/activate
-    fi
 
 ###############################################################################
 # Stage-related definitions
@@ -102,38 +90,45 @@ jobs:
     - stage: lint and pure python test
       <<: *stage_linux
 
-#    # "test" stage
-#    ###########################################################################
-#
-#    # GNU/Linux, Python 3.6
-#    - stage: test
-#      <<: *stage_linux
-#      python: 3.6
-#
-#    # GNU/Linux, Python 3.7
-#    - stage: test
-#      <<: *stage_linux
-#      # Compiling Python 3.7 requires an Ubuntu Xenial distribution
-#      # and sudo set to true
-#      # Fix when this is solved:
-#      # https://github.com/travis-ci/travis-ci/issues/9815
-#      dist: xenial
-#      python: 3.7
-#      sudo: true
-#
-#    # OSX, Python 3.6.5 (via pyenv)
-#    - stage: test
-#      <<: *stage_osx
-#
-#    # OSX, Python 3.7 (via pyenv)
-#    - stage: test
-#      <<: *stage_osx_python3_7
-#
-#    # "ibmq" stage
-#    ###########################################################################
-#    # GNU/Linux, Python 3.6, against IBM Q
-#    - stage: ibmq
-#      <<: *stage_linux
-#      if: branch = master and repo = Qiskit/qiskit-terra and type = push
-#      python: 3.6
-#      env: USE_ALTERNATE_ENV_CREDENTIALS=True
+    # "test" stage
+    ###########################################################################
+
+    # GNU/Linux, Python 3.6
+    - stage: test
+      <<: *stage_linux
+      python: 3.6
+
+    # GNU/Linux, Python 3.7
+    - stage: test
+      <<: *stage_linux
+      # Compiling Python 3.7 requires an Ubuntu Xenial distribution
+      # and sudo set to true
+      # Fix when this is solved:
+      # https://github.com/travis-ci/travis-ci/issues/9815
+      dist: xenial
+      python: 3.7
+      sudo: true
+
+    # OSX, Python 3.6.5 (via pyenv)
+    - stage: test
+      <<: *stage_osx
+
+    # OSX, Python 3.7 (via pyenv)
+    - stage: test
+      <<: *stage_osx
+      before_install:
+        |
+        if [ ${TRAVIS_OS_NAME} = "osx" ]; then
+          pyenv install 3.7.0
+          virtualenv --python ~/.pyenv/versions/3.7.0/bin/python venv
+          source venv/bin/activate
+        fi
+
+    # "ibmq" stage
+    ###########################################################################
+    # GNU/Linux, Python 3.6, against IBM Q
+    - stage: ibmq
+      <<: *stage_linux
+      if: branch = master and repo = Qiskit/qiskit-ibmq-provider and type = push
+      python: 3.6
+      env: USE_ALTERNATE_ENV_CREDENTIALS=True
