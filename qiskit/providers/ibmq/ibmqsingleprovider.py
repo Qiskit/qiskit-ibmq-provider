@@ -10,11 +10,10 @@
 import logging
 from collections import OrderedDict
 
-from marshmallow import ValidationError
-
 from qiskit.providers import BaseProvider
 from qiskit.providers.models import BackendConfiguration
 from qiskit.providers.providerutils import filter_backends
+from qiskit.validation.exceptions import ModelValidationError
 
 from .api import IBMQConnector
 from .ibmqbackend import IBMQBackend
@@ -101,7 +100,7 @@ class IBMQSingleProvider(BaseProvider):
                     provider=self._ibm_provider,
                     credentials=self.credentials,
                     api=self._api)
-            except ValidationError as ex:
+            except ModelValidationError as ex:
                 logger.warning(
                     'Remote backend "%s" could not be instantiated due to an '
                     'invalid config: %s',
