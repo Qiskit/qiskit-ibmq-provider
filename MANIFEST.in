@@ -1,0 +1,1 @@
+include qiskit/providers/ibmq/VERSION.txt

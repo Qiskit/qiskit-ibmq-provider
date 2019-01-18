@@ -10,7 +10,7 @@ import os
 from setuptools import setup
 
 requirements = [
-    "qiskit-terra>=0.7,<0.8",
+    #"qiskit-terra>=0.8",  # TODO: disabled for developers convenience
     "marshmallow>=2.17.0,<3",
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
@@ -18,7 +18,7 @@ requirements = [
 
 # Handle version.
 VERSION_PATH = os.path.join(os.path.dirname(__file__),
-                            "qiskit", "providers", "aer", "VERSION.txt")
+                            "qiskit", "providers", "ibmq", "VERSION.txt")
 with open(VERSION_PATH, "r") as version_file:
     VERSION = version_file.read().strip()
 
@@ -30,7 +30,7 @@ setup(
                      "access to real quantum devices and simulators.",
     url="https://github.com/Qiskit/qiskit-ibmq-provider",
     author="Qiskit Development Team",
-    author_email="qiskit@us.ibm.com",
+    author_email="qiskit@qiskit.org",
     license="Apache 2.0",
     classifiers=[
         "Environment :: Console",
@@ -46,7 +46,9 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
     keywords="qiskit sdk quantum api ibmq",
-    packages=['qiskit.providers.ibmq'],
+    packages=['qiskit.providers.ibmq',
+              'qiskit.providers.ibmq.api',
+              'qiskit.providers.ibmq.credentials'],
     install_requires=requirements,
     include_package_data=True,
     python_requires=">=3.5"
