@@ -105,8 +105,10 @@ class TestIBMQAccounts(QiskitTestCase):
         """Test saving the same credentials twice."""
         with custom_qiskitrc(), mock_ibmq_provider():
             IBMQ.save_account('QISKITRC_TOKEN')
-            IBMQ.save_account('QISKITRC_TOKEN')
+            with self.assertWarns(UserWarning) as context_manager:
+                IBMQ.save_account('QISKITRC_TOKEN')
 
+            self.assertIn('Set overwrite', str(context_manager.warning))
             # Compare the session accounts with the ones stored in file.
             stored_accounts = read_credentials_from_qiskitrc()
             self.assertEqual(len(stored_accounts), 1)
