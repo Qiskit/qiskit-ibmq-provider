@@ -28,7 +28,7 @@ stage_generic: &stage_generic
     # Install step for jobs that require compilation and qa.
     # TODO: until the split is complete, install a terra branch.
     # - pip install -U -r requirements.txt
-    - git clone --single-branch --branch feature/remove-ibmq https://github.com/diego-plan9/qiskit-sdk-py.git
+    - git clone https://github.com/Qiskit/qiskit-terra.git
     - pip install -e qiskit-sdk-py
     - pip install "requests>=2.19"
     - pip install "requests-ntlm>=1.1.0"
