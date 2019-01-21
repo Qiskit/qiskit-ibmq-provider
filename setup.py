@@ -11,7 +11,6 @@ from setuptools import setup
 
 requirements = [
     #"qiskit-terra>=0.8",  # TODO: disabled for developers convenience
-
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
 ]
@@ -22,12 +21,19 @@ VERSION_PATH = os.path.join(os.path.dirname(__file__),
 with open(VERSION_PATH, "r") as version_file:
     VERSION = version_file.read().strip()
 
+# Read long description from README.
+README_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                           'README.md')
+with open(README_PATH) as readme_file:
+    README = readme_file.read()
+
+
 setup(
     name="qiskit-ibmq-provider",
     version=VERSION,
-    description="Qiskit provider for IBMQ network",
-    long_description="Qiskit provider for accessing the IBMQ network, allowing "
-                     "access to real quantum devices and simulators.",
+    description="Qiskit provider for IBM Q quantum devices and simulators",
+    long_description=README,
+    long_description_content_type='text/markdown',
     url="https://github.com/Qiskit/qiskit-ibmq-provider",
     author="Qiskit Development Team",
     author_email="qiskit@qiskit.org",
