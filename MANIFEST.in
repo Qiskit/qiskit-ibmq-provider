@@ -1,0 +1,2 @@
+include LICENSE.txt README.md
+include qiskit/providers/ibmq/VERSION.txt
