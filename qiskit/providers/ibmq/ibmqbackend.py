@@ -194,8 +194,6 @@ class IBMQBackend(BaseBackend):
         """
         try:
             job_info = self._api.get_job(job_id)
-            print(job_info['backend']['name'])
-            print(self.name())
             if job_info['backend']['name'] != self.name():
                 warnings.warn('Job "{}" belongs to another backend than the one queried. '
                               'The query was made on backend "{}", '

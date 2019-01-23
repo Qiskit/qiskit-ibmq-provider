@@ -269,7 +269,7 @@ class TestIBMQJob(JobTestCase):
         else:
             self.assertEqual(job.qobj(), None)
 
-    #@slow_test
+    @slow_test
     @requires_qe_access
     def test_retrieve_job_uses_appropriate_backend(self, qe_token, qe_url):
         """Test that retrieved jobs come from their appropriate backend."""
@@ -287,7 +287,6 @@ class TestIBMQJob(JobTestCase):
         # test a retrieved job's backend is the same as the queried backend
         self.assertEqual(simulator_backend.retrieve_job(job_sim.job_id()).backend().name(),
                          simulator_backend.name())
-        print(job_real.backend().name(), real_backend.name())
         self.assertEqual(real_backend.retrieve_job(job_real.job_id()).backend().name(),
                          real_backend.name())
 
