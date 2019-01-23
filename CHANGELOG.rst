@@ -37,6 +37,7 @@ Changed
   Qiskit Terra package.
 - The exception hierarchy has been revised: the package base exception is
   ``IBMQError``, and they have been grouped in ``.exception`` modules. (#5)
+- Ensured that retrieved jobs come from their appropriate backend (#23)
 
 
 
