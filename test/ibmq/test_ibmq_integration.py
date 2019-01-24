@@ -15,8 +15,8 @@ from qiskit.tools.compiler import compile, execute
 from qiskit.transpiler import transpile
 
 
-class TestCompiler(QiskitTestCase):
-    """Qiskit Compiler Tests."""
+class TestIBMQIntegration(QiskitTestCase):
+    """Qiskit's IBMQ Provider integration tests."""
 
     seed = 42
 
@@ -86,7 +86,7 @@ class TestCompiler(QiskitTestCase):
         qc.h(qubit_reg[0])
         qc.cx(qubit_reg[0], qubit_reg[1])
         qc.measure(qubit_reg, clbit_reg)
-        qobj = compile(qc, backend, seed=TestCompiler.seed)
+        qobj = compile(qc, backend, seed=self.seed)
         job = backend.run(qobj)
         result = job.result(timeout=20)
         self.assertIsInstance(result, Result)
@@ -105,7 +105,7 @@ class TestCompiler(QiskitTestCase):
         qc.measure(qubit_reg, clbit_reg)
         qc_extra = QuantumCircuit(qubit_reg, clbit_reg, name="extra")
         qc_extra.measure(qubit_reg, clbit_reg)
-        qobj = compile([qc, qc_extra], backend, seed=TestCompiler.seed)
+        qobj = compile([qc, qc_extra], backend, seed=self.seed)
         job = backend.run(qobj)
         result = job.result()
         self.assertIsInstance(result, Result)
@@ -123,7 +123,7 @@ class TestCompiler(QiskitTestCase):
         qc.cx(qubit_reg[0], qubit_reg[1])
         qc.measure(qubit_reg, clbit_reg)
 
-        job = execute(qc, backend, seed=TestCompiler.seed)
+        job = execute(qc, backend, seed=self.seed)
         results = job.result()
         self.assertIsInstance(results, Result)
 
@@ -141,6 +141,6 @@ class TestCompiler(QiskitTestCase):
         qc.measure(qubit_reg, clbit_reg)
         qc_extra = QuantumCircuit(qubit_reg, clbit_reg)
         qc_extra.measure(qubit_reg, clbit_reg)
-        job = execute([qc, qc_extra], backend, seed=TestCompiler.seed)
+        job = execute([qc, qc_extra], backend, seed=self.seed)
         results = job.result()
         self.assertIsInstance(results, Result)
