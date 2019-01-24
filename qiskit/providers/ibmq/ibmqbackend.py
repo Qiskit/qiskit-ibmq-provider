@@ -193,6 +193,13 @@ class IBMQBackend(BaseBackend):
         """
         try:
             job_info = self._api.get_job(job_id)
+
+            # Check for generic errors.
+            if 'error' in job_info:
+                raise IBMQBackendError('Failed to get job "{}": {}'
+                                       .format(job_id, job_info['error']))
+
+            # Check for jobs from a different backend.
             if job_info['backend']['name'] != self.name():
                 warnings.warn('Job "{}" belongs to another backend than the one queried. '
                               'The query was made on backend "{}", '
@@ -201,19 +208,17 @@ class IBMQBackend(BaseBackend):
                 raise IBMQBackendError('Failed to get job "{}": '
                                        'job does not belong to backend "{}".'
                                        .format(job_id, job_info['backend']['name']))
-            if 'error' in job_info:
+
+            # Check for pre-qobj jobs.
+            if job_info.get('kind', None) != 'q-object':
+                warnings.warn('The result of job {} is in a no longer supported format. '
+                              'Please send the job using Qiskit 0.8+.'.format(job_id),
+                              DeprecationWarning)
                 raise IBMQBackendError('Failed to get job "{}": {}'
-                                       .format(job_id, job_info['error']))
+                                       .format(job_id, 'job in pre-qobj format'))
         except ApiError as ex:
             raise IBMQBackendError('Failed to get job "{}": {}'
                                    .format(job_id, str(ex)))
-
-        if job_info.get('kind', None) != 'q-object':
-            warnings.warn('The result of job {} is in a no longer supported format. '
-                          'Please send the job using Qiskit 0.8+.'.format(job_id),
-                          DeprecationWarning)
-            raise IBMQBackendError('Failed to get job "{}": {}'
-                                   .format(job_id, 'job in pre-qobj format'))
 
         is_device = not bool(self.configuration().simulator)
         job = IBMQJob(self, job_info.get('id'), self._api, is_device,
