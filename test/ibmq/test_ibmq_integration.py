@@ -15,8 +15,8 @@ from qiskit.tools.compiler import compile, execute
 from qiskit.transpiler import transpile
 
 
-class TestCompiler(QiskitTestCase):
-    """Qiskit Compiler Tests."""
+class TestIBMQIntegration(QiskitTestCase):
+    """Qiskit's IBMQ Provider integration tests."""
 
     seed = 42
 
