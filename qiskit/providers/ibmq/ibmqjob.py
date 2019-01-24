@@ -11,26 +11,18 @@ This module is used for creating asynchronous job objects for the
 IBM Q Experience.
 """
 
-import warnings
-from concurrent import futures
-import time
+import datetime
 import logging
 import pprint
-import contextlib
-import json
-import datetime
-import numpy
+import time
+from concurrent import futures
 
-from qiskit.qobj import qobj_to_dict, Qobj
-from qiskit.transpiler import transpile_dag
 from qiskit.providers import BaseJob, JobError, JobTimeoutError
-from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
+from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
+from qiskit.qobj import Qobj, qobj_to_dict, validate_qobj_against_schema
 from qiskit.result import Result
-from qiskit.result._utils import result_from_old_style_dict
-from qiskit.qobj import validate_qobj_against_schema
 
 from .api import ApiError
-
 
 logger = logging.getLogger(__name__)
 
@@ -434,124 +426,6 @@ class IBMQJob(BaseJob):
         return Qobj(**self._qobj_payload)
 
 
-class IBMQJobPreQobj(IBMQJob):
-    """Subclass of IBMQJob for handling pre-qobj jobs."""
-
-    def _submit_callback(self):
-        """Submit old style qasms job to IBM-Q. Can remove when all devices
-        understand Qobj.
-
-        Returns:
-            dict: A dictionary with the response of the submitted job
-        """
-        api_jobs = []
-        circuits = self._job_data['circuits']
-        for circuit in circuits:
-            job = _create_api_job_from_circuit(circuit)
-            api_jobs.append(job)
-
-        hpc_camel_cased = _format_hpc_parameters(self._job_data['hpc'])
-        seed = self._job_data['seed']
-        shots = self._job_data['shots']
-        max_credits = self._job_data['max_credits']
-
-        try:
-            submit_info = self._api.run_job(api_jobs, backend=self.backend().name(),
-                                            shots=shots, max_credits=max_credits,
-                                            seed=seed, hpc=hpc_camel_cased)
-        # pylint: disable=broad-except
-        except Exception as err:
-            # Undefined error during submission:
-            # Capture and keep it for raising it when calling status().
-            self._future_captured_exception = err
-            return None
-
-        # Error in the job after submission:
-        # Transition to the `ERROR` final state.
-        if 'error' in submit_info:
-            self._status = JobStatus.ERROR
-            self._api_error_msg = str(submit_info['error'])
-            return submit_info
-
-        # Submission success.
-        self._creation_date = submit_info.get('creationDate')
-        self._status = JobStatus.QUEUED
-        self._job_id = submit_info.get('id')
-        return submit_info
-
-    def _result_from_job_response(self, job_response):
-        experiment_results = []
-        for circuit_result in job_response['qasms']:
-            this_result = {'data': circuit_result['data'],
-                           'compiled_circuit_qasm': circuit_result.get('qasm'),
-                           'status': circuit_result['status'],
-                           'success': circuit_result['status'] == 'DONE',
-                           'shots': job_response['shots']}
-            if 'metadata' in circuit_result:
-                this_result['metadata'] = circuit_result['metadata']
-                if 'header' in circuit_result['metadata'].get('compiled_circuit', {}):
-                    this_result['header'] = \
-                        circuit_result['metadata']['compiled_circuit']['header']
-                else:
-                    this_result['header'] = {}
-            experiment_results.append(this_result)
-
-        ret = {
-            'id': self._job_id,
-            'status': job_response['status'],
-            'used_credits': job_response.get('usedCredits'),
-            'result': experiment_results,
-            'backend_name': self.backend().name(),
-            'success': job_response['status'] == 'COMPLETED',
-        }
-
-        # Append header: from the response; from the payload; or none.
-        header = job_response.get('header',
-                                  self._qobj_payload.get('header', {}))
-        if header:
-            ret['header'] = header
-
-        return result_from_old_style_dict(ret)
-
-    def qobj(self):
-        """Return the Qobj submitted for this job."""
-        warnings.warn('This job has not been submitted using Qobj.')
-
-
-def _numpy_type_converter(obj):
-    ret = obj
-    if isinstance(obj, numpy.integer):
-        ret = int(obj)
-    elif isinstance(obj, numpy.floating):
-        ret = float(obj)
-    elif isinstance(obj, numpy.ndarray):
-        ret = obj.tolist()
-    return ret
-
-
-def _create_api_job_from_circuit(circuit):
-    """Helper function that creates a special job required by the API, from a circuit."""
-    api_job = {}
-    if not circuit.get('compiled_circuit_qasm'):
-        compiled_circuit = transpile_dag(circuit['circuit'])
-        circuit['compiled_circuit_qasm'] = compiled_circuit.qasm(qeflag=True)
-
-    if isinstance(circuit['compiled_circuit_qasm'], bytes):
-        api_job['qasm'] = circuit['compiled_circuit_qasm'].decode()
-    else:
-        api_job['qasm'] = circuit['compiled_circuit_qasm']
-
-    if circuit.get('name'):
-        api_job['name'] = circuit['name']
-
-    # convert numpy types for json serialization
-    compiled_circuit = json.loads(json.dumps(circuit['compiled_circuit'],
-                                             default=_numpy_type_converter))
-
-    api_job['metadata'] = {'compiled_circuit': compiled_circuit}
-    return api_job
-
-
 def _is_job_queued(api_job_response):
     """Checks whether a job has been queued or not."""
     is_queued, position = False, 0
@@ -562,19 +436,3 @@ def _is_job_queued(api_job_response):
         if 'position' in api_job_response['infoQueue']:
             position = api_job_response['infoQueue']['position']
     return is_queued, position
-
-
-def _format_hpc_parameters(hpc):
-    """Helper function to get HPC parameters with the correct format"""
-    if hpc is None:
-        return None
-
-    hpc_camel_cased = None
-    with contextlib.suppress(KeyError, TypeError):
-        # Use CamelCase when passing the hpc parameters to the API.
-        hpc_camel_cased = {
-            'multiShotOptimization': hpc['multi_shot_optimization'],
-            'ompNumThreads': hpc['omp_num_threads']
-        }
-
-    return hpc_camel_cased
