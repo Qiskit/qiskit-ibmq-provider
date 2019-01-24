@@ -95,10 +95,25 @@ class IBMQConnector:
         """Check if the user has permission in QX platform."""
         return bool(self.req.credential.get_token())
 
-    def run_job(self, job, backend, shots=1,
-                max_credits=None, seed=None, hub=None, group=None,
-                project=None, hpc=None, access_token=None, user_id=None):
-        """Execute a job."""
+    def run_job(self, qobj, backend_name, hub=None, group=None, project=None,
+                access_token=None, user_id=None):
+        """Run a Qobj in a IBMQ backend.
+
+        Args:
+            qobj (dict): Qobj to be run, in dictionary form.
+            backend_name (str): backend name.
+            hub (str or None): IBMQ user hub.
+            group (str or None): IBMQ user group.
+            project (str or None): IBMQ user project.
+            access_token (str): IBMQ user access token.
+            user_id (str): IBMQ user id.
+
+        Raises:
+            BadBackendError: if the backend name is not valid.
+
+        Returns:
+            dict: API response.
+        """
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
@@ -106,44 +121,15 @@ class IBMQConnector:
         if not self.check_credentials():
             return {"error": "Not credentials valid"}
 
-        backend_type = self._check_backend(backend)
+        backend_type = self._check_backend(backend_name)
 
         if not backend_type:
-            raise BadBackendError(backend)
+            raise BadBackendError(backend_name)
 
-        if isinstance(job, (list, tuple)):
-            qasms = job
-            for qasm in qasms:
-                qasm['qasm'] = qasm['qasm'].replace('IBMQASM 2.0;', '')
-                qasm['qasm'] = qasm['qasm'].replace('OPENQASM 2.0;', '')
-
-            data = {'qasms': qasms,
-                    'shots': shots,
-                    'backend': {}}
-
-            if max_credits:
-                data['maxCredits'] = max_credits
-
-            if seed and len(str(seed)) < 11 and str(seed).isdigit():
-                data['seed'] = seed
-            elif seed:
-                return {"error": "Not seed allowed. Max 10 digits."}
-
-            data['backend']['name'] = backend_type
-        elif isinstance(job, dict):
-            q_obj = job
-            data = {'qObject': q_obj,
-                    'backend': {}}
-
-            data['backend']['name'] = backend_type
-        else:
-            return {"error": "Not a valid data to send"}
-
-        if hpc:
-            data['hpc'] = hpc
+        data = {'qObject': qobj,
+                'backend': {'name': backend_type}}
 
         url = get_job_url(self.config, hub, group, project)
-
         job = self.req.post(url, data=json.dumps(data))
 
         return job
