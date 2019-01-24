@@ -135,6 +135,7 @@ class IBMQJob(BaseJob):
             API server for job creation. Passing only a `job_id` will create an instance
             representing an already-created job retrieved from the API server.
         """
+        # pylint: disable=unused-argument
         super().__init__(backend, job_id)
         self._job_data = None
 

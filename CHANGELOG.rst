@@ -40,6 +40,12 @@ Changed
 - Ensured that retrieved jobs come from their appropriate backend (#23)
 
 
+Removed
+"""""""
+
+- Support for non-qobj format has been removed (#26).
+
+
 
 .. _UNRELEASED: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...HEAD
 .. _0.1rc1: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1rc1
