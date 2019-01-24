@@ -168,10 +168,9 @@ class IBMQBackend(BaseBackend):
 
         if old_format_jobs:
             job_ids = '\n - '.join(old_format_jobs)
-            warnings.warn('Some jobs ({}) are in a no-longer supported format. '
+            warnings.warn('Some jobs are in a no-longer supported format. '
                           'Please send the job using Qiskit 0.8+. Old jobs:'
-                          '\n - {}'.format(len(old_format_jobs), job_ids),
-                          DeprecationWarning)
+                          '\n - {}'.format(job_ids), DeprecationWarning)
         return job_list
 
     def retrieve_job(self, job_id):
