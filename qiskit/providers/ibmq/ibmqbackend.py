@@ -5,10 +5,8 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-"""IbmQ module
+"""Module for interfacing with an IBMQ Backend."""
 
-This module is used for connecting to the Quantum Experience.
-"""
 import logging
 import warnings
 
@@ -25,8 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class IBMQBackend(BaseBackend):
-    """Backend class interfacing with the Quantum Experience remotely.
-    """
+    """Backend class interfacing with an IBMQ backend."""
 
     def __init__(self, configuration, provider, credentials, api):
         """Initialize remote backend for IBM Quantum Experience.
@@ -50,13 +47,12 @@ class IBMQBackend(BaseBackend):
         """Run qobj asynchronously.
 
         Args:
-            qobj (dict): description of job
+            qobj (Qobj): description of job
 
         Returns:
             IBMQJob: an instance derived from BaseJob
         """
-        job = IBMQJob(self, None, self._api,
-                      not self.configuration().simulator, qobj=qobj)
+        job = IBMQJob(self, None, self._api, qobj=qobj)
         job.submit()
         return job
 
@@ -165,8 +161,7 @@ class IBMQBackend(BaseBackend):
                 old_format_jobs.append(job_info.get('id'))
                 break
 
-            is_device = not bool(self.configuration().simulator)
-            job = IBMQJob(self, job_info.get('id'), self._api, is_device,
+            job = IBMQJob(self, job_info.get('id'), self._api,
                           creation_date=job_info.get('creationDate'),
                           api_status=job_info.get('status'))
             job_list.append(job)
@@ -220,8 +215,7 @@ class IBMQBackend(BaseBackend):
             raise IBMQBackendError('Failed to get job "{}": {}'
                                    .format(job_id, str(ex)))
 
-        is_device = not bool(self.configuration().simulator)
-        job = IBMQJob(self, job_info.get('id'), self._api, is_device,
+        job = IBMQJob(self, job_info.get('id'), self._api,
                       creation_date=job_info.get('creationDate'),
                       api_status=job_info.get('status'))
         return job

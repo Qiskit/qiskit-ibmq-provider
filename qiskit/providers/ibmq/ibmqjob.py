@@ -19,7 +19,7 @@ from concurrent import futures
 
 from qiskit.providers import BaseJob, JobError, JobTimeoutError
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
-from qiskit.qobj import Qobj, qobj_to_dict, validate_qobj_against_schema
+from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.result import Result
 
 from .api import ApiError
@@ -104,7 +104,7 @@ class IBMQJob(BaseJob):
     """
     _executor = futures.ThreadPoolExecutor()
 
-    def __init__(self, backend, job_id, api, is_device, qobj=None,
+    def __init__(self, backend, job_id, api, qobj=None,
                  creation_date=None, api_status=None):
         """IBMQJob init function.
 
@@ -112,11 +112,10 @@ class IBMQJob(BaseJob):
         the API servers.
 
         Args:
-            backend (str): The backend instance used to run this job.
-            job_id (str): The job ID of an already submitted job. Pass `None`
-                if you are creating a new one.
+            backend (BaseBackend): The backend instance used to run this job.
+            job_id (str or None): The job ID of an already submitted job.
+                Pass `None` if you are creating a new job.
             api (IBMQConnector): IBMQ connector.
-            is_device (bool): whether backend is a real device  # TODO: remove this after Qobj
             qobj (Qobj): The Quantum Object. See notes below
             creation_date (str): When the job was run.
             api_status (str): `status` field directly from the API response.
@@ -131,19 +130,10 @@ class IBMQJob(BaseJob):
         super().__init__(backend, job_id)
         self._job_data = None
 
-        if qobj is not None:
+        if qobj:
             validate_qobj_against_schema(qobj)
 
-            self._qobj_payload = qobj_to_dict(qobj, version='1.0.0')
-            # TODO: No need for this conversion, just use the new equivalent members above
-            old_qobj = qobj_to_dict(qobj, version='0.0.1')
-            self._job_data = {
-                'circuits': old_qobj['circuits'],
-                'hpc':  old_qobj['config'].get('hpc'),
-                'seed': old_qobj['circuits'][0]['config'].get('seed'),
-                'shots': old_qobj['config']['shots'],
-                'max_credits': old_qobj['config']['max_credits']
-            }
+            self._qobj_payload = qobj.as_dict()
         else:
             self._qobj_payload = {}
 
@@ -183,7 +173,7 @@ class IBMQJob(BaseJob):
         """Return the result from the job.
 
         Args:
-           timeout (int): number of seconds to wait for job
+           timeout (float): number of seconds to wait for job
            wait (int): time between queries to IBM Q server
 
         Returns:
@@ -193,7 +183,7 @@ class IBMQJob(BaseJob):
             JobError: exception raised during job initialization
         """
         job_response = self._wait_for_result(timeout=timeout, wait=wait)
-        return self._result_from_job_response(job_response)
+        return Result.from_dict(job_response['qObjectResult'])
 
     def _wait_for_result(self, timeout=None, wait=5):
         self._wait_for_submission(timeout)
@@ -211,9 +201,6 @@ class IBMQJob(BaseJob):
                            'it is {}'.format(str(status)))
 
         return job_response
-
-    def _result_from_job_response(self, job_response):
-        return Result.from_dict(job_response['qObjectResult'])
 
     def cancel(self):
         """Attempt to cancel a job.

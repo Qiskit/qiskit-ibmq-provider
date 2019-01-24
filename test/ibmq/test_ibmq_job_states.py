@@ -299,8 +299,7 @@ class TestIBMQJobStates(JobTestCase):
         """Creates a new ``IBMQJob`` running with the provided API object."""
         backend = FakeRueschlikon()
         self._current_api = api
-        self._current_qjob = IBMQJob(backend, None, api, False,
-                                     qobj=new_fake_qobj())
+        self._current_qjob = IBMQJob(backend, None, api, qobj=new_fake_qobj())
         self._current_qjob.submit()
         return self._current_qjob
 
@@ -315,7 +314,7 @@ def _auto_progress_api(api, interval=0.2):
             api.progress()
 
 
-class BaseFakeAPI():
+class BaseFakeAPI:
     """Base class for faking the IBM-Q API."""
 
     class NoMoreStatesError(Exception):
@@ -525,14 +524,3 @@ class ErroredCancellationAPI(BaseFakeAPI):
 
     def cancel_job(self, job_id, *_args, **_kwargs):
         return {'status': 'Error', 'error': 'test-error-while-cancelling'}
-
-
-# TODO: Remove once qobj results come by default from all the simulator
-# backends.
-class QObjResultAPI(BaseFakeAPI):
-    """Class for emulating a successfully-completed non-queued API."""
-
-    _job_status = [
-        {'status': 'RUNNING'},
-
-    ]
