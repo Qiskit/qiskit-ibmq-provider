@@ -10,6 +10,7 @@
 import os
 import time
 import unittest
+import warnings
 from concurrent import futures
 
 import numpy
@@ -264,10 +265,7 @@ class TestIBMQJob(JobTestCase):
         rjob = backend.retrieve_job(job.job_id())
         self.assertEqual(job.job_id(), rjob.job_id())
         self.assertEqual(job.result().get_counts(), rjob.result().get_counts())
-        if getattr(backend.configuration(), 'allow_q_object'):
-            self.assertEqual(job.qobj().as_dict(), qobj.as_dict())
-        else:
-            self.assertEqual(job.qobj(), None)
+        self.assertEqual(job.qobj().as_dict(), qobj.as_dict())
 
     @slow_test
     @requires_qe_access
@@ -291,8 +289,14 @@ class TestIBMQJob(JobTestCase):
                          real_backend.name())
 
         # test retrieve requests for jobs that exist on other backends throw errors
-        self.assertRaises(IBMQBackendError, simulator_backend.retrieve_job, job_real.job_id())
-        self.assertRaises(IBMQBackendError, real_backend.retrieve_job, job_sim.job_id())
+        with self.assertWarns(Warning) as context_manager:
+            self.assertRaises(IBMQBackendError,
+                              simulator_backend.retrieve_job, job_real.job_id())
+        self.assertIn('belongs to', str(context_manager.warning))
+        with self.assertWarns(Warning) as context_manager:
+            self.assertRaises(IBMQBackendError,
+                              real_backend.retrieve_job, job_sim.job_id())
+        self.assertIn('belongs to', str(context_manager.warning))
 
     @requires_qe_access
     def test_retrieve_job_error(self, qe_token, qe_url):
@@ -310,9 +314,13 @@ class TestIBMQJob(JobTestCase):
         backends = IBMQ.backends(simulator=False)
         backend = least_busy(backends)
 
-        job_list = backend.jobs(limit=5, skip=0, status=JobStatus.DONE)
+        with warnings.catch_warnings():
+            # Disable warnings from pre-qobj jobs.
+            warnings.filterwarnings('ignore',
+                                    category=DeprecationWarning,
+                                    module='qiskit.providers.ibmq.ibmqbackend')
+            job_list = backend.jobs(limit=5, skip=0, status=JobStatus.DONE)
 
-        self.log.info('found %s matching jobs', len(job_list))
         for job in job_list:
             self.assertTrue(job.status() is JobStatus.DONE)
 
@@ -329,8 +337,14 @@ class TestIBMQJob(JobTestCase):
                      'qasms.result.data.counts.00': {'lt': 500}}
         self.log.info('searching for at most 5 jobs with 1024 shots, a count '
                       'for "00" of < 500, on the ibmq_qasm_simulator backend')
-        job_list = backend.jobs(limit=5, skip=0, db_filter=my_filter)
-        self.log.info('found %s matching jobs', len(job_list))
+
+        with warnings.catch_warnings():
+            # Disable warnings from pre-qobj jobs.
+            warnings.filterwarnings('ignore',
+                                    category=DeprecationWarning,
+                                    module='qiskit.providers.ibmq.ibmqbackend')
+            job_list = backend.jobs(limit=5, skip=0, db_filter=my_filter)
+
         for i, job in enumerate(job_list):
             self.log.info('match #%d', i)
             result = job.result()

@@ -9,8 +9,10 @@
 
 import re
 
-from qiskit.providers.ibmq.api import (ApiError, BadBackendError,
-                                       IBMQConnector, RegisterSizeError)
+from qiskit.circuit import QuantumCircuit, QuantumRegister, ClassicalRegister
+from qiskit.tools.compiler import compile
+from qiskit.providers.ibmq import IBMQ
+from qiskit.providers.ibmq.api import (ApiError, BadBackendError, IBMQConnector)
 from qiskit.test import QiskitTestCase, requires_qe_access
 
 
@@ -18,9 +20,18 @@ class TestIBMQConnector(QiskitTestCase):
     """Tests for IBMQConnector."""
 
     def setUp(self):
-        self.qasm = SAMPLE_QASM_1
-        self.qasms = [{'qasm': SAMPLE_QASM_1},
-                      {'qasm': SAMPLE_QASM_2}]
+        qr = QuantumRegister(2)
+        cr = ClassicalRegister(2)
+        self.qc1 = QuantumCircuit(qr, cr, name='qc1')
+        self.qc2 = QuantumCircuit(qr, cr, name='qc2')
+        self.qc1.h(qr)
+        self.qc2.h(qr[0])
+        self.qc2.cx(qr[0], qr[1])
+        self.qc1.measure(qr[0], cr[0])
+        self.qc1.measure(qr[1], cr[1])
+        self.qc2.measure(qr[0], cr[0])
+        self.qc2.measure(qr[1], cr[1])
+        self.seed = 73846087
 
     @staticmethod
     def _get_api(qe_token, qe_url):
@@ -42,10 +53,14 @@ class TestIBMQConnector(QiskitTestCase):
     @requires_qe_access
     def test_api_run_job(self, qe_token, qe_url):
         """Test running a job against a simulator."""
-        api = self._get_api(qe_token, qe_url)
-        backend = 'ibmq_qasm_simulator'
-        shots = 1
-        job = api.run_job(self.qasms, backend, shots)
+        IBMQ.enable_account(qe_token, qe_url)
+
+        backend_name = 'ibmq_qasm_simulator'
+        backend = IBMQ.get_backend(backend_name)
+        qobj = compile(self.qc1, backend=backend, seed=self.seed, shots=1)
+
+        api = backend._api
+        job = api.run_job(qobj.as_dict(), backend_name)
         check_status = None
         if 'status' in job:
             check_status = job['status']
@@ -54,11 +69,15 @@ class TestIBMQConnector(QiskitTestCase):
     @requires_qe_access
     def test_api_run_job_fail_backend(self, qe_token, qe_url):
         """Test running a job against an invalid backend."""
-        api = self._get_api(qe_token, qe_url)
-        backend = 'INVALID_BACKEND'
-        shots = 1
-        self.assertRaises(BadBackendError, api.run_job, self.qasms,
-                          backend, shots)
+        IBMQ.enable_account(qe_token, qe_url)
+
+        backend_name = 'ibmq_qasm_simulator'
+        backend = IBMQ.get_backend(backend_name)
+        qobj = compile(self.qc1, backend=backend, seed=self.seed, shots=1)
+
+        api = backend._api
+        self.assertRaises(BadBackendError, api.run_job, qobj.as_dict(),
+                          'INVALID_BACKEND_NAME')
 
     @requires_qe_access
     def test_api_get_jobs(self, qe_token, qe_url):
@@ -101,17 +120,6 @@ class TestIBMQConnector(QiskitTestCase):
         self.assertGreaterEqual(len(backends), 1)
 
     @requires_qe_access
-    def test_register_size_limit_exception(self, qe_token, qe_url):
-        """Check that exceeding register size limit generates exception."""
-        api = self._get_api(qe_token, qe_url)
-        backend = 'ibmq_qasm_simulator'
-        shots = 1
-        qasm = SAMPLE_QASM_3
-        self.assertRaises(RegisterSizeError, api.run_job,
-                          [{'qasm': qasm}],
-                          backend, shots)
-
-    @requires_qe_access
     def test_qx_api_version(self, qe_token, qe_url):
         """Check the version of the QX API."""
         api = self._get_api(qe_token, qe_url)
@@ -121,12 +129,15 @@ class TestIBMQConnector(QiskitTestCase):
     @requires_qe_access
     def test_get_job_includes(self, qe_token, qe_url):
         """Check the field includes parameter for get_job."""
-        api = self._get_api(qe_token, qe_url)
+        IBMQ.enable_account(qe_token, qe_url)
 
-        # Run a job and get its id.
-        backend = 'ibmq_qasm_simulator'
-        shots = 1
-        job = api.run_job(self.qasms, backend, shots)
+        backend_name = 'ibmq_qasm_simulator'
+        backend = IBMQ.get_backend(backend_name)
+        qobj = compile([self.qc1, self.qc2],
+                       backend=backend, seed=self.seed, shots=1)
+
+        api = backend._api
+        job = api.run_job(qobj.as_dict(), backend_name)
         job_id = job['id']
 
         # Get the job, excluding a parameter.
@@ -160,37 +171,3 @@ class TestAuthentication(QiskitTestCase):
         # pylint: disable=unused-argument
         with self.assertRaises(ApiError):
             _ = IBMQConnector(qe_token, config={'url': 'INVALID_URL'})
-
-
-SAMPLE_QASM_1 = """IBMQASM 2.0;
-include "qelib1.inc";
-qreg q[5];
-creg c[5];
-u2(-4*pi/3,2*pi) q[0];
-u2(-3*pi/2,2*pi) q[0];
-u3(-pi,0,-pi) q[0];
-u3(-pi,0,-pi/2) q[0];
-u2(pi,-pi/2) q[0];
-u3(-pi,0,-pi/2) q[0];
-measure q -> c;
-"""
-
-SAMPLE_QASM_2 = """IBMQASM 2.0;
-include "qelib1.inc";
-qreg q[5];
-creg c[3];
-creg f[2];
-x q[0];
-measure q[0] -> c[0];
-measure q[2] -> f[0];
-"""
-
-SAMPLE_QASM_3 = """OPENQASM 2.0;
-include "qelib1.inc";
-qreg q[45];
-creg c[45];
-h q[0];
-h q[44];
-measure q[0] -> c[0];
-measure q[44] -> c[44];
-"""

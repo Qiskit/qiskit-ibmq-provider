@@ -43,7 +43,7 @@ Changed
 Removed
 """""""
 
-- Support for non-qobj format has been removed (#26).
+- Support for non-qobj format has been removed. (#26, #28)
 
 
 

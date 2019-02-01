@@ -5,10 +5,8 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-"""IbmQ module
+"""Module for interfacing with an IBMQ Backend."""
 
-This module is used for connecting to the Quantum Experience.
-"""
 import logging
 import warnings
 
@@ -19,14 +17,13 @@ from qiskit.providers.models import BackendStatus, BackendProperties
 
 from .api import ApiError
 from .exceptions import IBMQBackendError, IBMQBackendValueError
-from .ibmqjob import IBMQJob, IBMQJobPreQobj
+from .ibmqjob import IBMQJob
 
 logger = logging.getLogger(__name__)
 
 
 class IBMQBackend(BaseBackend):
-    """Backend class interfacing with the Quantum Experience remotely.
-    """
+    """Backend class interfacing with an IBMQ backend."""
 
     def __init__(self, configuration, provider, credentials, api):
         """Initialize remote backend for IBM Quantum Experience.
@@ -50,14 +47,12 @@ class IBMQBackend(BaseBackend):
         """Run qobj asynchronously.
 
         Args:
-            qobj (dict): description of job
+            qobj (Qobj): description of job
 
         Returns:
             IBMQJob: an instance derived from BaseJob
         """
-        job_class = _job_class_from_backend_support(self)
-        job = job_class(self, None, self._api,
-                        not self.configuration().simulator, qobj=qobj)
+        job = IBMQJob(self, None, self._api, qobj=qobj)
         job.submit()
         return job
 
@@ -162,22 +157,20 @@ class IBMQBackend(BaseBackend):
         job_list = []
         old_format_jobs = []
         for job_info in job_info_list:
-            job_class = _job_class_from_job_response(job_info)
-            if job_class is IBMQJobPreQobj:
+            if job_info.get('kind', None) != 'q-object':
                 old_format_jobs.append(job_info.get('id'))
+                break
 
-            is_device = not bool(self.configuration().simulator)
-            job = job_class(self, job_info.get('id'), self._api, is_device,
-                            creation_date=job_info.get('creationDate'),
-                            api_status=job_info.get('status'))
+            job = IBMQJob(self, job_info.get('id'), self._api,
+                          creation_date=job_info.get('creationDate'),
+                          api_status=job_info.get('status'))
             job_list.append(job)
 
         if old_format_jobs:
             job_ids = '\n - '.join(old_format_jobs)
-            warnings.warn('Some jobs ({}) are in a no-longer supported format. These jobs will '
-                          'stop working after Qiskit 0.7. Save the results or send the job with '
-                          'Qiskit 0.7+. Old jobs:\n - {}'.format(len(old_format_jobs), job_ids),
-                          DeprecationWarning)
+            warnings.warn('Some jobs are in a no-longer supported format. '
+                          'Please send the job using Qiskit 0.8+. Old jobs:'
+                          '\n - {}'.format(job_ids), DeprecationWarning)
         return job_list
 
     def retrieve_job(self, job_id):
@@ -194,6 +187,13 @@ class IBMQBackend(BaseBackend):
         """
         try:
             job_info = self._api.get_job(job_id)
+
+            # Check for generic errors.
+            if 'error' in job_info:
+                raise IBMQBackendError('Failed to get job "{}": {}'
+                                       .format(job_id, job_info['error']))
+
+            # Check for jobs from a different backend.
             if job_info['backend']['name'] != self.name():
                 warnings.warn('Job "{}" belongs to another backend than the one queried. '
                               'The query was made on backend "{}", '
@@ -202,23 +202,21 @@ class IBMQBackend(BaseBackend):
                 raise IBMQBackendError('Failed to get job "{}": '
                                        'job does not belong to backend "{}".'
                                        .format(job_id, job_info['backend']['name']))
-            if 'error' in job_info:
-                raise IBMQBackendError('Failed to get job "{}": {}'
-                                       .format(job_id, job_info['error']))
-        except ApiError as ex:
-            raise IBMQBackendError('Failed to get job "{}":{}'
-                                   .format(job_id, str(ex)))
-        job_class = _job_class_from_job_response(job_info)
-        if job_class is IBMQJobPreQobj:
-            warnings.warn('The result of job {} is in a no longer supported format. '
-                          'These jobs will stop working after Qiskit 0.7. Save the results '
-                          'or send the job with Qiskit 0.7+'.format(job_id),
-                          DeprecationWarning)
 
-        is_device = not bool(self.configuration().simulator)
-        job = job_class(self, job_info.get('id'), self._api, is_device,
-                        creation_date=job_info.get('creationDate'),
-                        api_status=job_info.get('status'))
+            # Check for pre-qobj jobs.
+            if job_info.get('kind', None) != 'q-object':
+                warnings.warn('The result of job {} is in a no longer supported format. '
+                              'Please send the job using Qiskit 0.8+.'.format(job_id),
+                              DeprecationWarning)
+                raise IBMQBackendError('Failed to get job "{}": {}'
+                                       .format(job_id, 'job in pre-qobj format'))
+        except ApiError as ex:
+            raise IBMQBackendError('Failed to get job "{}": {}'
+                                   .format(job_id, str(ex)))
+
+        job = IBMQJob(self, job_info.get('id'), self._api,
+                      creation_date=job_info.get('creationDate'),
+                      api_status=job_info.get('status'))
         return job
 
     def __repr__(self):
@@ -228,13 +226,3 @@ class IBMQBackend(BaseBackend):
                                                    self.project)
         return "<{}('{}') from IBMQ({})>".format(
             self.__class__.__name__, self.name(), credentials_info)
-
-
-def _job_class_from_job_response(job_response):
-    is_qobj = job_response.get('kind', None) == 'q-object'
-    return IBMQJob if is_qobj else IBMQJobPreQobj
-
-
-def _job_class_from_backend_support(backend):
-    support_qobj = getattr(backend.configuration(), 'allow_q_object', False)
-    return IBMQJob if support_qobj else IBMQJobPreQobj

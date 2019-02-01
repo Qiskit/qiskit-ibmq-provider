@@ -15,9 +15,58 @@ from contextlib import suppress
 from qiskit.test.mock import new_fake_qobj, FakeRueschlikon
 from qiskit.providers import JobError, JobTimeoutError
 from qiskit.providers.ibmq.api import ApiError
-from qiskit.providers.ibmq.ibmqjob import API_FINAL_STATES, IBMQJobPreQobj
+from qiskit.providers.ibmq.ibmqjob import API_FINAL_STATES, IBMQJob
 from qiskit.providers.jobstatus import JobStatus
 from ..jobtestcase import JobTestCase
+
+
+VALID_QOBJ_RESPONSE = {
+    'status': 'COMPLETED',
+    'qObjectResult': {
+        'backend_name': 'ibmqx2',
+        'backend_version': '1.1.1',
+        'job_id': 'XC1323XG2',
+        'qobj_id': 'Experiment1',
+        'success': True,
+        'status': 'COMPLETED',
+        'results': [
+            {
+                'header': {
+                    'name': 'Bell state',
+                    'memory_slots': 2,
+                    'creg_sizes': [['c', 2]],
+                    'clbit_labels': [['c', 0], ['c', 1]],
+                    'qubit_labels': [['q', 0], ['q', 1]]
+                },
+                'shots': 1024,
+                'status': 'DONE',
+                'success': True,
+                'data': {
+                    'counts': {
+                        '0x0': 480, '0x3': 490, '0x1': 20, '0x2': 34
+                    }
+                }
+            },
+            {
+                'header': {
+                    'name': 'Bell state XY',
+                    'memory_slots': 2,
+                    'creg_sizes': [['c', 2]],
+                    'clbit_labels': [['c', 0], ['c', 1]],
+                    'qubit_labels': [['q', 0], ['q', 1]]
+                },
+                'shots': 1024,
+                'status': 'DONE',
+                'success': True,
+                'data': {
+                    'counts': {
+                        '0x0': 29, '0x3': 15, '0x1': 510, '0x2': 480
+                    }
+                }
+            }
+        ]
+    }
+}
 
 
 class TestIBMQJobStates(JobTestCase):
@@ -220,7 +269,7 @@ class TestIBMQJobStates(JobTestCase):
         self.assertFalse(can_cancel)
         self.assertEqual(job.status(), JobStatus.INITIALIZING)
 
-    def test_only_final_states_cause_datailed_request(self):
+    def test_only_final_states_cause_detailed_request(self):
         from unittest import mock
 
         # The state ERROR_CREATING_JOB is only handled when running the job,
@@ -246,13 +295,11 @@ class TestIBMQJobStates(JobTestCase):
                     else:
                         self.assertFalse(self._current_api.get_job.called)
 
-    def run_with_api(self, api, job_class=IBMQJobPreQobj):
-        """Creates a new ``IBMQJobPreQobj`` instance running with the provided API
-        object.
-        """
+    def run_with_api(self, api):
+        """Creates a new ``IBMQJob`` running with the provided API object."""
         backend = FakeRueschlikon()
         self._current_api = api
-        self._current_qjob = job_class(backend, None, api, False, qobj=new_fake_qobj())
+        self._current_qjob = IBMQJob(backend, None, api, qobj=new_fake_qobj())
         self._current_qjob.submit()
         return self._current_qjob
 
@@ -267,7 +314,7 @@ def _auto_progress_api(api, interval=0.2):
             api.progress()
 
 
-class BaseFakeAPI():
+class BaseFakeAPI:
     """Base class for faking the IBM-Q API."""
 
     class NoMoreStatesError(Exception):
@@ -345,7 +392,7 @@ class NonQueuedAPI(BaseFakeAPI):
 
     _job_status = [
         {'status': 'RUNNING'},
-        {'status': 'COMPLETED', 'qasms': []}
+        VALID_QOBJ_RESPONSE
     ]
 
 
@@ -477,60 +524,3 @@ class ErroredCancellationAPI(BaseFakeAPI):
 
     def cancel_job(self, job_id, *_args, **_kwargs):
         return {'status': 'Error', 'error': 'test-error-while-cancelling'}
-
-
-# TODO: Remove once qobj results come by default from all the simulator
-# backends.
-class QObjResultAPI(BaseFakeAPI):
-    """Class for emulating a successfully-completed non-queued API."""
-
-    _job_status = [
-        {'status': 'RUNNING'},
-        {
-            'status': 'COMPLETED',
-            'qObjectResult': {
-                'backend_name': 'ibmqx2',
-                'backend_version': '1.1.1',
-                'job_id': 'XC1323XG2',
-                'qobj_id': 'Experiment1',
-                'success': True,
-                'status': 'COMPLETED',
-                'results': [
-                    {
-                        'header': {
-                            'name': 'Bell state',
-                            'memory_slots': 2,
-                            'creg_sizes': [['c', 2]],
-                            'clbit_labels': [['c', 0], ['c', 1]],
-                            'qubit_labels': [['q', 0], ['q', 1]]
-                        },
-                        'shots': 1024,
-                        'status': 'DONE',
-                        'success': True,
-                        'data': {
-                            'counts': {
-                                '0x0': 480, '0x3': 490, '0x1': 20, '0x2': 34
-                            }
-                        }
-                    },
-                    {
-                        'header': {
-                            'name': 'Bell state XY',
-                            'memory_slots': 2,
-                            'creg_sizes': [['c', 2]],
-                            'clbit_labels': [['c', 0], ['c', 1]],
-                            'qubit_labels': [['q', 0], ['q', 1]]
-                        },
-                        'shots': 1024,
-                        'status': 'DONE',
-                        'success': True,
-                        'data': {
-                            'counts': {
-                                '0x0': 29, '0x3': 15, '0x1': 510, '0x2': 480
-                            }
-                        }
-                    }
-                ]
-            }
-        }
-    ]
