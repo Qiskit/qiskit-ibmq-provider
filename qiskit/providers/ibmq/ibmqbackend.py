@@ -13,7 +13,8 @@ import warnings
 from marshmallow import ValidationError
 
 from qiskit.providers import BaseBackend, JobStatus
-from qiskit.providers.models import BackendStatus, BackendProperties
+from qiskit.providers.models import (BackendStatus, BackendProperties,
+                                     PulseDefaults)
 
 from .api import ApiError
 from .exceptions import IBMQBackendError, IBMQBackendValueError
@@ -89,6 +90,20 @@ class IBMQBackend(BaseBackend):
         except ValidationError as ex:
             raise LookupError(
                 "Couldn't get backend status: {0}".format(ex))
+
+    def defaults(self):
+        """Return the pulse defaults for the backend.
+
+        Returns:
+            PulseDefaults: the pulse defaults for the backend. IF the backend
+            does not support defaults, it returns ``None``.
+        """
+        backend_defaults = self._api.backend_defaults(self.name())
+
+        if backend_defaults:
+            return PulseDefaults.from_dict(backend_defaults)
+
+        return None
 
     def jobs(self, limit=50, skip=0, status=None, db_filter=None):
         """Attempt to get the jobs submitted to the backend.
