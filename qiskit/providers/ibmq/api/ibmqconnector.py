@@ -47,7 +47,7 @@ def get_backend_defaults_url(config, backend_type):
         return '/Network/{}/Groups/{}/Projects/{}/devices/{}/defaults'.format(
             hub, group, project, backend_type)
 
-    return '/Backend/{}/defaults'.format(backend_type)
+    return '/Backends/{}/defaults'.format(backend_type)
 
 
 def get_backends_url(config, hub, group, project):
