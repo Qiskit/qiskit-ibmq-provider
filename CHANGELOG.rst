@@ -29,6 +29,8 @@ Added
 
 - The connector ``get_job()`` methods accepts two new parameters for including
   and excluding specific fields from the response. (#6)
+- Added ``backend.defauls()`` for retrieving the pulse defaults for a
+  backend (#33).
 
 Changed
 """""""
