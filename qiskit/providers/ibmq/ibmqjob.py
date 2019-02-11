@@ -425,6 +425,7 @@ class IBMQJob(BaseJob):
 
         return BackendProperties.from_dict(properties)
 
+
 def _is_job_queued(api_job_response):
     """Checks whether a job has been queued or not."""
     is_queued, position = False, 0
