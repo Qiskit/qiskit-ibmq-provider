@@ -74,6 +74,14 @@ class TestIBMQBackends(QiskitTestCase):
                 self.assertEqual(properties, None)
 
     @requires_qe_access
+    def test_remote_backend_defaults(self, qe_token, qe_url):
+        """Test backend pulse defaults."""
+        IBMQ.enable_account(qe_token, qe_url)
+        remotes = IBMQ.backends(simulator=False)
+        for backend in remotes:
+            _ = backend.defaults()
+
+    @requires_qe_access
     def test_qobj_headers_in_result_sims(self, qe_token, qe_url):
         """Test that the qobj headers are passed onto the results for sims."""
         IBMQ.enable_account(qe_token, qe_url)

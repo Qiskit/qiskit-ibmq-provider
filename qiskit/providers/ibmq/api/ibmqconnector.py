@@ -37,6 +37,19 @@ def get_backend_properties_url(config, backend_type, hub=None):
     return '/Backends/{}/properties'.format(backend_type)
 
 
+def get_backend_defaults_url(config, backend_type):
+    """Return the URL for a backend's pulse defaults."""
+    hub = config.get('hub', None)
+    group = config.get('group', None)
+    project = config.get('project', None)
+
+    if hub and group and project:
+        return '/Network/{}/Groups/{}/Projects/{}/devices/{}/defaults'.format(
+            hub, group, project, backend_type)
+
+    return '/Backends/{}/defaults'.format(backend_type)
+
+
 def get_backends_url(config, hub, group, project):
     """Return the URL for a backend."""
     hub = config.get('hub', hub)
@@ -81,13 +94,11 @@ class IBMQConnector:
 
     def _check_backend(self, backend_name):
         """Check if the name of a backend is valid to run in QX Platform."""
-        backend_name = backend_name.lower()
-
-        # Check for new-style backends
         backends = self.available_backends()
         for backend_ in backends:
             if backend_.get('backend_name', '') == backend_name:
                 return backend_name
+
         # backend unrecognized
         return None
 
@@ -312,7 +323,7 @@ class IBMQConnector:
         return res
 
     def backend_status(self, backend, access_token=None, user_id=None):
-        """Get the status of a chip."""
+        """Get the status of a backend."""
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
@@ -346,7 +357,7 @@ class IBMQConnector:
 
     def backend_properties(self, backend, hub=None, access_token=None,
                            user_id=None):
-        """Get the parameters of calibration of a real chip."""
+        """Get the properties of a backend."""
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
@@ -368,9 +379,26 @@ class IBMQConnector:
             ret["backend_name"] = backend_type
         return ret
 
+    def backend_defaults(self, backend):
+        """Get the pulse defaults of a backend."""
+        if not self.check_credentials():
+            raise CredentialsError('credentials invalid')
+
+        backend_name = self._check_backend(backend)
+
+        if not backend_name:
+            raise BadBackendError(backend)
+
+        url = get_backend_defaults_url(self.config, backend_name)
+
+        ret = self.req.get(url)
+        if not bool(ret):
+            ret = {}
+        return ret
+
     def available_backends(self, hub=None, group=None, project=None,
                            access_token=None, user_id=None):
-        """Get the backends available to use in the QX Platform."""
+        """Get the backends available to use in the IBMQ Platform."""
         if access_token:
             self.req.credential.set_token(access_token)
         if user_id:
