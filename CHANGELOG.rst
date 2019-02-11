@@ -31,6 +31,8 @@ Added
   and excluding specific fields from the response. (#6)
 - Added ``backend.defauls()`` for retrieving the pulse defaults for a
   backend through a new endpoint (#33).
+- Added ``job.properties()`` for retrieving the backend properties for
+  a job through a new endpint (#35).
 
 Changed
 """""""
