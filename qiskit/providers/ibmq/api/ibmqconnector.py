@@ -322,6 +322,18 @@ class IBMQConnector:
 
         return res
 
+    def job_properties(self, job_id):
+        """Get the backend properties of a job."""
+        if not self.check_credentials():
+            raise CredentialsError('credentials invalid')
+
+        url = get_job_url(self.config)
+        url += '/{}/properties'.format(job_id)
+
+        response = self.req.get(url)
+
+        return response
+
     def backend_status(self, backend, access_token=None, user_id=None):
         """Get the status of a backend."""
         if access_token:

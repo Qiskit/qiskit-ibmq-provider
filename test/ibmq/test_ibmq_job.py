@@ -75,30 +75,22 @@ class TestIBMQJob(JobTestCase):
     def test_run_device(self, qe_token, qe_url):
         """Test running in a real device."""
         IBMQ.enable_account(qe_token, qe_url)
-        backends = IBMQ.backends(simulator=False)
+        backend = least_busy(IBMQ.backends(simulator=False))
 
-        self.log.info('devices: %s', [b.name() for b in backends])
-        backend = least_busy(backends)
-        self.log.info('using backend: %s', backend.name())
         qobj = compile(self._qc, backend)
         shots = qobj.config.shots
         job = backend.run(qobj)
         while not job.status() is JobStatus.DONE:
-            self.log.info(job.status())
             time.sleep(4)
-        self.log.info(job.status)
+
         result = job.result()
         counts_qx = result.get_counts(0)
         counts_ex = {'00': shots/2, '11': shots/2}
-        states = counts_qx.keys() | counts_ex.keys()
-        # contingency table
-        ctable = numpy.array([[counts_qx.get(key, 0) for key in states],
-                              [counts_ex.get(key, 0) for key in states]])
-        self.log.info('states: %s', str(states))
-        self.log.info('ctable: %s', str(ctable))
-        contingency = chi2_contingency(ctable)
-        self.log.info('chi2_contingency: %s', str(contingency))
         self.assertDictAlmostEqual(counts_qx, counts_ex, shots*0.1)
+
+        # Test fetching the job properties, as this is a real backend and is
+        # guaranteed to have them.
+        _ = job.properties()
 
     @slow_test
     @requires_qe_access
