@@ -8,6 +8,8 @@
 
 """Tests for all IBMQ backends."""
 
+from unittest import skip
+
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq import IBMQ
@@ -74,6 +76,7 @@ class TestIBMQBackends(QiskitTestCase):
                 self.assertEqual(properties, None)
 
     @requires_qe_access
+    @skip('Skipping until support in production API')
     def test_remote_backend_defaults(self, qe_token, qe_url):
         """Test backend pulse defaults."""
         IBMQ.enable_account(qe_token, qe_url)
