@@ -141,9 +141,9 @@ class TestIBMQConnector(QiskitTestCase):
         job_id = job['id']
 
         # Get the job, excluding a parameter.
-        self.assertIn('userId', job)
-        job_excluded = api.get_job(job_id, exclude_fields=['userId'])
-        self.assertNotIn('userId', job_excluded)
+        self.assertIn('deleted', job)
+        job_excluded = api.get_job(job_id, exclude_fields=['deleted'])
+        self.assertNotIn('deleted', job_excluded)
 
 
 class TestAuthentication(QiskitTestCase):
