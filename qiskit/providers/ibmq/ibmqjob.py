@@ -19,6 +19,7 @@ from concurrent import futures
 
 from qiskit.providers import BaseJob, JobError, JobTimeoutError
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
+from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.result import Result
 
@@ -411,6 +412,18 @@ class IBMQJob(BaseJob):
             self._wait_for_result()
 
         return Qobj(**self._qobj_payload)
+
+    def properties(self):
+        """Return the backend properties for this job.
+
+        Returns:
+            BackendProperties: the backend properties used for this job.
+        """
+        self._wait_for_submission()
+
+        properties = self._api.job_properties(job_id=self.job_id())
+
+        return BackendProperties.from_dict(properties)
 
 
 def _is_job_queued(api_job_response):
