@@ -20,7 +20,7 @@ The format is based on `Keep a Changelog`_.
 ^^^^^^^^^^^^^
 
 
-`0.1rc1`_
+`0.1rc2`_
 ^^^^^^^^^
 
 
@@ -52,6 +52,6 @@ Removed
 
 
 .. _UNRELEASED: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...HEAD
-.. _0.1rc1: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1rc1
+.. _0.1rc2: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1rc2
 
 .. _Keep a Changelog: http://keepachangelog.com/en/1.0.0/
