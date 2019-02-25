@@ -63,12 +63,8 @@ class IBMQBackend(BaseBackend):
         The return is via QX API call.
 
         Returns:
-            BackendProperties: The properties of the backend. If the backend
-            is a simulator, it returns ``None``.
+            BackendProperties: The properties of the backend.
         """
-        if self.configuration().simulator:
-            return None
-
         api_properties = self._api.backend_properties(self.name())
 
         return BackendProperties.from_dict(api_properties)
@@ -241,3 +237,15 @@ class IBMQBackend(BaseBackend):
                                                    self.project)
         return "<{}('{}') from IBMQ({})>".format(
             self.__class__.__name__, self.name(), credentials_info)
+
+
+class IBMQSimulator(IBMQBackend):
+    """Backend class interfacing with an IBMQ simulator."""
+
+    def properties(self):
+        """Return the online backend properties.
+
+        Returns:
+            None
+        """
+        return None

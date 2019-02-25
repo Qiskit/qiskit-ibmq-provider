@@ -16,7 +16,7 @@ from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api import IBMQConnector
-from .ibmqbackend import IBMQBackend
+from .ibmqbackend import IBMQBackend, IBMQSimulator
 
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,7 @@ class IBMQSingleProvider(BaseProvider):
     Note: this class is not part of the public API and is not guaranteed to be
     present in future releases.
     """
+
     def __init__(self, credentials, ibmq_provider):
         """Return a new IBMQSingleProvider.
 
@@ -95,7 +96,8 @@ class IBMQSingleProvider(BaseProvider):
         for raw_config in configs_list:
             try:
                 config = BackendConfiguration.from_dict(raw_config)
-                ret[config.backend_name] = IBMQBackend(
+                backend_cls = IBMQSimulator if config.simulator() else IBMQBackend
+                ret[config.backend_name] = backend_cls(
                     configuration=config,
                     provider=self._ibm_provider,
                     credentials=self.credentials,
