@@ -13,6 +13,7 @@ import warnings
 from marshmallow import ValidationError
 
 from qiskit.providers import BaseBackend, JobStatus
+from qiskit.providers.ibmq.utils import update_qobj_config
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults)
 
@@ -249,3 +250,17 @@ class IBMQSimulator(IBMQBackend):
             None
         """
         return None
+
+    def run(self, qobj, backend_options=None, noise_model=None):
+        """Run qobj asynchronously.
+
+        Args:
+            qobj (Qobj): description of job
+            backend_options (dict): backend options
+            noise_model (NoiseModel): noise model
+
+        Returns:
+            IBMQJob: an instance derived from BaseJob
+        """
+        qobj = update_qobj_config(qobj, backend_options, noise_model)
+        return super(IBMQSimulator, self).run(qobj)
