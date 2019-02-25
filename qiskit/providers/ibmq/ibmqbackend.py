@@ -262,5 +262,6 @@ class IBMQSimulator(IBMQBackend):
         Returns:
             IBMQJob: an instance derived from BaseJob
         """
+        # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
         return super(IBMQSimulator, self).run(qobj)

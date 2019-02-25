@@ -15,8 +15,8 @@ from qiskit.qobj import QobjHeader
 
 
 class AerJSONEncoder(json.JSONEncoder):
-    """
-    JSON encoder for NumPy arrays and complex numbers.
+    """JSON encoder for NumPy arrays and complex numbers.
+
     This functions as the standard JSON Encoder but adds support
     for encoding:
         complex numbers z as lists [z.real, z.imag]
@@ -41,6 +41,9 @@ def update_qobj_config(qobj, backend_options=None, noise_model=None):
         qobj (Qobj): description of job
         backend_options (dict): backend options
         noise_model (NoiseModel): noise model
+
+    Returns:
+        Qobj: qobj.
     """
     config = qobj.config.as_dict()
 
