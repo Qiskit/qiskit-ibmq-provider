@@ -96,7 +96,7 @@ class IBMQSingleProvider(BaseProvider):
         for raw_config in configs_list:
             try:
                 config = BackendConfiguration.from_dict(raw_config)
-                backend_cls = IBMQSimulator if config.simulator() else IBMQBackend
+                backend_cls = IBMQSimulator if config.simulator else IBMQBackend
                 ret[config.backend_name] = backend_cls(
                     configuration=config,
                     provider=self._ibm_provider,

@@ -54,9 +54,10 @@ def update_qobj_config(qobj, backend_options=None, noise_model=None):
 
     # Append noise model to configuration.
     if noise_model:
-        config['noise_model'] = noise_model
+        config['noise_model'] = json.loads(json.dumps(noise_model,
+                                                      cls=AerJSONEncoder))
 
     # Update the Qobj configuration.
-    qobj.config = QobjHeader.from_dict(json.dumps(config, cls=AerJSONEncoder))
+    qobj.config = QobjHeader.from_dict(config)
 
     return qobj
