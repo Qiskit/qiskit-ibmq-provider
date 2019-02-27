@@ -123,8 +123,7 @@ class Credentials:
 
             if error_message:
                 raise CredentialsError('error during login: %s' % error_message)
-            else:
-                raise CredentialsError('invalid token')
+            raise CredentialsError('invalid token')
         try:
             response.raise_for_status()
             self.data_credentials = response.json()
@@ -355,8 +354,7 @@ class Request:
                     response.status_code,
                     url,
                     response.text))
-            else:
-                return self._parse_response(response)
+            return self._parse_response(response)
         try:
             if str(response.headers['content-type']).startswith("text/html;"):
                 self.result = response.text
