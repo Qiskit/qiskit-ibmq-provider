@@ -13,6 +13,7 @@ import warnings
 from marshmallow import ValidationError
 
 from qiskit.providers import BaseBackend, JobStatus
+from qiskit.providers.ibmq.utils import update_qobj_config
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults)
 
@@ -63,12 +64,8 @@ class IBMQBackend(BaseBackend):
         The return is via QX API call.
 
         Returns:
-            BackendProperties: The properties of the backend. If the backend
-            is a simulator, it returns ``None``.
+            BackendProperties: The properties of the backend.
         """
-        if self.configuration().simulator:
-            return None
-
         api_properties = self._api.backend_properties(self.name())
 
         return BackendProperties.from_dict(api_properties)
@@ -241,3 +238,30 @@ class IBMQBackend(BaseBackend):
                                                    self.project)
         return "<{}('{}') from IBMQ({})>".format(
             self.__class__.__name__, self.name(), credentials_info)
+
+
+class IBMQSimulator(IBMQBackend):
+    """Backend class interfacing with an IBMQ simulator."""
+
+    def properties(self):
+        """Return the online backend properties.
+
+        Returns:
+            None
+        """
+        return None
+
+    def run(self, qobj, backend_options=None, noise_model=None):
+        """Run qobj asynchronously.
+
+        Args:
+            qobj (Qobj): description of job
+            backend_options (dict): backend options
+            noise_model (NoiseModel): noise model
+
+        Returns:
+            IBMQJob: an instance derived from BaseJob
+        """
+        # pylint: disable=arguments-differ
+        qobj = update_qobj_config(qobj, backend_options, noise_model)
+        return super(IBMQSimulator, self).run(qobj)
