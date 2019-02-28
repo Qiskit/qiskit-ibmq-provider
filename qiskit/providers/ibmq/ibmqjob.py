@@ -186,7 +186,11 @@ class IBMQJob(BaseJob):
         job_response = self._wait_for_result(timeout=timeout, wait=wait)
         return Result.from_dict(job_response['qObjectResult'])
 
-    def _wait_for_result(self, timeout=None, wait=5):
+    def _get_error_details(self):
+        error_result = self._wait_for_result(expect_error=True)
+        return error_result['qObjectResult']['results'][0]['status']
+
+    def _wait_for_result(self, timeout=None, wait=5, expect_error=False):
         self._wait_for_submission(timeout)
 
         try:
@@ -197,7 +201,7 @@ class IBMQJob(BaseJob):
             raise JobError(str(api_err))
 
         status = self.status()
-        if status is not JobStatus.DONE:
+        if not expect_error and status is not JobStatus.DONE:
             raise JobError('Invalid job state. The job should be DONE but '
                            'it is {}'.format(str(status)))
 
@@ -271,8 +275,7 @@ class IBMQJob(BaseJob):
         elif 'ERROR' in api_job['status']:
             # Error status are of the form "ERROR_*_JOB"
             self._status = JobStatus.ERROR
-            # TODO: This seems to be an inconsistency in the API package.
-            self._api_error_msg = api_job.get('error') or api_job.get('Error')
+            self._api_error_msg = self._get_error_details()
 
         else:
             raise JobError('Unrecognized answer from server: \n{}'
