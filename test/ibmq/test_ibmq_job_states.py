@@ -20,6 +20,14 @@ from qiskit.providers.jobstatus import JobStatus
 from ..jobtestcase import JobTestCase
 
 
+MOCKED_ERROR_RESULT = {
+    'qObjectResult': {
+        'results': [{
+            'status': 'Error running job'
+        }]
+    }
+}
+
 VALID_QOBJ_RESPONSE = {
     'status': 'COMPLETED',
     'qObjectResult': {
@@ -383,7 +391,7 @@ class ErrorWhileValidatingAPI(BaseFakeAPI):
 
     _job_status = [
         {'status': 'VALIDATING'},
-        {'status': 'ERROR_VALIDATING_JOB'}
+        {'status': 'ERROR_VALIDATING_JOB', **MOCKED_ERROR_RESULT}
     ]
 
 
@@ -402,7 +410,7 @@ class ErrorWhileCreatingAPI(BaseFakeAPI):
     """
 
     _job_status = [
-        {'status': 'ERROR_CREATING_JOB'}
+        {'status': 'ERROR_CREATING_JOB', **MOCKED_ERROR_RESULT}
     ]
 
 
@@ -411,7 +419,8 @@ class ErrorWhileRunningAPI(BaseFakeAPI):
 
     _job_status = [
         {'status': 'RUNNING'},
-        {'status': 'ERROR_RUNNING_JOB', 'error': 'Error running job'}
+        {'status': 'ERROR_RUNNING_JOB', 'error': 'Error running job',
+         **MOCKED_ERROR_RESULT}
     ]
 
 
