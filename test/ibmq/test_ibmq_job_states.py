@@ -22,9 +22,20 @@ from ..jobtestcase import JobTestCase
 
 MOCKED_ERROR_RESULT = {
     'qObjectResult': {
-        'results': [{
-            'status': 'Error running job'
-        }]
+        'results': [
+            {
+                'status': 'DONE',
+                'success': True
+            },
+            {
+                'status': 'Error 1',
+                'success': False
+            },
+            {
+                'status': 'Error 2',
+                'success': False
+            }
+        ]
     }
 }
 
@@ -205,7 +216,8 @@ class TestIBMQJobStates(JobTestCase):
 
         self._current_api.progress()
         self.assertEqual(job.status(), JobStatus.ERROR)
-        self.assertEqual(job.error_message(), 'Error running job')
+        self.assertIn('Error 1', job.error_message())
+        self.assertIn('Error 2', job.error_message())
 
     def test_cancelled_result(self):
         job = self.run_with_api(CancellableAPI())
@@ -419,8 +431,7 @@ class ErrorWhileRunningAPI(BaseFakeAPI):
 
     _job_status = [
         {'status': 'RUNNING'},
-        {'status': 'ERROR_RUNNING_JOB', 'error': 'Error running job',
-         **MOCKED_ERROR_RESULT}
+        {'status': 'ERROR_RUNNING_JOB', **MOCKED_ERROR_RESULT}
     ]
 
 

@@ -188,7 +188,18 @@ class IBMQJob(BaseJob):
 
     def _get_error_details(self):
         error_result = self._wait_for_result(expect_error=True)
-        return error_result['qObjectResult']['results'][0]['status']
+        results = error_result['qObjectResult']['results']
+        if len(results) == 1:
+            return error_result['qObjectResult']['results'][0]['status']
+
+        error_list = []
+        for index, result in enumerate(results):
+            if not result['success']:
+                error_list.append('Experiment {}: {}'.format(index, result['status']))
+
+        error_report = 'The following experiments failed:\n{}'.format('\n'.join(error_list))
+        return error_report
+
 
     def _wait_for_result(self, timeout=None, wait=5, expect_error=False):
         self._wait_for_submission(timeout)
