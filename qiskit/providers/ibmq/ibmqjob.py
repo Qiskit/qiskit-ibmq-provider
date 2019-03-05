@@ -200,7 +200,6 @@ class IBMQJob(BaseJob):
         error_report = 'The following experiments failed:\n{}'.format('\n'.join(error_list))
         return error_report
 
-
     def _wait_for_result(self, timeout=None, wait=5, expect_error=False):
         self._wait_for_submission(timeout)
 
