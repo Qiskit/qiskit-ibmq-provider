@@ -487,6 +487,7 @@ class IBMQJob(BaseJob):
         error_report = 'The following experiments failed:\n{}'.format('\n'.join(error_list))
         return error_report
 
+
 def _is_job_queued(api_job_response):
     """Checks whether a job has been queued or not."""
     is_queued, position = False, 0
