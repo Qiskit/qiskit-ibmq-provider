@@ -1,9 +1,5 @@
 # standard python ignores follow
 
-# Editors
-.idea
-.vscode
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 .pytest_cache/
