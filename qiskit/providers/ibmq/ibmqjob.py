@@ -308,15 +308,15 @@ class IBMQJob(BaseJob):
         Calling this method if the job status is ERROR, consumes the job.
 
         Returns:
-            str: An error report if the job errored or None elsewhere.
+            str: An error report if the job errored or None otherwise.
         """
         self._wait_for_completion()
         if self.status() is not JobStatus.ERROR:
             return None
 
-        job_response = self._get_job()
-        results = job_response['qObjectResult']['results']
         if not self._api_error_msg:
+            job_response = self._get_job()
+            results = job_response['qObjectResult']['results']
             self._api_error_msg = self._build_error_report(results)
 
         return self._api_error_msg
@@ -473,12 +473,12 @@ class IBMQJob(BaseJob):
     def _build_error_report(self, results):
         """Build the error report.
 
-        Returns:
-            str: The error report.
-        """
-        if len(results) == 1:
-            return results[0]['status']
+        Args:
+            results (dict): result section of the job response.
 
+        Returns:
+            str: the error report.
+        """
         error_list = []
         for index, result in enumerate(results):
             if not result['success']:
@@ -488,13 +488,21 @@ class IBMQJob(BaseJob):
         return error_report
 
 
-def _is_job_queued(api_job_response):
-    """Checks whether a job has been queued or not."""
+def _is_job_queued(api_job_status_response):
+    """Checks whether a job has been queued or not.
+
+    Args:
+        api_job_status_response (dict): status response of the job.
+
+    Returns:
+        Pair[boolean, int]: a pair indicating if the job is queued and in which
+            position.
+    """
     is_queued, position = False, 0
-    if 'infoQueue' in api_job_response:
-        if 'status' in api_job_response['infoQueue']:
-            queue_status = api_job_response['infoQueue']['status']
+    if 'infoQueue' in api_job_status_response:
+        if 'status' in api_job_status_response['infoQueue']:
+            queue_status = api_job_status_response['infoQueue']['status']
             is_queued = queue_status == 'PENDING_IN_QUEUE'
-        if 'position' in api_job_response['infoQueue']:
-            position = api_job_response['infoQueue']['position']
+        if 'position' in api_job_status_response['infoQueue']:
+            position = api_job_status_response['infoQueue']['position']
     return is_queued, position
