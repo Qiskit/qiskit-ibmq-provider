@@ -277,7 +277,7 @@ class IBMQJob(BaseJob):
         else:
             raise JobError('Unrecognized answer from server: \n{}'
                            .format(pprint.pformat(api_job)))
-        
+
         return self._status.name
 
     def error_message(self):
