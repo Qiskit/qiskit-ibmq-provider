@@ -59,7 +59,7 @@ class IBMQJob(BaseJob):
 
         try:
             job_status = job.status() # It won't block. It will query the backend API.
-            if job_status is 'RUNNING':
+            if job_status == 'RUNNING':
                 print('The job is still running')
 
         except JobError as ex:

@@ -10,7 +10,6 @@
 
 import time
 
-from qiskit.providers import JobStatus
 from qiskit.test import QiskitTestCase
 
 
@@ -21,7 +20,7 @@ class JobTestCase(QiskitTestCase):
         """Waits until job progresses from `INITIALIZING` to other status."""
         waited = 0
         wait = 0.1
-        while job.status() is 'INITIALIZING':
+        while job.status() == 'INITIALIZING':
             time.sleep(wait)
             waited += wait
             if waited > timeout:

@@ -80,7 +80,7 @@ class TestIBMQJob(JobTestCase):
         qobj = compile(self._qc, backend)
         shots = qobj.config.shots
         job = backend.run(qobj)
-        while not job.status() is 'DONE':
+        while not job.status() == 'DONE':
             time.sleep(4)
 
         result = job.result()
@@ -116,17 +116,17 @@ class TestIBMQJob(JobTestCase):
         timeout = 30
         start_time = time.time()
         while not found_async_jobs:
-            check = sum([job.status() is 'RUNNING' for job in job_array])
+            check = sum([job.status() == 'RUNNING' for job in job_array])
             if check >= 2:
                 self.log.info('found %d simultaneous jobs', check)
                 break
-            if all([job.status() is 'DONE' for job in job_array]):
+            if all([job.status() == 'DONE' for job in job_array]):
                 # done too soon? don't generate error
                 self.log.warning('all jobs completed before simultaneous jobs '
                                  'could be detected')
                 break
             for job in job_array:
-                self.log.info('%s %s %s %s', job.status(), job.status() is 'RUNNING',
+                self.log.info('%s %s %s %s', job.status(), job.status() == 'RUNNING',
                               check, job.job_id())
             self.log.info('-  %s', str(time.time()-start_time))
             if time.time() - start_time > timeout:
@@ -137,7 +137,7 @@ class TestIBMQJob(JobTestCase):
         result_array = [job.result() for job in job_array]
         self.log.info('got back all job results')
         # Ensure all jobs have finished.
-        self.assertTrue(all([job.status() is 'DONE' for job in job_array]))
+        self.assertTrue(all([job.status() == 'DONE' for job in job_array]))
         self.assertTrue(all([result.success for result in result_array]))
 
         # Ensure job ids are unique.
@@ -165,11 +165,11 @@ class TestIBMQJob(JobTestCase):
         job_array = [backend.run(qobj) for _ in range(num_jobs)]
         time.sleep(3)  # give time for jobs to start (better way?)
         job_status = [job.status() for job in job_array]
-        num_init = sum([status is 'INITIALIZING' for status in job_status])
-        num_queued = sum([status is 'QUEUED' for status in job_status])
-        num_running = sum([status is 'RUNNING' for status in job_status])
-        num_done = sum([status is 'DONE' for status in job_status])
-        num_error = sum([status is 'ERROR' for status in job_status])
+        num_init = sum([status == 'INITIALIZING' for status in job_status])
+        num_queued = sum([status == 'QUEUED' for status in job_status])
+        num_running = sum([status == 'RUNNING' for status in job_status])
+        num_done = sum([status == 'DONE' for status in job_status])
+        num_error = sum([status == 'ERROR' for status in job_status])
         self.log.info('number of currently initializing jobs: %d/%d',
                       num_init, num_jobs)
         self.log.info('number of currently queued jobs: %d/%d',
@@ -186,7 +186,7 @@ class TestIBMQJob(JobTestCase):
         result_array = [job.result() for job in job_array]
 
         # Ensure all jobs have finished.
-        self.assertTrue(all([job.status() is 'DONE' for job in job_array]))
+        self.assertTrue(all([job.status() == 'DONE' for job in job_array]))
         self.assertTrue(all([result.success for result in result_array]))
 
         # Ensure job ids are unique.
@@ -207,7 +207,7 @@ class TestIBMQJob(JobTestCase):
         self.wait_for_initialization(job, timeout=5)
         can_cancel = job.cancel()
         self.assertTrue(can_cancel)
-        self.assertTrue(job.status() is 'CANCELLED')
+        self.assertTrue(job.status() == 'CANCELLED')
 
     @requires_qe_access
     def test_job_id(self, qe_token, qe_url):
@@ -314,7 +314,7 @@ class TestIBMQJob(JobTestCase):
             job_list = backend.jobs(limit=5, skip=0, status='DONE')
 
         for job in job_list:
-            self.assertTrue(job.status() is 'DONE')
+            self.assertTrue(job.status() == 'DONE')
 
     @requires_qe_access
     def test_get_jobs_filter_counts(self, qe_token, qe_url):
