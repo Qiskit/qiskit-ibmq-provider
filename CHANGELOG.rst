@@ -42,6 +42,8 @@ Changed
 - The exception hierarchy has been revised: the package base exception is
   ``IBMQError``, and they have been grouped in ``.exception`` modules. (#5)
 - Ensured that retrieved jobs come from their appropriate backend (#23)
+- Job ``error_message()`` function now summarizes the problems that made the
+  job to fail. (#48)
 
 
 Removed

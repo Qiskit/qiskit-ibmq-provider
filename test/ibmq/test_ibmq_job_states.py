@@ -232,7 +232,7 @@ class TestIBMQJobStates(JobTestCase):
     def test_errored_result(self):
         job = self.run_with_api(ThrowingGetJobAPI())
         self.wait_for_initialization(job)
-        with self.assertRaises(JobError):
+        with self.assertRaises(ApiError):
             job.result()
 
     def test_completed_result(self):

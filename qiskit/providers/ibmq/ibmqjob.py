@@ -168,6 +168,7 @@ class IBMQJob(BaseJob):
         self._creation_date = creation_date or current_utc_time()
         self._future = None
         self._api_error_msg = None
+        self._result = None
 
     def qobj(self):
         """Return the Qobj submitted for this job.
@@ -220,12 +221,11 @@ class IBMQJob(BaseJob):
             raise JobError('Invalid job state. The job should be DONE but '
                            'it is {}'.format(str(status)))
 
-        try:
+        if not self._result:
             job_response = self._get_job()
-        except ApiError as error:
-            raise JobError(str(error))
+            self._result = Result.from_dict(job_response['qObjectResult'])
 
-        return Result.from_dict(job_response['qObjectResult'])
+        return self._result
 
     def cancel(self):
         """Attempt to cancel a job.
