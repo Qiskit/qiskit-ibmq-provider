@@ -199,10 +199,19 @@ class IBMQJob(BaseJob):
 
     # pylint: disable=arguments-differ
     def result(self, timeout=None, wait=5):
-        """Return the result from the job, consuming the job.
+        """Return the result of the job.
 
-        An attempt to retrieve the results of a failed job will raise an
-        exception.
+        Note:
+            Some IBMQ job results can be read only once. A second attempt to
+            query the API for the job will fail, as the job is "consumed".
+
+            The first call to this method in an ``IBMQJob`` instance will query
+            the API and consume the job if it finished successfully (otherwise
+            it will raise a ``JobError`` exception without consumming the job).
+            Subsequent calls to that instance's method will also return the
+            results, since they are cached. However, attempting to retrieve the
+            results again in another instance or session might fail due to the
+            job having been consumed.
 
         Args:
            timeout (float): number of seconds to wait for job
@@ -305,10 +314,19 @@ class IBMQJob(BaseJob):
     def error_message(self):
         """Provide details about the reason of failure.
 
-        Calling this method if the job status is ERROR, consumes the job.
+        Note:
+            Some IBMQ job results can be read only once. A second attempt to
+            query the API for the job will fail, as the job is "consumed".
+
+            The first call to this method in an ``IBMQJob`` instance will query
+            the API and consume the job if it errored at some point (otherwise
+            it will return ``None``). Subsequent calls to that instance's method
+            will also return the failure details, since they are cached.
+            However, attempting to retrieve the error details again in another
+            instance or session might fail due to the job having been consumed.
 
         Returns:
-            str: An error report if the job errored or None otherwise.
+            str: An error report if the job errored or ``None`` otherwise.
         """
         self._wait_for_completion()
         if self.status() is not JobStatus.ERROR:
