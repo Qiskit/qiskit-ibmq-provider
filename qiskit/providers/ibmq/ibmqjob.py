@@ -59,7 +59,7 @@ class IBMQJob(BaseJob):
 
         try:
             job_status = job.status() # It won't block. It will query the backend API.
-            if job_status is JobStatus.RUNNING:
+            if job_status is 'RUNNING':
                 print('The job is still running')
 
         except JobError as ex:
@@ -229,7 +229,7 @@ class IBMQJob(BaseJob):
         """Query the API to update the status.
 
         Returns:
-            qiskit.providers.JobStatus: The status of the job, once updated.
+            str: The status of the job, once updated.
 
         Raises:
             JobError: if there was an exception in the future being executed
@@ -277,8 +277,8 @@ class IBMQJob(BaseJob):
         else:
             raise JobError('Unrecognized answer from server: \n{}'
                            .format(pprint.pformat(api_job)))
-
-        return self._status
+        
+        return self._status.name
 
     def error_message(self):
         """Return the error message returned from the API server response."""
