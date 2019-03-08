@@ -16,7 +16,6 @@ from qiskit.test.mock import new_fake_qobj, FakeRueschlikon
 from qiskit.providers import JobError, JobTimeoutError
 from qiskit.providers.ibmq.api import ApiError
 from qiskit.providers.ibmq.ibmqjob import API_FINAL_STATES, IBMQJob
-from qiskit.providers.jobstatus import JobStatus
 from ..jobtestcase import JobTestCase
 
 
@@ -85,76 +84,76 @@ class TestIBMQJobStates(JobTestCase):
         job = self.run_with_api(ValidatingAPI())
 
         self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.VALIDATING)
+        self.assertEqual(job.status(), 'VALIDATING')
 
     def test_error_while_creating_job(self):
         job = self.run_with_api(ErrorWhileCreatingAPI())
 
         self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.ERROR)
+        self.assertEqual(job.status(), 'ERROR')
 
     def test_error_while_validating_job(self):
         job = self.run_with_api(ErrorWhileValidatingAPI())
 
         self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.VALIDATING)
+        self.assertEqual(job.status(), 'VALIDATING')
 
         self._current_api.progress()
-        self.assertEqual(job.status(), JobStatus.ERROR)
+        self.assertEqual(job.status(), 'ERROR')
 
     def test_status_flow_for_non_queued_job(self):
         job = self.run_with_api(NonQueuedAPI())
 
         self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.RUNNING)
+        self.assertEqual(job.status(), 'RUNNING')
 
         self._current_api.progress()
-        self.assertEqual(job.status(), JobStatus.DONE)
+        self.assertEqual(job.status(), 'DONE')
 
     def test_status_flow_for_queued_job(self):
         job = self.run_with_api(QueuedAPI())
 
         self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.QUEUED)
+        self.assertEqual(job.status(), 'QUEUED')
 
         self._current_api.progress()
-        self.assertEqual(job.status(), JobStatus.RUNNING)
+        self.assertEqual(job.status(), 'RUNNING')
 
         self._current_api.progress()
-        self.assertEqual(job.status(), JobStatus.DONE)
+        self.assertEqual(job.status(), 'DONE')
 
     def test_status_flow_for_cancellable_job(self):
         job = self.run_with_api(CancellableAPI())
 
         self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.RUNNING)
+        self.assertEqual(job.status(), 'RUNNING')
 
         can_cancel = job.cancel()
         self.assertTrue(can_cancel)
 
         self._current_api.progress()
-        self.assertEqual(job.status(), JobStatus.CANCELLED)
+        self.assertEqual(job.status(), 'CANCELLED')
 
     def test_status_flow_for_non_cancellable_job(self):
         job = self.run_with_api(NonCancellableAPI())
 
         self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.RUNNING)
+        self.assertEqual(job.status(), 'RUNNING')
 
         can_cancel = job.cancel()
         self.assertFalse(can_cancel)
 
         self._current_api.progress()
-        self.assertEqual(job.status(), JobStatus.RUNNING)
+        self.assertEqual(job.status(), 'RUNNING')
 
     def test_status_flow_for_errored_cancellation(self):
         job = self.run_with_api(ErroredCancellationAPI())
 
         self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.RUNNING)
+        self.assertEqual(job.status(), 'RUNNING')
         can_cancel = job.cancel()
         self.assertFalse(can_cancel)
-        self.assertEqual(job.status(), JobStatus.RUNNING)
+        self.assertEqual(job.status(), 'RUNNING')
 
     def test_status_flow_for_unable_to_run_valid_qobj(self):
         """Contrary to other tests, this one is expected to fail even for a
@@ -182,21 +181,21 @@ class TestIBMQJobStates(JobTestCase):
             job.status()
 
         # Now the API gets fixed and doesn't throw anymore.
-        self.assertEqual(job.status(), JobStatus.DONE)
+        self.assertEqual(job.status(), 'DONE')
 
     def test_status_flow_for_unable_to_run_invalid_qobj(self):
         job = self.run_with_api(RejectingJobAPI())
         self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.ERROR)
+        self.assertEqual(job.status(), 'ERROR')
 
     def test_error_while_running_job(self):
         job = self.run_with_api(ErrorWhileRunningAPI())
 
         self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.RUNNING)
+        self.assertEqual(job.status(), 'RUNNING')
 
         self._current_api.progress()
-        self.assertEqual(job.status(), JobStatus.ERROR)
+        self.assertEqual(job.status(), 'ERROR')
         self.assertEqual(job.error_message(), 'Error running job')
 
     def test_cancelled_result(self):
@@ -207,7 +206,7 @@ class TestIBMQJobStates(JobTestCase):
         self._current_api.progress()
         with self.assertRaises(JobError):
             _ = job.result()
-            self.assertEqual(job.status(), JobStatus.CANCELLED)
+            self.assertEqual(job.status(), 'CANCELLED')
 
     def test_errored_result(self):
         job = self.run_with_api(ThrowingGetJobAPI())
@@ -221,7 +220,7 @@ class TestIBMQJobStates(JobTestCase):
         self.wait_for_initialization(job)
         self._current_api.progress()
         self.assertEqual(job.result().success, True)
-        self.assertEqual(job.status(), JobStatus.DONE)
+        self.assertEqual(job.status(), 'DONE')
 
     def test_block_on_result_waiting_until_completed(self):
         from concurrent import futures
@@ -232,7 +231,7 @@ class TestIBMQJobStates(JobTestCase):
 
         result = job.result()
         self.assertEqual(result.success, True)
-        self.assertEqual(job.status(), JobStatus.DONE)
+        self.assertEqual(job.status(), 'DONE')
 
     def test_block_on_result_waiting_until_cancelled(self):
         from concurrent.futures import ThreadPoolExecutor
@@ -244,7 +243,7 @@ class TestIBMQJobStates(JobTestCase):
         with self.assertRaises(JobError):
             job.result()
 
-        self.assertEqual(job.status(), JobStatus.CANCELLED)
+        self.assertEqual(job.status(), 'CANCELLED')
 
     def test_block_on_result_waiting_until_exception(self):
         from concurrent.futures import ThreadPoolExecutor
@@ -267,7 +266,7 @@ class TestIBMQJobStates(JobTestCase):
         job = self.run_with_api(CancellableAPI())
         can_cancel = job.cancel()
         self.assertFalse(can_cancel)
-        self.assertEqual(job.status(), JobStatus.INITIALIZING)
+        self.assertEqual(job.status(), 'INITIALIZING')
 
     def test_only_final_states_cause_detailed_request(self):
         from unittest import mock
