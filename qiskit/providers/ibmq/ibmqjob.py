@@ -168,10 +168,50 @@ class IBMQJob(BaseJob):
         self._creation_date = creation_date or current_utc_time()
         self._future = None
         self._api_error_msg = None
+        self._result = None
+
+    def qobj(self):
+        """Return the Qobj submitted for this job.
+
+        Note that this method might involve querying the API for results if the
+        Job has been created in a previous Qiskit session.
+
+        Returns:
+            Qobj: the Qobj submitted for this job.
+        """
+        if not self._qobj_payload:
+            # Populate self._qobj_payload by retrieving the results.
+            self._wait_for_job()
+
+        return Qobj(**self._qobj_payload)
+
+    def properties(self):
+        """Return the backend properties for this job.
+
+        Returns:
+            BackendProperties: the backend properties used for this job.
+        """
+        self._wait_for_submission()
+
+        properties = self._api.job_properties(job_id=self.job_id())
+
+        return BackendProperties.from_dict(properties)
 
     # pylint: disable=arguments-differ
     def result(self, timeout=None, wait=5):
-        """Return the result from the job.
+        """Return the result of the job.
+
+        Note:
+            Some IBMQ job results can be read only once. A second attempt to
+            query the API for the job will fail, as the job is "consumed".
+
+            The first call to this method in an ``IBMQJob`` instance will query
+            the API and consume the job if it finished successfully (otherwise
+            it will raise a ``JobError`` exception without consumming the job).
+            Subsequent calls to that instance's method will also return the
+            results, since they are cached. However, attempting to retrieve the
+            results again in another instance or session might fail due to the
+            job having been consumed.
 
         Args:
            timeout (float): number of seconds to wait for job
@@ -181,27 +221,20 @@ class IBMQJob(BaseJob):
             qiskit.Result: Result object
 
         Raises:
-            JobError: exception raised during job initialization
+            JobError: if attempted to recover a result on a failed job.
         """
-        job_response = self._wait_for_result(timeout=timeout, wait=wait)
-        return Result.from_dict(job_response['qObjectResult'])
-
-    def _wait_for_result(self, timeout=None, wait=5):
-        self._wait_for_submission(timeout)
-
-        try:
-            job_response = self._wait_for_job(timeout=timeout, wait=wait)
-            if not self._qobj_payload:
-                self._qobj_payload = job_response.get('qObject', {})
-        except ApiError as api_err:
-            raise JobError(str(api_err))
+        self._wait_for_completion(timeout=timeout, wait=wait)
 
         status = self.status()
         if status is not JobStatus.DONE:
             raise JobError('Invalid job state. The job should be DONE but '
                            'it is {}'.format(str(status)))
 
-        return job_response
+        if not self._result:
+            job_response = self._get_job()
+            self._result = Result.from_dict(job_response['qObjectResult'])
+
+        return self._result
 
     def cancel(self):
         """Attempt to cancel a job.
@@ -211,7 +244,7 @@ class IBMQJob(BaseJob):
             only possible on commercial systems.
 
         Raises:
-            JobError: if there was some unexpected failure in the server
+            JobError: if there was some unexpected failure in the server.
         """
         hub = self._api.config.get('hub', None)
         group = self._api.config.get('group', None)
@@ -271,8 +304,6 @@ class IBMQJob(BaseJob):
         elif 'ERROR' in api_job['status']:
             # Error status are of the form "ERROR_*_JOB"
             self._status = JobStatus.ERROR
-            # TODO: This seems to be an inconsistency in the API package.
-            self._api_error_msg = api_job.get('error') or api_job.get('Error')
 
         else:
             raise JobError('Unrecognized answer from server: \n{}'
@@ -281,7 +312,31 @@ class IBMQJob(BaseJob):
         return self._status
 
     def error_message(self):
-        """Return the error message returned from the API server response."""
+        """Provide details about the reason of failure.
+
+        Note:
+            Some IBMQ job results can be read only once. A second attempt to
+            query the API for the job will fail, as the job is "consumed".
+
+            The first call to this method in an ``IBMQJob`` instance will query
+            the API and consume the job if it errored at some point (otherwise
+            it will return ``None``). Subsequent calls to that instance's method
+            will also return the failure details, since they are cached.
+            However, attempting to retrieve the error details again in another
+            instance or session might fail due to the job having been consumed.
+
+        Returns:
+            str: An error report if the job errored or ``None`` otherwise.
+        """
+        self._wait_for_completion()
+        if self.status() is not JobStatus.ERROR:
+            return None
+
+        if not self._api_error_msg:
+            job_response = self._get_job()
+            results = job_response['qObjectResult']['results']
+            self._api_error_msg = self._build_error_report(results)
+
         return self._api_error_msg
 
     def queue_position(self):
@@ -348,21 +403,62 @@ class IBMQJob(BaseJob):
         self._job_id = submit_info.get('id')
         return submit_info
 
-    def _wait_for_job(self, timeout=60, wait=5):
-        """Wait until all online ran circuits of a qobj are 'COMPLETED'.
+    def _wait_for_job(self, timeout=None, wait=5):
+        """Blocks until the job is complete and returns the job content from the
+        API, consuming it.
+
+        Args:
+            timeout (float): number of seconds to wait for job.
+            wait (int): time between queries to IBM Q server.
+
+        Return:
+            dict: a dictionary with the contents of the job.
+
+        Raises:
+            JobError: if there is an error while requesting the results.
+        """
+        self._wait_for_completion(timeout, wait)
+
+        try:
+            job_response = self._get_job()
+            if not self._qobj_payload:
+                self._qobj_payload = job_response.get('qObject', {})
+        except ApiError as api_err:
+            raise JobError(str(api_err))
+
+        return job_response
+
+    def _get_job(self):
+        """Query the API for retrieving the job complete state, consuming it.
+
+        Returns:
+            dict: a dictionary with the contents of the result.
+
+        Raises:
+            JobTimeoutError: if the job does not return results before a
+                specified timeout.
+            JobError: if something wrong happened in some of the server API
+                calls.
+        """
+        if self._cancelled:
+            raise JobError(
+                'Job result impossible to retrieve. The job was cancelled.')
+
+        return self._api.get_job(self._job_id)
+
+    def _wait_for_completion(self, timeout=None, wait=5):
+        """Wait until the job progress to a final state such as DONE or ERROR.
 
         Args:
             timeout (float or None): seconds to wait for job. If None, wait
                 indefinitely.
-            wait (float): seconds between queries
-
-        Returns:
-            dict: A dict with the contents of the API request.
+            wait (float): seconds between queries.
 
         Raises:
-            JobTimeoutError: if the job does not return results before a specified timeout.
-            JobError: if something wrong happened in some of the server API calls
+            JobTimeoutError: if the job does not return results before a
+                specified timeout.
         """
+        self._wait_for_submission(timeout)
         start_time = time.time()
         while self.status() not in JOB_FINAL_STATES:
             elapsed_time = time.time() - start_time
@@ -373,12 +469,6 @@ class IBMQJob(BaseJob):
 
             logger.info('status = %s (%d seconds)', self._status, elapsed_time)
             time.sleep(wait)
-
-        if self._cancelled:
-            raise JobError(
-                'Job result impossible to retrieve. The job was cancelled.')
-
-        return self._api.get_job(self._job_id)
 
     def _wait_for_submission(self, timeout=60):
         """Waits for the request to return a job ID"""
@@ -398,41 +488,39 @@ class IBMQJob(BaseJob):
                 self._api_error_msg = str(submit_info['error'])
                 raise JobError(str(submit_info['error']))
 
-    def qobj(self):
-        """Return the Qobj submitted for this job.
+    def _build_error_report(self, results):
+        """Build the error report.
 
-        Note that this method might involve querying the API for results if the
-        Job has been created in a previous Qiskit session.
-
-        Returns:
-            Qobj: the Qobj submitted for this job.
-        """
-        if not self._qobj_payload:
-            # Populate self._qobj_payload by retrieving the results.
-            self._wait_for_result()
-
-        return Qobj(**self._qobj_payload)
-
-    def properties(self):
-        """Return the backend properties for this job.
+        Args:
+            results (dict): result section of the job response.
 
         Returns:
-            BackendProperties: the backend properties used for this job.
+            str: the error report.
         """
-        self._wait_for_submission()
+        error_list = []
+        for index, result in enumerate(results):
+            if not result['success']:
+                error_list.append('Experiment {}: {}'.format(index, result['status']))
 
-        properties = self._api.job_properties(job_id=self.job_id())
+        error_report = 'The following experiments failed:\n{}'.format('\n'.join(error_list))
+        return error_report
 
-        return BackendProperties.from_dict(properties)
 
+def _is_job_queued(api_job_status_response):
+    """Checks whether a job has been queued or not.
 
-def _is_job_queued(api_job_response):
-    """Checks whether a job has been queued or not."""
+    Args:
+        api_job_status_response (dict): status response of the job.
+
+    Returns:
+        Pair[boolean, int]: a pair indicating if the job is queued and in which
+            position.
+    """
     is_queued, position = False, 0
-    if 'infoQueue' in api_job_response:
-        if 'status' in api_job_response['infoQueue']:
-            queue_status = api_job_response['infoQueue']['status']
+    if 'infoQueue' in api_job_status_response:
+        if 'status' in api_job_status_response['infoQueue']:
+            queue_status = api_job_status_response['infoQueue']['status']
             is_queued = queue_status == 'PENDING_IN_QUEUE'
-        if 'position' in api_job_response['infoQueue']:
-            position = api_job_response['infoQueue']['position']
+        if 'position' in api_job_status_response['infoQueue']:
+            position = api_job_status_response['infoQueue']['position']
     return is_queued, position

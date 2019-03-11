@@ -20,6 +20,25 @@ from qiskit.providers.jobstatus import JobStatus
 from ..jobtestcase import JobTestCase
 
 
+MOCKED_ERROR_RESULT = {
+    'qObjectResult': {
+        'results': [
+            {
+                'status': 'DONE',
+                'success': True
+            },
+            {
+                'status': 'Error 1',
+                'success': False
+            },
+            {
+                'status': 'Error 2',
+                'success': False
+            }
+        ]
+    }
+}
+
 VALID_QOBJ_RESPONSE = {
     'status': 'COMPLETED',
     'qObjectResult': {
@@ -197,7 +216,8 @@ class TestIBMQJobStates(JobTestCase):
 
         self._current_api.progress()
         self.assertEqual(job.status(), JobStatus.ERROR)
-        self.assertEqual(job.error_message(), 'Error running job')
+        self.assertIn('Error 1', job.error_message())
+        self.assertIn('Error 2', job.error_message())
 
     def test_cancelled_result(self):
         job = self.run_with_api(CancellableAPI())
@@ -212,7 +232,7 @@ class TestIBMQJobStates(JobTestCase):
     def test_errored_result(self):
         job = self.run_with_api(ThrowingGetJobAPI())
         self.wait_for_initialization(job)
-        with self.assertRaises(JobError):
+        with self.assertRaises(ApiError):
             job.result()
 
     def test_completed_result(self):
@@ -383,7 +403,7 @@ class ErrorWhileValidatingAPI(BaseFakeAPI):
 
     _job_status = [
         {'status': 'VALIDATING'},
-        {'status': 'ERROR_VALIDATING_JOB'}
+        {'status': 'ERROR_VALIDATING_JOB', **MOCKED_ERROR_RESULT}
     ]
 
 
@@ -402,7 +422,7 @@ class ErrorWhileCreatingAPI(BaseFakeAPI):
     """
 
     _job_status = [
-        {'status': 'ERROR_CREATING_JOB'}
+        {'status': 'ERROR_CREATING_JOB', **MOCKED_ERROR_RESULT}
     ]
 
 
@@ -411,7 +431,7 @@ class ErrorWhileRunningAPI(BaseFakeAPI):
 
     _job_status = [
         {'status': 'RUNNING'},
-        {'status': 'ERROR_RUNNING_JOB', 'error': 'Error running job'}
+        {'status': 'ERROR_RUNNING_JOB', **MOCKED_ERROR_RESULT}
     ]
 
 
