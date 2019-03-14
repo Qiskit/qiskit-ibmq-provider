@@ -11,7 +11,8 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQ, least_busy
 from qiskit.result import Result
 from qiskit.test import QiskitTestCase, requires_qe_access
-from qiskit.tools.compiler import compile, execute
+from qiskit.tools.compiler import compile
+from qiskit.execute import execute
 from qiskit.transpiler import transpile
 
 
