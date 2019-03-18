@@ -183,7 +183,7 @@ class IBMQJob(BaseJob):
             # Populate self._qobj_payload by retrieving the results.
             self._wait_for_job()
 
-        return Qobj(**self._qobj_payload)
+        return Qobj.from_dict(self._qobj_payload)
 
     def properties(self):
         """Return the backend properties for this job.
