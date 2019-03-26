@@ -50,7 +50,7 @@ class Credentials:
         self.token = token
         (self.url, self.websocket_url,
          self.hub, self.group, self.project) = _unify_ibmq_url(
-            url, websocket_url, hub, group, project)
+             url, websocket_url, hub, group, project)
         self.proxies = proxies or {}
         self.verify = verify
 

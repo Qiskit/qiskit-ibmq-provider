@@ -10,6 +10,7 @@
 import json
 import logging
 
+from .apijobstatus import ApiJobStatus
 from .exceptions import CredentialsError, BadBackendError
 from .utils import Request
 
@@ -212,7 +213,7 @@ class IBMQConnector:
             if backend is not None:
                 query['where']['backend.name'] = backend
             if only_completed:
-                query['where']['status'] = 'COMPLETED'
+                query['where']['status'] = ApiJobStatus.COMPLETED.value
 
         url_filter = url_filter + json.dumps(query)
         jobs = self.req.get(url, url_filter)

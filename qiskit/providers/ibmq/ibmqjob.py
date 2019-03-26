@@ -24,21 +24,15 @@ from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.result import Result
 
 from .api import ApiError
+from .api.apijobstatus import ApiJobStatus
 
 logger = logging.getLogger(__name__)
 
 
-API_FINAL_STATES = (
-    'COMPLETED',
-    'CANCELLED',
-    'ERROR_CREATING_JOB',
-    'ERROR_VALIDATING_JOB',
-    'ERROR_RUNNING_JOB'
-)
-
-
 class IBMQJob(BaseJob):
-    """Represent the jobs that will be executed on IBM-Q simulators and real
+    """Representation of a job that will be execute on a IBMQ backend.
+
+    Represent the jobs that will be executed on IBM-Q simulators and real
     devices. Jobs are intended to be created calling ``run()`` on a particular
     backend.
 
@@ -150,11 +144,11 @@ class IBMQJob(BaseJob):
             # enough information to recreate the `Job`. If that is the case, try
             # to make use of that information during instantiation, as
             # `self.status()` involves an extra call to the API.
-            if api_status == 'VALIDATING':
+            if api_status == ApiJobStatus.VALIDATING.value:
                 self._status = JobStatus.VALIDATING
-            elif api_status == 'COMPLETED':
+            elif api_status == ApiJobStatus.COMPLETED.value:
                 self._status = JobStatus.DONE
-            elif api_status == 'CANCELLED':
+            elif api_status == ApiJobStatus.CANCELLED.value:
                 self._status = JobStatus.CANCELLED
                 self._cancelled = True
             else:
@@ -285,26 +279,26 @@ class IBMQJob(BaseJob):
         except Exception as err:
             raise JobError(str(err))
 
-        if api_job['status'] == 'VALIDATING':
+        if api_job['status'] == ApiJobStatus.VALIDATING.value:
             self._status = JobStatus.VALIDATING
 
-        elif api_job['status'] == 'RUNNING':
+        elif api_job['status'] == ApiJobStatus.RUNNING.value:
             self._status = JobStatus.RUNNING
             queued, self._queue_position = _is_job_queued(api_job)
             if queued:
                 self._status = JobStatus.QUEUED
 
-        elif api_job['status'] == 'COMPLETED':
+        elif api_job['status'] == ApiJobStatus.COMPLETED.value:
             self._status = JobStatus.DONE
 
-        elif api_job['status'] == 'CANCELLED':
+        elif api_job['status'] == ApiJobStatus.CANCELLED.value:
             self._status = JobStatus.CANCELLED
             self._cancelled = True
 
-        elif 'ERROR' in api_job['status']:
-            # Error status are of the form "ERROR_*_JOB"
+        elif api_job['status'] in (ApiJobStatus.ERROR_CREATING_JOB.value,
+                                   ApiJobStatus.ERROR_VALIDATING_JOB.value,
+                                   ApiJobStatus.ERROR_RUNNING_JOB.value):
             self._status = JobStatus.ERROR
-
         else:
             raise JobError('Unrecognized answer from server: \n{}'
                            .format(pprint.pformat(api_job)))

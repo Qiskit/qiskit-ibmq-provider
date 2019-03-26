@@ -18,6 +18,7 @@ from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults)
 
 from .api import ApiError
+from .api.apijobstatus import ApiJobStatus
 from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .ibmqjob import IBMQJob
 
@@ -146,15 +147,15 @@ class IBMQBackend(BaseBackend):
             if isinstance(status, str):
                 status = JobStatus[status]
             if status == JobStatus.RUNNING:
-                this_filter = {'status': 'RUNNING',
+                this_filter = {'status': ApiJobStatus.RUNNING.value,
                                'infoQueue': {'exists': False}}
             elif status == JobStatus.QUEUED:
-                this_filter = {'status': 'RUNNING',
+                this_filter = {'status': ApiJobStatus.RUNNING.value,
                                'infoQueue.status': 'PENDING_IN_QUEUE'}
             elif status == JobStatus.CANCELLED:
-                this_filter = {'status': 'CANCELLED'}
+                this_filter = {'status': ApiJobStatus.CANCELLED.value}
             elif status == JobStatus.DONE:
-                this_filter = {'status': 'COMPLETED'}
+                this_filter = {'status': ApiJobStatus.COMPLETED.value}
             elif status == JobStatus.ERROR:
                 this_filter = {'status': {'regexp': '^ERROR'}}
             else:
