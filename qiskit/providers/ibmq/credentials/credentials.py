@@ -27,7 +27,7 @@ class Credentials:
     """
 
     def __init__(self, token, url, hub=None, group=None, project=None,
-                 proxies=None, verify=True):
+                 websocket_url=None, proxies=None, verify=True):
         """Return new set of credentials.
 
         Args:
@@ -36,6 +36,7 @@ class Credentials:
             hub (str): the hub used for IBMQ.
             group (str): the group used for IBMQ.
             project (str): the project used for IBMQ.
+            websocket_url (str): URL for websocket communication with IBM Q.
             proxies (dict): proxy configuration for the API.
             verify (bool): if False, ignores SSL certificates errors
 
@@ -47,8 +48,9 @@ class Credentials:
             communicating with the API.
         """
         self.token = token
-        self.url, self.hub, self.group, self.project = _unify_ibmq_url(
-            url, hub, group, project)
+        (self.url, self.websocket_url,
+         self.hub, self.group, self.project) = _unify_ibmq_url(
+            url, websocket_url, hub, group, project)
         self.proxies = proxies or {}
         self.verify = verify
 
@@ -67,17 +69,18 @@ class Credentials:
         return self.hub, self.group, self.project
 
 
-def _unify_ibmq_url(url, hub=None, group=None, project=None):
+def _unify_ibmq_url(url, websocket_url=None, hub=None, group=None, project=None):
     """Return a new-style set of credential values (url and hub parameters).
 
     Args:
         url (str): URL for Quantum Experience or IBM Q.
+        websocket_url (str): URL for websocket communication with IBM Q.
         hub (str): the hub used for IBM Q.
         group (str): the group used for IBM Q.
         project (str): the project used for IBM Q.
 
     Returns:
-        tuple[url, hub, group, token]:
+        tuple[url, websocket_url, hub, group, token]:
             * url (str): new-style Quantum Experience or IBM Q URL (the hub,
                 group and project included in the URL.
             * hub (str): the hub used for IBM Q.
@@ -97,4 +100,4 @@ def _unify_ibmq_url(url, hub=None, group=None, project=None):
             # Cleanup the hub, group and project, without modifying the url.
             hub = group = project = None
 
-    return url, hub, group, project
+    return url, websocket_url, hub, group, project
