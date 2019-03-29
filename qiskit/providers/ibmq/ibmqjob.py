@@ -329,7 +329,7 @@ class IBMQJob(BaseJob):
         if not self._api_error_msg:
             job_response = self._get_job()
             results = job_response['qObjectResult']['results']
-            self._api_error_msg = self._build_error_report(results)
+            self._api_error_msg = _build_error_report(results)
 
         return self._api_error_msg
 
@@ -482,23 +482,6 @@ class IBMQJob(BaseJob):
                 self._api_error_msg = str(submit_info['error'])
                 raise JobError(str(submit_info['error']))
 
-    def _build_error_report(self, results):
-        """Build the error report.
-
-        Args:
-            results (dict): result section of the job response.
-
-        Returns:
-            str: the error report.
-        """
-        error_list = []
-        for index, result in enumerate(results):
-            if not result['success']:
-                error_list.append('Experiment {}: {}'.format(index, result['status']))
-
-        error_report = 'The following experiments failed:\n{}'.format('\n'.join(error_list))
-        return error_report
-
 
 def _is_job_queued(api_job_status_response):
     """Checks whether a job has been queued or not.
@@ -518,3 +501,21 @@ def _is_job_queued(api_job_status_response):
         if 'position' in api_job_status_response['infoQueue']:
             position = api_job_status_response['infoQueue']['position']
     return is_queued, position
+
+
+def _build_error_report(results):
+    """Build an user-friendly error report for a failed job.
+
+    Args:
+        results (dict): result section of the job response.
+
+    Returns:
+        str: the error report.
+    """
+    error_list = []
+    for index, result in enumerate(results):
+        if not result['success']:
+            error_list.append('Experiment {}: {}'.format(index, result['status']))
+
+    error_report = 'The following experiments failed:\n{}'.format('\n'.join(error_list))
+    return error_report
