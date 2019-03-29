@@ -16,11 +16,11 @@ from .utils import Request
 logger = logging.getLogger(__name__)
 
 
-def get_job_url(config, hub=None, group=None, project=None):
+def get_job_url(config):
     """Return the URL for a job."""
-    hub = config.get('hub', hub)
-    group = config.get('group', group)
-    project = config.get('project', project)
+    hub = config.get('hub', None)
+    group = config.get('group', None)
+    project = config.get('project', None)
 
     if hub and group and project:
         return '/Network/{}/Groups/{}/Projects/{}/jobs'.format(hub, group,
@@ -28,9 +28,9 @@ def get_job_url(config, hub=None, group=None, project=None):
     return '/Jobs'
 
 
-def get_backend_properties_url(config, backend_type, hub=None):
+def get_backend_properties_url(config, backend_type):
     """Return the URL for a backend's properties."""
-    hub = config.get('hub', hub)
+    hub = config.get('hub', None)
 
     if hub:
         return '/Network/{}/devices/{}/properties'.format(hub, backend_type)
@@ -50,11 +50,11 @@ def get_backend_defaults_url(config, backend_type):
     return '/Backends/{}/defaults'.format(backend_type)
 
 
-def get_backends_url(config, hub=None, group=None, project=None):
+def get_backends_url(config):
     """Return the URL for a backend."""
-    hub = config.get('hub', hub)
-    group = config.get('group', group)
-    project = config.get('project', project)
+    hub = config.get('hub', None)
+    group = config.get('group', None)
+    project = config.get('project', None)
 
     if hub and group and project:
         return '/Network/{}/Groups/{}/Projects/{}/devices/v/1'.format(hub, group,
