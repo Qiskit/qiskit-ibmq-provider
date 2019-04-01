@@ -123,7 +123,6 @@ class IBMQJob(BaseJob):
         """
         # pylint: disable=unused-argument
         super().__init__(backend, job_id)
-        self._job_data = None
 
         if qobj:
             validate_qobj_against_schema(qobj)
