@@ -13,6 +13,7 @@ requirements = [
     #"qiskit-terra>=0.8",  # TODO: disabled for developers convenience
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
+    "websockets>=7,<8"
 ]
 
 # Handle version.
