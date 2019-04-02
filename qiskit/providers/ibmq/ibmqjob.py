@@ -272,9 +272,6 @@ class IBMQJob(BaseJob):
         try:
             # TODO: See result values
             api_response = self._api.get_status_job(self._job_id)
-            if 'status' not in api_response:
-                raise JobError('get_status_job didn\'t return status: %s' %
-                               pprint.pformat(api_response))
             self._update_status(api_response)
         # pylint: disable=broad-except
         except Exception as err:
@@ -291,7 +288,7 @@ class IBMQJob(BaseJob):
         Raises:
             JobError: if the API response could not be parsed.
         """
-        if 'status' not in 'api_response':
+        if 'status' not in api_response:
             raise JobError('Unrecognized answer from server: \n{}'.format(
                 pprint.pformat(api_response)))
 
