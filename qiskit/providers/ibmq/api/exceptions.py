@@ -55,3 +55,12 @@ class CredentialsError(ApiError):
 class RegisterSizeError(ApiError):
     """Exception due to exceeding the maximum number of allowed qubits."""
     pass
+
+
+class WebsocketError(ApiError):
+    """Exceptions related to websockets."""
+    pass
+
+
+class WebsocketTimeoutError(WebsocketError):
+    """Timeout during websocket communication."""

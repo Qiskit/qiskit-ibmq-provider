@@ -10,7 +10,7 @@
 This module is used for creating asynchronous job objects for the
 IBM Q Experience.
 """
-
+import asyncio
 import datetime
 import logging
 import pprint
@@ -25,6 +25,7 @@ from qiskit.result import Result
 
 from .api import ApiError
 from .api.apijobstatus import ApiJobStatus
+from .api.exceptions import WebsocketTimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -278,31 +279,46 @@ class IBMQJob(BaseJob):
         except Exception as err:
             raise JobError(str(err))
 
-        if api_job['status'] == ApiJobStatus.VALIDATING.value:
+        return self._status
+
+    def _update_status(self, api_response):
+        """Update the job status from an API status.
+
+        Args:
+            api_response (dict): API response for a status query.
+
+        Raises:
+            JobError: if the API response could not be parsed.
+        """
+        if 'status' not in 'api_response':
+            raise JobError('Unrecognized answer from server: \n{}'.format(
+                pprint.pformat(api_response)))
+
+        api_status = api_response['status']
+
+        if api_status == ApiJobStatus.VALIDATING.value:
             self._status = JobStatus.VALIDATING
 
-        elif api_job['status'] == ApiJobStatus.RUNNING.value:
+        elif api_status == ApiJobStatus.RUNNING.value:
             self._status = JobStatus.RUNNING
-            queued, self._queue_position = _is_job_queued(api_job)
+            queued, self._queue_position = _is_job_queued(api_response)
             if queued:
                 self._status = JobStatus.QUEUED
 
-        elif api_job['status'] == ApiJobStatus.COMPLETED.value:
+        elif api_status == ApiJobStatus.COMPLETED.value:
             self._status = JobStatus.DONE
 
-        elif api_job['status'] == ApiJobStatus.CANCELLED.value:
+        elif api_status == ApiJobStatus.CANCELLED.value:
             self._status = JobStatus.CANCELLED
             self._cancelled = True
 
-        elif api_job['status'] in (ApiJobStatus.ERROR_CREATING_JOB.value,
-                                   ApiJobStatus.ERROR_VALIDATING_JOB.value,
-                                   ApiJobStatus.ERROR_RUNNING_JOB.value):
+        elif api_status in (ApiJobStatus.ERROR_CREATING_JOB.value,
+                            ApiJobStatus.ERROR_VALIDATING_JOB.value,
+                            ApiJobStatus.ERROR_RUNNING_JOB.value):
             self._status = JobStatus.ERROR
         else:
-            raise JobError('Unrecognized answer from server: \n{}'
-                           .format(pprint.pformat(api_job)))
-
-        return self._status
+            raise JobError(
+                'Unrecognized status from server: {}'.format(api_status))
 
     def error_message(self):
         """Provide details about the reason of failure.
@@ -452,16 +468,11 @@ class IBMQJob(BaseJob):
                 specified timeout.
         """
         self._wait_for_submission(timeout)
-        start_time = time.time()
-        while self.status() not in JOB_FINAL_STATES:
-            elapsed_time = time.time() - start_time
-            if timeout is not None and elapsed_time >= timeout:
-                raise JobTimeoutError(
-                    'Timeout while waiting for the job: {}'.format(self._job_id)
-                )
 
-            logger.info('status = %s (%d seconds)', self._status, elapsed_time)
-            time.sleep(wait)
+        if 'websocket_url' in self._api.config:
+            self._wait_for_final_status_websocket(timeout)
+        else:
+            self._wait_for_final_status(timeout, wait)
 
     def _wait_for_submission(self, timeout=60):
         """Waits for the request to return a job ID"""
@@ -480,6 +491,50 @@ class IBMQJob(BaseJob):
                 self._status = JobStatus.ERROR
                 self._api_error_msg = str(submit_info['error'])
                 raise JobError(str(submit_info['error']))
+
+    def _wait_for_final_status(self, timeout=None, wait=5):
+        """Wait until the job progress to a final state.
+
+        Args:
+            timeout (float or None): seconds to wait for job. If None, wait
+                indefinitely.
+            wait (float): seconds between queries.
+
+        Raises:
+            JobTimeoutError: if the job does not return results before a
+                specified timeout.
+        """
+        start_time = time.time()
+        while self.status() not in JOB_FINAL_STATES:
+            elapsed_time = time.time() - start_time
+            if timeout is not None and elapsed_time >= timeout:
+                raise JobTimeoutError(
+                    'Timeout while waiting for job {}'.format(self._job_id))
+
+            logger.info('status = %s (%d seconds)', self._status, elapsed_time)
+            time.sleep(wait)
+
+    def _wait_for_final_status_websocket(self, timeout=None):
+        """Wait until the job progress to a final state using websockets.
+
+        Args:
+            timeout (float or None): seconds to wait for job. If None, wait
+                indefinitely.
+
+        Raises:
+            JobTimeoutError: if the job does not return results before a
+                specified timeout.
+        """
+        websocket_client = self._api.websocket_client()
+
+        try:
+            status_response = asyncio.get_event_loop().run_until_complete(
+                websocket_client.get_job_status(self._job_id,
+                                                timeout=timeout))
+            self._update_status(status_response)
+        except WebsocketTimeoutError:
+            raise JobTimeoutError(
+                'Timeout while waiting for job {}'.format(self._job_id))
 
 
 def _is_job_queued(api_job_status_response):
