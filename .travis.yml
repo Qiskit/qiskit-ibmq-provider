@@ -31,8 +31,7 @@ stage_generic: &stage_generic
     - git clone https://github.com/Qiskit/qiskit-terra.git
     - pip install cython
     - pip install -e qiskit-terra
-    - pip install "requests>=2.19"
-    - pip install "requests-ntlm>=1.1.0"
+    - pip install -r requirements.txt
     - pip install -U -r requirements-dev.txt
   script:
     # Run the tests.
