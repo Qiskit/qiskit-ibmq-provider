@@ -44,6 +44,7 @@ Changed
 - Ensured that retrieved jobs come from their appropriate backend (#23)
 - Job ``error_message()`` function now summarizes the problems that made the
   job to fail. (#48)
+- ``backend.jobs()`` no longer emits a warning for pre-qobj jobs. (#59)
 
 
 Removed
