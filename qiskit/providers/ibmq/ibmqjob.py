@@ -292,31 +292,32 @@ class IBMQJob(BaseJob):
             raise JobError('Unrecognized answer from server: \n{}'.format(
                 pprint.pformat(api_response)))
 
-        api_status = api_response['status']
+        try:
+            api_status = ApiJobStatus(api_response['status'])
+        except ValueError:
+            raise JobError('Unrecognized status from server: {}'.format(
+                api_response['status']))
 
-        if api_status == ApiJobStatus.VALIDATING.value:
+        if api_status is ApiJobStatus.VALIDATING:
             self._status = JobStatus.VALIDATING
 
-        elif api_status == ApiJobStatus.RUNNING.value:
+        elif api_status is ApiJobStatus.RUNNING:
             self._status = JobStatus.RUNNING
             queued, self._queue_position = _is_job_queued(api_response)
             if queued:
                 self._status = JobStatus.QUEUED
 
-        elif api_status == ApiJobStatus.COMPLETED.value:
+        elif api_status is ApiJobStatus.COMPLETED:
             self._status = JobStatus.DONE
 
-        elif api_status == ApiJobStatus.CANCELLED.value:
+        elif api_status is ApiJobStatus.CANCELLED:
             self._status = JobStatus.CANCELLED
             self._cancelled = True
 
-        elif api_status in (ApiJobStatus.ERROR_CREATING_JOB.value,
-                            ApiJobStatus.ERROR_VALIDATING_JOB.value,
-                            ApiJobStatus.ERROR_RUNNING_JOB.value):
+        elif api_status in (ApiJobStatus.ERROR_CREATING_JOB,
+                            ApiJobStatus.ERROR_VALIDATING_JOB,
+                            ApiJobStatus.ERROR_RUNNING_JOB):
             self._status = JobStatus.ERROR
-        else:
-            raise JobError(
-                'Unrecognized status from server: {}'.format(api_status))
 
     def error_message(self):
         """Provide details about the reason of failure.

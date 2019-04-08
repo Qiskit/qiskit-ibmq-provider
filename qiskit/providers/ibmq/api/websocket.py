@@ -112,7 +112,8 @@ class WebsocketClient:
         last_status = None
 
         try:
-            # Read messages from the server.
+            # Read messages from the server until the connection is closed or
+            # a timeout has been reached.
             while True:
                 try:
                     if timeout:
