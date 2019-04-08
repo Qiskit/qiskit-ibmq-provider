@@ -75,8 +75,8 @@ def write_qiskit_rc(credentials, filename=None):
             location is used (`HOME/.qiskit/qiskitrc`).
     """
     def _credentials_object_to_dict(obj):
-        return {key: getattr(obj, key)
-                for key in ['token', 'url', 'proxies', 'verify']
+        return {key: getattr(obj, key) for key in
+                ['token', 'url', 'websocket_url', 'proxies', 'verify']
                 if getattr(obj, key)}
 
     def _section_name(credentials_):
