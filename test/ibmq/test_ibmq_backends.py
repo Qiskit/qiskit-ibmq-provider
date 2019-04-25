@@ -15,9 +15,12 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq import IBMQ
 from qiskit.qobj import QobjHeader
 from qiskit.test import QiskitTestCase, requires_qe_access, slow_test
+# from qiskit.test import requires_qe_access, slow_test
+# from qiskit.test.providers.ibmq import IBMQBackendTestCase
 from qiskit.tools.compiler import compile
 
 
+# class TestIBMQBackends(QiskitTestCase):
 class TestIBMQBackends(QiskitTestCase):
     """Tests for all the IBMQ backends."""
     def setUp(self):

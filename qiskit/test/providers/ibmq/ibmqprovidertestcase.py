@@ -8,9 +8,13 @@
 """Custom TestCase for IBM Q Provider."""
 
 from qiskit.test.providers import ProviderTestCase
+from qiskit.providers.ibmq import IBMQ
+from qiskit.providers.ibmq.ibmqprovider import IBMQProvider
+from qiskit.test import requires_qe_access
 
 
 class IBMQProviderTestCase(ProviderTestCase):
     """
-    Subclass of Qiskit ProviderTestCase per standard Qiskit Testing regimen
+    Specialization for IBM QE
     """
+    provider_cls = IBMQProvider
