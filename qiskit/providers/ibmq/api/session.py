@@ -30,7 +30,6 @@ class RetrySession(Session):
 
         Args:
             base_url (str): base URL for the session's requests.
-            access_token (str): IBM Q access token.
             retries (int): number of retries for the requests.
             backoff_factor (float): backoff factor between retry attempts.
             verify (bool): enable SSL verification.
@@ -40,10 +39,21 @@ class RetrySession(Session):
         super().__init__()
 
         self.base_url = base_url
+        self._access_token = access_token
 
         self._initialize_retry(retries, backoff_factor)
-        self._initialize_session_parameters(
-            access_token, verify, proxies or {}, auth)
+        self._initialize_session_parameters(verify, proxies or {}, auth)
+
+    @property
+    def access_token(self):
+        return self._access_token
+
+    @access_token.setter
+    def access_token(self, value):
+        if value:
+            self.params.update({'access_token': value})
+        else:
+            self.params.pop('access_token', None)
 
     def _initialize_retry(self, retries, backoff_factor):
         """Set the Session retry policy.
@@ -62,19 +72,15 @@ class RetrySession(Session):
         self.mount('http://', retry_adapter)
         self.mount('https://', retry_adapter)
 
-    def _initialize_session_parameters(self, access_token,
-                                       verify, proxies, auth):
+    def _initialize_session_parameters(self, verify, proxies, auth):
         """Set the Session parameters and attributes.
 
         Args:
-            access_token (str): IBM Q access token.
             verify (bool): enable SSL verification.
             proxies (dict): proxy URLs mapped by protocol.
             auth (AuthBase): authentication handler.
         """
         self.headers.update({'X-Qx-Client-Application': CLIENT_APPLICATION})
-        if access_token:
-            self.params.update({'access_token': access_token})
 
         self.auth = auth
         self.proxies = proxies or {}
