@@ -15,14 +15,13 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq import IBMQ
 from qiskit.qobj import QobjHeader
 from qiskit.test import QiskitTestCase, requires_qe_access, slow_test
-# from qiskit.test import requires_qe_access, slow_test
-# from qiskit.test.providers.ibmq import IBMQBackendTestCase
+from qiskit.test.providers.ibmq import IBMQBackendTestCase
 from qiskit.tools.compiler import compile
 
 
-# class TestIBMQBackends(QiskitTestCase):
 class TestIBMQBackends(QiskitTestCase):
     """Tests for all the IBMQ backends."""
+
     def setUp(self):
         super().setUp()
 
@@ -52,6 +51,16 @@ class TestIBMQBackends(QiskitTestCase):
         IBMQ.enable_account(qe_token, qe_url)
         remotes = IBMQ.backends(simulator=True)
         self.assertTrue(remotes)
+
+    @requires_qe_access
+    def test_backends_IBMQBackendTestCase(self, qe_token, qe_url):
+        """
+        Run the tests from qiskit.test.providers.ibmq.IBMQBackendTestCase
+        on each backend instance discovered.
+        """
+        IBMQ.enable_account(qe_token, qe_url)
+        for backend in IBMQ.backends():
+            self.gen_backend_test_class(backend)
 
     @requires_qe_access
     def test_remote_backend_status(self, qe_token, qe_url):
@@ -149,4 +158,12 @@ class TestIBMQBackends(QiskitTestCase):
                 else:
                     backend_by_display_name = IBMQ.get_backend(display_name)
                     self.assertEqual(backend_by_name, backend_by_display_name)
-                    self.assertEqual(backend_by_display_name.name(), backend_name)
+                    self.assertEqual(
+                        backend_by_display_name.name(), backend_name)
+
+    def gen_backend_test_class(self, backend):
+        """
+        Create a test class, and instance it, and call run() on it
+        https://github.com/Qiskit/qiskit-ibmq-provider/issues/52
+        """
+        return type(backend.name() + "IBMQBackendTestCase", (IBMQBackendTestCase,), {})(backend)
