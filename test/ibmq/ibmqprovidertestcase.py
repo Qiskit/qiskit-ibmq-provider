@@ -23,7 +23,7 @@ from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.ibmqprovider import IBMQProvider
 from qiskit.test import requires_qe_access
 
-from qiskit.test.providers.ibmq import IBMQBackendTestCase
+from .ibmqbackendtestcase import IBMQBackendTestCase
 
 
 class IBMQProviderTestCase(ProviderTestCase):

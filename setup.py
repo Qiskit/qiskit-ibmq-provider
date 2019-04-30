@@ -56,8 +56,7 @@ setup(
     keywords="qiskit sdk quantum api ibmq",
     packages=['qiskit.providers.ibmq',
               'qiskit.providers.ibmq.api',
-              'qiskit.providers.ibmq.credentials',
-              'qiskit.test.providers.ibmq'],
+              'qiskit.providers.ibmq.credentials'],
     install_requires=requirements,
     include_package_data=True,
     python_requires=">=3.5"

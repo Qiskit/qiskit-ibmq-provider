@@ -14,14 +14,15 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.qobj import QobjHeader
 from qiskit.test import requires_qe_access, slow_test
-from qiskit.test.providers.ibmq import IBMQBackendTestCase, IBMQProviderTestCase
+from .ibmqprovidertestcase import IBMQProviderTestCase
+from .ibmqbackendtestcase import IBMQBackendTestCase
 from qiskit.tools.compiler import compile
 
 
 class TestIBMQBackends(IBMQProviderTestCase):
     """Tests for all the IBMQ backends."""
 
-    def setUp(self):
+    def setUp(self):  # pylint: disable=invalid-name
         """Required method for testing"""
         super().setUp()
         qr = QuantumRegister(1)
@@ -31,7 +32,7 @@ class TestIBMQBackends(IBMQProviderTestCase):
         self.qc1.measure(qr, cr)
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls):  # pylint: disable=invalid-name
         """Required method for testing"""
         super().setUpClass()
 
@@ -57,7 +58,7 @@ class TestIBMQBackends(IBMQProviderTestCase):
         self.assertTrue(remotes)
 
     @requires_qe_access
-    def test_backends_IBMQBackendTestCase(self, qe_token, qe_url):
+    def test_backends_IBMQBackendTestCase(self, qe_token, qe_url):  # pylint: disable=invalid-name
         """Run the tests from qiskit.test.providers.ibmq.IBMQBackendTestCase
         on each backend instance discovered."""
         self.provider.enable_account(qe_token, qe_url)
