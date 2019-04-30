@@ -5,8 +5,7 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-"""
-    Specialization for IBM Q Providers.
+""" Specialization for IBM Q Providers.
     https://github.com/Qiskit/qiskit-ibmq-provider/issues/52
     Because the testing of backends from IBMQ is testing of instanced
     objects, we will not instance from a backend class, we will use the
