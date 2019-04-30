@@ -23,6 +23,7 @@ class TestIBMQBackends(IBMQProviderTestCase):
     """Tests for all the IBMQ backends."""
 
     def setUp(self):
+        """Required method for testing"""
         super().setUp()
         qr = QuantumRegister(1)
         cr = ClassicalRegister(1)
@@ -32,6 +33,7 @@ class TestIBMQBackends(IBMQProviderTestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Required method for testing"""
         super().setUpClass()
 
     @requires_qe_access
@@ -57,10 +59,8 @@ class TestIBMQBackends(IBMQProviderTestCase):
 
     @requires_qe_access
     def test_backends_IBMQBackendTestCase(self, qe_token, qe_url):
-        """
-        Run the tests from qiskit.test.providers.ibmq.IBMQBackendTestCase
-        on each backend instance discovered.
-        """
+        """Run the tests from qiskit.test.providers.ibmq.IBMQBackendTestCase
+        on each backend instance discovered."""
         self.provider.enable_account(qe_token, qe_url)
         for backend in self.provider.backends():
             TextTestRunner().run(
@@ -168,10 +168,8 @@ class TestIBMQBackends(IBMQProviderTestCase):
                         backend_by_display_name.name(), backend_name)
 
     def gen_backend_test_class(self, backend):
-        """
-        Create a test class, and instance it, and call run() on it
-        https://github.com/Qiskit/qiskit-ibmq-provider/issues/52
-        """
+        """Create a test class, and instance it, and call run() on it
+        https://github.com/Qiskit/qiskit-ibmq-provider/issues/52"""
         return type(backend.name() + "IBMQBackendTestCase", (IBMQBackendTestCase,), {
             "backend_instance": backend
         })
