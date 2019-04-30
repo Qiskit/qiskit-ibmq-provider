@@ -10,14 +10,10 @@
 from unittest import SkipTest
 
 from qiskit.test.providers import BackendTestCase
-from qiskit.providers.ibmq import IBMQ
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
-from qiskit.test import requires_qe_access
 
 
 class IBMQBackendTestCase(BackendTestCase):
-    """
-    Specialization for IBM Q Backends
+    """Specialization for IBM Q Backends
     https://github.com/Qiskit/qiskit-ibmq-provider/issues/52
     Because the testing of backends from IBMQ is testing of instanced
     objects, we will not instance from a backend class, we will use the
@@ -29,9 +25,6 @@ class IBMQBackendTestCase(BackendTestCase):
     backend_cls = None
     backend_instance = None
 
-    def setUp(self):
-        super().setUp()
-
     @classmethod
     def setUpClass(cls):
         if cls is IBMQBackendTestCase:
@@ -39,8 +32,7 @@ class IBMQBackendTestCase(BackendTestCase):
         super().setUpClass()
 
     def _get_backend(self):
-        """
-        Return an instance of a Backend.
+        """Return an instance of a Backend.
         In the case of IBMQ Backends, we return an instance we received
         from IBMQ.backends() rather that try to instance the class ourselves.
         """

@@ -19,21 +19,12 @@
 from unittest import SkipTest
 
 from qiskit.test.providers import ProviderTestCase
-from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.ibmqprovider import IBMQProvider
-from qiskit.test import requires_qe_access
-
-from .ibmqbackendtestcase import IBMQBackendTestCase
 
 
 class IBMQProviderTestCase(ProviderTestCase):
-    """
-    Specialization for IBM QE
-    """
+    """Specialization for IBM QE"""
     provider_cls = IBMQProvider
-
-    def setUp(self):
-        super().setUp()
 
     @classmethod
     def setUpClass(cls):
