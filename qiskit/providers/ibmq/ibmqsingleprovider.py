@@ -73,6 +73,8 @@ class IBMQSingleProvider(BaseProvider):
             }
             if credentials.proxies:
                 config_dict['proxies'] = credentials.proxies
+            if credentials.websocket_url:
+                config_dict['websocket_url'] = credentials.websocket_url
             return IBMQConnector(credentials.token, config_dict,
                                  credentials.verify)
         except Exception as ex:

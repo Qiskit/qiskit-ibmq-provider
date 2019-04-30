@@ -12,10 +12,11 @@
 import time
 from contextlib import suppress
 
+from qiskit.providers.ibmq.api.apijobstatus import API_JOB_FINAL_STATES, ApiJobStatus
 from qiskit.test.mock import new_fake_qobj, FakeRueschlikon
 from qiskit.providers import JobError, JobTimeoutError
 from qiskit.providers.ibmq.api import ApiError
-from qiskit.providers.ibmq.ibmqjob import API_FINAL_STATES, IBMQJob
+from qiskit.providers.ibmq.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
 from ..jobtestcase import JobTestCase
 
@@ -310,7 +311,7 @@ class TestIBMQJobStates(JobTestCase):
                 with mock.patch.object(self._current_api, 'get_job',
                                        wraps=self._current_api.get_job):
                     job.status()
-                    if status in API_FINAL_STATES:
+                    if ApiJobStatus(status) in API_JOB_FINAL_STATES:
                         self.assertTrue(self._current_api.get_job.called)
                     else:
                         self.assertFalse(self._current_api.get_job.called)

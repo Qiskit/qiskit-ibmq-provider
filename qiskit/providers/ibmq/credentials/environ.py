@@ -16,6 +16,7 @@ from .credentials import Credentials
 VARIABLES_MAP = {
     'QE_TOKEN': 'token',
     'QE_URL': 'url',
+    'QE_WEBSOCKET_URL': 'websocket_url',
     'QE_HUB': 'hub',
     'QE_GROUP': 'group',
     'QE_PROJECT': 'project'
@@ -29,7 +30,6 @@ def read_credentials_from_environ():
         dict: dictionary with the credentials, in the form::
 
             {credentials_unique_id: Credentials}
-
     """
     # The token is the only required parameter.
     if not (os.getenv('QE_TOKEN') and os.getenv('QE_URL')):

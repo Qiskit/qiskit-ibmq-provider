@@ -10,9 +10,10 @@ import os
 from setuptools import setup
 
 requirements = [
-    #"qiskit-terra>=0.8",  # TODO: disabled for developers convenience
+    "qiskit-terra>=0.8",
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
+    "websockets>=7,<8"
 ]
 
 # Handle version.
@@ -31,7 +32,8 @@ with open(README_PATH) as readme_file:
 setup(
     name="qiskit-ibmq-provider",
     version=VERSION,
-    description="Qiskit provider for IBM Q quantum devices and simulators",
+    description="Qiskit provider for accesing the quantum devices and "
+                "simulators at IBMQ",
     long_description=README,
     long_description_content_type='text/markdown',
     url="https://github.com/Qiskit/qiskit-ibmq-provider",

@@ -20,8 +20,8 @@ The format is based on `Keep a Changelog`_.
 ^^^^^^^^^^^^^
 
 
-`0.1rc2`_
-^^^^^^^^^
+`0.1`_
+^^^^^^
 
 
 Added
@@ -44,6 +44,7 @@ Changed
 - Ensured that retrieved jobs come from their appropriate backend (#23)
 - Job ``error_message()`` function now summarizes the problems that made the
   job to fail. (#48)
+- ``backend.jobs()`` no longer emits a warning for pre-qobj jobs. (#59)
 
 
 Removed
@@ -53,7 +54,7 @@ Removed
 
 
 
-.. _UNRELEASED: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...HEAD
-.. _0.1rc2: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1rc2
+.. _UNRELEASED: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1...HEAD
+.. _0.1rc3: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1
 
 .. _Keep a Changelog: http://keepachangelog.com/en/1.0.0/
