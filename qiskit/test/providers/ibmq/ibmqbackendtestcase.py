@@ -38,13 +38,9 @@ class IBMQBackendTestCase(BackendTestCase):
             raise SkipTest('Skipping base class tests')
         super().setUpClass()
 
-    def __init__(self, backend_instance=None):
-        if backend_instance:
-            self.backend_instance = backend_instance
-            self.backend_cls = type(self.backend_instance)
-
     def _get_backend(self):
-        """Return an instance of a Provider.
+        """
+        Return an instance of a Backend.
         In the case of IBMQ Backends, we return an instance we received
         from IBMQ.backends() rather that try to instance the class ourselves.
         """
