@@ -10,6 +10,7 @@
 This module is used for creating asynchronous job objects for the
 IBM Q Experience.
 """
+
 import asyncio
 import datetime
 import logging
@@ -234,18 +235,14 @@ class IBMQJob(BaseJob):
         """Attempt to cancel a job.
 
         Returns:
-            bool: True if job can be cancelled, else False. Currently this is
-            only possible on commercial systems.
+            bool: True if job can be cancelled, else False. Note this operation
+            might not be possible depending on the environment.
 
         Raises:
             JobError: if there was some unexpected failure in the server.
         """
-        hub = self._api.config.get('hub', None)
-        group = self._api.config.get('group', None)
-        project = self._api.config.get('project', None)
-
         try:
-            response = self._api.cancel_job(self._job_id, hub, group, project)
+            response = self._api.cancel_job(self._job_id)
             self._cancelled = 'error' not in response
             return self._cancelled
         except ApiError as error:
