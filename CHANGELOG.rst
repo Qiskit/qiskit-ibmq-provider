@@ -19,6 +19,20 @@ The format is based on `Keep a Changelog`_.
 `UNRELEASED`_
 ^^^^^^^^^^^^^
 
+`0.1.1`_
+^^^^^^^^
+
+Changed
+"""""""
+
+- The backend configurations now return instances of specialized
+  ``BackendConfiguration`` classes (ie. ``QasmBackendConfiguration``). (#74).
+
+Fixed
+"""""
+
+- Fixed signature mismatch during ``job.cancel()``. (#73)
+
 
 `0.1`_
 ^^^^^^
@@ -32,7 +46,7 @@ Added
 - Added ``backend.defauls()`` for retrieving the pulse defaults for a
   backend through a new endpoint (#33).
 - Added ``job.properties()`` for retrieving the backend properties for
-  a job through a new endpint (#35).
+  a job through a new endpoint (#35).
 
 Changed
 """""""
@@ -46,7 +60,6 @@ Changed
   job to fail. (#48)
 - ``backend.jobs()`` no longer emits a warning for pre-qobj jobs. (#59)
 
-
 Removed
 """""""
 
@@ -54,7 +67,8 @@ Removed
 
 
 
-.. _UNRELEASED: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1...HEAD
-.. _0.1rc3: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1
+.. _UNRELEASED: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1.1...HEAD
+.. _0.1.1: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1...0.1.1
+.. _0.1: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1
 
 .. _Keep a Changelog: http://keepachangelog.com/en/1.0.0/
