@@ -7,31 +7,7 @@
 
 """Utilities related to the IBMQ Provider."""
 
-import json
-
-from numpy import ndarray
-
 from qiskit.qobj import QobjHeader
-
-
-class AerJSONEncoder(json.JSONEncoder):
-    """JSON encoder for NumPy arrays and complex numbers.
-
-    This functions as the standard JSON Encoder but adds support
-    for encoding:
-        complex numbers z as lists [z.real, z.imag]
-        ndarrays as nested lists.
-    """
-
-    # pylint: disable=method-hidden,arguments-differ
-    def default(self, obj):
-        if isinstance(obj, ndarray):
-            return obj.tolist()
-        if isinstance(obj, complex):
-            return [obj.real, obj.imag]
-        if hasattr(obj, "as_dict"):
-            return obj.as_dict()
-        return super().default(obj)
 
 
 def update_qobj_config(qobj, backend_options=None, noise_model=None):
@@ -54,8 +30,7 @@ def update_qobj_config(qobj, backend_options=None, noise_model=None):
 
     # Append noise model to configuration.
     if noise_model:
-        config['noise_model'] = json.loads(json.dumps(noise_model,
-                                                      cls=AerJSONEncoder))
+        config['noise_model'] = noise_model.as_dict(serializable=True)
 
     # Update the Qobj configuration.
     qobj.config = QobjHeader.from_dict(config)
