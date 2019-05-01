@@ -1,15 +1,23 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2017, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """IBMQJob module
 
 This module is used for creating asynchronous job objects for the
 IBM Q Experience.
 """
+
 import asyncio
 import datetime
 import logging
@@ -234,18 +242,14 @@ class IBMQJob(BaseJob):
         """Attempt to cancel a job.
 
         Returns:
-            bool: True if job can be cancelled, else False. Currently this is
-            only possible on commercial systems.
+            bool: True if job can be cancelled, else False. Note this operation
+            might not be possible depending on the environment.
 
         Raises:
             JobError: if there was some unexpected failure in the server.
         """
-        hub = self._api.config.get('hub', None)
-        group = self._api.config.get('group', None)
-        project = self._api.config.get('project', None)
-
         try:
-            response = self._api.cancel_job(self._job_id, hub, group, project)
+            response = self._api.cancel_job(self._job_id)
             self._cancelled = 'error' not in response
             return self._cancelled
         except ApiError as error:

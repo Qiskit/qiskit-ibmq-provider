@@ -1,37 +1,20 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2019, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2018, 2019.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """Utilities related to the IBMQ Provider."""
 
-import json
-
-from numpy import ndarray
-
 from qiskit.qobj import QobjHeader
-
-
-class AerJSONEncoder(json.JSONEncoder):
-    """JSON encoder for NumPy arrays and complex numbers.
-
-    This functions as the standard JSON Encoder but adds support
-    for encoding:
-        complex numbers z as lists [z.real, z.imag]
-        ndarrays as nested lists.
-    """
-
-    # pylint: disable=method-hidden,arguments-differ
-    def default(self, obj):
-        if isinstance(obj, ndarray):
-            return obj.tolist()
-        if isinstance(obj, complex):
-            return [obj.real, obj.imag]
-        if hasattr(obj, "as_dict"):
-            return obj.as_dict()
-        return super().default(obj)
 
 
 def update_qobj_config(qobj, backend_options=None, noise_model=None):
@@ -54,8 +37,7 @@ def update_qobj_config(qobj, backend_options=None, noise_model=None):
 
     # Append noise model to configuration.
     if noise_model:
-        config['noise_model'] = json.loads(json.dumps(noise_model,
-                                                      cls=AerJSONEncoder))
+        config['noise_model'] = noise_model.as_dict(serializable=True)
 
     # Update the Qobj configuration.
     qobj.config = QobjHeader.from_dict(config)

@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """Provider for a single IBMQ account."""
 
@@ -11,7 +18,8 @@ import logging
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
-from qiskit.providers.models import BackendConfiguration
+from qiskit.providers.models import (QasmBackendConfiguration,
+                                     PulseBackendConfiguration)
 from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
@@ -97,7 +105,10 @@ class IBMQSingleProvider(BaseProvider):
         configs_list = self._api.available_backends()
         for raw_config in configs_list:
             try:
-                config = BackendConfiguration.from_dict(raw_config)
+                if raw_config.get('open_pulse', False):
+                    config = PulseBackendConfiguration.from_dict(raw_config)
+                else:
+                    config = QasmBackendConfiguration.from_dict(raw_config)
                 backend_cls = IBMQSimulator if config.simulator else IBMQBackend
                 ret[config.backend_name] = backend_cls(
                     configuration=config,
