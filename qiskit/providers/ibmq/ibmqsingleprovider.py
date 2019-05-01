@@ -11,7 +11,8 @@ import logging
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
-from qiskit.providers.models import BackendConfiguration
+from qiskit.providers.models import (QasmBackendConfiguration,
+                                     PulseBackendConfiguration)
 from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
@@ -97,7 +98,10 @@ class IBMQSingleProvider(BaseProvider):
         configs_list = self._api.available_backends()
         for raw_config in configs_list:
             try:
-                config = BackendConfiguration.from_dict(raw_config)
+                if raw_config.get('open_pulse', False):
+                    config = PulseBackendConfiguration.from_dict(raw_config)
+                else:
+                    config = QasmBackendConfiguration.from_dict(raw_config)
                 backend_cls = IBMQSimulator if config.simulator else IBMQBackend
                 ret[config.backend_name] = backend_cls(
                     configuration=config,
