@@ -19,8 +19,8 @@ The format is based on `Keep a Changelog`_.
 `UNRELEASED`_
 ^^^^^^^^^^^^^
 
-`0.1.1`_
-^^^^^^^^
+`0.1.1`_ - 2019-05-01
+^^^^^^^^^^^^^^^^^^^^^
 
 Changed
 """""""
@@ -34,8 +34,8 @@ Fixed
 - Fixed signature mismatch during ``job.cancel()``. (#73)
 
 
-`0.1`_
-^^^^^^
+`0.1`_ - 2019-04-17
+^^^^^^^^^^^^^^^^^^^
 
 
 Added
