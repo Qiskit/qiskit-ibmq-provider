@@ -40,6 +40,7 @@ class RetrySession(Session):
 
         self.base_url = base_url
         self._access_token = access_token
+        self.access_token = access_token
 
         self._initialize_retry(retries, backoff_factor)
         self._initialize_session_parameters(verify, proxies or {}, auth)
@@ -50,6 +51,7 @@ class RetrySession(Session):
 
     @access_token.setter
     def access_token(self, value):
+        self._access_token = value
         if value:
             self.params.update({'access_token': value})
         else:
@@ -90,4 +92,6 @@ class RetrySession(Session):
         """Constructs a Request, prepending the base url."""
         full_url = self.base_url + url
 
+        print(full_url)
+        print(self.params)
         return super().request(method, full_url, **kwargs)
