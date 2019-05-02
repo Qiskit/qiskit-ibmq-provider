@@ -22,21 +22,45 @@ class IBMQClient:
         self.auth_client = AuthClient(self.login_session)
 
         # Get the access token and use it in the sessions.
-        access_token = self.request_access_token()
+        access_token = self._request_access_token()
         self.login_session.access_token = access_token
-        api_url = self.user_urls()['http']
-
-        if api_url.endswith('.com?private=true'):
-            api_url = '{}/api'.format(api_url.split('?')[0])
+        api_url = self._user_urls()['http']
 
         self.api_session = RetrySession(api_url, access_token)
         self.api_client = ApiClient(self.api_session)
 
-    def request_access_token(self):
+    def _request_access_token(self):
         """Request a new access token from the API."""
         response = self.auth_client.login(self.api_token)
-        return response.json()['id']
+        return response['id']
 
-    def user_urls(self):
+    def _user_urls(self):
         response = self.auth_client.user_info()
-        return response.json()['urls']
+        return response['urls']
+
+    # Entry points.
+
+    def available_backends(self):
+        return self.api_client.backends()
+
+    # Backends.
+
+    def backend_status(self, backend_name):
+        return self.api_client.backend(backend_name).status()
+
+    def backend_properties(self, backend_name):
+        return self.api_client.backend(backend_name).properties()
+
+    def backend_pulse_defaults(self, backend_name):
+        # return self.api_client.backend(backend_name).pulse_defaults()
+        raise NotImplementedError
+
+    # Jobs.
+
+    def run_job(self, backend_name, qobj):
+
+        raise NotImplementedError
+
+    def get_job(self, job_id):
+        raise NotImplementedError
+
