@@ -8,7 +8,7 @@
 """Client for accessing IBM Q."""
 
 from .session import RetrySession
-from .rest import AuthClient, ApiClient
+from .rest import Api, Auth
 
 
 class IBMQClient:
@@ -19,7 +19,7 @@ class IBMQClient:
         self.auth_url = auth_url
 
         self.login_session = RetrySession(auth_url)
-        self.auth_client = AuthClient(self.login_session)
+        self.auth_client = Auth(self.login_session)
 
         # Get the access token and use it in the sessions.
         access_token = self._request_access_token()
@@ -27,7 +27,7 @@ class IBMQClient:
         api_url = self._user_urls()['http']
 
         self.api_session = RetrySession(api_url, access_token)
-        self.api_client = ApiClient(self.api_session)
+        self.api_client = Api(self.api_session)
 
     def _request_access_token(self):
         """Request a new access token from the API."""
