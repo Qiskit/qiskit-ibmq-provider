@@ -7,6 +7,7 @@
 
 """Rest clients for accessing IBM Q."""
 from functools import wraps
+import json
 
 
 class RestClient:
@@ -52,11 +53,16 @@ class ApiClient(RestClient):
 
     URL_MAP = {
         'backends': '/Backends/v/1',
-        'hubs': '/Network'
+        'hubs': '/Network',
+        'jobs': '/Jobs',
+        'jobs_status': '/Jobs/status'
     }
 
     def backend(self, backend_name):
         return BackendClient(self.session, backend_name)
+
+    def job(self, job_id):
+        return JobClient(self.session, job_id)
 
     def backends(self):
         url = self.get_url('backends')
@@ -65,6 +71,24 @@ class ApiClient(RestClient):
     def hubs(self):
         url = self.get_url('hubs')
         return self.session.get(url).json()
+
+    def jobs(self, limit=10, skip=0, extra_filter=None):
+        url = self.get_url('jobs_status')
+
+        query = {
+            'order': 'creationDate DESC',
+            'limit': limit,
+            'skip': skip,
+        }
+        if extra_filter:
+            query['where'] = extra_filter
+
+        return self.session.get(
+            url, params={'filter': json.dumps(query) if query else None}).json()
+
+    def run_job(self, job_payload):
+        url = self.get_url('jobs')
+        return self.session.post(url, json=job_payload).json()
 
 
 class BackendClient(RestClient):
@@ -111,6 +135,49 @@ class BackendClient(RestClient):
             response['backend_name'] = self.backend_name
 
         return response
+
+
+class JobClient(RestClient):
+
+    URL_MAP = {
+        'status': '/status',
+        'self': ''
+    }
+
+    def __init__(self, session, job_id):
+        self.job_id = job_id
+        super().__init__(session, '/Jobs/{}'.format(job_id))
+
+    def status(self):
+        url = self.get_url('status')
+        return self.session.get(url).json()
+
+    def get(self, excluded_fields, included_fields):
+        url = self.get_url('self')
+        query = build_url_filter(excluded_fields, included_fields)
+
+        return self.session.get(
+            url, params={'filter': json.dumps(query) if query else None}).json()
+
+
+def build_url_filter(excluded_fields, included_fields):
+    """Return a URL filter based on included and excluded fields."""
+    excluded_fields = excluded_fields or []
+    included_fields = included_fields or []
+    fields_bool = {}
+
+    # Build a map of fields to bool.
+    for field_ in excluded_fields:
+        fields_bool[field_] = False
+    for field_ in included_fields:
+        fields_bool[field_] = True
+
+    if 'properties' in fields_bool:
+        fields_bool['calibration'] = fields_bool.pop('properties')
+
+    if fields_bool:
+        return '&filter=' + json.dumps({'fields': fields_bool})
+    return ''
 
 
 def with_url(url_string):

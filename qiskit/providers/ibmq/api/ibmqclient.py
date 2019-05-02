@@ -57,10 +57,21 @@ class IBMQClient:
 
     # Jobs.
 
-    def run_job(self, backend_name, qobj):
+    def run_job(self, backend_name, qobj_dict):
+        payload = {'qObject': qobj_dict,
+                   'backend': {'name': backend_name}}
+        response = self.api_client.run_job(payload)
 
-        raise NotImplementedError
+        return response
 
-    def get_job(self, job_id):
-        raise NotImplementedError
+    def list_jobs(self, limit=10, skip=0, extra_filter=None):
+        return self.api_client.jobs(limit=limit, skip=skip,
+                                    extra_filter=extra_filter)
+
+    def get_job(self, job_id, excluded_fields=None, included_fields=None):
+        return self.api_client.job(job_id).get(excluded_fields,
+                                               included_fields)
+
+    def job_status(self, job_id):
+        return self.api_client.job(job_id).status()
 
