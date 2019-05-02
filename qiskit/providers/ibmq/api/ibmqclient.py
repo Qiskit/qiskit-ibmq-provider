@@ -75,3 +75,9 @@ class IBMQClient:
     def job_status(self, job_id):
         return self.api_client.job(job_id).status()
 
+    def job_properties(self, job_id):
+        # return self.api_client.job(job_id).properties()
+        raise NotImplementedError
+
+    def job_cancel(self, job_id):
+        return self.api_client.job(job_id).cancel()

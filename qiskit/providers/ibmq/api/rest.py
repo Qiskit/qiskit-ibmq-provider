@@ -140,17 +140,14 @@ class BackendClient(RestClient):
 class JobClient(RestClient):
 
     URL_MAP = {
-        'status': '/status',
-        'self': ''
+        'cancel': 'cancel',
+        'self': '',
+        'status': '/status'
     }
 
     def __init__(self, session, job_id):
         self.job_id = job_id
         super().__init__(session, '/Jobs/{}'.format(job_id))
-
-    def status(self):
-        url = self.get_url('status')
-        return self.session.get(url).json()
 
     def get(self, excluded_fields, included_fields):
         url = self.get_url('self')
@@ -158,6 +155,14 @@ class JobClient(RestClient):
 
         return self.session.get(
             url, params={'filter': json.dumps(query) if query else None}).json()
+
+    def cancel(self):
+        url = self.get_url('cancel')
+        return self.session.post(url).json()
+
+    def status(self):
+        url = self.get_url('status')
+        return self.session.get(url).json()
 
 
 def build_url_filter(excluded_fields, included_fields):
