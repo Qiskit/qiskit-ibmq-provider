@@ -18,6 +18,7 @@ import logging
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
+from qiskit.providers.ibmq.api.ibmqclient import IBMQClient
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 from qiskit.providers.providerutils import filter_backends
@@ -75,6 +76,11 @@ class IBMQSingleProvider(BaseProvider):
         Raises:
             ConnectionError: if the authentication resulted in error.
         """
+        # TODO: add more robust way of detecting new api.
+        if credentials.url == 'https://auth-dev.quantum-computing.ibm.com/api':
+            return IBMQClient(api_token=credentials.token,
+                              auth_url=credentials.url)
+
         try:
             config_dict = {
                 'url': credentials.url,
