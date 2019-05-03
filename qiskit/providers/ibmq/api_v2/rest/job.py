@@ -5,15 +5,15 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-"""Job REST adaptor for the IBM Q Api version 2."""
+"""Job REST adapter for the IBM Q Api version 2."""
 
 import json
 
-from .base import RestAdaptorBase
-from .util import build_url_filter
+from .base import RestAdapterBase
 
 
-class Job(RestAdaptorBase):
+class Job(RestAdapterBase):
+    """Rest adapter for job related endpoints."""
 
     URL_MAP = {
         'cancel': 'cancel',
@@ -22,10 +22,27 @@ class Job(RestAdaptorBase):
     }
 
     def __init__(self, session, job_id):
+        """Job constructor.
+
+        Args:
+            session (Session): session to be used in the adaptor.
+            job_id (str): id of the job.
+        """
         self.job_id = job_id
         super().__init__(session, '/Jobs/{}'.format(job_id))
 
     def get(self, excluded_fields, included_fields):
+        """Return a job.
+
+        Args:
+            excluded_fields (list[str]): names of the fields to explicitly
+                exclude from the result.
+            included_fields (list[str]): names of the fields to explicitly
+                include in the result.
+
+        Returns:
+            dict: json response.
+        """
         url = self.get_url('self')
         query = build_url_filter(excluded_fields, included_fields)
 
@@ -38,10 +55,43 @@ class Job(RestAdaptorBase):
         return response
 
     def cancel(self):
+        """Cancel a job."""
         url = self.get_url('cancel')
         return self.session.post(url).json()
 
     def status(self):
+        """Return the status of a job."""
         url = self.get_url('status')
         return self.session.get(url).json()
 
+
+def build_url_filter(excluded_fields, included_fields):
+    """Return a URL filter based on included and excluded fields.
+
+    Args:
+        excluded_fields (list[str]): names of the fields to explicitly
+            exclude from the result.
+        included_fields (list[str]): names of the fields to explicitly
+            include in the result.
+
+    Returns:
+        dict: the query, as a dict in the format for the API.
+    """
+    excluded_fields = excluded_fields or []
+    included_fields = included_fields or []
+    fields_bool = {}
+    ret = {}
+
+    # Build a map of fields to bool.
+    for field_ in excluded_fields:
+        fields_bool[field_] = False
+    for field_ in included_fields:
+        fields_bool[field_] = True
+
+    if 'properties' in fields_bool:
+        fields_bool['calibration'] = fields_bool.pop('properties')
+
+    if fields_bool:
+        ret = {'fields': fields_bool}
+
+    return ret

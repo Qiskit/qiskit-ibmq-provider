@@ -5,12 +5,13 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-"""Auth REST adaptor for the IBM Q Api version 2."""
+"""Auth REST adapter for the IBM Q Api version 2."""
 
-from .base import RestAdaptorBase
+from .base import RestAdapterBase
 
 
-class Auth(RestAdaptorBase):
+class Auth(RestAdapterBase):
+    """Rest adapter for authentication endpoints."""
 
     URL_MAP = {
         'login': '/users/loginWithToken',
@@ -18,10 +19,19 @@ class Auth(RestAdaptorBase):
     }
 
     def login(self, api_token):
+        """Login with token.
+
+        Args:
+            api_token (str): API token.
+
+        Returns:
+            dict: json response.
+        """
         url = self.get_url('login')
         return self.session.post(url, json={'apiToken': api_token}).json()
 
     def user_info(self):
+        """Return user information."""
         url = self.get_url('user_info')
         response = self.session.get(url).json()
 

@@ -5,12 +5,13 @@
 # This source code is licensed under the Apache License, Version 2.0 found in
 # the LICENSE.txt file in the root directory of this source tree.
 
-"""Backend REST adaptor for the IBM Q Api version 2."""
+"""Backend REST adapter for the IBM Q Api version 2."""
 
-from .base import RestAdaptorBase
+from .base import RestAdapterBase
 
 
-class Backend(RestAdaptorBase):
+class Backend(RestAdapterBase):
+    """Rest adapter for backend related endpoints."""
 
     URL_MAP = {
         'status': '/queue/status',
@@ -18,10 +19,17 @@ class Backend(RestAdaptorBase):
     }
 
     def __init__(self, session, backend_name):
+        """Backend constructor.
+
+        Args:
+            session (Session): session to be used in the adaptor.
+            backend_name (str): name of the backend.
+        """
         self.backend_name = backend_name
         super().__init__(session, '/Backends/{}'.format(backend_name))
 
     def status(self):
+        """Return backend status."""
         url = self.get_url('status')
         response = self.session.get(url).json()
 
@@ -46,6 +54,7 @@ class Backend(RestAdaptorBase):
         return ret
 
     def properties(self):
+        """Return backend properties."""
         url = self.get_url('properties')
         response = self.session.get(url, params={'version': 1}).json()
 
