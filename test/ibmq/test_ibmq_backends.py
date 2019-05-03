@@ -71,7 +71,7 @@ class TestIBMQBackends(IBMQProviderTestCase):
         on each backend instance discovered."""
         self.provider.enable_account(qe_token, qe_url)
         for backend in self.provider.backends():
-            TextTestRunner().run(
+            TextTestRunner(verbosity=2).run(
                 TestLoader().loadTestsFromTestCase(self.gen_backend_test_class(backend))
             )
 
