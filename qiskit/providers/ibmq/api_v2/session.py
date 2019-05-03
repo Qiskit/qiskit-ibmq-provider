@@ -93,5 +93,5 @@ class RetrySession(Session):
         full_url = self.base_url + url
 
         print(full_url)
-        print(self.params)
+        print(self.params, kwargs.get('params', {}))
         return super().request(method, full_url, **kwargs)

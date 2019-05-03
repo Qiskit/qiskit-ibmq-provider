@@ -9,7 +9,7 @@
 
 import json
 
-from qiskit.providers.ibmq.api.rest.base import RestAdaptorBase
+from .base import RestAdaptorBase
 from .backend import Backend
 from .job import Job
 

@@ -18,13 +18,13 @@ import logging
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
-from qiskit.providers.ibmq.api.ibmqclient import IBMQClient
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api import IBMQConnector
+from .api_v2 import IBMQClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 
 

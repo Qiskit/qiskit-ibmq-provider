@@ -7,7 +7,7 @@
 
 """Backend REST adaptor for the IBM Q Api version 2."""
 
-from qiskit.providers.ibmq.api.rest.base import RestAdaptorBase
+from .base import RestAdaptorBase
 
 
 class Backend(RestAdaptorBase):
