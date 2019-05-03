@@ -51,6 +51,11 @@ class Api(RestAdaptorBase):
         return self.session.get(
             url, params={'filter': json.dumps(query) if query else None}).json()
 
-    def run_job(self, job_payload):
+    def run_job(self, backend_name, qobj_dict):
         url = self.get_url('jobs')
-        return self.session.post(url, json=job_payload).json()
+
+        payload = {'qObject': qobj_dict,
+                   'backend': {'name': backend_name},
+                   'shots': qobj_dict.get('config', {}).get('shots', 1)}
+
+        return self.session.post(url, json=payload).json()

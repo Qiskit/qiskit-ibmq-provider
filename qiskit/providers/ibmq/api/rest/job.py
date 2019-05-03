@@ -29,8 +29,13 @@ class Job(RestAdaptorBase):
         url = self.get_url('self')
         query = build_url_filter(excluded_fields, included_fields)
 
-        return self.session.get(
+        response = self.session.get(
             url, params={'filter': json.dumps(query) if query else None}).json()
+
+        if 'calibration' in response:
+            response['properties'] = response.pop('calibration')
+
+        return response
 
     def cancel(self):
         url = self.get_url('cancel')

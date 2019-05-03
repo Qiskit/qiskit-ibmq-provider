@@ -40,10 +40,11 @@ class IBMQClient:
 
     # Entry points.
 
-    def available_backends(self):
-        return self.api_client.backends()
 
     # Backends.
+
+    def list_backends(self):
+        return self.api_client.backends()
 
     def backend_status(self, backend_name):
         return self.api_client.backend(backend_name).status()
@@ -57,19 +58,14 @@ class IBMQClient:
 
     # Jobs.
 
-    def job_run(self, backend_name, qobj_dict):
-        payload = {'qObject': qobj_dict,
-                   'backend': {'name': backend_name},
-                   'shots': qobj_dict.get('config', {}).get('shots', 1024)}
-        response = self.api_client.run_job(payload)
-
-        return response
-
-    def list_jobs(self, limit=10, skip=0, extra_filter=None):
+    def list_jobs_statuses(self, limit=10, skip=0, extra_filter=None):
         return self.api_client.jobs(limit=limit, skip=skip,
                                     extra_filter=extra_filter)
 
-    def get_job(self, job_id, excluded_fields=None, included_fields=None):
+    def job_run(self, backend_name, qobj_dict):
+        return self.api_client.run_job(backend_name, qobj_dict)
+
+    def job_get(self, job_id, excluded_fields=None, included_fields=None):
         return self.api_client.job(job_id).get(excluded_fields,
                                                included_fields)
 
@@ -84,5 +80,36 @@ class IBMQClient:
         return self.api_client.job(job_id).cancel()
 
     # Endpoints for compatibility with classic IBMQConnector.
+
+    def get_status_job(self, id_job):
+        return self.job_status(id_job)
+
     def run_job(self, qobj, backend_name):
         return self.job_run(backend_name, qobj)
+
+    def get_jobs(self, limit=10, skip=0, backend=None, only_completed=False,
+                 filter=None):
+        # TODO: this function seems to be unused currently in IBMQConnector.
+        raise NotImplementedError
+
+    def get_status_jobs(self, limit=10, skip=0, backend=None, filter=None):
+        if backend:
+            filter = filter or {}
+            filter.update({'backend.name': backend})
+
+        return self.list_jobs_statuses(limit, skip, filter)
+
+    def cancel_job(self, id_job):
+        return self.job_cancel(id_job)
+
+    def backend_defaults(self, backend):
+        return self.backend_pulse_defaults(backend)
+
+    def available_backends(self):
+        return self.list_backends()
+
+    def get_job(self, id_job, exclude_fields=None, include_fields=None):
+        return self.job_get(id_job, exclude_fields, include_fields)
+
+    def api_version(self):
+        pass
