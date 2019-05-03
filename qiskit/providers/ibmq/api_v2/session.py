@@ -7,9 +7,12 @@
 
 """Session customized for IBM Q access."""
 
-from requests import Session
+from requests import Session, RequestException
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+from .exceptions import ApiError
+
 
 STATUS_FORCELIST = (
     500,  # Internal Server Error
@@ -96,6 +99,15 @@ class RetrySession(Session):
         # pylint: disable=arguments-differ
         full_url = self.base_url + url
 
-        print(full_url)
-        print(self.params, kwargs.get('params', {}))
-        return super().request(method, full_url, **kwargs)
+        try:
+            response = super().request(method, full_url, **kwargs)
+            response.raise_for_status()
+        except RequestException as ex:
+            # Wrap the requests exceptions into a IBM Q custom one, for
+            # compatibility.
+            message = str(ex).replace(self.access_token, '[redacted]')
+
+            raise ApiError(message,
+                           original_exception=ex)
+
+        return response
