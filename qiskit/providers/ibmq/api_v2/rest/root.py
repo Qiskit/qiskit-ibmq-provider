@@ -29,6 +29,7 @@ class Api(RestAdapterBase):
         'hubs': '/Network',
         'jobs': '/Jobs',
         'jobs_status': '/Jobs/status',
+        'qcircuit': '/QCircuitApiModels',
         'version': '/version'
     }
 
@@ -100,9 +101,30 @@ class Api(RestAdapterBase):
         """
         url = self.get_url('jobs')
 
-        payload = {'qObject': qobj_dict,
-                   'backend': {'name': backend_name},
-                   'shots': qobj_dict.get('config', {}).get('shots', 1)}
+        payload = {
+            'qObject': qobj_dict,
+            'backend': {'name': backend_name},
+            'shots': qobj_dict.get('config', {}).get('shots', 1)
+        }
+
+        return self.session.post(url, json=payload).json()
+
+    def qcircuit(self, name, **kwargs):
+        """Execute a Qcircuit.
+
+        Args:
+            name (str): name of the Qcircuit.
+            **kwargs (dict): arguments for the Qcircuit.
+
+        Returns:
+            dict: json response.
+        """
+        url = self.get_url('qcircuit')
+
+        payload = {
+            'name': name,
+            'params': kwargs
+        }
 
         return self.session.post(url, json=payload).json()
 
