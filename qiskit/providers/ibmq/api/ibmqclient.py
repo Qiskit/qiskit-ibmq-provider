@@ -57,9 +57,10 @@ class IBMQClient:
 
     # Jobs.
 
-    def run_job(self, backend_name, qobj_dict):
+    def job_run(self, backend_name, qobj_dict):
         payload = {'qObject': qobj_dict,
-                   'backend': {'name': backend_name}}
+                   'backend': {'name': backend_name},
+                   'shots': qobj_dict.get('config', {}).get('shots', 1024)}
         response = self.api_client.run_job(payload)
 
         return response
@@ -81,3 +82,7 @@ class IBMQClient:
 
     def job_cancel(self, job_id):
         return self.api_client.job(job_id).cancel()
+
+    # Endpoints for compatibility with classic IBMQConnector.
+    def run_job(self, qobj, backend_name):
+        return self.job_run(backend_name, qobj)
