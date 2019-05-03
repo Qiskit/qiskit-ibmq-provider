@@ -51,8 +51,15 @@ class TestIBMQClient(QiskitTestCase):
         return IBMQClient(qe_token, qe_url)
 
     @requires_qe_access
+    def test_valid_login(self, qe_token, qe_url):
+        """Test valid authenticating against IBM Q."""
+        client = self._get_client(qe_token, qe_url)
+        self.assertTrue(client.api_client.session.access_token)
+
+    @requires_qe_access
     def test_run_job(self, qe_token, qe_url):
         """Test running a job against a simulator."""
+        _ = self._get_client(qe_token, qe_url)
         IBMQ.enable_account(qe_token, qe_url)
 
         # Create a Qobj.
@@ -111,6 +118,7 @@ class TestIBMQClient(QiskitTestCase):
     @requires_qe_access
     def test_get_job_includes(self, qe_token, qe_url):
         """Check the field includes parameter for get_job."""
+        _ = self._get_client(qe_token, qe_url)
         IBMQ.enable_account(qe_token, qe_url)
 
         backend_name = 'ibmq_qasm_simulator'
@@ -134,12 +142,6 @@ class TestAuthentication(QiskitTestCase):
     These tests are in a separate TestCase as they need to control the
     instantiation of `IBMQConnector` directly.
     """
-
-    @requires_qe_access
-    def test_valid_login(self, qe_token, qe_url):
-        """Test valid authenticating against IBM Q."""
-        client = IBMQClient(qe_token, qe_url)
-        self.assertTrue(client.api_client.session.access_token)
 
     @requires_qe_access
     def test_url_404(self, qe_token, qe_url):
