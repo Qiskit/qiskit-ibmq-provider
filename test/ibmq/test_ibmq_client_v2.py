@@ -45,7 +45,8 @@ class TestIBMQClient(QiskitTestCase):
     @staticmethod
     def _get_client(qe_token, qe_url):
         """Helper for instantiating an IBMQClient."""
-        if 'quantum-computing.ibm.com/api' not in qe_url:
+        if not ('quantum-computing.ibm.com/api' in qe_url and
+                'auth' in qe_url):
             raise SkipTest('New api URL not provided')
         return IBMQClient(qe_token, qe_url)
 

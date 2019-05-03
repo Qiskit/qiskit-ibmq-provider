@@ -15,6 +15,7 @@
 """Test IBMQConnector."""
 
 import re
+from unittest import SkipTest
 
 from qiskit.circuit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.tools.compiler import compile
@@ -43,6 +44,10 @@ class TestIBMQConnector(QiskitTestCase):
     @staticmethod
     def _get_api(qe_token, qe_url):
         """Helper for instantating an IBMQConnector."""
+        if ('quantum-computing.ibm.com/api' in qe_url and
+                'auth' in qe_url):
+            raise SkipTest('Classic api URL not provided')
+
         return IBMQConnector(qe_token, config={'url': qe_url})
 
     @requires_qe_access
@@ -60,6 +65,7 @@ class TestIBMQConnector(QiskitTestCase):
     @requires_qe_access
     def test_api_run_job(self, qe_token, qe_url):
         """Test running a job against a simulator."""
+        _ = self._get_api(qe_token, qe_url)
         IBMQ.enable_account(qe_token, qe_url)
 
         backend_name = 'ibmq_qasm_simulator'
@@ -76,6 +82,7 @@ class TestIBMQConnector(QiskitTestCase):
     @requires_qe_access
     def test_api_run_job_fail_backend(self, qe_token, qe_url):
         """Test running a job against an invalid backend."""
+        _ = self._get_api(qe_token, qe_url)
         IBMQ.enable_account(qe_token, qe_url)
 
         backend_name = 'ibmq_qasm_simulator'
@@ -136,6 +143,7 @@ class TestIBMQConnector(QiskitTestCase):
     @requires_qe_access
     def test_get_job_includes(self, qe_token, qe_url):
         """Check the field includes parameter for get_job."""
+        _ = self._get_api(qe_token, qe_url)
         IBMQ.enable_account(qe_token, qe_url)
 
         backend_name = 'ibmq_qasm_simulator'
