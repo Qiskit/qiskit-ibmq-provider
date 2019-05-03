@@ -111,8 +111,9 @@ class IBMQClient:
         Returns:
             dict: backend pulse defaults.
         """
+        # pylint: disable=unused-argument
         # return self.api_client.backend(backend_name).pulse_defaults()
-        raise NotImplementedError
+        return None
 
     # Jobs-related public functions.
 
