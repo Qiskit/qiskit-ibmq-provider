@@ -20,7 +20,8 @@ class Api(RestAdaptorBase):
         'backends': '/Backends/v/1',
         'hubs': '/Network',
         'jobs': '/Jobs',
-        'jobs_status': '/Jobs/status'
+        'jobs_status': '/Jobs/status',
+        'version': '/version'
     }
 
     def backend(self, backend_name):
@@ -59,3 +60,7 @@ class Api(RestAdaptorBase):
                    'shots': qobj_dict.get('config', {}).get('shots', 1)}
 
         return self.session.post(url, json=payload).json()
+
+    def version(self):
+        url = self.get_url('version')
+        return self.session.get(url).json()

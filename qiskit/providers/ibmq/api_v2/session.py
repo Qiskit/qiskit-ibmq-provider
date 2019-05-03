@@ -22,7 +22,7 @@ CLIENT_APPLICATION = 'qiskit-api-py'
 
 class RetrySession(Session):
     """Session with retry and handling of IBM Q parameters."""
-    
+
     def __init__(self, base_url, access_token=None,
                  retries=5, backoff_factor=0.5,
                  verify=True, proxies=None, auth=None):
@@ -30,6 +30,7 @@ class RetrySession(Session):
 
         Args:
             base_url (str): base URL for the session's requests.
+            access_token (str): access token.
             retries (int): number of retries for the requests.
             backoff_factor (float): backoff factor between retry attempts.
             verify (bool): enable SSL verification.
@@ -47,10 +48,12 @@ class RetrySession(Session):
 
     @property
     def access_token(self):
+        """Return the session access token."""
         return self._access_token
 
     @access_token.setter
     def access_token(self, value):
+        """Set the session access token."""
         self._access_token = value
         if value:
             self.params.update({'access_token': value})
@@ -90,6 +93,7 @@ class RetrySession(Session):
 
     def request(self, method, url, **kwargs):
         """Constructs a Request, prepending the base url."""
+        # pylint: disable=arguments-differ
         full_url = self.base_url + url
 
         print(full_url)
