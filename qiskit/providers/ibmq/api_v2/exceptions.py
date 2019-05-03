@@ -17,6 +17,7 @@ from qiskit.providers.ibmq.api import ApiError as ApiErrorV1
 
 
 class ApiError(ApiErrorV1):
+    """Generic IBM Q API error."""
     def __init__(self, *args, original_exception=None, **kwargs):
         self.original_exception = original_exception
         super().__init__(*args, **kwargs)

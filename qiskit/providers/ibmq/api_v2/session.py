@@ -112,7 +112,9 @@ class RetrySession(Session):
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
-            message = str(ex).replace(self.access_token, '[redacted]')
+            message = str(ex)
+            if self.access_token:
+                message = message.replace(self.access_token, '[redacted]')
 
             raise ApiError(message,
                            original_exception=ex)

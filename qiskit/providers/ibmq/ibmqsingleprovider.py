@@ -77,7 +77,7 @@ class IBMQSingleProvider(BaseProvider):
             ConnectionError: if the authentication resulted in error.
         """
         # TODO: add more robust way of detecting new api.
-        if credentials.url == 'https://auth-dev.quantum-computing.ibm.com/api':
+        if 'quantum-computing.ibm.com/api' in credentials.url:
             return IBMQClient(api_token=credentials.token,
                               auth_url=credentials.url)
 
