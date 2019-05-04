@@ -16,6 +16,7 @@
 
 from functools import wraps
 
+from qiskit.providers.ibmq.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 
 from ..exceptions import IBMQError
@@ -52,7 +53,7 @@ class QcircuitsManager:
             **kwargs (dict): parameters passed to the Qcircuit.
 
         Returns:
-            dict: response.
+            Result: the result of executing the circuit.
 
         Raises:
             IBMQError: if the Qcircuit could not be executed.
@@ -63,13 +64,35 @@ class QcircuitsManager:
         except RequestsApiError as ex:
             # Revise the original requests exception to intercept.
             response = ex.original_exception.response
+
+            # Check for specific error due to hub not available.
             if response.status_code == 400:
-                if response.json()['error']['code'] == 'HUB_NOT_FOUND':
+                try:
+                    response_body = response.json()
+                except ValueError:
+                    response_body = {}
+
+                if response_body.get('error', {}).get('code') == 'HUB_NOT_FOUND':
                     raise IBMQError('Qcircuit support is not available') from None
 
-            raise
+            if response.status_code == 401:
+                raise IBMQError('Qcircuit support is not available') from None
+        except Exception as ex:
+            raise IBMQError('Qcircuit could not be executed: {}'.format(ex))
 
-        return response
+        # Create a Job for the qcircuit.
+        try:
+            job = IBMQJob(backend=None,
+                          job_id=response['id'],
+                          api=self.client,
+                          creation_date=response['creationDate'],
+                          api_status=response['status'])
+        except Exception as ex:
+            raise IBMQError(
+                'Qcircuit could not be executed: invalid response: {}'.format(ex))
+
+        # Wait for the job to complete.
+        return job.result()
 
     @requires_api_connection
     def graph_state(self, number_of_qubits, adjacency_matrix, angles):
@@ -81,7 +104,7 @@ class QcircuitsManager:
             angles:
 
         Returns:
-            dict: response.
+            Result: the result of executing the circuit.
         """
 
         return self._call_qcircuit(name=GRAPH_STATE,
@@ -98,7 +121,7 @@ class QcircuitsManager:
             angles:
 
         Returns:
-            dict: response.
+            Result: the result of executing the circuit.
         """
         return self._call_qcircuit(name=HARDWARE_EFFICIENT,
                                    number_of_qubits=number_of_qubits,
@@ -112,7 +135,7 @@ class QcircuitsManager:
             number_of_qubits:
 
         Returns:
-            dict: response
+            Result: the result of executing the circuit.
         """
         return self._call_qcircuit(name=RANDOM_UNIFORM,
                                    number_of_qubits=number_of_qubits)
