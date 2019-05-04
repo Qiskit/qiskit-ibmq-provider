@@ -385,6 +385,30 @@ class IBMQConnector:
 
         return response
 
+    def qcircuit_run(self, name, **kwargs):
+        """Execute a Qcircuit.
+
+        Args:
+            name (str): name of the Qcircuit.
+            **kwargs (dict): arguments for the Qcircuit.
+
+        Returns:
+            dict: json response.
+        """
+        if not self.check_credentials():
+            raise CredentialsError('credentials invalid')
+
+        url = '/QCircuitApiModels'
+
+        payload = {
+            'name': name,
+            'params': kwargs
+        }
+
+        response = self.req.post(url, data=json.dumps(payload))
+
+        return response
+
     def websocket_client(self):
         """Return a websocket client for interacting with IBMQ.
 
