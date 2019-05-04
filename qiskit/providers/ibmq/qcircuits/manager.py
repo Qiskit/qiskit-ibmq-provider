@@ -50,7 +50,7 @@ class QcircuitsManager:
 
         Args:
             name (str): name of the Qcircuit.
-            **kwargs (dict): parameters passed to the Qcircuit.
+            **kwargs: parameters passed to the Qcircuit.
 
         Returns:
             Result: the result of executing the circuit.
@@ -98,10 +98,24 @@ class QcircuitsManager:
     def graph_state(self, number_of_qubits, adjacency_matrix, angles):
         """Execute the graph state Qcircuit.
 
+        This circuit implements graph state circuits that are measured in a
+        product basis. Measurement angles can be chosen to measure graph state
+        stabilizers (for validation/characterization) or to measure in a basis
+        such that the circuit family may be hard to classically simulate.
+
         Args:
-            number_of_qubits:
-            adjacency_matrix:
-            angles:
+            number_of_qubits (int): number of qubits to use, in the 2-20 range.
+            adjacency_matrix (list[list]): square matrix of elements whose
+                values are 0 or 1. The matrix size is `number_of_qubits` by
+                `number_of_qubits` and is expected to be symmetric and have
+                zeros on the diagonal.
+            angles (list[float]): list of phase angles, each in the interval
+                `[0, 2*pi)` radians. There should be 3 * number_of_qubits
+                elements in the array. The first three elements are the
+                theta, phi, and lambda angles, respectively, of a u3 gate
+                acting on the first qubit. Each of the number_of_qubits triples
+                is interpreted accordingly as the parameters of a u3 gate
+                acting on subsequent qubits.
 
         Returns:
             Result: the result of executing the circuit.
@@ -116,9 +130,15 @@ class QcircuitsManager:
     def hardware_efficient(self, number_of_qubits, angles):
         """Execute the hardware efficient Qcircuit.
 
+        This circuit implements the random lattice circuit across a user
+        specified number of qubits and phase angles.
+
         Args:
-            number_of_qubits:
-            angles:
+            number_of_qubits (int): number of qubits to use, in the 4-20 range.
+            angles (list): array of three phase angles (x/y/z) each from
+                0 to 4*Pi, one set for each qubit of each layer of the lattice.
+                There should be 3 * number_of_qubits * desired lattice depth
+                entries in the array.
 
         Returns:
             Result: the result of executing the circuit.
@@ -128,14 +148,21 @@ class QcircuitsManager:
                                    angles=angles)
 
     @requires_api_connection
-    def random_uniform(self, number_of_qubits):
+    def random_uniform(self, number_of_qubits=None):
         """Execute the random uniform Qcircuit.
 
+        This circuit implements hadamard gates across all available qubits on
+        the device.
+
         Args:
-            number_of_qubits:
+            number_of_qubits (int) : optional argument for number of qubits to use.
+                If not specified will use all qubits on device.
 
         Returns:
             Result: the result of executing the circuit.
         """
-        return self._call_qcircuit(name=RANDOM_UNIFORM,
-                                   number_of_qubits=number_of_qubits)
+        kwargs = {}
+        if number_of_qubits is not None:
+            kwargs['number_of_qubits'] = number_of_qubits
+
+        return self._call_qcircuit(name=RANDOM_UNIFORM, **kwargs)
