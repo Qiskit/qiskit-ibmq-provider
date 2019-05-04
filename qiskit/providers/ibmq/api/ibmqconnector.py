@@ -394,6 +394,9 @@ class IBMQConnector:
 
         Returns:
             dict: json response.
+
+        Raises:
+            CredentialsError: if the user was not authenticated.
         """
         if not self.check_credentials():
             raise CredentialsError('credentials invalid')

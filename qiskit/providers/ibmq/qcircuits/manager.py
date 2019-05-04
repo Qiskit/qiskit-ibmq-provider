@@ -20,17 +20,13 @@ from qiskit.providers.models import JobStatus
 from qiskit.providers.ibmq.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 
-from ..exceptions import IBMQError
+from .exceptions import (QcircuitAvailabilityError, QcircuitResultError,
+                         QcircuitSubmitError)
 
 
 GRAPH_STATE = 'graph_state'
 HARDWARE_EFFICIENT = 'hardware_efficient'
 RANDOM_UNIFORM = 'random_uniform'
-
-# User friendly error messages.
-QCIRCUIT_NOT_ALLOWED = 'Qcircuit support is not available yet in this account'
-QCIRCUIT_SUBMIT_ERROR = 'Qcircuit could not be submitted: {}'
-QCIRCUIT_RESULT_ERROR = 'Qcircuit result could not be returned: {}'
 
 
 def requires_api_connection(func):
@@ -38,7 +34,7 @@ def requires_api_connection(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if not self.client:
-            raise IBMQError(
+            raise QcircuitAvailabilityError(
                 'An account must be loaded in order to use QCircuits')
 
         return func(self, *args, **kwargs)
@@ -62,8 +58,10 @@ class QcircuitsManager:
             Result: the result of executing the circuit.
 
         Raises:
-            IBMQError: if the Qcircuit could not be executed.
-            RequestsApiError: if the request could not be completed.
+            QcircuitAvailabilityError: if Qcircuits are not available.
+            QcircuitSubmitError: if there was an error submitting the Qcircuit.
+            QcircuitResultError: if the result of the Qcircuit could not be
+                returned.
         """
         try:
             response = self.client.qcircuit_run(name=name, **kwargs)
@@ -79,29 +77,29 @@ class QcircuitsManager:
 
             # Generic authorization or unavailable endpoint error.
             if response.status_code in (401, 404):
-                raise IBMQError(QCIRCUIT_NOT_ALLOWED) from None
+                raise QcircuitAvailabilityError() from None
 
             if response.status_code == 400:
                 # Hub permission error.
                 if body.get('error', {}).get('code') == 'HUB_NOT_FOUND':
-                    raise IBMQError(QCIRCUIT_NOT_ALLOWED) from None
+                    raise QcircuitAvailabilityError() from None
 
                 # Generic error.
                 if body.get('error', {}).get('code') == 'GENERIC_ERROR':
-                    raise IBMQError(QCIRCUIT_NOT_ALLOWED) from None
+                    raise QcircuitAvailabilityError() from None
 
             # Handle the rest of the exceptions as unexpected.
-            raise IBMQError(QCIRCUIT_SUBMIT_ERROR.format(ex))
+            raise QcircuitSubmitError(str(ex))
         except Exception as ex:
             # Handle non-requests exception as unexpected.
-            raise IBMQError(QCIRCUIT_SUBMIT_ERROR.format(ex))
+            raise QcircuitSubmitError(str(ex))
 
         # Extra check for IBMQConnector code path.
         if 'error' in response:
             if response['error'].get('code') == 'HUB_NOT_FOUND':
-                raise IBMQError(QCIRCUIT_NOT_ALLOWED) from None
+                raise QcircuitAvailabilityError() from None
             else:
-                raise IBMQError(QCIRCUIT_SUBMIT_ERROR.format(response))
+                raise QcircuitSubmitError(str(response))
 
         # Create a Job for the qcircuit.
         try:
@@ -111,13 +109,13 @@ class QcircuitsManager:
                           creation_date=response['creationDate'],
                           api_status=response['status'])
         except Exception as ex:
-            raise IBMQError(QCIRCUIT_RESULT_ERROR.format(ex))
+            raise QcircuitResultError(str(ex))
 
         # Wait for the job to complete, explicitly checking for errors.
         job._wait_for_completion()
         if job.status() is JobStatus.ERROR:
-            raise IBMQError(QCIRCUIT_RESULT_ERROR.format(
-                'Job {} finished with an error'.format(job.job_id())))
+            raise QcircuitResultError(
+                'Job {} finished with an error'.format(job.job_id()))
 
         return job.result()
 
@@ -182,8 +180,8 @@ class QcircuitsManager:
         the device.
 
         Args:
-            number_of_qubits (int) : optional argument for number of qubits to use.
-                If not specified will use all qubits on device.
+            number_of_qubits (int) : optional argument for number of qubits to
+                use. If not specified will use all qubits on device.
 
         Returns:
             Result: the result of executing the circuit.
