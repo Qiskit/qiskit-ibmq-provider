@@ -20,7 +20,8 @@ from qiskit.providers.models import JobStatus
 from qiskit.providers.ibmq.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 
-from .exceptions import (QcircuitAvailabilityError, QcircuitResultError,
+from .exceptions import (QcircuitError,
+                         QcircuitAvailabilityError, QcircuitResultError,
                          QcircuitSubmitError)
 
 
@@ -144,7 +145,14 @@ class QcircuitsManager:
 
         Returns:
             Result: the result of executing the circuit.
+
+        Raises:
+            QcircuitError: if the parameters are not valid.
         """
+        if 2 <= number_of_qubits <= 20:
+            raise QcircuitError('Invalid number_of_qubits')
+        if len(angles) != number_of_qubits*3:
+            raise QcircuitError('Invalid angles length')
 
         return self._call_qcircuit(name=GRAPH_STATE,
                                    number_of_qubits=number_of_qubits,
@@ -167,7 +175,15 @@ class QcircuitsManager:
 
         Returns:
             Result: the result of executing the circuit.
+
+        Raises:
+            QcircuitError: if the parameters are not valid.
         """
+        if 4 <= number_of_qubits <= 20:
+            raise QcircuitError('Invalid number_of_qubits')
+        if len(angles) % 3*number_of_qubits != 0:
+            raise QcircuitError('Invalid angles length')
+
         return self._call_qcircuit(name=HARDWARE_EFFICIENT,
                                    number_of_qubits=number_of_qubits,
                                    angles=angles)
