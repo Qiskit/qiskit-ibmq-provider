@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2018, 2019.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -12,19 +12,20 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Test IBMQConnector."""
+"""Tests for the IBMQClient for API v2."""
 
 import re
-from unittest import SkipTest
+from unittest import SkipTest, skip
 
-from qiskit.circuit import QuantumCircuit, QuantumRegister, ClassicalRegister
-from qiskit.tools.compiler import compile
+from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQ
-from qiskit.providers.ibmq.api import (ApiError, BadBackendError, IBMQConnector)
+from qiskit.providers.ibmq.api_v2 import IBMQClient
+from qiskit.providers.ibmq.api_v2.exceptions import ApiError
 from qiskit.test import QiskitTestCase, requires_qe_access
+from qiskit.tools.compiler import compile
 
 
-class TestIBMQConnector(QiskitTestCase):
+class TestIBMQClient(QiskitTestCase):
     """Tests for IBMQConnector."""
 
     def setUp(self):
@@ -42,108 +43,82 @@ class TestIBMQConnector(QiskitTestCase):
         self.seed = 73846087
 
     @staticmethod
-    def _get_api(qe_token, qe_url):
-        """Helper for instantating an IBMQConnector."""
-        if ('quantum-computing.ibm.com/api' in qe_url and
+    def _get_client(qe_token, qe_url):
+        """Helper for instantiating an IBMQClient."""
+        if not ('quantum-computing.ibm.com/api' in qe_url and
                 'auth' in qe_url):
-            raise SkipTest('Classic api URL not provided')
-
-        return IBMQConnector(qe_token, config={'url': qe_url})
-
-    @requires_qe_access
-    def test_api_auth_token(self, qe_token, qe_url):
-        """Authentication with IBMQ Platform."""
-        api = self._get_api(qe_token, qe_url)
-        credential = api.check_credentials()
-        self.assertTrue(credential)
-
-    def test_api_auth_token_fail(self):
-        """Invalid authentication with IBQM Platform."""
-        self.assertRaises(ApiError,
-                          IBMQConnector, 'fail')
+            raise SkipTest('New api URL not provided')
+        return IBMQClient(qe_token, qe_url)
 
     @requires_qe_access
-    def test_api_run_job(self, qe_token, qe_url):
+    def test_valid_login(self, qe_token, qe_url):
+        """Test valid authenticating against IBM Q."""
+        client = self._get_client(qe_token, qe_url)
+        self.assertTrue(client.api_client.session.access_token)
+
+    @requires_qe_access
+    def test_run_job(self, qe_token, qe_url):
         """Test running a job against a simulator."""
-        _ = self._get_api(qe_token, qe_url)
+        _ = self._get_client(qe_token, qe_url)
         IBMQ.enable_account(qe_token, qe_url)
 
+        # Create a Qobj.
         backend_name = 'ibmq_qasm_simulator'
         backend = IBMQ.get_backend(backend_name)
         qobj = compile(self.qc1, backend=backend, seed=self.seed, shots=1)
 
+        # Run the job through the IBMQClient directly.
         api = backend._api
         job = api.run_job(qobj.as_dict(), backend_name)
-        check_status = None
-        if 'status' in job:
-            check_status = job['status']
-        self.assertIsNotNone(check_status)
+
+        self.assertIn('status', job)
+        self.assertIsNotNone(job['status'])
 
     @requires_qe_access
-    def test_api_run_job_fail_backend(self, qe_token, qe_url):
-        """Test running a job against an invalid backend."""
-        _ = self._get_api(qe_token, qe_url)
-        IBMQ.enable_account(qe_token, qe_url)
-
-        backend_name = 'ibmq_qasm_simulator'
-        backend = IBMQ.get_backend(backend_name)
-        qobj = compile(self.qc1, backend=backend, seed=self.seed, shots=1)
-
-        api = backend._api
-        self.assertRaises(BadBackendError, api.run_job, qobj.as_dict(),
-                          'INVALID_BACKEND_NAME')
-
-    @requires_qe_access
-    def test_api_get_jobs(self, qe_token, qe_url):
-        """Check get jobs by user authenticated."""
-        api = self._get_api(qe_token, qe_url)
-        jobs = api.get_jobs(2)
+    def test_get_status_jobs(self, qe_token, qe_url):
+        """Check get status jobs by user authenticated."""
+        api = self._get_client(qe_token, qe_url)
+        jobs = api.get_status_jobs(limit=2)
         self.assertEqual(len(jobs), 2)
 
     @requires_qe_access
-    def test_api_get_status_jobs(self, qe_token, qe_url):
-        """Check get status jobs by user authenticated."""
-        api = self._get_api(qe_token, qe_url)
-        jobs = api.get_status_jobs(1)
-        self.assertEqual(len(jobs), 1)
-
-    @requires_qe_access
-    def test_api_backend_status(self, qe_token, qe_url):
+    def test_backend_status(self, qe_token, qe_url):
         """Check the status of a real chip."""
         backend_name = ('ibmq_20_tokyo'
                         if self.using_ibmq_credentials else 'ibmqx4')
-        api = self._get_api(qe_token, qe_url)
+        api = self._get_client(qe_token, qe_url)
         is_available = api.backend_status(backend_name)
         self.assertIsNotNone(is_available['operational'])
 
     @requires_qe_access
-    def test_api_backend_properties(self, qe_token, qe_url):
+    def test_backend_properties(self, qe_token, qe_url):
         """Check the properties of calibration of a real chip."""
         backend_name = ('ibmq_20_tokyo'
                         if self.using_ibmq_credentials else 'ibmqx4')
-        api = self._get_api(qe_token, qe_url)
+        api = self._get_client(qe_token, qe_url)
 
         properties = api.backend_properties(backend_name)
         self.assertIsNotNone(properties)
 
     @requires_qe_access
-    def test_api_backends_available(self, qe_token, qe_url):
+    def test_available_backends(self, qe_token, qe_url):
         """Check the backends available."""
-        api = self._get_api(qe_token, qe_url)
+        api = self._get_client(qe_token, qe_url)
         backends = api.available_backends()
         self.assertGreaterEqual(len(backends), 1)
 
     @requires_qe_access
-    def test_qx_api_version(self, qe_token, qe_url):
+    def test_api_version(self, qe_token, qe_url):
         """Check the version of the QX API."""
-        api = self._get_api(qe_token, qe_url)
+        api = self._get_client(qe_token, qe_url)
         version = api.api_version()
-        self.assertGreaterEqual(int(version.split(".")[0]), 4)
+        self.assertIsNotNone(version)
 
+    @skip('TODO: reenable after API check')
     @requires_qe_access
     def test_get_job_includes(self, qe_token, qe_url):
         """Check the field includes parameter for get_job."""
-        _ = self._get_api(qe_token, qe_url)
+        _ = self._get_client(qe_token, qe_url)
         IBMQ.enable_account(qe_token, qe_url)
 
         backend_name = 'ibmq_qasm_simulator'
@@ -156,9 +131,9 @@ class TestIBMQConnector(QiskitTestCase):
         job_id = job['id']
 
         # Get the job, excluding a parameter.
-        self.assertIn('deleted', job)
-        job_excluded = api.get_job(job_id, exclude_fields=['deleted'])
-        self.assertNotIn('deleted', job_excluded)
+        self.assertIn('shots', job)
+        job_excluded = api.get_job(job_id, exclude_fields=['shots'])
+        self.assertNotIn('shots', job_excluded)
 
 
 class TestAuthentication(QiskitTestCase):
@@ -167,22 +142,24 @@ class TestAuthentication(QiskitTestCase):
     These tests are in a separate TestCase as they need to control the
     instantiation of `IBMQConnector` directly.
     """
+
     @requires_qe_access
     def test_url_404(self, qe_token, qe_url):
-        """Test accessing a 404 URL"""
+        """Test login against a 404 URL"""
         url_404 = re.sub(r'/api.*$', '/api/TEST_404', qe_url)
         with self.assertRaises(ApiError):
-            _ = IBMQConnector(qe_token,
-                              config={'url': url_404})
+            _ = IBMQClient(qe_token, url_404)
 
-    def test_invalid_token(self):
-        """Test using an invalid token"""
+    @requires_qe_access
+    def test_invalid_token(self, qe_token, qe_url):
+        """Test login using invalid token."""
+        qe_token = 'INVALID_TOKEN'
         with self.assertRaises(ApiError):
-            _ = IBMQConnector('INVALID_TOKEN')
+            _ = IBMQClient(qe_token, qe_url)
 
     @requires_qe_access
     def test_url_unreachable(self, qe_token, qe_url):
-        """Test accessing an invalid URL"""
-        # pylint: disable=unused-argument
+        """Test login against an invalid (malformed) URL."""
+        qe_url = 'INVALID_URL'
         with self.assertRaises(ApiError):
-            _ = IBMQConnector(qe_token, config={'url': 'INVALID_URL'})
+            _ = IBMQClient(qe_token, qe_url)
