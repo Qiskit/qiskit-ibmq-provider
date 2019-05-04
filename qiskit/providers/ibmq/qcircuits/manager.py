@@ -16,6 +16,7 @@
 
 from functools import wraps
 
+from qiskit.providers.models import JobStatus
 from qiskit.providers.ibmq.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 
@@ -25,6 +26,11 @@ from ..exceptions import IBMQError
 GRAPH_STATE = 'graph_state'
 HARDWARE_EFFICIENT = 'hardware_efficient'
 RANDOM_UNIFORM = 'random_uniform'
+
+# User friendly error messages.
+QCIRCUIT_NOT_ALLOWED = 'Qcircuit support is not available yet in this account'
+QCIRCUIT_SUBMIT_ERROR = 'Qcircuit could not be submitted: {}'
+QCIRCUIT_RESULT_ERROR = 'Qcircuit result could not be returned: {}'
 
 
 def requires_api_connection(func):
@@ -65,20 +71,37 @@ class QcircuitsManager:
             # Revise the original requests exception to intercept.
             response = ex.original_exception.response
 
-            # Check for specific error due to hub not available.
+            # Check for errors related to the submission.
+            try:
+                body = response.json()
+            except ValueError:
+                body = {}
+
+            # Generic authorization or unavailable endpoint error.
+            if response.status_code in (401, 404):
+                raise IBMQError(QCIRCUIT_NOT_ALLOWED) from None
+
             if response.status_code == 400:
-                try:
-                    response_body = response.json()
-                except ValueError:
-                    response_body = {}
+                # Hub permission error.
+                if body.get('error', {}).get('code') == 'HUB_NOT_FOUND':
+                    raise IBMQError(QCIRCUIT_NOT_ALLOWED) from None
 
-                if response_body.get('error', {}).get('code') == 'HUB_NOT_FOUND':
-                    raise IBMQError('Qcircuit support is not available') from None
+                # Generic error.
+                if body.get('error', {}).get('code') == 'GENERIC_ERROR':
+                    raise IBMQError(QCIRCUIT_NOT_ALLOWED) from None
 
-            if response.status_code == 401:
-                raise IBMQError('Qcircuit support is not available') from None
+            # Handle the rest of the exceptions as unexpected.
+            raise IBMQError(QCIRCUIT_SUBMIT_ERROR.format(ex))
         except Exception as ex:
-            raise IBMQError('Qcircuit could not be executed: {}'.format(ex))
+            # Handle non-requests exception as unexpected.
+            raise IBMQError(QCIRCUIT_SUBMIT_ERROR.format(ex))
+
+        # Extra check for IBMQConnector code path.
+        if 'error' in response:
+            if response['error'].get('code') == 'HUB_NOT_FOUND':
+                raise IBMQError(QCIRCUIT_NOT_ALLOWED) from None
+            else:
+                raise IBMQError(QCIRCUIT_SUBMIT_ERROR.format(response))
 
         # Create a Job for the qcircuit.
         try:
@@ -88,10 +111,14 @@ class QcircuitsManager:
                           creation_date=response['creationDate'],
                           api_status=response['status'])
         except Exception as ex:
-            raise IBMQError(
-                'Qcircuit could not be executed: invalid response: {}'.format(ex))
+            raise IBMQError(QCIRCUIT_RESULT_ERROR.format(ex))
 
-        # Wait for the job to complete.
+        # Wait for the job to complete, explicitly checking for errors.
+        job._wait_for_completion()
+        if job.status() is JobStatus.ERROR:
+            raise IBMQError(QCIRCUIT_RESULT_ERROR.format(
+                'Job {} finished with an error'.format(job.job_id())))
+
         return job.result()
 
     @requires_api_connection
