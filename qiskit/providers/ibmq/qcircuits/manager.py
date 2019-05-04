@@ -99,8 +99,7 @@ class QcircuitsManager:
         if 'error' in response:
             if response['error'].get('code') == 'HUB_NOT_FOUND':
                 raise QcircuitAvailabilityError() from None
-            else:
-                raise QcircuitSubmitError(str(response))
+            raise QcircuitSubmitError(str(response))
 
         # Create a Job for the qcircuit.
         try:
