@@ -42,12 +42,4 @@ class Auth(RestAdapterBase):
         url = self.get_url('user_info')
         response = self.session.get(url).json()
 
-        # Revise the URL.
-        try:
-            api_url = response['urls']['http']
-            if not api_url.endswith('/api'):
-                response['urls']['http'] = '{}/api'.format(api_url)
-        except KeyError:
-            pass
-
         return response
