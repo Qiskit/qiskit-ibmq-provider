@@ -12,17 +12,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Exceptions related to the IBM Q Api."""
-from qiskit.providers.ibmq.api import ApiError as ApiErrorV1
+"""Module for interacting with Circuits."""
 
-
-class ApiError(ApiErrorV1):
-    """Generic IBM Q API error."""
-    pass
-
-
-class RequestsApiError(ApiError):
-    """Exception re-raising a RequestException."""
-    def __init__(self, original_exception, *args, **kwargs):
-        self.original_exception = original_exception
-        super().__init__(*args, **kwargs)
+from .manager import CircuitsManager

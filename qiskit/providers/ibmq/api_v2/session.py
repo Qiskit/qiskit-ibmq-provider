@@ -18,8 +18,7 @@ from requests import Session, RequestException
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from .exceptions import ApiError
-
+from .exceptions import RequestsApiError
 
 STATUS_FORCELIST = (
     500,  # Internal Server Error
@@ -116,7 +115,6 @@ class RetrySession(Session):
             if self.access_token:
                 message = message.replace(self.access_token, '[redacted]')
 
-            raise ApiError(message,
-                           original_exception=ex)
+            raise RequestsApiError(ex, message) from None
 
         return response
