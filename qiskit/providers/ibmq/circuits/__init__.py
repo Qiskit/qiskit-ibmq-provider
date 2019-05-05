@@ -14,4 +14,4 @@
 
 """Module for interacting with QCircuits."""
 
-from .manager import QcircuitsManager
+from .manager import CircuitsManager

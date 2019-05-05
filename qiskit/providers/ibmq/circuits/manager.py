@@ -43,7 +43,7 @@ def requires_api_connection(func):
     return wrapper
 
 
-class QcircuitsManager:
+class CircuitsManager:
     """Class that provides access to the different qcircuits."""
     def __init__(self):
         self.client = None

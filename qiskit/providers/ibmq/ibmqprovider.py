@@ -24,7 +24,7 @@ from .credentials import (Credentials,
                           read_credentials_from_qiskitrc, store_credentials, discover_credentials)
 from .exceptions import IBMQAccountError
 from .ibmqsingleprovider import IBMQSingleProvider
-from .qcircuits import QcircuitsManager
+from .circuits import CircuitsManager
 
 QE_URL = 'https://quantumexperience.ng.bluemix.net/api'
 
@@ -43,7 +43,7 @@ class IBMQProvider(BaseProvider):
         # keys are tuples (hub, group, project), as the convention is that
         # that tuple uniquely identifies a set of credentials.
         self._accounts = OrderedDict()
-        self._qcircuits_manager = QcircuitsManager()
+        self._qcircuits_manager = CircuitsManager()
 
     @property
     def circuits(self):
