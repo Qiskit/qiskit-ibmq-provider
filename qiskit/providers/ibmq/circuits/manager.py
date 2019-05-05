@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Manager for interacting with QCircuits."""
+"""Manager for interacting with Circuits."""
 
 from functools import wraps
 
@@ -20,9 +20,9 @@ from qiskit.providers import JobStatus
 from qiskit.providers.ibmq.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 
-from .exceptions import (QcircuitError,
-                         QcircuitAvailabilityError, QcircuitResultError,
-                         QcircuitSubmitError)
+from .exceptions import (CircuitError,
+                         CircuitAvailabilityError, CircuitResultError,
+                         CircuitSubmitError)
 
 
 GRAPH_STATE = 'graph_state'
@@ -31,12 +31,12 @@ RANDOM_UNIFORM = 'random_uniform'
 
 
 def requires_api_connection(func):
-    """Decorator that ensures that a QCircuitsManager has a valid API."""
+    """Decorator that ensures that a CircuitsManager has a valid API."""
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if not self.client:
-            raise QcircuitAvailabilityError(
-                'An account must be loaded in order to use QCircuits')
+            raise CircuitAvailabilityError(
+                'An account must be loaded in order to use Circuits')
 
         return func(self, *args, **kwargs)
 
@@ -44,28 +44,28 @@ def requires_api_connection(func):
 
 
 class CircuitsManager:
-    """Class that provides access to the different qcircuits."""
+    """Class that provides access to the different Circuits."""
     def __init__(self):
         self.client = None
 
-    def _call_qcircuit(self, name, **kwargs):
-        """Execute a Qcircuit.
+    def _call_circuit(self, name, **kwargs):
+        """Execute a Circuit.
 
         Args:
-            name (str): name of the Qcircuit.
-            **kwargs: parameters passed to the Qcircuit.
+            name (str): name of the Circuit.
+            **kwargs: parameters passed to the Circuit.
 
         Returns:
             Result: the result of executing the circuit.
 
         Raises:
-            QcircuitAvailabilityError: if Qcircuits are not available.
-            QcircuitSubmitError: if there was an error submitting the Qcircuit.
-            QcircuitResultError: if the result of the Qcircuit could not be
+            CircuitAvailabilityError: if Circuits are not available.
+            CircuitSubmitError: if there was an error submitting the Circuit.
+            CircuitResultError: if the result of the Circuit could not be
                 returned.
         """
         try:
-            response = self.client.qcircuit_run(name=name, **kwargs)
+            response = self.client.circuit_run(name=name, **kwargs)
         except RequestsApiError as ex:
             # Revise the original requests exception to intercept.
             response = ex.original_exception.response
@@ -78,30 +78,30 @@ class CircuitsManager:
 
             # Generic authorization or unavailable endpoint error.
             if response.status_code in (401, 404):
-                raise QcircuitAvailabilityError() from None
+                raise CircuitAvailabilityError() from None
 
             if response.status_code == 400:
                 # Hub permission error.
                 if body.get('error', {}).get('code') == 'HUB_NOT_FOUND':
-                    raise QcircuitAvailabilityError() from None
+                    raise CircuitAvailabilityError() from None
 
                 # Generic error.
                 if body.get('error', {}).get('code') == 'GENERIC_ERROR':
-                    raise QcircuitAvailabilityError() from None
+                    raise CircuitAvailabilityError() from None
 
             # Handle the rest of the exceptions as unexpected.
-            raise QcircuitSubmitError(str(ex))
+            raise CircuitSubmitError(str(ex))
         except Exception as ex:
             # Handle non-requests exception as unexpected.
-            raise QcircuitSubmitError(str(ex))
+            raise CircuitSubmitError(str(ex))
 
         # Extra check for IBMQConnector code path.
         if 'error' in response:
             if response['error'].get('code') == 'HUB_NOT_FOUND':
-                raise QcircuitAvailabilityError() from None
-            raise QcircuitSubmitError(str(response))
+                raise CircuitAvailabilityError() from None
+            raise CircuitSubmitError(str(response))
 
-        # Create a Job for the qcircuit.
+        # Create a Job for the circuit.
         try:
             job = IBMQJob(backend=None,
                           job_id=response['id'],
@@ -109,19 +109,19 @@ class CircuitsManager:
                           creation_date=response['creationDate'],
                           api_status=response['status'])
         except Exception as ex:
-            raise QcircuitResultError(str(ex))
+            raise CircuitResultError(str(ex))
 
         # Wait for the job to complete, explicitly checking for errors.
         job._wait_for_completion()
         if job.status() is JobStatus.ERROR:
-            raise QcircuitResultError(
+            raise CircuitResultError(
                 'Job {} finished with an error'.format(job.job_id()))
 
         return job.result()
 
     @requires_api_connection
     def graph_state(self, number_of_qubits, adjacency_matrix, angles):
-        """Execute the graph state Qcircuit.
+        """Execute the graph state Circuit.
 
         This circuit implements graph state circuits that are measured in a
         product basis. Measurement angles can be chosen to measure graph state
@@ -146,21 +146,21 @@ class CircuitsManager:
             Result: the result of executing the circuit.
 
         Raises:
-            QcircuitError: if the parameters are not valid.
+            CircuitError: if the parameters are not valid.
         """
         if 2 <= number_of_qubits <= 20:
-            raise QcircuitError('Invalid number_of_qubits')
+            raise CircuitError('Invalid number_of_qubits')
         if len(angles) != number_of_qubits*3:
-            raise QcircuitError('Invalid angles length')
+            raise CircuitError('Invalid angles length')
 
-        return self._call_qcircuit(name=GRAPH_STATE,
-                                   number_of_qubits=number_of_qubits,
-                                   adjacency_matrix=adjacency_matrix,
-                                   angles=angles)
+        return self._call_circuit(name=GRAPH_STATE,
+                                  number_of_qubits=number_of_qubits,
+                                  adjacency_matrix=adjacency_matrix,
+                                  angles=angles)
 
     @requires_api_connection
     def hardware_efficient(self, number_of_qubits, angles):
-        """Execute the hardware efficient Qcircuit.
+        """Execute the hardware efficient Circuit.
 
         This circuit implements the random lattice circuit across a user
         specified number of qubits and phase angles.
@@ -176,20 +176,20 @@ class CircuitsManager:
             Result: the result of executing the circuit.
 
         Raises:
-            QcircuitError: if the parameters are not valid.
+            CircuitError: if the parameters are not valid.
         """
         if 4 <= number_of_qubits <= 20:
-            raise QcircuitError('Invalid number_of_qubits')
+            raise CircuitError('Invalid number_of_qubits')
         if len(angles) % 3*number_of_qubits != 0:
-            raise QcircuitError('Invalid angles length')
+            raise CircuitError('Invalid angles length')
 
-        return self._call_qcircuit(name=HARDWARE_EFFICIENT,
-                                   number_of_qubits=number_of_qubits,
-                                   angles=angles)
+        return self._call_circuit(name=HARDWARE_EFFICIENT,
+                                  number_of_qubits=number_of_qubits,
+                                  angles=angles)
 
     @requires_api_connection
     def random_uniform(self, number_of_qubits=None):
-        """Execute the random uniform Qcircuit.
+        """Execute the random uniform Circuit.
 
         This circuit implements hadamard gates across all available qubits on
         the device.
@@ -205,4 +205,4 @@ class CircuitsManager:
         if number_of_qubits is not None:
             kwargs['number_of_qubits'] = number_of_qubits
 
-        return self._call_qcircuit(name=RANDOM_UNIFORM, **kwargs)
+        return self._call_circuit(name=RANDOM_UNIFORM, **kwargs)

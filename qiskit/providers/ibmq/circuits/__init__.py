@@ -12,6 +12,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Module for interacting with QCircuits."""
+"""Module for interacting with Circuits."""
 
 from .manager import CircuitsManager

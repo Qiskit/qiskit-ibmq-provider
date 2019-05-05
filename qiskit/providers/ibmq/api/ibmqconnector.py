@@ -385,12 +385,12 @@ class IBMQConnector:
 
         return response
 
-    def qcircuit_run(self, name, **kwargs):
-        """Execute a Qcircuit.
+    def circuit_run(self, name, **kwargs):
+        """Execute a Circuit.
 
         Args:
-            name (str): name of the Qcircuit.
-            **kwargs (dict): arguments for the Qcircuit.
+            name (str): name of the Circuit.
+            **kwargs (dict): arguments for the Circuit.
 
         Returns:
             dict: json response.

@@ -12,37 +12,37 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Exceptions related to Qcircuits."""
+"""Exceptions related to Circuits."""
 
 from qiskit.providers.ibmq.exceptions import IBMQError
 
 
-QCIRCUIT_NOT_ALLOWED = 'Qcircuit support is not available yet in this account'
-QCIRCUIT_SUBMIT_ERROR = 'Qcircuit could not be submitted: {}'
-QCIRCUIT_RESULT_ERROR = 'Qcircuit result could not be returned: {}'
+CIRCUIT_NOT_ALLOWED = 'Circuit support is not available yet in this account'
+CIRCUIT_SUBMIT_ERROR = 'Circuit could not be submitted: {}'
+CIRCUIT_RESULT_ERROR = 'Circuit result could not be returned: {}'
 
 
-class QcircuitError(IBMQError):
-    """Generic Qcircuit exception."""
+class CircuitError(IBMQError):
+    """Generic Circuit exception."""
     pass
 
 
-class QcircuitAvailabilityError(QcircuitError):
-    """Error while accessing a Qcircuit."""
+class CircuitAvailabilityError(CircuitError):
+    """Error while accessing a Circuit."""
 
     def __init__(self, message=''):
-        super().__init__(message or QCIRCUIT_NOT_ALLOWED)
+        super().__init__(message or CIRCUIT_NOT_ALLOWED)
 
 
-class QcircuitSubmitError(QcircuitError):
-    """Error while submitting a Qcircuit."""
-
-    def __init__(self, message):
-        super().__init__(QCIRCUIT_SUBMIT_ERROR.format(message))
-
-
-class QcircuitResultError(QcircuitError):
-    """Error during the results of a Qcircuit."""
+class CircuitSubmitError(CircuitError):
+    """Error while submitting a Circuit."""
 
     def __init__(self, message):
-        super().__init__(QCIRCUIT_RESULT_ERROR.format(message))
+        super().__init__(CIRCUIT_SUBMIT_ERROR.format(message))
+
+
+class CircuitResultError(CircuitError):
+    """Error during the results of a Circuit."""
+
+    def __init__(self, message):
+        super().__init__(CIRCUIT_RESULT_ERROR.format(message))

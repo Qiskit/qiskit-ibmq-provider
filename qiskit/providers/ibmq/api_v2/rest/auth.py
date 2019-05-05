@@ -45,9 +45,8 @@ class Auth(RestAdapterBase):
         # Revise the URL.
         try:
             api_url = response['urls']['http']
-            if api_url.endswith('.com?private=true'):
-                response['urls']['http'] = '{}/api'.format(
-                    api_url.split('?')[0])
+            if not api_url.endswith('/api'):
+                response['urls']['http'] = '{}/api'.format(api_url)
         except KeyError:
             pass
 

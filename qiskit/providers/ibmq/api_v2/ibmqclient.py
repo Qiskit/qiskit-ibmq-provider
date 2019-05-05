@@ -203,17 +203,17 @@ class IBMQClient:
         """
         return self.api_client.version()
 
-    def qcircuit_run(self, name, **kwargs):
-        """Execute a Qcircuit.
+    def circuit_run(self, name, **kwargs):
+        """Execute a Circuit.
 
         Args:
-            name (str): name of the Qcircuit.
-            **kwargs (dict): arguments for the Qcircuit.
+            name (str): name of the Circuit.
+            **kwargs (dict): arguments for the Circuit.
 
         Returns:
             dict: json response.
         """
-        return self.api_client.qcircuit(name, **kwargs)
+        return self.api_client.circuit(name, **kwargs)
 
     # Endpoints for compatibility with classic IBMQConnector. These functions
     # are meant to facilitate the transition, and should be removed moving

@@ -29,7 +29,7 @@ class Api(RestAdapterBase):
         'hubs': '/Network',
         'jobs': '/Jobs',
         'jobs_status': '/Jobs/status',
-        'qcircuit': '/QCircuitApiModels',
+        'circuit': '/QCircuitApiModels',
         'version': '/version'
     }
 
@@ -109,17 +109,17 @@ class Api(RestAdapterBase):
 
         return self.session.post(url, json=payload).json()
 
-    def qcircuit(self, name, **kwargs):
-        """Execute a Qcircuit.
+    def circuit(self, name, **kwargs):
+        """Execute a Circuit.
 
         Args:
-            name (str): name of the Qcircuit.
-            **kwargs (dict): arguments for the Qcircuit.
+            name (str): name of the Circuit.
+            **kwargs (dict): arguments for the Circuit.
 
         Returns:
             dict: json response.
         """
-        url = self.get_url('qcircuit')
+        url = self.get_url('circuit')
 
         payload = {
             'name': name,
