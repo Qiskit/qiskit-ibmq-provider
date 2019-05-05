@@ -33,15 +33,8 @@ sudo: false
 stage_generic: &stage_generic
   install:
     # Install step for jobs that require compilation and qa.
-    # TODO: until terra 0.8 is released, install a terra branch and this
-    # package dependencies manually.
-    # - pip install -U -r requirements.txt
-    - pip install "requests>=2.19"
-    - pip install "requests-ntlm>=1.1.0"
-    - pip install "websockets>=7,<8"
-    - git clone https://github.com/Qiskit/qiskit-terra.git
     - pip install cython
-    - pip install -e qiskit-terra
+    - pip install -U -r requirements.txt
     - pip install -U -r requirements-dev.txt
   script:
     # Run the tests.
