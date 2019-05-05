@@ -168,7 +168,7 @@ class CircuitsManager:
         Args:
             number_of_qubits (int): number of qubits to use, in the 4-20 range.
             angles (list): array of three phase angles (x/y/z) each from
-                0 to 4*Pi, one set for each qubit of each layer of the lattice.
+                0 to 2*Pi, one set for each qubit of each layer of the lattice.
                 There should be 3 * number_of_qubits * desired lattice depth
                 entries in the array.
 
