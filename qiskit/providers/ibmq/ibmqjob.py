@@ -472,10 +472,13 @@ class IBMQJob(BaseJob):
         """
         self._wait_for_submission(timeout)
 
-        if 'websocket_url' in self._api.config:
-            self._wait_for_final_status_websocket(timeout)
-        else:
-            self._wait_for_final_status(timeout, wait)
+        # TODO: reenable during #61.
+        # if 'websocket_url' in self._api.config:
+        #     self._wait_for_final_status_websocket(timeout)
+        # else:
+        #     self._wait_for_final_status(timeout, wait)
+
+        self._wait_for_final_status(timeout, wait)
 
     def _wait_for_submission(self, timeout=60):
         """Waits for the request to return a job ID"""

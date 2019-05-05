@@ -16,6 +16,7 @@
 
 import json
 import logging
+import re
 
 from qiskit.providers.ibmq.api.websocket import WebsocketClient
 from .apijobstatus import ApiJobStatus
@@ -76,12 +77,13 @@ class IBMQConnector:
 
     This class exposes a Python API for making requests to the IBMQ platform.
     """
+
     def __init__(self, token=None, config=None, verify=True):
         """ If verify is set to false, ignore SSL certificate errors """
         self.config = config
 
         if self.config and ('url' in self.config):
-            url_parsed = self.config['url'].split('/api')
+            url_parsed = re.compile(r'(?<!\/)\/api').split(self.config['url'])
             if len(url_parsed) == 2:
                 hub = group = project = None
                 project_parse = url_parsed[1].split('/Projects/')
@@ -380,6 +382,33 @@ class IBMQConnector:
         response = self.req.get(url)
         if (response is not None) and (isinstance(response, dict)):
             return []
+
+        return response
+
+    def circuit_run(self, name, **kwargs):
+        """Execute a Circuit.
+
+        Args:
+            name (str): name of the Circuit.
+            **kwargs (dict): arguments for the Circuit.
+
+        Returns:
+            dict: json response.
+
+        Raises:
+            CredentialsError: if the user was not authenticated.
+        """
+        if not self.check_credentials():
+            raise CredentialsError('credentials invalid')
+
+        url = '/QCircuitApiModels'
+
+        payload = {
+            'name': name,
+            'params': kwargs
+        }
+
+        response = self.req.post(url, data=json.dumps(payload))
 
         return response
 

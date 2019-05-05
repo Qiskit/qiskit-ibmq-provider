@@ -24,6 +24,7 @@ from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api import IBMQConnector
+from .api_v2 import IBMQClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 
 
@@ -75,6 +76,13 @@ class IBMQSingleProvider(BaseProvider):
         Raises:
             ConnectionError: if the authentication resulted in error.
         """
+        # TODO: add more robust detection.
+        # Check if the URL belongs to auth services of the new API.
+        if ('quantum-computing.ibm.com/api' in credentials.url and
+                'auth' in credentials.url):
+            return IBMQClient(api_token=credentials.token,
+                              auth_url=credentials.url)
+
         try:
             config_dict = {
                 'url': credentials.url,
