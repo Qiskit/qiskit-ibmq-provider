@@ -33,6 +33,7 @@ Fixed
 """""
 
 - Fixed incorrect parsing of some API hub URLs (#77).
+- Fixed noise model handling for remote simulators (#84).
 
 
 `0.1.1`_ - 2019-05-01
