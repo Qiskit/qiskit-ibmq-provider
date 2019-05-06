@@ -179,8 +179,7 @@ class IBMQClient:
         Returns:
             dict: backend properties.
         """
-        # return self.api_client.job(job_id).properties()
-        raise NotImplementedError
+        return self.api_client.job(job_id).properties()
 
     def job_cancel(self, job_id):
         """Submit a request for cancelling a job.

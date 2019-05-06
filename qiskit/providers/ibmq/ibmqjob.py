@@ -196,7 +196,6 @@ class IBMQJob(BaseJob):
         self._wait_for_submission()
 
         properties = self._api.job_properties(job_id=self.job_id())
-
         return BackendProperties.from_dict(properties)
 
     # pylint: disable=arguments-differ
