@@ -25,7 +25,7 @@ def _serialize_noise_model(config):
            config (dict): The dictionary to traverse
 
        Returns:
-           config (dict): The transformed dictionary
+           dict: The transformed dictionary
     """
     for k, v in config.items():
         if isinstance(config[k], dict):
