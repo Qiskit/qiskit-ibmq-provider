@@ -29,6 +29,11 @@ Once the package is installed, you can access the provider from Qiskit.
 
 ### Configure your IBMQ credentials
 
+> **Note**: since `IBMQProvider` version `0.2.0`, the package supports
+> connecting to [the new IBM Q Experience], which includes a number of new
+> features. Please note that support is still experimental, and some
+> functionality might be subject to change or experience technical issues.
+
 1. Create an [IBM Q account] if you haven't already done so.
 
 2. Get an API token from the IBM Q website under
@@ -99,3 +104,4 @@ project at different levels. If you use Qiskit, please cite as per the included
 [many people]: https://github.com/Qiskit/qiskit-terra/graphs/contributors
 [BibTeX file]: https://github.com/Qiskit/qiskit/blob/master/Qiskit.bib
 [Apache License 2.0]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/LICENSE.txt
+[the new IBM Q Experience]: https://quantum-computing.ibm.com/
