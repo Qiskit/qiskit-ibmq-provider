@@ -19,6 +19,15 @@ The format is based on `Keep a Changelog`_.
 `UNRELEASED`_
 ^^^^^^^^^^^^^
 
+`0.2.1`_ - 2019-05-06
+^^^^^^^^^^^^^^^^^^^^^
+
+Fixed
+"""""
+
+- Improved compatibility with older setuptools versions. (#85)
+
+
 `0.2.0`_ - 2019-05-06
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -84,7 +93,8 @@ Removed
 
 
 
-.. _UNRELEASED: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.0...HEAD
+.. _UNRELEASED: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.1...HEAD
+.. _0.2.1: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1.1...0.2.1
 .. _0.2.0: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1.1...0.2.0
 .. _0.1.1: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1...0.1.1
 .. _0.1: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1
