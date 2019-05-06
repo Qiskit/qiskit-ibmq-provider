@@ -25,7 +25,8 @@ class Job(RestAdapterBase):
     URL_MAP = {
         'cancel': 'cancel',
         'self': '',
-        'status': '/status'
+        'status': '/status',
+        'properties': '/properties'
     }
 
     def __init__(self, session, job_id):
@@ -65,6 +66,11 @@ class Job(RestAdapterBase):
         """Cancel a job."""
         url = self.get_url('cancel')
         return self.session.post(url).json()
+
+    def properties(self):
+        """Return the backend properties of a job."""
+        url = self.get_url('properties')
+        return self.session.get(url).json()
 
     def status(self):
         """Return the status of a job."""
