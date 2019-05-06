@@ -14,7 +14,7 @@
 
 import os
 
-from setuptools import setup
+from setuptools import setup, find_namespace_packages
 
 requirements = [
     "qiskit-terra>=0.8",
@@ -61,9 +61,7 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
     keywords="qiskit sdk quantum api ibmq",
-    packages=['qiskit.providers.ibmq',
-              'qiskit.providers.ibmq.api',
-              'qiskit.providers.ibmq.credentials'],
+    packages=find_namespace_packages(exclude=['test']),
     install_requires=requirements,
     include_package_data=True,
     python_requires=">=3.5"
