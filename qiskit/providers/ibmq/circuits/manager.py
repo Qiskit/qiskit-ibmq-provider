@@ -97,8 +97,14 @@ class CircuitsManager:
 
         # Extra check for IBMQConnector code path.
         if 'error' in response:
+            # Hub permission error.
             if response['error'].get('code') == 'HUB_NOT_FOUND':
                 raise CircuitAvailabilityError() from None
+
+            # Generic error.
+            if response['error'].get('code') == 'GENERIC_ERROR':
+                raise CircuitAvailabilityError() from None
+
             raise CircuitSubmitError(str(response))
 
         # Create a Job for the circuit.
