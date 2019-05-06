@@ -30,7 +30,12 @@ CLIENT_APPLICATION = 'qiskit-api-py'
 
 
 class RetrySession(Session):
-    """Session with retry and handling of IBM Q parameters."""
+    """Session with retry and handling of IBM Q parameters.
+
+    Custom session for use with IBM Q, that includes a retry mechanism based
+    on urllib3 and handling of specific parameters based on
+    ``requests.Session``.
+    """
 
     def __init__(self, base_url, access_token=None,
                  retries=5, backoff_factor=0.5,
@@ -113,7 +118,7 @@ class RetrySession(Session):
             # compatibility.
             message = str(ex)
             if self.access_token:
-                message = message.replace(self.access_token, '[redacted]')
+                message = message.replace(self.access_token, '...')
 
             raise RequestsApiError(ex, message) from None
 

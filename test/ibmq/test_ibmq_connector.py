@@ -46,7 +46,7 @@ class TestIBMQConnector(QiskitTestCase):
         """Helper for instantating an IBMQConnector."""
         if ('quantum-computing.ibm.com/api' in qe_url and
                 'auth' in qe_url):
-            raise SkipTest('Classic api URL not provided')
+            raise SkipTest('Test needs credentials for classic API')
 
         return IBMQConnector(qe_token, config={'url': qe_url})
 
