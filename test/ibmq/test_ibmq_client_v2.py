@@ -47,7 +47,7 @@ class TestIBMQClient(QiskitTestCase):
         """Helper for instantiating an IBMQClient."""
         if not ('quantum-computing.ibm.com/api' in qe_url and
                 'auth' in qe_url):
-            raise SkipTest('New api URL not provided')
+            raise SkipTest('Test needs credentials for new API')
         return IBMQClient(qe_token, qe_url)
 
     @requires_qe_access
