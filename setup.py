@@ -14,7 +14,7 @@
 
 import os
 
-from setuptools import setup, find_namespace_packages
+from setuptools import setup
 
 requirements = [
     "qiskit-terra>=0.8",
@@ -39,7 +39,7 @@ with open(README_PATH) as readme_file:
 setup(
     name="qiskit-ibmq-provider",
     version=VERSION,
-    description="Qiskit provider for accesing the quantum devices and "
+    description="Qiskit provider for accessing the quantum devices and "
                 "simulators at IBMQ",
     long_description=README,
     long_description_content_type='text/markdown',
@@ -61,7 +61,11 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
     keywords="qiskit sdk quantum api ibmq",
-    packages=find_namespace_packages(exclude=['test']),
+    packages=['qiskit.providers.ibmq',
+              'qiskit.providers.ibmq.api',
+              'qiskit.providers.ibmq.api_v2',
+              'qiskit.providers.ibmq.circuits',
+              'qiskit.providers.ibmq.credentials'],
     install_requires=requirements,
     include_package_data=True,
     python_requires=">=3.5"
