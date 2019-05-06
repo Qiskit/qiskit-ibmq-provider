@@ -33,9 +33,11 @@ def update_qobj_config(qobj, backend_options=None, noise_model=None):
     # Append backend options to configuration.
     if backend_options:
         for key, val in backend_options.items():
+            if key == 'noise_model':
+                val = val.as_dict(serializable=True)
             config[key] = val
 
-    # Append noise model to configuration.
+    # Append noise model to configuration. Overwrites backend option
     if noise_model:
         config['noise_model'] = noise_model.as_dict(serializable=True)
 
