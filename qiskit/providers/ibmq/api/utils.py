@@ -352,10 +352,18 @@ class Request:
         url = self._sanitize_url(response.url)
 
         if response.status_code != requests.codes.ok:
-            logger.warning('Got a %s code response to %s: %s',
-                           response.status_code,
-                           url,
-                           response.text)
+            if 'QCircuitApiModels' in url:
+                # Reduce verbosity for Circuits invocation.
+                # TODO: reenable once the API is more stable.
+                logger.debug('Got a %s code response to %s: %s',
+                             response.status_code,
+                             url,
+                             response.text)
+            else:
+                logger.warning('Got a %s code response to %s: %s',
+                               response.status_code,
+                               url,
+                               response.text)
             if response.status_code in self.errors_not_retry:
                 raise ApiError(usr_msg='Got a {} code response to {}: {}'.format(
                     response.status_code,
