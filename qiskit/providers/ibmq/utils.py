@@ -16,6 +16,7 @@
 
 from qiskit.qobj import QobjHeader
 
+
 def _serialize_noise_model(config):
     """Traverse the dictionary looking for noise_model keys and apply
        a transformation so it can be serialized.
@@ -39,6 +40,7 @@ def _serialize_noise_model(config):
                     pass
 
     return config
+
 
 def update_qobj_config(qobj, backend_options=None, noise_model=None):
     """Update a Qobj configuration from options and noise model.
