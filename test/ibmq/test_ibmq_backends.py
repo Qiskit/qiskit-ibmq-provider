@@ -16,7 +16,7 @@
 """Tests for all IBMQ backends."""
 
 
-from unittest import skip, expectedFailure TestLoader, TextTestRunner
+from unittest import skip, expectedFailure, TestLoader, TextTestRunner
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
