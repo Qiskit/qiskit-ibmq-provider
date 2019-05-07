@@ -21,7 +21,7 @@ from unittest import skip, expectedFailure, TestLoader, TextTestRunner
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.qobj import QobjHeader
-from qiskit.test import QiskitTestCase, requires_qe_access, slow_test
+from qiskit.test import requires_qe_access, slow_test
 from qiskit.compiler import assemble, transpile
 
 from .ibmqprovidertestcase import IBMQProviderTestCase
