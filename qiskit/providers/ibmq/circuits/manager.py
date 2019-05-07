@@ -154,7 +154,7 @@ class CircuitsManager:
         Raises:
             CircuitError: if the parameters are not valid.
         """
-        if 2 <= number_of_qubits <= 20:
+        if not 2 <= number_of_qubits <= 20:
             raise CircuitError('Invalid number_of_qubits')
         if len(angles) != number_of_qubits*3:
             raise CircuitError('Invalid angles length')
@@ -184,7 +184,7 @@ class CircuitsManager:
         Raises:
             CircuitError: if the parameters are not valid.
         """
-        if 4 <= number_of_qubits <= 20:
+        if not 4 <= number_of_qubits <= 20:
             raise CircuitError('Invalid number_of_qubits')
         if len(angles) % 3*number_of_qubits != 0:
             raise CircuitError('Invalid angles length')
