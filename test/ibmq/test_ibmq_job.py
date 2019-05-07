@@ -29,7 +29,7 @@ from qiskit.providers.ibmq import IBMQ, least_busy
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.ibmqjob import IBMQJob
 from qiskit.test import requires_qe_access, slow_test
-from qiskit.tools.compiler import compile
+from qiskit.compiler import assemble, transpile
 from ..jobtestcase import JobTestCase
 
 
@@ -51,14 +51,14 @@ class TestIBMQJob(JobTestCase):
         qc = QuantumCircuit(qr, cr, name='hadamard')
         qc.h(qr)
         qc.measure(qr, cr)
-        qobj = compile([self._qc, qc], backend)
+        qobj = assemble(transpile([self._qc, qc], backend=backend), backend=backend)
         shots = qobj.config.shots
         job = backend.run(qobj)
         result = job.result()
         counts_qx1 = result.get_counts(0)
         counts_qx2 = result.get_counts(1)
-        counts_ex1 = {'00': shots/2, '11': shots/2}
-        counts_ex2 = {'00': shots/4, '11': shots/4, '10': shots/4, '01': shots/4}
+        counts_ex1 = {'00': shots / 2, '11': shots / 2}
+        counts_ex2 = {'00': shots / 4, '11': shots / 4, '10': shots / 4, '01': shots / 4}
         states1 = counts_qx1.keys() | counts_ex1.keys()
         states2 = counts_qx2.keys() | counts_ex2.keys()
         # contingency table
@@ -84,7 +84,7 @@ class TestIBMQJob(JobTestCase):
         IBMQ.enable_account(qe_token, qe_url)
         backend = least_busy(IBMQ.backends(simulator=False))
 
-        qobj = compile(self._qc, backend)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         shots = qobj.config.shots
         job = backend.run(qobj)
         while not job.status() is JobStatus.DONE:
@@ -92,8 +92,8 @@ class TestIBMQJob(JobTestCase):
 
         result = job.result()
         counts_qx = result.get_counts(0)
-        counts_ex = {'00': shots/2, '11': shots/2}
-        self.assertDictAlmostEqual(counts_qx, counts_ex, shots*0.1)
+        counts_ex = {'00': shots / 2, '11': shots / 2}
+        self.assertDictAlmostEqual(counts_qx, counts_ex, shots * 0.1)
 
         # Test fetching the job properties, as this is a real backend and is
         # guaranteed to have them.
@@ -113,17 +113,18 @@ class TestIBMQJob(JobTestCase):
         qr = QuantumRegister(num_qubits, 'qr')
         cr = ClassicalRegister(num_qubits, 'cr')
         qc = QuantumCircuit(qr, cr)
-        for i in range(num_qubits-1):
-            qc.cx(qr[i], qr[i+1])
+        for i in range(num_qubits - 1):
+            qc.cx(qr[i], qr[i + 1])
         qc.measure(qr, cr)
-        qobj = compile([qc]*10, backend)
+        qobj = assemble(transpile([qc] * 10, backend=backend), backend=backend)
         num_jobs = 5
         job_array = [backend.run(qobj) for _ in range(num_jobs)]
         found_async_jobs = False
         timeout = 30
         start_time = time.time()
         while not found_async_jobs:
-            check = sum([job.status() is JobStatus.RUNNING for job in job_array])
+            check = sum(
+                [job.status() is JobStatus.RUNNING for job in job_array])
             if check >= 2:
                 self.log.info('found %d simultaneous jobs', check)
                 break
@@ -135,7 +136,7 @@ class TestIBMQJob(JobTestCase):
             for job in job_array:
                 self.log.info('%s %s %s %s', job.status(), job.status() is JobStatus.RUNNING,
                               check, job.job_id())
-            self.log.info('-  %s', str(time.time()-start_time))
+            self.log.info('-  %s', str(time.time() - start_time))
             if time.time() - start_time > timeout:
                 raise TimeoutError('failed to see multiple running jobs after '
                                    '{0} s'.format(timeout))
@@ -144,7 +145,8 @@ class TestIBMQJob(JobTestCase):
         result_array = [job.result() for job in job_array]
         self.log.info('got back all job results')
         # Ensure all jobs have finished.
-        self.assertTrue(all([job.status() is JobStatus.DONE for job in job_array]))
+        self.assertTrue(
+            all([job.status() is JobStatus.DONE for job in job_array]))
         self.assertTrue(all([result.success for result in result_array]))
 
         # Ensure job ids are unique.
@@ -164,17 +166,19 @@ class TestIBMQJob(JobTestCase):
         qr = QuantumRegister(num_qubits, 'qr')
         cr = ClassicalRegister(num_qubits, 'cr')
         qc = QuantumCircuit(qr, cr)
-        for i in range(num_qubits-1):
-            qc.cx(qr[i], qr[i+1])
+        for i in range(num_qubits - 1):
+            qc.cx(qr[i], qr[i + 1])
         qc.measure(qr, cr)
-        qobj = compile(qc, backend)
+        qobj = assemble(transpile(qc, backend=backend), backend=backend)
         num_jobs = 3
         job_array = [backend.run(qobj) for _ in range(num_jobs)]
         time.sleep(3)  # give time for jobs to start (better way?)
         job_status = [job.status() for job in job_array]
-        num_init = sum([status is JobStatus.INITIALIZING for status in job_status])
+        num_init = sum(
+            [status is JobStatus.INITIALIZING for status in job_status])
         num_queued = sum([status is JobStatus.QUEUED for status in job_status])
-        num_running = sum([status is JobStatus.RUNNING for status in job_status])
+        num_running = sum(
+            [status is JobStatus.RUNNING for status in job_status])
         num_done = sum([status is JobStatus.DONE for status in job_status])
         num_error = sum([status is JobStatus.ERROR for status in job_status])
         self.log.info('number of currently initializing jobs: %d/%d',
@@ -193,7 +197,8 @@ class TestIBMQJob(JobTestCase):
         result_array = [job.result() for job in job_array]
 
         # Ensure all jobs have finished.
-        self.assertTrue(all([job.status() is JobStatus.DONE for job in job_array]))
+        self.assertTrue(
+            all([job.status() is JobStatus.DONE for job in job_array]))
         self.assertTrue(all([result.success for result in result_array]))
 
         # Ensure job ids are unique.
@@ -209,7 +214,7 @@ class TestIBMQJob(JobTestCase):
                         if self.using_ibmq_credentials else 'ibmqx4')
         backend = IBMQ.get_backend(backend_name)
 
-        qobj = compile(self._qc, backend)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
         self.wait_for_initialization(job, timeout=5)
         can_cancel = job.cancel()
@@ -222,7 +227,7 @@ class TestIBMQJob(JobTestCase):
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
-        qobj = compile(self._qc, backend)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
         self.log.info('job_id: %s', job.job_id())
         self.assertTrue(job.job_id() is not None)
@@ -233,7 +238,7 @@ class TestIBMQJob(JobTestCase):
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
-        qobj = compile(self._qc, backend)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
         self.assertTrue(job.backend().name() == backend.name())
 
@@ -246,11 +251,13 @@ class TestIBMQJob(JobTestCase):
         start_time = time.time()
         job_list = backend.jobs(limit=5, skip=0)
         self.log.info('time to get jobs: %0.3f s', time.time() - start_time)
-        self.log.info('found %s jobs on backend %s', len(job_list), backend.name())
+        self.log.info('found %s jobs on backend %s',
+                      len(job_list), backend.name())
         for job in job_list:
             self.log.info('status: %s', job.status())
             self.assertTrue(isinstance(job.job_id(), str))
-        self.log.info('time to get job statuses: %0.3f s', time.time() - start_time)
+        self.log.info('time to get job statuses: %0.3f s',
+                      time.time() - start_time)
 
     @requires_qe_access
     def test_retrieve_job(self, qe_token, qe_url):
@@ -258,7 +265,7 @@ class TestIBMQJob(JobTestCase):
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
-        qobj = compile(self._qc, backend)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
 
         rjob = backend.retrieve_job(job.job_id())
@@ -275,10 +282,12 @@ class TestIBMQJob(JobTestCase):
         backends = IBMQ.backends(simulator=False)
         real_backend = least_busy(backends)
 
-        qobj_sim = compile(self._qc, simulator_backend)
+        qobj_sim = assemble(
+            transpile(self._qc, backend=simulator_backend), backend=simulator_backend)
         job_sim = simulator_backend.run(qobj_sim)
 
-        qobj_real = compile(self._qc, real_backend)
+        qobj_real = assemble(
+            transpile(self._qc, backend=real_backend), backend=real_backend)
         job_real = real_backend.run(qobj_real)
 
         # test a retrieved job's backend is the same as the queried backend
@@ -370,7 +379,7 @@ class TestIBMQJob(JobTestCase):
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
-        qobj = compile(self._qc, backend)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         # backend.run() will automatically call job.submit()
         job = backend.run(qobj)
         with self.assertRaises(JobError):
@@ -397,13 +406,15 @@ class TestQobjBasedIBMQJob(JobTestCase):
 
     def test_qobj_enabled_job(self):
         """Job should be an instance of IBMQJob."""
-        qobj = compile(self._qc, self._backend)
+        qobj = assemble(
+            transpile(self._qc, backend=self._backend), backend=self._backend)
         job = self._backend.run(qobj)
         self.assertIsInstance(job, IBMQJob)
 
     def test_qobj_enabled_result(self):
         """Jobs can be retrieved."""
-        qobj = compile(self._qc, self._backend)
+        qobj = assemble(
+            transpile(self._qc, backend=self._backend), backend=self._backend)
         job = self._backend.run(qobj)
         try:
             job.result()
