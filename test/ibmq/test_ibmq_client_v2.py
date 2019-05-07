@@ -18,11 +18,11 @@ import re
 from unittest import SkipTest, skip
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
+from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.api_v2 import IBMQClient
 from qiskit.providers.ibmq.api_v2.exceptions import ApiError
 from qiskit.test import QiskitTestCase, requires_qe_access
-from qiskit.tools.compiler import compile
 
 
 class TestIBMQClient(QiskitTestCase):
@@ -65,7 +65,8 @@ class TestIBMQClient(QiskitTestCase):
         # Create a Qobj.
         backend_name = 'ibmq_qasm_simulator'
         backend = IBMQ.get_backend(backend_name)
-        qobj = compile(self.qc1, backend=backend, seed=self.seed, shots=1)
+        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
+        qobj = assemble(circuit, backend, shots=1)
 
         # Run the job through the IBMQClient directly.
         api = backend._api
@@ -123,8 +124,8 @@ class TestIBMQClient(QiskitTestCase):
 
         backend_name = 'ibmq_qasm_simulator'
         backend = IBMQ.get_backend(backend_name)
-        qobj = compile([self.qc1, self.qc2],
-                       backend=backend, seed=self.seed, shots=1)
+        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
+        qobj = assemble(circuit, backend, shots=1)
 
         api = backend._api
         job = api.run_job(qobj.as_dict(), backend_name)
