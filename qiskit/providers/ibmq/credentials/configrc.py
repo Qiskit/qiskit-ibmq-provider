@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """Utilities for reading and writing credentials from and to config files."""
 
@@ -75,8 +82,8 @@ def write_qiskit_rc(credentials, filename=None):
             location is used (`HOME/.qiskit/qiskitrc`).
     """
     def _credentials_object_to_dict(obj):
-        return {key: getattr(obj, key)
-                for key in ['token', 'url', 'proxies', 'verify']
+        return {key: getattr(obj, key) for key in
+                ['token', 'url', 'websocket_url', 'proxies', 'verify']
                 if getattr(obj, key)}
 
     def _section_name(credentials_):

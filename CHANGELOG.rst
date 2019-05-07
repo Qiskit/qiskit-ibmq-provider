@@ -19,9 +19,49 @@ The format is based on `Keep a Changelog`_.
 `UNRELEASED`_
 ^^^^^^^^^^^^^
 
+`0.2.1`_ - 2019-05-06
+^^^^^^^^^^^^^^^^^^^^^
 
-`0.1rc2`_
-^^^^^^^^^
+Fixed
+"""""
+
+- Improved compatibility with older setuptools versions. (#85)
+
+
+`0.2.0`_ - 2019-05-06
+^^^^^^^^^^^^^^^^^^^^^
+
+Added
+"""""
+
+- The IBMQProvider supports connecting to the new version of the IBM Q API.
+  Please note support for this version is still experimental. (#78)
+- Added support for ``Circuits`` through the new API. (#79).
+
+Fixed
+"""""
+
+- Fixed incorrect parsing of some API hub URLs (#77).
+- Fixed noise model handling for remote simulators (#84).
+
+
+`0.1.1`_ - 2019-05-01
+^^^^^^^^^^^^^^^^^^^^^
+
+Changed
+"""""""
+
+- The backend configurations now return instances of specialized
+  ``BackendConfiguration`` classes (ie. ``QasmBackendConfiguration``). (#74).
+
+Fixed
+"""""
+
+- Fixed signature mismatch during ``job.cancel()``. (#73)
+
+
+`0.1`_ - 2019-04-17
+^^^^^^^^^^^^^^^^^^^
 
 
 Added
@@ -32,7 +72,7 @@ Added
 - Added ``backend.defauls()`` for retrieving the pulse defaults for a
   backend through a new endpoint (#33).
 - Added ``job.properties()`` for retrieving the backend properties for
-  a job through a new endpint (#35).
+  a job through a new endpoint (#35).
 
 Changed
 """""""
@@ -44,7 +84,7 @@ Changed
 - Ensured that retrieved jobs come from their appropriate backend (#23)
 - Job ``error_message()`` function now summarizes the problems that made the
   job to fail. (#48)
-
+- ``backend.jobs()`` no longer emits a warning for pre-qobj jobs. (#59)
 
 Removed
 """""""
@@ -53,7 +93,10 @@ Removed
 
 
 
-.. _UNRELEASED: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...HEAD
-.. _0.1rc2: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1rc2
+.. _UNRELEASED: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.1...HEAD
+.. _0.2.1: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.0...0.2.1
+.. _0.2.0: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1.1...0.2.0
+.. _0.1.1: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1...0.1.1
+.. _0.1: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1
 
 .. _Keep a Changelog: http://keepachangelog.com/en/1.0.0/

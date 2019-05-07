@@ -1,13 +1,21 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """Test IBMQConnector."""
 
 import re
+from unittest import SkipTest
 
 from qiskit.circuit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.compiler import assemble, transpile
@@ -37,6 +45,10 @@ class TestIBMQConnector(QiskitTestCase):
     @staticmethod
     def _get_api(qe_token, qe_url):
         """Helper for instantating an IBMQConnector."""
+        if ('quantum-computing.ibm.com/api' in qe_url and
+                'auth' in qe_url):
+            raise SkipTest('Test needs credentials for classic API')
+
         return IBMQConnector(qe_token, config={'url': qe_url})
 
     @requires_qe_access
@@ -54,6 +66,7 @@ class TestIBMQConnector(QiskitTestCase):
     @requires_qe_access
     def test_api_run_job(self, qe_token, qe_url):
         """Test running a job against a simulator."""
+        _ = self._get_api(qe_token, qe_url)
         IBMQ.enable_account(qe_token, qe_url)
 
         backend_name = 'ibmq_qasm_simulator'
@@ -71,6 +84,7 @@ class TestIBMQConnector(QiskitTestCase):
     @requires_qe_access
     def test_api_run_job_fail_backend(self, qe_token, qe_url):
         """Test running a job against an invalid backend."""
+        _ = self._get_api(qe_token, qe_url)
         IBMQ.enable_account(qe_token, qe_url)
 
         backend_name = 'ibmq_qasm_simulator'
@@ -132,6 +146,7 @@ class TestIBMQConnector(QiskitTestCase):
     @requires_qe_access
     def test_get_job_includes(self, qe_token, qe_url):
         """Check the field includes parameter for get_job."""
+        _ = self._get_api(qe_token, qe_url)
         IBMQ.enable_account(qe_token, qe_url)
 
         backend_name = 'ibmq_qasm_simulator'

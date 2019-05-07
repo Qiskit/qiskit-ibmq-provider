@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """Utilities for reading credentials from environment variables."""
 
@@ -16,6 +23,7 @@ from .credentials import Credentials
 VARIABLES_MAP = {
     'QE_TOKEN': 'token',
     'QE_URL': 'url',
+    'QE_WEBSOCKET_URL': 'websocket_url',
     'QE_HUB': 'hub',
     'QE_GROUP': 'group',
     'QE_PROJECT': 'project'
@@ -29,7 +37,6 @@ def read_credentials_from_environ():
         dict: dictionary with the credentials, in the form::
 
             {credentials_unique_id: Credentials}
-
     """
     # The token is the only required parameter.
     if not (os.getenv('QE_TOKEN') and os.getenv('QE_URL')):
