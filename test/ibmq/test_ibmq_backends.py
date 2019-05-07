@@ -179,7 +179,6 @@ class TestIBMQBackends(IBMQProviderTestCase):
                     self.assertEqual(
                         backend_by_display_name.name(), backend_name)
 
-
     def gen_backend_test_class(self, backend):
         """Create a test class, and instance it, and call run() on it
         https://github.com/Qiskit/qiskit-ibmq-provider/issues/52"""
