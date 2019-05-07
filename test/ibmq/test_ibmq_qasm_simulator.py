@@ -10,7 +10,7 @@
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQ
 from qiskit.test import QiskitTestCase, requires_qe_access
-from qiskit.tools.compiler import compile
+from qiskit.compiler import assemble, transpile
 
 
 class TestIbmqQasmSimulator(QiskitTestCase):
@@ -27,7 +27,8 @@ class TestIbmqQasmSimulator(QiskitTestCase):
         qc = QuantumCircuit(qr, cr, name='qc')
         qc.h(qr[0])
         qc.measure(qr[0], cr[0])
-        qobj = compile(qc, backend=backend, seed=73846087)
+        qobj = assemble(transpile(qc, backend=backend, seed_transpiler=73846087),
+                        backend=backend)
         shots = qobj.config.shots
         job = backend.run(qobj)
         result = job.result()
@@ -54,7 +55,8 @@ class TestIbmqQasmSimulator(QiskitTestCase):
         qcr2.measure(qr[0], cr[0])
         qcr2.measure(qr[1], cr[1])
         shots = 1024
-        qobj = compile([qcr1, qcr2], backend=backend, seed=73846087, shots=shots)
+        qobj = assemble(transpile([qcr1, qcr2], backend=backend, seed_transpiler=73846087),
+                        backend=backend, shots=shots)
         job = backend.run(qobj)
         result = job.result()
         counts1 = result.get_counts(qcr1)
@@ -88,8 +90,8 @@ class TestIbmqQasmSimulator(QiskitTestCase):
         qcr2.measure(qr1[1], cr1[1])
         qcr2.measure(qr2[0], cr2[0])
         qcr2.measure(qr2[1], cr2[1])
-        shots = 1024
-        qobj = compile([qcr1, qcr2], backend, seed=8458, shots=shots, seed_mapper=88434)
+        qobj = assemble(transpile([qcr1, qcr2], backend, seed_transpiler=8458),
+                        backend=backend, shots=1024)
         job = backend.run(qobj)
         result = job.result()
         result1 = result.get_counts(qcr1)

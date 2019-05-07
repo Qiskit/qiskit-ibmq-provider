@@ -10,9 +10,10 @@
 import re
 
 from qiskit.circuit import QuantumCircuit, QuantumRegister, ClassicalRegister
-from qiskit.tools.compiler import compile
+from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq import IBMQ
-from qiskit.providers.ibmq.api import (ApiError, BadBackendError, IBMQConnector)
+from qiskit.providers.ibmq.api import (
+    ApiError, BadBackendError, IBMQConnector)
 from qiskit.test import QiskitTestCase, requires_qe_access
 
 
@@ -57,7 +58,8 @@ class TestIBMQConnector(QiskitTestCase):
 
         backend_name = 'ibmq_qasm_simulator'
         backend = IBMQ.get_backend(backend_name)
-        qobj = compile(self.qc1, backend=backend, seed=self.seed, shots=1)
+        qobj = assemble(transpile(self.qc1, backend=backend, seed_transpiler=self.seed),
+                        backend=backend, shots=1)
 
         api = backend._api
         job = api.run_job(qobj.as_dict(), backend_name)
@@ -73,7 +75,8 @@ class TestIBMQConnector(QiskitTestCase):
 
         backend_name = 'ibmq_qasm_simulator'
         backend = IBMQ.get_backend(backend_name)
-        qobj = compile(self.qc1, backend=backend, seed=self.seed, shots=1)
+        qobj = assemble(transpile(self.qc1, backend=backend, seed_transpiler=self.seed),
+                        backend=backend, shots=1)
 
         api = backend._api
         self.assertRaises(BadBackendError, api.run_job, qobj.as_dict(),
@@ -133,8 +136,8 @@ class TestIBMQConnector(QiskitTestCase):
 
         backend_name = 'ibmq_qasm_simulator'
         backend = IBMQ.get_backend(backend_name)
-        qobj = compile([self.qc1, self.qc2],
-                       backend=backend, seed=self.seed, shots=1)
+        qobj = assemble(transpile([self.qc1, self.qc2], backend=backend, seed_transpiler=self.seed),
+                        backend=backend, shots=1)
 
         api = backend._api
         job = api.run_job(qobj.as_dict(), backend_name)
