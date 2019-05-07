@@ -15,13 +15,14 @@
 
 """Tests for all IBMQ backends."""
 
+
 from unittest import skip, TestLoader, TextTestRunner
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.qobj import QobjHeader
-from qiskit.test import requires_qe_access, slow_test
-from qiskit.tools.compiler import compile
+from qiskit.test import QiskitTestCase, requires_qe_access, slow_test
+from qiskit.compiler import assemble, transpile
 
 from .ibmqprovidertestcase import IBMQProviderTestCase
 from .ibmqbackendtestcase import IBMQBackendTestCase
@@ -109,6 +110,7 @@ class TestIBMQBackends(IBMQProviderTestCase):
         for backend in remotes:
             _ = backend.defaults()
 
+    @expectedFailure
     @requires_qe_access
     def test_qobj_headers_in_result_sims(self, qe_token, qe_url):
         """Test that the qobj headers are passed onto the results for sims."""
@@ -119,11 +121,13 @@ class TestIBMQBackends(IBMQProviderTestCase):
 
         for backend in backends:
             with self.subTest(backend=backend):
-                qobj = compile(self.qc1, backend)
+                circuits = transpile(self.qc1, backend=backend)
 
                 # Update the Qobj header.
-                qobj.header = QobjHeader.from_dict(custom_qobj_header)
-                # Update the Qobj.experiment header.
+                qobj_header = QobjHeader.from_dict(custom_qobj_header)
+                # TODO: assemble appends extra keys to the header in terra 0.8.
+                qobj = assemble(circuits, backend=backend,
+                                qobj_header=qobj_header)
                 qobj.experiments[0].header.some_field = 'extra info'
 
                 result = backend.run(qobj).result()
@@ -142,7 +146,7 @@ class TestIBMQBackends(IBMQProviderTestCase):
 
         for backend in backends:
             with self.subTest(backend=backend):
-                qobj = compile(self.qc1, backend)
+                qobj = transpile(self.qc1, backend=backend)
 
                 # Update the Qobj header.
                 qobj.header = QobjHeader.from_dict(custom_qobj_header)
@@ -174,6 +178,7 @@ class TestIBMQBackends(IBMQProviderTestCase):
                     self.assertEqual(backend_by_name, backend_by_display_name)
                     self.assertEqual(
                         backend_by_display_name.name(), backend_name)
+
 
     def gen_backend_test_class(self, backend):
         """Create a test class, and instance it, and call run() on it

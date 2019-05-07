@@ -21,7 +21,7 @@ from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
 from qiskit.providers.ibmq import IBMQ
 from qiskit.qasm import pi
 from qiskit.test import QiskitTestCase, requires_qe_access, slow_test
-from qiskit.tools.compiler import compile
+from qiskit.compiler import transpile
 
 
 class TestIBMQQobj(QiskitTestCase):
@@ -70,7 +70,7 @@ class TestIBMQQobj(QiskitTestCase):
         circuit = QuantumCircuit(qr, cr)
         circuit.measure(qr[0], cr[0])
 
-        qobj = compile(circuit, self._remote_backend)
+        qobj = transpile(circuit, backend=self._remote_backend)
         result_remote = self._remote_backend.run(qobj).result()
         result_local = self._local_backend.run(qobj).result()
         self.assertDictAlmostEqual(result_remote.get_counts(circuit),
@@ -86,7 +86,7 @@ class TestIBMQQobj(QiskitTestCase):
         circuit.x(qr[0])
         circuit.measure(qr[0], cr[0])
 
-        qobj = compile(circuit, self._remote_backend)
+        qobj = transpile(circuit, backend=self._remote_backend)
         result_remote = self._remote_backend.run(qobj).result()
         result_local = self._local_backend.run(qobj).result()
         self.assertDictAlmostEqual(result_remote.get_counts(circuit),
@@ -106,7 +106,7 @@ class TestIBMQQobj(QiskitTestCase):
         circuit.measure(qr[2], cr[2])
         circuit.measure(qr[3], cr[3])
 
-        qobj = compile(circuit, self._remote_backend)
+        qobj = transpile(circuit, backend=self._remote_backend)
         result_remote = self._remote_backend.run(qobj).result()
         result_local = self._local_backend.run(qobj).result()
         self.assertDictAlmostEqual(result_remote.get_counts(circuit),
@@ -127,8 +127,8 @@ class TestIBMQQobj(QiskitTestCase):
         circuit.measure(qr[2], cr[1])
         circuit.measure(qr[3], cr[3])
 
-        qobj_remote = compile(circuit, self._remote_backend)
-        qobj_local = compile(circuit, self._local_backend)
+        qobj_remote = transpile(circuit, backend=self._remote_backend)
+        qobj_local = transpile(circuit, backend=self._local_backend)
         result_remote = self._remote_backend.run(qobj_remote).result()
         result_local = self._local_backend.run(qobj_local).result()
         self.assertDictAlmostEqual(result_remote.get_counts(circuit),
@@ -155,7 +155,7 @@ class TestIBMQQobj(QiskitTestCase):
         circuit.measure(qr2[0], cr1[2])
         circuit.measure(qr2[1], cr1[1])
 
-        qobj = compile(circuit, self._remote_backend)
+        qobj = transpile(circuit, backend=self._remote_backend)
         result_remote = self._remote_backend.run(qobj).result()
         result_local = self._local_backend.run(qobj).result()
         self.assertDictAlmostEqual(result_remote.get_counts(circuit),
@@ -191,7 +191,7 @@ class TestIBMQQobj(QiskitTestCase):
         circuit2.measure(qr1[0], cr1[2])
         circuit2.measure(qr2[1], cr1[2])
 
-        qobj = compile([circuit1, circuit2], self._remote_backend)
+        qobj = transpile([circuit1, circuit2], backend=self._remote_backend)
         result_remote = self._remote_backend.run(qobj).result()
         result_local = self._local_backend.run(qobj).result()
         self.assertDictAlmostEqual(result_remote.get_counts(circuit1),
@@ -211,7 +211,7 @@ class TestIBMQQobj(QiskitTestCase):
         circuit.measure(qr[0], cr[0])
         circuit.x(qr[0]).c_if(cr, 1)
 
-        qobj = compile(circuit, self._remote_backend)
+        qobj = transpile(circuit, backend=self._remote_backend)
         result_remote = self._remote_backend.run(qobj).result()
         result_local = self._local_backend.run(qobj).result()
         self.assertDictAlmostEqual(result_remote.get_counts(circuit),
@@ -228,7 +228,7 @@ class TestIBMQQobj(QiskitTestCase):
         circuit.ry(pi, qr[2])
         circuit.measure(qr, cr)
 
-        qobj = compile(circuit, self._remote_backend)
+        qobj = transpile(circuit, backend=self._remote_backend)
         result_remote = self._remote_backend.run(qobj).result()
         result_local = self._local_backend.run(qobj).result()
         self.assertDictAlmostEqual(result_remote.get_counts(circuit),
