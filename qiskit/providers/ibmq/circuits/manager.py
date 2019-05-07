@@ -45,6 +45,7 @@ def requires_api_connection(func):
 
 class CircuitsManager:
     """Class that provides access to the different Circuits."""
+
     def __init__(self):
         self.client = None
 
