@@ -1,37 +1,45 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2019, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2018, 2019.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """Utilities related to the IBMQ Provider."""
-
-import json
-
-from numpy import ndarray
 
 from qiskit.qobj import QobjHeader
 
 
-class AerJSONEncoder(json.JSONEncoder):
-    """JSON encoder for NumPy arrays and complex numbers.
+def _serialize_noise_model(config):
+    """Traverse the dictionary looking for noise_model keys and apply
+       a transformation so it can be serialized.
 
-    This functions as the standard JSON Encoder but adds support
-    for encoding:
-        complex numbers z as lists [z.real, z.imag]
-        ndarrays as nested lists.
+       Args:
+           config (dict): The dictionary to traverse
+
+       Returns:
+           dict: The transformed dictionary
     """
+    for k, v in config.items():
+        if isinstance(config[k], dict):
+            _serialize_noise_model(config[k])
+        else:
+            if k == 'noise_model':
+                try:
+                    config[k] = v.as_dict(serializable=True)
+                except AttributeError:
+                    # if .as_dict() fails is probably because the noise_model
+                    # has been already transformed elsewhere
+                    pass
 
-    # pylint: disable=method-hidden,arguments-differ
-    def default(self, obj):
-        if isinstance(obj, ndarray):
-            return obj.tolist()
-        if isinstance(obj, complex):
-            return [obj.real, obj.imag]
-        if hasattr(obj, "as_dict"):
-            return obj.as_dict()
-        return super().default(obj)
+    return config
 
 
 def update_qobj_config(qobj, backend_options=None, noise_model=None):
@@ -52,10 +60,12 @@ def update_qobj_config(qobj, backend_options=None, noise_model=None):
         for key, val in backend_options.items():
             config[key] = val
 
-    # Append noise model to configuration.
+    # Append noise model to configuration. Overwrites backend option
     if noise_model:
-        config['noise_model'] = json.loads(json.dumps(noise_model,
-                                                      cls=AerJSONEncoder))
+        config['noise_model'] = noise_model
+
+    # Look for noise_models in the config, and try to transform them
+    config = _serialize_noise_model(config)
 
     # Update the Qobj configuration.
     qobj.config = QobjHeader.from_dict(config)

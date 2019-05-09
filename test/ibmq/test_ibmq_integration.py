@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """IBMQ provider integration tests (compile and run)."""
 
@@ -11,9 +18,8 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQ, least_busy
 from qiskit.result import Result
 from qiskit.test import QiskitTestCase, requires_qe_access
-from qiskit.tools.compiler import compile
 from qiskit.execute import execute
-from qiskit.transpiler import transpile
+from qiskit.compiler import assemble, transpile
 
 
 class TestIBMQIntegration(QiskitTestCase):
@@ -54,7 +60,7 @@ class TestIBMQIntegration(QiskitTestCase):
         qc.cx(qubit_reg[0], qubit_reg[1])
         qc.measure(qubit_reg, clbit_reg)
 
-        circuits = transpile(qc, backend)
+        circuits = transpile(qc, backend=backend)
         self.assertIsInstance(circuits, QuantumCircuit)
 
     @requires_qe_access
@@ -87,7 +93,8 @@ class TestIBMQIntegration(QiskitTestCase):
         qc.h(qubit_reg[0])
         qc.cx(qubit_reg[0], qubit_reg[1])
         qc.measure(qubit_reg, clbit_reg)
-        qobj = compile(qc, backend, seed=self.seed)
+        qobj = assemble(transpile(qc, backend=backend, seed_transpiler=self.seed),
+                        backend=backend)
         job = backend.run(qobj)
         result = job.result(timeout=20)
         self.assertIsInstance(result, Result)
@@ -106,7 +113,8 @@ class TestIBMQIntegration(QiskitTestCase):
         qc.measure(qubit_reg, clbit_reg)
         qc_extra = QuantumCircuit(qubit_reg, clbit_reg, name="extra")
         qc_extra.measure(qubit_reg, clbit_reg)
-        qobj = compile([qc, qc_extra], backend, seed=self.seed)
+        qobj = assemble(transpile([qc, qc_extra], backend=backend, seed_transpiler=self.seed),
+                        backend=backend)
         job = backend.run(qobj)
         result = job.result()
         self.assertIsInstance(result, Result)
@@ -124,7 +132,7 @@ class TestIBMQIntegration(QiskitTestCase):
         qc.cx(qubit_reg[0], qubit_reg[1])
         qc.measure(qubit_reg, clbit_reg)
 
-        job = execute(qc, backend, seed=self.seed)
+        job = execute(qc, backend, seed_transpiler=self.seed)
         results = job.result()
         self.assertIsInstance(results, Result)
 
@@ -142,6 +150,6 @@ class TestIBMQIntegration(QiskitTestCase):
         qc.measure(qubit_reg, clbit_reg)
         qc_extra = QuantumCircuit(qubit_reg, clbit_reg)
         qc_extra.measure(qubit_reg, clbit_reg)
-        job = execute([qc, qc_extra], backend, seed=self.seed)
+        job = execute([qc, qc_extra], backend, seed_transpiler=self.seed)
         results = job.result()
         self.assertIsInstance(results, Result)

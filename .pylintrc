@@ -69,6 +69,8 @@ disable=no-self-use,        # disabled as it is too verbose
     too-many-public-methods, too-few-public-methods, too-many-ancestors,
     unnecessary-pass,   # allow for methods with just "pass", for clarity
     no-else-return,     # relax "elif" after a clause with a return
+    missing-yield-doc,      # in coroutines, these checks can yield false
+    missing-yield-type-doc  # positives (pun intended)
 
 
 [REPORTS]
@@ -327,7 +329,7 @@ callbacks=cb_,_cb
 
 # List of qualified module names which can have objects that can redefine
 # builtins.
-redefining-builtins-modules=six.moves,future.builtins,qiskit.tools.compiler
+redefining-builtins-modules=six.moves,future.builtins
 
 
 [CLASSES]

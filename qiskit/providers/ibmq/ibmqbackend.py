@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2017, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """Module for interfacing with an IBMQ Backend."""
 
@@ -18,6 +25,7 @@ from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults)
 
 from .api import ApiError
+from .api.apijobstatus import ApiJobStatus
 from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .ibmqjob import IBMQJob
 
@@ -103,7 +111,12 @@ class IBMQBackend(BaseBackend):
         return None
 
     def jobs(self, limit=50, skip=0, status=None, db_filter=None):
-        """Attempt to get the jobs submitted to the backend.
+        """Return the jobs submitted to this backend.
+
+        Return the jobs submitted to this backend, with optional filtering and
+        pagination. Note that jobs submitted with earlier versions of Qiskit
+        (in particular, those that predate the Qobj format) are not included
+        in the returned list.
 
         Args:
             limit (int): number of jobs to retrieve
@@ -146,15 +159,15 @@ class IBMQBackend(BaseBackend):
             if isinstance(status, str):
                 status = JobStatus[status]
             if status == JobStatus.RUNNING:
-                this_filter = {'status': 'RUNNING',
+                this_filter = {'status': ApiJobStatus.RUNNING.value,
                                'infoQueue': {'exists': False}}
             elif status == JobStatus.QUEUED:
-                this_filter = {'status': 'RUNNING',
+                this_filter = {'status': ApiJobStatus.RUNNING.value,
                                'infoQueue.status': 'PENDING_IN_QUEUE'}
             elif status == JobStatus.CANCELLED:
-                this_filter = {'status': 'CANCELLED'}
+                this_filter = {'status': ApiJobStatus.CANCELLED.value}
             elif status == JobStatus.DONE:
-                this_filter = {'status': 'COMPLETED'}
+                this_filter = {'status': ApiJobStatus.COMPLETED.value}
             elif status == JobStatus.ERROR:
                 this_filter = {'status': {'regexp': '^ERROR'}}
             else:
@@ -167,10 +180,9 @@ class IBMQBackend(BaseBackend):
         job_info_list = self._api.get_status_jobs(limit=limit, skip=skip,
                                                   filter=api_filter)
         job_list = []
-        old_format_jobs = []
         for job_info in job_info_list:
             if job_info.get('kind', None) != 'q-object':
-                old_format_jobs.append(job_info.get('id'))
+                # Discard pre-qobj jobs.
                 break
 
             job = IBMQJob(self, job_info.get('id'), self._api,
@@ -178,15 +190,10 @@ class IBMQBackend(BaseBackend):
                           api_status=job_info.get('status'))
             job_list.append(job)
 
-        if old_format_jobs:
-            job_ids = '\n - '.join(old_format_jobs)
-            warnings.warn('Some jobs are in a no-longer supported format. '
-                          'Please send the job using Qiskit 0.8+. Old jobs:'
-                          '\n - {}'.format(job_ids), DeprecationWarning)
         return job_list
 
     def retrieve_job(self, job_id):
-        """Attempt to get the specified job by job_id
+        """Return a job submitted to this backend.
 
         Args:
             job_id (str): the job id of the job to retrieve

@@ -1,15 +1,25 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018, IBM.
+# This code is part of Qiskit.
 #
-# This source code is licensed under the Apache License, Version 2.0 found in
-# the LICENSE.txt file in the root directory of this source tree.
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 """IBM Q API connector."""
 
 import json
 import logging
+import re
 
+from qiskit.providers.ibmq.api.websocket import WebsocketClient
+from .apijobstatus import ApiJobStatus
 from .exceptions import CredentialsError, BadBackendError
 from .utils import Request
 
@@ -67,12 +77,13 @@ class IBMQConnector:
 
     This class exposes a Python API for making requests to the IBMQ platform.
     """
+
     def __init__(self, token=None, config=None, verify=True):
         """ If verify is set to false, ignore SSL certificate errors """
         self.config = config
 
         if self.config and ('url' in self.config):
-            url_parsed = self.config['url'].split('/api')
+            url_parsed = re.compile(r'(?<!\/)\/api').split(self.config['url'])
             if len(url_parsed) == 2:
                 hub = group = project = None
                 project_parse = url_parsed[1].split('/Projects/')
@@ -212,7 +223,7 @@ class IBMQConnector:
             if backend is not None:
                 query['where']['backend.name'] = backend
             if only_completed:
-                query['where']['status'] = 'COMPLETED'
+                query['where']['status'] = ApiJobStatus.COMPLETED.value
 
         url_filter = url_filter + json.dumps(query)
         jobs = self.req.get(url, url_filter)
@@ -373,6 +384,42 @@ class IBMQConnector:
             return []
 
         return response
+
+    def circuit_run(self, name, **kwargs):
+        """Execute a Circuit.
+
+        Args:
+            name (str): name of the Circuit.
+            **kwargs (dict): arguments for the Circuit.
+
+        Returns:
+            dict: json response.
+
+        Raises:
+            CredentialsError: if the user was not authenticated.
+        """
+        if not self.check_credentials():
+            raise CredentialsError('credentials invalid')
+
+        url = '/QCircuitApiModels'
+
+        payload = {
+            'name': name,
+            'params': kwargs
+        }
+
+        response = self.req.post(url, data=json.dumps(payload))
+
+        return response
+
+    def websocket_client(self):
+        """Return a websocket client for interacting with IBMQ.
+
+        Returns:
+            WebsocketClient: an IBMQ websocket client.
+        """
+        return WebsocketClient(self.config['websocket_url'],
+                               self.req.credential.get_token())
 
     def api_version(self):
         """Get the API Version of the QX Platform."""
