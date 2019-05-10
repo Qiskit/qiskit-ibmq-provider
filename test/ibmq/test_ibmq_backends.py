@@ -124,8 +124,9 @@ class TestIBMQBackends(QiskitTestCase):
 
         for backend in backends:
             with self.subTest(backend=backend):
-                qobj = transpile(self.qc1, backend=backend)
+                circuits = transpile(self.qc1, backend=backend)
 
+                qobj = assemble(circuits, backend=backend)
                 # Update the Qobj header.
                 qobj.header = QobjHeader.from_dict(custom_qobj_header)
                 # Update the Qobj.experiment header.
