@@ -141,7 +141,7 @@ class TestIBMQConnector(QiskitTestCase):
         """Check the version of the QX API."""
         api = self._get_api(qe_token, qe_url)
         version = api.api_version()
-        self.assertGreaterEqual(int(version.split(".")[0]), 4)
+        self.assertIn('new_api', version)
 
     @requires_qe_access
     def test_get_job_includes(self, qe_token, qe_url):
