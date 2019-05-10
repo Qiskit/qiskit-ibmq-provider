@@ -103,7 +103,6 @@ class TestIBMQBackends(QiskitTestCase):
             with self.subTest(backend=backend):
                 circuits = transpile(self.qc1, backend=backend)
 
-                # TODO: assemble appends extra keys to the header in terra 0.8.
                 qobj = assemble(circuits, backend=backend)
                 # Update the Qobj header.
                 qobj.header = QobjHeader.from_dict(custom_qobj_header)
