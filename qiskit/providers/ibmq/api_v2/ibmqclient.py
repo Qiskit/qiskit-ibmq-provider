@@ -214,6 +214,29 @@ class IBMQClient:
         """
         return self.api_client.circuit(name, **kwargs)
 
+    def circuit_job_get(self, job_id):
+        """Return information about a Circuit job.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: job information.
+        """
+        return self.api_client.job(job_id).get([], [])
+
+    def circuit_job_status(self, job_id):
+        """Return the status of a Circuits job.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: job status.
+        """
+        return self.job_status(job_id)
+
+
     # Endpoints for compatibility with classic IBMQConnector. These functions
     # are meant to facilitate the transition, and should be removed moving
     # forward.

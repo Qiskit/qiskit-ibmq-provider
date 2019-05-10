@@ -412,6 +412,69 @@ class IBMQConnector:
 
         return response
 
+    def circuit_job_get(self, job_id):
+        """Return information about a Circuit job.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: job information.
+        """
+        if not self.check_credentials():
+            return {'status': 'Error',
+                    'error': 'Not credentials valid'}
+        if not job_id:
+            return {'status': 'Error',
+                    'error': 'Job ID not specified'}
+
+        # TODO: by API constraints, always use the URL without h/g/p.
+        url = '/Jobs/{}'.format(job_id)
+
+        job = self.req.get(url)
+
+        if 'calibration' in job:
+            job['properties'] = job.pop('calibration')
+
+        if 'qObjectResult' in job:
+            # If the job is using Qobj, return the qObjectResult directly,
+            # which should contain a valid Result.
+            return job
+        elif 'qasms' in job:
+            # Fallback for pre-Qobj jobs.
+            for qasm in job['qasms']:
+                if ('result' in qasm) and ('data' in qasm['result']):
+                    qasm['data'] = qasm['result']['data']
+                    del qasm['result']['data']
+                    for key in qasm['result']:
+                        qasm['data'][key] = qasm['result'][key]
+                    del qasm['result']
+
+        return job
+
+    def circuit_job_status(self, job_id):
+        """Return the status of a Circuits job.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: job status.
+        """
+        if not self.check_credentials():
+            return {'status': 'Error',
+                    'error': 'Not credentials valid'}
+        if not job_id:
+            return {'status': 'Error',
+                    'error': 'Job ID not specified'}
+
+        # TODO: by API constraints, always use the URL without h/g/p.
+        url = '/Jobs/{}/status'.format(job_id)
+
+        status = self.req.get(url)
+
+        return status
+
     def websocket_client(self):
         """Return a websocket client for interacting with IBMQ.
 
