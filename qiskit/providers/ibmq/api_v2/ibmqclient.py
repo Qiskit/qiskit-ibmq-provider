@@ -236,7 +236,6 @@ class IBMQClient:
         """
         return self.job_status(job_id)
 
-
     # Endpoints for compatibility with classic IBMQConnector. These functions
     # are meant to facilitate the transition, and should be removed moving
     # forward.

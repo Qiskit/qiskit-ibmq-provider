@@ -17,9 +17,9 @@
 from functools import wraps
 
 from qiskit.providers import JobStatus
-from qiskit.providers.ibmq.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 
+from .circuitjob import CircuitJob
 from .exceptions import (CircuitError,
                          CircuitAvailabilityError, CircuitResultError,
                          CircuitSubmitError)
@@ -36,7 +36,7 @@ def requires_api_connection(func):
     def wrapper(self, *args, **kwargs):
         if not self.client:
             raise CircuitAvailabilityError(
-                'An account must be loaded in order to use Circuits')
+                'An IBM Q Experience 2 account must be loaded in order to use Circuits')
 
         return func(self, *args, **kwargs)
 
@@ -110,11 +110,11 @@ class CircuitsManager:
 
         # Create a Job for the circuit.
         try:
-            job = IBMQJob(backend=None,
-                          job_id=response['id'],
-                          api=self.client,
-                          creation_date=response['creationDate'],
-                          api_status=response['status'])
+            job = CircuitJob(backend=None,
+                             job_id=response['id'],
+                             api=self.client,
+                             creation_date=response['creationDate'],
+                             api_status=response['status'])
         except Exception as ex:
             raise CircuitResultError(str(ex))
 
