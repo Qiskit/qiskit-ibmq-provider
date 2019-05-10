@@ -423,4 +423,13 @@ class IBMQConnector:
 
     def api_version(self):
         """Get the API Version of the QX Platform."""
-        return self.req.get('/version')
+        response = self.req.get('/version')
+
+        # Parse the response, making sure a dict is returned in all cases.
+        if isinstance(response, str):
+            response = {'new_api': False,
+                        'api': response}
+        elif isinstance(response, dict):
+            response['new_api'] = True
+
+        return response
