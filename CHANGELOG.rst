@@ -19,13 +19,24 @@ The format is based on `Keep a Changelog`_.
 `UNRELEASED`_
 ^^^^^^^^^^^^^
 
+Fixed
+"""""
+
+- Fixed Qcircuit status checks according to latest API changes. (#95)
+
+Changed
+"""""""
+
+- Updated detection of classic vs. new api based on version endpoint. (#95)
+
+
 `0.2.2`_ - 2019-05-07
 ^^^^^^^^^^^^^^^^^^^^^
 
 Fixed
 """""
 
-- Fixed Circuits parameter validation.
+- Fixed Circuits parameter validation (#89).
 
 
 `0.2.1`_ - 2019-05-06
