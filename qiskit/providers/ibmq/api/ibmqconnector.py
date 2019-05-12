@@ -18,7 +18,6 @@ import json
 import logging
 import re
 
-from qiskit.providers.ibmq.api.websocket import WebsocketClient
 from .apijobstatus import ApiJobStatus
 from .exceptions import CredentialsError, BadBackendError
 from .utils import Request
@@ -474,15 +473,6 @@ class IBMQConnector:
         status = self.req.get(url)
 
         return status
-
-    def websocket_client(self):
-        """Return a websocket client for interacting with IBMQ.
-
-        Returns:
-            WebsocketClient: an IBMQ websocket client.
-        """
-        return WebsocketClient(self.config['websocket_url'],
-                               self.req.credential.get_token())
 
     def api_version(self):
         """Get the API Version of the QX Platform."""

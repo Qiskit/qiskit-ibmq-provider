@@ -213,14 +213,15 @@ class IBMQBackend(BaseBackend):
                                        .format(job_id, job_info['error']))
 
             # Check for jobs from a different backend.
-            if job_info['backend']['name'] != self.name():
+            job_backend_name = job_info['backend']['name']
+            if job_backend_name != self.name():
                 warnings.warn('Job "{}" belongs to another backend than the one queried. '
                               'The query was made on backend "{}", '
                               'but the job actually belongs to backend "{}".'
-                              .format(job_id, job_info['backend']['name'], self.name()))
+                              .format(job_id, self.name(), job_backend_name))
                 raise IBMQBackendError('Failed to get job "{}": '
                                        'job does not belong to backend "{}".'
-                                       .format(job_id, job_info['backend']['name']))
+                                       .format(job_id, self.name()))
 
             # Check for pre-qobj jobs.
             if job_info.get('kind', None) != 'q-object':
