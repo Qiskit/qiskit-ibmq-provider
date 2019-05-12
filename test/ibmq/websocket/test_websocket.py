@@ -22,8 +22,7 @@ import websockets
 from qiskit.providers.ibmq.api_v2.exceptions import (
     WebsocketError, WebsocketTimeoutError, WebsocketIBMQProtocolError)
 from qiskit.providers.ibmq.api_v2.websocket import WebsocketClient
-from qiskit.test import QiskitTestCase #, requires_qe_access
-#from ..decorators import requires_new_api_auth_credentials
+from qiskit.test import QiskitTestCase
 
 
 from .websocket_server import (
@@ -69,28 +68,32 @@ class TestWebsocketClientMock(QiskitTestCase):
                 loop.run_until_complete(task)
 
     def test_job_final_status(self):
+        """Test retrieving a job already in final status."""
         client = WebsocketClient('ws://127.0.0.1:8765', TOKEN_JOB_COMPLETED)
         response = asyncio.get_event_loop().run_until_complete(
-                client.get_job_status('job_id'))
+            client.get_job_status('job_id'))
         self.assertIsInstance(response, dict)
         self.assertIn('status', response)
         self.assertEqual(response['status'], 'COMPLETED')
 
     def test_job_transition(self):
+        """Test retrieving a job that transitions to final status."""
         client = WebsocketClient('ws://127.0.0.1:8765', TOKEN_JOB_TRANSITION)
         response = asyncio.get_event_loop().run_until_complete(
-                client.get_job_status('job_id'))
+            client.get_job_status('job_id'))
         self.assertIsInstance(response, dict)
         self.assertIn('status', response)
         self.assertEqual(response['status'], 'COMPLETED')
 
     def test_timeout(self):
+        """Test timeout during retrieving a job status."""
         client = WebsocketClient('ws://127.0.0.1:8765', TOKEN_TIMEOUT)
         with self.assertRaises(WebsocketTimeoutError):
             _ = asyncio.get_event_loop().run_until_complete(
                 client.get_job_status('job_id', timeout=2))
 
     def test_invalid_response(self):
+        """Test unparseable response from the server."""
         client = WebsocketClient('ws://127.0.0.1:8765', TOKEN_WRONG_FORMAT)
         with self.assertRaises(WebsocketIBMQProtocolError):
             _ = asyncio.get_event_loop().run_until_complete(

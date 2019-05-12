@@ -24,7 +24,7 @@ from qiskit.providers.ibmq.api_v2 import IBMQClient
 from qiskit.providers.ibmq.api_v2.exceptions import ApiError
 from qiskit.test import QiskitTestCase, requires_qe_access
 
-from ..decorators import requires_new_api_auth_credentials
+from ..decorators import requires_new_api_auth
 
 
 class TestIBMQClient(QiskitTestCase):
@@ -50,14 +50,14 @@ class TestIBMQClient(QiskitTestCase):
         return IBMQClient(qe_token, qe_url)
 
     @requires_qe_access
-    @requires_new_api_auth_credentials
+    @requires_new_api_auth
     def test_valid_login(self, qe_token, qe_url):
         """Test valid authenticating against IBM Q."""
         client = self._get_client(qe_token, qe_url)
         self.assertTrue(client.client_api.session.access_token)
 
     @requires_qe_access
-    @requires_new_api_auth_credentials
+    @requires_new_api_auth
     def test_run_job(self, qe_token, qe_url):
         """Test running a job against a simulator."""
         IBMQ.enable_account(qe_token, qe_url)
@@ -76,7 +76,7 @@ class TestIBMQClient(QiskitTestCase):
         self.assertIsNotNone(job['status'])
 
     @requires_qe_access
-    @requires_new_api_auth_credentials
+    @requires_new_api_auth
     def test_get_status_jobs(self, qe_token, qe_url):
         """Check get status jobs by user authenticated."""
         api = self._get_client(qe_token, qe_url)
@@ -84,7 +84,7 @@ class TestIBMQClient(QiskitTestCase):
         self.assertEqual(len(jobs), 2)
 
     @requires_qe_access
-    @requires_new_api_auth_credentials
+    @requires_new_api_auth
     def test_backend_status(self, qe_token, qe_url):
         """Check the status of a real chip."""
         backend_name = ('ibmq_20_tokyo'
@@ -94,7 +94,7 @@ class TestIBMQClient(QiskitTestCase):
         self.assertIsNotNone(is_available['operational'])
 
     @requires_qe_access
-    @requires_new_api_auth_credentials
+    @requires_new_api_auth
     def test_backend_properties(self, qe_token, qe_url):
         """Check the properties of calibration of a real chip."""
         backend_name = ('ibmq_20_tokyo'
@@ -105,7 +105,7 @@ class TestIBMQClient(QiskitTestCase):
         self.assertIsNotNone(properties)
 
     @requires_qe_access
-    @requires_new_api_auth_credentials
+    @requires_new_api_auth
     def test_available_backends(self, qe_token, qe_url):
         """Check the backends available."""
         api = self._get_client(qe_token, qe_url)
@@ -113,7 +113,7 @@ class TestIBMQClient(QiskitTestCase):
         self.assertGreaterEqual(len(backends), 1)
 
     @requires_qe_access
-    @requires_new_api_auth_credentials
+    @requires_new_api_auth
     def test_api_version(self, qe_token, qe_url):
         """Check the version of the QX API."""
         api = self._get_client(qe_token, qe_url)
@@ -122,7 +122,7 @@ class TestIBMQClient(QiskitTestCase):
 
     @skip('TODO: reenable after checking with API team')
     @requires_qe_access
-    @requires_new_api_auth_credentials
+    @requires_new_api_auth
     def test_get_job_includes(self, qe_token, qe_url):
         """Check the field includes parameter for get_job."""
         IBMQ.enable_account(qe_token, qe_url)
@@ -150,7 +150,7 @@ class TestAuthentication(QiskitTestCase):
     """
 
     @requires_qe_access
-    @requires_new_api_auth_credentials
+    @requires_new_api_auth
     def test_url_404(self, qe_token, qe_url):
         """Test login against a 404 URL"""
         url_404 = re.sub(r'/api.*$', '/api/TEST_404', qe_url)
@@ -158,7 +158,7 @@ class TestAuthentication(QiskitTestCase):
             _ = IBMQClient(qe_token, url_404)
 
     @requires_qe_access
-    @requires_new_api_auth_credentials
+    @requires_new_api_auth
     def test_invalid_token(self, qe_token, qe_url):
         """Test login using invalid token."""
         qe_token = 'INVALID_TOKEN'
@@ -166,7 +166,7 @@ class TestAuthentication(QiskitTestCase):
             _ = IBMQClient(qe_token, qe_url)
 
     @requires_qe_access
-    @requires_new_api_auth_credentials
+    @requires_new_api_auth
     def test_url_unreachable(self, qe_token, qe_url):
         """Test login against an invalid (malformed) URL."""
         qe_url = 'INVALID_URL'

@@ -79,7 +79,7 @@ class WebsocketClient:
             Connect: an open websocket connection.
 
         Raises:
-            WebSocketError: if the connection to the websocket server could
+            WebsocketError: if the connection to the websocket server could
                 not be established.
             WebsocketAuthenticationError: if the connection to the websocket
                 was established, but the authentication failed.
@@ -87,7 +87,7 @@ class WebsocketClient:
                 server was established, but the answer was unexpected.
         """
         try:
-            logger.debug('Starting new websocket connection: {}'.format(url))
+            logger.debug('Starting new websocket connection: %s', url)
             websocket = yield from connect(url)
 
         except ConnectionError as ex:
@@ -152,7 +152,8 @@ class WebsocketClient:
                         timeout = max(5, int(original_timeout - elapsed_time))
                     else:
                         response_raw = yield from websocket.recv()
-                    logger.debug('Received message from websocket: {}'.format(response_raw))
+                    logger.debug('Received message from websocket: %s',
+                                 response_raw)
 
                     response = WebsocketMessage.from_bytes(response_raw)
                     last_status = response.data

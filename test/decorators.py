@@ -18,7 +18,7 @@ from functools import wraps
 from unittest import SkipTest
 
 
-def requires_new_api_auth_credentials(func):
+def requires_new_api_auth(func):
     """Decorator that signals that the test requires new API auth credentials.
 
     Note: this decorator is meant to be used *after* ``requires_qe_access``, as
@@ -47,7 +47,7 @@ def requires_new_api_auth_credentials(func):
     return _wrapper
 
 
-def requires_classic_api_credentials(func):
+def requires_classic_api(func):
     """Decorator that signals that the test requires classic API credentials.
 
     Note: this decorator is meant to be used *after* ``requires_qe_access``, as

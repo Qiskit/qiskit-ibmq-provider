@@ -537,7 +537,7 @@ class IBMQJob(BaseJob):
         """
         # Avoid the websocket invocation if already in a final state.
         if self._status in JOB_FINAL_STATES:
-            return
+            print(2)
 
         try:
             status_response = self._api.job_final_status_websocket(

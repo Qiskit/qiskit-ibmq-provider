@@ -28,6 +28,8 @@ TOKEN_WRONG_FORMAT = 'token_wrong_format'
 
 @asyncio.coroutine
 def websocket_handler(websocket, path):
+    """Entry point for the websocket mock server."""
+    # pylint: disable=unused-argument
     # Receive the authentication message.
     msg_in = yield from websocket.recv()
     auth_message = json.loads(msg_in)
@@ -78,6 +80,7 @@ def handle_token_job_transition(websocket):
     yield from websocket.send(msg_out.as_json().encode('utf8'))
 
     yield from websocket.close(code=4002)
+
 
 @asyncio.coroutine
 def handle_token_timeout(websocket):
