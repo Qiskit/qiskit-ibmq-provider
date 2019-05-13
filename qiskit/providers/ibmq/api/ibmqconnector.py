@@ -313,8 +313,7 @@ class IBMQConnector:
         if not backend_type:
             raise BadBackendError(backend)
 
-        status = self.req.get('/Backends/' + backend_type + '/queue/status',
-                              with_token=False)
+        status = self.req.get('/Backends/' + backend_type + '/queue/status')
         ret = {}
 
         # Adjust fields according to the specs (BackendStatus).
