@@ -23,6 +23,8 @@ Fixed
 """""
 
 - Fixed Qcircuit status checks according to latest API changes. (#95)
+- Fixed an authentication issue with the ``backend_status`` endpoint when
+  using the new api. (#101).
 
 Changed
 """""""
