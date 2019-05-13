@@ -18,7 +18,7 @@ import json
 import logging
 import re
 
-from .apijobstatus import ApiJobStatus
+from qiskit.providers.ibmq.apijobstatus import ApiJobStatus
 from .exceptions import CredentialsError, BadBackendError
 from .utils import Request
 

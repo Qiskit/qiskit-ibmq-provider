@@ -25,7 +25,7 @@ from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults)
 
 from .api import ApiError
-from .api.apijobstatus import ApiJobStatus
+from .apijobstatus import ApiJobStatus
 from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .ibmqjob import IBMQJob
 

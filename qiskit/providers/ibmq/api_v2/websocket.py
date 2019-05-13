@@ -22,6 +22,7 @@ from concurrent import futures
 
 from websockets import connect, ConnectionClosed
 
+from qiskit.providers.ibmq.apijobstatus import ApiJobStatus, API_JOB_FINAL_STATES
 from .exceptions import (WebsocketError, WebsocketTimeoutError,
                          WebsocketIBMQProtocolError,
                          WebsocketAuthenticationError)
@@ -157,6 +158,15 @@ class WebsocketClient:
 
                     response = WebsocketMessage.from_bytes(response_raw)
                     last_status = response.data
+
+                    job_status = response.data.get('status')
+                    if (job_status and
+                            ApiJobStatus(job_status) in API_JOB_FINAL_STATES):
+                        # Force closing the connection.
+                        # TODO: revise with API team the automatic closing.
+                        raise ConnectionClosed(
+                            code=4002,
+                            reason='IBMQProvider closed the connection')
 
                 except futures.TimeoutError:
                     # Timeout during our wait.

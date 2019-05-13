@@ -32,7 +32,7 @@ from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.result import Result
 
 from .api import ApiError
-from .api.apijobstatus import ApiJobStatus
+from .apijobstatus import ApiJobStatus
 from .api_v2.exceptions import WebsocketTimeoutError, WebsocketError
 
 logger = logging.getLogger(__name__)
@@ -537,7 +537,7 @@ class IBMQJob(BaseJob):
         """
         # Avoid the websocket invocation if already in a final state.
         if self._status in JOB_FINAL_STATES:
-            print(2)
+            return
 
         try:
             status_response = self._api.job_final_status_websocket(
