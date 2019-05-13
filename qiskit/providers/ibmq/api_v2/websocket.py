@@ -170,7 +170,7 @@ class WebsocketClient:
 
                 except futures.TimeoutError:
                     # Timeout during our wait.
-                    raise WebsocketTimeoutError('Timeout reached')
+                    raise WebsocketTimeoutError('Timeout reached') from None
                 except ConnectionClosed as ex:
                     # From the API:
                     # 4001: closed due to an internal erros

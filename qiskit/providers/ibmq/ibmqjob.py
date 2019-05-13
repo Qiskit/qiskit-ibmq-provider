@@ -480,6 +480,12 @@ class IBMQJob(BaseJob):
                 logger.warning('Error checking job status using websocket, '
                                'retrying using HTTP.')
                 logger.debug(ex)
+            except JobTimeoutError as ex:
+                # TODO: check with API team for timeout reliability. With this
+                # block, the user timeout is effectively doubled.
+                logger.warning('Timeout checking job status using websocket, '
+                               'retrying using HTTP')
+                logger.debug(ex)
 
         # Use traditional http requests if websocket not available or failed.
         self._wait_for_final_status(timeout, wait)
