@@ -70,7 +70,7 @@ class TestIBMQClient(QiskitTestCase):
 
         # Run the job through the IBMQClient directly.
         api = backend._api
-        job = api.run_job(qobj.as_dict(), backend_name)
+        job = api.submit_job(qobj.as_dict(), backend_name)
 
         self.assertIn('status', job)
         self.assertIsNotNone(job['status'])
@@ -133,7 +133,7 @@ class TestIBMQClient(QiskitTestCase):
         qobj = assemble(circuit, backend, shots=1)
 
         api = backend._api
-        job = api.run_job(qobj.as_dict(), backend_name)
+        job = api.submit_job(qobj.as_dict(), backend_name)
         job_id = job['id']
 
         # Get the job, excluding a parameter.

@@ -151,7 +151,7 @@ class IBMQClient:
         Returns:
             dict: job status.
         """
-        return self.client_api.run_job(backend_name, qobj_dict)
+        return self.client_api.submit_job(backend_name, qobj_dict)
 
     def job_get(self, job_id, excluded_fields=None, included_fields=None):
         """Return information about a job.

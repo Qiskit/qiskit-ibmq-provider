@@ -89,7 +89,7 @@ class Api(RestAdapterBase):
         return self.session.get(
             url, params={'filter': json.dumps(query) if query else None}).json()
 
-    def run_job(self, backend_name, qobj_dict):
+    def submit_job(self, backend_name, qobj_dict):
         """Submit a job for executing.
 
         Args:
