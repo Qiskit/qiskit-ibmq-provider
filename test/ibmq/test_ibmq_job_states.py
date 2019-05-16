@@ -373,7 +373,7 @@ class BaseFakeAPI:
         return {key: value for key, value in complete_response.items()
                 if key in summary_fields}
 
-    def run_job(self, *_args, **_kwargs):
+    def submit_job(self, *_args, **_kwargs):
         time.sleep(0.2)
         return {'id': 'TEST_ID'}
 
@@ -456,14 +456,14 @@ class QueuedAPI(BaseFakeAPI):
 class RejectingJobAPI(BaseFakeAPI):
     """Class for emulating an API unable of initializing."""
 
-    def run_job(self, *_args, **_kwargs):
+    def submit_job(self, *_args, **_kwargs):
         return {'error': 'invalid qobj'}
 
 
 class UnavailableRunAPI(BaseFakeAPI):
     """Class for emulating an API throwing before even initializing."""
 
-    def run_job(self, *_args, **_kwargs):
+    def submit_job(self, *_args, **_kwargs):
         time.sleep(0.2)
         raise ApiError()
 

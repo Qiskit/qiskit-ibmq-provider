@@ -113,9 +113,13 @@ class RetrySession(Session):
             url (string): URL for the new `Request` object.
             bare (bool): if `True`, do not send IBM Q specific information
                 (access token) in the request or modify the `url`.
+            kwargs (dict): additional arguments for the request.
 
         Returns:
-            Request:
+            Request: Request object.
+
+        Raises:
+            RequestsApiError: if the request failed.
         """
         # pylint: disable=arguments-differ
         if bare:
