@@ -54,7 +54,7 @@ class IBMQBackend(BaseBackend):
         self.project = credentials.project
 
     def run(self, qobj):
-        """Run qobj asynchronously.
+        """Run a Qobj asynchronously.
 
         Args:
             qobj (Qobj): description of job
