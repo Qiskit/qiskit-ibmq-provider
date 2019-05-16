@@ -36,15 +36,6 @@ class CircuitJob(IBMQJob):
     """
 
     def status(self):
-        """Query the API to update the status.
-
-        Returns:
-            qiskit.providers.JobStatus: The status of the job, once updated.
-
-        Raises:
-            JobError: if there was an exception in the future being executed
-                          or the server sent an unknown answer.
-        """
         # Implies self._job_id is None
         if self._future_captured_exception is not None:
             raise JobError(str(self._future_captured_exception))
@@ -63,17 +54,6 @@ class CircuitJob(IBMQJob):
         return self._status
 
     def _get_job(self):
-        """Query the API for retrieving the job complete state, consuming it.
-
-        Returns:
-            dict: a dictionary with the contents of the result.
-
-        Raises:
-            JobTimeoutError: if the job does not return results before a
-                specified timeout.
-            JobError: if something wrong happened in some of the server API
-                calls.
-        """
         if self._cancelled:
             raise JobError(
                 'Job result impossible to retrieve. The job was cancelled.')

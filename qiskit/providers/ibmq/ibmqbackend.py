@@ -27,7 +27,7 @@ from qiskit.providers.models import (BackendStatus, BackendProperties,
 from .api import ApiError
 from .apiconstants import ApiJobStatus, ApiJobKind
 from .exceptions import IBMQBackendError, IBMQBackendValueError
-from .job import IBMQJob
+from .job import IBMQJob, IBMQStorageJob, CircuitJob
 
 logger = logging.getLogger(__name__)
 
@@ -238,9 +238,18 @@ class IBMQBackend(BaseBackend):
             raise IBMQBackendError('Failed to get job "{}": {}'
                                    .format(job_id, str(ex)))
 
-        job = IBMQJob(self, job_info.get('id'), self._api,
-                      creation_date=job_info.get('creationDate'),
-                      api_status=job_info.get('status'))
+        # Determine the Job class to use depending on the job kind.
+        job_kind = ApiJobKind(job_info['kind'])
+        job_class = IBMQJob
+
+        if job_kind == ApiJobKind.QOBJECT_STORAGE:
+            job_class = IBMQStorageJob
+        elif job_kind == ApiJobKind.CIRCUIT:
+            job_class = CircuitJob
+
+        job = job_class(self, job_info.get('id'), self._api,
+                        creation_date=job_info.get('creationDate'),
+                        api_status=job_info.get('status'))
         return job
 
     def __repr__(self):

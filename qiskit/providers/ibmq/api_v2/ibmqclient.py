@@ -154,7 +154,7 @@ class IBMQClient:
         return self.client_api.submit_job(backend_name, qobj_dict)
 
     def job_submit_object_storage(self, backend_name, qobj_dict):
-        """Submit a Qobj to a device using object_storage.
+        """Submit a Qobj to a device using object storage.
 
         Args:
             backend_name (str): the name of the backend.
@@ -178,6 +178,40 @@ class IBMQClient:
         response = job_api.callback_upload()
 
         return response
+
+    def job_download_qobj_object_storage(self, job_id):
+        """Return a Qobj from object storage.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: Qobj, in dict form.
+        """
+        job_api = self.client_api.job(job_id)
+
+        # Get the download URL.
+        download_url = job_api.download_url()['url']
+
+        # Download the result from object storage.
+        return job_api.get_object_storage(download_url)
+
+    def job_result_object_storage(self, job_id):
+        """Return a result using object storage.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: job information.
+        """
+        job_api = self.client_api.job(job_id)
+
+        # Get the download URL.
+        download_url = job_api.result_url()['url']
+
+        # Download the result from object storage.
+        return job_api.get_object_storage(download_url)
 
     def job_get(self, job_id, excluded_fields=None, included_fields=None):
         """Return information about a job.
@@ -298,7 +332,7 @@ class IBMQClient:
 
     def submit_job(self, qobj_dict, backend_name):
         # pylint: disable=missing-docstring
-        return self.job_submit_object_storage(backend_name, qobj_dict)
+        return self.job_submit(backend_name, qobj_dict)
 
     def get_jobs(self, limit=10, skip=0, backend=None, only_completed=False,
                  filter=None):

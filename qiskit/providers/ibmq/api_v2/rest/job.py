@@ -25,9 +25,11 @@ class Job(RestAdapterBase):
     URL_MAP = {
         'callback_upload': '/jobDataUploaded',
         'cancel': 'cancel',
+        'download_url': '/jobDownloadUrl',
         'self': '',
         'status': '/status',
         'properties': '/properties',
+        'result_url': '/resultDownloadUrl',
         'upload_url': '/jobUploadUrl'
     }
 
@@ -74,9 +76,29 @@ class Job(RestAdapterBase):
         url = self.get_url('cancel')
         return self.session.post(url).json()
 
+    def download_url(self):
+        """Return an object storage URL for downloading the Qobj."""
+        url = self.get_url('download_url')
+        return self.session.get(url).json()
+
     def properties(self):
         """Return the backend properties of a job."""
         url = self.get_url('properties')
+        return self.session.get(url).json()
+
+    def result_url(self):
+        """Return an object storage URL for downloading results."""
+        url = self.get_url('result_url')
+        return self.session.get(url).json()
+
+    def status(self):
+        """Return the status of a job."""
+        url = self.get_url('status')
+        return self.session.get(url).json()
+
+    def upload_url(self):
+        """Return an object storage URL for uploading the Qobj."""
+        url = self.get_url('upload_url')
         return self.session.get(url).json()
 
     def put_object_storage(self, url, qobj_dict):
@@ -93,15 +115,16 @@ class Job(RestAdapterBase):
         response = self.session.put(url, json=qobj_dict, bare=True)
         return response.text
 
-    def status(self):
-        """Return the status of a job."""
-        url = self.get_url('status')
-        return self.session.get(url).json()
+    def get_object_storage(self, url):
+        """Get via object_storage.
 
-    def upload_url(self):
-        """Return an object storage URL for uploading."""
-        url = self.get_url('upload_url')
-        return self.session.get(url).json()
+        Args:
+            url (str): object storage URL.
+
+        Returns:
+            dict: json response.
+        """
+        return self.session.get(url, bare=True).json()
 
 
 def build_url_filter(excluded_fields, included_fields):
