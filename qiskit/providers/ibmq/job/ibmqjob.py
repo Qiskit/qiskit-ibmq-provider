@@ -168,6 +168,7 @@ class IBMQJob(BaseJob):
                 self._status = JobStatus.CANCELLED
                 self._cancelled = True
             else:
+                self._status = JobStatus.INITIALIZING
                 self.status()
 
     def qobj(self):

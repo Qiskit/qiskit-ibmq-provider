@@ -177,7 +177,7 @@ class IBMQClient:
         # Notify the API via the callback.
         response = job_api.callback_upload()
 
-        return response
+        return response['job']
 
     def job_download_qobj_object_storage(self, job_id):
         """Return a Qobj from object storage.
