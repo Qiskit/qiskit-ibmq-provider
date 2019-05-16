@@ -393,7 +393,8 @@ class IBMQJob(BaseJob):
         backend_name = self.backend().name()
 
         try:
-            submit_info = self._api.submit_job(self._qobj_payload, backend_name=backend_name)
+            submit_info = self._api.submit_job(self._qobj_payload,
+                                               backend_name=backend_name)
         # pylint: disable=broad-except
         except Exception as err:
             # Undefined error during submission:

@@ -23,10 +23,12 @@ class Job(RestAdapterBase):
     """Rest adapter for job related endpoints."""
 
     URL_MAP = {
+        'callback_upload': '/jobDataUploaded',
         'cancel': 'cancel',
         'self': '',
         'status': '/status',
-        'properties': '/properties'
+        'properties': '/properties',
+        'upload_url': '/jobUploadUrl'
     }
 
     def __init__(self, session, job_id):
@@ -62,6 +64,11 @@ class Job(RestAdapterBase):
 
         return response
 
+    def callback_upload(self):
+        """Notify the API after uploading a Qobj via object storage."""
+        url = self.get_url('callback_upload')
+        return self.session.post(url).json()
+
     def cancel(self):
         """Cancel a job."""
         url = self.get_url('cancel')
@@ -72,9 +79,28 @@ class Job(RestAdapterBase):
         url = self.get_url('properties')
         return self.session.get(url).json()
 
+    def put_object_storage(self, url, qobj_dict):
+        """Upload a Qobj via object storage.
+
+        Args:
+            url (str): object storage URL.
+            qobj_dict (dict): the qobj to be uploaded, in dict form.
+
+        Returns:
+            str: text response, that will be empty if the request was
+                successful.
+        """
+        response = self.session.put(url, json=qobj_dict, bare=True)
+        return response.text
+
     def status(self):
         """Return the status of a job."""
         url = self.get_url('status')
+        return self.session.get(url).json()
+
+    def upload_url(self):
+        """Return an object storage URL for uploading."""
+        url = self.get_url('upload_url')
         return self.session.get(url).json()
 
 

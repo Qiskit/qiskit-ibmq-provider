@@ -109,6 +109,27 @@ class Api(RestAdapterBase):
 
         return self.session.post(url, json=payload).json()
 
+    def submit_job_object_storage(self, backend_name, shots=1):
+        """Submit a job for executing, using object storage.
+
+        Args:
+            backend_name (str): the name of the backend.
+            shots (int): number of shots.
+
+        Returns:
+            dict: json response.
+        """
+        url = self.get_url('jobs')
+
+        # TODO: "shots" is currently required by the API.
+        payload = {
+            'backend': {'name': backend_name},
+            'shots': shots,
+            'allowObjectStorage': True
+        }
+
+        return self.session.post(url, json=payload).json()
+
     def circuit(self, name, **kwargs):
         """Execute a Circuit.
 

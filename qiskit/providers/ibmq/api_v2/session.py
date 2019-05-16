@@ -120,7 +120,9 @@ class RetrySession(Session):
         # pylint: disable=arguments-differ
         if bare:
             final_url = url
-            params = kwargs.get('params').update({'access_token': None})
+            # Explicitly pass `None` as the `access_token` param, disabling it.
+            params = kwargs.get('params', {})
+            params.update({'access_token': None})
             kwargs.update({'params': params})
         else:
             final_url = self.base_url + url
