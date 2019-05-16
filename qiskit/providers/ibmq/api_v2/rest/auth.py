@@ -33,8 +33,18 @@ class Auth(RestAdapterBase):
 
         Returns:
             dict: json response.
+        Raises:
+            ConnectionError: if the license agreement has not been accepted
         """
         url = self.get_url('login')
+
+        try:
+            self.session.post(url, json={'apiToken': api_token}).json()
+        except BaseException as ex:
+            if 'ACCEPT_LICENSE_REQUIRED'.encode() in ex.original_exception.response.content:
+                raise ConnectionError("Couldn't connect to IBMQ server: {0}"
+                                      .format('License agreement not accepted.')) from ex
+
         return self.session.post(url, json={'apiToken': api_token}).json()
 
     def user_info(self):
