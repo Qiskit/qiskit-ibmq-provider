@@ -238,18 +238,9 @@ class IBMQBackend(BaseBackend):
             raise IBMQBackendError('Failed to get job "{}": {}'
                                    .format(job_id, str(ex)))
 
-        # Determine the Job class to use depending on the job kind.
-        job_kind = ApiJobKind(job_info['kind'])
-        job_class = IBMQJob
-
-        if job_kind == ApiJobKind.QOBJECT_STORAGE:
-            job_class = IBMQStorageJob
-        elif job_kind == ApiJobKind.CIRCUIT:
-            job_class = CircuitJob
-
-        job = job_class(self, job_info.get('id'), self._api,
-                        creation_date=job_info.get('creationDate'),
-                        api_status=job_info.get('status'))
+        job = IBMQJob(self, job_info.get('id'), self._api,
+                      creation_date=job_info.get('creationDate'),
+                      api_status=job_info.get('status'))
         return job
 
     def __repr__(self):
