@@ -17,7 +17,7 @@
 from qiskit.exceptions import QiskitError
 from .ibmqprovider import IBMQProvider
 from .ibmqbackend import IBMQBackend
-from .ibmqjob import IBMQJob
+from .job import IBMQJob
 
 from .version import __version__
 

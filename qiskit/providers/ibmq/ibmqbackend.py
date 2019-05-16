@@ -27,7 +27,7 @@ from qiskit.providers.models import (BackendStatus, BackendProperties,
 from .api import ApiError
 from .apiconstants import ApiJobStatus, ApiJobKind
 from .exceptions import IBMQBackendError, IBMQBackendValueError
-from .ibmqjob import IBMQJob
+from .job import IBMQJob
 
 logger = logging.getLogger(__name__)
 

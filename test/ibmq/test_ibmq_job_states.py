@@ -23,7 +23,7 @@ from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatu
 from qiskit.test.mock import new_fake_qobj, FakeRueschlikon
 from qiskit.providers import JobError, JobTimeoutError
 from qiskit.providers.ibmq.api import ApiError
-from qiskit.providers.ibmq.ibmqjob import IBMQJob
+from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
 from ..jobtestcase import JobTestCase
 

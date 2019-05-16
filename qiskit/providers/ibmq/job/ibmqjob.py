@@ -25,15 +25,15 @@ import time
 from concurrent import futures
 
 from qiskit.providers import BaseJob, JobError, JobTimeoutError
-from qiskit.providers.ibmq.api_v2 import IBMQClient
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.result import Result
 
-from .api import ApiError
-from .apiconstants import ApiJobStatus
-from .api_v2.exceptions import WebsocketTimeoutError, WebsocketError
+from ..api import ApiError
+from ..apiconstants import ApiJobStatus
+from ..api_v2 import IBMQClient
+from ..api_v2.exceptions import WebsocketTimeoutError, WebsocketError
 
 logger = logging.getLogger(__name__)
 
