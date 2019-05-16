@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Values used by the API for a job status."""
+"""Values used by the API for different values."""
 
 import enum
 
@@ -47,3 +47,10 @@ API_JOB_FINAL_STATES = (
     ApiJobStatus.ERROR_VALIDATING_JOB,
     ApiJobStatus.ERROR_RUNNING_JOB
 )
+
+
+class ApiJobKind(enum.Enum):
+    """Possible values used by the API for a job kind."""
+    QOBJECT = 'q-object'
+    QOBJECT_STORAGE = 'q-object-external-storage'
+    CIRCUIT = 'q-circuit'
