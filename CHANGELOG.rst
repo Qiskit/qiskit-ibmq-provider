@@ -28,8 +28,6 @@ Changed
 """""""
 
 - Updated detection of classic vs. new api based on version endpoint. (#95)
-- Clarified the behavior of build_url_filter. (#92)
-- Removed the unneeded case where query is None in Api.jobs. (#92)
 
 
 `0.2.2`_ - 2019-05-07
