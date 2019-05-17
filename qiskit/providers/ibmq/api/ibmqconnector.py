@@ -18,8 +18,7 @@ import json
 import logging
 import re
 
-from qiskit.providers.ibmq.api.websocket import WebsocketClient
-from .apijobstatus import ApiJobStatus
+from qiskit.providers.ibmq.apijobstatus import ApiJobStatus
 from .exceptions import CredentialsError, BadBackendError
 from .utils import Request
 
@@ -313,8 +312,7 @@ class IBMQConnector:
         if not backend_type:
             raise BadBackendError(backend)
 
-        status = self.req.get('/Backends/' + backend_type + '/queue/status',
-                              with_token=False)
+        status = self.req.get('/Backends/' + backend_type + '/queue/status')
         ret = {}
 
         # Adjust fields according to the specs (BackendStatus).
@@ -474,15 +472,6 @@ class IBMQConnector:
         status = self.req.get(url)
 
         return status
-
-    def websocket_client(self):
-        """Return a websocket client for interacting with IBMQ.
-
-        Returns:
-            WebsocketClient: an IBMQ websocket client.
-        """
-        return WebsocketClient(self.config['websocket_url'],
-                               self.req.credential.get_token())
 
     def api_version(self):
         """Get the API Version of the QX Platform."""

@@ -18,7 +18,6 @@ This module is used for creating asynchronous job objects for the
 IBM Q Experience.
 """
 
-import asyncio
 import datetime
 import logging
 import pprint
@@ -26,14 +25,15 @@ import time
 from concurrent import futures
 
 from qiskit.providers import BaseJob, JobError, JobTimeoutError
+from qiskit.providers.ibmq.api_v2 import IBMQClient
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.result import Result
 
 from .api import ApiError
-from .api.apijobstatus import ApiJobStatus
-from .api.exceptions import WebsocketTimeoutError
+from .apijobstatus import ApiJobStatus
+from .api_v2.exceptions import WebsocketTimeoutError, WebsocketError
 
 logger = logging.getLogger(__name__)
 
@@ -471,12 +471,23 @@ class IBMQJob(BaseJob):
         """
         self._wait_for_submission(timeout)
 
-        # TODO: reenable during #61.
-        # if 'websocket_url' in self._api.config:
-        #     self._wait_for_final_status_websocket(timeout)
-        # else:
-        #     self._wait_for_final_status(timeout, wait)
+        # Attempt to use websocket if available.
+        if isinstance(self._api, IBMQClient):
+            try:
+                self._wait_for_final_status_websocket(timeout)
+                return
+            except WebsocketError as ex:
+                logger.warning('Error checking job status using websocket, '
+                               'retrying using HTTP.')
+                logger.debug(ex)
+            except JobTimeoutError as ex:
+                # TODO: check with API team for timeout reliability. With this
+                # block, the user timeout is effectively doubled.
+                logger.warning('Timeout checking job status using websocket, '
+                               'retrying using HTTP')
+                logger.debug(ex)
 
+        # Use traditional http requests if websocket not available or failed.
         self._wait_for_final_status(timeout, wait)
 
     def _wait_for_submission(self, timeout=60):
@@ -530,12 +541,13 @@ class IBMQJob(BaseJob):
             JobTimeoutError: if the job does not return results before a
                 specified timeout.
         """
-        websocket_client = self._api.websocket_client()
+        # Avoid the websocket invocation if already in a final state.
+        if self._status in JOB_FINAL_STATES:
+            return
 
         try:
-            status_response = asyncio.get_event_loop().run_until_complete(
-                websocket_client.get_job_status(self._job_id,
-                                                timeout=timeout))
+            status_response = self._api.job_final_status_websocket(
+                self._job_id, timeout=timeout)
             self._update_status(status_response)
         except WebsocketTimeoutError:
             raise JobTimeoutError(
