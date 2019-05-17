@@ -130,6 +130,9 @@ class Job(RestAdapterBase):
 def build_url_filter(excluded_fields, included_fields):
     """Return a URL filter based on included and excluded fields.
 
+    If a field appears in both excluded_fields and included_fields, it
+    is ultimately included.
+
     Args:
         excluded_fields (list[str]): names of the fields to explicitly
             exclude from the result.
@@ -141,19 +144,21 @@ def build_url_filter(excluded_fields, included_fields):
     """
     excluded_fields = excluded_fields or []
     included_fields = included_fields or []
-    fields_bool = {}
+    field_flags = {}
     ret = {}
 
     # Build a map of fields to bool.
     for field_ in excluded_fields:
-        fields_bool[field_] = False
+        field_flags[field_] = False
     for field_ in included_fields:
-        fields_bool[field_] = True
+        # Set the included fields. If a field_ here was also in
+        # excluded_fields, it is overwritten here.
+        field_flags[field_] = True
 
-    if 'properties' in fields_bool:
-        fields_bool['calibration'] = fields_bool.pop('properties')
+    if 'properties' in field_flags:
+        field_flags['calibration'] = field_flags.pop('properties')
 
-    if fields_bool:
-        ret = {'fields': fields_bool}
+    if field_flags:
+        ret = {'fields': field_flags}
 
     return ret
