@@ -35,7 +35,6 @@ class Auth(RestAdapterBase):
             dict: json response.
         """
         url = self.get_url('login')
-
         return self.session.post(url, json={'apiToken': api_token}).json()
 
     def user_info(self):
