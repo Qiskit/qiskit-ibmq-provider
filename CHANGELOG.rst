@@ -23,11 +23,19 @@ Fixed
 """""
 
 - Fixed Qcircuit status checks according to latest API changes. (#95)
+- Fixed an authentication issue with the ``backend_status`` endpoint when
+  using the new api. (#101).
 
 Changed
 """""""
 
 - Updated detection of classic vs. new api based on version endpoint. (#95)
+
+Added
+"""""
+
+- Added support for pooling job status via websockets. Note this is only
+  available when using the new API authentication. (#100)
 
 
 `0.2.2`_ - 2019-05-07
