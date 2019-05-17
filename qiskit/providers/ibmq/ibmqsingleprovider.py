@@ -25,6 +25,7 @@ from qiskit.validation.exceptions import ModelValidationError
 
 from .api import IBMQConnector
 from .api_v2 import IBMQClient
+from .api_v2.exceptions import UnlicensedError
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 
 
@@ -75,6 +76,7 @@ class IBMQSingleProvider(BaseProvider):
             IBMQConnector: instance of the IBMQConnector.
         Raises:
             ConnectionError: if the authentication resulted in error.
+            UnlicensedError: if the user hasn't accepted the license agreement.
         """
         # Use a temporary IBMQConnector for determining API version.
         # TODO: replace with a IBMQClient or a Session directly after support
@@ -111,7 +113,8 @@ class IBMQSingleProvider(BaseProvider):
             if 'License required' in str(ex):
                 # For the 401 License required exception from the API, be
                 # less verbose with the exceptions.
-                root_exception = None
+                raise UnlicensedError("Couldn't connect to IBMQ server: {0}"
+                                      .format(ex)) from root_exception
             raise ConnectionError("Couldn't connect to IBMQ server: {0}"
                                   .format(ex)) from root_exception
 

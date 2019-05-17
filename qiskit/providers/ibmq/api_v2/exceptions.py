@@ -47,3 +47,8 @@ class WebsocketAuthenticationError(WebsocketError):
 class WebsocketTimeoutError(WebsocketError):
     """Timeout during websocket communication."""
     pass
+
+
+class UnlicensedError(ApiError):
+    """Exception due to unlicensed access attempt."""
+    pass

@@ -116,12 +116,6 @@ class RetrySession(Session):
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
-            if ex.response.status_code == 401 and \
-                    ex.response.json()['error']['code'] == 'ACCEPT_LICENSE_REQUIRED':
-                message = ex.response.json()['error']['message']
-
-                raise RequestsApiError(ex, message)from None
-
             message = str(ex)
             if self.access_token:
                 message = message.replace(self.access_token, '...')
