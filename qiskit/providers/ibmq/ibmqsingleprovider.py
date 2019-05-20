@@ -109,6 +109,9 @@ class IBMQSingleProvider(BaseProvider):
                 return IBMQConnector(credentials.token, config_dict,
                                      credentials.verify)
         except AuthenticationLicenseError as ex:
+            raise ConnectionError("Couldn't connect to IBMQ server: {0}"
+                                  .format(ex)) from None
+        except Exception as ex:
             root_exception = ex
             raise ConnectionError("Couldn't connect to IBMQ server: {0}"
                                   .format(ex)) from root_exception
