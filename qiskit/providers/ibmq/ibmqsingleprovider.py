@@ -76,7 +76,6 @@ class IBMQSingleProvider(BaseProvider):
             IBMQConnector: instance of the IBMQConnector.
         Raises:
             ConnectionError: if the authentication resulted in error.
-            UnlicensedError: if the user hasn't accepted the license agreement.
         """
         # Use a temporary IBMQConnector for determining API version.
         # TODO: replace with a IBMQClient or a Session directly after support
