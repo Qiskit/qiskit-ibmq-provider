@@ -49,6 +49,6 @@ class WebsocketTimeoutError(WebsocketError):
     pass
 
 
-class UnlicensedError(ApiError):
-    """Exception due to unlicensed access attempt."""
+class AuthenticationLicenseError(ApiError):
+    """Exception due to user not accepting latest license agreement via web."""
     pass
