@@ -18,7 +18,7 @@ import json
 import logging
 import re
 
-from qiskit.providers.ibmq.apijobstatus import ApiJobStatus
+from qiskit.providers.ibmq.apiconstants import ApiJobStatus
 from .exceptions import CredentialsError, BadBackendError
 from .utils import Request
 
@@ -116,11 +116,11 @@ class IBMQConnector:
         """Check if the user has permission in QX platform."""
         return bool(self.req.credential.get_token())
 
-    def run_job(self, qobj, backend_name):
+    def submit_job(self, qobj_dict, backend_name):
         """Run a Qobj in a IBMQ backend.
 
         Args:
-            qobj (dict): Qobj to be run, in dictionary form.
+            qobj_dict (dict): Qobj to be run, in dictionary form.
             backend_name (str): backend name.
 
         Raises:
@@ -137,7 +137,7 @@ class IBMQConnector:
         if not backend_type:
             raise BadBackendError(backend_name)
 
-        data = {'qObject': qobj,
+        data = {'qObject': qobj_dict,
                 'backend': {'name': backend_type}}
 
         url = get_job_url(self.config)

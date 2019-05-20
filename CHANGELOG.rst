@@ -36,6 +36,8 @@ Added
 
 - Added support for pooling job status via websockets. Note this is only
   available when using the new API authentication. (#100)
+- Added support for using object storage when submitting and retrieving
+  jobs. (#110)
 
 
 `0.2.2`_ - 2019-05-07

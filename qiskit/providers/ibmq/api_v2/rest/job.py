@@ -23,10 +23,14 @@ class Job(RestAdapterBase):
     """Rest adapter for job related endpoints."""
 
     URL_MAP = {
+        'callback_upload': '/jobDataUploaded',
         'cancel': 'cancel',
+        'download_url': '/jobDownloadUrl',
         'self': '',
         'status': '/status',
-        'properties': '/properties'
+        'properties': '/properties',
+        'result_url': '/resultDownloadUrl',
+        'upload_url': '/jobUploadUrl'
     }
 
     def __init__(self, session, job_id):
@@ -62,20 +66,65 @@ class Job(RestAdapterBase):
 
         return response
 
+    def callback_upload(self):
+        """Notify the API after uploading a Qobj via object storage."""
+        url = self.get_url('callback_upload')
+        return self.session.post(url).json()
+
     def cancel(self):
         """Cancel a job."""
         url = self.get_url('cancel')
         return self.session.post(url).json()
+
+    def download_url(self):
+        """Return an object storage URL for downloading the Qobj."""
+        url = self.get_url('download_url')
+        return self.session.get(url).json()
 
     def properties(self):
         """Return the backend properties of a job."""
         url = self.get_url('properties')
         return self.session.get(url).json()
 
+    def result_url(self):
+        """Return an object storage URL for downloading results."""
+        url = self.get_url('result_url')
+        return self.session.get(url).json()
+
     def status(self):
         """Return the status of a job."""
         url = self.get_url('status')
         return self.session.get(url).json()
+
+    def upload_url(self):
+        """Return an object storage URL for uploading the Qobj."""
+        url = self.get_url('upload_url')
+        return self.session.get(url).json()
+
+    def put_object_storage(self, url, qobj_dict):
+        """Upload a Qobj via object storage.
+
+        Args:
+            url (str): object storage URL.
+            qobj_dict (dict): the qobj to be uploaded, in dict form.
+
+        Returns:
+            str: text response, that will be empty if the request was
+                successful.
+        """
+        response = self.session.put(url, json=qobj_dict, bare=True)
+        return response.text
+
+    def get_object_storage(self, url):
+        """Get via object_storage.
+
+        Args:
+            url (str): object storage URL.
+
+        Returns:
+            dict: json response.
+        """
+        return self.session.get(url, bare=True).json()
 
 
 def build_url_filter(excluded_fields, included_fields):
