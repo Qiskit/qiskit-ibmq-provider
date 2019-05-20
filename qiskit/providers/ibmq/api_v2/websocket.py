@@ -22,7 +22,7 @@ from concurrent import futures
 
 from websockets import connect, ConnectionClosed
 
-from qiskit.providers.ibmq.apijobstatus import ApiJobStatus, API_JOB_FINAL_STATES
+from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from .exceptions import (WebsocketError, WebsocketTimeoutError,
                          WebsocketIBMQProtocolError,
                          WebsocketAuthenticationError)

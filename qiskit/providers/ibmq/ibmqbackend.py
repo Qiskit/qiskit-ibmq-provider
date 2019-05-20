@@ -25,9 +25,9 @@ from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults)
 
 from .api import ApiError
-from .apijobstatus import ApiJobStatus
+from .apiconstants import ApiJobStatus, ApiJobKind
 from .exceptions import IBMQBackendError, IBMQBackendValueError
-from .ibmqjob import IBMQJob
+from .job import IBMQJob
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class IBMQBackend(BaseBackend):
         self.project = credentials.project
 
     def run(self, qobj):
-        """Run qobj asynchronously.
+        """Run a Qobj asynchronously.
 
         Args:
             qobj (Qobj): description of job
@@ -181,7 +181,9 @@ class IBMQBackend(BaseBackend):
                                                   filter=api_filter)
         job_list = []
         for job_info in job_info_list:
-            if job_info.get('kind', None) != 'q-object':
+            try:
+                ApiJobKind(job_info.get('kind', None))
+            except ValueError:
                 # Discard pre-qobj jobs.
                 break
 
@@ -224,7 +226,9 @@ class IBMQBackend(BaseBackend):
                                        .format(job_id, self.name()))
 
             # Check for pre-qobj jobs.
-            if job_info.get('kind', None) != 'q-object':
+            try:
+                ApiJobKind(job_info.get('kind', None))
+            except ValueError:
                 warnings.warn('The result of job {} is in a no longer supported format. '
                               'Please send the job using Qiskit 0.8+.'.format(job_id),
                               DeprecationWarning)

@@ -105,13 +105,34 @@ class RetrySession(Session):
         self.proxies = proxies or {}
         self.verify = verify
 
-    def request(self, method, url, **kwargs):
-        """Constructs a Request, prepending the base url."""
+    def request(self, method, url, bare=False, **kwargs):
+        """Constructs a Request, prepending the base url.
+
+        Args:
+            method (string): method for the new `Request` object.
+            url (string): URL for the new `Request` object.
+            bare (bool): if `True`, do not send IBM Q specific information
+                (access token) in the request or modify the `url`.
+            kwargs (dict): additional arguments for the request.
+
+        Returns:
+            Request: Request object.
+
+        Raises:
+            RequestsApiError: if the request failed.
+        """
         # pylint: disable=arguments-differ
-        full_url = self.base_url + url
+        if bare:
+            final_url = url
+            # Explicitly pass `None` as the `access_token` param, disabling it.
+            params = kwargs.get('params', {})
+            params.update({'access_token': None})
+            kwargs.update({'params': params})
+        else:
+            final_url = self.base_url + url
 
         try:
-            response = super().request(method, full_url, **kwargs)
+            response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for

@@ -19,7 +19,7 @@ from functools import wraps
 from qiskit.providers import JobStatus
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 
-from .circuitjob import CircuitJob
+from ..job.circuitjob import CircuitJob
 from .exceptions import (CircuitError,
                          CircuitAvailabilityError, CircuitResultError,
                          CircuitSubmitError)
