@@ -19,6 +19,7 @@ import asyncio
 from .session import RetrySession
 from .rest import Api, Auth
 from .websocket import WebsocketClient
+from .exceptions import RequestsApiError, AuthenticationLicenseError
 
 
 class IBMQClient:
@@ -64,7 +65,23 @@ class IBMQClient:
 
         Returns:
             str: access token.
+        Raises:
+            AuthenticationLicenseError: if the user hasn't accepted the license agreement.
         """
+        try:
+            self.client_auth.login(self.api_token)
+        except RequestsApiError as ex:
+            response = ex.original_exception.response
+            if response.status_code == 401:
+                try:
+                    error_code = response.json()['error']['name']
+                    if error_code == 'ACCEPT_LICENSE_REQUIRED':
+                        message = response.json()['error']['message']
+                        raise AuthenticationLicenseError(message)
+                except (ValueError, KeyError):
+                    # the response did not contain the expected json.
+                    pass
+
         response = self.client_auth.login(self.api_token)
         return response['id']
 

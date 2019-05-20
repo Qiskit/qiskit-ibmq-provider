@@ -47,3 +47,8 @@ class WebsocketAuthenticationError(WebsocketError):
 class WebsocketTimeoutError(WebsocketError):
     """Timeout during websocket communication."""
     pass
+
+
+class AuthenticationLicenseError(ApiError):
+    """Exception due to user not accepting latest license agreement via web."""
+    pass
