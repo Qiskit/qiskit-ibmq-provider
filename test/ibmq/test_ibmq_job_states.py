@@ -19,11 +19,11 @@
 import time
 from contextlib import suppress
 
-from qiskit.providers.ibmq.apijobstatus import API_JOB_FINAL_STATES, ApiJobStatus
+from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
 from qiskit.test.mock import new_fake_qobj, FakeRueschlikon
 from qiskit.providers import JobError, JobTimeoutError
 from qiskit.providers.ibmq.api import ApiError
-from qiskit.providers.ibmq.ibmqjob import IBMQJob
+from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
 from ..jobtestcase import JobTestCase
 
@@ -373,7 +373,7 @@ class BaseFakeAPI:
         return {key: value for key, value in complete_response.items()
                 if key in summary_fields}
 
-    def run_job(self, *_args, **_kwargs):
+    def submit_job(self, *_args, **_kwargs):
         time.sleep(0.2)
         return {'id': 'TEST_ID'}
 
@@ -456,14 +456,14 @@ class QueuedAPI(BaseFakeAPI):
 class RejectingJobAPI(BaseFakeAPI):
     """Class for emulating an API unable of initializing."""
 
-    def run_job(self, *_args, **_kwargs):
+    def submit_job(self, *_args, **_kwargs):
         return {'error': 'invalid qobj'}
 
 
 class UnavailableRunAPI(BaseFakeAPI):
     """Class for emulating an API throwing before even initializing."""
 
-    def run_job(self, *_args, **_kwargs):
+    def submit_job(self, *_args, **_kwargs):
         time.sleep(0.2)
         raise ApiError()
 

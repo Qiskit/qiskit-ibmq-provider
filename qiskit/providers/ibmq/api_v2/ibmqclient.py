@@ -19,6 +19,7 @@ import asyncio
 from .session import RetrySession
 from .rest import Api, Auth
 from .websocket import WebsocketClient
+from .exceptions import RequestsApiError, AuthenticationLicenseError
 
 
 class IBMQClient:
@@ -64,7 +65,23 @@ class IBMQClient:
 
         Returns:
             str: access token.
+        Raises:
+            AuthenticationLicenseError: if the user hasn't accepted the license agreement.
         """
+        try:
+            self.client_auth.login(self.api_token)
+        except RequestsApiError as ex:
+            response = ex.original_exception.response
+            if response.status_code == 401:
+                try:
+                    error_code = response.json()['error']['name']
+                    if error_code == 'ACCEPT_LICENSE_REQUIRED':
+                        message = response.json()['error']['message']
+                        raise AuthenticationLicenseError(message)
+                except (ValueError, KeyError):
+                    # the response did not contain the expected json.
+                    pass
+
         response = self.client_auth.login(self.api_token)
         return response['id']
 
@@ -141,7 +158,7 @@ class IBMQClient:
         return self.client_api.jobs(limit=limit, skip=skip,
                                     extra_filter=extra_filter)
 
-    def job_run_qobj(self, backend_name, qobj_dict):
+    def job_submit(self, backend_name, qobj_dict):
         """Submit a Qobj to a device.
 
         Args:
@@ -151,7 +168,67 @@ class IBMQClient:
         Returns:
             dict: job status.
         """
-        return self.client_api.run_job(backend_name, qobj_dict)
+        return self.client_api.submit_job(backend_name, qobj_dict)
+
+    def job_submit_object_storage(self, backend_name, qobj_dict):
+        """Submit a Qobj to a device using object storage.
+
+        Args:
+            backend_name (str): the name of the backend.
+            qobj_dict (dict): the Qobj to be executed, as a dictionary.
+
+        Returns:
+            dict: job status.
+        """
+        # Get the job via object storage.
+        job_info = self.client_api.submit_job_object_storage(backend_name)
+
+        # Get the upload URL.
+        job_id = job_info['id']
+        job_api = self.client_api.job(job_id)
+        upload_url = job_api.upload_url()['url']
+
+        # Upload the Qobj to object storage.
+        _ = job_api.put_object_storage(upload_url, qobj_dict)
+
+        # Notify the API via the callback.
+        response = job_api.callback_upload()
+
+        return response['job']
+
+    def job_download_qobj_object_storage(self, job_id):
+        """Return a Qobj from object storage.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: Qobj, in dict form.
+        """
+        job_api = self.client_api.job(job_id)
+
+        # Get the download URL.
+        download_url = job_api.download_url()['url']
+
+        # Download the result from object storage.
+        return job_api.get_object_storage(download_url)
+
+    def job_result_object_storage(self, job_id):
+        """Return a result using object storage.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: job information.
+        """
+        job_api = self.client_api.job(job_id)
+
+        # Get the download URL.
+        download_url = job_api.result_url()['url']
+
+        # Download the result from object storage.
+        return job_api.get_object_storage(download_url)
 
     def job_get(self, job_id, excluded_fields=None, included_fields=None):
         """Return information about a job.
@@ -270,9 +347,9 @@ class IBMQClient:
         # pylint: disable=missing-docstring
         return self.job_status(id_job)
 
-    def run_job(self, qobj, backend_name):
+    def submit_job(self, qobj_dict, backend_name):
         # pylint: disable=missing-docstring
-        return self.job_run_qobj(backend_name, qobj)
+        return self.job_submit(backend_name, qobj_dict)
 
     def get_jobs(self, limit=10, skip=0, backend=None, only_completed=False,
                  filter=None):

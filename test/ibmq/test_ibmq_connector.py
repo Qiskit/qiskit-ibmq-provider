@@ -71,7 +71,7 @@ class TestIBMQConnector(QiskitTestCase):
                         backend=backend, shots=1)
 
         api = backend._api
-        job = api.run_job(qobj.as_dict(), backend_name)
+        job = api.submit_job(qobj.as_dict(), backend_name)
         check_status = None
         if 'status' in job:
             check_status = job['status']
@@ -89,7 +89,7 @@ class TestIBMQConnector(QiskitTestCase):
                         backend=backend, shots=1)
 
         api = backend._api
-        self.assertRaises(BadBackendError, api.run_job, qobj.as_dict(),
+        self.assertRaises(BadBackendError, api.submit_job, qobj.as_dict(),
                           'INVALID_BACKEND_NAME')
 
     @requires_qe_access
@@ -157,7 +157,7 @@ class TestIBMQConnector(QiskitTestCase):
                         backend=backend, shots=1)
 
         api = backend._api
-        job = api.run_job(qobj.as_dict(), backend_name)
+        job = api.submit_job(qobj.as_dict(), backend_name)
         job_id = job['id']
 
         # Get the job, excluding a parameter.

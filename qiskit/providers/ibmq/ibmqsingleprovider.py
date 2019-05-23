@@ -25,6 +25,7 @@ from qiskit.validation.exceptions import ModelValidationError
 
 from .api import IBMQConnector
 from .api_v2 import IBMQClient
+from .api_v2.exceptions import AuthenticationLicenseError
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 
 
@@ -106,12 +107,11 @@ class IBMQSingleProvider(BaseProvider):
             else:
                 return IBMQConnector(credentials.token, config_dict,
                                      credentials.verify)
+        except AuthenticationLicenseError as ex:
+            raise ConnectionError("Couldn't connect to IBMQ server: {0}"
+                                  .format(ex)) from None
         except Exception as ex:
             root_exception = ex
-            if 'License required' in str(ex):
-                # For the 401 License required exception from the API, be
-                # less verbose with the exceptions.
-                root_exception = None
             raise ConnectionError("Couldn't connect to IBMQ server: {0}"
                                   .format(ex)) from root_exception
 
