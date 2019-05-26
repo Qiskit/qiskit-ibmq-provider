@@ -18,65 +18,71 @@
 from unittest import skip
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
-from qiskit.providers.ibmq import IBMQ
 from qiskit.qobj import QobjHeader
-from qiskit.test import QiskitTestCase, requires_qe_access, slow_test
+from qiskit.test import requires_qe_access, slow_test
 from qiskit.compiler import assemble, transpile
 
+from .ibmqprovidertestcase import IBMQProviderTestCase
 
-class TestIBMQBackends(QiskitTestCase):
+
+class TestIBMQBackends(IBMQProviderTestCase):
     """Tests for all the IBMQ backends."""
 
-    def setUp(self):
+    def setUp(self):   # pylint: disable=invalid-name
+        """Required method for testing"""
         super().setUp()
-
         qr = QuantumRegister(1)
         cr = ClassicalRegister(1)
         self.qc1 = QuantumCircuit(qr, cr, name='circuit0')
         self.qc1.h(qr[0])
         self.qc1.measure(qr, cr)
 
+    @classmethod
+    def setUpClass(cls):  # pylint: disable=invalid-name
+        """Required method for testing"""
+        super().setUpClass()
+
     @requires_qe_access
     def test_remote_backends_exist(self, qe_token, qe_url):
         """Test if there are remote backends."""
-        IBMQ.enable_account(qe_token, qe_url)
-        remotes = IBMQ.backends()
+        self.provider.enable_account(qe_token, qe_url)
+        remotes = self.provider.backends()
         self.assertTrue(len(remotes) > 0)
 
     @requires_qe_access
     def test_remote_backends_exist_real_device(self, qe_token, qe_url):
         """Test if there are remote backends that are devices."""
-        IBMQ.enable_account(qe_token, qe_url)
-        remotes = IBMQ.backends(simulator=False)
+        self.provider.enable_account(qe_token, qe_url)
+        remotes = self.provider.backends(simulator=False)
         self.assertTrue(remotes)
 
     @requires_qe_access
     def test_remote_backends_exist_simulator(self, qe_token, qe_url):
         """Test if there are remote backends that are simulators."""
-        IBMQ.enable_account(qe_token, qe_url)
-        remotes = IBMQ.backends(simulator=True)
+        self.provider.enable_account(qe_token, qe_url)
+        remotes = self.provider.backends(simulator=True)
         self.assertTrue(remotes)
 
     @requires_qe_access
     def test_remote_backend_status(self, qe_token, qe_url):
         """Test backend_status."""
-        IBMQ.enable_account(qe_token, qe_url)
-        for backend in IBMQ.backends():
+        self.provider.enable_account(qe_token, qe_url)
+        for backend in self.provider.backends():
             _ = backend.status()
 
     @requires_qe_access
     def test_remote_backend_configuration(self, qe_token, qe_url):
         """Test backend configuration."""
-        IBMQ.enable_account(qe_token, qe_url)
-        remotes = IBMQ.backends()
+        self.provider.enable_account(qe_token, qe_url)
+        remotes = self.provider.backends()
         for backend in remotes:
             _ = backend.configuration()
 
     @requires_qe_access
     def test_remote_backend_properties(self, qe_token, qe_url):
         """Test backend properties."""
-        IBMQ.enable_account(qe_token, qe_url)
-        remotes = IBMQ.backends(simulator=False)
+        self.provider.enable_account(qe_token, qe_url)
+        remotes = self.provider.backends(simulator=False)
         for backend in remotes:
             properties = backend.properties()
             if backend.configuration().simulator:
@@ -86,16 +92,16 @@ class TestIBMQBackends(QiskitTestCase):
     @skip('Skipping until support in production API')
     def test_remote_backend_defaults(self, qe_token, qe_url):
         """Test backend pulse defaults."""
-        IBMQ.enable_account(qe_token, qe_url)
-        remotes = IBMQ.backends(simulator=False)
+        self.provider.enable_account(qe_token, qe_url)
+        remotes = self.provider.backends(simulator=False)
         for backend in remotes:
             _ = backend.defaults()
 
     @requires_qe_access
     def test_qobj_headers_in_result_sims(self, qe_token, qe_url):
         """Test that the qobj headers are passed onto the results for sims."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backends = IBMQ.backends(simulator=True)
+        self.provider.enable_account(qe_token, qe_url)
+        backends = self.provider.backends(simulator=True)
 
         custom_qobj_header = {'x': 1, 'y': [1, 2, 3], 'z': {'a': 4}}
 
@@ -117,8 +123,8 @@ class TestIBMQBackends(QiskitTestCase):
     @requires_qe_access
     def test_qobj_headers_in_result_devices(self, qe_token, qe_url):
         """Test that the qobj headers are passed onto the results for devices."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backends = IBMQ.backends(simulator=False)
+        self.provider.enable_account(qe_token, qe_url)
+        backends = self.provider.backends(simulator=False)
 
         custom_qobj_header = {'x': 1, 'y': [1, 2, 3], 'z': {'a': 4}}
 
@@ -140,19 +146,20 @@ class TestIBMQBackends(QiskitTestCase):
     @requires_qe_access
     def test_aliases(self, qe_token, qe_url):
         """Test that display names of devices map the regular names."""
-        IBMQ.enable_account(qe_token, qe_url)
-        aliased_names = IBMQ._aliased_backend_names()
+        self.provider.enable_account(qe_token, qe_url)
+        aliased_names = self.provider._aliased_backend_names()
 
         for display_name, backend_name in aliased_names.items():
             with self.subTest(display_name=display_name,
                               backend_name=backend_name):
                 try:
-                    backend_by_name = IBMQ.get_backend(backend_name)
+                    backend_by_name = self.provider.get_backend(backend_name)
                 except QiskitBackendNotFoundError:
                     # The real name of the backend might not exist
                     pass
                 else:
-                    backend_by_display_name = IBMQ.get_backend(display_name)
+                    backend_by_display_name = self.provider.get_backend(
+                        display_name)
                     self.assertEqual(backend_by_name, backend_by_display_name)
                     self.assertEqual(
                         backend_by_display_name.name(), backend_name)
