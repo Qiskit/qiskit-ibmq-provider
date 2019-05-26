@@ -13,6 +13,7 @@
 # that they have been altered from the originals.
 
 """Exceptions related to the IBM Q Api."""
+
 from qiskit.providers.ibmq.api import ApiError as ApiErrorV1
 
 
@@ -26,3 +27,28 @@ class RequestsApiError(ApiError):
     def __init__(self, original_exception, *args, **kwargs):
         self.original_exception = original_exception
         super().__init__(*args, **kwargs)
+
+
+class WebsocketError(ApiError):
+    """Exceptions related to websockets."""
+    pass
+
+
+class WebsocketIBMQProtocolError(WebsocketError):
+    """Exceptions related to IBM Q protocol error."""
+    pass
+
+
+class WebsocketAuthenticationError(WebsocketError):
+    """Exception caused during websocket authentication."""
+    pass
+
+
+class WebsocketTimeoutError(WebsocketError):
+    """Timeout during websocket communication."""
+    pass
+
+
+class AuthenticationLicenseError(ApiError):
+    """Exception due to user not accepting latest license agreement via web."""
+    pass

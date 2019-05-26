@@ -27,7 +27,7 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers import JobError, JobStatus
 from qiskit.providers.ibmq import IBMQ, least_busy
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
-from qiskit.providers.ibmq.ibmqjob import IBMQJob
+from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.test import requires_qe_access, slow_test
 from qiskit.compiler import assemble, transpile
 from ..jobtestcase import JobTestCase

@@ -16,12 +16,19 @@
 
 import asyncio
 import json
+import logging
 import time
 from concurrent import futures
 
-import websockets
+from websockets import connect, ConnectionClosed
 
-from .exceptions import WebsocketError, WebsocketTimeoutError
+from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
+from .exceptions import (WebsocketError, WebsocketTimeoutError,
+                         WebsocketIBMQProtocolError,
+                         WebsocketAuthenticationError)
+
+
+logger = logging.getLogger(__name__)
 
 
 class WebsocketMessage:
@@ -45,7 +52,11 @@ class WebsocketMessage:
     @classmethod
     def from_bytes(cls, json_string):
         """Instantiate a message from a bytes response."""
-        parsed_dict = json.loads(json_string.decode('utf8'))
+        try:
+            parsed_dict = json.loads(json_string.decode('utf8'))
+        except (ValueError, AttributeError) as ex:
+            raise WebsocketIBMQProtocolError('Unable to parse message') from ex
+
         return cls(parsed_dict['type'], parsed_dict.get('data', None))
 
 
@@ -58,21 +69,30 @@ class WebsocketClient:
     """
 
     def __init__(self, websocket_url, access_token):
-        self.websocket_url = websocket_url
+        self.websocket_url = websocket_url.rstrip('/')
         self.access_token = access_token
 
     @asyncio.coroutine
-    def connect(self, url):
+    def _connect(self, url):
         """Authenticate against the websocket server, returning the connection.
 
         Returns:
             Connect: an open websocket connection.
 
         Raises:
-            WebsocketError: if the connection to the websocket server failed
-                due to connection or authentication errors.
+            WebsocketError: if the connection to the websocket server could
+                not be established.
+            WebsocketAuthenticationError: if the connection to the websocket
+                was established, but the authentication failed.
+            WebsocketIBMQProtocolError: if the connection to the websocket
+                server was established, but the answer was unexpected.
         """
-        websocket = yield from websockets.connect(url)
+        try:
+            logger.debug('Starting new websocket connection: %s', url)
+            websocket = yield from connect(url)
+
+        except ConnectionError as ex:
+            raise WebsocketError('Could not connect to server') from ex
 
         try:
             # Authenticate against the server.
@@ -84,10 +104,11 @@ class WebsocketClient:
             auth_response = WebsocketMessage.from_bytes(auth_response_raw)
 
             if auth_response.type_ != 'authenticated':
-                raise WebsocketError(auth_response.as_json())
-        except websockets.ConnectionClosed as ex:
+                raise WebsocketIBMQProtocolError(auth_response.as_json())
+        except ConnectionClosed as ex:
             yield from websocket.close()
-            raise WebsocketError('Error in websocket authentication: %s' % ex)
+            raise WebsocketAuthenticationError(
+                'Error during websocket authentication') from ex
 
         return websocket
 
@@ -112,7 +133,7 @@ class WebsocketClient:
             WebsocketTimeoutError: if the timeout has been reached.
         """
         url = '{}/jobs/{}/status'.format(self.websocket_url, job_id)
-        websocket = yield from self.connect(url)
+        websocket = yield from self._connect(url)
 
         original_timeout = timeout
         start_time = time.time()
@@ -132,19 +153,38 @@ class WebsocketClient:
                         timeout = max(5, int(original_timeout - elapsed_time))
                     else:
                         response_raw = yield from websocket.recv()
+                    logger.debug('Received message from websocket: %s',
+                                 response_raw)
 
                     response = WebsocketMessage.from_bytes(response_raw)
                     last_status = response.data
 
+                    job_status = response.data.get('status')
+                    if (job_status and
+                            ApiJobStatus(job_status) in API_JOB_FINAL_STATES):
+                        # Force closing the connection.
+                        # TODO: revise with API team the automatic closing.
+                        raise ConnectionClosed(
+                            code=4002,
+                            reason='IBMQProvider closed the connection')
+
                 except futures.TimeoutError:
                     # Timeout during our wait.
-                    raise WebsocketTimeoutError('Timeout reached')
-                except websockets.ConnectionClosed as ex:
+                    raise WebsocketTimeoutError('Timeout reached') from None
+                except ConnectionClosed as ex:
+                    # From the API:
+                    # 4001: closed due to an internal erros
+                    # 4002: closed on purpose (no more updates to send)
+                    # 4003: closed due to job not found.
+                    message = 'Unexpected error'
+                    if ex.code == 4001:
+                        message = 'Internal server error'
                     if ex.code == 4002:
-                        # 4002 is used by the API to signal closing on purpose.
                         break
-                    raise WebsocketError(
-                        'Connection with websocket closed: {}'.format(ex))
+                    elif ex.code == 4003:
+                        message = 'Job id not found'
+                    raise WebsocketError('Connection with websocket closed '
+                                         'unexpectedly: {}'.format(message)) from ex
         finally:
             yield from websocket.close()
 

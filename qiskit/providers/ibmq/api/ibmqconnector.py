@@ -18,8 +18,7 @@ import json
 import logging
 import re
 
-from qiskit.providers.ibmq.api.websocket import WebsocketClient
-from .apijobstatus import ApiJobStatus
+from qiskit.providers.ibmq.apiconstants import ApiJobStatus
 from .exceptions import CredentialsError, BadBackendError
 from .utils import Request
 
@@ -117,11 +116,11 @@ class IBMQConnector:
         """Check if the user has permission in QX platform."""
         return bool(self.req.credential.get_token())
 
-    def run_job(self, qobj, backend_name):
+    def submit_job(self, qobj_dict, backend_name):
         """Run a Qobj in a IBMQ backend.
 
         Args:
-            qobj (dict): Qobj to be run, in dictionary form.
+            qobj_dict (dict): Qobj to be run, in dictionary form.
             backend_name (str): backend name.
 
         Raises:
@@ -138,7 +137,7 @@ class IBMQConnector:
         if not backend_type:
             raise BadBackendError(backend_name)
 
-        data = {'qObject': qobj,
+        data = {'qObject': qobj_dict,
                 'backend': {'name': backend_type}}
 
         url = get_job_url(self.config)
@@ -313,8 +312,7 @@ class IBMQConnector:
         if not backend_type:
             raise BadBackendError(backend)
 
-        status = self.req.get('/Backends/' + backend_type + '/queue/status',
-                              with_token=False)
+        status = self.req.get('/Backends/' + backend_type + '/queue/status')
         ret = {}
 
         # Adjust fields according to the specs (BackendStatus).
@@ -412,15 +410,78 @@ class IBMQConnector:
 
         return response
 
-    def websocket_client(self):
-        """Return a websocket client for interacting with IBMQ.
+    def circuit_job_get(self, job_id):
+        """Return information about a Circuit job.
+
+        Args:
+            job_id (str): the id of the job.
 
         Returns:
-            WebsocketClient: an IBMQ websocket client.
+            dict: job information.
         """
-        return WebsocketClient(self.config['websocket_url'],
-                               self.req.credential.get_token())
+        if not self.check_credentials():
+            return {'status': 'Error',
+                    'error': 'Not credentials valid'}
+        if not job_id:
+            return {'status': 'Error',
+                    'error': 'Job ID not specified'}
+
+        # TODO: by API constraints, always use the URL without h/g/p.
+        url = '/Jobs/{}'.format(job_id)
+
+        job = self.req.get(url)
+
+        if 'calibration' in job:
+            job['properties'] = job.pop('calibration')
+
+        if 'qObjectResult' in job:
+            # If the job is using Qobj, return the qObjectResult directly,
+            # which should contain a valid Result.
+            return job
+        elif 'qasms' in job:
+            # Fallback for pre-Qobj jobs.
+            for qasm in job['qasms']:
+                if ('result' in qasm) and ('data' in qasm['result']):
+                    qasm['data'] = qasm['result']['data']
+                    del qasm['result']['data']
+                    for key in qasm['result']:
+                        qasm['data'][key] = qasm['result'][key]
+                    del qasm['result']
+
+        return job
+
+    def circuit_job_status(self, job_id):
+        """Return the status of a Circuits job.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: job status.
+        """
+        if not self.check_credentials():
+            return {'status': 'Error',
+                    'error': 'Not credentials valid'}
+        if not job_id:
+            return {'status': 'Error',
+                    'error': 'Job ID not specified'}
+
+        # TODO: by API constraints, always use the URL without h/g/p.
+        url = '/Jobs/{}/status'.format(job_id)
+
+        status = self.req.get(url)
+
+        return status
 
     def api_version(self):
         """Get the API Version of the QX Platform."""
-        return self.req.get('/version')
+        response = self.req.get('/version')
+
+        # Parse the response, making sure a dict is returned in all cases.
+        if isinstance(response, str):
+            response = {'new_api': False,
+                        'api': response}
+        elif isinstance(response, dict):
+            response['new_api'] = True
+
+        return response

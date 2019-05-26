@@ -17,9 +17,9 @@
 from functools import wraps
 
 from qiskit.providers import JobStatus
-from qiskit.providers.ibmq.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 
+from ..job.circuitjob import CircuitJob
 from .exceptions import (CircuitError,
                          CircuitAvailabilityError, CircuitResultError,
                          CircuitSubmitError)
@@ -36,7 +36,7 @@ def requires_api_connection(func):
     def wrapper(self, *args, **kwargs):
         if not self.client:
             raise CircuitAvailabilityError(
-                'An account must be loaded in order to use Circuits')
+                'An IBM Q Experience 2 account must be loaded in order to use Circuits')
 
         return func(self, *args, **kwargs)
 
@@ -110,11 +110,11 @@ class CircuitsManager:
 
         # Create a Job for the circuit.
         try:
-            job = IBMQJob(backend=None,
-                          job_id=response['id'],
-                          api=self.client,
-                          creation_date=response['creationDate'],
-                          api_status=response['status'])
+            job = CircuitJob(backend=None,
+                             job_id=response['id'],
+                             api=self.client,
+                             creation_date=response['creationDate'],
+                             api_status=response['status'])
         except Exception as ex:
             raise CircuitResultError(str(ex))
 
@@ -173,7 +173,7 @@ class CircuitsManager:
         specified number of qubits and phase angles.
 
         Args:
-            number_of_qubits (int): number of qubits to use, in the 4-20 range.
+            number_of_qubits (int): number of qubits to use, in the 2-20 range.
             angles (list): array of three phase angles (x/y/z) each from
                 0 to 2*Pi, one set for each qubit of each layer of the lattice.
                 There should be 3 * number_of_qubits * desired lattice depth
@@ -185,7 +185,7 @@ class CircuitsManager:
         Raises:
             CircuitError: if the parameters are not valid.
         """
-        if not 4 <= number_of_qubits <= 20:
+        if not 2 <= number_of_qubits <= 20:
             raise CircuitError('Invalid number_of_qubits')
         if len(angles) % 3*number_of_qubits != 0:
             raise CircuitError('Invalid angles length')

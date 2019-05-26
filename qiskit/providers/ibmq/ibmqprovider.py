@@ -262,9 +262,6 @@ class IBMQProvider(BaseProvider):
             IBMQSingleProvider: new single-account provider.
         """
         update_circuits_manager = False
-        # Use the first account as the account for circuits.
-        if not self._accounts:
-            update_circuits_manager = True
 
         # Check if duplicated credentials are already in use. By convention,
         # we assume (hub, group, project) is always unique.
@@ -277,6 +274,10 @@ class IBMQProvider(BaseProvider):
                 update_circuits_manager = True
 
         single_provider = IBMQSingleProvider(credentials, self)
+        # Use the first new-api account as the account for circuits.
+        if not self._accounts and single_provider.is_new_api:
+            update_circuits_manager = True
+
         self._accounts[credentials.unique_id()] = single_provider
 
         if update_circuits_manager:

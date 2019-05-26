@@ -14,8 +14,12 @@
 
 """Client for accessing IBM Q."""
 
+import asyncio
+
 from .session import RetrySession
 from .rest import Api, Auth
+from .websocket import WebsocketClient
+from .exceptions import RequestsApiError, AuthenticationLicenseError
 
 
 class IBMQClient:
@@ -31,32 +35,54 @@ class IBMQClient:
         self.api_token = api_token
         self.auth_url = auth_url
 
-        self.auth_client = Auth(RetrySession(auth_url))
-        self.api_client = self._init_api_client()
+        self.client_auth = Auth(RetrySession(auth_url))
+        self.client_api, self.client_ws = self._init_service_clients()
 
-    def _init_api_client(self):
-        """Initialize the client used for communicating with the API.
+    def _init_service_clients(self):
+        """Initialize the clients used for communicating with the API and ws.
 
         Returns:
-            Api: client for the api server.
+            tuple(Api, WebsocketClient):
+                Api: client for the api server.
+                WebsocketClient: client for the websocket server.
         """
         # Request an access token.
         access_token = self._request_access_token()
         # Use the token for the next auth server requests.
-        self.auth_client.session.access_token = access_token
-        api_url = self._user_urls()['http']
+        self.client_auth.session.access_token = access_token
+        service_urls = self._user_urls()
 
         # Create the api server client, using the access token.
-        api_session = Api(RetrySession(api_url, access_token))
-        return api_session
+        client_api = Api(RetrySession(service_urls['http'], access_token))
+
+        # Create the websocket server client, using the access token.
+        client_ws = WebsocketClient(service_urls['ws'], access_token)
+
+        return client_api, client_ws
 
     def _request_access_token(self):
         """Request a new access token from the API.
 
         Returns:
             str: access token.
+        Raises:
+            AuthenticationLicenseError: if the user hasn't accepted the license agreement.
         """
-        response = self.auth_client.login(self.api_token)
+        try:
+            self.client_auth.login(self.api_token)
+        except RequestsApiError as ex:
+            response = ex.original_exception.response
+            if response.status_code == 401:
+                try:
+                    error_code = response.json()['error']['name']
+                    if error_code == 'ACCEPT_LICENSE_REQUIRED':
+                        message = response.json()['error']['message']
+                        raise AuthenticationLicenseError(message)
+                except (ValueError, KeyError):
+                    # the response did not contain the expected json.
+                    pass
+
+        response = self.client_auth.login(self.api_token)
         return response['id']
 
     def _user_urls(self):
@@ -66,9 +92,39 @@ class IBMQClient:
             dict: a dict with the base URLs for the services. Currently
                 supported keys:
                 * ``http``: the api URL for http communication.
+                * ``ws``: the api URL for websocket communication.
         """
-        response = self.auth_client.user_info()
+        response = self.client_auth.user_info()
         return response['urls']
+
+    def _user_hubs(self):
+        """Retrieve the hubs available to the user.
+
+        The first entry in the list will be the default one, as indicated by
+        the API (by having `isDefault` in all hub, group, project fields).
+
+        Returns:
+            list[dict]: a list of dicts with the hubs, which contains the keys
+                `hub`, `group`, `project`.
+        """
+        response = self.client_api.hubs()
+
+        hubs = []
+        for hub in response:
+            hub_name = hub['name']
+            for group_name, group in hub['groups'].items():
+                for project_name, project in group['projects'].items():
+                    entry = {'hub': hub_name,
+                             'group': group_name,
+                             'project': project_name}
+
+                    # If
+                    if project.get('isDefault'):
+                        hubs.insert(0, entry)
+                    else:
+                        hubs.append(entry)
+
+        return hubs
 
     # Backend-related public functions.
 
@@ -78,7 +134,7 @@ class IBMQClient:
         Returns:
             list[dict]: a list of backends.
         """
-        return self.api_client.backends()
+        return self.client_api.backends()
 
     def backend_status(self, backend_name):
         """Return the status of a backend.
@@ -89,7 +145,7 @@ class IBMQClient:
         Returns:
             dict: backend status.
         """
-        return self.api_client.backend(backend_name).status()
+        return self.client_api.backend(backend_name).status()
 
     def backend_properties(self, backend_name):
         """Return the properties of a backend.
@@ -100,7 +156,7 @@ class IBMQClient:
         Returns:
             dict: backend properties.
         """
-        return self.api_client.backend(backend_name).properties()
+        return self.client_api.backend(backend_name).properties()
 
     def backend_pulse_defaults(self, backend_name):
         """Return the pulse defaults of a backend.
@@ -128,10 +184,10 @@ class IBMQClient:
         Returns:
             list[dict]: a list of job statuses.
         """
-        return self.api_client.jobs(limit=limit, skip=skip,
+        return self.client_api.jobs(limit=limit, skip=skip,
                                     extra_filter=extra_filter)
 
-    def job_run_qobj(self, backend_name, qobj_dict):
+    def job_submit(self, backend_name, qobj_dict):
         """Submit a Qobj to a device.
 
         Args:
@@ -141,7 +197,67 @@ class IBMQClient:
         Returns:
             dict: job status.
         """
-        return self.api_client.run_job(backend_name, qobj_dict)
+        return self.client_api.submit_job(backend_name, qobj_dict)
+
+    def job_submit_object_storage(self, backend_name, qobj_dict):
+        """Submit a Qobj to a device using object storage.
+
+        Args:
+            backend_name (str): the name of the backend.
+            qobj_dict (dict): the Qobj to be executed, as a dictionary.
+
+        Returns:
+            dict: job status.
+        """
+        # Get the job via object storage.
+        job_info = self.client_api.submit_job_object_storage(backend_name)
+
+        # Get the upload URL.
+        job_id = job_info['id']
+        job_api = self.client_api.job(job_id)
+        upload_url = job_api.upload_url()['url']
+
+        # Upload the Qobj to object storage.
+        _ = job_api.put_object_storage(upload_url, qobj_dict)
+
+        # Notify the API via the callback.
+        response = job_api.callback_upload()
+
+        return response['job']
+
+    def job_download_qobj_object_storage(self, job_id):
+        """Return a Qobj from object storage.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: Qobj, in dict form.
+        """
+        job_api = self.client_api.job(job_id)
+
+        # Get the download URL.
+        download_url = job_api.download_url()['url']
+
+        # Download the result from object storage.
+        return job_api.get_object_storage(download_url)
+
+    def job_result_object_storage(self, job_id):
+        """Return a result using object storage.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: job information.
+        """
+        job_api = self.client_api.job(job_id)
+
+        # Get the download URL.
+        download_url = job_api.result_url()['url']
+
+        # Download the result from object storage.
+        return job_api.get_object_storage(download_url)
 
     def job_get(self, job_id, excluded_fields=None, included_fields=None):
         """Return information about a job.
@@ -156,7 +272,7 @@ class IBMQClient:
         Returns:
             dict: job information.
         """
-        return self.api_client.job(job_id).get(excluded_fields,
+        return self.client_api.job(job_id).get(excluded_fields,
                                                included_fields)
 
     def job_status(self, job_id):
@@ -168,7 +284,21 @@ class IBMQClient:
         Returns:
             dict: job status.
         """
-        return self.api_client.job(job_id).status()
+        return self.client_api.job(job_id).status()
+
+    def job_final_status_websocket(self, job_id, timeout=None):
+        """Return the final status of a job via websocket.
+
+        Args:
+            job_id (str): the id of the job.
+            timeout (float or None): seconds to wait for job. If None, wait
+                indefinitely.
+
+        Returns:
+            dict: job status.
+        """
+        return asyncio.get_event_loop().run_until_complete(
+            self.client_ws.get_job_status(job_id, timeout=timeout))
 
     def job_properties(self, job_id):
         """Return the backend properties of a job.
@@ -179,7 +309,7 @@ class IBMQClient:
         Returns:
             dict: backend properties.
         """
-        return self.api_client.job(job_id).properties()
+        return self.client_api.job(job_id).properties()
 
     def job_cancel(self, job_id):
         """Submit a request for cancelling a job.
@@ -190,17 +320,9 @@ class IBMQClient:
         Returns:
             dict: job cancellation response.
         """
-        return self.api_client.job(job_id).cancel()
+        return self.client_api.job(job_id).cancel()
 
-    # Miscellaneous public functions.
-
-    def api_version(self):
-        """Return the version of the API.
-
-        Returns:
-            dict: versions of the api components.
-        """
-        return self.api_client.version()
+    # Circuits-related public functions.
 
     def circuit_run(self, name, **kwargs):
         """Execute a Circuit.
@@ -212,7 +334,39 @@ class IBMQClient:
         Returns:
             dict: json response.
         """
-        return self.api_client.circuit(name, **kwargs)
+        return self.client_api.circuit(name, **kwargs)
+
+    def circuit_job_get(self, job_id):
+        """Return information about a Circuit job.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: job information.
+        """
+        return self.client_api.job(job_id).get([], [])
+
+    def circuit_job_status(self, job_id):
+        """Return the status of a Circuits job.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: job status.
+        """
+        return self.job_status(job_id)
+
+    # Miscellaneous public functions.
+
+    def api_version(self):
+        """Return the version of the API.
+
+        Returns:
+            dict: versions of the api components.
+        """
+        return self.client_api.version()
 
     # Endpoints for compatibility with classic IBMQConnector. These functions
     # are meant to facilitate the transition, and should be removed moving
@@ -222,9 +376,9 @@ class IBMQClient:
         # pylint: disable=missing-docstring
         return self.job_status(id_job)
 
-    def run_job(self, qobj, backend_name):
+    def submit_job(self, qobj_dict, backend_name):
         # pylint: disable=missing-docstring
-        return self.job_run_qobj(backend_name, qobj)
+        return self.job_submit(backend_name, qobj_dict)
 
     def get_jobs(self, limit=10, skip=0, backend=None, only_completed=False,
                  filter=None):
