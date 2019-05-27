@@ -349,8 +349,10 @@ class IBMQJob(BaseJob):
                 self._api_error_msg = build_error_report(results)
             elif 'qasms' in job_response:
                 qasm_statuses = [qasm['status'] for qasm in job_response['qasms']]
-                self._api_error_msg = 'Job resulted in the following QASM state(s): ' \
+                self._api_error_msg = 'Job resulted in the following QASM status(es): ' \
                                       '%s.' % ', '.join(qasm_statuses)
+            else:
+                self._api_error_msg = 'An unknown error occurred.'
 
         return self._api_error_msg
 
