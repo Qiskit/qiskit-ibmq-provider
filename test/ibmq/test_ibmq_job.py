@@ -383,6 +383,30 @@ class TestIBMQJob(JobTestCase):
         with self.assertRaises(JobError):
             job.submit()
 
+    @requires_qe_access
+    def test_error_message_qasm(self, qe_token, qe_url):
+        """Test retrieving job error messages including QASM status(es)."""
+        IBMQ.enable_account(qe_token, qe_url)
+        backend = IBMQ.get_backend('ibmq_qasm_simulator')
+
+        qr = QuantumRegister(50)
+        cr = ClassicalRegister(2)
+        qc = QuantumCircuit(qr, cr)
+        qc.cx(qr[0], qr[1])
+        qc_new = transpile(qc, backend)
+
+        qobj = assemble(qc_new, shots=1000)
+        qobj.experiments[0].instructions[0].name = 'test_name'
+
+        job_sim = backend.run(qobj)
+        with self.assertRaises(JobError):
+            job_sim.result()
+
+        try:
+            job_sim.error_message()
+        except KeyError as ex:
+            self.fail(ex)
+
 
 def _bell_circuit():
     qr = QuantumRegister(2, 'q')
