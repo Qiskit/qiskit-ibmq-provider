@@ -19,10 +19,11 @@ import os
 from qiskit.providers.ibmq.circuits.exceptions import CircuitAvailabilityError
 
 from qiskit.result import Result
-from qiskit.test import QiskitTestCase, requires_qe_access
+from qiskit.test import QiskitTestCase
 
 from qiskit.providers.ibmq import IBMQ
 
+from ..decorators import requires_qe_access
 
 class TestCircuits(QiskitTestCase):
     """Tests IBM Q Circuits."""

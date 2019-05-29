@@ -17,9 +17,11 @@
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQ, least_busy
 from qiskit.result import Result
-from qiskit.test import QiskitTestCase, requires_qe_access
+from qiskit.test import QiskitTestCase
 from qiskit.execute import execute
 from qiskit.compiler import assemble, transpile
+
+from ..decorators import requires_qe_access
 
 
 class TestIBMQIntegration(QiskitTestCase):

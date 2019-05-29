@@ -25,6 +25,7 @@ from qiskit.providers import JobError, JobTimeoutError
 from qiskit.providers.ibmq.api import ApiError
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
+
 from ..jobtestcase import JobTestCase
 
 

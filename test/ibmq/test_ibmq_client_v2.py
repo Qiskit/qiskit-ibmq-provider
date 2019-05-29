@@ -22,9 +22,9 @@ from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.api_v2 import IBMQClient
 from qiskit.providers.ibmq.api_v2.exceptions import ApiError
-from qiskit.test import QiskitTestCase, requires_qe_access
+from qiskit.test import QiskitTestCase
 
-from ..decorators import requires_new_api_auth
+from ..decorators import requires_new_api_auth, requires_qe_access
 
 
 class TestIBMQClient(QiskitTestCase):
@@ -86,7 +86,6 @@ class TestIBMQClient(QiskitTestCase):
         backend = IBMQ.get_backend(backend_name)
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
         qobj = assemble(circuit, backend, shots=1)
-        print('complied')
 
         # Run the job through the IBMQClient directly using object storage.
         api = backend._api

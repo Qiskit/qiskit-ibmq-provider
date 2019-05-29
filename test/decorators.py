@@ -146,4 +146,4 @@ def _get_credentials():
         # Use the first available credentials.
         return list(discovered_credentials.values())[0]
 
-    raise Exception('Could not locate valid credentials.')
+    raise Exception('Could not locate valid credentials.') from None

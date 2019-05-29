@@ -20,8 +20,10 @@ from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
                     QuantumRegister)
 from qiskit.providers.ibmq import IBMQ
 from qiskit.qasm import pi
-from qiskit.test import QiskitTestCase, requires_qe_access, slow_test
+from qiskit.test import QiskitTestCase, slow_test
 from qiskit.compiler import transpile
+
+from ..decorators import requires_qe_access
 
 
 class TestIBMQQobj(QiskitTestCase):
