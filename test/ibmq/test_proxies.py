@@ -31,8 +31,14 @@ class TestProxies(QiskitTestCase):
     """Tests for proxies."""
 
     @requires_qe_access
+    @requires_new_api_auth
     def test_proxies(self, qe_token, qe_url):
-        """Test valid authenticating against IBM Q."""
-        proxies = None
-        #client = IBMQClient(qe_token, qe_url, proxies)
-        pass
+        """Test IBMQClient proxy support."""
+        return  # skip for now
+
+        proxies = {
+            'http': '127.0.0.1:8080',
+            'https': '127.0.0.1:8080'
+        }
+
+        IBMQClient(qe_token, qe_url, proxies)
