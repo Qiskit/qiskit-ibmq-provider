@@ -25,6 +25,7 @@ from qiskit.providers.ibmq import IBMQ
 
 from ..decorators import requires_qe_access
 
+
 class TestCircuits(QiskitTestCase):
     """Tests IBM Q Circuits."""
 

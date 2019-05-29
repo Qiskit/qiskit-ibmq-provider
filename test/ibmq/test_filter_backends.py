@@ -19,6 +19,7 @@ from qiskit.test import QiskitTestCase
 
 from ..decorators import requires_qe_access
 
+
 class TestBackendFilters(QiskitTestCase):
     """Qiskit Backend Filtering Tests."""
 
