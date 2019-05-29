@@ -17,16 +17,19 @@
 
 from unittest import skip
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
+from qiskit.providers.ibmq import IBMQProvider
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.qobj import QobjHeader
 from qiskit.test import requires_qe_access, slow_test
+from qiskit.test.providers import ProviderTestCase
 from qiskit.compiler import assemble, transpile
 
-from .ibmqprovidertestcase import IBMQProviderTestCase
 
-
-class TestIBMQBackends(IBMQProviderTestCase):
+class TestIBMQProvider(ProviderTestCase):
     """Tests for all the IBMQ backends."""
+
+    provider_cls = IBMQProvider
+    backend_name = 'ibmq_qasm_simulator'
 
     def setUp(self):   # pylint: disable=invalid-name
         """Required method for testing"""
@@ -43,64 +46,50 @@ class TestIBMQBackends(IBMQProviderTestCase):
         super().setUpClass()
 
     @requires_qe_access
-    def test_remote_backends_exist(self, qe_token, qe_url):
-        """Test if there are remote backends."""
-        self.provider.enable_account(qe_token, qe_url)
-        remotes = self.provider.backends()
-        self.assertTrue(len(remotes) > 0)
+    def _get_provider(self, qe_token, qe_url):  # pylint: disable=arguments-differ,not-callable
+        """Return an instance of a Provider."""
+        provider = self.provider_cls()
+        provider.enable_account(qe_token, qe_url)
+        return provider
 
-    @requires_qe_access
-    def test_remote_backends_exist_real_device(self, qe_token, qe_url):
+    def test_remote_backends_exist_real_device(self):
         """Test if there are remote backends that are devices."""
-        self.provider.enable_account(qe_token, qe_url)
         remotes = self.provider.backends(simulator=False)
         self.assertTrue(remotes)
 
-    @requires_qe_access
-    def test_remote_backends_exist_simulator(self, qe_token, qe_url):
+    def test_remote_backends_exist_simulator(self):
         """Test if there are remote backends that are simulators."""
-        self.provider.enable_account(qe_token, qe_url)
         remotes = self.provider.backends(simulator=True)
         self.assertTrue(remotes)
 
-    @requires_qe_access
-    def test_remote_backend_status(self, qe_token, qe_url):
+    def test_remote_backend_status(self):
         """Test backend_status."""
-        self.provider.enable_account(qe_token, qe_url)
         for backend in self.provider.backends():
             _ = backend.status()
 
-    @requires_qe_access
-    def test_remote_backend_configuration(self, qe_token, qe_url):
+    def test_remote_backend_configuration(self):
         """Test backend configuration."""
-        self.provider.enable_account(qe_token, qe_url)
         remotes = self.provider.backends()
         for backend in remotes:
             _ = backend.configuration()
 
-    @requires_qe_access
-    def test_remote_backend_properties(self, qe_token, qe_url):
+    def test_remote_backend_properties(self):
         """Test backend properties."""
-        self.provider.enable_account(qe_token, qe_url)
         remotes = self.provider.backends(simulator=False)
         for backend in remotes:
             properties = backend.properties()
             if backend.configuration().simulator:
                 self.assertEqual(properties, None)
 
-    @requires_qe_access
     @skip('Skipping until support in production API')
-    def test_remote_backend_defaults(self, qe_token, qe_url):
+    def test_remote_backend_defaults(self):
         """Test backend pulse defaults."""
-        self.provider.enable_account(qe_token, qe_url)
         remotes = self.provider.backends(simulator=False)
         for backend in remotes:
             _ = backend.defaults()
 
-    @requires_qe_access
-    def test_qobj_headers_in_result_sims(self, qe_token, qe_url):
+    def test_qobj_headers_in_result_sims(self):
         """Test that the qobj headers are passed onto the results for sims."""
-        self.provider.enable_account(qe_token, qe_url)
         backends = self.provider.backends(simulator=True)
 
         custom_qobj_header = {'x': 1, 'y': [1, 2, 3], 'z': {'a': 4}}
@@ -120,10 +109,8 @@ class TestIBMQBackends(IBMQProviderTestCase):
                                  'extra info')
 
     @slow_test
-    @requires_qe_access
-    def test_qobj_headers_in_result_devices(self, qe_token, qe_url):
+    def test_qobj_headers_in_result_devices(self):
         """Test that the qobj headers are passed onto the results for devices."""
-        self.provider.enable_account(qe_token, qe_url)
         backends = self.provider.backends(simulator=False)
 
         custom_qobj_header = {'x': 1, 'y': [1, 2, 3], 'z': {'a': 4}}
@@ -143,10 +130,8 @@ class TestIBMQBackends(IBMQProviderTestCase):
                 self.assertEqual(result.results[0].header.some_field,
                                  'extra info')
 
-    @requires_qe_access
-    def test_aliases(self, qe_token, qe_url):
+    def test_aliases(self):
         """Test that display names of devices map the regular names."""
-        self.provider.enable_account(qe_token, qe_url)
         aliased_names = self.provider._aliased_backend_names()
 
         for display_name, backend_name in aliased_names.items():
