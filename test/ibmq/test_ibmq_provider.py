@@ -46,7 +46,7 @@ class TestIBMQProvider(ProviderTestCase):
         super().setUpClass()
 
     @requires_qe_access
-    def _get_provider(self, qe_token, qe_url):  # pylint: disable=arguments-differ,not-callable
+    def _get_provider(self, qe_token, qe_url):  # pylint: disable=arguments-differ
         """Return an instance of a Provider."""
         provider = self.provider_cls()
         provider.enable_account(qe_token, qe_url)
