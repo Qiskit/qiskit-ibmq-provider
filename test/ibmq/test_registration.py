@@ -31,6 +31,7 @@ from qiskit.providers.ibmq.ibmqprovider import QE_URL
 from qiskit.providers.ibmq.ibmqsingleprovider import IBMQSingleProvider
 from qiskit.test import QiskitTestCase
 
+
 IBMQ_TEMPLATE = 'https://localhost/api/Hubs/{}/Groups/{}/Projects/{}'
 
 PROXIES = {

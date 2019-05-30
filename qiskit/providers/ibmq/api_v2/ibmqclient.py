@@ -72,7 +72,7 @@ class IBMQClient:
             self.client_auth.login(self.api_token)
         except RequestsApiError as ex:
             response = ex.original_exception.response
-            if response.status_code == 401:
+            if response and response.status_code == 401:
                 try:
                     error_code = response.json()['error']['name']
                     if error_code == 'ACCEPT_LICENSE_REQUIRED':

@@ -20,8 +20,10 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQProvider
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.qobj import QobjHeader
-from qiskit.test import requires_qe_access, slow_test, providers
+from qiskit.test import slow_test, providers
 from qiskit.compiler import assemble, transpile
+
+from ..decorators import requires_qe_access
 
 
 class TestIBMQProvider(providers.ProviderTestCase):

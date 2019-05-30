@@ -16,8 +16,10 @@
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQ
-from qiskit.test import QiskitTestCase, requires_qe_access
+from qiskit.test import QiskitTestCase
 from qiskit.compiler import assemble, transpile
+
+from ..decorators import requires_qe_access
 
 
 class TestIbmqQasmSimulator(QiskitTestCase):
