@@ -17,9 +17,9 @@
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq import IBMQ, least_busy
-from qiskit.test import QiskitTestCase, requires_qe_access, slow_test
+from qiskit.test import QiskitTestCase, slow_test
 
-from ...decorators import requires_new_api_auth
+from ...decorators import requires_new_api_auth, requires_qe_access
 
 
 class TestWebsocketIntegration(QiskitTestCase):

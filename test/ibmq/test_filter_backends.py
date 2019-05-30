@@ -15,7 +15,9 @@
 """Backends Filtering Test."""
 
 from qiskit.providers.ibmq import IBMQ, least_busy
-from qiskit.test import QiskitTestCase, requires_qe_access
+from qiskit.test import QiskitTestCase
+
+from ..decorators import requires_qe_access
 
 
 class TestBackendFilters(QiskitTestCase):
