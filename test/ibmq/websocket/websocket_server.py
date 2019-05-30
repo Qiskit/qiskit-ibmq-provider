@@ -28,6 +28,7 @@ TEST_IP_ADDRESS = '127.0.0.1'
 TEST_WSS_PORT = '9876'
 TEST_WS_PORT = '8765'
 
+
 @asyncio.coroutine
 def websocket_handler(websocket, path):
     """Entry point for the websocket mock server."""
