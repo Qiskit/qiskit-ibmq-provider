@@ -406,23 +406,6 @@ class TestQobjBasedIBMQJob(JobTestCase):
 
         self._qc = _bell_circuit()
 
-    def test_qobj_enabled_job(self):
-        """Job should be an instance of IBMQJob."""
-        qobj = assemble(
-            transpile(self._qc, backend=self._backend), backend=self._backend)
-        job = self._backend.run(qobj)
-        self.assertIsInstance(job, IBMQJob)
-
-    def test_qobj_enabled_result(self):
-        """Jobs can be retrieved."""
-        qobj = assemble(
-            transpile(self._qc, backend=self._backend), backend=self._backend)
-        job = self._backend.run(qobj)
-        try:
-            job.result()
-        except JobError as err:
-            self.fail(err)
-
 
 def _bell_circuit():
     qr = QuantumRegister(2, 'q')
