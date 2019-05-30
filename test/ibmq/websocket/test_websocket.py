@@ -27,8 +27,11 @@ from qiskit.test import QiskitTestCase
 
 from .websocket_server import (
     TOKEN_JOB_COMPLETED, TOKEN_JOB_TRANSITION, TOKEN_WRONG_FORMAT,
-    TOKEN_TIMEOUT, TEST_IP_ADDRESS, TEST_WSS_PORT, TEST_WS_PORT,
-    websocket_handler)
+    TOKEN_TIMEOUT, websocket_handler)
+
+TEST_IP_ADDRESS = '127.0.0.1'
+TEST_WSS_PORT = '9876'
+TEST_WS_PORT = '8765'
 
 
 class TestWebsocketClient(QiskitTestCase):
