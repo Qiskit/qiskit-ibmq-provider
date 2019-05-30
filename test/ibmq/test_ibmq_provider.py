@@ -31,7 +31,7 @@ class TestIBMQProvider(ProviderTestCase):
     provider_cls = IBMQProvider
     backend_name = 'ibmq_qasm_simulator'
 
-    def setUp(self):   # pylint: disable=invalid-name
+    def setUp(self):
         """Required method for testing"""
         super().setUp()
         qr = QuantumRegister(1)
@@ -40,14 +40,10 @@ class TestIBMQProvider(ProviderTestCase):
         self.qc1.h(qr[0])
         self.qc1.measure(qr, cr)
 
-    @classmethod
-    def setUpClass(cls):  # pylint: disable=invalid-name
-        """Required method for testing"""
-        super().setUpClass()
-
     @requires_qe_access
-    def _get_provider(self, qe_token, qe_url):  # pylint: disable=arguments-differ
+    def _get_provider(self, qe_token, qe_url):
         """Return an instance of a Provider."""
+        # pylint: disable=arguments-differ
         provider = self.provider_cls()
         provider.enable_account(qe_token, qe_url)
         return provider
