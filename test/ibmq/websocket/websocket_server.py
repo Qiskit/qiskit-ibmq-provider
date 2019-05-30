@@ -24,7 +24,9 @@ TOKEN_JOB_COMPLETED = 'token_job_completed'
 TOKEN_JOB_TRANSITION = 'token_job_transition'
 TOKEN_TIMEOUT = 'token_timeout'
 TOKEN_WRONG_FORMAT = 'token_wrong_format'
-
+TEST_IP_ADDRESS = '127.0.0.1'
+TEST_WSS_PORT = '9876'
+TEST_WS_PORT = '8765'
 
 @asyncio.coroutine
 def websocket_handler(websocket, path):
