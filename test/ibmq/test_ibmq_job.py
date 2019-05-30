@@ -389,7 +389,7 @@ class TestIBMQJob(JobTestCase):
         IBMQ.enable_account(qe_token, qe_url)
         backend = IBMQ.get_backend('ibmq_qasm_simulator')
 
-        qr = QuantumRegister(50)
+        qr = QuantumRegister(5)  # 5 is sufficient for this test
         cr = ClassicalRegister(2)
         qc = QuantumCircuit(qr, cr)
         qc.cx(qr[0], qr[1])
@@ -402,10 +402,8 @@ class TestIBMQJob(JobTestCase):
         with self.assertRaises(JobError):
             job_sim.result()
 
-        try:
-            job_sim.error_message()
-        except KeyError as ex:
-            self.fail(ex)
+        message = job_sim.error_message()
+        self.assertIn('Job resulted in the following QASM status(es): ', message)
 
 
 def _bell_circuit():
