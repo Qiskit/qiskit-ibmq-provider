@@ -15,7 +15,6 @@
 
 """Tests for all IBMQ backends."""
 
-from unittest import skip
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQProvider
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
@@ -78,7 +77,6 @@ class TestIBMQProvider(providers.ProviderTestCase):
             if backend.configuration().simulator:
                 self.assertEqual(properties, None)
 
-    @skip('Skipping until support in production API')
     def test_remote_backend_defaults(self):
         """Test backend pulse defaults."""
         remotes = self.provider.backends(simulator=False)
