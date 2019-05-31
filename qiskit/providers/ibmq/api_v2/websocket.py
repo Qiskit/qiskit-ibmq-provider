@@ -20,6 +20,7 @@ import logging
 import time
 from concurrent import futures
 
+import nest_asyncio
 from websockets import connect, ConnectionClosed
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
@@ -29,6 +30,9 @@ from .exceptions import (WebsocketError, WebsocketTimeoutError,
 
 
 logger = logging.getLogger(__name__)
+
+# Patch asyncio to allow nested use of `loop.run_until_complete()`.
+nest_asyncio.apply()
 
 
 class WebsocketMessage:
