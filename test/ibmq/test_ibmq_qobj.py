@@ -186,21 +186,3 @@ class TestIBMQQobj(QiskitTestCase):
                                    result_local.get_counts(circuit1), delta=50)
         self.assertDictAlmostEqual(result_remote.get_counts(circuit2),
                                    result_local.get_counts(circuit2), delta=50)
-
-    @slow_test
-    @requires_qe_access
-    def test_conditional_operation(self):
-        """Test conditional operation."""
-        qr = QuantumRegister(4)
-        cr = ClassicalRegister(4)
-        circuit = QuantumCircuit(qr, cr)
-        circuit.x(qr[0])
-        circuit.x(qr[2])
-        circuit.measure(qr[0], cr[0])
-        circuit.x(qr[0]).c_if(cr, 1)
-
-        qobj = transpile(circuit, backend=self._remote_backend)
-        result_remote = self._remote_backend.run(qobj).result()
-        result_local = self._local_backend.run(qobj).result()
-        self.assertDictAlmostEqual(result_remote.get_counts(circuit),
-                                   result_local.get_counts(circuit), delta=50)
