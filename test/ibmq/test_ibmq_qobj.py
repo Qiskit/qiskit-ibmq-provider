@@ -19,7 +19,6 @@ import os
 from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
                     QuantumRegister)
 from qiskit.providers.ibmq import IBMQ
-from qiskit.qasm import pi
 from qiskit.test import QiskitTestCase, slow_test
 from qiskit.compiler import transpile
 
@@ -199,23 +198,6 @@ class TestIBMQQobj(QiskitTestCase):
         circuit.x(qr[2])
         circuit.measure(qr[0], cr[0])
         circuit.x(qr[0]).c_if(cr, 1)
-
-        qobj = transpile(circuit, backend=self._remote_backend)
-        result_remote = self._remote_backend.run(qobj).result()
-        result_local = self._local_backend.run(qobj).result()
-        self.assertDictAlmostEqual(result_remote.get_counts(circuit),
-                                   result_local.get_counts(circuit), delta=50)
-
-    @slow_test
-    @requires_qe_access
-    def test_atlantic_circuit(self):
-        """Test Atlantis deterministic ry operation."""
-        qr = QuantumRegister(3)
-        cr = ClassicalRegister(3)
-        circuit = QuantumCircuit(qr, cr)
-        circuit.ry(pi, qr[0])
-        circuit.ry(pi, qr[2])
-        circuit.measure(qr, cr)
 
         qobj = transpile(circuit, backend=self._remote_backend)
         result_remote = self._remote_backend.run(qobj).result()
