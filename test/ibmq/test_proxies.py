@@ -12,22 +12,17 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Tests for the IBMQClient for API v2."""
+"""Tests for the IBMQClient proxy support."""
 
-import re
-from unittest import skip
+import subprocess
 
-from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.compiler import assemble, transpile
-from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.api_v2 import IBMQClient
-from qiskit.providers.ibmq.api_v2.exceptions import ApiError
 from qiskit.test import QiskitTestCase, requires_qe_access
 
 from ..decorators import requires_new_api_auth
 
-import asyncio
-import pproxy as pp
+ADDRESS = '127.0.0.1'
+PORT = '8080'
 
 
 class TestProxies(QiskitTestCase):
@@ -38,27 +33,23 @@ class TestProxies(QiskitTestCase):
         super().setUpClass()
 
         # Launch the mock server.
-        server = pp.Server('ss://127.0.0.1:8080')
-        remote = pp.Connection('ss://127.0.0.1:8080')
-        args = dict(rserver=[remote],
-                    verbose=print)
-        cls.server = asyncio.get_event_loop().run_until_complete(server.start_server(args))
+        cls.proxy_process = subprocess.Popen(
+           ['pproxy', '-l', 'http://{}:{}'.format(ADDRESS, PORT)])
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
         # Close the mock server.
-        loop = asyncio.get_event_loop()
-        loop.stop()
+        cls.proxy_process.kill()
 
     @requires_qe_access
     @requires_new_api_auth
     def test_proxies(self, qe_token, qe_url):
-        """Test IBMQClient proxy support."""
-        proxies = {
-            'https': '127.0.0.1:8080'
+        """Test IBMQClient proxy connection."""
+        input_proxies = {
+            'https': '{}:{}'.format(ADDRESS, PORT)
         }
 
-        IBMQClient(qe_token, qe_url, proxies)
-        return
+        client = IBMQClient(qe_token, qe_url, input_proxies)
+        self.assertEqual(client.proxies, input_proxies)
