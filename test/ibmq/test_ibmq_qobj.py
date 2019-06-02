@@ -25,12 +25,14 @@ from qiskit.compiler import transpile
 from ..decorators import requires_qe_access
 
 
-class TestIBMQQobj(QiskitTestCase):
+class TestIBMQQobjBackends(QiskitTestCase):
     """Qiskit backend qobj test.
 
-    Compares remote simulator as configured in environment variables
-    'IBMQ_QOBJ_DEVICE', 'IBMQ_TOKEN' and 'IBMQ_QOBJ_URL' against local
-    simulator 'local_qasm_simulator' as ground truth.
+    Executes a series of circuits of special interest using remote
+    simulators as configured in environment variables
+    'IBMQ_QOBJ_DEVICE', 'IBMQ_TOKEN' and 'IBMQ_QOBJ_URL', comparing
+    results against local simulator 'local_qasm_simulator' as ground
+    truth.
     """
 
     def setUp(self):
