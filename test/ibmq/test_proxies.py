@@ -33,8 +33,9 @@ class TestProxies(QiskitTestCase):
         super().setUpClass()
 
         # Launch the mock server.
-        cls.proxy_process = subprocess.Popen(
-           ['pproxy', '-l', 'http://{}:{}'.format(ADDRESS, PORT)])
+        cls.proxy_process = subprocess.Popen([
+            'pproxy', '-l', 'http://{}:{}'.format(ADDRESS, PORT)
+        ])
 
     @classmethod
     def tearDownClass(cls):

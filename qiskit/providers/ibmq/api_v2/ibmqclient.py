@@ -31,6 +31,7 @@ class IBMQClient:
         Args:
             api_token (str): IBM Q api token.
             auth_url (str): URL for the authentication service.
+            proxies (dict): proxies used in the connection.
         """
         self.api_token = api_token
         self.auth_url = auth_url
