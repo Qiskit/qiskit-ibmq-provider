@@ -297,6 +297,8 @@ class IBMQClient:
         Returns:
             dict: job status.
         """
+        # As mentioned in `websocket.py`, in jupyter we need to use
+        # `nest_asyncio` to allow nested event loops.
         return asyncio.get_event_loop().run_until_complete(
             self.client_ws.get_job_status(job_id, timeout=timeout))
 
