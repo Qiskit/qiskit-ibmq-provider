@@ -38,7 +38,7 @@ stage_generic: &stage_generic
     - pip install -U -r requirements-dev.txt
   script:
     # Run the tests.
-    - make test
+    - travis_wait 120 make test
 
 stage_linux: &stage_linux
   <<: *stage_generic
