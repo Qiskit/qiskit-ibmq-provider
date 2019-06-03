@@ -82,6 +82,7 @@ stages:
   - lint and pure python test
   - test
   - ibmq
+  - slow tests
 
 # Define the job matrix explicitly, as matrix expansion causes issues when
 # using it with stages and some variables/sections cannot be overridden.
@@ -92,11 +93,13 @@ jobs:
     # Linter and style check (GNU/Linux, Python 3.5)
     - stage: lint and pure python test
       <<: *stage_linux
+      if: type != cron
       script: make style && make lint
 
     # Run the tests against without compilation (GNU/Linux, Python 3.5)
     - stage: lint and pure python test
       <<: *stage_linux
+      if: type != cron
 
     # "test" stage
     ###########################################################################
@@ -104,11 +107,13 @@ jobs:
     # GNU/Linux, Python 3.6
     - stage: test
       <<: *stage_linux
+      if: type != cron
       python: 3.6
 
     # GNU/Linux, Python 3.7
     - stage: test
       <<: *stage_linux
+      if: type != cron
       # Compiling Python 3.7 requires an Ubuntu Xenial distribution
       # and sudo set to true
       # Fix when this is solved:
@@ -120,6 +125,7 @@ jobs:
     # OSX, Python 3.5.6 (via pyenv)
     - stage: test
       <<: *stage_osx
+      if: type != cron
       env:
         - MPLBACKEND=ps
         - PYTHON_VERSION=3.5.6
@@ -127,6 +133,7 @@ jobs:
     # OSX, Python 3.6.5 (via pyenv)
     - stage: test
       <<: *stage_osx
+      if: type != cron
       env:
         - MPLBACKEND=ps
         - PYTHON_VERSION=3.6.5
@@ -134,6 +141,7 @@ jobs:
     # OSX, Python 3.7.2 (via pyenv)
     - stage: test
       <<: *stage_osx
+      if: type != cron
       env:
         - MPLBACKEND=ps
         - PYTHON_VERSION=3.7.2
@@ -146,3 +154,12 @@ jobs:
       if: branch = master and repo = Qiskit/qiskit-ibmq-provider and type = push
       python: 3.6
       env: USE_ALTERNATE_ENV_CREDENTIALS=True
+
+    # "slow tests" stage
+    ###########################################################################
+    # GNU/Linux, Python 3.5
+    - stage: slow tests
+      <<: *stage_linux
+      if: type = cron
+      env:
+        - QISKIT_TESTS=run_slow
