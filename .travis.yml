@@ -82,6 +82,7 @@ stages:
   - lint and pure python test
   - test
   - ibmq
+  - slow tests
 
 # Define the job matrix explicitly, as matrix expansion causes issues when
 # using it with stages and some variables/sections cannot be overridden.
