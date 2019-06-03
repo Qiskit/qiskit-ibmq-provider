@@ -157,7 +157,7 @@ jobs:
 
     # "slow tests" stage
     ###########################################################################
-    # GNU/Linus, Python 3.5
+    # GNU/Linux, Python 3.5
     - stage: slow tests
       <<: *stage_linux
       if: type = cron
