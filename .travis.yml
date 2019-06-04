@@ -38,7 +38,7 @@ stage_generic: &stage_generic
     - pip install -U -r requirements-dev.txt
   script:
     # Run the tests.
-    - travis_wait 120 make test
+    - make test
 
 stage_linux: &stage_linux
   <<: *stage_generic
@@ -163,3 +163,6 @@ jobs:
       if: type = cron
       env:
         - QISKIT_TESTS=run_slow
+      script:
+        # effectively increases timeout to 2h.
+        - travis_wait 120 make test
