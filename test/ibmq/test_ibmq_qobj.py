@@ -52,19 +52,6 @@ class TestIBMQQobj(QiskitTestCase):
 
     @slow_test
     @requires_qe_access
-    def test_operational(self):
-        """Test if backend is operational."""
-        self.assertTrue(self._remote_backend.status().operational)
-
-    @slow_test
-    @requires_qe_access
-    def test_allow_qobj(self):
-        """Test if backend support Qobj."""
-        self.assertTrue(getattr(self._remote_backend.configuration(),
-                                'allow_q_object', False))
-
-    @slow_test
-    @requires_qe_access
     def test_one_qubit_no_operation(self):
         """Test one circuit, one register, in-order readout."""
         qr = QuantumRegister(1)
