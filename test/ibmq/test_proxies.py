@@ -65,10 +65,10 @@ class TestProxies(QiskitTestCase):
             'https': '{}:{}'.format(ADDRESS, '6666')
         }
 
-        with self.assertRaises(RequestsApiError) as cm:
+        with self.assertRaises(RequestsApiError) as context_manager:
             _ = IBMQClient(qe_token, qe_url, input_proxies)
 
-        self.assertIsInstance(cm.exception.original_exception, ProxyError)
+        self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
 
     @requires_qe_access
     @requires_new_api_auth
@@ -78,7 +78,7 @@ class TestProxies(QiskitTestCase):
             'https': '{}:{}'.format(ADDRESS, PORT)
         }
 
-        with self.assertRaises(RequestsApiError) as cm:
+        with self.assertRaises(RequestsApiError) as context_manager:
             _ = IBMQClient(qe_token, qe_url, input_proxies)
 
-        self.assertIsInstance(cm.exception.original_exception, ProxyError)
+        self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
