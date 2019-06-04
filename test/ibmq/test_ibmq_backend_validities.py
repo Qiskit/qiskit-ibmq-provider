@@ -25,7 +25,7 @@ from qiskit.compiler import transpile
 from ..decorators import requires_qe_access
 
 
-class TestIBMQQobjBackends(QiskitTestCase):
+class TestIBMQBackendValidities(QiskitTestCase):
     """Qiskit backend qobj test.
 
     Executes a series of circuits of special interest using remote
