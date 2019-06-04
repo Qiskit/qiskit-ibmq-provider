@@ -30,8 +30,8 @@ from .websocket_server import (
     TOKEN_TIMEOUT, websocket_handler)
 
 TEST_IP_ADDRESS = '127.0.0.1'
-TEST_WSS_PORT = '9876'
-TEST_WS_PORT = '8765'
+INVALID_PORT = 9876
+VALID_PORT = 8765
 
 
 class TestWebsocketClient(QiskitTestCase):
@@ -39,7 +39,7 @@ class TestWebsocketClient(QiskitTestCase):
 
     def test_invalid_url(self):
         """Test connecting to an invalid URL."""
-        client = WebsocketClient('wss://{}:{}'.format(TEST_IP_ADDRESS, TEST_WSS_PORT), None)
+        client = WebsocketClient('wss://{}:{}'.format(TEST_IP_ADDRESS, INVALID_PORT), None)
 
         with self.assertRaises(WebsocketError):
             asyncio.get_event_loop().run_until_complete(
@@ -53,7 +53,7 @@ class TestWebsocketClientMock(QiskitTestCase):
         super().setUpClass()
 
         # Launch the mock server.
-        start_server = websockets.serve(websocket_handler, TEST_IP_ADDRESS, int(TEST_WS_PORT))
+        start_server = websockets.serve(websocket_handler, TEST_IP_ADDRESS, int(VALID_PORT))
         cls.server = asyncio.get_event_loop().run_until_complete(start_server)
 
     @classmethod
@@ -73,7 +73,7 @@ class TestWebsocketClientMock(QiskitTestCase):
     def test_job_final_status(self):
         """Test retrieving a job already in final status."""
         client = WebsocketClient('ws://{}:{}'.format(
-            TEST_IP_ADDRESS, TEST_WS_PORT), TOKEN_JOB_COMPLETED)
+            TEST_IP_ADDRESS, VALID_PORT), TOKEN_JOB_COMPLETED)
         response = asyncio.get_event_loop().run_until_complete(
             client.get_job_status('job_id'))
         self.assertIsInstance(response, dict)
@@ -83,7 +83,7 @@ class TestWebsocketClientMock(QiskitTestCase):
     def test_job_transition(self):
         """Test retrieving a job that transitions to final status."""
         client = WebsocketClient('ws://{}:{}'.format(
-            TEST_IP_ADDRESS, TEST_WS_PORT), TOKEN_JOB_TRANSITION)
+            TEST_IP_ADDRESS, VALID_PORT), TOKEN_JOB_TRANSITION)
         response = asyncio.get_event_loop().run_until_complete(
             client.get_job_status('job_id'))
         self.assertIsInstance(response, dict)
@@ -93,7 +93,7 @@ class TestWebsocketClientMock(QiskitTestCase):
     def test_timeout(self):
         """Test timeout during retrieving a job status."""
         client = WebsocketClient('ws://{}:{}'.format(
-            TEST_IP_ADDRESS, TEST_WS_PORT), TOKEN_TIMEOUT)
+            TEST_IP_ADDRESS, VALID_PORT), TOKEN_TIMEOUT)
         with self.assertRaises(WebsocketTimeoutError):
             _ = asyncio.get_event_loop().run_until_complete(
                 client.get_job_status('job_id', timeout=2))
@@ -101,7 +101,7 @@ class TestWebsocketClientMock(QiskitTestCase):
     def test_invalid_response(self):
         """Test unparseable response from the server."""
         client = WebsocketClient('ws://{}:{}'.format(
-            TEST_IP_ADDRESS, TEST_WS_PORT), TOKEN_WRONG_FORMAT)
+            TEST_IP_ADDRESS, VALID_PORT), TOKEN_WRONG_FORMAT)
         with self.assertRaises(WebsocketIBMQProtocolError):
             _ = asyncio.get_event_loop().run_until_complete(
                 client.get_job_status('job_id'))
