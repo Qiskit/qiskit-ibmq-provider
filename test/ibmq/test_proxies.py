@@ -16,7 +16,10 @@
 
 import subprocess
 
+from requests.exceptions import ProxyError
+
 from qiskit.providers.ibmq.api_v2 import IBMQClient
+from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 from qiskit.test import QiskitTestCase, requires_qe_access
 
 from ..decorators import requires_new_api_auth
@@ -34,23 +37,48 @@ class TestProxies(QiskitTestCase):
 
         # Launch the mock server.
         cls.proxy_process = subprocess.Popen([
-            'pproxy', '-l', 'http://{}:{}'.format(ADDRESS, PORT)
-        ])
+            'pproxy', '-v', '-i', 'http://{}:{}'.format(ADDRESS, PORT)
+        ], stdout=subprocess.PIPE)
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
         # Close the mock server.
-        cls.proxy_process.kill()
+        if cls.proxy_process.returncode is None:
+            cls.proxy_process.terminate()
 
     @requires_qe_access
     @requires_new_api_auth
     def test_proxies(self, qe_token, qe_url):
-        """Test IBMQClient proxy connection."""
+        """Should reach the proxy."""
+        request = 'http auth.quantum-computing.ibm.com:443'
+        _ = IBMQClient(qe_token, qe_url, {'https': 'http://{}:{}'.format(ADDRESS, PORT)})
+        self.proxy_process.terminate()  # kill to be able of reading the output
+        self.assertIn(request, self.proxy_process.stdout.read().decode('utf-8'))
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_invalid_proxy_port(self, qe_token, qe_url):
+        """Should raise RequestApiError with ProxyError as original exception."""
+        input_proxies = {
+            'https': '{}:{}'.format(ADDRESS, '6666')
+        }
+
+        with self.assertRaises(RequestsApiError) as cm:
+            _ = IBMQClient(qe_token, qe_url, input_proxies)
+
+        self.assertIsInstance(cm.exception.original_exception, ProxyError)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_invalid_proxy_address(self, qe_token, qe_url):
+        """Should raise RequestApiError with ProxyError as original exception."""
         input_proxies = {
             'https': '{}:{}'.format(ADDRESS, PORT)
         }
 
-        client = IBMQClient(qe_token, qe_url, input_proxies)
-        self.assertEqual(client.proxies, input_proxies)
+        with self.assertRaises(RequestsApiError) as cm:
+            _ = IBMQClient(qe_token, qe_url, input_proxies)
+
+        self.assertIsInstance(cm.exception.original_exception, ProxyError)
