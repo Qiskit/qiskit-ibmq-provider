@@ -163,3 +163,6 @@ jobs:
       if: type = cron
       env:
         - QISKIT_TESTS=run_slow
+      script:
+        # effectively increases timeout to 2h.
+        - travis_wait 120 make test
