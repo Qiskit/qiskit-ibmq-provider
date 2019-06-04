@@ -30,6 +30,8 @@ Changed
 """""""
 
 - Updated detection of classic vs. new api based on version endpoint. (#95)
+- The ``requires_qe_access`` decorator, previously in terra, is now included
+  in this package. (#128)
 
 Added
 """""

@@ -20,8 +20,10 @@ from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
                     QuantumRegister)
 from qiskit.providers.ibmq import IBMQ
 from qiskit.qasm import pi
-from qiskit.test import QiskitTestCase, requires_qe_access, slow_test
+from qiskit.test import QiskitTestCase, slow_test
 from qiskit.compiler import transpile
+
+from ..decorators import requires_qe_access
 
 
 class TestIBMQQobj(QiskitTestCase):
@@ -47,19 +49,6 @@ class TestIBMQQobj(QiskitTestCase):
         self._remote_backend = IBMQ.get_backend(self._testing_device)
         self.log.info('Remote backend: %s', self._remote_backend.name())
         self.log.info('Local backend: %s', self._local_backend.name())
-
-    @slow_test
-    @requires_qe_access
-    def test_operational(self):
-        """Test if backend is operational."""
-        self.assertTrue(self._remote_backend.status().operational)
-
-    @slow_test
-    @requires_qe_access
-    def test_allow_qobj(self):
-        """Test if backend support Qobj."""
-        self.assertTrue(getattr(self._remote_backend.configuration(),
-                                'allow_q_object', False))
 
     @slow_test
     @requires_qe_access

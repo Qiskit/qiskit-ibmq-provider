@@ -99,6 +99,35 @@ class IBMQClient:
         response = self.client_auth.user_info()
         return response['urls']
 
+    def _user_hubs(self):
+        """Retrieve the hubs available to the user.
+
+        The first entry in the list will be the default one, as indicated by
+        the API (by having `isDefault` in all hub, group, project fields).
+
+        Returns:
+            list[dict]: a list of dicts with the hubs, which contains the keys
+                `hub`, `group`, `project`.
+        """
+        response = self.client_api.hubs()
+
+        hubs = []
+        for hub in response:
+            hub_name = hub['name']
+            for group_name, group in hub['groups'].items():
+                for project_name, project in group['projects'].items():
+                    entry = {'hub': hub_name,
+                             'group': group_name,
+                             'project': project_name}
+
+                    # If
+                    if project.get('isDefault'):
+                        hubs.insert(0, entry)
+                    else:
+                        hubs.append(entry)
+
+        return hubs
+
     # Backend-related public functions.
 
     def list_backends(self):
@@ -270,6 +299,8 @@ class IBMQClient:
         Returns:
             dict: job status.
         """
+        # As mentioned in `websocket.py`, in jupyter we need to use
+        # `nest_asyncio` to allow nested event loops.
         return asyncio.get_event_loop().run_until_complete(
             self.client_ws.get_job_status(job_id, timeout=timeout))
 
