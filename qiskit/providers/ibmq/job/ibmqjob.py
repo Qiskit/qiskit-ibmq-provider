@@ -110,7 +110,8 @@ class IBMQJob(BaseJob):
     _executor = futures.ThreadPoolExecutor()
 
     def __init__(self, backend, job_id, api, qobj=None,
-                 creation_date=None, api_status=None):
+                 creation_date=None, api_status=None,
+                 use_object_storage=False, use_websockets=False):
         """IBMQJob init function.
 
         We can instantiate jobs from two sources: A QObj, and an already submitted job returned by
@@ -120,10 +121,15 @@ class IBMQJob(BaseJob):
             backend (BaseBackend): The backend instance used to run this job.
             job_id (str or None): The job ID of an already submitted job.
                 Pass `None` if you are creating a new job.
-            api (IBMQConnector): IBMQ connector.
+            api (IBMQConnector or IBMQClient): object for connecting to the API.
             qobj (Qobj): The Quantum Object. See notes below
             creation_date (str): When the job was run.
             api_status (str): `status` field directly from the API response.
+            use_object_storage (bool): if `True`, signals that the Job will
+                _attempt_ to use object storage for submitting jobs and
+                retrieving results.
+            use_websockets (bool): if `True`, signals that the Job will
+                _attempt_ to use websockets when pooling for final status.
 
         Notes:
             It is mandatory to pass either ``qobj`` or ``job_id``. Passing a ``qobj``
@@ -146,6 +152,14 @@ class IBMQJob(BaseJob):
         self._api_error_msg = None
         self._result = None
         self._queue_position = None
+
+        # Properties used for deciding the underlying API features to use.
+        self._use_object_storage = use_object_storage
+        self._use_websockets = use_websockets
+
+        if isinstance(api, IBMQClient):
+            self._use_object_storage = True
+            self._use_websockets = True
 
         if qobj:
             validate_qobj_against_schema(qobj)
@@ -231,8 +245,14 @@ class IBMQJob(BaseJob):
                            'it is {}'.format(str(status)))
 
         if not self._result:
-            job_response = self._get_job()
-            self._result = Result.from_dict(job_response['qObjectResult'])
+            if self._use_object_storage:
+                # Retrieve the results via object storage.
+                result_response = self._api.job_result_object_storage(
+                    self._job_id)
+                self._result = Result.from_dict(result_response)
+            else:
+                job_response = self._get_job()
+                self._result = Result.from_dict(job_response['qObjectResult'])
 
         return self._result
 
@@ -398,15 +418,33 @@ class IBMQJob(BaseJob):
         """
         backend_name = self.backend().name()
 
-        try:
-            submit_info = self._api.submit_job(self._qobj_payload,
-                                               backend_name=backend_name)
-        # pylint: disable=broad-except
-        except Exception as err:
-            # Undefined error during submission:
-            # Capture and keep it for raising it when calling status().
-            self._future_captured_exception = err
-            return None
+        submit_info = None
+        if self._use_object_storage:
+            # Attempt to use object storage.
+            try:
+                submit_info = self._api.job_submit_object_storage(
+                    backend_name=backend_name,
+                    qobj_dict=self._qobj_payload)
+            except Exception as err:
+                # pylint: disable=broad-except
+                # Fall back to submitting the Qobj via POST if object storage
+                # failed.
+                logger.warning('Submitting the job via object storage failed: '
+                               'retrying via regular POST upload.')
+                # Disable object storage for this job.
+                self._use_object_storage = False
+
+        if not submit_info:
+            try:
+                submit_info = self._api.submit_job(
+                    backend_name=backend_name,
+                    qobj_dict=self._qobj_payload)
+            # pylint: disable=broad-except
+            except Exception as err:
+                # Undefined error during submission:
+                # Capture and keep it for raising it when calling status().
+                self._future_captured_exception = err
+                return None
 
         # Error in the job after submission:
         # Transition to the `ERROR` final state.
@@ -440,7 +478,12 @@ class IBMQJob(BaseJob):
         try:
             job_response = self._get_job()
             if not self._qobj_payload:
-                self._qobj_payload = job_response.get('qObject', {})
+                if self._use_object_storage:
+                    # Attempt to use object storage.
+                    self._qobj_payload = self._api.job_download_qobj_object_storage(
+                        self._job_id)
+                else:
+                    self._qobj_payload = job_response.get('qObject', {})
         except ApiError as api_err:
             raise JobError(str(api_err))
 
