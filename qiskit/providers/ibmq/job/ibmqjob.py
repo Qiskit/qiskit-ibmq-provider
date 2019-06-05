@@ -522,7 +522,7 @@ class IBMQJob(BaseJob):
         self._wait_for_submission(timeout)
 
         # Attempt to use websocket if available.
-        if isinstance(self._api, IBMQClient):
+        if self._use_websockets:
             try:
                 self._wait_for_final_status_websocket(timeout)
                 return
