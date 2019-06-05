@@ -12,37 +12,31 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Version finder for the IBM Q Api version 2."""
+"""Client for accessing IBM Q's version finder."""
 
-from json import JSONDecodeError
+from .session import RetrySession
+from .rest import Auth
+from .rest.version_finder import VersionFinder
 
-from .base import RestAdapterBase
 
+class IBMQVersionFinder:
+    """Client for programmatic access to the IBM Q API."""
 
-class VersionFinder(RestAdapterBase):
-    """Rest adapter for the version finder."""
+    def __init__(self, auth_url):
+        """IBMQVersionFinder constructor.
 
-    URL_MAP = {
-        'version': '/version'
-    }
+        Args:
+            auth_url (str): URL for the authentication service.
+        """
+        self.auth_url = auth_url
+        self.client_auth = Auth(RetrySession(auth_url))
+        self.client_version_finder = VersionFinder(RetrySession(auth_url))
 
     def version_info(self):
-        """Return the version info.
+        """Return the version info of the API.
 
         Returns:
             dict: a dict of the API versions with a key conveying whether
                 the new API is being used.
         """
-        url = self.get_url('version')
-        response = self.session.get(url)
-
-        try:
-            version_info = response.json()
-        except JSONDecodeError:
-            return {
-                'new_api': False,
-                'api': response.text
-            }
-
-        version_info['new_api'] = True
-        return version_info
+        return self.client_version_finder.version_info()

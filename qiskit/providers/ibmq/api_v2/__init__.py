@@ -15,3 +15,4 @@
 """IBM Q API version 2 connector and utilities."""
 
 from .ibmqclient import IBMQClient
+from .ibmqversionfinder import IBMQVersionFinder

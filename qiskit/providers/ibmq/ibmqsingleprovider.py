@@ -24,10 +24,8 @@ from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api import IBMQConnector
-from .api_v2 import IBMQClient
+from .api_v2 import IBMQClient, IBMQVersionFinder
 from .api_v2.exceptions import AuthenticationLicenseError
-from .api_v2.rest.version_finder import VersionFinder
-from .api_v2.session import RetrySession
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 
 
@@ -91,7 +89,7 @@ class IBMQSingleProvider(BaseProvider):
         if credentials.websocket_url:
             config_dict['websocket_url'] = credentials.websocket_url
 
-        version_finder = VersionFinder(RetrySession(credentials.url))
+        version_finder = IBMQVersionFinder(auth_url=credentials.url)
         version_info = version_finder.version_info()
 
         # Check if the URL belongs to auth services of the new API.
