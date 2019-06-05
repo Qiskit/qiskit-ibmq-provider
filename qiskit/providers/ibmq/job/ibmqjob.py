@@ -157,10 +157,6 @@ class IBMQJob(BaseJob):
         self._use_object_storage = use_object_storage
         self._use_websockets = use_websockets
 
-        if isinstance(api, IBMQClient):
-            self._use_object_storage = True
-            self._use_websockets = True
-
         if qobj:
             validate_qobj_against_schema(qobj)
             self._qobj_payload = qobj.to_dict()
