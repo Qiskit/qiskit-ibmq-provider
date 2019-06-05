@@ -26,6 +26,8 @@ from qiskit.validation.exceptions import ModelValidationError
 from .api import IBMQConnector
 from .api_v2 import IBMQClient
 from .api_v2.exceptions import AuthenticationLicenseError
+from .api_v2.rest.version_finder import VersionFinder
+from .api_v2.session import RetrySession
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 
 
@@ -89,16 +91,11 @@ class IBMQSingleProvider(BaseProvider):
         if credentials.websocket_url:
             config_dict['websocket_url'] = credentials.websocket_url
 
-        # Prepare the version_config for the version detector.
-        version_config = config_dict.copy()
-        # By passing "access_token" in the dict, we bypass the login.
-        version_config['access_token'] = 'version_check'
-        version_connector = IBMQConnector(None, version_config,
-                                          credentials.verify)
+        version_finder = VersionFinder(RetrySession(credentials.url))
+        version_info = version_finder.version_info()
 
         # Check if the URL belongs to auth services of the new API.
         try:
-            version_info = version_connector.api_version()
             self.is_new_api = version_info['new_api']
 
             if version_info['new_api'] and 'api-auth' in version_info:
@@ -119,8 +116,8 @@ class IBMQSingleProvider(BaseProvider):
         """Return the remote backends available.
 
         Returns:
-            dict[str:IBMQBackend]: a dict of the remote backend instances,
-                keyed by backend name.
+            dict: a dict of the Api version(s) and a bool telling if the
+            new Api is being used.
         """
         ret = OrderedDict()
         configs_list = self._api.available_backends()
