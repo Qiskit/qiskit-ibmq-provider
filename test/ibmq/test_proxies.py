@@ -14,6 +14,7 @@
 
 """Tests for the IBMQClient proxy support."""
 
+import urllib
 import subprocess
 
 from requests.exceptions import ProxyError
@@ -52,10 +53,18 @@ class TestProxies(QiskitTestCase):
     @requires_new_api_auth
     def test_proxies(self, qe_token, qe_url):
         """Should reach the proxy."""
-        request = 'http auth.quantum-computing.ibm.com:443'
-        _ = IBMQClient(qe_token, qe_url, {'https': 'http://{}:{}'.format(ADDRESS, PORT)})
+        input_proxies = {
+            'https': 'http://{}:{}'.format(ADDRESS, PORT)
+        }
+
+        qe_url_parts = urllib.parse.urlparse(qe_url)
+        protocol_port = '443' if qe_url_parts.scheme == 'https' else '80'
+        pproxy_desired_access_log_line = 'http {}:{}'.format(qe_url_parts.hostname, protocol_port)
+
+        _ = IBMQClient(qe_token, qe_url, input_proxies)
+
         self.proxy_process.terminate()  # kill to be able of reading the output
-        self.assertIn(request, self.proxy_process.stdout.read().decode('utf-8'))
+        self.assertIn(pproxy_desired_access_log_line, self.proxy_process.stdout.read().decode('utf-8'))
 
     @requires_qe_access
     @requires_new_api_auth
