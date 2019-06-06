@@ -64,7 +64,8 @@ class TestProxies(QiskitTestCase):
         _ = IBMQClient(qe_token, qe_url, input_proxies)
 
         self.proxy_process.terminate()  # kill to be able of reading the output
-        self.assertIn(pproxy_desired_access_log_line, self.proxy_process.stdout.read().decode('utf-8'))
+        self.assertIn(
+            pproxy_desired_access_log_line, self.proxy_process.stdout.read().decode('utf-8'))
 
     @requires_qe_access
     @requires_new_api_auth
