@@ -149,7 +149,7 @@ class IBMQJob(BaseJob):
 
         if qobj:
             validate_qobj_against_schema(qobj)
-            self._qobj_payload = qobj.as_dict()
+            self._qobj_payload = qobj.to_dict()
             self._status = JobStatus.INITIALIZING
         else:
             # In case of not providing a `qobj`, it is assumed the job already
