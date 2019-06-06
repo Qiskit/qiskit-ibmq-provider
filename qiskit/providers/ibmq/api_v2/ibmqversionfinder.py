@@ -22,17 +22,17 @@ from .rest.version_finder import VersionFinder
 class IBMQVersionFinder:
     """Client for programmatic access to the IBM Q API."""
 
-    def __init__(self, auth_url):
+    def __init__(self, url):
         """IBMQVersionFinder constructor.
 
         Args:
-            auth_url (str): URL for the authentication service.
+            url (str): URL for the authentication service.
         """
-        self.auth_url = auth_url
-        self.client_auth = Auth(RetrySession(auth_url))
-        self.client_version_finder = VersionFinder(RetrySession(auth_url))
+        self.auth_url = url
+        self.client_auth = Auth(RetrySession(url))
+        self.client_version_finder = VersionFinder(RetrySession(url))
 
-    def version_info(self):
+    def version(self):
         """Return the version info of the API.
 
         Returns:

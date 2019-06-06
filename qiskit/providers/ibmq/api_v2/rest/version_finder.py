@@ -30,19 +30,22 @@ class VersionFinder(RestAdapterBase):
         """Return the version info.
 
         Returns:
-            dict: a dict of the API versions with a key conveying whether
-                the new API is being used.
+            dict: a dict with information about the API version,
+            with the following keys:
+                * `new_api` (bool): whether the new API is being used
+            And the following optional keys:
+                * `api-*` (str): the versions of each individual API component
         """
         url = self.get_url('version')
         response = self.session.get(url)
 
         try:
             version_info = response.json()
+            version_info['new_api'] = True
         except JSONDecodeError:
             return {
                 'new_api': False,
                 'api': response.text
             }
 
-        version_info['new_api'] = True
         return version_info

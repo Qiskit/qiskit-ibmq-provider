@@ -89,8 +89,8 @@ class IBMQSingleProvider(BaseProvider):
         if credentials.websocket_url:
             config_dict['websocket_url'] = credentials.websocket_url
 
-        version_finder = IBMQVersionFinder(auth_url=credentials.url)
-        version_info = version_finder.version_info()
+        version_finder = IBMQVersionFinder(url=credentials.url)
+        version_info = version_finder.version()
 
         # Check if the URL belongs to auth services of the new API.
         try:
@@ -114,8 +114,8 @@ class IBMQSingleProvider(BaseProvider):
         """Return the remote backends available.
 
         Returns:
-            dict: a dict of the Api version(s) and a bool telling if the
-            new Api is being used.
+            dict[str:IBMQBackend]: a dict of the remote backend instances,
+                keyed by backend name.
         """
         ret = OrderedDict()
         configs_list = self._api.available_backends()
