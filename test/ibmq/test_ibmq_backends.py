@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBMQ Remote Simulator Backend Qobj Tests."""
+"""IBMQ Remote Backend Tests."""
 
 from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
                     QuantumRegister)
@@ -23,11 +23,11 @@ from qiskit.compiler import assemble, transpile
 from ..decorators import requires_qe_access
 
 
-class TestIBMQSimBackends(QiskitTestCase):
-    """Qiskit test for remote simulator backend validation.
+class TestIBMQBackends(QiskitTestCase):
+    """Qiskit test for remote backend validation.
 
     Executes a series of circuits of special interest using
-    all available remote simulators, comparing results against
+    all available remote backends, comparing results against
     local simulator 'local_qasm_simulator' as ground truth.
     """
 
