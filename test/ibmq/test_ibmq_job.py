@@ -407,6 +407,7 @@ class TestIBMQJob(JobTestCase):
         message = job_sim.error_message()
         self.assertIn('Job resulted in the following QASM status(es): ', message)
 
+    @slow_test
     @requires_qe_access
     def test_running_job_properties(self, qe_token, qe_url):
         """Test fetching properties of a running job."""

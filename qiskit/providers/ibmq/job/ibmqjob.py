@@ -187,7 +187,8 @@ class IBMQJob(BaseJob):
         return Qobj.from_dict(self._qobj_payload)
 
     def properties(self):
-        """Return the backend properties for this job.
+        """Return the backend properties for this job. The properties might not
+        be available if the job hasn't completed, in which case None is returned.
 
         Returns:
             BackendProperties: the backend properties used for this job, or None if
