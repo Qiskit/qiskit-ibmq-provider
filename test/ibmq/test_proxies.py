@@ -85,7 +85,7 @@ class TestProxies(QiskitTestCase):
     def test_invalid_proxy_address(self, qe_token, qe_url):
         """Should raise RequestApiError with ProxyError as original exception."""
         input_proxies = {
-            'https': '{}:{}'.format(ADDRESS, PORT)
+            'https': '{}:{}'.format('invalid', PORT)
         }
 
         with self.assertRaises(RequestsApiError) as context_manager:
