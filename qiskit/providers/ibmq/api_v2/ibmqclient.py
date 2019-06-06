@@ -35,13 +35,15 @@ class IBMQClient:
         """
         self.api_token = api_token
         self.auth_url = auth_url
-        self.proxies = proxies
 
-        self.client_auth = Auth(RetrySession(auth_url, proxies=self.proxies))
-        self.client_api, self.client_ws = self._init_service_clients()
+        self.client_auth = Auth(RetrySession(auth_url, proxies=proxies))
+        self.client_api, self.client_ws = self._init_service_clients(proxies=proxies)
 
-    def _init_service_clients(self):
+    def _init_service_clients(self, proxies):
         """Initialize the clients used for communicating with the API and ws.
+
+        Args:
+            proxies (dict): proxies used in the connection.
 
         Returns:
             tuple(Api, WebsocketClient):
@@ -55,7 +57,7 @@ class IBMQClient:
         service_urls = self._user_urls()
 
         # Create the api server client, using the access token.
-        client_api = Api(RetrySession(service_urls['http'], access_token, proxies=self.proxies))
+        client_api = Api(RetrySession(service_urls['http'], access_token, proxies=proxies))
 
         # Create the websocket server client, using the access token.
         client_ws = WebsocketClient(service_urls['ws'], access_token)
