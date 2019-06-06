@@ -77,9 +77,6 @@ class IBMQSingleProvider(BaseProvider):
         Raises:
             ConnectionError: if the authentication resulted in error.
         """
-        # Use a temporary IBMQConnector for determining API version.
-        # TODO: replace with a IBMQClient or a Session directly after support
-        # for proxies is tested for RetrySession.
         # Prepare the config_dict for IBMQConnector.
         config_dict = {
             'url': credentials.url,

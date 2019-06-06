@@ -20,23 +20,26 @@ from .rest.version_finder import VersionFinder
 
 
 class IBMQVersionFinder:
-    """Client for programmatic access to the IBM Q API."""
+    """Client for finding the API version being used."""
 
     def __init__(self, url):
         """IBMQVersionFinder constructor.
 
         Args:
-            url (str): URL for the authentication service.
+            url (str): URL for the service.
         """
         self.auth_url = url
         self.client_auth = Auth(RetrySession(url))
         self.client_version_finder = VersionFinder(RetrySession(url))
 
     def version(self):
-        """Return the version info of the API.
+        """Return the version info.
 
         Returns:
-            dict: a dict of the API versions with a key conveying whether
-                the new API is being used.
+            dict: a dict with information about the API version,
+            with the following keys:
+                * `new_api` (bool): whether the new API is being used
+            And the following optional keys:
+                * `api-*` (str): the versions of each individual API component
         """
         return self.client_version_finder.version_info()
