@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBMQ Remote Backend Qobj Tests."""
+"""IBMQ Remote Simulator Backend Qobj Tests."""
 
 from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
                     QuantumRegister)
@@ -23,14 +23,12 @@ from qiskit.compiler import assemble, transpile
 from ..decorators import requires_qe_access
 
 
-class TestIBMQBackendValidities(QiskitTestCase):
-    """Qiskit backend qobj test.
+class TestIBMQSimBackends(QiskitTestCase):
+    """Qiskit test for remote simulator backend validation.
 
-    Executes a series of circuits of special interest using remote
-    simulators as configured in environment variables
-    'IBMQ_QOBJ_DEVICE', 'IBMQ_TOKEN' and 'IBMQ_QOBJ_URL', comparing
-    results against local simulator 'local_qasm_simulator' as ground
-    truth.
+    Executes a series of circuits of special interest using
+    all available remote simulators, comparing results against
+    local simulator 'local_qasm_simulator' as ground truth.
     """
 
     def setUp(self):
@@ -40,7 +38,7 @@ class TestIBMQBackendValidities(QiskitTestCase):
 
     @requires_qe_access
     def get_backends(self, qe_token=None, qe_url=None):
-        """Return all available backends."""
+        """Return all available remote backends."""
         IBMQ.enable_account(qe_token, qe_url)
         return IBMQ.backends()
 
@@ -147,8 +145,6 @@ class TestIBMQBackendValidities(QiskitTestCase):
         for remote_backend in self._remote_backends:
             with self.subTest(backend=remote_backend):
                 result_remote = remote_backend.run(qobj).result()
-                print('local: ', result_local.get_counts())
-                print('remote: ', result_remote.get_counts())
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
