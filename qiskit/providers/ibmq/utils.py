@@ -33,9 +33,9 @@ def _serialize_noise_model(config):
         else:
             if k == 'noise_model':
                 try:
-                    config[k] = v.as_dict(serializable=True)
+                    config[k] = v.to_dict(serializable=True)
                 except AttributeError:
-                    # if .as_dict() fails is probably because the noise_model
+                    # if .to_dict() fails is probably because the noise_model
                     # has been already transformed elsewhere
                     pass
 
@@ -53,7 +53,7 @@ def update_qobj_config(qobj, backend_options=None, noise_model=None):
     Returns:
         Qobj: qobj.
     """
-    config = qobj.config.as_dict()
+    config = qobj.config.to_dict()
 
     # Append backend options to configuration.
     if backend_options:

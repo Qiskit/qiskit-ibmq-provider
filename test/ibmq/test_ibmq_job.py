@@ -271,7 +271,7 @@ class TestIBMQJob(JobTestCase):
         rjob = backend.retrieve_job(job.job_id())
         self.assertEqual(job.job_id(), rjob.job_id())
         self.assertEqual(job.result().get_counts(), rjob.result().get_counts())
-        self.assertEqual(job.qobj().as_dict(), qobj.as_dict())
+        self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
 
     @slow_test
     @requires_qe_access
@@ -406,6 +406,17 @@ class TestIBMQJob(JobTestCase):
 
         message = job_sim.error_message()
         self.assertIn('Job resulted in the following QASM status(es): ', message)
+
+    @slow_test
+    @requires_qe_access
+    def test_running_job_properties(self, qe_token, qe_url):
+        """Test fetching properties of a running job."""
+        IBMQ.enable_account(qe_token, qe_url)
+        backend = least_busy(IBMQ.backends(simulator=False))
+
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+        _ = job.properties()
 
 
 def _bell_circuit():
