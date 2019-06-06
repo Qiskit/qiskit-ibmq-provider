@@ -271,7 +271,7 @@ class TestIBMQJob(JobTestCase):
         rjob = backend.retrieve_job(job.job_id())
         self.assertEqual(job.job_id(), rjob.job_id())
         self.assertEqual(job.result().get_counts(), rjob.result().get_counts())
-        self.assertEqual(job.qobj().as_dict(), qobj.as_dict())
+        self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
 
     @slow_test
     @requires_qe_access
