@@ -31,7 +31,6 @@ from qiskit.result import Result
 
 from ..api import ApiError
 from ..apiconstants import ApiJobStatus
-from ..api_v2 import IBMQClient
 from ..api_v2.exceptions import WebsocketTimeoutError, WebsocketError
 
 from .utils import current_utc_time, build_error_report, is_job_queued
@@ -421,8 +420,7 @@ class IBMQJob(BaseJob):
                 submit_info = self._api.job_submit_object_storage(
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload)
-            except Exception as err:
-                # pylint: disable=broad-except
+            except Exception as err:  # pylint: disable=broad-except
                 # Fall back to submitting the Qobj via POST if object storage
                 # failed.
                 logger.warning('Submitting the job via object storage failed: '
@@ -435,8 +433,7 @@ class IBMQJob(BaseJob):
                 submit_info = self._api.submit_job(
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload)
-            # pylint: disable=broad-except
-            except Exception as err:
+            except Exception as err:  # pylint: disable=broad-except
                 # Undefined error during submission:
                 # Capture and keep it for raising it when calling status().
                 self._future_captured_exception = err
