@@ -70,7 +70,7 @@ class TestIBMQClient(QiskitTestCase):
 
         # Run the job through the IBMQClient directly.
         api = backend._api
-        job = api.submit_job(qobj.as_dict(), backend_name)
+        job = api.submit_job(qobj.to_dict(), backend_name)
 
         self.assertIn('status', job)
         self.assertIsNotNone(job['status'])
@@ -89,7 +89,7 @@ class TestIBMQClient(QiskitTestCase):
 
         # Run the job through the IBMQClient directly using object storage.
         api = backend._api
-        job = api.job_submit_object_storage(backend_name, qobj.as_dict())
+        job = api.job_submit_object_storage(backend_name, qobj.to_dict())
         job_id = job['id']
         self.assertEqual(job['kind'], 'q-object-external-storage')
 
@@ -100,7 +100,7 @@ class TestIBMQClient(QiskitTestCase):
         result = api.job_result_object_storage(job_id)
         qobj_downloaded = api.job_download_qobj_object_storage(job_id)
 
-        self.assertEqual(qobj_downloaded, qobj.as_dict())
+        self.assertEqual(qobj_downloaded, qobj.to_dict())
         self.assertEqual(result['status'], 'COMPLETED')
 
     @requires_qe_access
@@ -161,7 +161,7 @@ class TestIBMQClient(QiskitTestCase):
         qobj = assemble(circuit, backend, shots=1)
 
         api = backend._api
-        job = api.submit_job(qobj.as_dict(), backend_name)
+        job = api.submit_job(qobj.to_dict(), backend_name)
         job_id = job['id']
 
         # Get the job, excluding a parameter.

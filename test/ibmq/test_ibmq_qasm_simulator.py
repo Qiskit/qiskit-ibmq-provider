@@ -107,3 +107,22 @@ class TestIbmqQasmSimulator(QiskitTestCase):
         result2 = result.get_counts(qcr2)
         self.assertEqual(result1, {'00 01': 1024})
         self.assertEqual(result2, {'10 00': 1024})
+
+    @requires_qe_access
+    def test_conditional_operation(self, qe_token, qe_url):
+        """Test conditional operation."""
+        IBMQ.enable_account(qe_token, qe_url)
+        backend = IBMQ.get_backend('ibmq_qasm_simulator')
+
+        qr = QuantumRegister(4)
+        cr = ClassicalRegister(4)
+        circuit = QuantumCircuit(qr, cr)
+        circuit.x(qr[0])
+        circuit.x(qr[2])
+        circuit.measure(qr[0], cr[0])
+        circuit.x(qr[0]).c_if(cr, 1)
+
+        qobj = assemble(transpile(circuit, backend=backend))
+        result = backend.run(qobj).result()
+
+        self.assertEqual(result.get_counts(circuit), {'0001': 1024})
