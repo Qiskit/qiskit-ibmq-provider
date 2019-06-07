@@ -16,4 +16,3 @@
 
 from .circuitjob import CircuitJob
 from .ibmqjob import IBMQJob
-from .ibmqstoragejob import IBMQStorageJob
