@@ -103,7 +103,8 @@ class IBMQSingleProvider(BaseProvider):
 
             if version_info['new_api'] and 'api-auth' in version_info:
                 return IBMQClient(api_token=credentials.token,
-                                  auth_url=credentials.url)
+                                  auth_url=credentials.url,
+                                  proxies=credentials.proxies)
             else:
                 return IBMQConnector(credentials.token, config_dict,
                                      credentials.verify)
