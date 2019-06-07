@@ -31,6 +31,7 @@ class TestIBMQBackends(QiskitTestCase):
     local simulator 'local_qasm_simulator' as ground truth.
     """
 
+    @slow_test
     def setUp(self):
         super().setUp()
         self._local_backend = BasicAer.get_backend('qasm_simulator')
@@ -119,7 +120,6 @@ class TestIBMQBackends(QiskitTestCase):
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
-    @slow_test
     def test_multi_register(self):
         """Test one circuit, two registers, out-of-order readout."""
         qr1 = QuantumRegister(2)
@@ -148,7 +148,6 @@ class TestIBMQBackends(QiskitTestCase):
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
-    @slow_test
     def test_multi_circuit(self):
         """Test two circuits, two registers, out-of-order readout."""
         qr1 = QuantumRegister(2)
