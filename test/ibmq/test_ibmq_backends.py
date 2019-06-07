@@ -31,12 +31,12 @@ class TestIBMQBackends(QiskitTestCase):
     local simulator 'local_qasm_simulator' as ground truth.
     """
 
+    @slow_test
     def setUp(self):
         super().setUp()
         self._local_backend = BasicAer.get_backend('qasm_simulator')
         self._remote_backends = self.get_backends()
 
-    @slow_test
     @requires_qe_access
     def get_backends(self, qe_token=None, qe_url=None):
         """Return all available remote backends."""
