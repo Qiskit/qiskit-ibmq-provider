@@ -178,10 +178,10 @@ class TestIBMQClient(QiskitTestCase):
         with self.assertRaises(RequestsApiError):
             try:
                 api.job_status('foo')
-            except RequestsApiError as e:
+            except RequestsApiError as ex:
                 self.assertIn(
-                    e.original_exception.response.json()['error']['message'],
-                    e.message)
+                    ex.original_exception.response.json()['error']['message'],
+                    ex.message)
                 raise
 
 
