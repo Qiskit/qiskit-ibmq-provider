@@ -36,6 +36,7 @@ class TestIBMQBackends(QiskitTestCase):
         self._local_backend = BasicAer.get_backend('qasm_simulator')
         self._remote_backends = self.get_backends()
 
+    @slow_test
     @requires_qe_access
     def get_backends(self, qe_token=None, qe_url=None):
         """Return all available remote backends."""
@@ -119,7 +120,6 @@ class TestIBMQBackends(QiskitTestCase):
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
-    @slow_test
     def test_multi_register(self):
         """Test one circuit, two registers, out-of-order readout."""
         qr1 = QuantumRegister(2)
@@ -148,7 +148,6 @@ class TestIBMQBackends(QiskitTestCase):
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
-    @slow_test
     def test_multi_circuit(self):
         """Test two circuits, two registers, out-of-order readout."""
         qr1 = QuantumRegister(2)
