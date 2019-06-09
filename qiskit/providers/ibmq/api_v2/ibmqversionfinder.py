@@ -22,15 +22,16 @@ from .rest.version_finder import VersionFinder
 class IBMQVersionFinder:
     """Client for finding the API version being used."""
 
-    def __init__(self, url):
+    def __init__(self, url, proxies=None):
         """IBMQVersionFinder constructor.
 
         Args:
             url (str): URL for the service.
+            proxies (dict): proxies used in the connection.
         """
-        self.auth_url = url
-        self.client_auth = Auth(RetrySession(url))
-        self.client_version_finder = VersionFinder(RetrySession(url))
+        self.url = url
+        self.client_auth = Auth(RetrySession(url, proxies=proxies))
+        self.client_version_finder = VersionFinder(RetrySession(url, proxies=proxies))
 
     def version(self):
         """Return the version info.
