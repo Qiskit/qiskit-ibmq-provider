@@ -19,7 +19,7 @@ import subprocess
 
 from requests.exceptions import ProxyError
 
-from qiskit.providers.ibmq.api_v2 import IBMQClient
+from qiskit.providers.ibmq.api_v2 import IBMQClient, IBMQVersionFinder
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 from qiskit.test import QiskitTestCase, requires_qe_access
 
@@ -61,11 +61,15 @@ class TestProxies(QiskitTestCase):
         protocol_port = '443' if qe_url_parts.scheme == 'https' else '80'
         pproxy_desired_access_log_line = 'http {}:{}'.format(qe_url_parts.hostname, protocol_port)
 
-        _ = IBMQClient(qe_token, qe_url, input_proxies)
+        with self.subTest(class_=IBMQClient):
+            _ = IBMQClient(qe_token, qe_url, input_proxies)
+            self.assertIn(pproxy_desired_access_log_line, read_process_log(self.proxy_process))
 
-        self.proxy_process.terminate()  # kill to be able of reading the output
-        self.assertIn(
-            pproxy_desired_access_log_line, self.proxy_process.stdout.read().decode('utf-8'))
+        with self.subTest(class_=IBMQVersionFinder):
+            self.proxy_process = new_proxy_process()
+            _ = IBMQVersionFinder(qe_url, input_proxies)
+            _.version()  # call the version finder, sending logging output to the proxy process
+            self.assertIn(pproxy_desired_access_log_line, read_process_log(self.proxy_process))
 
     @requires_qe_access
     @requires_new_api_auth
@@ -75,10 +79,16 @@ class TestProxies(QiskitTestCase):
             'https': '{}:{}'.format(ADDRESS, '6666')
         }
 
-        with self.assertRaises(RequestsApiError) as context_manager:
-            _ = IBMQClient(qe_token, qe_url, input_proxies)
+        with self.subTest(class_=IBMQClient):
+            with self.assertRaises(RequestsApiError) as context_manager:
+                _ = IBMQClient(qe_token, qe_url, input_proxies)
+                self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
 
-        self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
+        with self.subTest(class_=IBMQVersionFinder):
+            with self.assertRaises(RequestsApiError) as context_manager:
+                _ = IBMQVersionFinder(qe_url, input_proxies)
+                _.version()
+                self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
 
     @requires_qe_access
     @requires_new_api_auth
@@ -88,7 +98,28 @@ class TestProxies(QiskitTestCase):
             'https': '{}:{}'.format('invalid', PORT)
         }
 
-        with self.assertRaises(RequestsApiError) as context_manager:
-            _ = IBMQClient(qe_token, qe_url, input_proxies)
+        with self.subTest(class_=IBMQClient):
+            with self.assertRaises(RequestsApiError) as context_manager:
+                _ = IBMQClient(qe_token, qe_url, input_proxies)
+                self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
 
-        self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
+        with self.subTest(class_=IBMQVersionFinder):
+            with self.assertRaises(RequestsApiError) as context_manager:
+                _ = IBMQVersionFinder(qe_url, input_proxies)
+                _.version()
+                self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
+
+
+def read_process_log(process):
+    """Terminate a process and return its output."""
+    process.terminate()  # kill to be able of reading the output
+    return process.stdout.read().decode('utf-8')
+
+
+def new_proxy_process():
+    """Launch and return a mock server."""
+    proxy_process = subprocess.Popen([
+        'pproxy', '-v', '-i', 'http://{}:{}'.format(ADDRESS, PORT)
+    ], stdout=subprocess.PIPE)
+
+    return proxy_process
