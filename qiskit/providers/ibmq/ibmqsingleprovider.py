@@ -81,12 +81,16 @@ class IBMQSingleProvider(BaseProvider):
         config_dict = {
             'url': credentials.url,
         }
+        proxies = None
         if credentials.proxies:
             config_dict['proxies'] = credentials.proxies
+            proxies = credentials.proxies['urls']
         if credentials.websocket_url:
             config_dict['websocket_url'] = credentials.websocket_url
 
-        version_finder = IBMQVersionFinder(url=credentials.url)
+        # make sure [urls] is a valid key, or catch error... what happens to PROXIES?
+        version_finder = IBMQVersionFinder(url=credentials.url,
+                                           proxies=proxies)
         version_info = version_finder.version()
 
         # Check if the URL belongs to auth services of the new API.
@@ -96,7 +100,7 @@ class IBMQSingleProvider(BaseProvider):
             if version_info['new_api'] and 'api-auth' in version_info:
                 return IBMQClient(api_token=credentials.token,
                                   auth_url=credentials.url,
-                                  proxies=credentials.proxies)
+                                  proxies=proxies)
             else:
                 return IBMQConnector(credentials.token, config_dict,
                                      credentials.verify)
