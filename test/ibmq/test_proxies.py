@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Tests for the IBMQClient proxy support."""
+"""Tests for the IBMQClient and IBMQVersionFinder proxy support."""
 
 import urllib
 import subprocess
