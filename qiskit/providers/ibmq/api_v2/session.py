@@ -140,7 +140,9 @@ class RetrySession(Session):
             message = str(ex)
             if ex.response is not None:
                 try:
-                    message += ". {}".format(ex.response.json()['error']['message'])
+                    error_json = ex.response.json()['error']
+                    message += ". {}, Error code: {}.".format(
+                        error_json['message'], error_json['code'])
                 except (ValueError, KeyError):
                     # the response did not contain the expected json.
                     pass

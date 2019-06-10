@@ -175,14 +175,15 @@ class TestIBMQClient(QiskitTestCase):
         """Check exception has proper message."""
         api = self._get_client(qe_token, qe_url)
 
-        with self.assertRaises(RequestsApiError):
-            try:
-                api.job_status('foo')
-            except RequestsApiError as ex:
-                self.assertIn(
-                    ex.original_exception.response.json()['error']['message'],
-                    ex.message)
-                raise
+        with self.assertRaises(RequestsApiError) as exception_context:
+            api.job_status('foo')
+
+        raised_exception = exception_context.exception
+        original_error = raised_exception.original_exception.response.json()['error']
+        self.assertIn(original_error['message'], raised_exception.message,
+                      "Original error message not in raised exception")
+        self.assertIn(original_error['code'], raised_exception.message,
+                      "Original error code not in raised exception")
 
 
 class TestAuthentication(QiskitTestCase):
