@@ -21,7 +21,7 @@ from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.api_v2 import IBMQClient
-from qiskit.providers.ibmq.api_v2.exceptions import ApiError
+from qiskit.providers.ibmq.api_v2.exceptions import ApiError, RequestsApiError
 from qiskit.test import QiskitTestCase
 
 from ..decorators import requires_new_api_auth, requires_qe_access
@@ -168,6 +168,22 @@ class TestIBMQClient(QiskitTestCase):
         self.assertIn('shots', job)
         job_excluded = api.get_job(job_id, exclude_fields=['shots'])
         self.assertNotIn('shots', job_excluded)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_exception_message(self, qe_token, qe_url):
+        """Check exception has proper message."""
+        api = self._get_client(qe_token, qe_url)
+
+        with self.assertRaises(RequestsApiError) as exception_context:
+            api.job_status('foo')
+
+        raised_exception = exception_context.exception
+        original_error = raised_exception.original_exception.response.json()['error']
+        self.assertIn(original_error['message'], raised_exception.message,
+                      "Original error message not in raised exception")
+        self.assertIn(original_error['code'], raised_exception.message,
+                      "Original error code not in raised exception")
 
 
 class TestAuthentication(QiskitTestCase):
