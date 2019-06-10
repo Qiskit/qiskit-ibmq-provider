@@ -138,6 +138,15 @@ class RetrySession(Session):
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
             message = str(ex)
+            if ex.response is not None:
+                try:
+                    error_json = ex.response.json()['error']
+                    message += ". {}, Error code: {}.".format(
+                        error_json['message'], error_json['code'])
+                except (ValueError, KeyError):
+                    # the response did not contain the expected json.
+                    pass
+
             if self.access_token:
                 message = message.replace(self.access_token, '...')
 
