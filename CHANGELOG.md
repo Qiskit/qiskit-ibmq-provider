@@ -2,8 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a
-Changelog](http://keepachangelog.com/en/1.0.0/).
+The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 > **Types of changes:**
 >
@@ -14,8 +13,8 @@ Changelog](http://keepachangelog.com/en/1.0.0/).
 > -   **Fixed**: for any bug fixes.
 > -   **Security**: in case of vulnerabilities.
 
-[UNRELEASED](https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.2...HEAD)
-=================================================================================
+
+## [UNRELEASED]
 
 Fixed
 -----
@@ -40,7 +39,7 @@ Added
 -   Added support for using object storage when submitting and
     retrieving jobs. (\#110)
 
-[0.2.2](https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.1...0.2.2) - 2019-05-07
+[0.2.2] - 2019-05-07
 ==========================================================================================
 
 Fixed
@@ -48,7 +47,7 @@ Fixed
 
 -   Fixed Circuits parameter validation (\#89).
 
-[0.2.1](https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.0...0.2.1) - 2019-05-06
+[0.2.1] - 2019-05-06
 ==========================================================================================
 
 Fixed
@@ -56,7 +55,7 @@ Fixed
 
 -   Improved compatibility with older setuptools versions. (\#85)
 
-[0.2.0](https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1.1...0.2.0) - 2019-05-06
+[0.2.0] - 2019-05-06
 ==========================================================================================
 
 Added
@@ -73,7 +72,7 @@ Fixed
 -   Fixed incorrect parsing of some API hub URLs (\#77).
 -   Fixed noise model handling for remote simulators (\#84).
 
-[0.1.1](https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1...0.1.1) - 2019-05-01
+[0.1.1 - 2019-05-01
 ========================================================================================
 
 Changed
@@ -88,7 +87,7 @@ Fixed
 
 -   Fixed signature mismatch during `job.cancel()`. (\#73)
 
-[0.1](https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1) - 2019-04-17
+[0.1] - 2019-04-17
 ========================================================================================
 
 Added
@@ -119,3 +118,14 @@ Removed
 -------
 
 -   Support for non-qobj format has been removed. (\#26, \#28)
+
+
+
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.2...HEAD
+[0.2.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.1...0.2.2
+[0.2.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.0...0.2.1
+[0.2.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1.1...0.2.0
+[0.1.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.1...0.1.1
+[0.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/104d524...0.1
+
+[Keep a Changelog]: http://keepachangelog.com/en/1.0.0/
