@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: bug
+labels: 'type: bug'
 assignees: ''
 
 ---
@@ -10,9 +10,11 @@ assignees: ''
 <!-- ⚠️ If you do not respect this template, your issue will be closed -->
 <!-- ⚠️ Make sure to browse the opened and closed issues -->
 
-### Informations
+### Information
 
-- **Qiskit version**:
+- **Qiskit IBMQ Provider version**:
+- **API URL or version**:
+
 - **Python version**:
 - **Operating system**:
 
