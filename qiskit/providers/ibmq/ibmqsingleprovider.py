@@ -88,7 +88,6 @@ class IBMQSingleProvider(BaseProvider):
         if credentials.websocket_url:
             config_dict['websocket_url'] = credentials.websocket_url
 
-        # make sure [urls] is a valid key, or catch error... what happens to PROXIES?
         version_finder = IBMQVersionFinder(url=credentials.url,
                                            proxies=proxies)
         version_info = version_finder.version()

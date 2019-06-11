@@ -26,7 +26,7 @@ class VersionFinder(RestAdapterBase):
         'version': '/version'
     }
 
-    def version_info(self):
+    def version(self):
         """Return the version info.
 
         Returns:

@@ -15,7 +15,6 @@
 """Client for accessing IBM Q's version finder."""
 
 from .session import RetrySession
-from .rest import Auth
 from .rest.version_finder import VersionFinder
 
 
@@ -30,7 +29,6 @@ class IBMQVersionFinder:
             proxies (dict): proxies used in the connection.
         """
         self.url = url
-        self.client_auth = Auth(RetrySession(url, proxies=proxies))
         self.client_version_finder = VersionFinder(RetrySession(url, proxies=proxies))
 
     def version(self):
@@ -43,4 +41,4 @@ class IBMQVersionFinder:
             And the following optional keys:
                 * `api-*` (str): the versions of each individual API component
         """
-        return self.client_version_finder.version_info()
+        return self.client_version_finder.version()

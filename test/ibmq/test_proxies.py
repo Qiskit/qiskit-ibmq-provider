@@ -37,12 +37,16 @@ class TestProxies(QiskitTestCase):
 
     def setUp(self):
         # launch a mock server.
+        super().setUp()
+
         self.proxy_process = subprocess.Popen([
             'pproxy', '-v', '-i', 'http://{}:{}'.format(ADDRESS, PORT)
         ], stdout=subprocess.PIPE)
 
     def tearDown(self):
         # terminate the mock server.
+        super().tearDown()
+
         if self.proxy_process.returncode is None:
             self.proxy_process.terminate()
 
@@ -65,8 +69,8 @@ class TestProxies(QiskitTestCase):
         """Should reach the proxy using IBMQVersionFinder."""
         pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
 
-        _ = IBMQVersionFinder(qe_url, VALID_PROXIES)
-        _.version()  # call the version finder, sending logging output to the proxy process
+        version_finder = IBMQVersionFinder(qe_url, VALID_PROXIES)
+        version_finder.version()  # call the version finder, sending logging to the proxy process
 
         self.proxy_process.terminate()  # kill to be able of reading the output
         self.assertIn(pproxy_desired_access_log_line_,
@@ -88,8 +92,8 @@ class TestProxies(QiskitTestCase):
         """Should raise RequestApiError with ProxyError as
             original exception using IBMQVersionFinder."""
         with self.assertRaises(RequestsApiError) as context_manager:
-            _ = IBMQVersionFinder(qe_url, INVALID_PORT_PROXIES)
-            _.version()
+            version_finder = IBMQVersionFinder(qe_url, INVALID_PORT_PROXIES)
+            version_finder.version()
 
         self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
 
@@ -110,8 +114,8 @@ class TestProxies(QiskitTestCase):
         """Should raise RequestApiError with ProxyError as
             original exception using IBMQVersionFinder."""
         with self.assertRaises(RequestsApiError) as context_manager:
-            _ = IBMQVersionFinder(qe_url, INVALID_ADDRESS_PROXIES)
-            _.version()
+            version_finder = IBMQVersionFinder(qe_url, INVALID_ADDRESS_PROXIES)
+            version_finder.version()
 
         self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
 
