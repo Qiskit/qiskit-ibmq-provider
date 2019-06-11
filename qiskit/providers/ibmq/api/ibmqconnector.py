@@ -184,7 +184,7 @@ class IBMQConnector:
         if 'calibration' in job:
             job['properties'] = job.pop('calibration')
 
-        # The kind field indicates the type of the job (empty for qasm jobs)
+        # The "kind" field indicates the type of the job (empty for qasm jobs)
         job_type = job.get('kind', '')
 
         if (not job_type) and ('qasms' in job):

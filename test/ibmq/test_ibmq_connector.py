@@ -212,12 +212,7 @@ class TestIBMQConnector(QiskitTestCase):
 
         api = backend._api
         job = api.submit_job(qobj.to_dict(), backend_name)
-        job_id = job['id']
-
-        # Get the job, excluding a parameter.
-        self.assertIn('deleted', job)
-        job_excluded = api.get_job(job_id, exclude_fields=['deleted'])
-        self.assertNotIn('deleted', job_excluded)
+        return api, job
 
 
 class TestAuthentication(QiskitTestCase):
