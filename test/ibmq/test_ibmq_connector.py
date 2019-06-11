@@ -155,11 +155,11 @@ class TestIBMQConnector(QiskitTestCase):
         job_id = job['id']
 
         # Get the job, including a field.
-        self.assertIn('status', job)
+        self.assertIn('deleted', job)
         self.assertIn('shots', job)
-        job_included = api.get_job(job_id, include_fields=['status'])
+        job_included = api.get_job(job_id, include_fields=['deleted'])
         # Ensure the result has only the included field
-        self.assertIn('status', job_included)
+        self.assertIn('deleted', job_included)
         self.assertNotIn('shots', job_included)
 
     @requires_qe_access
@@ -173,10 +173,10 @@ class TestIBMQConnector(QiskitTestCase):
 
         # Get the job, excluding a field.
         self.assertIn('shots', job)
-        self.assertIn('status', job)
-        job_excluded = api.get_job(job_id, exclude_fields=['status'])
+        self.assertIn('deleted', job)
+        job_excluded = api.get_job(job_id, exclude_fields=['deleted'])
         # Ensure the result only excludes the specified field
-        self.assertNotIn('status', job_excluded)
+        self.assertNotIn('deleted', job_excluded)
         self.assertIn('shots', job)
 
     @requires_qe_access
