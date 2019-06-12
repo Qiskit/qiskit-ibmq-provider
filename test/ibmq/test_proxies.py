@@ -14,6 +14,7 @@
 
 """Tests for the IBMQClient and IBMQVersionFinder proxy support."""
 
+
 import urllib
 import subprocess
 
@@ -25,30 +26,37 @@ from qiskit.test import QiskitTestCase, requires_qe_access
 
 from ..decorators import requires_new_api_auth
 
+# Worst-case time in seconds to wait for each tests' proxy process to terminate before
+# continuing to the next test regardless (ResourceWarnings will arise otherwise).
+TIMEOUT = 60
+
 ADDRESS = '127.0.0.1'
-PORT = '8080'
-VALID_PROXIES = {'https': 'http://{}:{}'.format(ADDRESS, PORT)}
+PORT = 8080
+VALID_PROXIES = {'https': 'http://{}:{}'.format(ADDRESS, str(PORT))}
 INVALID_PORT_PROXIES = {'https': '{}:{}'.format(ADDRESS, '6666')}
-INVALID_ADDRESS_PROXIES = {'https': '{}:{}'.format('invalid', PORT)}
+INVALID_ADDRESS_PROXIES = {'https': '{}:{}'.format('invalid', str(PORT))}
 
 
 class TestProxies(QiskitTestCase):
     """Tests for proxy capabilities."""
 
     def setUp(self):
-        # launch a mock server.
         super().setUp()
 
-        self.proxy_process = subprocess.Popen([
-            'pproxy', '-v', '-i', 'http://{}:{}'.format(ADDRESS, PORT)
-        ], stdout=subprocess.PIPE)
+        # launch a mock server.
+        command = ['pproxy', '-v', '-i', 'http://{}:{}'.format(ADDRESS, str(PORT))]
+        self.proxy_process = subprocess.Popen(command, stdout=subprocess.PIPE, close_fds=True)
 
     def tearDown(self):
-        # terminate the mock server.
         super().tearDown()
 
+        # terminate the mock server.
         if self.proxy_process.returncode is None:
-            self.proxy_process.terminate()
+            self.proxy_process.stdout.close()  # close the IO buffer
+            self.proxy_process.terminate()  # initiate process termination
+
+            # wait for the process to terminate, or proceed after some time regardless
+            self.proxy_process.wait(timeout=TIMEOUT)
 
     @requires_qe_access
     @requires_new_api_auth
