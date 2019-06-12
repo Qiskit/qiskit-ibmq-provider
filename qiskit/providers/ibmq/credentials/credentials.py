@@ -54,7 +54,7 @@ class Credentials:
             communicating with the API.
         """
         self.token = token
-        (self.url,
+        (self.url, self.base_url,
          self.hub, self.group, self.project) = _unify_ibmq_url(
              url, hub, group, project)
         self.proxies = proxies or {}
@@ -85,17 +85,19 @@ def _unify_ibmq_url(url, hub=None, group=None, project=None):
         project (str): the project used for IBM Q.
 
     Returns:
-        tuple[url, hub, group, token]:
+        tuple[url, base_url, hub, group, token]:
             * url (str): new-style Quantum Experience or IBM Q URL (the hub,
-                group and project included in the URL.
+                group and project included in the URL).
+            * base_url (str): base URL for the API, without hub/group/project.
             * hub (str): the hub used for IBM Q.
             * group (str): the group used for IBM Q.
             * project (str): the project used for IBM Q.
     """
     # Check if the URL is "new style", and retrieve embedded parameters from it.
     regex_match = re.match(REGEX_IBMQ_HUBS, url, re.IGNORECASE)
+    base_url = url
     if regex_match:
-        _, hub, group, project = regex_match.groups()
+        base_url, hub, group, project = regex_match.groups()
     else:
         if hub and group and project:
             # Assume it is an IBMQ URL, and update the url.
@@ -105,4 +107,4 @@ def _unify_ibmq_url(url, hub=None, group=None, project=None):
             # Cleanup the hub, group and project, without modifying the url.
             hub = group = project = None
 
-    return url, hub, group, project
+    return url, base_url, hub, group, project
