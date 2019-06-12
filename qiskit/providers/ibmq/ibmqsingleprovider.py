@@ -85,8 +85,6 @@ class IBMQSingleProvider(BaseProvider):
         if credentials.proxies:
             config_dict['proxies'] = credentials.proxies
             proxies = credentials.proxies['urls']
-        if credentials.websocket_url:
-            config_dict['websocket_url'] = credentials.websocket_url
 
         version_finder = IBMQVersionFinder(url=credentials.url,
                                            proxies=proxies)

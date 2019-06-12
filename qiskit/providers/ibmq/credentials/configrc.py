@@ -83,7 +83,7 @@ def write_qiskit_rc(credentials, filename=None):
     """
     def _credentials_object_to_dict(obj):
         return {key: getattr(obj, key) for key in
-                ['token', 'url', 'websocket_url', 'proxies', 'verify']
+                ['token', 'url', 'proxies', 'verify']
                 if getattr(obj, key)}
 
     def _section_name(credentials_):
