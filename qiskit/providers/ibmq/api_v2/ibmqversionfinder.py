@@ -28,7 +28,6 @@ class IBMQVersionFinder:
             url (str): URL for the service.
             proxies (dict): proxies used in the connection.
         """
-        self.url = url
         self.client_version_finder = VersionFinder(RetrySession(url, proxies=proxies))
 
     def version(self):

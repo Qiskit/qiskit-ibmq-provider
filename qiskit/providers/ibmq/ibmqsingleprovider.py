@@ -77,16 +77,9 @@ class IBMQSingleProvider(BaseProvider):
         Raises:
             ConnectionError: if the authentication resulted in error.
         """
-        # Prepare the config_dict for IBMQConnector.
-        config_dict = {
-            'url': credentials.url,
-        }
-        proxies = None
-        if credentials.proxies:
-            config_dict['proxies'] = credentials.proxies
-            proxies = credentials.proxies['urls']
-
-        version_finder = IBMQVersionFinder(url=credentials.url,
+        # Use an IBMQVersionFinder for finding out the API version.
+        proxies = credentials.proxies.get('urls')
+        version_finder = IBMQVersionFinder(url=credentials.base_url,
                                            proxies=proxies)
         version_info = version_finder.version()
 
@@ -99,6 +92,13 @@ class IBMQSingleProvider(BaseProvider):
                                   auth_url=credentials.url,
                                   proxies=proxies)
             else:
+                # Prepare the config_dict for IBMQConnector.
+                config_dict = {
+                    'url': credentials.url,
+                }
+                if credentials.proxies:
+                    config_dict['proxies'] = credentials.proxies
+
                 return IBMQConnector(credentials.token, config_dict,
                                      credentials.verify)
         except AuthenticationLicenseError as ex:
