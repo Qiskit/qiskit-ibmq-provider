@@ -73,7 +73,7 @@ def requires_classic_api(func):
         # TODO: provide a way to check it in a more robust way.
         if 'quantum-computing.ibm.com/api' in qe_url:
             raise SkipTest(
-                'Skipping test that requires new API auth credentials')
+                'Skipping test that requires classic API auth credentials')
 
         return func(self, *args, **kwargs)
 
