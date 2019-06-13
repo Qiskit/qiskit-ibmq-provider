@@ -21,8 +21,9 @@ class Backend(RestAdapterBase):
     """Rest adapter for backend related endpoints."""
 
     URL_MAP = {
+        'properties': '/properties',
+        'pulse_defaults': '/defaults',
         'status': '/queue/status',
-        'properties': '/properties'
     }
 
     def __init__(self, session, backend_name):
@@ -34,6 +35,22 @@ class Backend(RestAdapterBase):
         """
         self.backend_name = backend_name
         super().__init__(session, '/Backends/{}'.format(backend_name))
+
+    def properties(self):
+        """Return backend properties."""
+        url = self.get_url('properties')
+        response = self.session.get(url, params={'version': 1}).json()
+
+        # Adjust name of the backend.
+        if response:
+            response['backend_name'] = self.backend_name
+
+        return response
+
+    def pulse_defaults(self):
+        """Return backend pulse defaults."""
+        url = self.get_url('pulse_defaults')
+        return self.session.get(url).json()
 
     def status(self):
         """Return backend status."""
@@ -59,14 +76,3 @@ class Backend(RestAdapterBase):
             ret['dedicated'] = response['busy']
 
         return ret
-
-    def properties(self):
-        """Return backend properties."""
-        url = self.get_url('properties')
-        response = self.session.get(url, params={'version': 1}).json()
-
-        # Adjust name of the backend.
-        if response:
-            response['backend_name'] = self.backend_name
-
-        return response
