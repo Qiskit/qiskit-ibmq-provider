@@ -89,7 +89,9 @@ class IBMQSingleProvider(BaseProvider):
         if credentials.websocket_url:
             config_dict['websocket_url'] = credentials.websocket_url
 
-        version_finder = IBMQVersionFinder(url=credentials.url,
+        # Use an IBMQVersionFinder for finding out the API version.
+        proxies = credentials.proxies.get('urls')
+        version_finder = IBMQVersionFinder(url=credentials.base_url,
                                            verify=verify, proxies=proxies)
         version_info = version_finder.version()
 
@@ -102,6 +104,13 @@ class IBMQSingleProvider(BaseProvider):
                                   auth_url=credentials.url,
                                   verify=verify, proxies=proxies)
             else:
+                # Prepare the config_dict for IBMQConnector.
+                config_dict = {
+                    'url': credentials.url,
+                }
+                if credentials.proxies:
+                    config_dict['proxies'] = credentials.proxies
+
                 return IBMQConnector(credentials.token, config_dict,
                                      credentials.verify)
         except AuthenticationLicenseError as ex:
