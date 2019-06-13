@@ -97,8 +97,9 @@ class IBMQSingleProvider(BaseProvider):
                 # Prepare the config_dict for IBMQConnector.
                 config_dict = {
                     'url': credentials.url,
-                    'proxies': credentials.proxies
                 }
+                if credentials.proxies:
+                    config_dict['proxies'] = credentials.proxies
 
                 return IBMQConnector(credentials.token, config_dict,
                                      credentials.verify)
