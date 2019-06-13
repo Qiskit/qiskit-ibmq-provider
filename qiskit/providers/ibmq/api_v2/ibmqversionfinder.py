@@ -29,7 +29,6 @@ class IBMQVersionFinder:
             verify (bool): if False, ignores SSL certificates errors.
             proxies (dict): proxies used in the connection.
         """
-        self.url = url
         self.client_version_finder = VersionFinder(
             RetrySession(url, verify=verify, proxies=proxies)
         )

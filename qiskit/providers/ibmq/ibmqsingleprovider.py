@@ -66,12 +66,11 @@ class IBMQSingleProvider(BaseProvider):
 
         return filter_backends(backends, filters=filters, **kwargs)
 
-    def _authenticate(self, credentials, verify=True):
+    def _authenticate(self, credentials):
         """Authenticate against the IBMQ API.
 
         Args:
             credentials (Credentials): Quantum Experience or IBMQ credentials.
-            verify (bool): if False, ignores SSL certificates errors.
 
         Returns:
             IBMQConnector: instance of the IBMQConnector.
@@ -81,7 +80,8 @@ class IBMQSingleProvider(BaseProvider):
         # Use an IBMQVersionFinder for finding out the API version.
         proxies = credentials.proxies.get('urls')
         version_finder = IBMQVersionFinder(url=credentials.base_url,
-                                           verify=verify, proxies=proxies)
+                                           verify=credentials.verify,
+                                           proxies=proxies)
         version_info = version_finder.version()
 
         # Check if the URL belongs to auth services of the new API.
@@ -91,14 +91,13 @@ class IBMQSingleProvider(BaseProvider):
             if version_info['new_api'] and 'api-auth' in version_info:
                 return IBMQClient(api_token=credentials.token,
                                   auth_url=credentials.url,
-                                  verify=verify, proxies=proxies)
+                                  verify=credentials.verify,
+                                  proxies=proxies)
             else:
                 # Prepare the config_dict for IBMQConnector.
                 config_dict = {
                     'url': credentials.url,
                 }
-                if credentials.websocket_url:
-                    config_dict['websocket_url'] = credentials.websocket_url
                 if credentials.proxies:
                     config_dict['proxies'] = credentials.proxies
 
