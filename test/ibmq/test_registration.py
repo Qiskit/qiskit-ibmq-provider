@@ -33,6 +33,7 @@ from qiskit.providers.ibmq.ibmqsingleprovider import IBMQSingleProvider
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 from qiskit.test import QiskitTestCase
 
+from ..contextmanagers import custom_envs, no_envs
 
 IBMQ_TEMPLATE = 'https://localhost/api/Hubs/{}/Groups/{}/Projects/{}'
 
@@ -42,6 +43,8 @@ PROXIES = {
         'https': 'https://user:password@127.0.0.1:5678'
     }
 }
+
+CREDENTIAL_ENV_VARS = VARIABLES_MAP.keys()
 
 
 # TODO: NamedTemporaryFiles do not support name in Windows
@@ -175,7 +178,7 @@ class TestCredentials(QiskitTestCase):
 
     def test_autoregister_no_credentials(self):
         """Test register() with no credentials available."""
-        with no_file('Qconfig.py'), custom_qiskitrc(), no_envs():
+        with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             with self.assertRaises(IBMQAccountError) as context_manager:
                 IBMQ.load_accounts()
 
@@ -195,7 +198,7 @@ class TestCredentials(QiskitTestCase):
                 store_credentials(credentials)
                 self.assertIn('already present', str(w[0]))
 
-            with no_file('Qconfig.py'), no_envs(), mock_ibmq_provider():
+            with no_file('Qconfig.py'), no_envs(CREDENTIAL_ENV_VARS), mock_ibmq_provider():
                 # Attempt overwriting.
                 store_credentials(credentials2, overwrite=True)
                 IBMQ.load_accounts()
@@ -255,20 +258,6 @@ def no_file(filename):
 
 
 @contextmanager
-def no_envs():
-    """Context manager that disables qiskit environment variables."""
-    # Remove the original variables from `os.environ`.
-    # Store the original `os.environ`.
-    os_environ_original = os.environ.copy()
-    modified_environ = {key: value for key, value in os.environ.items()
-                        if key not in VARIABLES_MAP.keys()}
-    os.environ = modified_environ
-    yield
-    # Restore the original `os.environ`.
-    os.environ = os_environ_original
-
-
-@contextmanager
 def custom_qiskitrc(contents=b''):
     """Context manager that uses a temporary qiskitrc."""
     # Create a temporary file with the contents.
@@ -302,19 +291,6 @@ def custom_qconfig(contents=b''):
     # Delete the temporary file and restore the default location.
     tmp_file.close()
     qconfig.DEFAULT_QCONFIG_FILE = default_qconfig_file_original
-
-
-@contextmanager
-def custom_envs(new_environ):
-    """Context manager that disables qiskit environment variables."""
-    # Remove the original variables from `os.environ`.
-    # Store the original `os.environ`.
-    os_environ_original = os.environ.copy()
-    modified_environ = {**os.environ, **new_environ}
-    os.environ = modified_environ
-    yield
-    # Restore the original `os.environ`.
-    os.environ = os_environ_original
 
 
 @contextmanager

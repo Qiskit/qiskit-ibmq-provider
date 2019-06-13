@@ -39,6 +39,8 @@ Added
     only available when using the new API authentication. (\#100)
 -   Added support for using object storage when submitting and
     retrieving jobs. (\#110)
+-   Added support for custom client application session header via the environment
+    variable `QE_CUSTOM_CLIENT_APP_HEADER` when using the new API. (\#TBD)
 
 [0.2.2](https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.1...0.2.2) - 2019-05-07
 ==========================================================================================

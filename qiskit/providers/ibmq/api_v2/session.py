@@ -14,11 +14,13 @@
 
 """Session customized for IBM Q access."""
 
+import os
 from requests import Session, RequestException
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .exceptions import RequestsApiError
+from ..version import __version__ as ibmq_provider_version
 
 STATUS_FORCELIST = (
     500,  # Internal Server Error
@@ -26,7 +28,8 @@ STATUS_FORCELIST = (
     503,  # Service Unavailable
     504,  # Gateway Timeout
 )
-CLIENT_APPLICATION = 'qiskit-api-py'
+CLIENT_APPLICATION = 'ibmqprovider/version-' + ibmq_provider_version
+CUSTOM_HEADER_ENV_VAR = 'QE_CUSTOM_CLIENT_APP_HEADER'
 
 
 class RetrySession(Session):
@@ -99,7 +102,14 @@ class RetrySession(Session):
             proxies (dict): proxy URLs mapped by protocol.
             auth (AuthBase): authentication handler.
         """
-        self.headers.update({'X-Qx-Client-Application': CLIENT_APPLICATION})
+        client_app_header = CLIENT_APPLICATION
+
+        # Append custom header to the end if specified
+        custom_header = os.getenv(CUSTOM_HEADER_ENV_VAR)
+        if custom_header:
+            client_app_header += "/" + custom_header
+
+        self.headers.update({'X-Qx-Client-Application': client_app_header})
 
         self.auth = auth
         self.proxies = proxies or {}
