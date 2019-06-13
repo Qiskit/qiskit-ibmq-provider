@@ -78,17 +78,6 @@ class IBMQSingleProvider(BaseProvider):
         Raises:
             ConnectionError: if the authentication resulted in error.
         """
-        # Prepare the config_dict for IBMQConnector.
-        config_dict = {
-            'url': credentials.url,
-        }
-        proxies = None
-        if credentials.proxies:
-            config_dict['proxies'] = credentials.proxies
-            proxies = credentials.proxies['urls']
-        if credentials.websocket_url:
-            config_dict['websocket_url'] = credentials.websocket_url
-
         # Use an IBMQVersionFinder for finding out the API version.
         proxies = credentials.proxies.get('urls')
         version_finder = IBMQVersionFinder(url=credentials.base_url,
@@ -108,6 +97,8 @@ class IBMQSingleProvider(BaseProvider):
                 config_dict = {
                     'url': credentials.url,
                 }
+                if credentials.websocket_url:
+                    config_dict['websocket_url'] = credentials.websocket_url
                 if credentials.proxies:
                     config_dict['proxies'] = credentials.proxies
 
