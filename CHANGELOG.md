@@ -46,7 +46,7 @@ The format is based on [Keep a Changelog].
 ## [0.2.1] - 2019-05-06
 
 ### Fixed
-.
+
 - Improved compatibility with older setuptools versions. (\#85)
 
 
