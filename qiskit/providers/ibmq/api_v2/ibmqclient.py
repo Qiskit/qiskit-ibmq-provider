@@ -80,11 +80,15 @@ class IBMQClient:
         except RequestsApiError as ex:
             response = ex.original_exception.response
             if response is not None and response.status_code == 401:
-                error_code = response.json()['error']['name']
-                if error_code == 'ACCEPT_LICENSE_REQUIRED':
-                    message = response.json()['error']['message']
-                    raise AuthenticationLicenseError(message)
-        raise RequestsApiError(ex)
+                try:
+                    error_code = response.json()['error']['name']
+                    if error_code == 'ACCEPT_LICENSE_REQUIRED':
+                        message = response.json()['error']['message']
+                        raise AuthenticationLicenseError(message)
+                except (ValueError, KeyError):
+                    # the response did not contain the expected json.
+                    pass
+        raise ex
 
     def _user_urls(self):
         """Retrieve the api URLs from the auth server.
