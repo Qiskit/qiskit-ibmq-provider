@@ -80,6 +80,7 @@ class IBMQSingleProvider(BaseProvider):
         # Use an IBMQVersionFinder for finding out the API version.
         proxies = credentials.proxies.get('urls')
         version_finder = IBMQVersionFinder(url=credentials.base_url,
+                                           verify=credentials.verify,
                                            proxies=proxies)
         version_info = version_finder.version()
 
@@ -90,6 +91,7 @@ class IBMQSingleProvider(BaseProvider):
             if version_info['new_api'] and 'api-auth' in version_info:
                 return IBMQClient(api_token=credentials.token,
                                   auth_url=credentials.url,
+                                  verify=credentials.verify,
                                   proxies=proxies)
             else:
                 # Prepare the config_dict for IBMQConnector.

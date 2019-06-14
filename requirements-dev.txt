@@ -1,4 +1,5 @@
 pycodestyle
 pylint>=2.3,<2.4
+pylintfileheader>=0.0.2
 vcrpy
 pproxy==1.2.2
