@@ -23,7 +23,6 @@ from .credentials import Credentials
 VARIABLES_MAP = {
     'QE_TOKEN': 'token',
     'QE_URL': 'url',
-    'QE_WEBSOCKET_URL': 'websocket_url',
     'QE_HUB': 'hub',
     'QE_GROUP': 'group',
     'QE_PROJECT': 'project'
