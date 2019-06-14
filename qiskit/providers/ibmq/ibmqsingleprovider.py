@@ -24,7 +24,7 @@ from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api import IBMQConnector
-from .api_v2 import IBMQClient
+from .api_v2 import IBMQClient, IBMQVersionFinder
 from .api_v2.exceptions import AuthenticationLicenseError
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 
@@ -77,35 +77,28 @@ class IBMQSingleProvider(BaseProvider):
         Raises:
             ConnectionError: if the authentication resulted in error.
         """
-        # Use a temporary IBMQConnector for determining API version.
-        # TODO: replace with a IBMQClient or a Session directly after support
-        # for proxies is tested for RetrySession.
-        # Prepare the config_dict for IBMQConnector.
-        config_dict = {
-            'url': credentials.url,
-        }
-        if credentials.proxies:
-            config_dict['proxies'] = credentials.proxies
-        if credentials.websocket_url:
-            config_dict['websocket_url'] = credentials.websocket_url
-
-        # Prepare the version_config for the version detector.
-        version_config = config_dict.copy()
-        # By passing "access_token" in the dict, we bypass the login.
-        version_config['access_token'] = 'version_check'
-        version_connector = IBMQConnector(None, version_config,
-                                          credentials.verify)
+        # Use an IBMQVersionFinder for finding out the API version.
+        proxies = credentials.proxies.get('urls')
+        version_finder = IBMQVersionFinder(url=credentials.base_url,
+                                           proxies=proxies)
+        version_info = version_finder.version()
 
         # Check if the URL belongs to auth services of the new API.
         try:
-            version_info = version_connector.api_version()
             self.is_new_api = version_info['new_api']
 
             if version_info['new_api'] and 'api-auth' in version_info:
                 return IBMQClient(api_token=credentials.token,
                                   auth_url=credentials.url,
-                                  proxies=credentials.proxies)
+                                  proxies=proxies)
             else:
+                # Prepare the config_dict for IBMQConnector.
+                config_dict = {
+                    'url': credentials.url,
+                }
+                if credentials.proxies:
+                    config_dict['proxies'] = credentials.proxies
+
                 return IBMQConnector(credentials.token, config_dict,
                                      credentials.verify)
         except AuthenticationLicenseError as ex:
