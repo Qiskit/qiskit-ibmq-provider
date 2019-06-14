@@ -72,8 +72,7 @@ class IBMQClient:
 
         Raises:
             AuthenticationLicenseError: if the user hasn't accepted the license agreement.
-            KeyError: if the response from the login attempt did not contain the expected JSON.
-
+            RequestsApiError: if the request failed.
         """
         try:
             response = self.client_auth.login(self.api_token)
@@ -81,15 +80,11 @@ class IBMQClient:
         except RequestsApiError as ex:
             response = ex.original_exception.response
             if response is not None and response.status_code == 401:
-                try:
-                    error_code = response.json()['error']['name']
-                    if error_code == 'ACCEPT_LICENSE_REQUIRED':
-                        message = response.json()['error']['message']
-                        raise AuthenticationLicenseError(message)
-                except KeyError as invalid_key:
-                    # the response did not contain the expected json.
-                    raise KeyError('Invalid key access attempt in the JSON response '
-                                   'during access token request: {}.'.format(invalid_key))
+                error_code = response.json()['error']['name']
+                if error_code == 'ACCEPT_LICENSE_REQUIRED':
+                    message = response.json()['error']['message']
+                    raise AuthenticationLicenseError(message)
+        raise RequestsApiError(ex)
 
     def _user_urls(self):
         """Retrieve the api URLs from the auth server.
