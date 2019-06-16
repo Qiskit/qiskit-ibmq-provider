@@ -29,14 +29,9 @@ Once the package is installed, you can access the provider from Qiskit.
 
 ### Configure your IBMQ credentials
 
-> **Note**: since `IBMQProvider` version `0.2.0`, the package supports
-> connecting to [the new IBM Q Experience], which includes a number of new
-> features. Please note that support is still experimental, and some
-> functionality might be subject to change or experience technical issues.
+1. Create an IBM Q account or log in to your existing account by visiting the [IBM Q Experience login page].
 
-1. Create an [IBM Q account] if you haven't already done so.
-
-2. Get an API token from the IBM Q website under
+2. Copy (and/or optionally regenerate) your API token from your [IBM Q Experience account page].
    _My Account > Advanced > API Token_. 
 
 3. Take your token from step 2, here called `MY_API_TOKEN`, and run:
@@ -93,7 +88,8 @@ project at different levels. If you use Qiskit, please cite as per the included
 
 
 [IBM Q]: https://www.research.ibm.com/ibm-q/
-[IBM Q account]: https://quantumexperience.ng.bluemix.net
+[IBM Q Experience login page]:  https://quantum-computing.ibm.com/login
+[IBM Q Experience account page]: https://quantum-computing.ibm.com/account
 [contribution guidelines]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/.github/CONTRIBUTING.rst
 [code of conduct]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/.github/CODE_OF_CONDUCT.rst
 [GitHub issues]: https://github.com/Qiskit/qiskit-ibmq-provider/issues
@@ -104,4 +100,3 @@ project at different levels. If you use Qiskit, please cite as per the included
 [many people]: https://github.com/Qiskit/qiskit-terra/graphs/contributors
 [BibTeX file]: https://github.com/Qiskit/qiskit/blob/master/Qiskit.bib
 [Apache License 2.0]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/LICENSE.txt
-[the new IBM Q Experience]: https://quantum-computing.ibm.com/
