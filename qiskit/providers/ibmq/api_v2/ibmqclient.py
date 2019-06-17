@@ -25,24 +25,26 @@ from .exceptions import RequestsApiError, AuthenticationLicenseError
 class IBMQClient:
     """Client for programmatic access to the IBM Q API."""
 
-    def __init__(self, api_token, auth_url, proxies=None):
+    def __init__(self, api_token, auth_url, verify=True, proxies=None):
         """IBMQClient constructor.
 
         Args:
             api_token (str): IBM Q api token.
             auth_url (str): URL for the authentication service.
+            verify (bool): if False, ignores SSL certificates errors.
             proxies (dict): proxies used in the connection.
         """
         self.api_token = api_token
         self.auth_url = auth_url
 
-        self.client_auth = Auth(RetrySession(auth_url, proxies=proxies))
-        self.client_api, self.client_ws = self._init_service_clients(proxies=proxies)
+        self.client_auth = Auth(RetrySession(auth_url, verify=verify, proxies=proxies))
+        self.client_api, self.client_ws = self._init_service_clients(verify=verify, proxies=proxies)
 
-    def _init_service_clients(self, proxies):
+    def _init_service_clients(self, verify, proxies):
         """Initialize the clients used for communicating with the API and ws.
 
         Args:
+            verify (bool): if False, ignores SSL certificates errors.
             proxies (dict): proxies used in the connection.
 
         Returns:
@@ -57,7 +59,8 @@ class IBMQClient:
         service_urls = self._user_urls()
 
         # Create the api server client, using the access token.
-        client_api = Api(RetrySession(service_urls['http'], access_token, proxies=proxies))
+        client_api = Api(RetrySession(service_urls['http'], access_token,
+                                      verify=verify, proxies=proxies))
 
         # Create the websocket server client, using the access token.
         client_ws = WebsocketClient(service_urls['ws'], access_token)
@@ -69,14 +72,17 @@ class IBMQClient:
 
         Returns:
             str: access token.
+
         Raises:
             AuthenticationLicenseError: if the user hasn't accepted the license agreement.
+            RequestsApiError: if the request failed.
         """
         try:
-            self.client_auth.login(self.api_token)
+            response = self.client_auth.login(self.api_token)
+            return response['id']
         except RequestsApiError as ex:
             response = ex.original_exception.response
-            if response and response.status_code == 401:
+            if response is not None and response.status_code == 401:
                 try:
                     error_code = response.json()['error']['name']
                     if error_code == 'ACCEPT_LICENSE_REQUIRED':
@@ -85,9 +91,7 @@ class IBMQClient:
                 except (ValueError, KeyError):
                     # the response did not contain the expected json.
                     pass
-
-        response = self.client_auth.login(self.api_token)
-        return response['id']
+            raise
 
     def _user_urls(self):
         """Retrieve the api URLs from the auth server.
@@ -171,9 +175,7 @@ class IBMQClient:
         Returns:
             dict: backend pulse defaults.
         """
-        # pylint: disable=unused-argument
-        # return self.api_client.backend(backend_name).pulse_defaults()
-        return None
+        return self.client_api.backend(backend_name).pulse_defaults()
 
     # Jobs-related public functions.
 
