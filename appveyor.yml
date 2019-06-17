@@ -14,6 +14,7 @@ version: 1.0.{build}
 
 environment:
     matrix:
+        - PYTHON_VERSION: 3.5
         - PYTHON: C:\Python35
 
 build: false
@@ -23,6 +24,7 @@ skip_branch_with_pr: true
 install:
     - pip.exe install -U -r requirements.txt
     - pip.exe install -U -r requirements-dev.txt
+    - pip.exe install pytest
 
 # Use py.test for output of xunit test results.
 test_script:
