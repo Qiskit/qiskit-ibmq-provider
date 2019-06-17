@@ -23,7 +23,6 @@ skip_branch_with_pr: true
 
 install:
     - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-    - python --version
     - pip.exe install -U -r requirements.txt
     - pip.exe install -U -r requirements-dev.txt
     - pip.exe install pytest
@@ -35,4 +34,4 @@ test_script:
 # Upload the test results to appveyor so they are shown on the "Tests" tab.
 after_test:
     - ps: $wc = New-Object 'System.Net.WebClient'
-    - ps: $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\test_results.xml)
+    - ps: $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\test_results.xml))
