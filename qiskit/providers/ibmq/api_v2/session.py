@@ -28,7 +28,7 @@ STATUS_FORCELIST = (
     503,  # Service Unavailable
     504,  # Gateway Timeout
 )
-CLIENT_APPLICATION = 'ibmqprovider/version-' + ibmq_provider_version
+CLIENT_APPLICATION = 'ibmqprovider/' + ibmq_provider_version
 CUSTOM_HEADER_ENV_VAR = 'QE_CUSTOM_CLIENT_APP_HEADER'
 
 

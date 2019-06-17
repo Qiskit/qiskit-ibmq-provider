@@ -34,8 +34,8 @@ The format is based on [Keep a Changelog].
   available when using the new API authentication. (\#100)
 - Added support for using object storage when submitting and retrieving
   jobs. (\#110)
--   Added support for custom qx-client-application request header via the environment
-    variable `QE_CUSTOM_CLIENT_APP_HEADER` when using the new API. (\#165)
+- Added support for custom qx-client-application request header via the environment
+  variable `QE_CUSTOM_CLIENT_APP_HEADER` when using the new API. (\#165)
 
 
 ## [0.2.2] - 2019-05-07

@@ -20,7 +20,11 @@ from contextlib import contextmanager
 
 @contextmanager
 def custom_envs(new_environ):
-    """Context manager that modifies environment variables."""
+    """Context manager that modifies environment variables.
+
+    Args:
+        new_environ (dict): a dictionary of modified environment variables.
+    """
     # Remove the original variables from `os.environ`.
     # Store the original `os.environ`.
     os_environ_original = os.environ.copy()
