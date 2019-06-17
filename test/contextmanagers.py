@@ -23,7 +23,7 @@ def custom_envs(new_environ):
     """Context manager that modifies environment variables.
 
     Args:
-        new_environ (dict): a dictionary of modified environment variables.
+        new_environ (dict): a dictionary of new environment variables to use.
     """
     # Remove the original variables from `os.environ`.
     # Store the original `os.environ`.
