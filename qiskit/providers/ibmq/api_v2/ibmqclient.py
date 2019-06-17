@@ -91,7 +91,7 @@ class IBMQClient:
                 except (ValueError, KeyError):
                     # the response did not contain the expected json.
                     pass
-        raise ex
+            raise
 
     def _user_urls(self):
         """Retrieve the api URLs from the auth server.
