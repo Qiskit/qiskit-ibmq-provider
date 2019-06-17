@@ -1,0 +1,34 @@
+# This code is part of Qiskit.
+#
+# (C) Copyright IBM 2017, 2019.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+version: 1.0.{build}
+
+environment:
+    matrix:
+        - PYTHON: C:\Python35
+
+build: false
+deploy: false
+skip_branch_with_pr: true
+
+install:
+    - pip.exe install -U -r requirements.txt
+    - pip.exe install -U -r requirements-dev.txt
+
+# Use py.test for output of xunit test results.
+test_script:
+    - py.test -s -v --junit-xml=test_results.xml
+
+# Upload the test results to appveyor so they are shown on the "Tests" tab.
+after_test:
+    - ps: $wc = New-Object 'System.Net.WebClient'
+    - ps: $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\test_results.xml)
