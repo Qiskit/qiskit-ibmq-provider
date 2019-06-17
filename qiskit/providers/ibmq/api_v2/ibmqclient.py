@@ -175,9 +175,7 @@ class IBMQClient:
         Returns:
             dict: backend pulse defaults.
         """
-        # pylint: disable=unused-argument
-        # return self.api_client.backend(backend_name).pulse_defaults()
-        return None
+        return self.client_api.backend(backend_name).pulse_defaults()
 
     # Jobs-related public functions.
 
