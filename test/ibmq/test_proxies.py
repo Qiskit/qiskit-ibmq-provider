@@ -56,7 +56,7 @@ class TestProxies(QiskitTestCase):
         """Should reach the proxy using IBMQClient."""
         pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
 
-        _ = IBMQClient(qe_token, qe_url, VALID_PROXIES)
+        _ = IBMQClient(qe_token, qe_url, proxies=VALID_PROXIES)
 
         self.proxy_process.terminate()  # kill to be able of reading the output
         self.assertIn(pproxy_desired_access_log_line_,
@@ -69,7 +69,7 @@ class TestProxies(QiskitTestCase):
         """Should reach the proxy using IBMQVersionFinder."""
         pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
 
-        version_finder = IBMQVersionFinder(qe_url, VALID_PROXIES)
+        version_finder = IBMQVersionFinder(qe_url, proxies=VALID_PROXIES)
         version_finder.version()  # call the version finder, sending logging to the proxy process
 
         self.proxy_process.terminate()  # kill to be able of reading the output
@@ -81,7 +81,7 @@ class TestProxies(QiskitTestCase):
     def test_invalid_proxy_port_ibmqclient(self, qe_token, qe_url):
         """Should raise RequestApiError with ProxyError as original exception using IBMQClient."""
         with self.assertRaises(RequestsApiError) as context_manager:
-            _ = IBMQClient(qe_token, qe_url, INVALID_PORT_PROXIES)
+            _ = IBMQClient(qe_token, qe_url, proxies=INVALID_PORT_PROXIES)
 
         self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
 
@@ -92,7 +92,7 @@ class TestProxies(QiskitTestCase):
         """Should raise RequestApiError with ProxyError as
             original exception using IBMQVersionFinder."""
         with self.assertRaises(RequestsApiError) as context_manager:
-            version_finder = IBMQVersionFinder(qe_url, INVALID_PORT_PROXIES)
+            version_finder = IBMQVersionFinder(qe_url, proxies=INVALID_PORT_PROXIES)
             version_finder.version()
 
         self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
@@ -103,7 +103,7 @@ class TestProxies(QiskitTestCase):
         """Should raise RequestApiError with ProxyError as
             original exception using IBMQClient."""
         with self.assertRaises(RequestsApiError) as context_manager:
-            _ = IBMQClient(qe_token, qe_url, INVALID_ADDRESS_PROXIES)
+            _ = IBMQClient(qe_token, qe_url, proxies=INVALID_ADDRESS_PROXIES)
 
         self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
 
@@ -114,7 +114,7 @@ class TestProxies(QiskitTestCase):
         """Should raise RequestApiError with ProxyError as
             original exception using IBMQVersionFinder."""
         with self.assertRaises(RequestsApiError) as context_manager:
-            version_finder = IBMQVersionFinder(qe_url, INVALID_ADDRESS_PROXIES)
+            version_finder = IBMQVersionFinder(qe_url, proxies=INVALID_ADDRESS_PROXIES)
             version_finder.version()
 
         self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
