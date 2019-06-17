@@ -36,8 +36,8 @@ Once the package is installed, you can access the provider from Qiskit.
 3. Take your token from step 2, here called `MY_API_TOKEN`, and run:
 
    ```python
-   >>> from qiskit import IBMQ
-   >>> IBMQ.save_account('MY_API_TOKEN')
+   from qiskit import IBMQ
+   IBMQ.save_account('MY_API_TOKEN')
    ```
 
 4. If you have access to the IBM Q Network features, you also need to pass the
@@ -48,15 +48,15 @@ Once they are stored, at any point in the future you can load and use them
 in your program simply via:
 
 ```python
->>> from qiskit import IBMQ
->>> IBMQ.load_accounts()
+from qiskit import IBMQ
+IBMQ.load_accounts()
 ```
 
 For those who do not want to save there credentials to disk please use
 
 ```python
->>> from qiskit import IBMQ
->>> IBMQ.enable_account('MY_API_TOKEN')
+from qiskit import IBMQ
+IBMQ.enable_account('MY_API_TOKEN')
 ```
 
 ## Contribution Guidelines
@@ -67,8 +67,8 @@ By participating, you are expect to uphold to this code.
 
 We use [GitHub issues] for tracking requests and bugs. Please use our [slack]
 for discussion and simple questions. To join our Slack community use the
-[invite link]. For questions that are more suited for a forum we use the
-`Qiskit` tag in [Stack Exchange].
+invite link at [Qiskit.org]. For questions that are more suited for a forum we
+use the `Qiskit` tag in [Stack Exchange].
 
 ## Next Steps
 
@@ -89,11 +89,11 @@ project at different levels. If you use Qiskit, please cite as per the included
 [IBM Q]: https://www.research.ibm.com/ibm-q/
 [IBM Q Experience login page]:  https://quantum-computing.ibm.com/login
 [IBM Q Experience account page]: https://quantum-computing.ibm.com/account
-[contribution guidelines]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/.github/CONTRIBUTING.rst
-[code of conduct]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/.github/CODE_OF_CONDUCT.rst
+[contribution guidelines]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/CONTRIBUTING.md
+[code of conduct]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/CODE_OF_CONDUCT.md
 [GitHub issues]: https://github.com/Qiskit/qiskit-ibmq-provider/issues
 [slack]: https://qiskit.slack.com
-[invite link]: https://join.slack.com/t/qiskit/shared_invite/enQtNDc2NjUzMjE4Mzc0LTMwZmE0YTM4ZThiNGJmODkzN2Y2NTNlMDIwYWNjYzA2ZmM1YTRlZGQ3OGM0NjcwMjZkZGE0MTA4MGQ1ZTVmYzk
+[Qiskit.org]: https://qiskit.org
 [Stack Exchange]: https://quantumcomputing.stackexchange.com/questions/tagged/qiskit
 [Qiskit Tutorial]: https://github.com/Qiskit/qiskit-tutorial
 [many people]: https://github.com/Qiskit/qiskit-terra/graphs/contributors

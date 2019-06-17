@@ -72,14 +72,17 @@ class IBMQClient:
 
         Returns:
             str: access token.
+
         Raises:
             AuthenticationLicenseError: if the user hasn't accepted the license agreement.
+            RequestsApiError: if the request failed.
         """
         try:
-            self.client_auth.login(self.api_token)
+            response = self.client_auth.login(self.api_token)
+            return response['id']
         except RequestsApiError as ex:
             response = ex.original_exception.response
-            if response and response.status_code == 401:
+            if response is not None and response.status_code == 401:
                 try:
                     error_code = response.json()['error']['name']
                     if error_code == 'ACCEPT_LICENSE_REQUIRED':
@@ -88,9 +91,7 @@ class IBMQClient:
                 except (ValueError, KeyError):
                     # the response did not contain the expected json.
                     pass
-
-        response = self.client_auth.login(self.api_token)
-        return response['id']
+            raise
 
     def _user_urls(self):
         """Retrieve the api URLs from the auth server.
@@ -174,9 +175,7 @@ class IBMQClient:
         Returns:
             dict: backend pulse defaults.
         """
-        # pylint: disable=unused-argument
-        # return self.api_client.backend(backend_name).pulse_defaults()
-        return None
+        return self.client_api.backend(backend_name).pulse_defaults()
 
     # Jobs-related public functions.
 
