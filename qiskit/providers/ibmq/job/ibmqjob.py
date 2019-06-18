@@ -405,6 +405,10 @@ class IBMQJob(BaseJob):
     def submit(self):
         """Submit job to IBM-Q.
 
+        Events:
+            Publishes job creation using `ibmq.job.start`
+            to `qiskit.tools.events.pubsub.Publisher`.
+
         Raises:
             JobError: If we have already submitted the job.
         """
@@ -414,7 +418,7 @@ class IBMQJob(BaseJob):
         if self._future is not None or self._job_id is not None:
             raise JobError("We have already submitted the job!")
         self._future = self._executor.submit(self._submit_callback)
-        Publisher().publish("terra.job.started", self)
+        Publisher().publish("ibmq.job.start", self)
 
     def _submit_callback(self):
         """Submit qobj job to IBM-Q.
