@@ -25,7 +25,7 @@ from .exceptions import RequestsApiError, AuthenticationLicenseError
 class IBMQClient:
     """Client for programmatic access to the IBM Q API."""
 
-    def __init__(self, api_token, auth_url, verify=True, proxies=None):
+    def __init__(self, api_token, auth_url, verify=True, proxies=None, ntlm_credentials=None):
         """IBMQClient constructor.
 
         Args:
@@ -33,19 +33,23 @@ class IBMQClient:
             auth_url (str): URL for the authentication service.
             verify (bool): if False, ignores SSL certificates errors.
             proxies (dict): proxies used in the connection.
+            ntlm_credentials (dict): NTLM proxy credentials.
         """
         self.api_token = api_token
         self.auth_url = auth_url
 
-        self.client_auth = Auth(RetrySession(auth_url, verify=verify, proxies=proxies))
-        self.client_api, self.client_ws = self._init_service_clients(verify=verify, proxies=proxies)
+        self.client_auth = Auth(RetrySession(auth_url, verify=verify, proxies=proxies,
+                                             ntlm_credentials=ntlm_credentials))
+        self.client_api, self.client_ws = self._init_service_clients(
+            verify=verify, proxies=proxies, ntlm_credentials=ntlm_credentials)
 
-    def _init_service_clients(self, verify, proxies):
+    def _init_service_clients(self, verify, proxies, ntlm_credentials):
         """Initialize the clients used for communicating with the API and ws.
 
         Args:
             verify (bool): if False, ignores SSL certificates errors.
             proxies (dict): proxies used in the connection.
+            ntlm_credentials (dict): NTLM proxy credentials.
 
         Returns:
             tuple(Api, WebsocketClient):
@@ -60,7 +64,8 @@ class IBMQClient:
 
         # Create the api server client, using the access token.
         client_api = Api(RetrySession(service_urls['http'], access_token,
-                                      verify=verify, proxies=proxies))
+                                      verify=verify, proxies=proxies,
+                                      ntlm_credentials=ntlm_credentials))
 
         # Create the websocket server client, using the access token.
         client_ws = WebsocketClient(service_urls['ws'], access_token)

@@ -73,7 +73,8 @@ class IBMQSingleProvider(BaseProvider):
             credentials (Credentials): Quantum Experience or IBMQ credentials.
 
         Returns:
-            IBMQConnector: instance of the IBMQConnector.
+            IBMQClient: instance of the IBMQClient if using the new API.
+            IBMQConnector: instance of the IBMQConnector if using the old API.
         Raises:
             ConnectionError: if the authentication resulted in error.
         """
@@ -81,7 +82,8 @@ class IBMQSingleProvider(BaseProvider):
         proxies = credentials.proxies.get('urls')
         version_finder = IBMQVersionFinder(url=credentials.base_url,
                                            verify=credentials.verify,
-                                           proxies=proxies)
+                                           proxies=proxies,
+                                           ntlm_credentials=credentials.ntlm_credentials)
         version_info = version_finder.version()
 
         # Check if the URL belongs to auth services of the new API.
@@ -92,11 +94,12 @@ class IBMQSingleProvider(BaseProvider):
                 return IBMQClient(api_token=credentials.token,
                                   auth_url=credentials.url,
                                   verify=credentials.verify,
-                                  proxies=proxies)
+                                  proxies=proxies,
+                                  ntlm_credentials=credentials.ntlm_credentials)
             else:
                 # Prepare the config_dict for IBMQConnector.
                 config_dict = {
-                    'url': credentials.url,
+                    'url': credentials.url
                 }
                 if credentials.proxies:
                     config_dict['proxies'] = credentials.proxies

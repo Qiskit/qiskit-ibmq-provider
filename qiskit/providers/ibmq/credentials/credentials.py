@@ -34,7 +34,7 @@ class Credentials:
     """
 
     def __init__(self, token, url, hub=None, group=None, project=None,
-                 proxies=None, verify=True):
+                 proxies=None, ntlm_credentials=None, verify=True):
         """Return new set of credentials.
 
         Args:
@@ -44,6 +44,7 @@ class Credentials:
             group (str): the group used for IBMQ.
             project (str): the project used for IBMQ.
             proxies (dict): proxy configuration for the API.
+            ntlm_credentials (dict): NTLM proxy credentials.
             verify (bool): if False, ignores SSL certificates errors
 
         Note:
@@ -58,6 +59,7 @@ class Credentials:
          self.hub, self.group, self.project) = _unify_ibmq_url(
              url, hub, group, project)
         self.proxies = proxies or {}
+        self.ntlm_credentials = ntlm_credentials
         self.verify = verify
 
     def is_ibmq(self):

@@ -42,7 +42,9 @@ class RetrySession(Session):
 
     def __init__(self, base_url, access_token=None,
                  retries=5, backoff_factor=0.5,
-                 verify=True, proxies=None, auth=None):
+                 verify=True, proxies=None,
+                 ntlm_credentials=None,
+                 auth=None):
         """RetrySession constructor.
 
         Args:
@@ -52,6 +54,7 @@ class RetrySession(Session):
             backoff_factor (float): backoff factor between retry attempts.
             verify (bool): enable SSL verification.
             proxies (dict): proxy URLs mapped by protocol.
+            ntlm_credentials (dict): NTLM proxy credentials.
             auth (AuthBase): authentication handler.
         """
         super().__init__()
@@ -61,7 +64,7 @@ class RetrySession(Session):
         self.access_token = access_token
 
         self._initialize_retry(retries, backoff_factor)
-        self._initialize_session_parameters(verify, proxies or {}, auth)
+        self._initialize_session_parameters(verify, proxies or {}, ntlm_credentials or {}, auth)
 
     @property
     def access_token(self):
@@ -94,12 +97,13 @@ class RetrySession(Session):
         self.mount('http://', retry_adapter)
         self.mount('https://', retry_adapter)
 
-    def _initialize_session_parameters(self, verify, proxies, auth):
+    def _initialize_session_parameters(self, verify, proxies, ntlm_credentials, auth):
         """Set the Session parameters and attributes.
 
         Args:
             verify (bool): enable SSL verification.
             proxies (dict): proxy URLs mapped by protocol.
+            ntlm_credentials (dict): NTLM proxy credentials.
             auth (AuthBase): authentication handler.
         """
         client_app_header = CLIENT_APPLICATION
@@ -114,6 +118,7 @@ class RetrySession(Session):
         self.auth = auth
         self.proxies = proxies or {}
         self.verify = verify
+        self.ntlm_credentials = ntlm_credentials
 
     def request(self, method, url, bare=False, **kwargs):
         """Constructs a Request, prepending the base url.
