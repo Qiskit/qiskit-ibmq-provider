@@ -15,7 +15,6 @@
 """Tests for the IBMQClient for API v2."""
 
 import re
-from unittest import skip
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
@@ -148,26 +147,56 @@ class TestIBMQClient(QiskitTestCase):
         version = api.api_version()
         self.assertIsNotNone(version)
 
-    @skip('TODO: reenable after checking with API team')
     @requires_qe_access
     @requires_new_api_auth
     def test_get_job_includes(self, qe_token, qe_url):
-        """Check the field includes parameter for get_job."""
+        """Check the include fields parameter for get_job."""
         IBMQ.enable_account(qe_token, qe_url)
 
-        backend_name = 'ibmq_qasm_simulator'
-        backend = IBMQ.get_backend(backend_name)
-        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
-        qobj = assemble(circuit, backend, shots=1)
-
-        api = backend._api
-        job = api.submit_job(qobj.to_dict(), backend_name)
+        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
         job_id = job['id']
 
-        # Get the job, excluding a parameter.
+        # Get the job, including a field.
+        self.assertIn('backend', job)
         self.assertIn('shots', job)
-        job_excluded = api.get_job(job_id, exclude_fields=['shots'])
-        self.assertNotIn('shots', job_excluded)
+        job_included = api.get_job(job_id, include_fields=['backend'])
+
+        # Ensure the result has only the included field
+        self.assertIn('backend', job_included)
+        self.assertNotIn('shots', job_included)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_get_job_excludes(self, qe_token, qe_url):
+        """Check the exclude fields parameter for get_job."""
+        IBMQ.enable_account(qe_token, qe_url)
+
+        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
+        job_id = job['id']
+
+        # Get the job, excluding a field.
+        self.assertIn('shots', job)
+        self.assertIn('backend', job)
+        job_excluded = api.get_job(job_id, exclude_fields=['backend'])
+        # Ensure the result only excludes the specified field
+        self.assertNotIn('backend', job_excluded)
+        self.assertIn('shots', job)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_get_job_with_invalid_filter(self, qe_token, qe_url):
+        """Check get_job with an invalid filter."""
+        IBMQ.enable_account(qe_token, qe_url)
+
+        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
+        job_id = job['id']
+
+        # Get the job, excluding an non-existent field.
+        self.assertNotIn('dummy_exclude', job)
+        self.assertNotIn('dummy_include', job)
+        filtered_job = api.get_job(job_id, exclude_fields=['dummy_exclude'],
+                                   include_fields=['dummy_include'])
+        self.assertFalse(filtered_job)
 
     @requires_qe_access
     @requires_new_api_auth
@@ -184,6 +213,25 @@ class TestIBMQClient(QiskitTestCase):
                       "Original error message not in raised exception")
         self.assertIn(original_error['code'], raised_exception.message,
                       "Original error code not in raised exception")
+
+    def _submit_job_to_backend(self, backend_name):
+        """Submit a generic qobj job to the backend
+
+        Args:
+            backend_name (str): backend name
+
+        Returns:
+            tuple(IBMQConnector, dict):
+                IBMQConnector: API for communicating with IBMQ.
+                dict: API response to the job submit.
+        """
+        backend = IBMQ.get_backend(backend_name)
+        qobj = assemble(transpile([self.qc1, self.qc2], backend=backend, seed_transpiler=self.seed),
+                        backend=backend, shots=1)
+
+        api = backend._api
+        job = api.submit_job(qobj.to_dict(), backend_name)
+        return api, job
 
 
 class TestAuthentication(QiskitTestCase):

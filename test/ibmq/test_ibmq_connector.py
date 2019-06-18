@@ -15,6 +15,7 @@
 """Test IBMQConnector."""
 
 import re
+from unittest import skip
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
@@ -145,6 +146,7 @@ class TestIBMQConnector(QiskitTestCase):
         version = api.api_version()
         self.assertIn('new_api', version)
 
+    @skip('function is being deprecated')
     @requires_qe_access
     @requires_classic_api
     def test_get_job_includes(self, qe_token, qe_url):
@@ -179,6 +181,7 @@ class TestIBMQConnector(QiskitTestCase):
         self.assertNotIn('deleted', job_excluded)
         self.assertIn('shots', job)
 
+    @skip('function is being deprecated')
     @requires_qe_access
     @requires_classic_api
     def test_get_job_with_invalid_filter(self, qe_token, qe_url):
