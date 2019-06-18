@@ -24,6 +24,7 @@ from qiskit.providers.ibmq.api_v2.exceptions import ApiError, RequestsApiError
 from qiskit.test import QiskitTestCase
 
 from ..decorators import requires_new_api_auth, requires_qe_access
+from ..contextmanagers import custom_envs, no_envs
 
 
 class TestIBMQClient(QiskitTestCase):
@@ -213,6 +214,22 @@ class TestIBMQClient(QiskitTestCase):
                       "Original error message not in raised exception")
         self.assertIn(original_error['code'], raised_exception.message,
                       "Original error code not in raised exception")
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_custom_client_app_header(self, qe_token, qe_url):
+        """Check custom client application header"""
+        custom_header = 'batman'
+        with custom_envs({'QE_CUSTOM_CLIENT_APP_HEADER': custom_header}):
+            api = self._get_client(qe_token, qe_url)
+            self.assertIn(custom_header,
+                          api.client_api.session.headers['X-Qx-Client-Application'])
+
+        # Make sure the header is re-initialized
+        with no_envs(['QE_CUSTOM_CLIENT_APP_HEADER']):
+            api = self._get_client(qe_token, qe_url)
+            self.assertNotIn(custom_header,
+                             api.client_api.session.headers['X-Qx-Client-Application'])
 
     def _submit_job_to_backend(self, backend_name):
         """Submit a generic qobj job to the backend
