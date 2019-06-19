@@ -42,8 +42,7 @@ class RetrySession(Session):
 
     def __init__(self, base_url, access_token=None,
                  retries=5, backoff_factor=0.5,
-                 verify=True, proxies=None,
-                 auth=None):
+                 verify=True, proxies=None, auth=None):
         """RetrySession constructor.
 
         Args:
