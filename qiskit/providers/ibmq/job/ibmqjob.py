@@ -406,8 +406,7 @@ class IBMQJob(BaseJob):
         """Submit job to IBM-Q.
 
         Events:
-            Publishes job creation using `ibmq.job.start`
-            to `qiskit.tools.events.pubsub.Publisher`.
+            ibmq.job.start: The job has started.
 
         Raises:
             JobError: If we have already submitted the job.
