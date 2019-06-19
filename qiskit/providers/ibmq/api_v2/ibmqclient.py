@@ -93,6 +93,15 @@ class IBMQClient:
                     pass
             raise
 
+    def _check_token(self, response):
+        """Generate a new access token if a 401 response was received."""
+        if response.status_code == 401:
+            new_access_token = self._request_access_token()
+            self.client_api.session.access_token = new_access_token
+            self.client_ws.access_token = new_access_token
+            return False
+        return True
+
     def _user_urls(self):
         """Retrieve the api URLs from the auth server.
 
@@ -114,8 +123,19 @@ class IBMQClient:
         Returns:
             list[dict]: a list of dicts with the hubs, which contains the keys
                 `hub`, `group`, `project`.
+
+        Raises:
+            RequestsApiError: if the request to the API session
+                failed despite a new access token being generated.
         """
-        response = self.client_api.hubs()
+        try:
+            response = self.client_api.hubs()
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                response = self.client_api.hubs()
+            else:
+                raise
 
         hubs = []
         for hub in response:
@@ -141,8 +161,18 @@ class IBMQClient:
 
         Returns:
             list[dict]: a list of backends.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.backends()
+        try:
+            return self.client_api.backends()
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.backends()
+            else:
+                raise
 
     def backend_status(self, backend_name):
         """Return the status of a backend.
@@ -152,8 +182,18 @@ class IBMQClient:
 
         Returns:
             dict: backend status.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.backend(backend_name).status()
+        try:
+            return self.client_api.backend(backend_name).status()
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.backend(backend_name).status()
+            else:
+                raise
 
     def backend_properties(self, backend_name):
         """Return the properties of a backend.
@@ -163,8 +203,18 @@ class IBMQClient:
 
         Returns:
             dict: backend properties.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.backend(backend_name).properties()
+        try:
+            return self.client_api.backend(backend_name).properties()
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.backend(backend_name).properties()
+            else:
+                raise
 
     def backend_pulse_defaults(self, backend_name):
         """Return the pulse defaults of a backend.
@@ -174,8 +224,18 @@ class IBMQClient:
 
         Returns:
             dict: backend pulse defaults.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.backend(backend_name).pulse_defaults()
+        try:
+            return self.client_api.backend(backend_name).pulse_defaults()
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.backend(backend_name).pulse_defaults()
+            else:
+                raise
 
     # Jobs-related public functions.
 
@@ -189,9 +249,20 @@ class IBMQClient:
 
         Returns:
             list[dict]: a list of job statuses.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.jobs(limit=limit, skip=skip,
-                                    extra_filter=extra_filter)
+        try:
+            return self.client_api.jobs(limit=limit, skip=skip,
+                                        extra_filter=extra_filter)
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.jobs(limit=limit, skip=skip,
+                                            extra_filter=extra_filter)
+            else:
+                raise
 
     def job_submit(self, backend_name, qobj_dict):
         """Submit a Qobj to a device.
@@ -202,8 +273,18 @@ class IBMQClient:
 
         Returns:
             dict: job status.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.submit_job(backend_name, qobj_dict)
+        try:
+            return self.client_api.submit_job(backend_name, qobj_dict)
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.submit_job(backend_name, qobj_dict)
+            else:
+                raise
 
     def job_submit_object_storage(self, backend_name, qobj_dict):
         """Submit a Qobj to a device using object storage.
@@ -214,13 +295,33 @@ class IBMQClient:
 
         Returns:
             dict: job status.
+
+        Raises:
+            RequestsApiError: if a request to the API session
+                failed despite a new access token being generated.
         """
         # Get the job via object storage.
-        job_info = self.client_api.submit_job_object_storage(backend_name)
+        try:
+            job_info = self.client_api.submit_job_object_storage(backend_name)
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                job_info = self.client_api.submit_job_object_storage(backend_name)
+            else:
+                raise
 
         # Get the upload URL.
         job_id = job_info['id']
-        job_api = self.client_api.job(job_id)
+
+        try:
+            job_api = self.client_api.job(job_id)
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                job_api = self.client_api.job(job_id)
+            else:
+                raise
+
         upload_url = job_api.upload_url()['url']
 
         # Upload the Qobj to object storage.
@@ -239,8 +340,19 @@ class IBMQClient:
 
         Returns:
             dict: Qobj, in dict form.
+
+        Raises:
+            RequestsApiError: if the request to the API session
+                failed despite a new access token being generated.
         """
-        job_api = self.client_api.job(job_id)
+        try:
+            job_api = self.client_api.job(job_id)
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                job_api = self.client_api.job(job_id)
+            else:
+                raise
 
         # Get the download URL.
         download_url = job_api.download_url()['url']
@@ -256,8 +368,19 @@ class IBMQClient:
 
         Returns:
             dict: job information.
+
+        Raises:
+            RequestsApiError: if the request to the API session
+                failed despite a new access token being generated.
         """
-        job_api = self.client_api.job(job_id)
+        try:
+            job_api = self.client_api.job(job_id)
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                job_api = self.client_api.job(job_id)
+            else:
+                raise
 
         # Get the download URL.
         download_url = job_api.result_url()['url']
@@ -277,9 +400,18 @@ class IBMQClient:
 
         Returns:
             dict: job information.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.job(job_id).get(excluded_fields,
-                                               included_fields)
+        try:
+            return self.client_api.job(job_id).get(excluded_fields, included_fields)
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.job(job_id).get(excluded_fields, included_fields)
+            else:
+                raise
 
     def job_status(self, job_id):
         """Return the status of a job.
@@ -289,8 +421,18 @@ class IBMQClient:
 
         Returns:
             dict: job status.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.job(job_id).status()
+        try:
+            return self.client_api.job(job_id).status()
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.job(job_id).status()
+            else:
+                raise
 
     def job_final_status_websocket(self, job_id, timeout=None):
         """Return the final status of a job via websocket.
@@ -316,8 +458,18 @@ class IBMQClient:
 
         Returns:
             dict: backend properties.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.job(job_id).properties()
+        try:
+            return self.client_api.job(job_id).properties()
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.job(job_id).properties()
+            else:
+                raise
 
     def job_cancel(self, job_id):
         """Submit a request for cancelling a job.
@@ -327,8 +479,18 @@ class IBMQClient:
 
         Returns:
             dict: job cancellation response.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.job(job_id).cancel()
+        try:
+            return self.client_api.job(job_id).cancel()
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.job(job_id).cancel()
+            else:
+                raise
 
     # Circuits-related public functions.
 
@@ -341,8 +503,18 @@ class IBMQClient:
 
         Returns:
             dict: json response.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.circuit(name, **kwargs)
+        try:
+            return self.client_api.circuit(name, **kwargs)
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.circuit(name, **kwargs)
+            else:
+                raise
 
     def circuit_job_get(self, job_id):
         """Return information about a Circuit job.
@@ -352,8 +524,18 @@ class IBMQClient:
 
         Returns:
             dict: job information.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.job(job_id).get([], [])
+        try:
+            return self.client_api.job(job_id).get([], [])
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.job(job_id).get([], [])
+            else:
+                raise
 
     def circuit_job_status(self, job_id):
         """Return the status of a Circuits job.
@@ -363,6 +545,7 @@ class IBMQClient:
 
         Returns:
             dict: job status.
+
         """
         return self.job_status(job_id)
 
@@ -373,8 +556,18 @@ class IBMQClient:
 
         Returns:
             dict: versions of the api components.
+
+        Raises:
+            RequestsApiError: if the request failed despite a new access token being generated.
         """
-        return self.client_api.version()
+        try:
+            return self.client_api.version()
+        except RequestsApiError as ex:
+            # check the user's access token is valid, generating a new one if needed
+            if not self._check_token(ex.original_exception.response):
+                return self.client_api.version()
+            else:
+                raise
 
     # Endpoints for compatibility with classic IBMQConnector. These functions
     # are meant to facilitate the transition, and should be removed moving
