@@ -157,14 +157,13 @@ class TestIBMQClient(QiskitTestCase):
         api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
         job_id = job['id']
 
-        # Get the job, including a field.
+        # Get the job, including some fields.
         self.assertIn('backend', job)
         self.assertIn('shots', job)
-        job_included = api.get_job(job_id, include_fields=['backend'])
+        job_included = api.get_job(job_id, include_fields=['backend', 'shots'])
 
-        # Ensure the result has only the included field
-        self.assertIn('backend', job_included)
-        self.assertNotIn('shots', job_included)
+        # Ensure the result has only the included fields
+        self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
 
     @requires_qe_access
     @requires_new_api_auth
@@ -179,14 +178,30 @@ class TestIBMQClient(QiskitTestCase):
         self.assertIn('shots', job)
         self.assertIn('backend', job)
         job_excluded = api.get_job(job_id, exclude_fields=['backend'])
+
         # Ensure the result only excludes the specified field
         self.assertNotIn('backend', job_excluded)
         self.assertIn('shots', job)
 
     @requires_qe_access
     @requires_new_api_auth
-    def test_get_job_with_invalid_filter(self, qe_token, qe_url):
-        """Check get_job with an invalid filter."""
+    def test_get_job_includes_nonexistent(self, qe_token, qe_url):
+        """Check get_job including nonexistent fields."""
+        IBMQ.enable_account(qe_token, qe_url)
+
+        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
+        job_id = job['id']
+
+        # Get the job, including an nonexistent field.
+        self.assertNotIn('dummy_include', job)
+        job_included = api.get_job(job_id, include_fields=['dummy_include'])
+        # Ensure the result is empty, since no existing fields are included
+        self.assertFalse(job_included)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_get_job_excludes_nonexistent(self, qe_token, qe_url):
+        """Check get_job excluding nonexistent fields."""
         IBMQ.enable_account(qe_token, qe_url)
 
         api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
@@ -194,10 +209,12 @@ class TestIBMQClient(QiskitTestCase):
 
         # Get the job, excluding an non-existent field.
         self.assertNotIn('dummy_exclude', job)
-        self.assertNotIn('dummy_include', job)
-        filtered_job = api.get_job(job_id, exclude_fields=['dummy_exclude'],
-                                   include_fields=['dummy_include'])
-        self.assertFalse(filtered_job)
+        self.assertIn('shots', job)
+        job_excluded = api.get_job(job_id, exclude_fields=['dummy_exclude'])
+
+        # Ensure the result only excludes the specified field. We can't do a direct
+        # comparison against the original job because some fields might have changed.
+        self.assertIn('shots', job_excluded)
 
     @requires_qe_access
     @requires_new_api_auth
