@@ -28,6 +28,7 @@ from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.result import Result
+from qiskit.tools.events.pubsub import Publisher
 
 from ..api import ApiError
 from ..apiconstants import ApiJobStatus
@@ -404,6 +405,9 @@ class IBMQJob(BaseJob):
     def submit(self):
         """Submit job to IBM-Q.
 
+        Events:
+            ibmq.job.start: The job has started.
+
         Raises:
             JobError: If we have already submitted the job.
         """
@@ -413,6 +417,7 @@ class IBMQJob(BaseJob):
         if self._future is not None or self._job_id is not None:
             raise JobError("We have already submitted the job!")
         self._future = self._executor.submit(self._submit_callback)
+        Publisher().publish("ibmq.job.start", self)
 
     def _submit_callback(self):
         """Submit qobj job to IBM-Q.
