@@ -21,17 +21,17 @@ from .rest.version_finder import VersionFinder
 class IBMQVersionFinder:
     """Client for finding the API version being used."""
 
-    def __init__(self, url, verify=True, proxies=None, ntlm_credentials=None):
+    def __init__(self, url, verify=True, proxies=None, auth=None):
         """IBMQVersionFinder constructor.
 
         Args:
             url (str): URL for the service.
             verify (bool): if False, ignores SSL certificates errors.
             proxies (dict): proxies used in the connection.
-            ntlm_credentials (dict): NTLM proxy credentials.
+            auth (AuthBase): authentication handler.
         """
         self.client_version_finder = VersionFinder(
-            RetrySession(url, verify=verify, proxies=proxies, ntlm_credentials=ntlm_credentials)
+            RetrySession(url, verify=verify, proxies=proxies, auth=auth)
         )
 
     def version(self):

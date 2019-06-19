@@ -16,6 +16,7 @@
 
 import logging
 from collections import OrderedDict
+from requests_ntlm import HttpNtlmAuth
 
 from qiskit.providers import BaseProvider
 from qiskit.providers.models import (QasmBackendConfiguration,
@@ -80,10 +81,14 @@ class IBMQSingleProvider(BaseProvider):
         """
         # Use an IBMQVersionFinder for finding out the API version.
         proxies = credentials.proxies.get('urls')
+        ntlm_credentials = credentials.proxies.get('ntlm_credentials')
+        auth = None if not ntlm_credentials else HttpNtlmAuth(
+            ntlm_credentials['username'],
+            ntlm_credentials['password']
+        )
         version_finder = IBMQVersionFinder(url=credentials.base_url,
                                            verify=credentials.verify,
-                                           proxies=proxies,
-                                           ntlm_credentials=credentials.ntlm_credentials)
+                                           proxies=proxies, auth=auth)
         version_info = version_finder.version()
 
         # Check if the URL belongs to auth services of the new API.
@@ -91,11 +96,8 @@ class IBMQSingleProvider(BaseProvider):
             self.is_new_api = version_info['new_api']
 
             if version_info['new_api'] and 'api-auth' in version_info:
-                return IBMQClient(api_token=credentials.token,
-                                  auth_url=credentials.url,
-                                  verify=credentials.verify,
-                                  proxies=proxies,
-                                  ntlm_credentials=credentials.ntlm_credentials)
+                return IBMQClient(api_token=credentials.token, auth_url=credentials.url,
+                                  verify=credentials.verify, proxies=proxies, auth=auth)
             else:
                 # Prepare the config_dict for IBMQConnector.
                 config_dict = {
