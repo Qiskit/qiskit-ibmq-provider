@@ -80,7 +80,7 @@ class IBMQSingleProvider(BaseProvider):
             ConnectionError: if the authentication resulted in error.
         """
         # handle proxy and auth configuration
-        proxy_urls = credentials.proxies['urls'] if 'urls' in credentials.proxies else None
+        proxy_urls = credentials.proxies.get('urls')
 
         if 'username_ntlm' in credentials.proxies and 'password_ntlm' in credentials.proxies:
             auth = HttpNtlmAuth(
