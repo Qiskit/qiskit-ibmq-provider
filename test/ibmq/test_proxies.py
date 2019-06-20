@@ -26,10 +26,6 @@ from qiskit.test import QiskitTestCase, requires_qe_access
 
 from ..decorators import requires_new_api_auth
 
-# Worst-case time in seconds to wait for each tests' proxy process to terminate before
-# continuing to the next test regardless (ResourceWarnings will arise otherwise).
-TIMEOUT = 60
-
 ADDRESS = '127.0.0.1'
 PORT = 8080
 VALID_PROXIES = {'https': 'http://{}:{}'.format(ADDRESS, str(PORT))}
@@ -44,8 +40,8 @@ class TestProxies(QiskitTestCase):
         super().setUp()
 
         # launch a mock server.
-        command = ['pproxy', '-v', '-i', 'http://{}:{}'.format(ADDRESS, str(PORT))]
-        self.proxy_process = subprocess.Popen(command, stdout=subprocess.PIPE, close_fds=True)
+        command = ['pproxy', '-v', '-i', 'http://{}:{}'.format(ADDRESS, PORT)]
+        self.proxy_process = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     def tearDown(self):
         super().tearDown()
@@ -55,34 +51,27 @@ class TestProxies(QiskitTestCase):
             self.proxy_process.stdout.close()  # close the IO buffer
             self.proxy_process.terminate()  # initiate process termination
 
-            # wait for the process to terminate, or proceed after some time regardless
-            self.proxy_process.wait(timeout=TIMEOUT)
+            # wait for the process to terminate
+            self.proxy_process.wait()
 
     @requires_qe_access
     @requires_new_api_auth
-    def test_proxies_ibmqclient(self, qe_token, qe_url):
-        """Should reach the proxy using IBMQClient."""
-        pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
-
-        _ = IBMQClient(qe_token, qe_url, proxies=VALID_PROXIES)
-
-        self.proxy_process.terminate()  # kill to be able of reading the output
-        self.assertIn(pproxy_desired_access_log_line_,
-                      self.proxy_process.stdout.read().decode('utf-8'))
-
-    # pylint: disable=unused-argument
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_proxies_ibmqversionfinder(self, qe_token, qe_url):
-        """Should reach the proxy using IBMQVersionFinder."""
+    def test_valid_proxies(self, qe_token, qe_url):
+        """Should reach the proxy using IBMQVersionFinder and IBMQClient."""
         pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
 
         version_finder = IBMQVersionFinder(qe_url, proxies=VALID_PROXIES)
-        version_finder.version()  # call the version finder, sending logging to the proxy process
+        version_finder.version()  # call the version finder for proxy hit #1
 
-        self.proxy_process.terminate()  # kill to be able of reading the output
-        self.assertIn(pproxy_desired_access_log_line_,
-                      self.proxy_process.stdout.read().decode('utf-8'))
+        _ = IBMQClient(qe_token, qe_url, proxies=VALID_PROXIES)  # proxy hit #2
+
+        self.proxy_process.terminate()  # terminate the process in order to read the output
+
+        # read the process output and count the number of proxy hits logged
+        process_output = self.proxy_process.stdout.read().decode('utf-8')
+        proxy_hits = process_output.count(pproxy_desired_access_log_line_)
+
+        self.assertEqual(proxy_hits, 2)
 
     @requires_qe_access
     @requires_new_api_auth
