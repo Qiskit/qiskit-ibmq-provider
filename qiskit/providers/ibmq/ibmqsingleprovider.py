@@ -79,16 +79,21 @@ class IBMQSingleProvider(BaseProvider):
         Raises:
             ConnectionError: if the authentication resulted in error.
         """
+        # handle proxy and auth configuration
+        proxy_urls = credentials.proxies['urls'] if 'urls' in credentials.proxies else None
+
+        if 'username_ntlm' in credentials.proxies and 'password_ntlm' in credentials.proxies:
+            auth = HttpNtlmAuth(
+                credentials.proxies['username_ntlm'],
+                credentials.proxies['password_ntlm']
+            )
+        else:
+            auth = None
+
         # Use an IBMQVersionFinder for finding out the API version.
-        proxies = credentials.proxies.get('urls')
-        ntlm_credentials = credentials.proxies.get('ntlm_credentials')
-        auth = None if not ntlm_credentials else HttpNtlmAuth(
-            ntlm_credentials['username'],
-            ntlm_credentials['password']
-        )
         version_finder = IBMQVersionFinder(url=credentials.base_url,
                                            verify=credentials.verify,
-                                           proxies=proxies, auth=auth)
+                                           proxies=proxy_urls, auth=auth)
         version_info = version_finder.version()
 
         # Check if the URL belongs to auth services of the new API.
@@ -97,7 +102,7 @@ class IBMQSingleProvider(BaseProvider):
 
             if version_info['new_api'] and 'api-auth' in version_info:
                 return IBMQClient(api_token=credentials.token, auth_url=credentials.url,
-                                  verify=credentials.verify, proxies=proxies, auth=auth)
+                                  verify=credentials.verify, proxies=proxy_urls, auth=auth)
             else:
                 # Prepare the config_dict for IBMQConnector.
                 config_dict = {
