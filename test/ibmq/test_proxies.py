@@ -56,22 +56,29 @@ class TestProxies(QiskitTestCase):
 
     @requires_qe_access
     @requires_new_api_auth
-    def test_valid_proxies(self, qe_token, qe_url):
-        """Should reach the proxy using IBMQVersionFinder and IBMQClient."""
+    def test_proxies_ibmqclient(self, qe_token, qe_url):
+        """Should reach the proxy using IBMQClient."""
+        pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
+
+        _ = IBMQClient(qe_token, qe_url, proxies=VALID_PROXIES)
+
+        self.proxy_process.terminate()  # kill to be able of reading the output
+        self.assertIn(pproxy_desired_access_log_line_,
+                      self.proxy_process.stdout.read().decode('utf-8'))
+
+    # pylint: disable=unused-argument
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_proxies_ibmqversionfinder(self, qe_token, qe_url):
+        """Should reach the proxy using IBMQVersionFinder."""
         pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
 
         version_finder = IBMQVersionFinder(qe_url, proxies=VALID_PROXIES)
-        version_finder.version()  # call the version finder for proxy hit #1
+        version_finder.version()  # call the version finder, sending logging to the proxy process
 
-        _ = IBMQClient(qe_token, qe_url, proxies=VALID_PROXIES)  # proxy hit #2
-
-        self.proxy_process.terminate()  # terminate the process in order to read the output
-
-        # read the process output and count the number of proxy hits logged
-        process_output = self.proxy_process.stdout.read().decode('utf-8')
-        proxy_hits = process_output.count(pproxy_desired_access_log_line_)
-
-        self.assertEqual(proxy_hits, 2)
+        self.proxy_process.terminate()  # kill to be able of reading the output
+        self.assertIn(pproxy_desired_access_log_line_,
+                      self.proxy_process.stdout.read().decode('utf-8'))
 
     @requires_qe_access
     @requires_new_api_auth
