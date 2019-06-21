@@ -28,9 +28,9 @@ from ..decorators import requires_new_api_auth
 
 ADDRESS = '127.0.0.1'
 PORT = 8080
-VALID_PROXIES = {'https': 'http://{}:{}'.format(ADDRESS, str(PORT))}
+VALID_PROXIES = {'https': 'http://{}:{}'.format(ADDRESS, PORT)}
 INVALID_PORT_PROXIES = {'https': '{}:{}'.format(ADDRESS, '6666')}
-INVALID_ADDRESS_PROXIES = {'https': '{}:{}'.format('invalid', str(PORT))}
+INVALID_ADDRESS_PROXIES = {'https': '{}:{}'.format('invalid', PORT)}
 
 
 class TestProxies(QiskitTestCase):

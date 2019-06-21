@@ -63,6 +63,10 @@ class RetrySession(Session):
         self._initialize_retry(retries, backoff_factor)
         self._initialize_session_parameters(verify, proxies or {}, auth)
 
+    def __del__(self):
+        """RetrySession destructor. Closes the session."""
+        self.close()
+
     @property
     def access_token(self):
         """Return the session access token."""
