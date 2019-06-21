@@ -14,5 +14,7 @@
 
 """IBM Q API version 2 connector and utilities."""
 
+from .ibmqauthclient import IBMQAuthClient
 from .ibmqclient import IBMQClient
+from .ibmqprojectclient import IBMQProjectClient
 from .ibmqversionfinder import IBMQVersionFinder
