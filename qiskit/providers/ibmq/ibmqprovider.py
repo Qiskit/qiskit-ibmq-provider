@@ -26,7 +26,7 @@ from .credentials import (Credentials,
 from .exceptions import IBMQAccountError
 from .ibmqprojectprovider import IBMQProjectProvider
 from .ibmqsingleprovider import IBMQSingleProvider
-from .circuits import CircuitsManager
+
 
 QE_URL = 'https://quantumexperience.ng.bluemix.net/api'
 QX_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
@@ -46,7 +46,6 @@ class IBMQProvider(BaseProvider):
         # keys are tuples (hub, group, project), as the convention is that
         # that tuple uniquely identifies a set of credentials.
         self._accounts = OrderedDict()
-        self._circuits_manager = CircuitsManager()
 
         self._credentials = None
         self._providers = OrderedDict()
@@ -132,11 +131,6 @@ class IBMQProvider(BaseProvider):
                                    'criteria')
 
         return self._providers[providers[0]]
-
-    @property
-    def circuits(self):
-        """Entry point for Circuit invocation."""
-        return self._circuits_manager
 
     def backends(self, name=None, filters=None, **kwargs):
         """Return all backends accessible via IBMQ provider, subject to optional filtering.
@@ -306,11 +300,6 @@ class IBMQProvider(BaseProvider):
             credentials = Credentials(current_creds[creds].credentials.token,
                                       current_creds[creds].credentials.url)
             if self._credentials_match_filter(credentials, kwargs):
-                # Remove api from circuits manager if in use.
-                if (self._accounts[credentials.unique_id()]._api ==
-                        self._circuits_manager.client):
-                    self._circuits_manager.client = None
-
                 del self._accounts[credentials.unique_id()]
                 disabled = True
 
@@ -349,27 +338,14 @@ class IBMQProvider(BaseProvider):
         Returns:
             IBMQSingleProvider: new single-account provider.
         """
-        update_circuits_manager = False
-
         # Check if duplicated credentials are already in use. By convention,
         # we assume (hub, group, project) is always unique.
         if credentials.unique_id() in self._accounts.keys():
             warnings.warn('Credentials are already in use.')
 
-            # Remove api from circuits manager if in use.
-            if (self._accounts[credentials.unique_id()]._api ==
-                    self._circuits_manager.client):
-                update_circuits_manager = True
-
         single_provider = IBMQSingleProvider(credentials, self)
-        # Use the first new-api account as the account for circuits.
-        if not self._accounts and single_provider.is_new_api:
-            update_circuits_manager = True
 
         self._accounts[credentials.unique_id()] = single_provider
-
-        if update_circuits_manager:
-            self._circuits_manager.client = single_provider._api
 
         return single_provider
 

@@ -16,6 +16,7 @@
 
 import logging
 
+from .circuits import CircuitsManager
 from .ibmqsingleprovider import IBMQSingleProvider
 
 logger = logging.getLogger(__name__)
@@ -45,3 +46,6 @@ class IBMQProjectProvider(IBMQSingleProvider):
 
         # Populate the list of remote backends.
         self._backends = self._discover_remote_backends()
+
+        # Set circuits manager.
+        self.circuits = CircuitsManager(project_client)
