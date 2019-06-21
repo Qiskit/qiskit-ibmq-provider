@@ -15,6 +15,7 @@
 """Model for representing IBM Q credentials."""
 
 import re
+from requests_ntlm import HttpNtlmAuth
 
 # Regex that matches a IBMQ URL with hub information
 REGEX_IBMQ_HUBS = (
@@ -77,10 +78,18 @@ class Credentials:
     def connection_parameters(self):
         """Return a dict of kwargs in the format expected by requests."""
         request_kwargs = {
-            'url': self.url,
             'proxies': self.proxies,
             'verify': self.verify
         }
+
+        if 'username_ntlm' in self.proxies and 'password_ntlm' in self.proxies:
+            request_kwargs['auth'] = HttpNtlmAuth(
+                self.proxies['username_ntlm'],
+                self.proxies['password_ntlm']
+            )
+        else:
+            request_kwargs['auth'] = None
+
         return request_kwargs
 
 
