@@ -108,6 +108,31 @@ class IBMQProvider(BaseProvider):
             provider = IBMQProjectProvider(provider_credentials, client_project)
             self._providers[provider_credentials.unique_id()] = provider
 
+    def get_provider(self, hub=None, group=None, project=None):
+        """Return a provider for a single hub/group/project combination.
+
+        Returns:
+            IBMQProjectProvider:
+
+        Raises:
+            IBMQAccountError:
+        """
+        filters = []
+        for i, key in enumerate((hub, group, project)):
+            if key:
+                filters.append(lambda x: x[i] == key)
+
+        providers = list(filter(lambda x: all(f(x) for f in filters),
+                                self._providers.keys()))
+
+        if not providers:
+            raise IBMQAccountError('No providers matching the criteria')
+        if len(providers) > 1:
+            raise IBMQAccountError('More than one provider matching the '
+                                   'criteria')
+
+        return self._providers[providers[0]]
+
     @property
     def circuits(self):
         """Entry point for Circuit invocation."""
