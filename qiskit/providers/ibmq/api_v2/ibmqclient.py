@@ -25,30 +25,25 @@ from .exceptions import RequestsApiError, AuthenticationLicenseError
 class IBMQClient:
     """Client for programmatic access to the IBM Q API."""
 
-    def __init__(self, api_token, auth_url, verify=True, proxies=None, auth=None):
+    def __init__(self, api_token, url, **request_kwargs):
         """IBMQClient constructor.
 
         Args:
             api_token (str): IBM Q api token.
-            auth_url (str): URL for the authentication service.
-            verify (bool): if False, ignores SSL certificates errors.
-            proxies (dict): proxies used in the connection.
-            auth (AuthBase): authentication handler.
+            url (str): URL for the authentication service.
+            **request_kwargs (dict): arguments for the session and service clients.
         """
         self.api_token = api_token
-        self.auth_url = auth_url
+        self.auth_url = url
 
-        self.client_auth = Auth(RetrySession(auth_url, verify=verify, proxies=proxies, auth=auth))
-        self.client_api, self.client_ws = self._init_service_clients(
-            verify=verify, proxies=proxies, auth=auth)
+        self.client_auth = Auth(RetrySession(url, **request_kwargs))
+        self.client_api, self.client_ws = self._init_service_clients(**request_kwargs)
 
-    def _init_service_clients(self, verify, proxies, auth):
+    def _init_service_clients(self, **request_kwargs):
         """Initialize the clients used for communicating with the API and ws.
 
         Args:
-            verify (bool): if False, ignores SSL certificates errors.
-            proxies (dict): proxies used in the connection.
-            auth (AuthBase): authentication handler.
+            **request_kwargs (dict): arguments for the session.
 
         Returns:
             tuple(Api, WebsocketClient):
@@ -62,8 +57,7 @@ class IBMQClient:
         service_urls = self._user_urls()
 
         # Create the api server client, using the access token.
-        client_api = Api(RetrySession(service_urls['http'], access_token,
-                                      verify=verify, proxies=proxies, auth=auth))
+        client_api = Api(RetrySession(service_urls['http'], access_token, **request_kwargs))
 
         # Create the websocket server client, using the access token.
         client_ws = WebsocketClient(service_urls['ws'], access_token)

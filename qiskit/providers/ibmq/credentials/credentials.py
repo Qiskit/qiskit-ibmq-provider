@@ -74,6 +74,15 @@ class Credentials:
         """
         return self.hub, self.group, self.project
 
+    def connection_parameters(self):
+        """Return a dict of kwargs in the format expected by requests."""
+        request_kwargs = {
+            'url': self.url,
+            'proxies': self.proxies,
+            'verify': self.verify
+        }
+        return request_kwargs
+
 
 def _unify_ibmq_url(url, hub=None, group=None, project=None):
     """Return a new-style set of credential values (url and hub parameters).
