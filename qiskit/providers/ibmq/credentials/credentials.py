@@ -23,7 +23,8 @@ REGEX_IBMQ_HUBS = (
     '/Hubs/(?P<hub>[^/]+)/Groups/(?P<group>[^/]+)/Projects/(?P<project>[^/]+)'
 )
 # Template for creating an IBMQ URL with hub information
-TEMPLATE_IBMQ_HUBS = '{prefix}/Hubs/{hub}/Groups/{group}/Projects/{project}'
+# TODO: verify compatibility with old premium API
+TEMPLATE_IBMQ_HUBS = '{prefix}/Network/{hub}/Groups/{group}/Projects/{project}'
 
 
 class Credentials:
