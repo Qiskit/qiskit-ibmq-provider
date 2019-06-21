@@ -19,14 +19,17 @@ from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
 
+from .api_v2 import IBMQVersionFinder, IBMQAuthClient, IBMQProjectClient
 from .credentials.configrc import remove_credentials
 from .credentials import (Credentials,
                           read_credentials_from_qiskitrc, store_credentials, discover_credentials)
 from .exceptions import IBMQAccountError
+from .ibmqprojectprovider import IBMQProjectProvider
 from .ibmqsingleprovider import IBMQSingleProvider
 from .circuits import CircuitsManager
 
 QE_URL = 'https://quantumexperience.ng.bluemix.net/api'
+QX_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 
 
 class IBMQProvider(BaseProvider):
@@ -44,6 +47,66 @@ class IBMQProvider(BaseProvider):
         # that tuple uniquely identifies a set of credentials.
         self._accounts = OrderedDict()
         self._circuits_manager = CircuitsManager()
+
+        self._credentials = None
+        self._providers = OrderedDict()
+
+    def use_token(self, token, auth_url=QX_AUTH_URL, **kwargs):
+        """Authenticate against IBM Q Experience for use during this session.
+
+        Args:
+            token (str): IBM Q Experience API token.
+            auth_url (str): URL for the IBM Q Experience auth server.
+            **kwargs (dict): additional settings for the connection:
+                * proxies (dict): proxy configuration.
+                * verify (bool): verify the server's TLS certificate.
+
+        """
+        # TODO: rename function
+        # TODO: check and clean kwargs (verify str, proxies)
+        self._set_token(Credentials(token, auth_url, **kwargs))
+
+    def _set_token(self, credentials):
+        """Authenticate against IBM Q Experience and populate the providers.
+
+        Args:
+            credentials (Credentials): credentials for IBM Q Experience.
+
+        Raises:
+            IBMQAccountError:
+        """
+        # TODO: add checks (overwrite, mixing old and new)
+        version_finder = IBMQVersionFinder(credentials.base_url)
+        version_info = version_finder.version()
+
+        if not (version_info['new_api'] and 'api-auth' in version_info):
+            raise IBMQAccountError(
+                'The URL specified ({}) is not a IBM Q Experience '
+                'authentication URL'.format(credentials.base_url))
+
+        auth_client = IBMQAuthClient(credentials.token,
+                                     credentials.base_url)
+
+        service_urls = auth_client.user_urls()
+        user_hubs = auth_client.user_hubs()
+
+        for hub_info in user_hubs:
+            # Build credentials.
+            provider_credentials = Credentials(credentials.token,
+                                               service_urls['http'],
+                                               hub_info['hub'],
+                                               hub_info['group'],
+                                               hub_info['project'],
+                                               credentials.proxies,
+                                               credentials.verify)
+
+            # Build the client.
+            client_project = IBMQProjectClient(
+                auth_client.current_access_token(),
+                provider_credentials.url,
+                service_urls['ws'])
+            provider = IBMQProjectProvider(provider_credentials, client_project)
+            self._providers[provider_credentials.unique_id()] = provider
 
     @property
     def circuits(self):
