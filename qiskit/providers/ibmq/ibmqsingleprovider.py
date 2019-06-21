@@ -16,6 +16,7 @@
 
 import logging
 from collections import OrderedDict
+from requests_ntlm import HttpNtlmAuth
 
 from qiskit.providers import BaseProvider
 from qiskit.providers.models import (QasmBackendConfiguration,
@@ -73,15 +74,26 @@ class IBMQSingleProvider(BaseProvider):
             credentials (Credentials): Quantum Experience or IBMQ credentials.
 
         Returns:
-            IBMQConnector: instance of the IBMQConnector.
+            IBMQClient: instance of the IBMQClient if using the new API.
+            IBMQConnector: instance of the IBMQConnector if using the old API.
         Raises:
             ConnectionError: if the authentication resulted in error.
         """
-        # Use an IBMQVersionFinder for finding out the API version.
+        # handle proxy and auth configuration
         proxies = credentials.proxies.get('urls')
+
+        if 'username_ntlm' in credentials.proxies and 'password_ntlm' in credentials.proxies:
+            auth = HttpNtlmAuth(
+                credentials.proxies['username_ntlm'],
+                credentials.proxies['password_ntlm']
+            )
+        else:
+            auth = None
+
+        # Use an IBMQVersionFinder for finding out the API version.
         version_finder = IBMQVersionFinder(url=credentials.base_url,
                                            verify=credentials.verify,
-                                           proxies=proxies)
+                                           proxies=proxies, auth=auth)
         version_info = version_finder.version()
 
         # Check if the URL belongs to auth services of the new API.
@@ -89,14 +101,12 @@ class IBMQSingleProvider(BaseProvider):
             self.is_new_api = version_info['new_api']
 
             if version_info['new_api'] and 'api-auth' in version_info:
-                return IBMQClient(api_token=credentials.token,
-                                  auth_url=credentials.url,
-                                  verify=credentials.verify,
-                                  proxies=proxies)
+                return IBMQClient(api_token=credentials.token, auth_url=credentials.url,
+                                  verify=credentials.verify, proxies=proxies, auth=auth)
             else:
                 # Prepare the config_dict for IBMQConnector.
                 config_dict = {
-                    'url': credentials.url,
+                    'url': credentials.url
                 }
                 if credentials.proxies:
                     config_dict['proxies'] = credentials.proxies
