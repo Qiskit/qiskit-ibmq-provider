@@ -82,7 +82,8 @@ class IBMQSingleProvider(BaseProvider):
         request_kwargs = credentials.connection_parameters()
 
         # Use an IBMQVersionFinder for finding out the API version.
-        version_finder = IBMQVersionFinder(credentials.url, **request_kwargs)
+        version_finder = IBMQVersionFinder(credentials.base_url,
+                                           **request_kwargs)
         version_info = version_finder.version()
 
         # Check if the URL belongs to auth services of the new API.
