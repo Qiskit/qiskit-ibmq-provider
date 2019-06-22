@@ -81,7 +81,11 @@ class TestIBMQProvider(providers.ProviderTestCase):
         """Test backend pulse defaults."""
         remotes = self.provider.backends(simulator=False)
         for backend in remotes:
-            _ = backend.defaults()
+            defaults = backend.defaults()
+            if backend.configuration().open_pulse:
+                self.assertIsNotNone(defaults)
+            else:
+                self.assertIsNone(defaults)
 
     def test_qobj_headers_in_result_sims(self):
         """Test that the qobj headers are passed onto the results for sims."""
