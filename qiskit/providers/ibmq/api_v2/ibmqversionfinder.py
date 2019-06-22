@@ -26,9 +26,10 @@ class IBMQVersionFinder:
 
         Args:
             url (str): URL for the service.
-            **request_kwargs (dict): arguments for the session.
+            **request_kwargs (dict): arguments for the `requests` Session.
         """
-        self.client_version_finder = VersionFinder(RetrySession(url, **request_kwargs))
+        self.client_version_finder = VersionFinder(
+            RetrySession(url, **request_kwargs))
 
     def version(self):
         """Return the version info.
