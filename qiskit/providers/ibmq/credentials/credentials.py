@@ -76,19 +76,25 @@ class Credentials:
         return self.hub, self.group, self.project
 
     def connection_parameters(self):
-        """Return a dict of kwargs in the format expected by requests."""
+        """Return a dict of kwargs in the format expected by `requests`.
+
+        Returns:
+            dict: a dict with connection-related arguments in the format
+                expected by `requests`. The following keys can be present:
+                `proxies`, `verify`, `auth`.
+        """
         request_kwargs = {
-            'proxies': self.proxies,
             'verify': self.verify
         }
+
+        if 'urls' in self.proxies:
+            request_kwargs['proxies'] = self.proxies['urls']
 
         if 'username_ntlm' in self.proxies and 'password_ntlm' in self.proxies:
             request_kwargs['auth'] = HttpNtlmAuth(
                 self.proxies['username_ntlm'],
                 self.proxies['password_ntlm']
             )
-        else:
-            request_kwargs['auth'] = None
 
         return request_kwargs
 
