@@ -35,13 +35,15 @@ class Credentials:
     The `unique_id()` returns the unique identifier.
     """
 
-    def __init__(self, token, url, hub=None, group=None, project=None,
+    def __init__(self, token, url, websockets_url=None,
+                 hub=None, group=None, project=None,
                  proxies=None, verify=True):
         """Return new set of credentials.
 
         Args:
             token (str): Quantum Experience or IBMQ API token.
             url (str): URL for Quantum Experience or IBMQ.
+            websockets_url (str): URL for websocket server.
             hub (str): the hub used for IBMQ.
             group (str): the group used for IBMQ.
             project (str): the project used for IBMQ.
@@ -59,6 +61,7 @@ class Credentials:
         (self.url, self.base_url,
          self.hub, self.group, self.project) = _unify_ibmq_url(
              url, hub, group, project)
+        self.websockets_url = websockets_url
         self.proxies = proxies or {}
         self.verify = verify
 

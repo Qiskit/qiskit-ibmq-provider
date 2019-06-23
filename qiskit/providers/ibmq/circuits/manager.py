@@ -101,7 +101,8 @@ class CircuitsManager:
                              job_id=response['id'],
                              api=self.client,
                              creation_date=response['creationDate'],
-                             api_status=response['status'])
+                             api_status=response['status'],
+                             use_websockets=True)
         except Exception as ex:
             raise CircuitResultError(str(ex))
 

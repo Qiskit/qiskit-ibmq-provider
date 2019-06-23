@@ -91,20 +91,19 @@ class IBMQProvider(BaseProvider):
 
         for hub_info in user_hubs:
             # Build credentials.
-            provider_credentials = Credentials(credentials.token,
-                                               service_urls['http'],
-                                               hub_info['hub'],
-                                               hub_info['group'],
-                                               hub_info['project'],
-                                               credentials.proxies,
-                                               credentials.verify)
+            provider_credentials = Credentials(
+                credentials.token,
+                url=service_urls['http'],
+                websockets_url=service_urls['ws'],
+                hub=hub_info['hub'],
+                group=hub_info['group'],
+                project=hub_info['project'],
+                proxies=credentials.proxies,
+                verify=credentials.verify)
 
-            # Build the client.
-            client_project = IBMQProjectClient(
-                auth_client.current_access_token(),
-                provider_credentials.url,
-                service_urls['ws'])
-            provider = IBMQProjectProvider(provider_credentials, client_project)
+            # Build the provider.
+            provider = IBMQProjectProvider(provider_credentials,
+                                           auth_client.current_access_token())
             self._providers[provider_credentials.unique_id()] = provider
 
     def get_provider(self, hub=None, group=None, project=None):

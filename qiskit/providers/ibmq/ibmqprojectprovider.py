@@ -16,6 +16,7 @@
 
 import logging
 
+from qiskit.providers.ibmq.api_v2 import IBMQProjectClient
 from .circuits import CircuitsManager
 from .ibmqsingleprovider import IBMQSingleProvider
 
@@ -29,16 +30,19 @@ class IBMQProjectProvider(IBMQSingleProvider):
     present in future releases.
     """
 
-    def __init__(self, credentials, project_client):
+    def __init__(self, credentials, access_token):
         """Return a new IBMQSingleProvider.
 
         Args:
             credentials (Credentials): IBM Q Experience credentials.
-            project_client (IBMQProjectClient): client for communicating with
-                the API.
+            access_token (str): access token for IBM Q Experience.
         """
         self.credentials = credentials
-        self._api = project_client
+
+        self._api = IBMQProjectClient(access_token,
+                                      credentials.url,
+                                      credentials.websockets_url,
+                                      **credentials.connection_parameters())
 
         # TODO: remove when fully removing IBMQSingleProvider, and adjust
         # the reference in `_discover_remote_backends()`.
@@ -48,4 +52,8 @@ class IBMQProjectProvider(IBMQSingleProvider):
         self._backends = self._discover_remote_backends()
 
         # Set circuits manager.
-        self.circuits = CircuitsManager(project_client)
+        circuit_client = IBMQProjectClient(access_token,
+                                           credentials.base_url,
+                                           credentials.websockets_url,
+                                           **credentials.connection_parameters())
+        self.circuits = CircuitsManager(circuit_client)
