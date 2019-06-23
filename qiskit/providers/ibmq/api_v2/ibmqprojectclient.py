@@ -23,15 +23,15 @@ from .websocket import WebsocketClient
 class IBMQProjectClient(IBMQClient):
     """Client for programmatic access to the IBM Q API."""
 
-    def __init__(self, access_token, api_url, websockets_url, **kwargs):
+    def __init__(self, access_token, api_url, websockets_url, **request_kwargs):
         """IBMQClient constructor.
 
         Args:
             access_token (str):
             api_url (str):
             websockets_url (str):
-            **kwargs (dict):
+            **request_kwargs (dict): arguments for the `requests` Session.
         """
         self.client_api = Api(RetrySession(api_url, access_token,
-                                           **kwargs))
+                                           **request_kwargs))
         self.client_ws = WebsocketClient(websockets_url, access_token)

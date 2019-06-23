@@ -22,25 +22,25 @@ from .session import RetrySession
 class IBMQAuthClient:
     """Client for programmatic access to the IBM Q API."""
 
-    def __init__(self, api_token, auth_url, **kwargs):
+    def __init__(self, api_token, auth_url, **request_kwargs):
         """IBMQClient constructor.
 
         Args:
             api_token (str): IBM Q api token.
             auth_url (str): URL for the authentication service.
-            **kwargs (dict):
+            **request_kwargs (dict): arguments for the `requests` Session.
         """
         self.api_token = api_token
         self.auth_url = auth_url
 
-        self.client_auth = Auth(RetrySession(auth_url, **kwargs))
-        self.client_api = self._init_service_clients(**kwargs)
+        self.client_auth = Auth(RetrySession(auth_url, **request_kwargs))
+        self.client_api = self._init_service_clients(**request_kwargs)
 
-    def _init_service_clients(self, **kwargs):
+    def _init_service_clients(self, **request_kwargs):
         """Initialize the clients used for communicating with the API and ws.
 
         Args:
-            **kwargs (dict):
+            **request_kwargs (dict): arguments for the `requests` Session.
 
         Returns:
             Api: client for the api server.
@@ -53,7 +53,7 @@ class IBMQAuthClient:
 
         # Create the api server client, using the access token.
         client_api = Api(RetrySession(service_urls['http'], access_token,
-                                      **kwargs))
+                                      **request_kwargs))
 
         return client_api
 
