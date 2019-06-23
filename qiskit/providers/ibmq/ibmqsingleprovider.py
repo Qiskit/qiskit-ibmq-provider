@@ -24,8 +24,6 @@ from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api import IBMQConnector
-from .api_v2.clients import AccountClient, VersionClient
-from .api_v2.exceptions import AuthenticationLicenseError
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 
 
@@ -50,7 +48,6 @@ class IBMQSingleProvider(BaseProvider):
 
         # Get a connection to IBMQ.
         self.credentials = credentials
-        self.is_new_api = False
         self._api = self._authenticate(self.credentials)
         self._ibm_provider = ibmq_provider
 
@@ -66,48 +63,32 @@ class IBMQSingleProvider(BaseProvider):
 
         return filter_backends(backends, filters=filters, **kwargs)
 
-    def _authenticate(self, credentials):
+    @classmethod
+    def _authenticate(cls, credentials):
         """Authenticate against the IBMQ API.
 
         Args:
             credentials (Credentials): Quantum Experience or IBMQ credentials.
 
         Returns:
-            IBMQClient: instance of the IBMQClient if using the new API.
-            IBMQConnector: instance of the IBMQConnector if using the old API.
+            IBMQConnector: instance of the IBMQConnector.
         Raises:
             ConnectionError: if the authentication resulted in error.
         """
-        # construct kwargs to be used by the session requests
-        request_kwargs = credentials.connection_parameters()
-
-        # Use an IBMQVersionFinder for finding out the API version.
-        version_finder = VersionClient(credentials.base_url, **request_kwargs)
-        version_info = version_finder.version()
-
-        # Check if the URL belongs to auth services of the new API.
         try:
-            self.is_new_api = version_info['new_api']
-
-            if version_info['new_api'] and 'api-auth' in version_info:
-                return AccountClient(api_token=credentials.token,
-                                     auth_url=credentials.url,
-                                     **request_kwargs)
-            else:
-                # Prepare the config_dict for IBMQConnector.
-                config_dict = {
-                    'url': credentials.url
-                }
-                if credentials.proxies:
-                    config_dict['proxies'] = credentials.proxies
-
-                return IBMQConnector(credentials.token, config_dict,
-                                     credentials.verify)
-        except AuthenticationLicenseError as ex:
-            raise ConnectionError("Couldn't connect to IBMQ server: {0}"
-                                  .format(ex)) from None
+            config_dict = {
+                'url': credentials.url,
+            }
+            if credentials.proxies:
+                config_dict['proxies'] = credentials.proxies
+            return IBMQConnector(credentials.token, config_dict,
+                                 credentials.verify)
         except Exception as ex:
             root_exception = ex
+            if 'License required' in str(ex):
+                # For the 401 License required exception from the API, be
+                # less verbose with the exceptions.
+                root_exception = None
             raise ConnectionError("Couldn't connect to IBMQ server: {0}"
                                   .format(ex)) from root_exception
 

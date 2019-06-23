@@ -165,10 +165,10 @@ class TestIBMQAccounts(QiskitTestCase):
 
     def test_pass_bad_proxy(self):
         """Test proxy pass through."""
-        with self.assertRaises(RequestsApiError) as context_manager:
+        with self.assertRaises(ConnectionError) as context_manager:
             IBMQ.enable_account('dummy_token', 'https://dummy_url',
                                 proxies=PROXIES)
-        self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
+        self.assertIn('ProxyError', str(context_manager.exception))
 
 
 # TODO: NamedTemporaryFiles do not support name in Windows
