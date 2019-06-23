@@ -24,7 +24,7 @@ from .credentials.configrc import remove_credentials
 from .credentials import (Credentials,
                           read_credentials_from_qiskitrc, store_credentials, discover_credentials)
 from .exceptions import IBMQAccountError
-from .ibmqprojectprovider import IBMQProjectProvider
+from .accountprovider import AccountProvider
 from .ibmqsingleprovider import IBMQSingleProvider
 
 
@@ -102,15 +102,15 @@ class IBMQProvider(BaseProvider):
                 verify=credentials.verify)
 
             # Build the provider.
-            provider = IBMQProjectProvider(provider_credentials,
-                                           auth_client.current_access_token())
+            provider = AccountProvider(provider_credentials,
+                                       auth_client.current_access_token())
             self._providers[provider_credentials.unique_id()] = provider
 
     def get_provider(self, hub=None, group=None, project=None):
         """Return a provider for a single hub/group/project combination.
 
         Returns:
-            IBMQProjectProvider:
+            AccountProvider:
 
         Raises:
             IBMQAccountError:

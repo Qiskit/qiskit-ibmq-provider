@@ -1,0 +1,110 @@
+# -*- coding: utf-8 -*-
+
+# This code is part of Qiskit.
+#
+# (C) Copyright IBM 2017, 2018.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+"""Provider for a single IBMQ account."""
+
+import logging
+from collections import OrderedDict
+
+from qiskit.providers import BaseProvider
+from qiskit.providers.models import (QasmBackendConfiguration,
+                                     PulseBackendConfiguration)
+from qiskit.providers.providerutils import filter_backends
+from qiskit.validation.exceptions import ModelValidationError
+
+from .api_v2.clients import AccountClient
+from .circuits import CircuitsManager
+from .ibmqbackend import IBMQBackend, IBMQSimulator
+
+logger = logging.getLogger(__name__)
+
+
+class AccountProvider(BaseProvider):
+    """Provider for single IBMQ accounts.
+
+    Note: this class is not part of the public API and is not guaranteed to be
+    present in future releases.
+    """
+
+    def __init__(self, credentials, access_token):
+        """Return a new IBMQSingleProvider.
+
+        Args:
+            credentials (Credentials): IBM Q Experience credentials.
+            access_token (str): access token for IBM Q Experience.
+        """
+        super().__init__()
+
+        self.credentials = credentials
+
+        # Set the clients.
+        self._api = AccountClient(access_token,
+                                  credentials.url,
+                                  credentials.websockets_url,
+                                  **credentials.connection_parameters())
+        circuit_client = AccountClient(access_token,
+                                       credentials.base_url,
+                                       credentials.websockets_url,
+                                       **credentials.connection_parameters())
+        self.circuits = CircuitsManager(circuit_client)
+
+        # Initialize the internal list of backends, lazy-loading it on first
+        # access.
+        self._backends = None
+
+    def backends(self, name=None, filters=None, **kwargs):
+        # pylint: disable=arguments-differ
+        if self._backends is None:
+            self._backends = self._discover_remote_backends()
+
+        backends = self._backends.values()
+
+        if name:
+            kwargs['backend_name'] = name
+
+        return filter_backends(backends, filters=filters, **kwargs)
+
+    def _discover_remote_backends(self):
+        """Return the remote backends available.
+
+        Returns:
+            dict[str:IBMQBackend]: a dict of the remote backend instances,
+                keyed by backend name.
+        """
+        ret = OrderedDict()
+        configs_list = self._api.available_backends()
+        for raw_config in configs_list:
+            try:
+                if raw_config.get('open_pulse', False):
+                    config = PulseBackendConfiguration.from_dict(raw_config)
+                else:
+                    config = QasmBackendConfiguration.from_dict(raw_config)
+                backend_cls = IBMQSimulator if config.simulator else IBMQBackend
+                ret[config.backend_name] = backend_cls(
+                    configuration=config,
+                    provider=self,
+                    credentials=self.credentials,
+                    api=self._api)
+            except ModelValidationError as ex:
+                logger.warning(
+                    'Remote backend "%s" could not be instantiated due to an '
+                    'invalid config: %s',
+                    raw_config.get('backend_name',
+                                   raw_config.get('name', 'unknown')),
+                    ex)
+
+        return ret
+
+    def __eq__(self, other):
+        return self.credentials == other.credentials
