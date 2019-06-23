@@ -24,7 +24,7 @@ from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api import IBMQConnector
-from .api_v2 import IBMQClient, IBMQVersionFinder
+from .api_v2.clients import AccountClient, VersionClient
 from .api_v2.exceptions import AuthenticationLicenseError
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 
@@ -82,8 +82,7 @@ class IBMQSingleProvider(BaseProvider):
         request_kwargs = credentials.connection_parameters()
 
         # Use an IBMQVersionFinder for finding out the API version.
-        version_finder = IBMQVersionFinder(credentials.base_url,
-                                           **request_kwargs)
+        version_finder = VersionClient(credentials.base_url, **request_kwargs)
         version_info = version_finder.version()
 
         # Check if the URL belongs to auth services of the new API.
@@ -91,9 +90,9 @@ class IBMQSingleProvider(BaseProvider):
             self.is_new_api = version_info['new_api']
 
             if version_info['new_api'] and 'api-auth' in version_info:
-                return IBMQClient(api_token=credentials.token,
-                                  auth_url=credentials.url,
-                                  **request_kwargs)
+                return AccountClient(api_token=credentials.token,
+                                     auth_url=credentials.url,
+                                     **request_kwargs)
             else:
                 # Prepare the config_dict for IBMQConnector.
                 config_dict = {

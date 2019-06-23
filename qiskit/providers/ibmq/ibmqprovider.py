@@ -19,7 +19,7 @@ from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
 
-from .api_v2 import IBMQVersionFinder, IBMQAuthClient, IBMQProjectClient
+from .api_v2.clients import AuthClient, VersionClient
 from .credentials.configrc import remove_credentials
 from .credentials import (Credentials,
                           read_credentials_from_qiskitrc, store_credentials, discover_credentials)
@@ -75,7 +75,7 @@ class IBMQProvider(BaseProvider):
             IBMQAccountError:
         """
         # TODO: add checks (overwrite, mixing old and new)
-        version_finder = IBMQVersionFinder(credentials.base_url)
+        version_finder = VersionClient(credentials.base_url)
         version_info = version_finder.version()
 
         if not (version_info['new_api'] and 'api-auth' in version_info):
@@ -83,8 +83,8 @@ class IBMQProvider(BaseProvider):
                 'The URL specified ({}) is not a IBM Q Experience '
                 'authentication URL'.format(credentials.base_url))
 
-        auth_client = IBMQAuthClient(credentials.token,
-                                     credentials.base_url)
+        auth_client = AuthClient(credentials.token,
+                                 credentials.base_url)
 
         service_urls = auth_client.user_urls()
         user_hubs = auth_client.user_hubs()

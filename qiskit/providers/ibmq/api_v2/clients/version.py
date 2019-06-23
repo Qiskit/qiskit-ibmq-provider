@@ -14,11 +14,13 @@
 
 """Client for accessing IBM Q's version finder."""
 
-from .session import RetrySession
-from .rest.version_finder import VersionFinder
+from ..session import RetrySession
+from ..rest.version_finder import VersionFinder
+
+from .base import BaseClient
 
 
-class IBMQVersionFinder:
+class VersionClient(BaseClient):
     """Client for finding the API version being used."""
 
     def __init__(self, url, **request_kwargs):

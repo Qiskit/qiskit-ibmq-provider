@@ -14,12 +14,14 @@
 
 """Client for accessing authentication features of IBM Q ."""
 
-from .exceptions import AuthenticationLicenseError, RequestsApiError
-from .rest import Api, Auth
-from .session import RetrySession
+from ..exceptions import AuthenticationLicenseError, RequestsApiError
+from ..rest import Api, Auth
+from ..session import RetrySession
+
+from .base import BaseClient
 
 
-class IBMQAuthClient:
+class AuthClient(BaseClient):
     """Client for programmatic access to the IBM Q API."""
 
     def __init__(self, api_token, auth_url, **request_kwargs):

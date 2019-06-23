@@ -20,7 +20,7 @@ import warnings
 from marshmallow import ValidationError
 
 from qiskit.providers import BaseBackend, JobStatus
-from qiskit.providers.ibmq.api_v2 import IBMQClient
+from qiskit.providers.ibmq.api_v2.clients import BaseClient
 from qiskit.providers.ibmq.utils import update_qobj_config
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults)
@@ -64,7 +64,7 @@ class IBMQBackend(BaseBackend):
             IBMQJob: an instance derived from BaseJob
         """
         kwargs = {}
-        if isinstance(self._api, IBMQClient):
+        if isinstance(self._api, BaseClient):
             # Default to using object storage and websockets for new API.
             # TODO: reenable object storage when API is ready.
             kwargs = {'use_object_storage': False,
@@ -200,7 +200,7 @@ class IBMQBackend(BaseBackend):
                 # Discard pre-qobj jobs.
                 break
 
-            if isinstance(self._api, IBMQClient):
+            if isinstance(self._api, BaseClient):
                 # Default to using websockets for new API.
                 kwargs['use_websockets'] = True
             if job_kind == ApiJobKind.QOBJECT_STORAGE:
@@ -250,7 +250,7 @@ class IBMQBackend(BaseBackend):
             try:
                 job_kind = ApiJobKind(job_info.get('kind', None))
 
-                if isinstance(self._api, IBMQClient):
+                if isinstance(self._api, BaseClient):
                     # Default to using websockets for new API.
                     kwargs['use_websockets'] = True
                 if job_kind == ApiJobKind.QOBJECT_STORAGE:

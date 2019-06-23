@@ -121,7 +121,7 @@ class IBMQJob(BaseJob):
             backend (BaseBackend): The backend instance used to run this job.
             job_id (str or None): The job ID of an already submitted job.
                 Pass `None` if you are creating a new job.
-            api (IBMQConnector or IBMQClient): object for connecting to the API.
+            api (IBMQConnector or BaseClient): object for connecting to the API.
             qobj (Qobj): The Quantum Object. See notes below
             creation_date (str): When the job was run.
             api_status (str): `status` field directly from the API response.
