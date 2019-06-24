@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2017, 2019.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -31,14 +31,10 @@ logger = logging.getLogger(__name__)
 
 
 class AccountProvider(BaseProvider):
-    """Provider for single IBMQ accounts.
-
-    Note: this class is not part of the public API and is not guaranteed to be
-    present in future releases.
-    """
+    """Provider for single IBM Quantum Experience accounts."""
 
     def __init__(self, credentials, access_token):
-        """Return a new IBMQSingleProvider.
+        """Return a new AccountProvider.
 
         Args:
             credentials (Credentials): IBM Q Experience credentials.

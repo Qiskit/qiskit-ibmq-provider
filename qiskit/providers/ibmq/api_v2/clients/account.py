@@ -27,7 +27,7 @@ class AccountClient(BaseClient):
     """Client for programmatic access to the IBM Q API."""
 
     def __init__(self, access_token, api_url, websockets_url, **request_kwargs):
-        """IBMQClient constructor.
+        """AccountClient constructor.
 
         Args:
             access_token (str): IBM Q Experience access token.

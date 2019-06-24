@@ -24,7 +24,7 @@ class VersionClient(BaseClient):
     """Client for finding the API version being used."""
 
     def __init__(self, url, **request_kwargs):
-        """IBMQVersionFinder constructor.
+        """VersionClient constructor.
 
         Args:
             url (str): URL for the service.

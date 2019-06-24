@@ -16,7 +16,7 @@
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
-from qiskit.providers.ibmq import IBMQ, least_busy
+from qiskit.providers.ibmq import least_busy
 from qiskit.test import QiskitTestCase, slow_test
 
 from ...decorators import requires_provider

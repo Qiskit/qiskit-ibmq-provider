@@ -120,7 +120,7 @@ class AuthClient(BaseClient):
                              'group': group_name,
                              'project': project_name}
 
-                    # If
+                    # Move to the top if it is the default h/g/p.
                     if project.get('isDefault'):
                         hubs.insert(0, entry)
                     else:
