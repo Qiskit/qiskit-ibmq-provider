@@ -15,7 +15,11 @@
 """Model for representing IBM Q credentials."""
 
 import re
+
 from requests_ntlm import HttpNtlmAuth
+
+from .hubgroupproject import HubGroupProject
+
 
 # Regex that matches a IBMQ URL with hub information
 REGEX_IBMQ_HUBS = (
@@ -76,8 +80,11 @@ class Credentials:
         """Return a value that uniquely identifies these credentials.
 
         By convention, we assume (hub, group, project) is always unique.
+
+        Returns:
+            HubGroupProject: the (hub, group, project) tuple.
         """
-        return self.hub, self.group, self.project
+        return HubGroupProject(self.hub, self.group, self.project)
 
     def connection_parameters(self):
         """Return a dict of kwargs in the format expected by `requests`.
