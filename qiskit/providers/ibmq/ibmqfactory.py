@@ -18,7 +18,7 @@ from collections import OrderedDict
 
 from .api_v2.clients import AuthClient, VersionClient
 from .credentials import Credentials
-from .exceptions import IBMQAccountError
+from .exceptions import IBMQApiURLError, IBMQProviderError
 from .accountprovider import AccountProvider
 
 
@@ -34,12 +34,12 @@ class IBMQFactory:
 
     # Account management functions.
 
-    def enable_account(self, token, auth_url=QX_AUTH_URL, **kwargs):
+    def enable_account(self, token, url=QX_AUTH_URL, **kwargs):
         """Authenticate against IBM Q Experience for use during this session.
 
         Args:
             token (str): IBM Q Experience API token.
-            auth_url (str): URL for the IBM Q Experience auth server.
+            url (str): URL for the IBM Q Experience auth server.
             **kwargs (dict): additional settings for the connection:
                 * proxies (dict): proxy configuration.
                 * verify (bool): verify the server's TLS certificate.
@@ -48,7 +48,7 @@ class IBMQFactory:
             AccountProvider: the provider for the default open access project.
         """
         # TODO: check and clean kwargs (verify str, proxies)
-        self._initialize_providers(Credentials(token, auth_url, **kwargs))
+        self._initialize_providers(Credentials(token, url, **kwargs))
 
         return self.providers()[0]
 
@@ -101,20 +101,31 @@ class IBMQFactory:
             AccountProvider: provider that match the specified criteria.
 
         Raises:
-            IBMQAccountError: if no provider matches the specified criteria,
+            IBMQProviderError: if no provider matches the specified criteria,
                 or more than one provider match the specified criteria.
         """
         providers = self.providers(hub, group, project)
 
         if not providers:
-            raise IBMQAccountError('No providers matching the criteria')
+            raise IBMQProviderError('No providers matching the criteria')
         if len(providers) > 1:
-            raise IBMQAccountError('More than one provider matching the '
-                                   'criteria')
+            raise IBMQProviderError('More than one provider matching the '
+                                    'criteria')
 
         return providers[0]
 
     # Private functions.
+
+    @staticmethod
+    def _check_api_version(credentials):
+        """Check the version of the API in a set of credentials.
+
+        Returns:
+            dict: dictionary with version information.
+        """
+        version_finder = VersionClient(credentials.base_url,
+                                       **credentials.connection_parameters())
+        return version_finder.version()
 
     def _initialize_providers(self, credentials):
         """Authenticate against IBM Q Experience and populate the providers.
@@ -123,17 +134,16 @@ class IBMQFactory:
             credentials (Credentials): credentials for IBM Q Experience.
 
         Raises:
-            IBMQAccountError: if the credentials do not belong to a IBM Q
+            IBMQApiURLError: if the credentials do not belong to a IBM Q
                 Experience authentication URL.
         """
         # TODO: add checks (overwrite, mixing old and new)
-        version_finder = VersionClient(credentials.base_url)
-        version_info = version_finder.version()
+        version_info = self._check_api_version(credentials)
 
         if not (version_info['new_api'] and 'api-auth' in version_info):
-            raise IBMQAccountError(
+            raise IBMQApiURLError(
                 'The URL specified ({}) is not a IBM Q Experience '
-                'authentication URL'.format(credentials.base_url))
+                'authentication URL'.format(credentials.url))
 
         auth_client = AuthClient(credentials.token,
                                  credentials.base_url)
