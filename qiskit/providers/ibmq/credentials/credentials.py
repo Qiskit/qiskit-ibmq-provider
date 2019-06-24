@@ -44,7 +44,7 @@ class Credentials:
             hub (str): the hub used for IBMQ.
             group (str): the group used for IBMQ.
             project (str): the project used for IBMQ.
-            proxies (dict): proxy configuration for the API.
+            proxies (dict): proxy urls for the API.
             verify (bool): if False, ignores SSL certificates errors
 
         Note:
