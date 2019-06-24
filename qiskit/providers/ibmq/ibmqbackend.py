@@ -20,15 +20,15 @@ import warnings
 from marshmallow import ValidationError
 
 from qiskit.providers import BaseBackend, JobStatus
-from qiskit.providers.ibmq.api_v2.clients import BaseClient
-from qiskit.providers.ibmq.utils import update_qobj_config
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults)
 
 from .api import ApiError
+from .api_v2.clients import BaseClient
 from .apiconstants import ApiJobStatus, ApiJobKind
 from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .job import IBMQJob
+from .utils import update_qobj_config
 
 logger = logging.getLogger(__name__)
 

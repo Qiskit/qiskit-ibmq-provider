@@ -15,7 +15,6 @@
 """Test IBMQ online qasm simulator."""
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers.ibmq import IBMQ
 from qiskit.test import QiskitTestCase
 from qiskit.compiler import assemble, transpile
 

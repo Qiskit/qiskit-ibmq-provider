@@ -30,9 +30,9 @@ class AccountClient(BaseClient):
         """IBMQClient constructor.
 
         Args:
-            access_token (str):
-            api_url (str):
-            websockets_url (str):
+            access_token (str): IBM Q Experience access token.
+            api_url (str): IBM Q Experience URL.
+            websockets_url (str): URL for the websockets server.
             **request_kwargs (dict): arguments for the `requests` Session.
         """
         self.client_api = Api(RetrySession(api_url, access_token,

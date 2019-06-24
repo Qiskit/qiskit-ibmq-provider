@@ -73,7 +73,7 @@ class IBMQFactory:
             return self._v1_provider
 
         # Prevent using credentials not from the auth server.
-        if not 'api-auth' in version_info:
+        if 'api-auth' not in version_info:
             raise IBMQApiUrlError(
                 'The URL specified ({}) is not a IBM Q Experience '
                 'authentication URL'.format(credentials.url))
@@ -89,6 +89,11 @@ class IBMQFactory:
         return self.providers()[0]
 
     def disable_account(self):
+        """Disable the account in the current session.
+
+        Raises:
+            IBMQAccountError: if no account is in use in the session.
+        """
         raise NotImplementedError
 
     def load_account(self):
@@ -100,6 +105,7 @@ class IBMQFactory:
         raise NotImplementedError
 
     def save_account(self):
+        """Save an account to disk for future use."""
         raise NotImplementedError
 
     # Provider management functions.

@@ -20,7 +20,6 @@ from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 from unittest import skipIf
 from unittest.mock import patch
-from requests.exceptions import ProxyError
 
 from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.credentials import (
@@ -30,9 +29,7 @@ from qiskit.providers.ibmq.credentials.environ import VARIABLES_MAP
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
 from qiskit.providers.ibmq.ibmqprovider import QE_URL
 from qiskit.providers.ibmq.ibmqsingleprovider import IBMQSingleProvider
-from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 from qiskit.test import QiskitTestCase
-
 from ..contextmanagers import custom_envs, no_envs
 
 IBMQ_TEMPLATE = 'https://localhost/api/Hubs/{}/Groups/{}/Projects/{}'

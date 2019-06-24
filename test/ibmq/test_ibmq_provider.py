@@ -30,7 +30,7 @@ from ..decorators import (requires_qe_access,
 
 
 class TestIBMQProvider(providers.ProviderTestCase):
-    """Tests for all the IBMQ backends."""
+    """Tests for all the IBMQ backends through the classic API."""
 
     provider_cls = IBMQProvider
     backend_name = 'ibmq_qasm_simulator'
@@ -155,6 +155,7 @@ class TestIBMQProvider(providers.ProviderTestCase):
 
 
 class TestAccountProvider(TestIBMQProvider):
+    """Tests for all the IBMQ backends through the new API."""
 
     provider_cls = AccountProvider
 

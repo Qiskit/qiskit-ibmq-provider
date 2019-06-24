@@ -14,11 +14,9 @@
 
 """Manager for interacting with Circuits."""
 
-from functools import wraps
-
 from qiskit.providers import JobStatus
-from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 
+from ..api_v2.exceptions import RequestsApiError
 from ..job.circuitjob import CircuitJob
 from .exceptions import (CircuitError,
                          CircuitAvailabilityError, CircuitResultError,

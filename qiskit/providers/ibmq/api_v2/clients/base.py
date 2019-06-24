@@ -16,4 +16,5 @@
 
 
 class BaseClient:
+    """Abstract class for clients."""
     pass
