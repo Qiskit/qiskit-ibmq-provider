@@ -84,17 +84,20 @@ class Credentials:
                 `proxies`, `verify`, `auth`.
         """
         request_kwargs = {
-            'verify': self.verify
+            'verify': self.verify,
+            'proxies': None,
+            'auth': None
         }
 
-        if 'urls' in self.proxies:
+        if self.proxies:
+            # make the 'proxies' entry just a dict of urls
             request_kwargs['proxies'] = self.proxies['urls']
 
-        if 'username_ntlm' in self.proxies and 'password_ntlm' in self.proxies:
-            request_kwargs['auth'] = HttpNtlmAuth(
-                self.proxies['username_ntlm'],
-                self.proxies['password_ntlm']
-            )
+            if 'username_ntlm' in self.proxies and 'password_ntlm' in self.proxies:
+                request_kwargs['auth'] = HttpNtlmAuth(
+                    self.proxies['username_ntlm'],
+                    self.proxies['password_ntlm']
+                )
 
         return request_kwargs
 
