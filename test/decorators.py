@@ -18,6 +18,7 @@ import os
 from functools import wraps
 from unittest import SkipTest
 
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test.testing_options import get_test_options
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
@@ -109,6 +110,31 @@ def requires_qe_access(func):
         self.using_ibmq_credentials = credentials.is_ibmq()
         kwargs.update({'qe_token': credentials.token,
                        'qe_url': credentials.url})
+
+        return func(self, *args, **kwargs)
+
+    return _wrapper
+
+
+def requires_provider(func):
+    """Decorator that signals the test uses the online API, via a provider.
+
+    This decorator delegates into the `requires_qe_access` decorator, but
+    instead of the credentials it appends a `provider` argument to the
+    decorated function.
+
+    Args:
+        func (callable): test function to be decorated.
+
+    Returns:
+        callable: the decorated function.
+    """
+    @wraps(func)
+    @requires_qe_access
+    def _wrapper(self, qe_token, qe_url, *args, **kwargs):
+        ibmq_factory = IBMQFactory()
+        provider = ibmq_factory.enable_account(qe_token, qe_url)
+        kwargs.update({'provider': provider})
 
         return func(self, *args, **kwargs)
 

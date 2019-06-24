@@ -14,47 +14,43 @@
 
 """Backends Filtering Test."""
 
-from qiskit.providers.ibmq import IBMQ, least_busy
+from qiskit.providers.ibmq import least_busy
 from qiskit.test import QiskitTestCase
 
-from ..decorators import requires_qe_access
+from ..decorators import requires_provider
 
 
 class TestBackendFilters(QiskitTestCase):
     """Qiskit Backend Filtering Tests."""
 
-    @requires_qe_access
-    def test_filter_config_properties(self, qe_token, qe_url):
+    @requires_provider
+    def test_filter_config_properties(self, provider):
         """Test filtering by configuration properties"""
         n_qubits = 20 if self.using_ibmq_credentials else 5
 
-        IBMQ.enable_account(qe_token, qe_url)
-        filtered_backends = IBMQ.backends(n_qubits=n_qubits, local=False)
+        filtered_backends = provider.backends(n_qubits=n_qubits, local=False)
         self.assertTrue(filtered_backends)
 
-    @requires_qe_access
-    def test_filter_status_dict(self, qe_token, qe_url):
+    @requires_provider
+    def test_filter_status_dict(self, provider):
         """Test filtering by dictionary of mixed status/configuration properties"""
-        IBMQ.enable_account(qe_token, qe_url)
-        filtered_backends = IBMQ.backends(
+        filtered_backends = provider.backends(
             operational=True,  # from status
             local=False, simulator=True)  # from configuration
 
         self.assertTrue(filtered_backends)
 
-    @requires_qe_access
-    def test_filter_config_callable(self, qe_token, qe_url):
+    @requires_provider
+    def test_filter_config_callable(self, provider):
         """Test filtering by lambda function on configuration properties"""
-        IBMQ.enable_account(qe_token, qe_url)
-        filtered_backends = IBMQ.backends(
+        filtered_backends = provider.backends(
             filters=lambda x: (not x.configuration().simulator
                                and x.configuration().n_qubits >= 5))
         self.assertTrue(filtered_backends)
 
-    @requires_qe_access
-    def test_filter_least_busy(self, qe_token, qe_url):
+    @requires_provider
+    def test_filter_least_busy(self, provider):
         """Test filtering by least busy function"""
-        IBMQ.enable_account(qe_token, qe_url)
-        backends = IBMQ.backends()
+        backends = provider.backends()
         filtered_backends = least_busy(backends)
         self.assertTrue(filtered_backends)

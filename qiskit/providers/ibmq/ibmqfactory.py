@@ -186,11 +186,9 @@ class IBMQFactory:
                 credentials.token,
                 url=service_urls['http'],
                 websockets_url=service_urls['ws'],
-                hub=hub_info['hub'],
-                group=hub_info['group'],
-                project=hub_info['project'],
                 proxies=credentials.proxies,
-                verify=credentials.verify)
+                verify=credentials.verify,
+                **hub_info,)
 
             # Build the provider.
             try:
@@ -200,5 +198,4 @@ class IBMQFactory:
             except Exception as ex:  # pylint: disable=broad-except
                 # Catch-all for errors instantiating the provider.
                 logger.warning('Unable to instantiate provider for %s: %s',
-                               hub_info,
-                               ex)
+                               hub_info, ex)
