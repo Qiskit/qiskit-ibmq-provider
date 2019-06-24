@@ -16,7 +16,6 @@
 
 import logging
 from collections import OrderedDict
-from requests_ntlm import HttpNtlmAuth
 
 from qiskit.providers import BaseProvider
 from qiskit.providers.models import (QasmBackendConfiguration,
@@ -79,21 +78,12 @@ class IBMQSingleProvider(BaseProvider):
         Raises:
             ConnectionError: if the authentication resulted in error.
         """
-        # handle proxy and auth configuration
-        proxies = credentials.proxies.get('urls')
-
-        if 'username_ntlm' in credentials.proxies and 'password_ntlm' in credentials.proxies:
-            auth = HttpNtlmAuth(
-                credentials.proxies['username_ntlm'],
-                credentials.proxies['password_ntlm']
-            )
-        else:
-            auth = None
+        # construct kwargs to be used by the session requests
+        request_kwargs = credentials.connection_parameters()
 
         # Use an IBMQVersionFinder for finding out the API version.
-        version_finder = IBMQVersionFinder(url=credentials.base_url,
-                                           verify=credentials.verify,
-                                           proxies=proxies, auth=auth)
+        version_finder = IBMQVersionFinder(credentials.base_url,
+                                           **request_kwargs)
         version_info = version_finder.version()
 
         # Check if the URL belongs to auth services of the new API.
@@ -101,8 +91,9 @@ class IBMQSingleProvider(BaseProvider):
             self.is_new_api = version_info['new_api']
 
             if version_info['new_api'] and 'api-auth' in version_info:
-                return IBMQClient(api_token=credentials.token, auth_url=credentials.url,
-                                  verify=credentials.verify, proxies=proxies, auth=auth)
+                return IBMQClient(api_token=credentials.token,
+                                  auth_url=credentials.url,
+                                  **request_kwargs)
             else:
                 # Prepare the config_dict for IBMQConnector.
                 config_dict = {
