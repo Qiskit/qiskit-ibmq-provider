@@ -27,7 +27,7 @@ class IBMQAccountError(IBMQError):
     pass
 
 
-class IBMQApiURLError(IBMQAccountError):
+class IBMQApiUrlError(IBMQAccountError):
     """Errors raised due to mixing API versions."""
 
 

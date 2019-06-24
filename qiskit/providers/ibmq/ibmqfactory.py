@@ -14,13 +14,16 @@
 
 """Factory and credentials manager for IBM Q Experience."""
 
+import logging
 from collections import OrderedDict
 
+from .accountprovider import AccountProvider
 from .api_v2.clients import AuthClient, VersionClient
 from .credentials import Credentials
-from .exceptions import IBMQApiURLError, IBMQProviderError
-from .accountprovider import AccountProvider
+from .exceptions import IBMQAccountError, IBMQApiUrlError, IBMQProviderError
+from .ibmqprovider import IBMQProvider
 
+logger = logging.getLogger(__name__)
 
 QX_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 
@@ -31,6 +34,7 @@ class IBMQFactory:
     def __init__(self):
         self._credentials = None
         self._providers = OrderedDict()
+        self._v1_provider = IBMQProvider()
 
     # Account management functions.
 
@@ -46,9 +50,41 @@ class IBMQFactory:
 
         Returns:
             AccountProvider: the provider for the default open access project.
+
+        Raises:
+            IBMQAccountError: if an IBM Q Experience 2 account is already in
+                use, or if attempting using both classic API and new API
+                accounts.
+            IBMQApiUrlError: if the credentials are from IBM Q Experience 2,
+                but do not belong to the authentication URL.
         """
-        # TODO: check and clean kwargs (verify str, proxies)
-        self._initialize_providers(Credentials(token, url, **kwargs))
+        # Check if an IBM Q Experience 2 account is already in use.
+        if self._credentials:
+            raise IBMQAccountError('An IBM Q Experience 2 account is already '
+                                   'enabled.')
+
+        # Check the version used by these credentials.
+        credentials = Credentials(token, url, **kwargs)
+        version_info = self._check_api_version(credentials)
+
+        # For API 1, delegate onto the IBMQProvider.
+        if not version_info['new_api']:
+            self._v1_provider.enable_account(token, url, **kwargs)
+            return self._v1_provider
+
+        # Prevent using credentials not from the auth server.
+        if not 'api-auth' in version_info:
+            raise IBMQApiUrlError(
+                'The URL specified ({}) is not a IBM Q Experience '
+                'authentication URL'.format(credentials.url))
+
+        # Prevent mixing API 1 and API 2 credentials.
+        if self._v1_provider.active_accounts():
+            raise IBMQAccountError('An IBM Q Experience 1 account is '
+                                   'already enabled.')
+
+        # Initialize the API 2 providers.
+        self._initialize_providers(credentials)
 
         return self.providers()[0]
 
@@ -134,23 +170,16 @@ class IBMQFactory:
             credentials (Credentials): credentials for IBM Q Experience.
 
         Raises:
-            IBMQApiURLError: if the credentials do not belong to a IBM Q
+            IBMQApiUrlError: if the credentials do not belong to a IBM Q
                 Experience authentication URL.
         """
-        # TODO: add checks (overwrite, mixing old and new)
-        version_info = self._check_api_version(credentials)
-
-        if not (version_info['new_api'] and 'api-auth' in version_info):
-            raise IBMQApiURLError(
-                'The URL specified ({}) is not a IBM Q Experience '
-                'authentication URL'.format(credentials.url))
-
         auth_client = AuthClient(credentials.token,
                                  credentials.base_url)
 
         service_urls = auth_client.user_urls()
         user_hubs = auth_client.user_hubs()
 
+        self._credentials = credentials
         for hub_info in user_hubs:
             # Build credentials.
             provider_credentials = Credentials(
@@ -164,6 +193,12 @@ class IBMQFactory:
                 verify=credentials.verify)
 
             # Build the provider.
-            provider = AccountProvider(provider_credentials,
-                                       auth_client.current_access_token())
-            self._providers[provider_credentials.unique_id()] = provider
+            try:
+                provider = AccountProvider(provider_credentials,
+                                           auth_client.current_access_token())
+                self._providers[provider_credentials.unique_id()] = provider
+            except Exception as ex:  # pylint: disable=broad-except
+                # Catch-all for errors instantiating the provider.
+                logger.warning('Unable to instantiate provider for %s: %s',
+                               hub_info,
+                               ex)
