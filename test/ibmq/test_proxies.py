@@ -12,14 +12,15 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Tests for the IBMQClient and IBMQVersionFinder proxy support."""
+"""Tests for the AuthClient and VersionClient proxy support."""
 
 import urllib
 import subprocess
 
 from requests.exceptions import ProxyError
 
-from qiskit.providers.ibmq.api_v2 import IBMQClient, IBMQVersionFinder
+from qiskit.providers.ibmq.api_v2.clients import (AuthClient,
+                                                  VersionClient)
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 from qiskit.test import QiskitTestCase, requires_qe_access
 
@@ -52,11 +53,11 @@ class TestProxies(QiskitTestCase):
 
     @requires_qe_access
     @requires_new_api_auth
-    def test_proxies_ibmqclient(self, qe_token, qe_url):
+    def test_proxies_authclient(self, qe_token, qe_url):
         """Should reach the proxy using IBMQClient."""
         pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
 
-        _ = IBMQClient(qe_token, qe_url, proxies=VALID_PROXIES)
+        _ = AuthClient(qe_token, qe_url, proxies=VALID_PROXIES)
 
         self.proxy_process.terminate()  # kill to be able of reading the output
         self.assertIn(pproxy_desired_access_log_line_,
@@ -65,12 +66,12 @@ class TestProxies(QiskitTestCase):
     # pylint: disable=unused-argument
     @requires_qe_access
     @requires_new_api_auth
-    def test_proxies_ibmqversionfinder(self, qe_token, qe_url):
+    def test_proxies_versionclient(self, qe_token, qe_url):
         """Should reach the proxy using IBMQVersionFinder."""
         pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
 
-        version_finder = IBMQVersionFinder(qe_url, proxies=VALID_PROXIES)
-        version_finder.version()  # call the version finder, sending logging to the proxy process
+        version_finder = VersionClient(qe_url, proxies=VALID_PROXIES)
+        version_finder.version()
 
         self.proxy_process.terminate()  # kill to be able of reading the output
         self.assertIn(pproxy_desired_access_log_line_,
@@ -78,46 +79,48 @@ class TestProxies(QiskitTestCase):
 
     @requires_qe_access
     @requires_new_api_auth
-    def test_invalid_proxy_port_ibmqclient(self, qe_token, qe_url):
-        """Should raise RequestApiError with ProxyError as original exception using IBMQClient."""
+    def test_invalid_proxy_port_authclient(self, qe_token, qe_url):
+        """Should raise RequestApiError with ProxyError using AuthClient."""
         with self.assertRaises(RequestsApiError) as context_manager:
-            _ = IBMQClient(qe_token, qe_url, proxies=INVALID_PORT_PROXIES)
+            _ = AuthClient(qe_token, qe_url, proxies=INVALID_PORT_PROXIES)
 
-        self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
+        self.assertIsInstance(context_manager.exception.original_exception,
+                              ProxyError)
 
     # pylint: disable=unused-argument
     @requires_qe_access
     @requires_new_api_auth
-    def test_invalid_proxy_port_ibmqversionfinder(self, qe_token, qe_url):
-        """Should raise RequestApiError with ProxyError as
-            original exception using IBMQVersionFinder."""
+    def test_invalid_proxy_port_versionclient(self, qe_token, qe_url):
+        """Should raise RequestApiError with ProxyError using VersionClient."""
         with self.assertRaises(RequestsApiError) as context_manager:
-            version_finder = IBMQVersionFinder(qe_url, proxies=INVALID_PORT_PROXIES)
+            version_finder = VersionClient(qe_url, proxies=INVALID_PORT_PROXIES)
             version_finder.version()
 
-        self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
+        self.assertIsInstance(context_manager.exception.original_exception,
+                              ProxyError)
 
     @requires_qe_access
     @requires_new_api_auth
-    def test_invalid_proxy_address_ibmqclient(self, qe_token, qe_url):
-        """Should raise RequestApiError with ProxyError as
-            original exception using IBMQClient."""
+    def test_invalid_proxy_address_authclient(self, qe_token, qe_url):
+        """Should raise RequestApiError with ProxyError using AuthClient."""
         with self.assertRaises(RequestsApiError) as context_manager:
-            _ = IBMQClient(qe_token, qe_url, proxies=INVALID_ADDRESS_PROXIES)
+            _ = AuthClient(qe_token, qe_url, proxies=INVALID_ADDRESS_PROXIES)
 
-        self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
+        self.assertIsInstance(context_manager.exception.original_exception,
+                              ProxyError)
 
-    # pylint: disable=unused-argument
     @requires_qe_access
     @requires_new_api_auth
-    def test_invalid_proxy_address_ibmqversionfinder(self, qe_token, qe_url):
-        """Should raise RequestApiError with ProxyError as
-            original exception using IBMQVersionFinder."""
+    def test_invalid_proxy_address_versionclient(self, qe_token, qe_url):
+        """Should raise RequestApiError with ProxyError using VersionClient."""
+        # pylint: disable=unused-argument
         with self.assertRaises(RequestsApiError) as context_manager:
-            version_finder = IBMQVersionFinder(qe_url, proxies=INVALID_ADDRESS_PROXIES)
+            version_finder = VersionClient(qe_url,
+                                           proxies=INVALID_ADDRESS_PROXIES)
             version_finder.version()
 
-        self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
+        self.assertIsInstance(context_manager.exception.original_exception,
+                              ProxyError)
 
 
 def pproxy_desired_access_log_line(url):

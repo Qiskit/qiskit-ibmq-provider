@@ -17,7 +17,7 @@
 import asyncio
 import json
 
-from qiskit.providers.ibmq.api_v2.websocket import WebsocketMessage
+from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketMessage
 
 
 TOKEN_JOB_COMPLETED = 'token_job_completed'
