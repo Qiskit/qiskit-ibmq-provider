@@ -150,74 +150,6 @@ class TestIBMQClient(QiskitTestCase):
 
     @requires_qe_access
     @requires_new_api_auth
-    def test_get_job_includes(self, qe_token, qe_url):
-        """Check the include fields parameter for get_job."""
-        IBMQ.enable_account(qe_token, qe_url)
-
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, including some fields.
-        self.assertIn('backend', job)
-        self.assertIn('shots', job)
-        job_included = api.get_job(job_id, include_fields=['backend', 'shots'])
-
-        # Ensure the result has only the included fields
-        self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_get_job_excludes(self, qe_token, qe_url):
-        """Check the exclude fields parameter for get_job."""
-        IBMQ.enable_account(qe_token, qe_url)
-
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, excluding a field.
-        self.assertIn('shots', job)
-        self.assertIn('backend', job)
-        job_excluded = api.get_job(job_id, exclude_fields=['backend'])
-
-        # Ensure the result only excludes the specified field
-        self.assertNotIn('backend', job_excluded)
-        self.assertIn('shots', job)
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_get_job_includes_nonexistent(self, qe_token, qe_url):
-        """Check get_job including nonexistent fields."""
-        IBMQ.enable_account(qe_token, qe_url)
-
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, including an nonexistent field.
-        self.assertNotIn('dummy_include', job)
-        job_included = api.get_job(job_id, include_fields=['dummy_include'])
-        # Ensure the result is empty, since no existing fields are included
-        self.assertFalse(job_included)
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_get_job_excludes_nonexistent(self, qe_token, qe_url):
-        """Check get_job excluding nonexistent fields."""
-        IBMQ.enable_account(qe_token, qe_url)
-
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, excluding an non-existent field.
-        self.assertNotIn('dummy_exclude', job)
-        self.assertIn('shots', job)
-        job_excluded = api.get_job(job_id, exclude_fields=['dummy_exclude'])
-
-        # Ensure the result only excludes the specified field. We can't do a direct
-        # comparison against the original job because some fields might have changed.
-        self.assertIn('shots', job_excluded)
-
-    @requires_qe_access
-    @requires_new_api_auth
     def test_exception_message(self, qe_token, qe_url):
         """Check exception has proper message."""
         api = self._get_client(qe_token, qe_url)
@@ -298,3 +230,75 @@ class TestAuthentication(QiskitTestCase):
         qe_url = 'INVALID_URL'
         with self.assertRaises(ApiError):
             _ = IBMQClient(qe_token, qe_url)
+
+
+class TestIBMQClientJobs(QiskitTestCase):
+    """Tests for IBMQClient methods relating to inspecting its jobs."""
+
+    # pylint: disable=arguments-differ
+    @classmethod
+    @requires_qe_access
+    @requires_new_api_auth
+    def setUpClass(cls, qe_token, qe_url):
+        super().setUpClass()
+
+        IBMQ.enable_account(qe_token, qe_url)
+
+        # Create a circuit
+        qr = QuantumRegister(2)
+        cr = ClassicalRegister(2)
+        qc1 = QuantumCircuit(qr, cr, name='qc1')
+        seed = 73846087
+
+        # Create a Qobj.
+        backend_name = 'ibmq_qasm_simulator'
+        backend = IBMQ.get_backend(backend_name)
+        circuit = transpile(qc1, backend, seed_transpiler=seed)
+        qobj = assemble(circuit, backend, shots=1)
+
+        # Run the job through the IBMQClient directly.
+        cls.api = backend._api
+        cls.job = cls.api.submit_job(qobj.to_dict(), backend_name)
+
+        cls.job_id = cls.job['id']
+
+    def test_get_job_includes(self):
+        """Check the include fields parameter for get_job."""
+        # Get the job, including some fields.
+        self.assertIn('backend', self.job)
+        self.assertIn('shots', self.job)
+        job_included = self.api.get_job(self.job_id, include_fields=['backend', 'shots'])
+
+        # Ensure the result has only the included fields
+        self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
+
+    def test_get_job_excludes(self):
+        """Check the exclude fields parameter for get_job."""
+
+        # Get the job, excluding a field.
+        self.assertIn('shots', self.job)
+        self.assertIn('backend', self.job)
+        job_excluded = self.api.get_job(self.job_id, exclude_fields=['backend'])
+
+        # Ensure the result only excludes the specified field
+        self.assertNotIn('backend', job_excluded)
+        self.assertIn('shots', self.job)
+
+    def test_get_job_includes_nonexistent(self):
+        """Check get_job including nonexistent fields."""
+        # Get the job, including an nonexistent field.
+        self.assertNotIn('dummy_include', self.job)
+        job_included = self.api.get_job(self.job_id, include_fields=['dummy_include'])
+        # Ensure the result is empty, since no existing fields are included
+        self.assertFalse(job_included)
+
+    def test_get_job_excludes_nonexistent(self):
+        """Check get_job excluding nonexistent fields."""
+        # Get the job, excluding an non-existent field.
+        self.assertNotIn('dummy_exclude', self.job)
+        self.assertIn('shots', self.job)
+        job_excluded = self.api.get_job(self.job_id, exclude_fields=['dummy_exclude'])
+
+        # Ensure the result only excludes the specified field. We can't do a direct
+        # comparison against the original job because some fields might have changed.
+        self.assertIn('shots', job_excluded)
