@@ -8,7 +8,7 @@ trigger:
 - stable
 
 pool:
-  vmImage: ''vs2017-win2016'
+  vmImage: 'vs2017-win2016'
 strategy:
   matrix:
     Python35:
@@ -23,13 +23,11 @@ steps:
   inputs:
     versionSpec: '$(python.version)'
   displayName: 'Use Python $(python.version)'
-
 - script: |
     python -m pip install --upgrade pip
     pip install -U -r requirements.txt
     pip install -U -r requirements-dev.txt
   displayName: 'Install dependencies'
-
 - script: |
     pip install pytest pytest-azurepipelines
     pytest -s -v
