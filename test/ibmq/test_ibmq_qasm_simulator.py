@@ -43,7 +43,7 @@ class TestIbmqQasmSimulator(QiskitTestCase):
         result = job.result()
         counts = result.get_counts(qc)
         target = {'0': shots / 2, '1': shots / 2}
-        threshold = 0.04 * shots
+        threshold = 0.05 * shots
         self.assertDictAlmostEqual(counts, target, threshold)
 
     @requires_qe_access
@@ -73,7 +73,7 @@ class TestIbmqQasmSimulator(QiskitTestCase):
         target1 = {'00': shots / 4, '01': shots / 4,
                    '10': shots / 4, '11': shots / 4}
         target2 = {'00': shots / 2, '11': shots / 2}
-        threshold = 0.04 * shots
+        threshold = 0.05 * shots
         self.assertDictAlmostEqual(counts1, target1, threshold)
         self.assertDictAlmostEqual(counts2, target2, threshold)
 
