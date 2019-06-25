@@ -17,9 +17,10 @@
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq import least_busy
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test import QiskitTestCase, slow_test
 
-from ...decorators import requires_provider
+from ...decorators import requires_qe_access, requires_new_api_auth
 
 
 class TestWebsocketIntegration(QiskitTestCase):
@@ -31,9 +32,12 @@ class TestWebsocketIntegration(QiskitTestCase):
         self._qc1 = QuantumCircuit(qr, cr, name='qc1')
         self._qc1.measure(qr[0], cr[0])
 
-    @requires_provider
-    def test_websockets_simulator(self, provider):
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_websockets_simulator(self, qe_token, qe_url):
         """Test checking status of a job via websockets for a simulator."""
+        ibmq_factory = IBMQFactory()
+        provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = provider.get_backend(simulator=True)
 
         qc = transpile(self._qc1, backend=backend)
@@ -47,9 +51,12 @@ class TestWebsocketIntegration(QiskitTestCase):
         self.assertEqual(result.status, 'COMPLETED')
 
     @slow_test
-    @requires_provider
-    def test_websockets_device(self, provider):
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_websockets_device(self, qe_token, qe_url):
         """Test checking status of a job via websockets for a device."""
+        ibmq_factory = IBMQFactory()
+        provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = least_busy(provider.backends(simulator=False))
 
         qc = transpile(self._qc1, backend=backend)
