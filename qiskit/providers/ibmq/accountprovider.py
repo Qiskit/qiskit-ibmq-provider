@@ -66,13 +66,12 @@ class AccountProvider(BaseProvider):
 
         backends = self._backends.values()
 
+        # Special handling of the `name` parameter, to support alias
+        # resolution.
         if name:
-            # Special handling of the `name` parameter, to support alias
-            # resolution.
-            if name:
-                aliases = self._aliased_backend_names()
-                aliases.update(self._deprecated_backend_names())
-                name = aliases.get(name, name)
+            aliases = self._aliased_backend_names()
+            aliases.update(self._deprecated_backend_names())
+            name = aliases.get(name, name)
             kwargs['backend_name'] = name
 
         return filter_backends(backends, filters=filters, **kwargs)
