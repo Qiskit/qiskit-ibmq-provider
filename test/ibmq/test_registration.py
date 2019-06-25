@@ -283,13 +283,13 @@ class TestCredentialsKwargs(QiskitTestCase):
             'dummy_token', 'https://dummy_url', proxies=proxies_with_ntlm_dict)
         result = proxies_with_ntlm_credentials.connection_parameters()
 
-        # verify the NTLM credentials
+        # Verify the NTLM credentials.
         self.assertEqual(
             ntlm_expected_result['auth'].username, result['auth'].username)
         self.assertEqual(
             ntlm_expected_result['auth'].password, result['auth'].password)
 
-        # remove the HttpNtlmAuth objects for direct comparison of the dicts
+        # Remove the HttpNtlmAuth objects for direct comparison of the dicts.
         ntlm_expected_result.pop('auth')
         result.pop('auth')
         self.assertDictEqual(ntlm_expected_result, result)
@@ -301,8 +301,11 @@ class TestCredentialsKwargs(QiskitTestCase):
         malformed_nested_credentials = Credentials(
             'dummy_token', 'https://dummy_url',
             proxies=malformed_nested_proxies_dict)
-        with self.assertRaises(KeyError):
-            _ = dict(malformed_nested_credentials.connection_parameters())
+
+        # Malformed proxy entries should be ignored.
+        expected_result = {'verify': True}
+        result = malformed_nested_credentials.connection_parameters()
+        self.assertDictEqual(expected_result, result)
 
     def test_malformed_ntlm_params(self):
         """Test input with malformed NTLM credentials."""
@@ -315,10 +318,10 @@ class TestCredentialsKwargs(QiskitTestCase):
         malformed_ntlm_credentials = Credentials(
             'dummy_token', 'https://dummy_url',
             proxies=malformed_ntlm_credentials_dict)
-        # should raise when trying to do username.split('\\', <int>)
-        # in NTLM credentials due to int not facilitating 'split'
+        # Should raise when trying to do username.split('\\', <int>)
+        # in NTLM credentials due to int not facilitating 'split'.
         with self.assertRaises(AttributeError):
-            _ = dict(malformed_ntlm_credentials.connection_parameters())
+            _ = malformed_ntlm_credentials.connection_parameters()
 
 
 # Context managers
