@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for accessing authentication features of IBM Q ."""
+"""Client for accessing authentication features of IBM Q."""
 
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
 from ..rest import Api, Auth
@@ -22,7 +22,7 @@ from .base import BaseClient
 
 
 class AuthClient(BaseClient):
-    """Client for programmatic access to the IBM Q API."""
+    """Client for accessing authentication features of IBM Q."""
 
     def __init__(self, api_token, auth_url, **request_kwargs):
         """IBMQClient constructor.
