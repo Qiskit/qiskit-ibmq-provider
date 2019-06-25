@@ -102,16 +102,16 @@ def requires_qe_access(func):
         callable: the decorated function.
     """
     @wraps(func)
-    def _wrapper(*args, **kwargs):
+    def _wrapper(obj, *args, **kwargs):
         if get_test_options()['skip_online']:
             raise SkipTest('Skipping online tests')
 
         credentials = _get_credentials()
-        args[0].using_ibmq_credentials = credentials.is_ibmq()
+        obj.using_ibmq_credentials = credentials.is_ibmq()
         kwargs.update({'qe_token': credentials.token,
                        'qe_url': credentials.url})
 
-        return func(*args, **kwargs)
+        return func(obj, *args, **kwargs)
 
     return _wrapper
 
@@ -131,12 +131,14 @@ def requires_provider(func):
     """
     @wraps(func)
     @requires_qe_access
-    def _wrapper(self, qe_token, qe_url, *args, **kwargs):
+    def _wrapper(*args, **kwargs):
         ibmq_factory = IBMQFactory()
+        qe_token = kwargs.pop('qe_token')
+        qe_url = kwargs.pop('qe_url')
         provider = ibmq_factory.enable_account(qe_token, qe_url)
         kwargs.update({'provider': provider})
 
-        return func(self, *args, **kwargs)
+        return func(*args, **kwargs)
 
     return _wrapper
 
