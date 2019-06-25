@@ -292,12 +292,6 @@ class TestIBMQJobStates(JobTestCase):
         with self.assertRaises(JobTimeoutError):
             job.result(timeout=0.2)
 
-    def test_cancel_while_initializing_fails(self):
-        job = self.run_with_api(CancellableAPI())
-        can_cancel = job.cancel()
-        self.assertFalse(can_cancel)
-        self.assertEqual(job.status(), JobStatus.INITIALIZING)
-
     def test_only_final_states_cause_detailed_request(self):
         from unittest import mock
 
