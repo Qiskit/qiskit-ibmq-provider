@@ -238,27 +238,32 @@ class TestCredentials(QiskitTestCase):
         self.assertEqual(len(credentials), 1)
         self.assertEqual(list(credentials.values())[0].token, 'QCONFIG_TOKEN')
 
+
+class TestCredentialsKwargs(QiskitTestCase):
+    """Test for `Credentials.connection_parameters()`."""
+
     def test_no_proxy_params(self):
         """Test when no proxy parameters are passed."""
-        no_params_expected_result = {'verify': True, 'proxies': None, 'auth': None}
+        no_params_expected_result = {'verify': True}
         no_params_credentials = Credentials('dummy_token', 'https://dummy_url')
-        result = dict(no_params_credentials.connection_parameters())
+        result = no_params_credentials.connection_parameters()
         self.assertDictEqual(no_params_expected_result, result)
 
     def test_verify_param(self):
         """Test 'verify' arg is acknowledged."""
-        false_verify_expected_result = {'verify': False, 'proxies': None, 'auth': None}
-        false_verify_credentials = Credentials('dummy_token', 'https://dummy_url', verify=False)
-        result = dict(false_verify_credentials.connection_parameters())
+        false_verify_expected_result = {'verify': False}
+        false_verify_credentials = Credentials(
+            'dummy_token', 'https://dummy_url', verify=False)
+        result = false_verify_credentials.connection_parameters()
         self.assertDictEqual(false_verify_expected_result, result)
 
     def test_proxy_param(self):
         """Test using only proxy urls (no NTLM credentials)."""
         urls = {'http': 'localhost:8080', 'https': 'localhost:8080'}
-        proxies_only_expected_result = {'verify': True, 'proxies': urls, 'auth': None}
+        proxies_only_expected_result = {'verify': True, 'proxies': urls}
         proxies_only_credentials = Credentials(
             'dummy_token', 'https://dummy_url', proxies={'urls': urls})
-        result = dict(proxies_only_credentials.connection_parameters())
+        result = proxies_only_credentials.connection_parameters()
         self.assertDictEqual(proxies_only_expected_result, result)
 
     def test_proxies_param_with_ntlm(self):
@@ -276,7 +281,7 @@ class TestCredentials(QiskitTestCase):
         }
         proxies_with_ntlm_credentials = Credentials(
             'dummy_token', 'https://dummy_url', proxies=proxies_with_ntlm_dict)
-        result = dict(proxies_with_ntlm_credentials.connection_parameters())
+        result = proxies_with_ntlm_credentials.connection_parameters()
 
         # verify the NTLM credentials
         self.assertEqual(
@@ -284,7 +289,7 @@ class TestCredentials(QiskitTestCase):
         self.assertEqual(
             ntlm_expected_result['auth'].password, result['auth'].password)
 
-        # remove the NTLM HttpNtlmAuth objects for direct comparison of the dicts
+        # remove the HttpNtlmAuth objects for direct comparison of the dicts
         ntlm_expected_result.pop('auth')
         result.pop('auth')
         self.assertDictEqual(ntlm_expected_result, result)
@@ -294,7 +299,8 @@ class TestCredentials(QiskitTestCase):
         urls = {'http': 'localhost:8080', 'https': 'localhost:8080'}
         malformed_nested_proxies_dict = {'proxies': urls}
         malformed_nested_credentials = Credentials(
-            'dummy_token', 'https://dummy_url', proxies=malformed_nested_proxies_dict)
+            'dummy_token', 'https://dummy_url',
+            proxies=malformed_nested_proxies_dict)
         with self.assertRaises(KeyError):
             _ = dict(malformed_nested_credentials.connection_parameters())
 
@@ -307,7 +313,8 @@ class TestCredentials(QiskitTestCase):
             'password_ntlm': 5678
         }
         malformed_ntlm_credentials = Credentials(
-            'dummy_token', 'https://dummy_url', proxies=malformed_ntlm_credentials_dict)
+            'dummy_token', 'https://dummy_url',
+            proxies=malformed_ntlm_credentials_dict)
         # should raise when trying to do username.split('\\', <int>)
         # in NTLM credentials due to int not facilitating 'split'
         with self.assertRaises(AttributeError):

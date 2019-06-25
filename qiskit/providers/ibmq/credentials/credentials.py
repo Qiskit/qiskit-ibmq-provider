@@ -84,9 +84,7 @@ class Credentials:
                 `proxies`, `verify`, `auth`.
         """
         request_kwargs = {
-            'verify': self.verify,
-            'proxies': None,
-            'auth': None
+            'verify': self.verify
         }
 
         if self.proxies:
