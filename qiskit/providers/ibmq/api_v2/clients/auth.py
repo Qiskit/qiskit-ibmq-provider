@@ -25,7 +25,7 @@ class AuthClient(BaseClient):
     """Client for accessing authentication features of IBM Q."""
 
     def __init__(self, api_token, auth_url, **request_kwargs):
-        """IBMQClient constructor.
+        """AuthClient constructor.
 
         Args:
             api_token (str): IBM Q api token.
