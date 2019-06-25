@@ -78,34 +78,6 @@ class TestIBMQClient(QiskitTestCase):
 
     @requires_qe_access
     @requires_new_api_auth
-    def test_run_job_object_storage(self, qe_token, qe_url):
-        """Test running a job against a simulator using object storage."""
-        IBMQ.enable_account(qe_token, qe_url)
-
-        # Create a Qobj.
-        backend_name = 'ibmq_qasm_simulator'
-        backend = IBMQ.get_backend(backend_name)
-        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
-        qobj = assemble(circuit, backend, shots=1)
-
-        # Run the job through the IBMQClient directly using object storage.
-        api = backend._api
-        job = api.job_submit_object_storage(backend_name, qobj.to_dict())
-        job_id = job['id']
-        self.assertEqual(job['kind'], 'q-object-external-storage')
-
-        # Wait for completion.
-        api.job_final_status_websocket(job_id)
-
-        # Fetch results and qobj via object storage.
-        result = api.job_result_object_storage(job_id)
-        qobj_downloaded = api.job_download_qobj_object_storage(job_id)
-
-        self.assertEqual(qobj_downloaded, qobj.to_dict())
-        self.assertEqual(result['status'], 'COMPLETED')
-
-    @requires_qe_access
-    @requires_new_api_auth
     def test_get_status_jobs(self, qe_token, qe_url):
         """Check get status jobs by user authenticated."""
         api = self._get_client(qe_token, qe_url)
@@ -275,7 +247,6 @@ class TestIBMQClientJobs(QiskitTestCase):
 
     def test_get_job_excludes(self):
         """Check the exclude fields parameter for get_job."""
-
         # Get the job, excluding a field.
         self.assertIn('shots', self.job)
         self.assertIn('backend', self.job)
@@ -306,44 +277,32 @@ class TestIBMQClientJobs(QiskitTestCase):
 
     def test_job_submit(self):
         """Test job submission."""
-        result = self.client.job_submit(self.backend_name, self.qobj.to_dict())
-        status_present = ['status' in [dict_ for dict_ in result.get('qasms')]]
-        self.assertTrue(status_present)
+        # self.job is submitted in setUpClass
+        self.assertIn('status', self.job)
 
     @skip
     # TODO: Q-Object-External-Storage property is not allowed in this backend
     def test_job_submit_object_storage(self):
         """Test job submission using object storage."""
-        # Get the job via object storage.
-        # result = self.client.job_submit_object_storage(self.backend_name,
-        #                                                self.qobj.to_dict())
+        # Run the job through the IBMQClient directly using object storage.
+        job = self.client.job_submit_object_storage(self.backend_name, self.qobj.to_dict())
+        job_id = job['id']
+        self.assertEqual(job['kind'], 'q-object-external-storage')
 
-        # TODO
-        pass
+        # Wait for completion.
+        self.client.job_final_status_websocket(job_id)
 
-    @skip
-    # TODO: RequestsApiError: 404 Client Error: Not Found for url: [...] None, Error code: NotFound.
-    def test_job_download_qobj_object_storage(self):
-        """Test job Qobj download using object storage."""
-        # result = self.client.job_download_qobj_object_storage(self.job_id)
+        # Fetch results and qobj via object storage.
+        result = self.client.job_result_object_storage(job_id)
+        qobj_downloaded = self.client.job_download_qobj_object_storage(job_id)
 
-        # TODO
-        pass
+        self.assertEqual(qobj_downloaded, self.qobj.to_dict())
+        self.assertEqual(result['status'], 'COMPLETED')
 
-    @skip
-    # TODO: RequestsApiError: 404 Client Error: Not Found for url: [...] None, Error code: NotFound.
-    def test_job_result_object_storage(self):
-        """Test getting a job's result using object storage."""
-        # result = self.client.job_result_object_storage(self.job_id)
-
-        # TODO
-        pass
-
-    def test_job_get_responsive(self):
+    def test_job_get(self):
         """Test getting a job responds with something other than None."""
         result = self.client.job_get(self.job_id)
-        status_present = ['status' in [dict_ for dict_ in result.get('qasms')]]
-        self.assertTrue(status_present)
+        self.assertIsNotNone(result)
 
     def test_job_get_filtered_fields(self):
         """Test getting a job responds uses field filters correctly."""
@@ -368,26 +327,15 @@ class TestIBMQClientJobs(QiskitTestCase):
     def test_job_status(self):
         """Test getting job status."""
         result = self.client.job_status(self.job_id)
-        status_present = 'status' in result
-        self.assertTrue(status_present)
+        self.assertIn('status', result)
 
     def test_job_final_status_websocket(self):
         """Test getting a job's final status via websocket."""
         result = self.client.job_final_status_websocket(self.job_id)
-        status_present = 'status' in result
-        self.assertTrue(status_present)
+        self.assertIn('status', result)
 
     def test_job_properties(self):
         """Test getting job properties."""
         # TODO - is {} an acceptable response here?
         result = self.client.job_properties(self.job_id)
         self.assertIsNotNone(result)
-
-    # TODO: RequestsApiError: 404 Client Error: Not Found for url: [...]
-    def test_job_cancel(self):
-        """Test cancelling a job."""
-        result = self.client.job_cancel(self.job_id)
-        print(result)
-
-        # TODO
-        pass
