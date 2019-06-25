@@ -271,6 +271,9 @@ class IBMQJob(BaseJob):
         Raises:
             JobError: if there was some unexpected failure in the server.
         """
+        # Wait for the job ID to become available.
+        self._wait_for_submission()
+
         try:
             response = self._api.cancel_job(self._job_id)
             self._cancelled = 'error' not in response
@@ -551,7 +554,7 @@ class IBMQJob(BaseJob):
         """Waits for the request to return a job ID"""
         if self._job_id is None:
             if self._future is None:
-                raise JobError("You have to submit before asking for status or results!")
+                raise JobError("You have to submit the job before doing a job related operation!")
             try:
                 submit_info = self._future.result(timeout=timeout)
                 if self._future_captured_exception is not None:
