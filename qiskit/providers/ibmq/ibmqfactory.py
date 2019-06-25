@@ -149,7 +149,7 @@ class IBMQFactory:
         providers = self.providers(hub, group, project)
 
         if not providers:
-            raise IBMQProviderError('No providers matching the criteria')
+            raise IBMQProviderError('No provider matching the criteria')
         if len(providers) > 1:
             raise IBMQProviderError('More than one provider matching the '
                                     'criteria')
