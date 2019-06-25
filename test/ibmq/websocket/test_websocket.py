@@ -98,6 +98,9 @@ class TestWebsocketClientMock(QiskitTestCase):
             _ = asyncio.get_event_loop().run_until_complete(
                 client.get_job_status('job_id', timeout=2))
 
+    # TODO timeout with http retry
+    # TODO websocket error with http retry
+
     def test_invalid_response(self):
         """Test unparseable response from the server."""
         client = WebsocketClient('ws://{}:{}'.format(

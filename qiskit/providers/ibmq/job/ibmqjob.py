@@ -226,7 +226,7 @@ class IBMQJob(BaseJob):
 
             The first call to this method in an ``IBMQJob`` instance will query
             the API and consume the job if it finished successfully (otherwise
-            it will raise a ``JobError`` exception without consumming the job).
+            it will raise a ``JobError`` exception without consuming the job).
             Subsequent calls to that instance's method will also return the
             results, since they are cached. However, attempting to retrieve the
             results again in another instance or session might fail due to the
@@ -271,6 +271,9 @@ class IBMQJob(BaseJob):
         Raises:
             JobError: if there was some unexpected failure in the server.
         """
+
+        self._wait_for_submission()
+
         try:
             response = self._api.cancel_job(self._job_id)
             self._cancelled = 'error' not in response
@@ -530,6 +533,7 @@ class IBMQJob(BaseJob):
 
         # Attempt to use websocket if available.
         if self._use_websockets:
+            start_time = time.time()
             try:
                 self._wait_for_final_status_websocket(timeout)
                 return
@@ -538,11 +542,13 @@ class IBMQJob(BaseJob):
                                'retrying using HTTP.')
                 logger.debug(ex)
             except JobTimeoutError as ex:
-                # TODO: check with API team for timeout reliability. With this
-                # block, the user timeout is effectively doubled.
                 logger.warning('Timeout checking job status using websocket, '
                                'retrying using HTTP')
                 logger.debug(ex)
+
+            # Adjust timeout for HTTP retry.
+            if timeout is not None:
+                timeout -= (time.time() - start_time)
 
         # Use traditional http requests if websocket not available or failed.
         self._wait_for_final_status(timeout, wait)
