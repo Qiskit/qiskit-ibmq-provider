@@ -264,6 +264,10 @@ class IBMQJob(BaseJob):
     def cancel(self):
         """Attempt to cancel a job.
 
+        Note:
+            This function waits for a job ID to become available if the job
+            has been submitted but not yet queued.
+
         Returns:
             bool: True if job can be cancelled, else False. Note this operation
             might not be possible depending on the environment.
