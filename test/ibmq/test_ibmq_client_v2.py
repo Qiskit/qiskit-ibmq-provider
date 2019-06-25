@@ -15,6 +15,7 @@
 """Tests for the IBMQClient for API v2."""
 
 import re
+from unittest import skip
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
@@ -251,14 +252,14 @@ class TestIBMQClientJobs(QiskitTestCase):
         seed = 73846087
 
         # Create a Qobj.
-        backend_name = 'ibmq_qasm_simulator'
-        backend = IBMQ.get_backend(backend_name)
+        cls.backend_name = 'ibmq_qasm_simulator'
+        backend = IBMQ.get_backend(cls.backend_name)
         circuit = transpile(qc1, backend, seed_transpiler=seed)
-        qobj = assemble(circuit, backend, shots=1)
+        cls.qobj = assemble(circuit, backend, shots=1)
 
         # Run the job through the IBMQClient directly.
-        cls.api = backend._api
-        cls.job = cls.api.submit_job(qobj.to_dict(), backend_name)
+        cls.client = backend._api
+        cls.job = cls.client.submit_job(cls.qobj.to_dict(), cls.backend_name)
 
         cls.job_id = cls.job['id']
 
@@ -267,7 +268,7 @@ class TestIBMQClientJobs(QiskitTestCase):
         # Get the job, including some fields.
         self.assertIn('backend', self.job)
         self.assertIn('shots', self.job)
-        job_included = self.api.get_job(self.job_id, include_fields=['backend', 'shots'])
+        job_included = self.client.get_job(self.job_id, include_fields=['backend', 'shots'])
 
         # Ensure the result has only the included fields
         self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
@@ -278,7 +279,7 @@ class TestIBMQClientJobs(QiskitTestCase):
         # Get the job, excluding a field.
         self.assertIn('shots', self.job)
         self.assertIn('backend', self.job)
-        job_excluded = self.api.get_job(self.job_id, exclude_fields=['backend'])
+        job_excluded = self.client.get_job(self.job_id, exclude_fields=['backend'])
 
         # Ensure the result only excludes the specified field
         self.assertNotIn('backend', job_excluded)
@@ -288,7 +289,7 @@ class TestIBMQClientJobs(QiskitTestCase):
         """Check get_job including nonexistent fields."""
         # Get the job, including an nonexistent field.
         self.assertNotIn('dummy_include', self.job)
-        job_included = self.api.get_job(self.job_id, include_fields=['dummy_include'])
+        job_included = self.client.get_job(self.job_id, include_fields=['dummy_include'])
         # Ensure the result is empty, since no existing fields are included
         self.assertFalse(job_included)
 
@@ -297,8 +298,96 @@ class TestIBMQClientJobs(QiskitTestCase):
         # Get the job, excluding an non-existent field.
         self.assertNotIn('dummy_exclude', self.job)
         self.assertIn('shots', self.job)
-        job_excluded = self.api.get_job(self.job_id, exclude_fields=['dummy_exclude'])
+        job_excluded = self.client.get_job(self.job_id, exclude_fields=['dummy_exclude'])
 
         # Ensure the result only excludes the specified field. We can't do a direct
         # comparison against the original job because some fields might have changed.
         self.assertIn('shots', job_excluded)
+
+    def test_job_submit(self):
+        """Test job submission."""
+        result = self.client.job_submit(self.backend_name, self.qobj.to_dict())
+        status_present = ['status' in [dict_ for dict_ in result.get('qasms')]]
+        self.assertTrue(status_present)
+
+    @skip
+    # TODO: Q-Object-External-Storage property is not allowed in this backend
+    def test_job_submit_object_storage(self):
+        """Test job submission using object storage."""
+        # Get the job via object storage.
+        # result = self.client.job_submit_object_storage(self.backend_name,
+        #                                                self.qobj.to_dict())
+
+        # TODO
+        pass
+
+    @skip
+    # TODO: RequestsApiError: 404 Client Error: Not Found for url: [...] None, Error code: NotFound.
+    def test_job_download_qobj_object_storage(self):
+        """Test job Qobj download using object storage."""
+        # result = self.client.job_download_qobj_object_storage(self.job_id)
+
+        # TODO
+        pass
+
+    @skip
+    # TODO: RequestsApiError: 404 Client Error: Not Found for url: [...] None, Error code: NotFound.
+    def test_job_result_object_storage(self):
+        """Test getting a job's result using object storage."""
+        # result = self.client.job_result_object_storage(self.job_id)
+
+        # TODO
+        pass
+
+    def test_job_get_responsive(self):
+        """Test getting a job responds with something other than None."""
+        result = self.client.job_get(self.job_id)
+        status_present = ['status' in [dict_ for dict_ in result.get('qasms')]]
+        self.assertTrue(status_present)
+
+    def test_job_get_filtered_fields(self):
+        """Test getting a job responds uses field filters correctly."""
+        no_params_result = self.client.job_get(self.job_id)
+
+        # test exclusion returns a different result than the default
+        excluded_fields = ['qasms']
+        excluded_fields_result = self.client.job_get(self.job_id, excluded_fields=excluded_fields)
+        self.assertNotEqual(excluded_fields_result, no_params_result)
+
+        # test inclusion returns a different result than the default
+        included_fields = ['qasms']
+        included_fields_result = self.client.job_get(self.job_id, included_fields=included_fields)
+        self.assertNotEqual(included_fields_result, no_params_result)
+
+        # test sending both an include and exclude list uses only the include list
+        include_and_exclude_result = self.client.job_get(self.job_id,
+                                                         included_fields=included_fields,
+                                                         excluded_fields=excluded_fields)
+        self.assertDictEqual(include_and_exclude_result, included_fields_result)
+
+    def test_job_status(self):
+        """Test getting job status."""
+        result = self.client.job_status(self.job_id)
+        status_present = 'status' in result
+        self.assertTrue(status_present)
+
+    def test_job_final_status_websocket(self):
+        """Test getting a job's final status via websocket."""
+        result = self.client.job_final_status_websocket(self.job_id)
+        status_present = 'status' in result
+        self.assertTrue(status_present)
+
+    def test_job_properties(self):
+        """Test getting job properties."""
+        # TODO - is {} an acceptable response here?
+        result = self.client.job_properties(self.job_id)
+        self.assertIsNotNone(result)
+
+    # TODO: RequestsApiError: 404 Client Error: Not Found for url: [...]
+    def test_job_cancel(self):
+        """Test cancelling a job."""
+        result = self.client.job_cancel(self.job_id)
+        print(result)
+
+        # TODO
+        pass
