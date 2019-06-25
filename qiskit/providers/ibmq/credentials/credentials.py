@@ -88,8 +88,8 @@ class Credentials:
         }
 
         if self.proxies:
-            # make the 'proxies' entry just a dict of urls
-            request_kwargs['proxies'] = self.proxies['urls']
+            if 'urls' in self.proxies:
+                request_kwargs['proxies'] = self.proxies['urls']
 
             if 'username_ntlm' in self.proxies and 'password_ntlm' in self.proxies:
                 request_kwargs['auth'] = HttpNtlmAuth(
