@@ -24,7 +24,7 @@ class Job(RestAdapterBase):
 
     URL_MAP = {
         'callback_upload': '/jobDataUploaded',
-        'cancel': 'cancel',
+        'cancel': '/cancel',
         'download_url': '/jobDownloadUrl',
         'self': '',
         'status': '/status',

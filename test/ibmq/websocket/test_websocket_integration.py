@@ -13,12 +13,17 @@
 # that they have been altered from the originals.
 
 """Test for the Websocket client integration."""
+from unittest import mock
+from threading import Thread
+from queue import Queue
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
+from qiskit.providers import JobTimeoutError
 from qiskit.providers.ibmq import IBMQ, least_busy
-from qiskit.providers.ibmq.api_v2.exceptions import (
-    WebsocketError, WebsocketTimeoutError, WebsocketIBMQProtocolError)
+from qiskit.providers.ibmq.api_v2.websocket import WebsocketClient, WebsocketMessage
+from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+from qiskit.providers.jobstatus import JobStatus
 from qiskit.test import QiskitTestCase, slow_test
 
 from ...decorators import requires_new_api_auth, requires_qe_access
@@ -27,44 +32,37 @@ from ...decorators import requires_new_api_auth, requires_qe_access
 class TestWebsocketIntegration(QiskitTestCase):
     """Websocket integration tests."""
 
-    @classmethod
+    # pylint: disable=arguments-differ
     @requires_qe_access
     @requires_new_api_auth
-    def setUpClass(cls, qe_token, qe_url):
-        super().setUpClass()
-
+    def setUp(self, qe_token, qe_url):
         IBMQ.enable_account(qe_token, qe_url)
-
+        self.sim_backend = IBMQ.get_backend('ibmq_qasm_simulator')
         # Create a circuit
         qr = QuantumRegister(1)
         cr = ClassicalRegister(1)
-        cls._qc1 = QuantumCircuit(qr, cr, name='qc1')
-        cls._qc1.measure(qr[0], cr[0])
+        self.qc1 = QuantumCircuit(qr, cr, name='qc1')
+        self.qc1.measure(qr[0], cr[0])
 
-    def test_websockets_simulator(self,):
+        # Create and run a default Qobj using the simulator.
+        self.circuit = transpile(self.qc1, backend=self.sim_backend)
+        self.qobj = assemble(self.circuit, backend=self.sim_backend, shots=1)
+        self.job = self.sim_backend.run(self.qobj)
+
+    def test_websockets_simulator(self):
         """Test checking status of a job via websockets for a simulator."""
-        #IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend(simulator=True)
-
-        qc = transpile(self._qc1, backend=backend)
-        qobj = assemble(qc, backend=backend)
-
-        job = backend.run(qobj)
         # Manually disable the non-websocket polling.
-        job._wait_for_final_status = None
-        result = job.result()
+        self.job._wait_for_final_status = None
+        result = self.job.result()
 
         self.assertEqual(result.status, 'COMPLETED')
 
     @slow_test
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_websockets_device(self, qe_token, qe_url):
+    def test_websockets_device(self):
         """Test checking status of a job via websockets for a device."""
-        IBMQ.enable_account(qe_token, qe_url)
         backend = least_busy(IBMQ.backends(simulator=False))
 
-        qc = transpile(self._qc1, backend=backend)
+        qc = transpile(self.qc1, backend=backend)
         qobj = assemble(qc, backend=backend)
 
         job = backend.run(qobj)
@@ -74,66 +72,87 @@ class TestWebsocketIntegration(QiskitTestCase):
 
         self.assertEqual(result.status, 'COMPLETED')
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_websockets_job_final_state(self, qe_token, qe_url):
+    def test_websockets_job_final_state(self):
         """Test checking status of a job in a final state via websockets."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend(simulator=True)
-        job = self._send_job_to_backend(backend)
+        # Cancel the job to put it in a final (cancelled) state.
+        self.job.cancel()
+        self.job._wait_for_completion()
+        self.assertIs(self.job._status, JobStatus.CANCELLED)
 
-        # Cancel the job to put it in a final state.
-        job.cancel()
-        job.result(timeout=1)
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_websockets_retry_bad_url(self, qe_token, qe_url):
-        """Test checking status of a job via websockets for a simulator."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend(simulator=True)
-        job = self._send_job_to_backend(backend)
-
+    def test_websockets_retry_bad_url(self):
+        """Test http retry after websocket error due to an invalid URL."""
         # Use fake websocket address.
-        job._api.client_ws.websocket_url = 'wss://wss.wayne-enterprises.com'
+        self.job._api.client_ws.websocket_url = 'wss://wss.wayne-enterprises.com'
 
-        result = job.result()
-        self.assertEqual(result.status, 'COMPLETED')
+        # _wait_for_completion() should retry with http successfully after getting websockets error.
+        self.job._wait_for_completion()
+        self.assertIs(self.job._status, JobStatus.DONE)
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_websockets_retry_bad_auth(self, qe_token, qe_url):
-        """Test checking status of a job via websockets for a simulator."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend(simulator=True)
-        job = self._send_job_to_backend(backend)
+    @mock.patch.object(WebsocketClient, '_authentication_message',
+                       return_value=WebsocketMessage(type_='authentication', data='phantom_token'))
+    def test_websockets_retry_bad_auth(self, _):
+        """Test http retry after websocket error due to a failed authentication."""
+        with mock.patch.object(IBMQJob, '_wait_for_final_status',
+                               side_effect=self.job._wait_for_final_status) as mocked_wait:
+            self.job._wait_for_completion()
+            self.assertIs(self.job._status, JobStatus.DONE)
+            mocked_wait.assert_called_with(mock.ANY, mock.ANY)
 
-        # Use fake websocket address.
-        job._api.client_ws.websocket_url = 'wss://wss.wayne-enterprises.com'
+    def test_websockets_retry_connection_closed(self):
+        """Test http retry after websocket error due to closed connection."""
 
-        result = job.result()
-        self.assertEqual(result.status, 'COMPLETED')
+        def _final_status_side_effect(*args, **kwargs):
+            """Side effect function to restore job ID"""
+            self.job._job_id = saved_job_id
+            return saved_wait_for_final_status(*args, **kwargs)
 
-    def _send_job_to_backend(self, backend):
-        """Send a job a simulator.
+        self.job._wait_for_submission()
 
-        Args:
-            backend (IBMQBackend): backend to send the job to.
+        # Save the originals.
+        saved_job_id = self.job._job_id
+        saved_wait_for_final_status = self.job._wait_for_final_status
+        # Use bad job ID to fail the status retrieval.
+        self.job._job_id = '12345'
 
-        Returns:
-            IBMQJob: an instance derived from BaseJob, representing the job.
-        """
-        qc = transpile(self._qc1, backend=backend)
+        # job.result() should retry with http successfully after getting websockets error.
+        with mock.patch.object(IBMQJob, '_wait_for_final_status',
+                               side_effect=_final_status_side_effect):
+            self.job._wait_for_completion()
+            self.assertIs(self.job._status, JobStatus.DONE)
+
+    @slow_test
+    def test_websockets_timeout(self):
+        """Test timeout checking status of a job via websockets."""
+        backend = IBMQ.get_backend('ibmqx4')
+
+        qc = transpile(self.qc1, backend=backend)
         qobj = assemble(qc, backend=backend)
-
         job = backend.run(qobj)
-        return job
 
-    # TODO test getting status after already got final status  (i.e. cancelled)
-    # TODO test web socket error
-    #   connection, authentication, etc?
-    # TODO test timeout error?
+        job._wait_for_submission()
+        with self.assertRaises(JobTimeoutError):
+            job.result(timeout=0.1)
 
-    # TODO stress test
-    # - checking status of multiple jobs
-    # - multiple checking of same job
+    def test_websockets_multi_job(self):
+        """Test checking status of multiple jobs in parallel via websockets."""
+
+        def _run_job_get_result(q):
+            job = self.sim_backend.run(self.qobj)
+            job._wait_for_completion()
+            if job._status is not JobStatus.DONE:
+                q.put(False)
+
+        max_threads = 2
+        result_q = Queue()
+        job_threads = []
+
+        for i in range(max_threads):
+            job_thread = Thread(target=_run_job_get_result, args=(result_q,),
+                                name="job_result_{}".format(i), daemon=True)
+            job_thread.start()
+            job_threads.append(job_thread)
+
+        for job_thread in job_threads:
+            job_thread.join()
+
+        self.assertTrue(result_q.empty())

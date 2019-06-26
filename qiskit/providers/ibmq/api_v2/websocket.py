@@ -146,8 +146,6 @@ class WebsocketClient:
         start_time = time.time()
         last_status = None
 
-        print(">>>>>> websocket get_job_status called")
-
         try:
             # Read messages from the server until the connection is closed or
             # a timeout has been reached.
