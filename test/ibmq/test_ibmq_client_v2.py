@@ -18,6 +18,7 @@ import re
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
+from qiskit.providers import JobStatus
 from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.api_v2 import IBMQClient
 from qiskit.providers.ibmq.api_v2.exceptions import ApiError, RequestsApiError
@@ -28,7 +29,7 @@ from ..contextmanagers import custom_envs, no_envs
 
 
 class TestIBMQClient(QiskitTestCase):
-    """Tests for IBMQConnector."""
+    """Tests for IBMQClient."""
 
     def setUp(self):
         qr = QuantumRegister(2)
@@ -215,6 +216,20 @@ class TestIBMQClient(QiskitTestCase):
         # Ensure the result only excludes the specified field. We can't do a direct
         # comparison against the original job because some fields might have changed.
         self.assertIn('shots', job_excluded)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_job_cancel(self, qe_token, qe_url):
+        """Test job cancellation."""
+        IBMQ.enable_account(qe_token, qe_url)
+
+        backend = IBMQ.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile([self.qc1, self.qc2], backend=backend, seed_transpiler=self.seed),
+                        backend=backend, shots=1)
+        job = backend.run(qobj)
+        cancelled = job.cancel()
+        self.assertTrue(cancelled)
+        self.assertTrue(job.status() is JobStatus.CANCELLED)
 
     @requires_qe_access
     @requires_new_api_auth
