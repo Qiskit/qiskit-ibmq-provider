@@ -163,6 +163,7 @@ class TestIBMQClientAccounts(QiskitTestCase):
             for warn in w:
                 self.assertTrue(issubclass(warn.category, DeprecationWarning))
 
+
 @contextmanager
 def custom_qiskitrc(contents=b''):
     """Context manager that uses a temporary qiskitrc."""

@@ -117,6 +117,9 @@ class IBMQFactory:
             **kwargs (dict): This parameter is deprecated.
                 * proxies (dict): Proxy configuration for the API.
                 * verify (bool): If False, ignores SSL certificates errors
+
+        Raises:
+            NotImplementedError: TODO delete when implemented
         """
         if token is not None:
             extra_msg = "" if self._credentials is not None else \
@@ -126,8 +129,8 @@ class IBMQFactory:
                           DeprecationWarning)
         if self._credentials is not None:
             raise NotImplementedError
-        else:
-            self._v1_provider.save_account(token, url=url, overwrite=overwrite, **kwargs)
+
+        self._v1_provider.save_account(token, url=url, overwrite=overwrite, **kwargs)
 
     def delete_account(self):
         """Delete saved account from disk"""
