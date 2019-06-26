@@ -21,7 +21,7 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers import JobTimeoutError
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.api_v2.websocket import WebsocketClient, WebsocketMessage
+from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketClient, WebsocketMessage
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
@@ -38,8 +38,8 @@ class TestWebsocketIntegration(QiskitTestCase):
     @requires_new_api_auth
     def setUp(self, qe_token, qe_url):
         ibmq_factory = IBMQFactory()
-        provider = ibmq_factory.enable_account(qe_token, qe_url)
-        self.sim_backend = provider.get_backend(simulator=True)
+        self.provider = ibmq_factory.enable_account(qe_token, qe_url)
+        self.sim_backend = self.provider.get_backend(simulator=True)
 
         # Create a circuit
         qr = QuantumRegister(1)
@@ -63,7 +63,7 @@ class TestWebsocketIntegration(QiskitTestCase):
     @slow_test
     def test_websockets_device(self):
         """Test checking status of a job via websockets for a device."""
-        backend = least_busy(provider.backends(simulator=False))
+        backend = least_busy(self.provider.backends(simulator=False))
 
         qc = transpile(self.qc1, backend=backend)
         qobj = assemble(qc, backend=backend)
@@ -126,7 +126,7 @@ class TestWebsocketIntegration(QiskitTestCase):
     @slow_test
     def test_websockets_timeout(self):
         """Test timeout checking status of a job via websockets."""
-        backend = IBMQ.get_backend('ibmqx4')
+        backend = least_busy(self.provider.backends(simulator=False))
 
         qc = transpile(self.qc1, backend=backend)
         qobj = assemble(qc, backend=backend)
