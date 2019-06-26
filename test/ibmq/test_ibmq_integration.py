@@ -15,13 +15,13 @@
 """IBMQ provider integration tests (compile and run)."""
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers.ibmq import IBMQ, least_busy
+from qiskit.providers.ibmq import least_busy
 from qiskit.result import Result
 from qiskit.test import QiskitTestCase
 from qiskit.execute import execute
 from qiskit.compiler import assemble, transpile
 
-from ..decorators import requires_qe_access
+from ..decorators import requires_provider
 
 
 class TestIBMQIntegration(QiskitTestCase):
@@ -38,22 +38,20 @@ class TestIBMQIntegration(QiskitTestCase):
         self._qc2.x(qr[0])
         self._qc2.measure(qr[0], cr[0])
 
-    @requires_qe_access
-    def test_ibmq_result_fields(self, qe_token, qe_url):
+    @requires_provider
+    def test_ibmq_result_fields(self, provider):
         """Test components of a result from a remote simulator."""
-        IBMQ.enable_account(qe_token, qe_url)
-        remote_backend = IBMQ.get_backend(local=False, simulator=True)
+        remote_backend = provider.get_backend(local=False, simulator=True)
         remote_result = execute(self._qc1, remote_backend).result()
         self.assertEqual(remote_result.backend_name, remote_backend.name())
         self.assertIsInstance(remote_result.job_id, str)
         self.assertEqual(remote_result.status, 'COMPLETED')
         self.assertEqual(remote_result.results[0].status, 'DONE')
 
-    @requires_qe_access
-    def test_compile_remote(self, qe_token, qe_url):
+    @requires_provider
+    def test_compile_remote(self, provider):
         """Test Compiler remote."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = least_busy(IBMQ.backends())
+        backend = least_busy(provider.backends())
 
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
@@ -65,11 +63,10 @@ class TestIBMQIntegration(QiskitTestCase):
         circuits = transpile(qc, backend=backend)
         self.assertIsInstance(circuits, QuantumCircuit)
 
-    @requires_qe_access
-    def test_compile_two_remote(self, qe_token, qe_url):
+    @requires_provider
+    def test_compile_two_remote(self, provider):
         """Test Compiler remote on two circuits."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = least_busy(IBMQ.backends())
+        backend = least_busy(provider.backends())
 
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
@@ -83,11 +80,10 @@ class TestIBMQIntegration(QiskitTestCase):
         self.assertIsInstance(circuits[0], QuantumCircuit)
         self.assertIsInstance(circuits[1], QuantumCircuit)
 
-    @requires_qe_access
-    def test_compile_run_remote(self, qe_token, qe_url):
+    @requires_provider
+    def test_compile_run_remote(self, provider):
         """Test Compiler and run remote."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend(local=False, simulator=True)
+        backend = provider.get_backend(local=False, simulator=True)
 
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
@@ -101,11 +97,10 @@ class TestIBMQIntegration(QiskitTestCase):
         result = job.result(timeout=20)
         self.assertIsInstance(result, Result)
 
-    @requires_qe_access
-    def test_compile_two_run_remote(self, qe_token, qe_url):
+    @requires_provider
+    def test_compile_two_run_remote(self, provider):
         """Test Compiler and run two circuits."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend(local=False, simulator=True)
+        backend = provider.get_backend(local=False, simulator=True)
 
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
@@ -121,11 +116,10 @@ class TestIBMQIntegration(QiskitTestCase):
         result = job.result()
         self.assertIsInstance(result, Result)
 
-    @requires_qe_access
-    def test_execute_remote(self, qe_token, qe_url):
+    @requires_provider
+    def test_execute_remote(self, provider):
         """Test Execute remote."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend(local=False, simulator=True)
+        backend = provider.get_backend(local=False, simulator=True)
 
         qubit_reg = QuantumRegister(2)
         clbit_reg = ClassicalRegister(2)
@@ -138,11 +132,10 @@ class TestIBMQIntegration(QiskitTestCase):
         results = job.result()
         self.assertIsInstance(results, Result)
 
-    @requires_qe_access
-    def test_execute_two_remote(self, qe_token, qe_url):
+    @requires_provider
+    def test_execute_two_remote(self, provider):
         """Test execute two remote."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend(local=False, simulator=True)
+        backend = provider.get_backend(local=False, simulator=True)
 
         qubit_reg = QuantumRegister(2)
         clbit_reg = ClassicalRegister(2)

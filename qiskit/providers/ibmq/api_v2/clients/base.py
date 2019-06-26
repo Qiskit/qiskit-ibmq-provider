@@ -12,4 +12,9 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Q API version 2 connector and utilities."""
+"""Base Client for accessing IBM Q."""
+
+
+class BaseClient:
+    """Abstract class for clients."""
+    pass

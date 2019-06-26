@@ -27,11 +27,19 @@ class IBMQAccountError(IBMQError):
     pass
 
 
+class IBMQApiUrlError(IBMQAccountError):
+    """Errors raised due to mixing API versions."""
+
+
+class IBMQProviderError(IBMQAccountError):
+    """Errors related to provider handling."""
+
+
 class IBMQBackendError(IBMQError):
-    """IBM Q Backend Errors"""
+    """IBM Q Backend Errors."""
     pass
 
 
 class IBMQBackendValueError(IBMQError, ValueError):
-    """Value errors thrown within IBMQBackend """
+    """Value errors thrown within IBMQBackend."""
     pass
