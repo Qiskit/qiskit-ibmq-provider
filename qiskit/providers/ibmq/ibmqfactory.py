@@ -18,6 +18,8 @@ import logging
 import warnings
 from collections import OrderedDict
 
+from qiskit.providers.exceptions import QiskitBackendNotFoundError
+
 from .accountprovider import AccountProvider
 from .api_v2.clients import AuthClient, VersionClient
 from .credentials import Credentials
@@ -249,7 +251,7 @@ class IBMQFactory:
         """
         warnings.warn('IBMQ.backends() is being deprecated. '
                       'Please use providers() to find the desired AccountProvider and '
-                      'AccountProvider.backends() to find its backends',
+                      'AccountProvider.backends() to find its backends.',
                       DeprecationWarning)
 
         if self._credentials:
@@ -270,6 +272,36 @@ class IBMQFactory:
             return backends
         else:
             return self._v1_provider.backends(name, filters, **kwargs)
+
+    def get_backend(self, name=None, **kwargs):
+        """Return a single backend matching the specified filtering.
+
+        Args:
+            name (str): name of the backend.
+            **kwargs (dict): dict used for filtering.
+
+        Returns:
+            BaseBackend: a backend matching the filtering.
+
+        Raises:
+            QiskitBackendNotFoundError: if no backend could be found or
+                more than one backend matches the filtering criteria.
+        """
+        warnings.warn('IBMQ.get_backend() is being deprecated. '
+                      'Please use providers() to find the desired AccountProvider and '
+                      'AccountProvider.get_backend() to find the backend.',
+                      DeprecationWarning)
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            backends = self.backends(name, **kwargs)
+
+        if len(backends) > 1:
+            raise QiskitBackendNotFoundError('More than one backend matches the criteria')
+        if not backends:
+            raise QiskitBackendNotFoundError('No backend matches the criteria')
+
+        return backends[0]
 
     # Provider management functions.
 

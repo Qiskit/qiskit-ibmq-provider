@@ -125,7 +125,6 @@ class TestIBMQClientAccounts(QiskitTestCase):
 
     @requires_qe_access
     @requires_classic_api
-    @skipIf(os.name == 'nt', 'Test not supported in Windows')
     def test_api1_accounts_compatibility(self, qe_token, qe_url):
         """Test backward compatibility for IBMQProvider account methods."""
         ibmq = IBMQFactory()
@@ -146,7 +145,7 @@ class TestIBMQClientAccounts(QiskitTestCase):
     @requires_classic_api
     @skipIf(os.name == 'nt', 'Test not supported in Windows')
     def test_api1_qiskitrc_compatibility(self, qe_token, qe_url):
-        """Test login into API 2 during an already logged-in API 1 account."""
+        """Test backward compatibility for IBMQProvider qiskitrc related methods."""
         ibmq = IBMQFactory()
         ibmq.enable_account(qe_token, qe_url)
 
@@ -162,6 +161,22 @@ class TestIBMQClientAccounts(QiskitTestCase):
             self.assertEqual(len(w), 4)
             for warn in w:
                 self.assertTrue(issubclass(warn.category, DeprecationWarning))
+
+    @requires_qe_access
+    @requires_classic_api
+    def test_api1_backends_compatibility(self, qe_token, qe_url):
+        """Test backward compatibility for IBMQProvider backends method."""
+        ibmq = IBMQFactory()
+        ibmq.enable_account(qe_token, qe_url)
+
+        ibmq_provider = IBMQProvider()
+        ibmq_provider.enable_account(qe_token, qe_url)
+        ibmq_provider_backend_names = [b.name() for b in ibmq_provider.backends()]
+
+        with warnings.catch_warnings(record=True) as w:
+            ibmq_backend_names = [b.name() for b in ibmq.backends()]
+            self.assertEqual(set(ibmq_backend_names), set(ibmq_provider_backend_names))
+            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
 
 @contextmanager
