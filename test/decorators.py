@@ -150,7 +150,7 @@ def _get_credentials():
         Credentials: set of credentials
 
     Raises:
-        SkipTest: when the credential could not be set and they are needed
+        Exception: when the credential could not be set and they are needed
             for that set of options
     """
     if os.getenv('USE_ALTERNATE_ENV_CREDENTIALS', ''):
