@@ -13,9 +13,14 @@
 # that they have been altered from the originals.
 
 """Tests for the IBMQFactory."""
-
+import os
+import warnings
+from contextlib import contextmanager
+from tempfile import NamedTemporaryFile
+from unittest import skipIf
 
 from qiskit.providers.ibmq.accountprovider import AccountProvider
+from qiskit.providers.ibmq.credentials import configrc
 from qiskit.providers.ibmq.exceptions import IBMQAccountError, IBMQApiUrlError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.ibmqprovider import IBMQProvider
@@ -34,6 +39,11 @@ AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 
 class TestIBMQClientAccounts(QiskitTestCase):
     """Tests for IBMQConnector."""
+
+    @classmethod
+    def setUpClass(cls):
+        # Cause all warnings to always be triggered.
+        warnings.simplefilter("always")
 
     @requires_qe_access
     @requires_new_api_auth
@@ -112,3 +122,60 @@ class TestIBMQClientAccounts(QiskitTestCase):
             ibmq.enable_account(qe_token_api2, qe_url_api2)
 
         self.assertIn('already', str(context_manager.exception))
+
+    @requires_qe_access
+    @requires_classic_api
+    @skipIf(os.name == 'nt', 'Test not supported in Windows')
+    def test_api1_accounts_compatibility(self, qe_token, qe_url):
+        """Test backward compatibility for IBMQProvider account methods."""
+        ibmq = IBMQFactory()
+        ibmq.enable_account(qe_token, qe_url)
+
+        with warnings.catch_warnings(record=True) as w:
+            accounts = ibmq.active_accounts()[0]
+            self.assertEqual(accounts['token'], qe_token)
+            self.assertEqual(accounts['url'], qe_url)
+
+            ibmq.disable_accounts()
+            self.assertEqual(len(ibmq.active_accounts()), 0)
+            self.assertEqual(len(w), 3)
+            for warn in w:
+                self.assertTrue(issubclass(warn.category, DeprecationWarning))
+
+    @requires_qe_access
+    @requires_classic_api
+    @skipIf(os.name == 'nt', 'Test not supported in Windows')
+    def test_api1_qiskitrc_compatibility(self, qe_token, qe_url):
+        """Test login into API 2 during an already logged-in API 1 account."""
+        ibmq = IBMQFactory()
+        ibmq.enable_account(qe_token, qe_url)
+
+        with warnings.catch_warnings(record=True) as w:
+            with custom_qiskitrc():
+                ibmq.save_account(token=qe_token, url=qe_url)
+                accounts = ibmq.stored_accounts()[0]
+                self.assertEqual(accounts['token'], qe_token)
+                self.assertEqual(accounts['url'], qe_url)
+                ibmq.delete_accounts()
+                self.assertEqual(len(ibmq.stored_accounts()), 0)
+
+            self.assertEqual(len(w), 4)
+            for warn in w:
+                self.assertTrue(issubclass(warn.category, DeprecationWarning))
+
+@contextmanager
+def custom_qiskitrc(contents=b''):
+    """Context manager that uses a temporary qiskitrc."""
+    # Create a temporary file with the contents.
+    tmp_file = NamedTemporaryFile()
+    tmp_file.write(contents)
+    tmp_file.flush()
+
+    # Temporarily modify the default location of the qiskitrc file.
+    default_qiskitrc_file_original = configrc.DEFAULT_QISKITRC_FILE
+    configrc.DEFAULT_QISKITRC_FILE = tmp_file.name
+    yield
+
+    # Delete the temporary file and restore the default location.
+    tmp_file.close()
+    configrc.DEFAULT_QISKITRC_FILE = default_qiskitrc_file_original
