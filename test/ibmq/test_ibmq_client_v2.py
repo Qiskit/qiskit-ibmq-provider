@@ -18,17 +18,17 @@ import re
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
-from qiskit.providers.ibmq import IBMQ
-from qiskit.providers.ibmq.api_v2 import IBMQClient
+from qiskit.providers.ibmq.api_v2.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api_v2.exceptions import ApiError, RequestsApiError
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test import QiskitTestCase
 
 from ..decorators import requires_new_api_auth, requires_qe_access
 from ..contextmanagers import custom_envs, no_envs
 
 
-class TestIBMQClient(QiskitTestCase):
-    """Tests for IBMQConnector."""
+class TestAccountClient(QiskitTestCase):
+    """Tests for AccountClient."""
 
     def setUp(self):
         qr = QuantumRegister(2)
@@ -44,46 +44,46 @@ class TestIBMQClient(QiskitTestCase):
         self.qc2.measure(qr[1], cr[1])
         self.seed = 73846087
 
-    @staticmethod
-    def _get_client(qe_token, qe_url):
+    @classmethod
+    def setUpClass(cls):
+        cls.provider = cls._get_provider()
+        cls.access_token = cls.provider._api.client_api.session.access_token
+
+    @classmethod
+    @requires_qe_access
+    @requires_new_api_auth
+    def _get_provider(cls, qe_token=None, qe_url=None):
+        """Helper for getting account credentials."""
+        ibmq_factory = IBMQFactory()
+        provider = ibmq_factory.enable_account(qe_token, qe_url)
+        return provider
+
+    def _get_client(self):
         """Helper for instantiating an IBMQClient."""
-        return IBMQClient(qe_token, qe_url)
+        return AccountClient(self.access_token,
+                             self.provider.credentials.url,
+                             self.provider.credentials.websockets_url)
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_valid_login(self, qe_token, qe_url):
-        """Test valid authenticating against IBM Q."""
-        client = self._get_client(qe_token, qe_url)
-        self.assertTrue(client.client_api.session.access_token)
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_run_job(self, qe_token, qe_url):
-        """Test running a job against a simulator."""
-        IBMQ.enable_account(qe_token, qe_url)
-
+    def test_job_submit(self):
+        """Test job_submit, running a job against a simulator."""
         # Create a Qobj.
         backend_name = 'ibmq_qasm_simulator'
-        backend = IBMQ.get_backend(backend_name)
+        backend = self.provider.get_backend(backend_name)
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
         qobj = assemble(circuit, backend, shots=1)
 
         # Run the job through the IBMQClient directly.
         api = backend._api
-        job = api.submit_job(qobj.to_dict(), backend_name)
+        job = api.job_submit(backend_name, qobj.to_dict())
 
         self.assertIn('status', job)
         self.assertIsNotNone(job['status'])
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_run_job_object_storage(self, qe_token, qe_url):
+    def test_job_submit_object_storage(self):
         """Test running a job against a simulator using object storage."""
-        IBMQ.enable_account(qe_token, qe_url)
-
         # Create a Qobj.
         backend_name = 'ibmq_qasm_simulator'
-        backend = IBMQ.get_backend(backend_name)
+        backend = self.provider.get_backend(backend_name)
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
         qobj = assemble(circuit, backend, shots=1)
 
@@ -103,124 +103,38 @@ class TestIBMQClient(QiskitTestCase):
         self.assertEqual(qobj_downloaded, qobj.to_dict())
         self.assertEqual(result['status'], 'COMPLETED')
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_get_status_jobs(self, qe_token, qe_url):
+    def test_get_status_jobs(self):
         """Check get status jobs by user authenticated."""
-        api = self._get_client(qe_token, qe_url)
+        api = self._get_client()
         jobs = api.get_status_jobs(limit=2)
         self.assertEqual(len(jobs), 2)
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_backend_status(self, qe_token, qe_url):
+    def test_backend_status(self):
         """Check the status of a real chip."""
         backend_name = ('ibmq_20_tokyo'
                         if self.using_ibmq_credentials else 'ibmqx4')
-        api = self._get_client(qe_token, qe_url)
+        api = self._get_client()
         is_available = api.backend_status(backend_name)
         self.assertIsNotNone(is_available['operational'])
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_backend_properties(self, qe_token, qe_url):
+    def test_backend_properties(self):
         """Check the properties of calibration of a real chip."""
         backend_name = ('ibmq_20_tokyo'
                         if self.using_ibmq_credentials else 'ibmqx4')
-        api = self._get_client(qe_token, qe_url)
+        api = self._get_client()
 
         properties = api.backend_properties(backend_name)
         self.assertIsNotNone(properties)
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_available_backends(self, qe_token, qe_url):
+    def test_available_backends(self):
         """Check the backends available."""
-        api = self._get_client(qe_token, qe_url)
+        api = self._get_client()
         backends = api.available_backends()
         self.assertGreaterEqual(len(backends), 1)
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_api_version(self, qe_token, qe_url):
-        """Check the version of the QX API."""
-        api = self._get_client(qe_token, qe_url)
-        version = api.api_version()
-        self.assertIsNotNone(version)
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_get_job_includes(self, qe_token, qe_url):
-        """Check the include fields parameter for get_job."""
-        IBMQ.enable_account(qe_token, qe_url)
-
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, including some fields.
-        self.assertIn('backend', job)
-        self.assertIn('shots', job)
-        job_included = api.get_job(job_id, include_fields=['backend', 'shots'])
-
-        # Ensure the result has only the included fields
-        self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_get_job_excludes(self, qe_token, qe_url):
-        """Check the exclude fields parameter for get_job."""
-        IBMQ.enable_account(qe_token, qe_url)
-
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, excluding a field.
-        self.assertIn('shots', job)
-        self.assertIn('backend', job)
-        job_excluded = api.get_job(job_id, exclude_fields=['backend'])
-
-        # Ensure the result only excludes the specified field
-        self.assertNotIn('backend', job_excluded)
-        self.assertIn('shots', job)
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_get_job_includes_nonexistent(self, qe_token, qe_url):
-        """Check get_job including nonexistent fields."""
-        IBMQ.enable_account(qe_token, qe_url)
-
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, including an nonexistent field.
-        self.assertNotIn('dummy_include', job)
-        job_included = api.get_job(job_id, include_fields=['dummy_include'])
-        # Ensure the result is empty, since no existing fields are included
-        self.assertFalse(job_included)
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_get_job_excludes_nonexistent(self, qe_token, qe_url):
-        """Check get_job excluding nonexistent fields."""
-        IBMQ.enable_account(qe_token, qe_url)
-
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, excluding an non-existent field.
-        self.assertNotIn('dummy_exclude', job)
-        self.assertIn('shots', job)
-        job_excluded = api.get_job(job_id, exclude_fields=['dummy_exclude'])
-
-        # Ensure the result only excludes the specified field. We can't do a direct
-        # comparison against the original job because some fields might have changed.
-        self.assertIn('shots', job_excluded)
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_exception_message(self, qe_token, qe_url):
+    def test_exception_message(self):
         """Check exception has proper message."""
-        api = self._get_client(qe_token, qe_url)
+        api = self._get_client()
 
         with self.assertRaises(RequestsApiError) as exception_context:
             api.job_status('foo')
@@ -232,48 +146,142 @@ class TestIBMQClient(QiskitTestCase):
         self.assertIn(original_error['code'], raised_exception.message,
                       "Original error code not in raised exception")
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_custom_client_app_header(self, qe_token, qe_url):
+    def test_custom_client_app_header(self):
         """Check custom client application header"""
         custom_header = 'batman'
         with custom_envs({'QE_CUSTOM_CLIENT_APP_HEADER': custom_header}):
-            api = self._get_client(qe_token, qe_url)
+            api = self._get_client()
             self.assertIn(custom_header,
                           api.client_api.session.headers['X-Qx-Client-Application'])
 
         # Make sure the header is re-initialized
         with no_envs(['QE_CUSTOM_CLIENT_APP_HEADER']):
-            api = self._get_client(qe_token, qe_url)
+            api = self._get_client()
             self.assertNotIn(custom_header,
                              api.client_api.session.headers['X-Qx-Client-Application'])
 
-    def _submit_job_to_backend(self, backend_name):
-        """Submit a generic qobj job to the backend
 
-        Args:
-            backend_name (str): backend name
+class TestAccountClientJobs(QiskitTestCase):
+    """Tests for AccountClient methods related to jobs.
 
-        Returns:
-            tuple(IBMQConnector, dict):
-                IBMQConnector: API for communicating with IBMQ.
-                dict: API response to the job submit.
-        """
-        backend = IBMQ.get_backend(backend_name)
-        qobj = assemble(transpile([self.qc1, self.qc2], backend=backend, seed_transpiler=self.seed),
+    This TestCase submits a Job during class invocation, available at
+    `cls.job`. Tests should inspect that job according to their needs.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.provider = cls._get_provider()
+        cls.access_token = cls.provider._api.client_api.session.access_token
+
+        backend_name = 'ibmq_qasm_simulator'
+        backend = cls.provider.get_backend(backend_name)
+        cls.client = backend._api
+        cls.job = cls.client.submit_job(cls._get_qobj(backend).to_dict(),
+                                        backend_name)
+        cls.job_id = cls.job['id']
+
+    @classmethod
+    @requires_qe_access
+    @requires_new_api_auth
+    def _get_provider(cls, qe_token=None, qe_url=None):
+        """Helper for getting account credentials."""
+        ibmq_factory = IBMQFactory()
+        provider = ibmq_factory.enable_account(qe_token, qe_url)
+        return provider
+
+    @staticmethod
+    def _get_qobj(backend):
+        """Return a Qobj."""
+        # Create a circuit.
+        qr = QuantumRegister(2)
+        cr = ClassicalRegister(2)
+        qc1 = QuantumCircuit(qr, cr, name='qc1')
+        seed = 73846087
+
+        # Assemble the Qobj.
+        qobj = assemble(transpile([qc1], backend=backend,
+                                  seed_transpiler=seed),
                         backend=backend, shots=1)
 
-        api = backend._api
-        job = api.submit_job(qobj.to_dict(), backend_name)
-        return api, job
+        return qobj
+
+    def test_job_get(self):
+        """Test job_get."""
+        result = self.client.job_get(self.job_id)
+        self.assertIn('status', result)
+
+    def test_job_get_includes(self):
+        """Check the include fields parameter for job_get."""
+        # Get the job, including some fields.
+        self.assertIn('backend', self.job)
+        self.assertIn('shots', self.job)
+        job_included = self.client.job_get(self.job_id,
+                                           included_fields=['backend', 'shots'])
+
+        # Ensure the result has only the included fields
+        self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
+
+    def test_job_get_excludes(self):
+        """Check the exclude fields parameter for job_get."""
+        # Get the job, excluding a field.
+        self.assertIn('shots', self.job)
+        self.assertIn('backend', self.job)
+        job_excluded = self.client.job_get(self.job_id, excluded_fields=['backend'])
+
+        # Ensure the result only excludes the specified field
+        self.assertNotIn('backend', job_excluded)
+        self.assertIn('shots', self.job)
+
+    def test_job_get_includes_nonexistent(self):
+        """Check job_get including nonexistent fields."""
+        # Get the job, including an nonexistent field.
+        self.assertNotIn('dummy_include', self.job)
+        job_included = self.client.job_get(self.job_id,
+                                           included_fields=['dummy_include'])
+
+        # Ensure the result is empty, since no existing fields are included
+        self.assertFalse(job_included)
+
+    def test_job_get_excludes_nonexistent(self):
+        """Check job_get excluding nonexistent fields."""
+        # Get the job, excluding an non-existent field.
+        self.assertNotIn('dummy_exclude', self.job)
+        self.assertIn('shots', self.job)
+        job_excluded = self.client.job_get(self.job_id,
+                                           excluded_fields=['dummy_exclude'])
+
+        # Ensure the result only excludes the specified field. We can't do a direct
+        # comparison against the original job because some fields might have changed.
+        self.assertIn('shots', job_excluded)
+
+    def test_job_status(self):
+        """Test getting job status."""
+        result = self.client.job_status(self.job_id)
+        self.assertIn('status', result)
+
+    def test_job_final_status_websocket(self):
+        """Test getting a job's final status via websocket."""
+        result = self.client.job_final_status_websocket(self.job_id)
+        self.assertIn('status', result)
+
+    def test_job_properties(self):
+        """Test getting job properties."""
+        # Force the job to finish.
+        _ = self.client.job_final_status_websocket(self.job_id)
+
+        result = self.client.job_properties(self.job_id)
+        self.assertIn('backend_name', result)
 
 
-class TestAuthentication(QiskitTestCase):
-    """Tests for the authentication features.
+class TestAuthClient(QiskitTestCase):
+    """Tests for the AuthClient."""
 
-    These tests are in a separate TestCase as they need to control the
-    instantiation of `IBMQConnector` directly.
-    """
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_valid_login(self, qe_token, qe_url):
+        """Test valid authenticating against IBM Q."""
+        client = AuthClient(qe_token, qe_url)
+        self.assertTrue(client.client_api.session.access_token)
 
     @requires_qe_access
     @requires_new_api_auth
@@ -281,7 +289,7 @@ class TestAuthentication(QiskitTestCase):
         """Test login against a 404 URL"""
         url_404 = re.sub(r'/api.*$', '/api/TEST_404', qe_url)
         with self.assertRaises(ApiError):
-            _ = IBMQClient(qe_token, url_404)
+            _ = AuthClient(qe_token, url_404)
 
     @requires_qe_access
     @requires_new_api_auth
@@ -289,7 +297,7 @@ class TestAuthentication(QiskitTestCase):
         """Test login using invalid token."""
         qe_token = 'INVALID_TOKEN'
         with self.assertRaises(ApiError):
-            _ = IBMQClient(qe_token, qe_url)
+            _ = AuthClient(qe_token, qe_url)
 
     @requires_qe_access
     @requires_new_api_auth
@@ -297,4 +305,12 @@ class TestAuthentication(QiskitTestCase):
         """Test login against an invalid (malformed) URL."""
         qe_url = 'INVALID_URL'
         with self.assertRaises(ApiError):
-            _ = IBMQClient(qe_token, qe_url)
+            _ = AuthClient(qe_token, qe_url)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_api_version(self, qe_token, qe_url):
+        """Check the version of the QX API."""
+        api = AuthClient(qe_token, qe_url)
+        version = api.api_version()
+        self.assertIsNotNone(version)

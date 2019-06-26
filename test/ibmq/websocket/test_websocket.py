@@ -21,7 +21,7 @@ import websockets
 
 from qiskit.providers.ibmq.api_v2.exceptions import (
     WebsocketError, WebsocketTimeoutError, WebsocketIBMQProtocolError)
-from qiskit.providers.ibmq.api_v2.websocket import WebsocketClient
+from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketClient
 from qiskit.test import QiskitTestCase
 
 
