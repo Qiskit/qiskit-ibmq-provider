@@ -18,8 +18,6 @@ import re
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
-from qiskit.providers import JobStatus
-from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.api_v2.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api_v2.exceptions import ApiError, RequestsApiError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
