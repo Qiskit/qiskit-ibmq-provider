@@ -74,12 +74,12 @@ class TestAccountClient(QiskitTestCase):
 
         # Run the job through the IBMQClient directly.
         api = backend._api
-        job = api.submit_job(qobj.to_dict(), backend_name)
+        job = api.job_submit(qobj.to_dict(), backend_name)
 
         self.assertIn('status', job)
         self.assertIsNotNone(job['status'])
 
-    def test_run_job_object_storage(self):
+    def test_job_submit_object_storage(self):
         """Test running a job against a simulator using object storage."""
         # Create a Qobj.
         backend_name = 'ibmq_qasm_simulator'
@@ -205,54 +205,54 @@ class TestAccountClientJobs(QiskitTestCase):
 
         return qobj
 
-    def test_get_job_includes(self):
-        """Check the include fields parameter for get_job."""
+    def test_job_get(self):
+        """Test job_get."""
+        result = self.client.job_get(self.job_id)
+        self.assertIn('status', result)
+
+    def test_job_get_includes(self):
+        """Check the include fields parameter for job_get."""
         # Get the job, including some fields.
         self.assertIn('backend', self.job)
         self.assertIn('shots', self.job)
-        job_included = self.client.get_job(self.job_id,
+        job_included = self.client.job_get(self.job_id,
                                            include_fields=['backend', 'shots'])
 
         # Ensure the result has only the included fields
         self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
 
-    def test_get_job_excludes(self):
-        """Check the exclude fields parameter for get_job."""
+    def test_job_get_excludes(self):
+        """Check the exclude fields parameter for job_get."""
         # Get the job, excluding a field.
         self.assertIn('shots', self.job)
         self.assertIn('backend', self.job)
-        job_excluded = self.client.get_job(self.job_id, exclude_fields=['backend'])
+        job_excluded = self.client.job_get(self.job_id, exclude_fields=['backend'])
 
         # Ensure the result only excludes the specified field
         self.assertNotIn('backend', job_excluded)
         self.assertIn('shots', self.job)
 
-    def test_get_job_includes_nonexistent(self):
-        """Check get_job including nonexistent fields."""
+    def test_job_get_includes_nonexistent(self):
+        """Check job_get including nonexistent fields."""
         # Get the job, including an nonexistent field.
         self.assertNotIn('dummy_include', self.job)
-        job_included = self.client.get_job(self.job_id,
+        job_included = self.client.job_get(self.job_id,
                                            include_fields=['dummy_include'])
 
         # Ensure the result is empty, since no existing fields are included
         self.assertFalse(job_included)
 
-    def test_get_job_excludes_nonexistent(self):
-        """Check get_job excluding nonexistent fields."""
+    def test_job_get_excludes_nonexistent(self):
+        """Check job_get excluding nonexistent fields."""
         # Get the job, excluding an non-existent field.
         self.assertNotIn('dummy_exclude', self.job)
         self.assertIn('shots', self.job)
-        job_excluded = self.client.get_job(self.job_id,
+        job_excluded = self.client.job_get(self.job_id,
                                            exclude_fields=['dummy_exclude'])
 
         # Ensure the result only excludes the specified field. We can't do a direct
         # comparison against the original job because some fields might have changed.
         self.assertIn('shots', job_excluded)
-
-    def test_job_get(self):
-        """Test job_get."""
-        result = self.client.job_get(self.job_id)
-        self.assertIn('status', result)
 
     def test_job_status(self):
         """Test getting job status."""
