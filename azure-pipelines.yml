@@ -13,9 +13,12 @@ strategy:
   matrix:
     Python35:
       python.version: '3.5'
+      QISKIT_TESTS: 'skip_online'
     Python36:
       python.version: '3.6'
+      QISKIT_TESTS: 'skip_online'
     Python37:
+      QISKIT_TESTS: 'skip_online'
       python.version: '3.7'
 
 steps:
