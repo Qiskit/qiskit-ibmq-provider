@@ -16,11 +16,10 @@
 
 from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
                     QuantumRegister)
-from qiskit.providers.ibmq import IBMQ
 from qiskit.test import QiskitTestCase, slow_test
 from qiskit.compiler import assemble, transpile
 
-from ..decorators import requires_qe_access
+from ..decorators import requires_provider
 
 
 class TestIBMQBackends(QiskitTestCase):
@@ -37,11 +36,10 @@ class TestIBMQBackends(QiskitTestCase):
         self._local_backend = BasicAer.get_backend('qasm_simulator')
         self._remote_backends = self.get_backends()
 
-    @requires_qe_access
-    def get_backends(self, qe_token=None, qe_url=None):
+    @requires_provider
+    def get_backends(self, provider=None):
         """Return all available remote backends."""
-        IBMQ.enable_account(qe_token, qe_url)
-        return IBMQ.backends()
+        return provider.backends()
 
     def test_one_qubit_no_operation(self):
         """Test one circuit, one register, in-order readout."""

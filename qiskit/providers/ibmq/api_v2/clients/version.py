@@ -14,25 +14,24 @@
 
 """Client for accessing IBM Q's version finder."""
 
-from .session import RetrySession
-from .rest.version_finder import VersionFinder
+from ..session import RetrySession
+from ..rest.version_finder import VersionFinder
+
+from .base import BaseClient
 
 
-class IBMQVersionFinder:
+class VersionClient(BaseClient):
     """Client for finding the API version being used."""
 
-    def __init__(self, url, verify=True, proxies=None, auth=None):
-        """IBMQVersionFinder constructor.
+    def __init__(self, url, **request_kwargs):
+        """VersionClient constructor.
 
         Args:
             url (str): URL for the service.
-            verify (bool): if False, ignores SSL certificates errors.
-            proxies (dict): proxies used in the connection.
-            auth (AuthBase): authentication handler.
+            **request_kwargs (dict): arguments for the `requests` Session.
         """
         self.client_version_finder = VersionFinder(
-            RetrySession(url, verify=verify, proxies=proxies, auth=auth)
-        )
+            RetrySession(url, **request_kwargs))
 
     def version(self):
         """Return the version info.

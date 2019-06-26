@@ -15,21 +15,19 @@
 """Test IBMQ online qasm simulator."""
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers.ibmq import IBMQ
 from qiskit.test import QiskitTestCase
 from qiskit.compiler import assemble, transpile
 
-from ..decorators import requires_qe_access
+from ..decorators import requires_provider
 
 
 class TestIbmqQasmSimulator(QiskitTestCase):
     """Test IBM Q Qasm Simulator."""
 
-    @requires_qe_access
-    def test_execute_one_circuit_simulator_online(self, qe_token, qe_url):
+    @requires_provider
+    def test_execute_one_circuit_simulator_online(self, provider):
         """Test execute_one_circuit_simulator_online."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend('ibmq_qasm_simulator')
+        backend = provider.get_backend('ibmq_qasm_simulator')
 
         qr = QuantumRegister(1)
         cr = ClassicalRegister(1)
@@ -43,14 +41,13 @@ class TestIbmqQasmSimulator(QiskitTestCase):
         result = job.result()
         counts = result.get_counts(qc)
         target = {'0': shots / 2, '1': shots / 2}
-        threshold = 0.04 * shots
+        threshold = 0.05 * shots
         self.assertDictAlmostEqual(counts, target, threshold)
 
-    @requires_qe_access
-    def test_execute_several_circuits_simulator_online(self, qe_token, qe_url):
+    @requires_provider
+    def test_execute_several_circuits_simulator_online(self, provider):
         """Test execute_several_circuits_simulator_online."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend('ibmq_qasm_simulator')
+        backend = provider.get_backend('ibmq_qasm_simulator')
 
         qr = QuantumRegister(2)
         cr = ClassicalRegister(2)
@@ -73,15 +70,14 @@ class TestIbmqQasmSimulator(QiskitTestCase):
         target1 = {'00': shots / 4, '01': shots / 4,
                    '10': shots / 4, '11': shots / 4}
         target2 = {'00': shots / 2, '11': shots / 2}
-        threshold = 0.04 * shots
+        threshold = 0.05 * shots
         self.assertDictAlmostEqual(counts1, target1, threshold)
         self.assertDictAlmostEqual(counts2, target2, threshold)
 
-    @requires_qe_access
-    def test_online_qasm_simulator_two_registers(self, qe_token, qe_url):
+    @requires_provider
+    def test_online_qasm_simulator_two_registers(self, provider):
         """Test online_qasm_simulator_two_registers."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend('ibmq_qasm_simulator')
+        backend = provider.get_backend('ibmq_qasm_simulator')
 
         qr1 = QuantumRegister(2)
         cr1 = ClassicalRegister(2)
@@ -108,11 +104,10 @@ class TestIbmqQasmSimulator(QiskitTestCase):
         self.assertEqual(result1, {'00 01': 1024})
         self.assertEqual(result2, {'10 00': 1024})
 
-    @requires_qe_access
-    def test_conditional_operation(self, qe_token, qe_url):
+    @requires_provider
+    def test_conditional_operation(self, provider):
         """Test conditional operation."""
-        IBMQ.enable_account(qe_token, qe_url)
-        backend = IBMQ.get_backend('ibmq_qasm_simulator')
+        backend = provider.get_backend('ibmq_qasm_simulator')
 
         qr = QuantumRegister(4)
         cr = ClassicalRegister(4)

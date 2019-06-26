@@ -16,126 +16,28 @@
 
 import asyncio
 
-from .session import RetrySession
-from .rest import Api, Auth
+from ..rest import Api
+from ..session import RetrySession
+
+from .base import BaseClient
 from .websocket import WebsocketClient
-from .exceptions import RequestsApiError, AuthenticationLicenseError
 
 
-class IBMQClient:
+class AccountClient(BaseClient):
     """Client for programmatic access to the IBM Q API."""
 
-    def __init__(self, api_token, auth_url, verify=True, proxies=None, auth=None):
-        """IBMQClient constructor.
+    def __init__(self, access_token, api_url, websockets_url, **request_kwargs):
+        """AccountClient constructor.
 
         Args:
-            api_token (str): IBM Q api token.
-            auth_url (str): URL for the authentication service.
-            verify (bool): if False, ignores SSL certificates errors.
-            proxies (dict): proxies used in the connection.
-            auth (AuthBase): authentication handler.
+            access_token (str): IBM Q Experience access token.
+            api_url (str): IBM Q Experience URL.
+            websockets_url (str): URL for the websockets server.
+            **request_kwargs (dict): arguments for the `requests` Session.
         """
-        self.api_token = api_token
-        self.auth_url = auth_url
-
-        self.client_auth = Auth(RetrySession(auth_url, verify=verify, proxies=proxies, auth=auth))
-        self.client_api, self.client_ws = self._init_service_clients(
-            verify=verify, proxies=proxies, auth=auth)
-
-    def _init_service_clients(self, verify, proxies, auth):
-        """Initialize the clients used for communicating with the API and ws.
-
-        Args:
-            verify (bool): if False, ignores SSL certificates errors.
-            proxies (dict): proxies used in the connection.
-            auth (AuthBase): authentication handler.
-
-        Returns:
-            tuple(Api, WebsocketClient):
-                Api: client for the api server.
-                WebsocketClient: client for the websocket server.
-        """
-        # Request an access token.
-        access_token = self._request_access_token()
-        # Use the token for the next auth server requests.
-        self.client_auth.session.access_token = access_token
-        service_urls = self._user_urls()
-
-        # Create the api server client, using the access token.
-        client_api = Api(RetrySession(service_urls['http'], access_token,
-                                      verify=verify, proxies=proxies, auth=auth))
-
-        # Create the websocket server client, using the access token.
-        client_ws = WebsocketClient(service_urls['ws'], access_token)
-
-        return client_api, client_ws
-
-    def _request_access_token(self):
-        """Request a new access token from the API.
-
-        Returns:
-            str: access token.
-
-        Raises:
-            AuthenticationLicenseError: if the user hasn't accepted the license agreement.
-            RequestsApiError: if the request failed.
-        """
-        try:
-            response = self.client_auth.login(self.api_token)
-            return response['id']
-        except RequestsApiError as ex:
-            response = ex.original_exception.response
-            if response is not None and response.status_code == 401:
-                try:
-                    error_code = response.json()['error']['name']
-                    if error_code == 'ACCEPT_LICENSE_REQUIRED':
-                        message = response.json()['error']['message']
-                        raise AuthenticationLicenseError(message)
-                except (ValueError, KeyError):
-                    # the response did not contain the expected json.
-                    pass
-            raise
-
-    def _user_urls(self):
-        """Retrieve the api URLs from the auth server.
-
-        Returns:
-            dict: a dict with the base URLs for the services. Currently
-                supported keys:
-                * ``http``: the api URL for http communication.
-                * ``ws``: the api URL for websocket communication.
-        """
-        response = self.client_auth.user_info()
-        return response['urls']
-
-    def _user_hubs(self):
-        """Retrieve the hubs available to the user.
-
-        The first entry in the list will be the default one, as indicated by
-        the API (by having `isDefault` in all hub, group, project fields).
-
-        Returns:
-            list[dict]: a list of dicts with the hubs, which contains the keys
-                `hub`, `group`, `project`.
-        """
-        response = self.client_api.hubs()
-
-        hubs = []
-        for hub in response:
-            hub_name = hub['name']
-            for group_name, group in hub['groups'].items():
-                for project_name, project in group['projects'].items():
-                    entry = {'hub': hub_name,
-                             'group': group_name,
-                             'project': project_name}
-
-                    # If
-                    if project.get('isDefault'):
-                        hubs.insert(0, entry)
-                    else:
-                        hubs.append(entry)
-
-        return hubs
+        self.client_api = Api(RetrySession(api_url, access_token,
+                                           **request_kwargs))
+        self.client_ws = WebsocketClient(websockets_url, access_token)
 
     # Backend-related public functions.
 

@@ -16,14 +16,10 @@
 
 import os
 
-from qiskit.providers.ibmq.circuits.exceptions import CircuitAvailabilityError
-
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.result import Result
 from qiskit.test import QiskitTestCase
-
-from qiskit.providers.ibmq import IBMQ
-
-from ..decorators import requires_qe_access
+from ..decorators import requires_new_api_auth, requires_qe_access
 
 
 class TestCircuits(QiskitTestCase):
@@ -36,16 +32,11 @@ class TestCircuits(QiskitTestCase):
             self.skipTest('Circut tests disable')
 
     @requires_qe_access
+    @requires_new_api_auth
     def test_circuit_random_uniform(self, qe_token, qe_url):
         """Test random_uniform circuit."""
-        IBMQ.enable_account(qe_token, qe_url)
-        results = IBMQ.circuits.random_uniform(number_of_qubits=4)
+        ibmq_factory = IBMQFactory()
+        provider = ibmq_factory.enable_account(qe_token, qe_url)
+        results = provider.circuits.random_uniform(number_of_qubits=4)
 
         self.assertIsInstance(results, Result)
-
-    def test_load_account_required(self):
-        """Test that an account needs to be loaded for using Circuits."""
-        with self.assertRaises(CircuitAvailabilityError) as context_manager:
-            _ = IBMQ.circuits.random_uniform(number_of_qubits=4)
-
-        self.assertIn('account', str(context_manager.exception))

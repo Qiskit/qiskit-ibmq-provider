@@ -24,9 +24,11 @@ import nest_asyncio
 from websockets import connect, ConnectionClosed
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
-from .exceptions import (WebsocketError, WebsocketTimeoutError,
-                         WebsocketIBMQProtocolError,
-                         WebsocketAuthenticationError)
+from ..exceptions import (WebsocketError, WebsocketTimeoutError,
+                          WebsocketIBMQProtocolError,
+                          WebsocketAuthenticationError)
+
+from .base import BaseClient
 
 
 logger = logging.getLogger(__name__)
@@ -66,7 +68,7 @@ class WebsocketMessage:
         return cls(parsed_dict['type'], parsed_dict.get('data', None))
 
 
-class WebsocketClient:
+class WebsocketClient(BaseClient):
     """Client for websocket communication with the IBMQ API.
 
     Attributes:
