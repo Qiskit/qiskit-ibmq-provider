@@ -64,8 +64,8 @@ class TestAccountClient(QiskitTestCase):
                              self.provider.credentials.url,
                              self.provider.credentials.websockets_url)
 
-    def test_run_job(self):
-        """Test running a job against a simulator."""
+    def test_job_submit(self):
+        """Test job_submit, running a job against a simulator."""
         # Create a Qobj.
         backend_name = 'ibmq_qasm_simulator'
         backend = self.provider.get_backend(backend_name)
@@ -74,12 +74,12 @@ class TestAccountClient(QiskitTestCase):
 
         # Run the job through the IBMQClient directly.
         api = backend._api
-        job = api.submit_job(qobj.to_dict(), backend_name)
+        job = api.job_submit(backend_name, qobj.to_dict())
 
         self.assertIn('status', job)
         self.assertIsNotNone(job['status'])
 
-    def test_run_job_object_storage(self):
+    def test_job_submit_object_storage(self):
         """Test running a job against a simulator using object storage."""
         # Create a Qobj.
         backend_name = 'ibmq_qasm_simulator'
@@ -132,58 +132,6 @@ class TestAccountClient(QiskitTestCase):
         backends = api.available_backends()
         self.assertGreaterEqual(len(backends), 1)
 
-    def test_get_job_includes(self):
-        """Check the include fields parameter for get_job."""
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, including some fields.
-        self.assertIn('backend', job)
-        self.assertIn('shots', job)
-        job_included = api.get_job(job_id, include_fields=['backend', 'shots'])
-
-        # Ensure the result has only the included fields
-        self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
-
-    def test_get_job_excludes(self):
-        """Check the exclude fields parameter for get_job."""
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, excluding a field.
-        self.assertIn('shots', job)
-        self.assertIn('backend', job)
-        job_excluded = api.get_job(job_id, exclude_fields=['backend'])
-
-        # Ensure the result only excludes the specified field
-        self.assertNotIn('backend', job_excluded)
-        self.assertIn('shots', job)
-
-    def test_get_job_includes_nonexistent(self):
-        """Check get_job including nonexistent fields."""
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, including an nonexistent field.
-        self.assertNotIn('dummy_include', job)
-        job_included = api.get_job(job_id, include_fields=['dummy_include'])
-        # Ensure the result is empty, since no existing fields are included
-        self.assertFalse(job_included)
-
-    def test_get_job_excludes_nonexistent(self):
-        """Check get_job excluding nonexistent fields."""
-        api, job = self._submit_job_to_backend('ibmq_qasm_simulator')
-        job_id = job['id']
-
-        # Get the job, excluding an non-existent field.
-        self.assertNotIn('dummy_exclude', job)
-        self.assertIn('shots', job)
-        job_excluded = api.get_job(job_id, exclude_fields=['dummy_exclude'])
-
-        # Ensure the result only excludes the specified field. We can't do a direct
-        # comparison against the original job because some fields might have changed.
-        self.assertIn('shots', job_excluded)
-
     def test_exception_message(self):
         """Check exception has proper message."""
         api = self._get_client()
@@ -212,25 +160,117 @@ class TestAccountClient(QiskitTestCase):
             self.assertNotIn(custom_header,
                              api.client_api.session.headers['X-Qx-Client-Application'])
 
-    def _submit_job_to_backend(self, backend_name):
-        """Submit a generic qobj job to the backend
 
-        Args:
-            backend_name (str): backend name
+class TestAccountClientJobs(QiskitTestCase):
+    """Tests for AccountClient methods related to jobs.
 
-        Returns:
-            tuple(IBMQConnector, dict):
-                AccountClient: API for communicating with IBMQ.
-                dict: API response to the job submit.
-        """
-        backend = self.provider.get_backend(backend_name)
-        qobj = assemble(transpile([self.qc1, self.qc2], backend=backend,
-                                  seed_transpiler=self.seed),
+    This TestCase submits a Job during class invocation, available at
+    `cls.job`. Tests should inspect that job according to their needs.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.provider = cls._get_provider()
+        cls.access_token = cls.provider._api.client_api.session.access_token
+
+        backend_name = 'ibmq_qasm_simulator'
+        backend = cls.provider.get_backend(backend_name)
+        cls.client = backend._api
+        cls.job = cls.client.submit_job(cls._get_qobj(backend).to_dict(),
+                                        backend_name)
+        cls.job_id = cls.job['id']
+
+    @classmethod
+    @requires_qe_access
+    @requires_new_api_auth
+    def _get_provider(cls, qe_token=None, qe_url=None):
+        """Helper for getting account credentials."""
+        ibmq_factory = IBMQFactory()
+        provider = ibmq_factory.enable_account(qe_token, qe_url)
+        return provider
+
+    @staticmethod
+    def _get_qobj(backend):
+        """Return a Qobj."""
+        # Create a circuit.
+        qr = QuantumRegister(2)
+        cr = ClassicalRegister(2)
+        qc1 = QuantumCircuit(qr, cr, name='qc1')
+        seed = 73846087
+
+        # Assemble the Qobj.
+        qobj = assemble(transpile([qc1], backend=backend,
+                                  seed_transpiler=seed),
                         backend=backend, shots=1)
 
-        api = backend._api
-        job = api.submit_job(qobj.to_dict(), backend_name)
-        return api, job
+        return qobj
+
+    def test_job_get(self):
+        """Test job_get."""
+        result = self.client.job_get(self.job_id)
+        self.assertIn('status', result)
+
+    def test_job_get_includes(self):
+        """Check the include fields parameter for job_get."""
+        # Get the job, including some fields.
+        self.assertIn('backend', self.job)
+        self.assertIn('shots', self.job)
+        job_included = self.client.job_get(self.job_id,
+                                           included_fields=['backend', 'shots'])
+
+        # Ensure the result has only the included fields
+        self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
+
+    def test_job_get_excludes(self):
+        """Check the exclude fields parameter for job_get."""
+        # Get the job, excluding a field.
+        self.assertIn('shots', self.job)
+        self.assertIn('backend', self.job)
+        job_excluded = self.client.job_get(self.job_id, excluded_fields=['backend'])
+
+        # Ensure the result only excludes the specified field
+        self.assertNotIn('backend', job_excluded)
+        self.assertIn('shots', self.job)
+
+    def test_job_get_includes_nonexistent(self):
+        """Check job_get including nonexistent fields."""
+        # Get the job, including an nonexistent field.
+        self.assertNotIn('dummy_include', self.job)
+        job_included = self.client.job_get(self.job_id,
+                                           included_fields=['dummy_include'])
+
+        # Ensure the result is empty, since no existing fields are included
+        self.assertFalse(job_included)
+
+    def test_job_get_excludes_nonexistent(self):
+        """Check job_get excluding nonexistent fields."""
+        # Get the job, excluding an non-existent field.
+        self.assertNotIn('dummy_exclude', self.job)
+        self.assertIn('shots', self.job)
+        job_excluded = self.client.job_get(self.job_id,
+                                           excluded_fields=['dummy_exclude'])
+
+        # Ensure the result only excludes the specified field. We can't do a direct
+        # comparison against the original job because some fields might have changed.
+        self.assertIn('shots', job_excluded)
+
+    def test_job_status(self):
+        """Test getting job status."""
+        result = self.client.job_status(self.job_id)
+        self.assertIn('status', result)
+
+    def test_job_final_status_websocket(self):
+        """Test getting a job's final status via websocket."""
+        result = self.client.job_final_status_websocket(self.job_id)
+        self.assertIn('status', result)
+
+    def test_job_properties(self):
+        """Test getting job properties."""
+        # Force the job to finish.
+        _ = self.client.job_final_status_websocket(self.job_id)
+
+        result = self.client.job_properties(self.job_id)
+        self.assertIn('backend_name', result)
 
 
 class TestAuthClient(QiskitTestCase):
