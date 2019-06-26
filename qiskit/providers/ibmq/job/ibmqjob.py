@@ -121,7 +121,7 @@ class IBMQJob(BaseJob):
             backend (BaseBackend): The backend instance used to run this job.
             job_id (str or None): The job ID of an already submitted job.
                 Pass `None` if you are creating a new job.
-            api (IBMQConnector or IBMQClient): object for connecting to the API.
+            api (IBMQConnector or BaseClient): object for connecting to the API.
             qobj (Qobj): The Quantum Object. See notes below
             creation_date (str): When the job was run.
             api_status (str): `status` field directly from the API response.
@@ -264,6 +264,10 @@ class IBMQJob(BaseJob):
     def cancel(self):
         """Attempt to cancel a job.
 
+        Note:
+            This function waits for a job ID to become available if the job
+            has been submitted but not yet queued.
+
         Returns:
             bool: True if job can be cancelled, else False. Note this operation
             might not be possible depending on the environment.
@@ -271,6 +275,9 @@ class IBMQJob(BaseJob):
         Raises:
             JobError: if there was some unexpected failure in the server.
         """
+        # Wait for the job ID to become available.
+        self._wait_for_submission()
+
         try:
             response = self._api.cancel_job(self._job_id)
             self._cancelled = 'error' not in response
@@ -551,7 +558,7 @@ class IBMQJob(BaseJob):
         """Waits for the request to return a job ID"""
         if self._job_id is None:
             if self._future is None:
-                raise JobError("You have to submit before asking for status or results!")
+                raise JobError("You have to submit the job before doing a job related operation!")
             try:
                 submit_info = self._future.result(timeout=timeout)
                 if self._future_captured_exception is not None:

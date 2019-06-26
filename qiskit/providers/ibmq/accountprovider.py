@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2017, 2019.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -23,74 +23,58 @@ from qiskit.providers.models import (QasmBackendConfiguration,
 from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
-from .api import IBMQConnector
+from .api_v2.clients import AccountClient
+from .circuits import CircuitsManager
 from .ibmqbackend import IBMQBackend, IBMQSimulator
-
 
 logger = logging.getLogger(__name__)
 
 
-class IBMQSingleProvider(BaseProvider):
-    """Provider for single IBMQ accounts.
+class AccountProvider(BaseProvider):
+    """Provider for single IBM Quantum Experience accounts."""
 
-    Note: this class is not part of the public API and is not guaranteed to be
-    present in future releases.
-    """
-
-    def __init__(self, credentials, ibmq_provider):
-        """Return a new IBMQSingleProvider.
+    def __init__(self, credentials, access_token):
+        """Return a new AccountProvider.
 
         Args:
-            credentials (Credentials): Quantum Experience or IBMQ credentials.
-            ibmq_provider (IBMQProvider): IBMQ main provider.
+            credentials (Credentials): IBM Q Experience credentials.
+            access_token (str): access token for IBM Q Experience.
         """
         super().__init__()
 
-        # Get a connection to IBMQ.
         self.credentials = credentials
-        self._api = self._authenticate(self.credentials)
-        self._ibm_provider = ibmq_provider
 
-        # Populate the list of remote backends.
-        self._backends = self._discover_remote_backends()
+        # Set the clients.
+        self._api = AccountClient(access_token,
+                                  credentials.url,
+                                  credentials.websockets_url,
+                                  **credentials.connection_parameters())
+        circuit_client = AccountClient(access_token,
+                                       credentials.base_url,
+                                       credentials.websockets_url,
+                                       **credentials.connection_parameters())
+        self.circuits = CircuitsManager(circuit_client)
+
+        # Initialize the internal list of backends, lazy-loading it on first
+        # access.
+        self._backends = None
 
     def backends(self, name=None, filters=None, **kwargs):
         # pylint: disable=arguments-differ
+        if self._backends is None:
+            self._backends = self._discover_remote_backends()
+
         backends = self._backends.values()
 
+        # Special handling of the `name` parameter, to support alias
+        # resolution.
         if name:
+            aliases = self._aliased_backend_names()
+            aliases.update(self._deprecated_backend_names())
+            name = aliases.get(name, name)
             kwargs['backend_name'] = name
 
         return filter_backends(backends, filters=filters, **kwargs)
-
-    @classmethod
-    def _authenticate(cls, credentials):
-        """Authenticate against the IBMQ API.
-
-        Args:
-            credentials (Credentials): Quantum Experience or IBMQ credentials.
-
-        Returns:
-            IBMQConnector: instance of the IBMQConnector.
-        Raises:
-            ConnectionError: if the authentication resulted in error.
-        """
-        try:
-            config_dict = {
-                'url': credentials.url,
-            }
-            if credentials.proxies:
-                config_dict['proxies'] = credentials.proxies
-            return IBMQConnector(credentials.token, config_dict,
-                                 credentials.verify)
-        except Exception as ex:
-            root_exception = ex
-            if 'License required' in str(ex):
-                # For the 401 License required exception from the API, be
-                # less verbose with the exceptions.
-                root_exception = None
-            raise ConnectionError("Couldn't connect to IBMQ server: {0}"
-                                  .format(ex)) from root_exception
 
     def _discover_remote_backends(self):
         """Return the remote backends available.
@@ -110,7 +94,7 @@ class IBMQSingleProvider(BaseProvider):
                 backend_cls = IBMQSimulator if config.simulator else IBMQBackend
                 ret[config.backend_name] = backend_cls(
                     configuration=config,
-                    provider=self._ibm_provider,
+                    provider=self,
                     credentials=self.credentials,
                     api=self._api)
             except ModelValidationError as ex:
@@ -122,6 +106,25 @@ class IBMQSingleProvider(BaseProvider):
                     ex)
 
         return ret
+
+    @staticmethod
+    def _deprecated_backend_names():
+        """Returns deprecated backend names."""
+        return {
+            'ibmqx_qasm_simulator': 'ibmq_qasm_simulator',
+            'ibmqx_hpc_qasm_simulator': 'ibmq_qasm_simulator',
+            'real': 'ibmqx1'
+            }
+
+    @staticmethod
+    def _aliased_backend_names():
+        """Returns aliased backend names."""
+        return {
+            'ibmq_5_yorktown': 'ibmqx2',
+            'ibmq_5_tenerife': 'ibmqx4',
+            'ibmq_16_rueschlikon': 'ibmqx5',
+            'ibmq_20_austin': 'QS1_1'
+            }
 
     def __eq__(self, other):
         return self.credentials == other.credentials

@@ -15,21 +15,20 @@
 """Tests for the IBMQClient for API v2."""
 
 import re
-from unittest import skip
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
-from qiskit.providers.ibmq import IBMQ
-from qiskit.providers.ibmq.api_v2 import IBMQClient
+from qiskit.providers.ibmq.api_v2.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api_v2.exceptions import ApiError, RequestsApiError
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test import QiskitTestCase
 
 from ..decorators import requires_new_api_auth, requires_qe_access
 from ..contextmanagers import custom_envs, no_envs
 
 
-class TestIBMQClient(QiskitTestCase):
-    """Tests for IBMQConnector."""
+class TestAccountClient(QiskitTestCase):
+    """Tests for AccountClient."""
 
     def setUp(self):
         qr = QuantumRegister(2)
@@ -45,27 +44,31 @@ class TestIBMQClient(QiskitTestCase):
         self.qc2.measure(qr[1], cr[1])
         self.seed = 73846087
 
-    @staticmethod
-    def _get_client(qe_token, qe_url):
+    @classmethod
+    def setUpClass(cls):
+        cls.provider = cls._get_provider()
+        cls.access_token = cls.provider._api.client_api.session.access_token
+
+    @classmethod
+    @requires_qe_access
+    @requires_new_api_auth
+    def _get_provider(cls, qe_token=None, qe_url=None):
+        """Helper for getting account credentials."""
+        ibmq_factory = IBMQFactory()
+        provider = ibmq_factory.enable_account(qe_token, qe_url)
+        return provider
+
+    def _get_client(self):
         """Helper for instantiating an IBMQClient."""
-        return IBMQClient(qe_token, qe_url)
+        return AccountClient(self.access_token,
+                             self.provider.credentials.url,
+                             self.provider.credentials.websockets_url)
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_valid_login(self, qe_token, qe_url):
-        """Test valid authenticating against IBM Q."""
-        client = self._get_client(qe_token, qe_url)
-        self.assertTrue(client.client_api.session.access_token)
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_run_job(self, qe_token, qe_url):
+    def test_run_job(self):
         """Test running a job against a simulator."""
-        IBMQ.enable_account(qe_token, qe_url)
-
         # Create a Qobj.
         backend_name = 'ibmq_qasm_simulator'
-        backend = IBMQ.get_backend(backend_name)
+        backend = self.provider.get_backend(backend_name)
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
         qobj = assemble(circuit, backend, shots=1)
 
@@ -76,56 +79,38 @@ class TestIBMQClient(QiskitTestCase):
         self.assertIn('status', job)
         self.assertIsNotNone(job['status'])
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_get_status_jobs(self, qe_token, qe_url):
+    def test_get_status_jobs(self):
         """Check get status jobs by user authenticated."""
-        api = self._get_client(qe_token, qe_url)
+        api = self._get_client()
         jobs = api.get_status_jobs(limit=2)
         self.assertEqual(len(jobs), 2)
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_backend_status(self, qe_token, qe_url):
+    def test_backend_status(self):
         """Check the status of a real chip."""
         backend_name = ('ibmq_20_tokyo'
                         if self.using_ibmq_credentials else 'ibmqx4')
-        api = self._get_client(qe_token, qe_url)
+        api = self._get_client()
         is_available = api.backend_status(backend_name)
         self.assertIsNotNone(is_available['operational'])
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_backend_properties(self, qe_token, qe_url):
+    def test_backend_properties(self):
         """Check the properties of calibration of a real chip."""
         backend_name = ('ibmq_20_tokyo'
                         if self.using_ibmq_credentials else 'ibmqx4')
-        api = self._get_client(qe_token, qe_url)
+        api = self._get_client()
 
         properties = api.backend_properties(backend_name)
         self.assertIsNotNone(properties)
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_available_backends(self, qe_token, qe_url):
+    def test_available_backends(self):
         """Check the backends available."""
-        api = self._get_client(qe_token, qe_url)
+        api = self._get_client()
         backends = api.available_backends()
         self.assertGreaterEqual(len(backends), 1)
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_api_version(self, qe_token, qe_url):
-        """Check the version of the QX API."""
-        api = self._get_client(qe_token, qe_url)
-        version = api.api_version()
-        self.assertIsNotNone(version)
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_exception_message(self, qe_token, qe_url):
+    def test_exception_message(self):
         """Check exception has proper message."""
-        api = self._get_client(qe_token, qe_url)
+        api = self._get_client()
 
         with self.assertRaises(RequestsApiError) as exception_context:
             api.job_status('foo')
@@ -137,19 +122,17 @@ class TestIBMQClient(QiskitTestCase):
         self.assertIn(original_error['code'], raised_exception.message,
                       "Original error code not in raised exception")
 
-    @requires_qe_access
-    @requires_new_api_auth
-    def test_custom_client_app_header(self, qe_token, qe_url):
+    def test_custom_client_app_header(self):
         """Check custom client application header"""
         custom_header = 'batman'
         with custom_envs({'QE_CUSTOM_CLIENT_APP_HEADER': custom_header}):
-            api = self._get_client(qe_token, qe_url)
+            api = self._get_client()
             self.assertIn(custom_header,
                           api.client_api.session.headers['X-Qx-Client-Application'])
 
         # Make sure the header is re-initialized
         with no_envs(['QE_CUSTOM_CLIENT_APP_HEADER']):
-            api = self._get_client(qe_token, qe_url)
+            api = self._get_client()
             self.assertNotIn(custom_header,
                              api.client_api.session.headers['X-Qx-Client-Application'])
 
@@ -161,11 +144,12 @@ class TestIBMQClient(QiskitTestCase):
 
         Returns:
             tuple(IBMQConnector, dict):
-                IBMQConnector: API for communicating with IBMQ.
+                AccountClient: API for communicating with IBMQ.
                 dict: API response to the job submit.
         """
-        backend = IBMQ.get_backend(backend_name)
-        qobj = assemble(transpile([self.qc1, self.qc2], backend=backend, seed_transpiler=self.seed),
+        backend = self.provider.get_backend(backend_name)
+        qobj = assemble(transpile([self.qc1, self.qc2], backend=backend,
+                                  seed_transpiler=self.seed),
                         backend=backend, shots=1)
 
         api = backend._api
@@ -173,12 +157,15 @@ class TestIBMQClient(QiskitTestCase):
         return api, job
 
 
-class TestAuthentication(QiskitTestCase):
-    """Tests for the authentication features.
+class TestAuthClient(QiskitTestCase):
+    """Tests for the AuthClient."""
 
-    These tests are in a separate TestCase as they need to control the
-    instantiation of `IBMQConnector` directly.
-    """
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_valid_login(self, qe_token, qe_url):
+        """Test valid authenticating against IBM Q."""
+        client = AuthClient(qe_token, qe_url)
+        self.assertTrue(client.client_api.session.access_token)
 
     @requires_qe_access
     @requires_new_api_auth
@@ -186,7 +173,7 @@ class TestAuthentication(QiskitTestCase):
         """Test login against a 404 URL"""
         url_404 = re.sub(r'/api.*$', '/api/TEST_404', qe_url)
         with self.assertRaises(ApiError):
-            _ = IBMQClient(qe_token, url_404)
+            _ = AuthClient(qe_token, url_404)
 
     @requires_qe_access
     @requires_new_api_auth
@@ -194,7 +181,7 @@ class TestAuthentication(QiskitTestCase):
         """Test login using invalid token."""
         qe_token = 'INVALID_TOKEN'
         with self.assertRaises(ApiError):
-            _ = IBMQClient(qe_token, qe_url)
+            _ = AuthClient(qe_token, qe_url)
 
     @requires_qe_access
     @requires_new_api_auth
@@ -202,7 +189,15 @@ class TestAuthentication(QiskitTestCase):
         """Test login against an invalid (malformed) URL."""
         qe_url = 'INVALID_URL'
         with self.assertRaises(ApiError):
-            _ = IBMQClient(qe_token, qe_url)
+            _ = AuthClient(qe_token, qe_url)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_api_version(self, qe_token, qe_url):
+        """Check the version of the QX API."""
+        api = AuthClient(qe_token, qe_url)
+        version = api.api_version()
+        self.assertIsNotNone(version)
 
 
 class TestIBMQClientJobs(QiskitTestCase):

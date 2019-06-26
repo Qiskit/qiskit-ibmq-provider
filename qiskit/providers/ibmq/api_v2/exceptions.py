@@ -14,7 +14,7 @@
 
 """Exceptions related to the IBM Q Api."""
 
-from qiskit.providers.ibmq.api import ApiError as ApiErrorV1
+from ..api import ApiError as ApiErrorV1
 
 
 class ApiError(ApiErrorV1):
