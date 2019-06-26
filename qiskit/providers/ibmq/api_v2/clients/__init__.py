@@ -12,4 +12,10 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Q API version 2 connector and utilities."""
+"""IBM Q API version 2 clients."""
+
+from .base import BaseClient
+from .account import AccountClient
+from .auth import AuthClient
+from .version import VersionClient
+from .websocket import WebsocketClient

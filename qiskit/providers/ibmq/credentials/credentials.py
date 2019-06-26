@@ -15,7 +15,11 @@
 """Model for representing IBM Q credentials."""
 
 import re
+
 from requests_ntlm import HttpNtlmAuth
+
+from .hubgroupproject import HubGroupProject
+
 
 # Regex that matches a IBMQ URL with hub information
 REGEX_IBMQ_HUBS = (
@@ -23,7 +27,8 @@ REGEX_IBMQ_HUBS = (
     '/Hubs/(?P<hub>[^/]+)/Groups/(?P<group>[^/]+)/Projects/(?P<project>[^/]+)'
 )
 # Template for creating an IBMQ URL with hub information
-TEMPLATE_IBMQ_HUBS = '{prefix}/Hubs/{hub}/Groups/{group}/Projects/{project}'
+# TODO: verify compatibility with old premium API
+TEMPLATE_IBMQ_HUBS = '{prefix}/Network/{hub}/Groups/{group}/Projects/{project}'
 
 
 class Credentials:
@@ -34,13 +39,15 @@ class Credentials:
     The `unique_id()` returns the unique identifier.
     """
 
-    def __init__(self, token, url, hub=None, group=None, project=None,
+    def __init__(self, token, url, websockets_url=None,
+                 hub=None, group=None, project=None,
                  proxies=None, verify=True):
         """Return new set of credentials.
 
         Args:
             token (str): Quantum Experience or IBMQ API token.
             url (str): URL for Quantum Experience or IBMQ.
+            websockets_url (str): URL for websocket server.
             hub (str): the hub used for IBMQ.
             group (str): the group used for IBMQ.
             project (str): the project used for IBMQ.
@@ -58,6 +65,7 @@ class Credentials:
         (self.url, self.base_url,
          self.hub, self.group, self.project) = _unify_ibmq_url(
              url, hub, group, project)
+        self.websockets_url = websockets_url
         self.proxies = proxies or {}
         self.verify = verify
 
@@ -72,8 +80,11 @@ class Credentials:
         """Return a value that uniquely identifies these credentials.
 
         By convention, we assume (hub, group, project) is always unique.
+
+        Returns:
+            HubGroupProject: the (hub, group, project) tuple.
         """
-        return self.hub, self.group, self.project
+        return HubGroupProject(self.hub, self.group, self.project)
 
     def connection_parameters(self):
         """Return a dict of kwargs in the format expected by `requests`.

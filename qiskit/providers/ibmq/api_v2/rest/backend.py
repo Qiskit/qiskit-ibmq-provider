@@ -34,7 +34,7 @@ class Backend(RestAdapterBase):
             backend_name (str): name of the backend.
         """
         self.backend_name = backend_name
-        super().__init__(session, '/Backends/{}'.format(backend_name))
+        super().__init__(session, '/devices/{}'.format(backend_name))
 
     def properties(self):
         """Return backend properties."""

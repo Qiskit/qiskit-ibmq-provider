@@ -14,11 +14,9 @@
 
 """Manager for interacting with Circuits."""
 
-from functools import wraps
-
 from qiskit.providers import JobStatus
-from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 
+from ..api_v2.exceptions import RequestsApiError
 from ..job.circuitjob import CircuitJob
 from .exceptions import (CircuitError,
                          CircuitAvailabilityError, CircuitResultError,
@@ -30,24 +28,11 @@ HARDWARE_EFFICIENT = 'hardware_efficient'
 RANDOM_UNIFORM = 'random_uniform'
 
 
-def requires_api_connection(func):
-    """Decorator that ensures that a CircuitsManager has a valid API."""
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if not self.client:
-            raise CircuitAvailabilityError(
-                'An IBM Q Experience 2 account must be loaded in order to use Circuits')
-
-        return func(self, *args, **kwargs)
-
-    return wrapper
-
-
 class CircuitsManager:
     """Class that provides access to the different Circuits."""
 
-    def __init__(self):
-        self.client = None
+    def __init__(self, client):
+        self.client = client
 
     def _call_circuit(self, name, **kwargs):
         """Execute a Circuit.
@@ -114,7 +99,8 @@ class CircuitsManager:
                              job_id=response['id'],
                              api=self.client,
                              creation_date=response['creationDate'],
-                             api_status=response['status'])
+                             api_status=response['status'],
+                             use_websockets=True)
         except Exception as ex:
             raise CircuitResultError(str(ex))
 
@@ -126,7 +112,6 @@ class CircuitsManager:
 
         return job.result()
 
-    @requires_api_connection
     def graph_state(self, number_of_qubits, adjacency_matrix, angles):
         """Execute the graph state Circuit.
 
@@ -165,7 +150,6 @@ class CircuitsManager:
                                   adjacency_matrix=adjacency_matrix,
                                   angles=angles)
 
-    @requires_api_connection
     def hardware_efficient(self, number_of_qubits, angles):
         """Execute the hardware efficient Circuit.
 
@@ -194,7 +178,6 @@ class CircuitsManager:
                                   number_of_qubits=number_of_qubits,
                                   angles=angles)
 
-    @requires_api_connection
     def random_uniform(self, number_of_qubits=None):
         """Execute the random uniform Circuit.
 
