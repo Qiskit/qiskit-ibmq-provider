@@ -22,7 +22,7 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 
 from .accountprovider import AccountProvider
 from .api_v2.clients import AuthClient, VersionClient
-from .credentials import Credentials, read_credentials_from_qiskitrc
+from .credentials import Credentials
 from .credentials.configrc import read_credentials_from_qiskitrc, remove_credentials
 from .exceptions import IBMQAccountError, IBMQApiUrlError, IBMQProviderError
 from .ibmqprovider import IBMQProvider
