@@ -24,7 +24,7 @@ from .accountprovider import AccountProvider
 from .api_v2.clients import AuthClient, VersionClient
 from .credentials import Credentials
 from .exceptions import IBMQAccountError, IBMQApiUrlError, IBMQProviderError
-from .ibmqprovider import IBMQProvider, QE_URL
+from .ibmqprovider import IBMQProvider
 
 logger = logging.getLogger(__name__)
 
@@ -107,32 +107,9 @@ class IBMQFactory:
         """
         raise NotImplementedError
 
-    def save_account(self, token=None, url=QE_URL, overwrite=False, **kwargs):
-        """Save an account to disk for future use.
-
-        Args:
-            token (str): Quantum Experience or IBM Q API token. This parameter is deprecated.
-            url (str): URL for Quantum Experience or IBM Q (for IBM Q,
-                including the hub, group and project in the URL).
-                This parameter is deprecated.
-            overwrite (bool): overwrite existing credentials. This parameter is deprecated.
-            **kwargs (dict): This parameter is deprecated.
-                * proxies (dict): Proxy configuration for the API.
-                * verify (bool): If False, ignores SSL certificates errors
-
-        Raises:
-            NotImplementedError: TODO delete when implemented
-        """
-        if token is not None:
-            extra_msg = "" if self._credentials is not None else \
-                " Please use IBM Q Experience 2, which offers a single account, instead."
-            warnings.warn('save_account() will no longer take token, url, '
-                          'and other account related parameters.' + extra_msg,
-                          DeprecationWarning)
-        if self._credentials is not None:
-            raise NotImplementedError
-
-        self._v1_provider.save_account(token, url=url, overwrite=overwrite, **kwargs)
+    def save_account(self):
+        """Save an account to disk for future use."""
+        raise NotImplementedError
 
     def delete_account(self):
         """Delete saved account from disk"""
@@ -251,6 +228,9 @@ class IBMQFactory:
         Returns:
             list[dict]: a list with information about the accounts currently
                 in the session.
+
+        Raises:
+            IBMQAccountError: if the method is used with a v1 account.
         """
         if self._credentials:
             raise IBMQAccountError('active_accounts() is not available when '
@@ -272,7 +252,8 @@ class IBMQFactory:
         If no filter is passed, all accounts in the current session will be disabled.
 
         Raises:
-            IBMQAccountError: if no account matched the filter.
+            IBMQAccountError: if the method is used with a v1 account, or
+                if no account matched the filter.
         """
         if self._credentials:
             raise IBMQAccountError('disable_accounts() is not available when '
@@ -299,7 +280,8 @@ class IBMQFactory:
         3. in the `qiskitrc` configuration file
 
         Raises:
-            IBMQAccountError: if no credentials are found.
+            IBMQAccountError: if the method is used with a v1 account, or
+                if no credentials are found.
         """
         if self._credentials:
             raise IBMQAccountError('load_accounts() is not available when '
@@ -321,7 +303,8 @@ class IBMQFactory:
         If no filter is passed, all accounts will be deleted from disk.
 
         Raises:
-            IBMQAccountError: if no account matched the filter.
+            IBMQAccountError: if the method is used with a v1 account, or
+                if no account matched the filter.
         """
         if self._credentials:
             raise IBMQAccountError('delete_accounts() is not available when '
@@ -342,6 +325,9 @@ class IBMQFactory:
         Returns:
             list[dict]: a list with information about the accounts stored
                 on disk.
+
+        Raises:
+            IBMQAccountError: if the method is used with a v1 account.
         """
         if self._credentials:
             raise IBMQAccountError('stored_accounts() is not available when '
