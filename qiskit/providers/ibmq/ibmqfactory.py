@@ -23,6 +23,7 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from .accountprovider import AccountProvider
 from .api_v2.clients import AuthClient, VersionClient
 from .credentials import Credentials
+from .credentials.configrc import read_credentials_from_qiskitrc, remove_credentials
 from .exceptions import IBMQAccountError, IBMQApiUrlError, IBMQProviderError
 from .ibmqprovider import IBMQProvider
 
@@ -111,9 +112,29 @@ class IBMQFactory:
         """Save an account to disk for future use."""
         raise NotImplementedError
 
-    def delete_account(self):
-        """Delete saved account from disk"""
-        raise NotImplementedError
+    @staticmethod
+    def delete_account():
+        """Delete the saved account from disk.
+
+        Raises:
+            IBMQAccountError: if no API 2 valid configuration was found.
+        """
+        stored_credentials = read_credentials_from_qiskitrc()
+        if not stored_credentials:
+            raise IBMQAccountError('No credentials found.')
+
+        if len(stored_credentials) != 1:
+            raise IBMQAccountError('Multiple credentials found. Please use '
+                                   'IBMQ.update_account() for updating your '
+                                   'stored credentials.')
+
+        credentials = list(stored_credentials.values())[0]
+        if credentials.url != QX_AUTH_URL:
+            raise IBMQAccountError('Credentials from the API 1 found. Please use '
+                                   'IBMQ.update_account() for updating your '
+                                   'stored credentials.')
+
+        remove_credentials(credentials)
 
     def stored_account(self):
         """List the account stored on disk"""
