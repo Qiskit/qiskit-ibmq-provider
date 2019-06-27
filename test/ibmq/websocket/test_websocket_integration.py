@@ -33,12 +33,17 @@ from ...decorators import requires_qe_access, requires_new_api_auth
 class TestWebsocketIntegration(QiskitTestCase):
     """Websocket integration tests."""
 
-    # pylint: disable=arguments-differ
+    @classmethod
     @requires_qe_access
     @requires_new_api_auth
-    def setUp(self, qe_token, qe_url):
+    def _get_provider(cls, qe_token=None, qe_url=None):
+        """Helper for getting account credentials."""
         ibmq_factory = IBMQFactory()
-        self.provider = ibmq_factory.enable_account(qe_token, qe_url)
+        provider = ibmq_factory.enable_account(qe_token, qe_url)
+        return provider
+
+    def setUp(self):
+        self.provider = self._get_provider()
         self.sim_backend = self.provider.get_backend(simulator=True)
 
         # Create a circuit
@@ -47,16 +52,17 @@ class TestWebsocketIntegration(QiskitTestCase):
         self.qc1 = QuantumCircuit(qr, cr, name='qc1')
         self.qc1.measure(qr[0], cr[0])
 
-        # Create and run a default Qobj using the simulator.
+        # Create a default Qobj using the simulator.
         self.circuit = transpile(self.qc1, backend=self.sim_backend)
         self.qobj = assemble(self.circuit, backend=self.sim_backend, shots=1)
-        self.job = self.sim_backend.run(self.qobj)
 
     def test_websockets_simulator(self):
         """Test checking status of a job via websockets for a simulator."""
+        job = self.sim_backend.run(self.qobj)
+
         # Manually disable the non-websocket polling.
-        self.job._wait_for_final_status = None
-        result = self.job.result()
+        job._wait_for_final_status = None
+        result = job.result()
 
         self.assertEqual(result.status, 'COMPLETED')
 
@@ -77,28 +83,43 @@ class TestWebsocketIntegration(QiskitTestCase):
 
     def test_websockets_job_final_state(self):
         """Test checking status of a job in a final state via websockets."""
+        job = self.sim_backend.run(self.qobj)
+
+        # Manually disable the non-websocket polling.
+        job._wait_for_final_status = None
         # Cancel the job to put it in a final (cancelled) state.
-        self.job.cancel()
-        self.job._wait_for_completion()
-        self.assertIs(self.job._status, JobStatus.CANCELLED)
+        job.cancel()
+        job._wait_for_completion()
+
+        self.assertIs(job._status, JobStatus.CANCELLED)
 
     def test_websockets_retry_bad_url(self):
         """Test http retry after websocket error due to an invalid URL."""
-        # Use fake websocket address.
-        self.job._api.client_ws.websocket_url = 'wss://wss.wayne-enterprises.com'
+        job = self.sim_backend.run(self.qobj)
 
-        # _wait_for_completion() should retry with http successfully after getting websockets error.
-        self.job._wait_for_completion()
-        self.assertIs(self.job._status, JobStatus.DONE)
+        saved_websocket_url = job._api.client_ws.websocket_url
+        try:
+            # Use fake websocket address.
+            job._api.client_ws.websocket_url = 'wss://wss.localhost'
+
+            # _wait_for_completion() should retry with http successfully
+            # after getting websockets error.
+            job._wait_for_completion()
+        finally:
+            job._api.client_ws.websocket_url = saved_websocket_url
+
+        self.assertIs(job._status, JobStatus.DONE)
 
     @mock.patch.object(WebsocketClient, '_authentication_message',
                        return_value=WebsocketMessage(type_='authentication', data='phantom_token'))
     def test_websockets_retry_bad_auth(self, _):
         """Test http retry after websocket error due to a failed authentication."""
+        job = self.sim_backend.run(self.qobj)
+
         with mock.patch.object(IBMQJob, '_wait_for_final_status',
-                               side_effect=self.job._wait_for_final_status) as mocked_wait:
-            self.job._wait_for_completion()
-            self.assertIs(self.job._status, JobStatus.DONE)
+                               side_effect=job._wait_for_final_status) as mocked_wait:
+            job._wait_for_completion()
+            self.assertIs(job._status, JobStatus.DONE)
             mocked_wait.assert_called_with(mock.ANY, mock.ANY)
 
     def test_websockets_retry_connection_closed(self):
@@ -106,22 +127,23 @@ class TestWebsocketIntegration(QiskitTestCase):
 
         def _final_status_side_effect(*args, **kwargs):
             """Side effect function to restore job ID"""
-            self.job._job_id = saved_job_id
+            job._job_id = saved_job_id
             return saved_wait_for_final_status(*args, **kwargs)
 
-        self.job._wait_for_submission()
+        job = self.sim_backend.run(self.qobj)
+        job._wait_for_submission()
 
         # Save the originals.
-        saved_job_id = self.job._job_id
-        saved_wait_for_final_status = self.job._wait_for_final_status
+        saved_job_id = job._job_id
+        saved_wait_for_final_status = job._wait_for_final_status
         # Use bad job ID to fail the status retrieval.
-        self.job._job_id = '12345'
+        job._job_id = '12345'
 
         # job.result() should retry with http successfully after getting websockets error.
         with mock.patch.object(IBMQJob, '_wait_for_final_status',
                                side_effect=_final_status_side_effect):
-            self.job._wait_for_completion()
-            self.assertIs(self.job._status, JobStatus.DONE)
+            job._wait_for_completion()
+            self.assertIs(job._status, JobStatus.DONE)
 
     @slow_test
     def test_websockets_timeout(self):
@@ -141,6 +163,8 @@ class TestWebsocketIntegration(QiskitTestCase):
 
         def _run_job_get_result(q):
             job = self.sim_backend.run(self.qobj)
+            # Manually disable the non-websocket polling.
+            job._wait_for_final_status = None
             job._wait_for_completion()
             if job._status is not JobStatus.DONE:
                 q.put(False)
