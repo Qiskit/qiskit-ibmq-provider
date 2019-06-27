@@ -30,7 +30,7 @@ steps:
   displayName: 'Install dependencies'
 - bash: |
     if [[ -z "$QE_URL" ]] ; then
-        export QISKIT_TESTS: 'skip_online'
+        export QISKIT_TESTS='skip_online'
     fi
     pip install pytest pytest-azurepipelines
     pytest -s -v
