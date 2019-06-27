@@ -128,3 +128,13 @@ class AccountProvider(BaseProvider):
 
     def __eq__(self, other):
         return self.credentials == other.credentials
+
+    def __repr__(self):
+        credentials_info = ''
+        hgp = self.credentials.unique_id()
+        if hgp.hub:
+            credentials_info = ' ({}, {}, {})'.format(
+                hgp.hub, hgp.group, hgp.project)
+
+        return "<{} for IBMQ{}>".format(
+            self.__class__.__name__, credentials_info)
