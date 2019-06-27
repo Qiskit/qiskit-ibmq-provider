@@ -131,7 +131,7 @@ class AccountProvider(BaseProvider):
 
     def __repr__(self):
         credentials_info = ''
-        if self.credentials.hub:
+        if self.credentials.is_ibmq():
             credentials_info = ' ({}, {}, {})'.format(
                 self.credentials.hub, self.credentials.group, self.credentials.project)
 
