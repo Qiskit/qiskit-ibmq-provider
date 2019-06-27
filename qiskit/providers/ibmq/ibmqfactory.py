@@ -358,6 +358,13 @@ class IBMQFactory:
     def backends(self, name=None, filters=None, **kwargs):
         """Return all backends accessible via IBMQ provider, subject to optional filtering.
 
+        Note: this method is being deprecated. Please use v2, and::
+
+            provider = IBMQ.get_provider(...)
+            provider.backends()
+
+            instead.
+
         Args:
             name (str): backend name to filter by
             filters (callable): more complex filters, such as lambda functions
@@ -370,8 +377,8 @@ class IBMQFactory:
             list[IBMQBackend]: list of backends available that match the filter
         """
         warnings.warn('IBMQ.backends() is being deprecated. '
-                      'Please use providers() to find the desired AccountProvider and '
-                      'AccountProvider.backends() to find its backends.',
+                      'Please use IBMQ.get_provider() to retrieve a provider '
+                      'and AccountProvider.backends() to find its backends.',
                       DeprecationWarning)
 
         if self._credentials:
@@ -396,6 +403,13 @@ class IBMQFactory:
     def get_backend(self, name=None, **kwargs):
         """Return a single backend matching the specified filtering.
 
+        Note: this method is being deprecated. Please use v2, and::
+
+            provider = IBMQ.get_provider(...)
+            provider.get_backend('name')
+
+            instead.
+
         Args:
             name (str): name of the backend.
             **kwargs (dict): dict used for filtering.
@@ -407,13 +421,14 @@ class IBMQFactory:
             QiskitBackendNotFoundError: if no backend could be found or
                 more than one backend matches the filtering criteria.
         """
-        warnings.warn('IBMQ.get_backend() is being deprecated. '
-                      'Please use providers() to find the desired AccountProvider and '
-                      'AccountProvider.get_backend() to find the backend.',
+        warnings.warn('IBMQ.backends() is being deprecated. '
+                      'Please use IBMQ.get_provider() to retrieve a provider '
+                      'and AccountProvider.get_backend("name") to retrieve a '
+                      'backend.',
                       DeprecationWarning)
 
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
             backends = self.backends(name, **kwargs)
 
         if len(backends) > 1:
