@@ -131,10 +131,9 @@ class AccountProvider(BaseProvider):
 
     def __repr__(self):
         credentials_info = ''
-        hgp = self.credentials.unique_id()
-        if hgp.hub:
+        if self.credentials.hub:
             credentials_info = ' ({}, {}, {})'.format(
-                hgp.hub, hgp.group, hgp.project)
+                self.credentials.hub, self.credentials.group, self.credentials.project)
 
         return "<{} for IBMQ{}>".format(
             self.__class__.__name__, credentials_info)
