@@ -33,6 +33,8 @@ from .base import BaseClient
 
 logger = logging.getLogger(__name__)
 
+# `asyncio` by design does not allow event loops to be nested. Jupyter (really
+# tornado) has its own event loop already so we need to patch it.
 # Patch asyncio to allow nested use of `loop.run_until_complete()`.
 nest_asyncio.apply()
 
@@ -97,7 +99,8 @@ class WebsocketClient(BaseClient):
             logger.debug('Starting new websocket connection: %s', url)
             websocket = yield from connect(url)
 
-        except ConnectionError as ex:
+        # pylint: disable=broad-except
+        except Exception as ex:
             raise WebsocketError('Could not connect to server') from ex
 
         try:
@@ -168,24 +171,20 @@ class WebsocketClient(BaseClient):
                     job_status = response.data.get('status')
                     if (job_status and
                             ApiJobStatus(job_status) in API_JOB_FINAL_STATES):
-                        # Force closing the connection.
-                        # TODO: revise with API team the automatic closing.
-                        raise ConnectionClosed(
-                            code=4002,
-                            reason='IBMQProvider closed the connection')
+                        break
 
                 except futures.TimeoutError:
                     # Timeout during our wait.
                     raise WebsocketTimeoutError('Timeout reached') from None
                 except ConnectionClosed as ex:
                     # From the API:
-                    # 4001: closed due to an internal erros
+                    # 4001: closed due to an internal errors
                     # 4002: closed on purpose (no more updates to send)
                     # 4003: closed due to job not found.
                     message = 'Unexpected error'
                     if ex.code == 4001:
                         message = 'Internal server error'
-                    if ex.code == 4002:
+                    elif ex.code == 4002:
                         break
                     elif ex.code == 4003:
                         message = 'Job id not found'
@@ -197,6 +196,6 @@ class WebsocketClient(BaseClient):
         return last_status
 
     def _authentication_message(self):
-        """Return the message used for authenticating agains the server."""
+        """Return the message used for authenticating against the server."""
         return WebsocketMessage(type_='authentication',
                                 data=self.access_token)
