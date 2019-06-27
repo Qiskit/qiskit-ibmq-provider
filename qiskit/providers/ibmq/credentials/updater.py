@@ -32,9 +32,25 @@ QE2_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 def update_credentials(force=False):
     """Update or provide information about updating stored credentials.
 
+    This function is an interactive helper to update credentials stored in
+    disk from the API version 1 to the API version 2. Upon invocation, the
+    function will inspect the credentials stored in disk and attempt to
+    convert them to the new version, displaying the changes and asking for
+    confirmation before overwriting the credentials.
+
+    The function attempts to preserve the existing advanced parameters (such
+    as proxies), but has limited conflict resolution handling. For complex
+    configurations with multiple credentials, an alternative is to directly
+    clear the existing credentials via `IBMQ.delete_accounts()` and recreate
+    the configuration from the instructions at the IBM Q Experience site.
+
     Args:
         force (bool): if `True`, disable interactive prompts and perform the
             changes.
+
+    Returns:
+        Credentials: if the updating is possible, credentials for the API
+            version 2; and `None` otherwise.
     """
     # Get the list of stored credentials.
     credentials_list = list(read_credentials_from_qiskitrc().values())
