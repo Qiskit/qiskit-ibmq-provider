@@ -13,12 +13,9 @@ strategy:
   matrix:
     Python35:
       python.version: '3.5'
-      QISKIT_TESTS: 'skip_online'
     Python36:
       python.version: '3.6'
-      QISKIT_TESTS: 'skip_online'
     Python37:
-      QISKIT_TESTS: 'skip_online'
       python.version: '3.7'
 
 steps:
@@ -31,7 +28,10 @@ steps:
     pip install -U -r requirements.txt
     pip install -U -r requirements-dev.txt
   displayName: 'Install dependencies'
-- script: |
+- bash: |
+    if [[ -z "$QE_URL" ]] ; then
+        export QISKIT_TESTS: 'skip_online'
+    fi
     pip install pytest pytest-azurepipelines
     pytest -s -v
   displayName: 'pytest'
