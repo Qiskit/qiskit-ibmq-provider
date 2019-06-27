@@ -15,7 +15,9 @@
 """Helper for updating credentials from API 1 to API 2."""
 
 from .credentials import Credentials
-from .configrc import read_credentials_from_qiskitrc
+from .configrc import (read_credentials_from_qiskitrc,
+                       remove_credentials,
+                       store_credentials)
 
 
 QE_URL = 'https://quantumexperience.ng.bluemix.net/api'
@@ -41,27 +43,26 @@ def update_credentials(force=False):
     hub_lines = []
     warnings = []
     provider_number = 1
-    first_converted_url = None
 
     # Parse the credentials found.
     for credentials in credentials_list:
         if is_directly_updatable(credentials):
+            # Credentials for known URLs without
             new_credentials.append(Credentials(credentials.token, QE2_AUTH_URL,
                                                proxies=credentials.proxies,
                                                verify=credentials.verify))
-            if not first_converted_url:
-                first_converted_url = credentials.url
         else:
-            if credentials.is_ibmq():
+            if credentials.url == QE2_AUTH_URL:
+                # Credential is already for auth url.
+                warnings.append('The stored account with url "{}" is already '
+                                'an API 2 account.'.format(credentials.url))
+            elif credentials.is_ibmq():
                 new_credentials.append(Credentials(credentials.token,
                                                    QE2_AUTH_URL,
                                                    proxies=credentials.proxies,
                                                    verify=credentials.verify))
-                if not first_converted_url:
-                    first_converted_url = credentials.url
-
                 hub_lines.append(
-                    "provider{} = IBMQ.get_provider(hub='{}', group='{}',"
+                    "  provider{} = IBMQ.get_provider(hub='{}', group='{}',"
                     "project='{})".format(provider_number,
                                           credentials.hub,
                                           credentials.group,
@@ -70,23 +71,63 @@ def update_credentials(force=False):
             else:
                 # Unknown URL - do not act on it.
                 warnings.append('The stored account with url "{}" could not be '
-                                'parsed and will be discarded.')
+                                'parsed.'.format(credentials.url))
+
+    # Check that the conversion can be performed.
+    print('Found {} credentials.'.format(len(credentials_list)))
+
+    if not new_credentials:
+        print('No credentials available for updating could be found. No '
+              'action will be performed.')
+        if warnings:
+            print('Details:')
+            print('\n'.join(warnings))
+
+        return None
 
     # Check if any of the meaningful fields differ.
+    final_credentials = new_credentials[0]
     tuples = [(credentials.token, credentials.proxies, credentials.verify)
               for credentials in new_credentials]
 
-    if not all(field_tuple==tuples[0] for field_tuple in tuples):
-        warnings.append("The credentials stored differ in several fields. The "
-                        "conversion will use the settings previously stored "
-                        "for the v1 account at '{}'.".format(first_converted_url))
+    if not all(field_tuple == tuples[0] for field_tuple in tuples):
+        warnings.append('The credentials stored differ in several fields. The '
+                        'conversion will use the settings previously stored '
+                        'for the first v1 account.')
 
-    return credentials_list
+    # Print a summary of the changes.
+    print('The credentials stored will be replaced with a single entry with '
+          'token "{}" and the new API 2 URL.'.format(final_credentials.token))
+    if final_credentials.proxies:
+        print('The existing proxy configuration will be preserved.')
+
+    if hub_lines:
+        print('In order to access the provider, please use the new '
+              '"IBMQ.get_provider()" methods:')
+        print('\n  provider0 = IBMQ.load_account()')
+        print('\n'.join(hub_lines))
+        print('  backends = provider0.backends()')
+    if warnings:
+        print('\nWarnings:')
+        print('\n'.join(warnings))
+
+    # Ask for confirmation from the user.
+    if not force:
+        confirmation = input('\nUpdate the credentials? [y/N]: ')
+        if confirmation not in ('y', 'Y'):
+            return None
+
+    # Proceed with overwriting the credentials.
+    for credentials in credentials_list:
+        remove_credentials(credentials)
+    store_credentials(final_credentials)
+
+    return final_credentials
 
 
 def is_directly_updatable(credentials):
     """Returns `True` if credentials can be updated directly."""
-    if credentials.base_url in (QE_URL, QE2_AUTH_URL):
+    if credentials.base_url == QE_URL:
         return True
 
     if credentials.base_url in (QCONSOLE_URL, QE2_URL, QCONSOLE2_URL):
