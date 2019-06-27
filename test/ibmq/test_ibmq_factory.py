@@ -14,6 +14,7 @@
 
 """Tests for the IBMQFactory."""
 
+import warnings
 
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.exceptions import IBMQAccountError, IBMQApiUrlError
@@ -32,8 +33,8 @@ API2_URL = 'https://api.quantum-computing.ibm.com/api'
 AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 
 
-class TestIBMQClientAccounts(QiskitTestCase):
-    """Tests for IBMQConnector."""
+class TestIBMQFactoryEnableAccount(QiskitTestCase):
+    """Tests for IBMQFactory `enable_account()`."""
 
     @requires_qe_access
     @requires_new_api_auth
@@ -112,3 +113,50 @@ class TestIBMQClientAccounts(QiskitTestCase):
             ibmq.enable_account(qe_token_api2, qe_url_api2)
 
         self.assertIn('already', str(context_manager.exception))
+
+
+class TestIBMQFactoryAccountsDeprecation(QiskitTestCase):
+    """Tests for IBMQFactory account-related deprecated methods."""
+
+    @classmethod
+    def setUpClass(cls):
+        # Cause all warnings to always be triggered.
+        warnings.simplefilter("always")
+
+    @requires_qe_access
+    @requires_classic_api
+    def test_api1_accounts_compatibility(self, qe_token, qe_url):
+        """Test backward compatibility for IBMQProvider account methods."""
+        ibmq = IBMQFactory()
+        ibmq.enable_account(qe_token, qe_url)
+
+        with warnings.catch_warnings(record=True) as warnings_list:
+            accounts = ibmq.active_accounts()[0]
+            self.assertEqual(accounts['token'], qe_token)
+            self.assertEqual(accounts['url'], qe_url)
+            ibmq.disable_accounts()
+            number_of_accounts = len(ibmq.active_accounts())
+
+        self.assertEqual(number_of_accounts, 0)
+        self.assertEqual(len(warnings_list), 3)
+        for warn in warnings_list:
+            self.assertTrue(issubclass(warn.category, DeprecationWarning))
+
+    @requires_qe_access
+    @requires_classic_api
+    def test_backends(self, qe_token, qe_url):
+        """Test backward compatibility for IBMQProvider backends method."""
+        ibmq = IBMQFactory()
+        ibmq.enable_account(qe_token, qe_url)
+
+        ibmq_provider = IBMQProvider()
+        ibmq_provider.enable_account(qe_token, qe_url)
+        ibmq_provider_backend_names = [b.name() for b in ibmq_provider.backends()]
+
+        with warnings.catch_warnings(record=True) as warnings_list:
+            ibmq_backend_names = [b.name() for b in ibmq.backends()]
+
+        self.assertEqual(set(ibmq_backend_names),
+                         set(ibmq_provider_backend_names))
+        self.assertTrue(issubclass(warnings_list[0].category,
+                                   DeprecationWarning))

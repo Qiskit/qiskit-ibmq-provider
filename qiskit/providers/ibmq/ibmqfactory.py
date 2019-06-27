@@ -15,7 +15,10 @@
 """Factory and credentials manager for IBM Q Experience."""
 
 import logging
+import warnings
 from collections import OrderedDict
+
+from qiskit.providers.exceptions import QiskitBackendNotFoundError
 
 from .accountprovider import AccountProvider
 from .api_v2.clients import AuthClient, VersionClient
@@ -106,6 +109,14 @@ class IBMQFactory:
 
     def save_account(self):
         """Save an account to disk for future use."""
+        raise NotImplementedError
+
+    def delete_account(self):
+        """Delete saved account from disk"""
+        raise NotImplementedError
+
+    def stored_account(self):
+        """List the account stored on disk"""
         raise NotImplementedError
 
     # Provider management functions.
@@ -205,3 +216,210 @@ class IBMQFactory:
                 # Catch-all for errors instantiating the provider.
                 logger.warning('Unable to instantiate provider for %s: %s',
                                hub_info, ex)
+
+    # Deprecated account management functions for backward compatibility.
+
+    def active_accounts(self):
+        """List all version 1 accounts currently in the session.
+
+        Note: this method is being deprecated, and only available when using
+            v1 accounts.
+
+        Returns:
+            list[dict]: a list with information about the accounts currently
+                in the session.
+
+        Raises:
+            IBMQAccountError: if the method is used with a v1 account.
+        """
+        if self._credentials:
+            raise IBMQAccountError('active_accounts() is not available when '
+                                   'using an IBM Q Experience 2 account.')
+
+        warnings.warn('active_accounts() is being deprecated. '
+                      'Please use IBM Q Experience 2, which offers a single account, instead.',
+                      DeprecationWarning)
+
+        return self._v1_provider.active_accounts()
+
+    def disable_accounts(self, **kwargs):
+        """Disable version 1 accounts in the current session.
+
+        Note: this method is being deprecated, and only available when using
+            v1 accounts.
+
+        The filter kwargs can be `token`, `url`, `hub`, `group`, `project`.
+        If no filter is passed, all accounts in the current session will be disabled.
+
+        Raises:
+            IBMQAccountError: if the method is used with a v1 account, or
+                if no account matched the filter.
+        """
+        if self._credentials:
+            raise IBMQAccountError('disable_accounts() is not available when '
+                                   'using an IBM Q Experience 2 account.')
+
+        warnings.warn('disable_accounts() is being deprecated. '
+                      'Please use IBM Q Experience 2 and disable_account() instead.',
+                      DeprecationWarning)
+
+        self._v1_provider.disable_accounts(**kwargs)
+
+    def load_accounts(self, **kwargs):
+        """Load version 1 IBMQ accounts found in the system into current session.
+
+        Note: this method is being deprecated, and only available when using
+            v1 accounts.
+
+        Automatically load the accounts found in the system. This method
+        looks for credentials in the following locations, in order, and
+        returns as soon as credentials are found:
+
+        1. in the `Qconfig.py` file in the current working directory.
+        2. in the environment variables.
+        3. in the `qiskitrc` configuration file
+
+        Raises:
+            IBMQAccountError: if the method is used with a v1 account, or
+                if no credentials are found.
+        """
+        if self._credentials:
+            raise IBMQAccountError('load_accounts() is not available when '
+                                   'using and IBM Q Experience 2 account.')
+
+        warnings.warn('load_accounts() is being deprecated. '
+                      'Please use IBM Q Experience 2 and load_account() instead.',
+                      DeprecationWarning)
+
+        self._v1_provider.load_accounts(**kwargs)
+
+    def delete_accounts(self, **kwargs):
+        """Delete saved accounts from disk, subject to optional filtering.
+
+        Note: this method is being deprecated, and only available when using
+            v1 accounts.
+
+        The filter kwargs can be `token`, `url`, `hub`, `group`, `project`.
+        If no filter is passed, all accounts will be deleted from disk.
+
+        Raises:
+            IBMQAccountError: if the method is used with a v1 account, or
+                if no account matched the filter.
+        """
+        if self._credentials:
+            raise IBMQAccountError('delete_accounts() is not available when '
+                                   'using and IBM Q Experience 2 account.')
+
+        warnings.warn('delete_accounts() is being deprecated. '
+                      'Please use IBM Q Experience 2 and delete_account() instead.',
+                      DeprecationWarning)
+
+        self._v1_provider.delete_accounts(**kwargs)
+
+    def stored_accounts(self):
+        """List all accounts stored to disk.
+
+        Note: this method is being deprecated, and only available when using
+            v1 accounts.
+
+        Returns:
+            list[dict]: a list with information about the accounts stored
+                on disk.
+
+        Raises:
+            IBMQAccountError: if the method is used with a v1 account.
+        """
+        if self._credentials:
+            raise IBMQAccountError('stored_accounts() is not available when '
+                                   'using and IBM Q Experience 2 account.')
+
+        warnings.warn('stored_accounts() is being deprecated. '
+                      'Please use IBM Q Experience 2 and stored_account() instead.',
+                      DeprecationWarning)
+
+        return self._v1_provider.stored_accounts()
+
+    # Deprecated backend-related functionality.
+
+    def backends(self, name=None, filters=None, **kwargs):
+        """Return all backends accessible via IBMQ provider, subject to optional filtering.
+
+        Note: this method is being deprecated. Please use v2, and::
+
+            provider = IBMQ.get_provider(...)
+            provider.backends()
+
+            instead.
+
+        Args:
+            name (str): backend name to filter by
+            filters (callable): more complex filters, such as lambda functions
+                e.g. IBMQ.backends(filters=lambda b: b.configuration['n_qubits'] > 5)
+            kwargs: simple filters specifying a true/false criteria in the
+                backend configuration or backend status or provider credentials
+                e.g. IBMQ.backends(n_qubits=5, operational=True, hub='internal')
+
+        Returns:
+            list[IBMQBackend]: list of backends available that match the filter
+        """
+        warnings.warn('IBMQ.backends() is being deprecated. '
+                      'Please use IBMQ.get_provider() to retrieve a provider '
+                      'and AccountProvider.backends() to find its backends.',
+                      DeprecationWarning)
+
+        if self._credentials:
+            hgp_filter = {}
+
+            # First filter providers by h/g/p
+            for key in ['hub', 'group', 'project']:
+                if key in kwargs:
+                    hgp_filter[key] = kwargs.pop(key)
+            providers = self.providers(**hgp_filter)
+
+            # Aggregate the list of filtered backends.
+            backends = []
+            for provider in providers:
+                backends = backends + provider.backends(
+                    name=name, filters=filters, **kwargs)
+
+            return backends
+        else:
+            return self._v1_provider.backends(name, filters, **kwargs)
+
+    def get_backend(self, name=None, **kwargs):
+        """Return a single backend matching the specified filtering.
+
+        Note: this method is being deprecated. Please use v2, and::
+
+            provider = IBMQ.get_provider(...)
+            provider.get_backend('name')
+
+            instead.
+
+        Args:
+            name (str): name of the backend.
+            **kwargs (dict): dict used for filtering.
+
+        Returns:
+            BaseBackend: a backend matching the filtering.
+
+        Raises:
+            QiskitBackendNotFoundError: if no backend could be found or
+                more than one backend matches the filtering criteria.
+        """
+        warnings.warn('IBMQ.backends() is being deprecated. '
+                      'Please use IBMQ.get_provider() to retrieve a provider '
+                      'and AccountProvider.get_backend("name") to retrieve a '
+                      'backend.',
+                      DeprecationWarning)
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            backends = self.backends(name, **kwargs)
+
+        if len(backends) > 1:
+            raise QiskitBackendNotFoundError('More than one backend matches the criteria')
+        if not backends:
+            raise QiskitBackendNotFoundError('No backend matches the criteria')
+
+        return backends[0]
