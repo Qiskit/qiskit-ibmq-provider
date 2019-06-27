@@ -207,10 +207,22 @@ class AccountClient(BaseClient):
 
         Returns:
             dict: job status.
+
+        Raises:
+            RuntimeError: if an unexpected error occurred while getting the event loop.
         """
         # As mentioned in `websocket.py`, in jupyter we need to use
         # `nest_asyncio` to allow nested event loops.
-        return asyncio.get_event_loop().run_until_complete(
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError as ex:
+            # Event loop may not be set in a child thread.
+            if 'There is no current event loop' in str(ex):
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            else:
+                raise
+        return loop.run_until_complete(
             self.client_ws.get_job_status(job_id, timeout=timeout))
 
     def job_properties(self, job_id):
