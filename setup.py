@@ -65,6 +65,7 @@ setup(
     packages=['qiskit.providers.ibmq',
               'qiskit.providers.ibmq.api',
               'qiskit.providers.ibmq.api_v2',
+              'qiskit.providers.ibmq.api_v2.clients',
               'qiskit.providers.ibmq.api_v2.rest',
               'qiskit.providers.ibmq.circuits',
               'qiskit.providers.ibmq.credentials',

@@ -14,7 +14,7 @@
 
 """Exceptions related to Circuits."""
 
-from qiskit.providers.ibmq.exceptions import IBMQError
+from ..exceptions import IBMQError
 
 
 CIRCUIT_NOT_ALLOWED = 'Circuit support is not available yet in this account'

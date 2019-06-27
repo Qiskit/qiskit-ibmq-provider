@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 from unittest import skipIf
 from unittest.mock import patch
-from requests.exceptions import ProxyError
+from requests_ntlm import HttpNtlmAuth
 
 from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.credentials import (
@@ -30,7 +30,6 @@ from qiskit.providers.ibmq.credentials.environ import VARIABLES_MAP
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
 from qiskit.providers.ibmq.ibmqprovider import QE_URL
 from qiskit.providers.ibmq.ibmqsingleprovider import IBMQSingleProvider
-from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 from qiskit.test import QiskitTestCase
 
 from ..contextmanagers import custom_envs, no_envs
@@ -165,10 +164,10 @@ class TestIBMQAccounts(QiskitTestCase):
 
     def test_pass_bad_proxy(self):
         """Test proxy pass through."""
-        with self.assertRaises(RequestsApiError) as context_manager:
+        with self.assertRaises(ConnectionError) as context_manager:
             IBMQ.enable_account('dummy_token', 'https://dummy_url',
                                 proxies=PROXIES)
-        self.assertIsInstance(context_manager.exception.original_exception, ProxyError)
+        self.assertIn('ProxyError', str(context_manager.exception))
 
 
 # TODO: NamedTemporaryFiles do not support name in Windows
@@ -236,6 +235,91 @@ class TestCredentials(QiskitTestCase):
 
         self.assertEqual(len(credentials), 1)
         self.assertEqual(list(credentials.values())[0].token, 'QCONFIG_TOKEN')
+
+
+class TestCredentialsKwargs(QiskitTestCase):
+    """Test for `Credentials.connection_parameters()`."""
+
+    def test_no_proxy_params(self):
+        """Test when no proxy parameters are passed."""
+        no_params_expected_result = {'verify': True}
+        no_params_credentials = Credentials('dummy_token', 'https://dummy_url')
+        result = no_params_credentials.connection_parameters()
+        self.assertDictEqual(no_params_expected_result, result)
+
+    def test_verify_param(self):
+        """Test 'verify' arg is acknowledged."""
+        false_verify_expected_result = {'verify': False}
+        false_verify_credentials = Credentials(
+            'dummy_token', 'https://dummy_url', verify=False)
+        result = false_verify_credentials.connection_parameters()
+        self.assertDictEqual(false_verify_expected_result, result)
+
+    def test_proxy_param(self):
+        """Test using only proxy urls (no NTLM credentials)."""
+        urls = {'http': 'localhost:8080', 'https': 'localhost:8080'}
+        proxies_only_expected_result = {'verify': True, 'proxies': urls}
+        proxies_only_credentials = Credentials(
+            'dummy_token', 'https://dummy_url', proxies={'urls': urls})
+        result = proxies_only_credentials.connection_parameters()
+        self.assertDictEqual(proxies_only_expected_result, result)
+
+    def test_proxies_param_with_ntlm(self):
+        """Test proxies with NTLM credentials."""
+        urls = {'http': 'localhost:8080', 'https': 'localhost:8080'}
+        proxies_with_ntlm_dict = {
+            'urls': urls,
+            'username_ntlm': 'domain\\username',
+            'password_ntlm': 'password'
+        }
+        ntlm_expected_result = {
+            'verify': True,
+            'proxies': urls,
+            'auth': HttpNtlmAuth('domain\\username', 'password')
+        }
+        proxies_with_ntlm_credentials = Credentials(
+            'dummy_token', 'https://dummy_url', proxies=proxies_with_ntlm_dict)
+        result = proxies_with_ntlm_credentials.connection_parameters()
+
+        # Verify the NTLM credentials.
+        self.assertEqual(
+            ntlm_expected_result['auth'].username, result['auth'].username)
+        self.assertEqual(
+            ntlm_expected_result['auth'].password, result['auth'].password)
+
+        # Remove the HttpNtlmAuth objects for direct comparison of the dicts.
+        ntlm_expected_result.pop('auth')
+        result.pop('auth')
+        self.assertDictEqual(ntlm_expected_result, result)
+
+    def test_malformed_proxy_param(self):
+        """Test input with malformed nesting of the proxies dictionary."""
+        urls = {'http': 'localhost:8080', 'https': 'localhost:8080'}
+        malformed_nested_proxies_dict = {'proxies': urls}
+        malformed_nested_credentials = Credentials(
+            'dummy_token', 'https://dummy_url',
+            proxies=malformed_nested_proxies_dict)
+
+        # Malformed proxy entries should be ignored.
+        expected_result = {'verify': True}
+        result = malformed_nested_credentials.connection_parameters()
+        self.assertDictEqual(expected_result, result)
+
+    def test_malformed_ntlm_params(self):
+        """Test input with malformed NTLM credentials."""
+        urls = {'http': 'localhost:8080', 'https': 'localhost:8080'}
+        malformed_ntlm_credentials_dict = {
+            'urls': urls,
+            'username_ntlm': 1234,
+            'password_ntlm': 5678
+        }
+        malformed_ntlm_credentials = Credentials(
+            'dummy_token', 'https://dummy_url',
+            proxies=malformed_ntlm_credentials_dict)
+        # Should raise when trying to do username.split('\\', <int>)
+        # in NTLM credentials due to int not facilitating 'split'.
+        with self.assertRaises(AttributeError):
+            _ = malformed_ntlm_credentials.connection_parameters()
 
 
 # Context managers

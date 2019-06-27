@@ -18,15 +18,19 @@
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQProvider
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
+from qiskit.providers.ibmq.accountprovider import AccountProvider
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.qobj import QobjHeader
 from qiskit.test import slow_test, providers
 from qiskit.compiler import assemble, transpile
 
-from ..decorators import requires_qe_access
+from ..decorators import (requires_qe_access,
+                          requires_classic_api,
+                          requires_new_api_auth)
 
 
 class TestIBMQProvider(providers.ProviderTestCase):
-    """Tests for all the IBMQ backends."""
+    """Tests for all the IBMQ backends through the classic API."""
 
     provider_cls = IBMQProvider
     backend_name = 'ibmq_qasm_simulator'
@@ -41,6 +45,7 @@ class TestIBMQProvider(providers.ProviderTestCase):
         self.qc1.measure(qr, cr)
 
     @requires_qe_access
+    @requires_classic_api
     def _get_provider(self, qe_token, qe_url):
         """Return an instance of a Provider."""
         # pylint: disable=arguments-differ
@@ -147,3 +152,17 @@ class TestIBMQProvider(providers.ProviderTestCase):
                     self.assertEqual(backend_by_name, backend_by_display_name)
                     self.assertEqual(
                         backend_by_display_name.name(), backend_name)
+
+
+class TestAccountProvider(TestIBMQProvider):
+    """Tests for all the IBMQ backends through the new API."""
+
+    provider_cls = AccountProvider
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def _get_provider(self, qe_token, qe_url):
+        """Return an instance of a Provider."""
+        # pylint: disable=arguments-differ
+        ibmq = IBMQFactory()
+        return ibmq.enable_account(qe_token, qe_url)
