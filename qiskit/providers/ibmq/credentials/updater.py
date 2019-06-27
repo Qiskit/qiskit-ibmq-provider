@@ -117,12 +117,12 @@ def update_credentials(force=False):
     if final_credentials.proxies:
         print('The existing proxy configuration will be preserved.')
 
+    print('In order to access the provider, please use the new '
+          '"IBMQ.get_provider()" methods:')
+    print('\n  provider0 = IBMQ.load_account()')
     if hub_lines:
-        print('In order to access the provider, please use the new '
-              '"IBMQ.get_provider()" methods:')
-        print('\n  provider0 = IBMQ.load_account()')
         print('\n'.join(hub_lines))
-        print('  backends = provider0.backends()')
+    print('  backends = provider0.backends()')
     if warnings:
         print('\nWarnings:')
         print('\n'.join(warnings))

@@ -27,8 +27,9 @@ from qiskit.providers.ibmq.credentials import (
     Credentials, configrc, discover_credentials, qconfig,
     read_credentials_from_qiskitrc, store_credentials)
 from qiskit.providers.ibmq.credentials.environ import VARIABLES_MAP
+from qiskit.providers.ibmq.credentials.updater import update_credentials, QE2_AUTH_URL, QE2_URL
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
-from qiskit.providers.ibmq.ibmqprovider import QE_URL
+from qiskit.providers.ibmq.ibmqprovider import QE_URL, IBMQProvider
 from qiskit.providers.ibmq.ibmqsingleprovider import IBMQSingleProvider
 from qiskit.test import QiskitTestCase
 
@@ -50,6 +51,7 @@ CREDENTIAL_ENV_VARS = VARIABLES_MAP.keys()
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
 class TestIBMQAccounts(QiskitTestCase):
     """Tests for the IBMQ account handling."""
+
     def test_enable_account(self):
         """Test enabling one account."""
         with custom_qiskitrc(), mock_ibmq_provider():
@@ -320,6 +322,109 @@ class TestCredentialsKwargs(QiskitTestCase):
         # in NTLM credentials due to int not facilitating 'split'.
         with self.assertRaises(AttributeError):
             _ = malformed_ntlm_credentials.connection_parameters()
+
+
+@skipIf(os.name == 'nt', 'Test not supported in Windows')
+class TestIBMQAccountUpdater(QiskitTestCase):
+    """Tests for the update_credentials() helper."""
+
+    def setUp(self):
+        super().setUp()
+
+        # Reference for saving accounts.
+        self.ibmq = IBMQProvider()
+
+    def assertSingleCredentialWithApi2Url(self, credentials_dict):
+        """Asserts that there is only one credentials belonging to API 2."""
+        self.assertEqual(len(credentials_dict), 1)
+        credentials = list(credentials_dict.values())[0]
+        self.assertEqual(credentials.url, QE2_AUTH_URL)
+        self.assertIsNone(credentials.hub)
+        self.assertIsNone(credentials.group)
+        self.assertIsNone(credentials.project)
+
+    def test_qe_credentials(self):
+        """Test converting QE credentials."""
+        with custom_qiskitrc():
+            self.ibmq.save_account('A', url=QE_URL)
+            _ = update_credentials(force=True)
+
+            # Assert over the stored (updated) credentials.
+            loaded_accounts = read_credentials_from_qiskitrc()
+            self.assertSingleCredentialWithApi2Url(loaded_accounts)
+
+    def test_qconsole_credentials(self):
+        """Test converting Qconsole credentials."""
+        with custom_qiskitrc():
+            self.ibmq.save_account('A',
+                                   url=IBMQ_TEMPLATE.format('a', 'b', 'c'))
+            _ = update_credentials(force=True)
+
+            # Assert over the stored (updated) credentials.
+            loaded_accounts = read_credentials_from_qiskitrc()
+            self.assertSingleCredentialWithApi2Url(loaded_accounts)
+
+    def test_proxy_credentials(self):
+        """Test converting credentials with proxy values."""
+        with custom_qiskitrc():
+            self.ibmq.save_account('A',
+                                   url=IBMQ_TEMPLATE.format('a', 'b', 'c'),
+                                   proxies=PROXIES)
+            _ = update_credentials(force=True)
+
+            # Assert over the stored (updated) credentials.
+            loaded_accounts = read_credentials_from_qiskitrc()
+            self.assertSingleCredentialWithApi2Url(loaded_accounts)
+
+            # Extra assert on preserving proxies.
+            credentials = list(loaded_accounts.values())[0]
+            self.assertEqual(credentials.proxies, PROXIES)
+
+    def test_multiple_credentials(self):
+        """Test converting multiple credentials."""
+        with custom_qiskitrc():
+            self.ibmq.save_account('A', url=QE_URL)
+            self.ibmq.save_account('B',
+                                   url=IBMQ_TEMPLATE.format('a', 'b', 'c'))
+            self.ibmq.save_account('C',
+                                   url=IBMQ_TEMPLATE.format('d', 'e', 'f'))
+
+            _ = update_credentials(force=True)
+
+            # Assert over the stored (updated) credentials.
+            loaded_accounts = read_credentials_from_qiskitrc()
+            self.assertSingleCredentialWithApi2Url(loaded_accounts)
+
+    def test_api2_non_auth_credentials(self):
+        """Test converting api 2 non auth credentials."""
+        with custom_qiskitrc():
+            self.ibmq.save_account('A', url=QE2_URL)
+            _ = update_credentials(force=True)
+
+            # Assert over the stored (updated) credentials.
+            loaded_accounts = read_credentials_from_qiskitrc()
+            self.assertSingleCredentialWithApi2Url(loaded_accounts)
+
+    def test_auth2_credentials(self):
+        """Test converting already API 2 auth credentials."""
+        with custom_qiskitrc():
+            self.ibmq.save_account('A', url=QE2_AUTH_URL)
+            credentials = update_credentials(force=True)
+
+            # No credentials should be returned.
+            self.assertIsNone(credentials)
+
+    def test_unknown_credentials(self):
+        """Test converting credentials with an unknown URL."""
+        with custom_qiskitrc():
+            self.ibmq.save_account('A', url='UNKNOWN_URL')
+            credentials = update_credentials(force=True)
+
+            # No credentials should be returned nor updated.
+            self.assertIsNone(credentials)
+            loaded_accounts = read_credentials_from_qiskitrc()
+            self.assertEqual(list(loaded_accounts.values())[0].url,
+                             'UNKNOWN_URL')
 
 
 # Context managers
