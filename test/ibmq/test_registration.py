@@ -19,7 +19,7 @@ import warnings
 from io import StringIO
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from unittest import skipIf
+from unittest import skipIf, skip
 from unittest.mock import patch
 from requests_ntlm import HttpNtlmAuth
 
@@ -48,6 +48,7 @@ PROXIES = {
 
 # TODO: NamedTemporaryFiles do not support name in Windows
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
+@skip('Temporarily skipped, related to test_ibm_factory')
 class TestIBMQAccounts(IBMQTestCase):
     """Tests for the IBMQ account handling."""
 
@@ -184,6 +185,7 @@ class TestCredentials(IBMQTestCase):
 
         self.assertIn('No IBMQ credentials found', str(context_manager.exception))
 
+    @skip('Temporarily skipped, related to test_ibm_factory')
     def test_store_credentials_overwrite(self):
         """Test overwriting qiskitrc credentials."""
         credentials = Credentials('QISKITRC_TOKEN', url=QE_URL, hub='HUB')
