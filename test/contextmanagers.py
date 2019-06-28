@@ -17,8 +17,12 @@
 import os
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
+from unittest.mock import patch
 
 from qiskit.providers.ibmq.credentials import configrc
+from qiskit.providers.ibmq.credentials.environ import VARIABLES_MAP
+
+CREDENTIAL_ENV_VARS = VARIABLES_MAP.keys()
 
 
 @contextmanager
@@ -77,3 +81,20 @@ def custom_qiskitrc(contents=b''):
     # Delete the temporary file and restore the default location.
     tmp_file.close()
     configrc.DEFAULT_QISKITRC_FILE = default_qiskitrc_file_original
+
+
+@contextmanager
+def no_file(filename):
+    """Context manager that disallows access to a file."""
+    def side_effect(filename_):
+        """Return False for the specified file."""
+        if filename_ == filename:
+            return False
+        return isfile_original(filename_)
+
+    # Store the original `os.path.isfile` function, for mocking.
+    isfile_original = os.path.isfile
+    patcher = patch('os.path.isfile', side_effect=side_effect)
+    patcher.start()
+    yield
+    patcher.stop()

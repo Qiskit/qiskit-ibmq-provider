@@ -28,7 +28,8 @@ from qiskit.test import QiskitTestCase
 from ..decorators import (requires_qe_access,
                           requires_new_api_auth,
                           requires_classic_api)
-from ..contextmanagers import custom_qiskitrc
+from ..contextmanagers import (custom_qiskitrc, no_file, no_envs,
+                               CREDENTIAL_ENV_VARS)
 
 
 API1_URL = 'https://quantumexperience.ng.bluemix.net/api'
@@ -218,3 +219,22 @@ class TestIBMQFactoryAccountsOnDisk(QiskitTestCase):
             self.provider.save_account(self.v1_token, url=API1_URL)
             with self.assertRaises(IBMQAccountError):
                 self.factory.delete_account()
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_load_account_v2(self, qe_token, qe_url):
+        """Test saving an API 2 account."""
+        with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
+            self.factory.save_account(qe_token, url=qe_url)
+            self.factory.load_account()
+
+        self.assertEqual(self.factory._credentials.token, qe_token)
+        self.assertEqual(self.factory._credentials.url, qe_url)
+        self.assertEqual(self.factory._v1_provider._accounts, {})
+
+    def test_load_account_v1(self):
+        """Test saving an API 1 account."""
+        with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
+            self.provider.save_account(self.v1_token, url=API1_URL)
+            with self.assertRaises(IBMQAccountError):
+                self.factory.load_account()
