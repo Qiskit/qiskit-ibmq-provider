@@ -93,7 +93,13 @@ class IBMQFactory:
         # Initialize the API 2 providers.
         self._initialize_providers(credentials)
 
-        return self.providers()[0]
+        # Prevent edge case where no hubs are available.
+        providers = self.providers()
+        if not providers:
+            warnings.warn('No Hub/Group/Projects could be found.')
+            return None
+
+        return providers[0]
 
     def disable_account(self):
         """Disable the account in the current session.
@@ -162,7 +168,13 @@ class IBMQFactory:
         # Initialize the API 2 providers.
         self._initialize_providers(credentials)
 
-        return self.providers()[0]
+        # Prevent edge case where no hubs are available.
+        providers = self.providers()
+        if not providers:
+            warnings.warn('No Hub/Group/Projects could be found.')
+            return None
+
+        return providers[0]
 
     @staticmethod
     def save_account(token, url=QX_AUTH_URL, overwrite=False, **kwargs):
