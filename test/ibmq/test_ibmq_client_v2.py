@@ -89,7 +89,24 @@ class TestAccountClient(QiskitTestCase):
 
         # Run the job through the IBMQClient directly using object storage.
         api = backend._api
-        job = api.job_submit_object_storage(backend_name, qobj.to_dict())
+
+        try:
+            job = api.job_submit_object_storage(backend_name, qobj.to_dict())
+        except RequestsApiError as ex:
+            response = ex.original_exception.response
+            if response.status_code == 400:
+                try:
+                    api_code = response.json()['error']['code']
+
+                    # If we reach that point, it means the backend does not
+                    # support qobject storage.
+                    self.assertEqual(api_code,
+                                     'Q_OBJECT_STORAGE_IS_NOT_ALLOWED')
+                    return
+                except (ValueError, KeyError):
+                    pass
+            raise
+
         job_id = job['id']
         self.assertEqual(job['kind'], 'q-object-external-storage')
 
