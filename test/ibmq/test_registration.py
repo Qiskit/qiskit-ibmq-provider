@@ -31,8 +31,8 @@ from qiskit.providers.ibmq.credentials.updater import update_credentials, QE2_AU
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
 from qiskit.providers.ibmq.ibmqprovider import QE_URL, IBMQProvider
 from qiskit.providers.ibmq.ibmqsingleprovider import IBMQSingleProvider
-from qiskit.test import QiskitTestCase
 
+from ..ibmqtestcase import IBMQTestCase
 from ..contextmanagers import custom_envs, no_envs, custom_qiskitrc, no_file, CREDENTIAL_ENV_VARS
 
 
@@ -48,7 +48,7 @@ PROXIES = {
 
 # TODO: NamedTemporaryFiles do not support name in Windows
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
-class TestIBMQAccounts(QiskitTestCase):
+class TestIBMQAccounts(IBMQTestCase):
     """Tests for the IBMQ account handling."""
 
     def test_enable_account(self):
@@ -173,7 +173,7 @@ class TestIBMQAccounts(QiskitTestCase):
 
 # TODO: NamedTemporaryFiles do not support name in Windows
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
-class TestCredentials(QiskitTestCase):
+class TestCredentials(IBMQTestCase):
     """Tests for the credential subsystem."""
 
     def test_autoregister_no_credentials(self):
@@ -238,7 +238,7 @@ class TestCredentials(QiskitTestCase):
         self.assertEqual(list(credentials.values())[0].token, 'QCONFIG_TOKEN')
 
 
-class TestCredentialsKwargs(QiskitTestCase):
+class TestCredentialsKwargs(IBMQTestCase):
     """Test for `Credentials.connection_parameters()`."""
 
     def test_no_proxy_params(self):
@@ -324,7 +324,7 @@ class TestCredentialsKwargs(QiskitTestCase):
 
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
-class TestIBMQAccountUpdater(QiskitTestCase):
+class TestIBMQAccountUpdater(IBMQTestCase):
     """Tests for the update_credentials() helper."""
 
     def setUp(self):

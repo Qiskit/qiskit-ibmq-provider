@@ -14,14 +14,14 @@
 
 """Custom TestCase for Jobs."""
 
-
 import time
 
 from qiskit.providers import JobStatus
-from qiskit.test import QiskitTestCase
+
+from .ibmqtestcase import IBMQTestCase
 
 
-class JobTestCase(QiskitTestCase):
+class JobTestCase(IBMQTestCase):
     """Include common functionality when testing jobs."""
 
     def wait_for_initialization(self, job, timeout=1):
