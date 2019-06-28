@@ -22,8 +22,11 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 
 from .accountprovider import AccountProvider
 from .api_v2.clients import AuthClient, VersionClient
-from .credentials import Credentials
-from .credentials.configrc import read_credentials_from_qiskitrc, remove_credentials
+from .credentials import Credentials, discover_credentials
+from .credentials.configrc import (read_credentials_from_qiskitrc,
+                                   remove_credentials,
+                                   store_credentials)
+from .credentials.updater import update_credentials
 from .exceptions import IBMQAccountError, IBMQApiUrlError, IBMQProviderError
 from .ibmqprovider import IBMQProvider
 
@@ -90,27 +93,112 @@ class IBMQFactory:
         # Initialize the API 2 providers.
         self._initialize_providers(credentials)
 
-        return self.providers()[0]
+        # Prevent edge case where no hubs are available.
+        providers = self.providers()
+        if not providers:
+            warnings.warn('No Hub/Group/Projects could be found.')
+            return None
+
+        return providers[0]
 
     def disable_account(self):
         """Disable the account in the current session.
 
         Raises:
-            IBMQAccountError: if no account is in use in the session.
+            IBMQAccountError: if API 1 credentials are found, or if no account
+                is in use in the session.
         """
-        raise NotImplementedError
+        if self._v1_provider._accounts:
+            raise IBMQAccountError('An IBM Q Experience 1 account is enabled. '
+                                   'Please use IBMQ.disable_accounts() to '
+                                   'disable the account.')
+
+        if not self._credentials:
+            raise IBMQAccountError('No account is in use for this session.')
+
+        self._credentials = None
+        self._providers = OrderedDict()
 
     def load_account(self):
         """Authenticate against IBM Q Experience from stored credentials.
 
         Returns:
             AccountProvider: the provider for the default open access project.
-        """
-        raise NotImplementedError
 
-    def save_account(self):
-        """Save an account to disk for future use."""
-        raise NotImplementedError
+        Raises:
+            IBMQAccountError: if an IBM Q Experience 1 account is already in
+                use, or no IBM Q Experience 2 accounts can be found.
+        """
+        # Prevent mixing API 1 and API 2 credentials.
+        if self._v1_provider.active_accounts():
+            raise IBMQAccountError('An IBM Q Experience 1 account is '
+                                   'already enabled.')
+
+        # Check for valid credentials.
+        credentials_list = list(discover_credentials().values())
+
+        if not credentials_list:
+            raise IBMQAccountError('No IBMQ credentials found on disk.')
+
+        if len(credentials_list) > 1:
+            raise IBMQAccountError('Multiple credentials found. Please use '
+                                   'IBMQ.update_account() for updating your '
+                                   'stored credentials.')
+
+        credentials = credentials_list[0]
+        # Explicitly check via an API call, to allow environment auth URLs.
+        # contain API 2 URL (but not auth) slipping through.
+        version_info = self._check_api_version(credentials)
+
+        # For API 1, delegate onto the IBMQProvider.
+        if not version_info['new_api']:
+            raise IBMQAccountError('Credentials from the API 1 found. Please use '
+                                   'IBMQ.update_account() for updating your '
+                                   'stored credentials.')
+
+        if 'api-auth' not in version_info:
+            raise IBMQAccountError('Invalid credentials from the API 2 found. '
+                                   'Please use IBMQ.update_account() for '
+                                   'updating your stored credentials.')
+
+        # Initialize the API 2 providers.
+        if self._credentials:
+            # For convention, emit a warning instead of raising.
+            warnings.warn('Credentials are already in use. The existing '
+                          'account in the session will be replaced.')
+            self.disable_account()
+
+        self._initialize_providers(credentials)
+
+        # Prevent edge case where no hubs are available.
+        providers = self.providers()
+        if not providers:
+            warnings.warn('No Hub/Group/Projects could be found.')
+            return None
+
+        return providers[0]
+
+    @staticmethod
+    def save_account(token, url=QX_AUTH_URL, overwrite=False, **kwargs):
+        """Save the account to disk for future use.
+
+        Args:
+            token (str): IBM Q Experience API token.
+            url (str): URL for the IBM Q Experience auth server.
+            overwrite (bool): overwrite existing credentials.
+            **kwargs (dict):
+                * proxies (dict): Proxy configuration for the API.
+                * verify (bool): If False, ignores SSL certificates errors
+
+        Raises:
+            IBMQAccountError: if attempting to save an IBM Q Experience 1
+                account.
+        """
+        if url != QX_AUTH_URL:
+            raise IBMQAccountError('IBM Q Experience 1 accounts are deprecated.')
+
+        credentials = Credentials(token, url, **kwargs)
+        store_credentials(credentials, overwrite=overwrite)
 
     @staticmethod
     def delete_account():
@@ -136,9 +224,45 @@ class IBMQFactory:
 
         remove_credentials(credentials)
 
-    def stored_account(self):
-        """List the account stored on disk"""
-        raise NotImplementedError
+    @staticmethod
+    def stored_account():
+        """List the account stored on disk.
+
+        Returns:
+            dict: dictionary with information about the account stored on disk.
+
+        Raises:
+            IBMQAccountError: if no valid API 2 account information found.
+        """
+        stored_credentials = read_credentials_from_qiskitrc()
+        if not stored_credentials:
+            return {}
+
+        if (len(stored_credentials) > 1 or
+                list(stored_credentials.values())[0].url != QX_AUTH_URL):
+            raise IBMQAccountError('Credentials from the API 1 found. Please use '
+                                   'IBMQ.update_account() for updating your '
+                                   'stored credentials.')
+
+        credentials = list(stored_credentials.values())[0]
+        return {
+            'token': credentials.token,
+            'url': credentials.url
+        }
+
+    @staticmethod
+    def update_account(force=False):
+        """Interactive helper from migrating stored credentials to API 2.
+
+        Args:
+            force (bool): if `True`, disable interactive prompts and perform
+                the changes.
+
+        Returns:
+            Credentials: if the updating is possible, credentials for the API
+            version 2; and `None` otherwise.
+        """
+        return update_credentials(force)
 
     # Provider management functions.
 
@@ -251,7 +375,7 @@ class IBMQFactory:
                 in the session.
 
         Raises:
-            IBMQAccountError: if the method is used with a v1 account.
+            IBMQAccountError: if the method is used with a v2 account.
         """
         if self._credentials:
             raise IBMQAccountError('active_accounts() is not available when '
@@ -273,7 +397,7 @@ class IBMQFactory:
         If no filter is passed, all accounts in the current session will be disabled.
 
         Raises:
-            IBMQAccountError: if the method is used with a v1 account, or
+            IBMQAccountError: if the method is used with a v2 account, or
                 if no account matched the filter.
         """
         if self._credentials:
@@ -301,12 +425,25 @@ class IBMQFactory:
         3. in the `qiskitrc` configuration file
 
         Raises:
-            IBMQAccountError: if the method is used with a v1 account, or
+            IBMQAccountError: if the method is used with a v2 account, or
                 if no credentials are found.
+            IBMQApiUrlError: if any of the credentials stored belong to API 2.
         """
         if self._credentials:
             raise IBMQAccountError('load_accounts() is not available when '
-                                   'using and IBM Q Experience 2 account.')
+                                   'using an IBM Q Experience 2 account.')
+
+        # Check if any stored credentials are from API v2.
+        for credentials in discover_credentials().values():
+            # Explicitly check via an API call, to prevent credentials that
+            # contain API 2 URL (but not auth) slipping through.
+            version_info = self._check_api_version(credentials)
+            if version_info['new_api']:
+                raise IBMQApiUrlError(
+                    'Credentials for API 2 have been found. Please use '
+                    'IBMQ.update_account() for updating your stored '
+                    'credentials, and IBMQ.load_account() (in singular form) '
+                    'for using an API 2 account.')
 
         warnings.warn('load_accounts() is being deprecated. '
                       'Please use IBM Q Experience 2 and load_account() instead.',
@@ -324,12 +461,12 @@ class IBMQFactory:
         If no filter is passed, all accounts will be deleted from disk.
 
         Raises:
-            IBMQAccountError: if the method is used with a v1 account, or
+            IBMQAccountError: if the method is used with a v2 account, or
                 if no account matched the filter.
         """
         if self._credentials:
             raise IBMQAccountError('delete_accounts() is not available when '
-                                   'using and IBM Q Experience 2 account.')
+                                   'using an IBM Q Experience 2 account.')
 
         warnings.warn('delete_accounts() is being deprecated. '
                       'Please use IBM Q Experience 2 and delete_account() instead.',
@@ -348,11 +485,11 @@ class IBMQFactory:
                 on disk.
 
         Raises:
-            IBMQAccountError: if the method is used with a v1 account.
+            IBMQAccountError: if the method is used with a v2 account.
         """
         if self._credentials:
             raise IBMQAccountError('stored_accounts() is not available when '
-                                   'using and IBM Q Experience 2 account.')
+                                   'using an IBM Q Experience 2 account.')
 
         warnings.warn('stored_accounts() is being deprecated. '
                       'Please use IBM Q Experience 2 and stored_account() instead.',
