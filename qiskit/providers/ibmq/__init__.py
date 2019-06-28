@@ -15,6 +15,7 @@
 """Backends provided by IBM Quantum Experience."""
 
 from qiskit.exceptions import QiskitError
+from .ibmqfactory import IBMQFactory
 from .ibmqprovider import IBMQProvider
 from .ibmqbackend import IBMQBackend
 from .job import IBMQJob
@@ -22,7 +23,7 @@ from .job import IBMQJob
 from .version import __version__
 
 # Global instance to be used as the entry point for convenience.
-IBMQ = IBMQProvider()
+IBMQ = IBMQFactory()
 
 
 def least_busy(backends):
