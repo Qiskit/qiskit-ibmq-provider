@@ -26,8 +26,8 @@ REGEX_IBMQ_HUBS = (
     '(?P<prefix>http[s]://.+/api)'
     '/Hubs/(?P<hub>[^/]+)/Groups/(?P<group>[^/]+)/Projects/(?P<project>[^/]+)'
 )
+
 # Template for creating an IBMQ URL with hub information
-# TODO: verify compatibility with old premium API
 TEMPLATE_IBMQ_HUBS = '{prefix}/Network/{hub}/Groups/{group}/Projects/{project}'
 
 

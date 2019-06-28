@@ -22,7 +22,9 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 
 from .accountprovider import AccountProvider
 from .api_v2.clients import AuthClient, VersionClient
-from .credentials import Credentials
+from .credentials import Credentials, discover_credentials
+from .credentials.configrc import read_credentials_from_qiskitrc, remove_credentials
+from .credentials.updater import update_credentials
 from .exceptions import IBMQAccountError, IBMQApiUrlError, IBMQProviderError
 from .ibmqprovider import IBMQProvider
 
@@ -111,13 +113,47 @@ class IBMQFactory:
         """Save an account to disk for future use."""
         raise NotImplementedError
 
-    def delete_account(self):
-        """Delete saved account from disk"""
-        raise NotImplementedError
+    @staticmethod
+    def delete_account():
+        """Delete the saved account from disk.
+
+        Raises:
+            IBMQAccountError: if no API 2 valid configuration was found.
+        """
+        stored_credentials = read_credentials_from_qiskitrc()
+        if not stored_credentials:
+            raise IBMQAccountError('No credentials found.')
+
+        if len(stored_credentials) != 1:
+            raise IBMQAccountError('Multiple credentials found. Please use '
+                                   'IBMQ.update_account() for updating your '
+                                   'stored credentials.')
+
+        credentials = list(stored_credentials.values())[0]
+        if credentials.url != QX_AUTH_URL:
+            raise IBMQAccountError('Credentials from the API 1 found. Please use '
+                                   'IBMQ.update_account() for updating your '
+                                   'stored credentials.')
+
+        remove_credentials(credentials)
 
     def stored_account(self):
         """List the account stored on disk"""
         raise NotImplementedError
+
+    @staticmethod
+    def update_account(force=False):
+        """Interactive helper from migrating stored credentials to API 2.
+
+        Args:
+            force (bool): if `True`, disable interactive prompts and perform
+                the changes.
+
+        Returns:
+            Credentials: if the updating is possible, credentials for the API
+            version 2; and `None` otherwise.
+        """
+        return update_credentials(force)
 
     # Provider management functions.
 
@@ -230,7 +266,7 @@ class IBMQFactory:
                 in the session.
 
         Raises:
-            IBMQAccountError: if the method is used with a v1 account.
+            IBMQAccountError: if the method is used with a v2 account.
         """
         if self._credentials:
             raise IBMQAccountError('active_accounts() is not available when '
@@ -252,7 +288,7 @@ class IBMQFactory:
         If no filter is passed, all accounts in the current session will be disabled.
 
         Raises:
-            IBMQAccountError: if the method is used with a v1 account, or
+            IBMQAccountError: if the method is used with a v2 account, or
                 if no account matched the filter.
         """
         if self._credentials:
@@ -280,12 +316,23 @@ class IBMQFactory:
         3. in the `qiskitrc` configuration file
 
         Raises:
-            IBMQAccountError: if the method is used with a v1 account, or
+            IBMQAccountError: if the method is used with a v2 account, or
                 if no credentials are found.
+            IBMQApiUrlError: if any of the credentials stored belong to API 2.
         """
         if self._credentials:
             raise IBMQAccountError('load_accounts() is not available when '
-                                   'using and IBM Q Experience 2 account.')
+                                   'using an IBM Q Experience 2 account.')
+
+        # Check if any stored credentials are from API v2.
+        for credentials in discover_credentials().values():
+            version_info = self._check_api_version(credentials)
+            if version_info['new_api']:
+                raise IBMQApiUrlError(
+                    'Credentials for API 2 have been found. Please use '
+                    'IBMQ.update_account() for updating your stored '
+                    'credentials, and IBMQ.load_account() (in singular form) '
+                    'for using an API 2 account.')
 
         warnings.warn('load_accounts() is being deprecated. '
                       'Please use IBM Q Experience 2 and load_account() instead.',
@@ -303,12 +350,12 @@ class IBMQFactory:
         If no filter is passed, all accounts will be deleted from disk.
 
         Raises:
-            IBMQAccountError: if the method is used with a v1 account, or
+            IBMQAccountError: if the method is used with a v2 account, or
                 if no account matched the filter.
         """
         if self._credentials:
             raise IBMQAccountError('delete_accounts() is not available when '
-                                   'using and IBM Q Experience 2 account.')
+                                   'using an IBM Q Experience 2 account.')
 
         warnings.warn('delete_accounts() is being deprecated. '
                       'Please use IBM Q Experience 2 and delete_account() instead.',
@@ -327,11 +374,11 @@ class IBMQFactory:
                 on disk.
 
         Raises:
-            IBMQAccountError: if the method is used with a v1 account.
+            IBMQAccountError: if the method is used with a v2 account.
         """
         if self._credentials:
             raise IBMQAccountError('stored_accounts() is not available when '
-                                   'using and IBM Q Experience 2 account.')
+                                   'using an IBM Q Experience 2 account.')
 
         warnings.warn('stored_accounts() is being deprecated. '
                       'Please use IBM Q Experience 2 and stored_account() instead.',
