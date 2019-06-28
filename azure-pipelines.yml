@@ -37,7 +37,7 @@ jobs:
 
 - job: 'Windows_Merge_Tests'
   pool: {vmImage: 'vs2017-win2016'}
-  condition: not(eq(variables['Build.Reason'], PullRequest)
+  condition: not(eq(variables['Build.Reason'], 'PullRequest')
   strategy:
     matrix:
       Python35:
