@@ -20,11 +20,12 @@ from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.api import (ApiError, BadBackendError, IBMQConnector)
-from qiskit.test import QiskitTestCase
+
+from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_classic_api, requires_qe_access
 
 
-class TestIBMQConnector(QiskitTestCase):
+class TestIBMQConnector(IBMQTestCase):
     """Tests for IBMQConnector."""
 
     def setUp(self):
@@ -146,7 +147,7 @@ class TestIBMQConnector(QiskitTestCase):
         self.assertIn('new_api', version)
 
 
-class TestAuthentication(QiskitTestCase):
+class TestAuthentication(IBMQTestCase):
     """Tests for the authentication features.
 
     These tests are in a separate TestCase as they need to control the

@@ -17,14 +17,14 @@
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import least_busy
 from qiskit.result import Result
-from qiskit.test import QiskitTestCase
 from qiskit.execute import execute
 from qiskit.compiler import assemble, transpile
 
+from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
 
 
-class TestIBMQIntegration(QiskitTestCase):
+class TestIBMQIntegration(IBMQTestCase):
     """Qiskit's IBMQ Provider integration tests."""
 
     seed = 42
