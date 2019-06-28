@@ -107,20 +107,47 @@ class IBMQFactory:
                                    'Please use IBMQ.disable_accounts() to '
                                    'disable the account.')
 
-        if self._credentials is not None:
-            self._credentials = None
-            self._providers = OrderedDict()
-
-        else:
+        if not self._credentials:
             raise IBMQAccountError('No account is in use for this session.')
+
+        self._credentials = None
+        self._providers = OrderedDict()
 
     def load_account(self):
         """Authenticate against IBM Q Experience from stored credentials.
 
         Returns:
             AccountProvider: the provider for the default open access project.
+
+        Raises:
+            IBMQAccountError: if an IBM Q Experience 1 account is already in
+                use, or no IBM Q Experience 2 accounts can be found.
         """
-        raise NotImplementedError
+        if self._credentials:
+            # For convention, emit a warning instead of raising.
+            warnings.warn('Credentials are already in use.')
+
+        # Prevent mixing API 1 and API 2 credentials.
+        if self._v1_provider.active_accounts():
+            raise IBMQAccountError('An IBM Q Experience 1 account is '
+                                   'already enabled.')
+
+        # Check for valid credentials.
+        credentials_list = list(discover_credentials().values())
+
+        if not credentials_list:
+            raise IBMQAccountError('No IBMQ credentials found on disk.')
+
+        if len(credentials_list) > 1 or credentials_list[0].url != QX_AUTH_URL:
+            raise IBMQAccountError('Credentials from the API 1 found. Please use '
+                                   'IBMQ.update_account() for updating your '
+                                   'stored credentials.')
+
+        # Initialize the API 2 providers.
+        credentials = credentials_list[0]
+        self._initialize_providers(credentials)
+
+        return self.providers()[0]
 
     @staticmethod
     def save_account(token, url=QX_AUTH_URL, overwrite=False, **kwargs):
@@ -379,6 +406,8 @@ class IBMQFactory:
 
         # Check if any stored credentials are from API v2.
         for credentials in discover_credentials().values():
+            # Explicitly check via an API call, to prevent credentials that
+            # contain API 2 URL (but not auth) slipping through.
             version_info = self._check_api_version(credentials)
             if version_info['new_api']:
                 raise IBMQApiUrlError(
