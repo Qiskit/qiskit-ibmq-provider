@@ -76,9 +76,6 @@ class IBMQFactory:
 
         # For API 1, delegate onto the IBMQProvider.
         if not version_info['new_api']:
-            warnings.warn('IBM Q Experience 1 account is deprecated. '
-                          'IBMQ.update_account() for updating your stored credentials.',
-                          DeprecationWarning)
             self._v1_provider.enable_account(token, url, **kwargs)
             return self._v1_provider
 
@@ -105,12 +102,15 @@ class IBMQFactory:
             IBMQAccountError: if API 1 credentials are found, or if no account
                 is in use in the session.
         """
+        if self._v1_provider._accounts:
+            raise IBMQAccountError('An IBM Q Experience 1 account is enabled. '
+                                   'Please use IBMQ.disable_accounts() to '
+                                   'disable the account.')
+
         if self._credentials is not None:
             self._credentials = None
             self._providers = OrderedDict()
-        elif self._v1_provider._accounts:
-            raise IBMQAccountError('Credentials from the API 1 found. Please use '
-                                   'IBMQ.disable_accounts() to disable the account.')
+
         else:
             raise IBMQAccountError('No account is in use for this session.')
 
@@ -135,11 +135,11 @@ class IBMQFactory:
                 * verify (bool): If False, ignores SSL certificates errors
 
         Raises:
-            IBMQAccountError: if IBM Q Experience 1 account is used
+            IBMQAccountError: if attempting to save an IBM Q Experience 1
+                account.
         """
         if url != QX_AUTH_URL:
-            raise IBMQAccountError('IBM Q Experience 1 accounts are deprecated. Please use '
-                                   'IBMQ.update_account() for updating your stored credentials.')
+            raise IBMQAccountError('IBM Q Experience 1 accounts are deprecated.')
 
         credentials = Credentials(token, url, **kwargs)
         store_credentials(credentials, overwrite=overwrite)
@@ -182,15 +182,16 @@ class IBMQFactory:
         if not stored_credentials:
             return {}
 
-        if len(stored_credentials) > 1 or list(stored_credentials.values())[0].url != QX_AUTH_URL:
+        if (len(stored_credentials) > 1 or
+                list(stored_credentials.values())[0].url != QX_AUTH_URL):
             raise IBMQAccountError('Credentials from the API 1 found. Please use '
                                    'IBMQ.update_account() for updating your '
                                    'stored credentials.')
 
-        cred = list(stored_credentials.values())[0]
+        credentials = list(stored_credentials.values())[0]
         return {
-            'token': cred.token,
-            'url': cred.url
+            'token': credentials.token,
+            'url': credentials.url
         }
 
     @staticmethod
