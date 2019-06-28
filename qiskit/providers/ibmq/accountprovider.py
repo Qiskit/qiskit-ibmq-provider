@@ -49,11 +49,7 @@ class AccountProvider(BaseProvider):
                                   credentials.url,
                                   credentials.websockets_url,
                                   **credentials.connection_parameters())
-        circuit_client = AccountClient(access_token,
-                                       credentials.base_url,
-                                       credentials.websockets_url,
-                                       **credentials.connection_parameters())
-        self.circuits = CircuitsManager(circuit_client)
+        self.circuits = CircuitsManager(self._api)
 
         # Initialize the internal list of backends, lazy-loading it on first
         # access.
