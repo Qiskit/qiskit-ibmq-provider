@@ -129,10 +129,6 @@ class IBMQFactory:
             IBMQAccountError: if an IBM Q Experience 1 account is already in
                 use, or no IBM Q Experience 2 accounts can be found.
         """
-        if self._credentials:
-            # For convention, emit a warning instead of raising.
-            warnings.warn('Credentials are already in use.')
-
         # Prevent mixing API 1 and API 2 credentials.
         if self._v1_provider.active_accounts():
             raise IBMQAccountError('An IBM Q Experience 1 account is '
@@ -166,6 +162,12 @@ class IBMQFactory:
                                    'updating your stored credentials.')
 
         # Initialize the API 2 providers.
+        if self._credentials:
+            # For convention, emit a warning instead of raising.
+            warnings.warn('Credentials are already in use. The existing '
+                          'account in the session will be replaced.')
+            self.disable_account()
+
         self._initialize_providers(credentials)
 
         # Prevent edge case where no hubs are available.
