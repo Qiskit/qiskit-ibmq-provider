@@ -138,13 +138,28 @@ class IBMQFactory:
         if not credentials_list:
             raise IBMQAccountError('No IBMQ credentials found on disk.')
 
-        if len(credentials_list) > 1 or credentials_list[0].url != QX_AUTH_URL:
+        if len(credentials_list) > 1:
+            raise IBMQAccountError('Multiple credentials found. Please use '
+                                   'IBMQ.update_account() for updating your '
+                                   'stored credentials.')
+
+        credentials = credentials_list[0]
+        # Explicitly check via an API call, to allow environment auth URLs.
+        # contain API 2 URL (but not auth) slipping through.
+        version_info = self._check_api_version(credentials)
+
+        # For API 1, delegate onto the IBMQProvider.
+        if not version_info['new_api']:
             raise IBMQAccountError('Credentials from the API 1 found. Please use '
                                    'IBMQ.update_account() for updating your '
                                    'stored credentials.')
 
+        if 'api-auth' not in version_info:
+            raise IBMQAccountError('Invalid credentials from the API 2 found. '
+                                   'Please use IBMQ.update_account() for '
+                                   'updating your stored credentials.')
+
         # Initialize the API 2 providers.
-        credentials = credentials_list[0]
         self._initialize_providers(credentials)
 
         return self.providers()[0]
