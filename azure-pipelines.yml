@@ -8,7 +8,7 @@ trigger:
 - stable
 
 jobs:
-- job: 'Windows_PR_Tests':
+- job: 'Windows_PR_Tests'
   pool: {vmImage: 'vs2017-win2016'}
   strategy:
     matrix:
@@ -35,7 +35,7 @@ jobs:
         pytest -s -v
       displayName: 'pytest'
 
-- job: 'Windows_Merge_Tests':
+- job: 'Windows_Merge_Tests'
   pool: {vmImage: 'vs2017-win2016'}
   condition: not(eq(variables['Build.Reason'], PullRequest)
   strategy:
