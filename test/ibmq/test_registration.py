@@ -27,14 +27,14 @@ from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.credentials import (
     Credentials, discover_credentials, qconfig,
     read_credentials_from_qiskitrc, store_credentials)
-from qiskit.providers.ibmq.credentials.environ import VARIABLES_MAP
 from qiskit.providers.ibmq.credentials.updater import update_credentials, QE2_AUTH_URL, QE2_URL
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
 from qiskit.providers.ibmq.ibmqprovider import QE_URL, IBMQProvider
 from qiskit.providers.ibmq.ibmqsingleprovider import IBMQSingleProvider
 from qiskit.test import QiskitTestCase
 
-from ..contextmanagers import custom_envs, no_envs, custom_qiskitrc
+from ..contextmanagers import custom_envs, no_envs, custom_qiskitrc, no_file, CREDENTIAL_ENV_VARS
+
 
 IBMQ_TEMPLATE = 'https://localhost/api/Hubs/{}/Groups/{}/Projects/{}'
 
@@ -44,8 +44,6 @@ PROXIES = {
         'https': 'https://user:password@127.0.0.1:5678'
     }
 }
-
-CREDENTIAL_ENV_VARS = VARIABLES_MAP.keys()
 
 
 # TODO: NamedTemporaryFiles do not support name in Windows
@@ -443,22 +441,6 @@ class TestIBMQAccountUpdater(QiskitTestCase):
 
 
 # Context managers
-
-@contextmanager
-def no_file(filename):
-    """Context manager that disallows access to a file."""
-    def side_effect(filename_):
-        """Return False for the specified file."""
-        if filename_ == filename:
-            return False
-        return isfile_original(filename_)
-
-    # Store the original `os.path.isfile` function, for mocking.
-    isfile_original = os.path.isfile
-    patcher = patch('os.path.isfile', side_effect=side_effect)
-    patcher.start()
-    yield
-    patcher.stop()
 
 
 @contextmanager
