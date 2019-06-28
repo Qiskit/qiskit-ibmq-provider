@@ -63,7 +63,7 @@ def update_credentials(force=False):
     # Parse the credentials found.
     for credentials in credentials_list:
         if is_directly_updatable(credentials):
-            # Credentials for known URLs without
+            # Credentials can be updated to the new URL directly.
             new_credentials.append(Credentials(credentials.token, QE2_AUTH_URL,
                                                proxies=credentials.proxies,
                                                verify=credentials.verify))
@@ -96,7 +96,7 @@ def update_credentials(force=False):
         print('No credentials available for updating could be found. No '
               'action will be performed.')
         if warnings:
-            print('Details:')
+            print('Warnings:')
             print('\n'.join(warnings))
 
         return None
@@ -117,15 +117,16 @@ def update_credentials(force=False):
     if final_credentials.proxies:
         print('The existing proxy configuration will be preserved.')
 
-    print('In order to access the provider, please use the new '
+    if warnings:
+        print('\nWarnings:')
+        print('\n'.join(warnings))
+
+    print('\nIn order to access the provider, please use the new '
           '"IBMQ.get_provider()" methods:')
     print('\n  provider0 = IBMQ.load_account()')
     if hub_lines:
         print('\n'.join(hub_lines))
     print('  backends = provider0.backends()')
-    if warnings:
-        print('\nWarnings:')
-        print('\n'.join(warnings))
 
     # Ask for confirmation from the user.
     if not force:

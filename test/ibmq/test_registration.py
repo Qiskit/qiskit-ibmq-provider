@@ -345,7 +345,7 @@ class TestIBMQAccountUpdater(QiskitTestCase):
         # Reenable stdout output.
         self.patcher.stop()
 
-    def assertCorrectApi2Credentials(self, credentials_dict):
+    def assertCorrectApi2Credentials(self, token, credentials_dict):
         """Asserts that there is only one credentials belonging to API 2."""
         self.assertEqual(len(credentials_dict), 1)
         credentials = list(credentials_dict.values())[0]
@@ -353,6 +353,8 @@ class TestIBMQAccountUpdater(QiskitTestCase):
         self.assertIsNone(credentials.hub)
         self.assertIsNone(credentials.group)
         self.assertIsNone(credentials.project)
+        if token:
+            self.assertEqual(credentials.token, token)
 
     def test_qe_credentials(self):
         """Test converting QE credentials."""
@@ -362,7 +364,7 @@ class TestIBMQAccountUpdater(QiskitTestCase):
 
             # Assert over the stored (updated) credentials.
             loaded_accounts = read_credentials_from_qiskitrc()
-            self.assertCorrectApi2Credentials(loaded_accounts)
+            self.assertCorrectApi2Credentials('A', loaded_accounts)
 
     def test_qconsole_credentials(self):
         """Test converting Qconsole credentials."""
@@ -373,7 +375,7 @@ class TestIBMQAccountUpdater(QiskitTestCase):
 
             # Assert over the stored (updated) credentials.
             loaded_accounts = read_credentials_from_qiskitrc()
-            self.assertCorrectApi2Credentials(loaded_accounts)
+            self.assertCorrectApi2Credentials('A', loaded_accounts)
 
     def test_proxy_credentials(self):
         """Test converting credentials with proxy values."""
@@ -385,7 +387,7 @@ class TestIBMQAccountUpdater(QiskitTestCase):
 
             # Assert over the stored (updated) credentials.
             loaded_accounts = read_credentials_from_qiskitrc()
-            self.assertCorrectApi2Credentials(loaded_accounts)
+            self.assertCorrectApi2Credentials('A', loaded_accounts)
 
             # Extra assert on preserving proxies.
             credentials = list(loaded_accounts.values())[0]
@@ -404,7 +406,9 @@ class TestIBMQAccountUpdater(QiskitTestCase):
 
             # Assert over the stored (updated) credentials.
             loaded_accounts = read_credentials_from_qiskitrc()
-            self.assertCorrectApi2Credentials(loaded_accounts)
+            # We don't assert over the token, as it depends on the order of
+            # the qiskitrc, which is not guaranteed.
+            self.assertCorrectApi2Credentials(None, loaded_accounts)
 
     def test_api2_non_auth_credentials(self):
         """Test converting api 2 non auth credentials."""
@@ -414,7 +418,7 @@ class TestIBMQAccountUpdater(QiskitTestCase):
 
             # Assert over the stored (updated) credentials.
             loaded_accounts = read_credentials_from_qiskitrc()
-            self.assertCorrectApi2Credentials(loaded_accounts)
+            self.assertCorrectApi2Credentials('A', loaded_accounts)
 
     def test_auth2_credentials(self):
         """Test converting already API 2 auth credentials."""
