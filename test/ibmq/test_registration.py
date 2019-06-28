@@ -25,7 +25,7 @@ from requests_ntlm import HttpNtlmAuth
 
 from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.ibmq.credentials import (
-    Credentials, configrc, discover_credentials, qconfig,
+    Credentials, discover_credentials, qconfig,
     read_credentials_from_qiskitrc, store_credentials)
 from qiskit.providers.ibmq.credentials.environ import VARIABLES_MAP
 from qiskit.providers.ibmq.credentials.updater import update_credentials, QE2_AUTH_URL, QE2_URL
@@ -34,7 +34,7 @@ from qiskit.providers.ibmq.ibmqprovider import QE_URL, IBMQProvider
 from qiskit.providers.ibmq.ibmqsingleprovider import IBMQSingleProvider
 from qiskit.test import QiskitTestCase
 
-from ..contextmanagers import custom_envs, no_envs
+from ..contextmanagers import custom_envs, no_envs, custom_qiskitrc
 
 IBMQ_TEMPLATE = 'https://localhost/api/Hubs/{}/Groups/{}/Projects/{}'
 
@@ -459,24 +459,6 @@ def no_file(filename):
     patcher.start()
     yield
     patcher.stop()
-
-
-@contextmanager
-def custom_qiskitrc(contents=b''):
-    """Context manager that uses a temporary qiskitrc."""
-    # Create a temporary file with the contents.
-    tmp_file = NamedTemporaryFile()
-    tmp_file.write(contents)
-    tmp_file.flush()
-
-    # Temporarily modify the default location of the qiskitrc file.
-    default_qiskitrc_file_original = configrc.DEFAULT_QISKITRC_FILE
-    configrc.DEFAULT_QISKITRC_FILE = tmp_file.name
-    yield
-
-    # Delete the temporary file and restore the default location.
-    tmp_file.close()
-    configrc.DEFAULT_QISKITRC_FILE = default_qiskitrc_file_original
 
 
 @contextmanager
