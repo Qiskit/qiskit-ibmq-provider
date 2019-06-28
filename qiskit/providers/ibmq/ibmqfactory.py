@@ -195,7 +195,8 @@ class IBMQFactory:
                 account.
         """
         if url != QX_AUTH_URL:
-            raise IBMQAccountError('IBM Q Experience 1 accounts are deprecated.')
+            raise IBMQAccountError('Saving IBM Q Experience 1 accounts is '
+                                   'deprecated. Please ')
 
         credentials = Credentials(token, url, **kwargs)
         store_credentials(credentials, overwrite=overwrite)
