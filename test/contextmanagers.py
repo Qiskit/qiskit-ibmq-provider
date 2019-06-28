@@ -16,6 +16,9 @@
 
 import os
 from contextlib import contextmanager
+from tempfile import NamedTemporaryFile
+
+from qiskit.providers.ibmq.credentials import configrc
 
 
 @contextmanager
@@ -56,3 +59,21 @@ def no_envs(vars_to_remove):
     finally:
         # Restore the original `os.environ`.
         os.environ = os_environ_original
+
+
+@contextmanager
+def custom_qiskitrc(contents=b''):
+    """Context manager that uses a temporary qiskitrc."""
+    # Create a temporary file with the contents.
+    tmp_file = NamedTemporaryFile()
+    tmp_file.write(contents)
+    tmp_file.flush()
+
+    # Temporarily modify the default location of the qiskitrc file.
+    default_qiskitrc_file_original = configrc.DEFAULT_QISKITRC_FILE
+    configrc.DEFAULT_QISKITRC_FILE = tmp_file.name
+    yield
+
+    # Delete the temporary file and restore the default location.
+    tmp_file.close()
+    configrc.DEFAULT_QISKITRC_FILE = default_qiskitrc_file_original

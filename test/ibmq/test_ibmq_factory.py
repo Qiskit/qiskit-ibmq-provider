@@ -14,7 +14,9 @@
 
 """Tests for the IBMQFactory."""
 
+import os
 import warnings
+from unittest import skipIf
 
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.exceptions import IBMQAccountError, IBMQApiUrlError
@@ -26,6 +28,7 @@ from qiskit.test import QiskitTestCase
 from ..decorators import (requires_qe_access,
                           requires_new_api_auth,
                           requires_classic_api)
+from ..contextmanagers import custom_qiskitrc
 
 
 API1_URL = 'https://quantumexperience.ng.bluemix.net/api'
@@ -160,3 +163,58 @@ class TestIBMQFactoryAccountsDeprecation(QiskitTestCase):
                          set(ibmq_provider_backend_names))
         self.assertTrue(issubclass(warnings_list[0].category,
                                    DeprecationWarning))
+
+
+@skipIf(os.name == 'nt', 'Test not supported in Windows')
+class TestIBMQFactoryAccountsOnDisk(QiskitTestCase):
+    """Tests for the IBMQ account handling on disk."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.v2_token = 'API2_TOKEN'
+        cls.v1_token = 'API1_TOKEN'
+
+    def setUp(self):
+        super().setUp()
+
+        # Reference for saving accounts.
+        self.factory = IBMQFactory()
+        self.provider = IBMQProvider()
+
+    def test_save_account_v2(self):
+        """Test saving an API 2 account."""
+        with custom_qiskitrc():
+            self.factory.save_account(self.v2_token, url=AUTH_URL)
+            stored_cred = self.factory.stored_account()
+
+        self.assertEqual(stored_cred['token'], self.v2_token)
+        self.assertEqual(stored_cred['url'], AUTH_URL)
+
+    def test_save_account_v1(self):
+        """Test saving an API 1 account."""
+        with custom_qiskitrc():
+            with self.assertRaises(IBMQAccountError):
+                self.factory.save_account(self.v1_token, url=API1_URL)
+
+    def test_stored_account_v1(self):
+        """Test listing a stored API 1 account."""
+        with custom_qiskitrc():
+            self.provider.save_account(self.v1_token, url=API1_URL)
+            with self.assertRaises(IBMQAccountError):
+                self.factory.stored_account()
+
+    def test_delete_account_v2(self):
+        """Test deleting an API 2 account."""
+        with custom_qiskitrc():
+            self.factory.save_account(self.v2_token, url=AUTH_URL)
+            self.factory.delete_account()
+            stored_cred = self.factory.stored_account()
+
+        self.assertEqual(len(stored_cred), 0)
+
+    def test_delete_account_v1(self):
+        """Test deleting an API 1 account."""
+        with custom_qiskitrc():
+            self.provider.save_account(self.v1_token, url=API1_URL)
+            with self.assertRaises(IBMQAccountError):
+                self.factory.delete_account()

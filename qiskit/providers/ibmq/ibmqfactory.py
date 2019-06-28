@@ -23,7 +23,8 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from .accountprovider import AccountProvider
 from .api_v2.clients import AuthClient, VersionClient
 from .credentials import Credentials
-from .credentials.configrc import read_credentials_from_qiskitrc, remove_credentials
+from .credentials.configrc import (read_credentials_from_qiskitrc, remove_credentials,
+                                   store_credentials)
 from .exceptions import IBMQAccountError, IBMQApiUrlError, IBMQProviderError
 from .ibmqprovider import IBMQProvider
 
@@ -73,6 +74,9 @@ class IBMQFactory:
 
         # For API 1, delegate onto the IBMQProvider.
         if not version_info['new_api']:
+            warnings.warn('IBM Experience 1 account is deprecated. '
+                          'IBMQ.update_account() for updating your stored credentials.',
+                          DeprecationWarning)
             self._v1_provider.enable_account(token, url, **kwargs)
             return self._v1_provider
 
@@ -96,9 +100,17 @@ class IBMQFactory:
         """Disable the account in the current session.
 
         Raises:
-            IBMQAccountError: if no account is in use in the session.
+            IBMQAccountError: if API 1 credentials are found, or if no account
+                is in use in the session.
         """
-        raise NotImplementedError
+        if self._credentials is not None:
+            self._credentials = None
+            self._providers = OrderedDict()
+        elif self._v1_provider._accounts:
+            raise IBMQAccountError('Credentials from the API 1 found. Please use '
+                                   'IBMQ.disable_accounts() to disable the account.')
+        else:
+            raise IBMQAccountError('No account is in use for this session.')
 
     def load_account(self):
         """Authenticate against IBM Q Experience from stored credentials.
@@ -108,9 +120,27 @@ class IBMQFactory:
         """
         raise NotImplementedError
 
-    def save_account(self):
-        """Save an account to disk for future use."""
-        raise NotImplementedError
+    @staticmethod
+    def save_account(token, url=QX_AUTH_URL, overwrite=False, **kwargs):
+        """Save the account to disk for future use.
+
+        Args:
+            token (str): IBM Q Experience API token.
+            url (str): URL for the IBM Q Experience auth server.
+            overwrite (bool): overwrite existing credentials.
+            **kwargs (dict):
+                * proxies (dict): Proxy configuration for the API.
+                * verify (bool): If False, ignores SSL certificates errors
+
+        Raises:
+            IBMQAccountError: if IBM Q Experience 1 account is used
+        """
+        if url != QX_AUTH_URL:
+            raise IBMQAccountError('IBM Q Experience 1 accounts are deprecated. Please use '
+                                   'IBMQ.update_account() for updating your stored credentials.')
+
+        credentials = Credentials(token, url, **kwargs)
+        store_credentials(credentials, overwrite=overwrite)
 
     @staticmethod
     def delete_account():
@@ -136,9 +166,30 @@ class IBMQFactory:
 
         remove_credentials(credentials)
 
-    def stored_account(self):
-        """List the account stored on disk"""
-        raise NotImplementedError
+    @staticmethod
+    def stored_account():
+        """List the account stored on disk.
+
+        Returns:
+            dict: dictionary with information about the account stored on disk.
+
+        Raises:
+            IBMQAccountError: if no valid API 2 account information found.
+        """
+        stored_credentials = read_credentials_from_qiskitrc()
+        if not stored_credentials:
+            return {}
+
+        if len(stored_credentials) > 1 or list(stored_credentials.values())[0].url != QX_AUTH_URL:
+            raise IBMQAccountError('Credentials from the API 1 found. Please use '
+                                   'IBMQ.update_account() for updating your '
+                                   'stored credentials.')
+
+        cred = list(stored_credentials.values())[0]
+        return {
+            'token': cred.token,
+            'url': cred.url
+        }
 
     # Provider management functions.
 
