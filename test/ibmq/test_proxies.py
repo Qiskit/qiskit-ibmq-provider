@@ -23,9 +23,11 @@ from requests.exceptions import ProxyError
 from qiskit.providers.ibmq.api_v2.clients import (AuthClient,
                                                   VersionClient)
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
-from qiskit.test import QiskitTestCase, requires_qe_access
+from qiskit.test import requires_qe_access
 
+from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_new_api_auth
+
 
 ADDRESS = '127.0.0.1'
 PORT = 8080
@@ -34,7 +36,7 @@ INVALID_PORT_PROXIES = {'https': '{}:{}'.format(ADDRESS, '6666')}
 INVALID_ADDRESS_PROXIES = {'https': '{}:{}'.format('invalid', PORT)}
 
 
-class TestProxies(QiskitTestCase):
+class TestProxies(IBMQTestCase):
     """Tests for proxy capabilities."""
 
     def setUp(self):

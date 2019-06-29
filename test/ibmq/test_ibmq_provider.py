@@ -27,9 +27,10 @@ from qiskit.compiler import assemble, transpile
 from ..decorators import (requires_qe_access,
                           requires_classic_api,
                           requires_new_api_auth)
+from ..ibmqtestcase import IBMQTestCase
 
 
-class TestIBMQProvider(providers.ProviderTestCase):
+class TestIBMQProvider(IBMQTestCase, providers.ProviderTestCase):
     """Tests for all the IBMQ backends through the classic API."""
 
     provider_cls = IBMQProvider

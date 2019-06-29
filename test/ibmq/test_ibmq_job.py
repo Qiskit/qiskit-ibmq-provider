@@ -389,7 +389,7 @@ class TestIBMQJob(JobTestCase):
             job_sim.result()
 
         message = job_sim.error_message()
-        self.assertIn('Job resulted in the following QASM status(es): ', message)
+        self.assertTrue(message)
 
     @slow_test
     @requires_provider

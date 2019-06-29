@@ -23,8 +23,7 @@ from qiskit.providers.ibmq.exceptions import IBMQAccountError, IBMQApiUrlError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.ibmqprovider import IBMQProvider
 
-from qiskit.test import QiskitTestCase
-
+from ..ibmqtestcase import IBMQTestCase
 from ..decorators import (requires_qe_access,
                           requires_new_api_auth,
                           requires_classic_api)
@@ -37,7 +36,7 @@ API2_URL = 'https://api.quantum-computing.ibm.com/api'
 AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 
 
-class TestIBMQFactoryEnableAccount(QiskitTestCase):
+class TestIBMQFactoryEnableAccount(IBMQTestCase):
     """Tests for IBMQFactory `enable_account()`."""
 
     @requires_qe_access
@@ -119,7 +118,7 @@ class TestIBMQFactoryEnableAccount(QiskitTestCase):
         self.assertIn('already', str(context_manager.exception))
 
 
-class TestIBMQFactoryAccountsDeprecation(QiskitTestCase):
+class TestIBMQFactoryAccountsDeprecation(IBMQTestCase):
     """Tests for IBMQFactory account-related deprecated methods."""
 
     @classmethod
@@ -167,7 +166,7 @@ class TestIBMQFactoryAccountsDeprecation(QiskitTestCase):
 
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
-class TestIBMQFactoryAccountsOnDisk(QiskitTestCase):
+class TestIBMQFactoryAccountsOnDisk(IBMQTestCase):
     """Tests for the IBMQ account handling on disk."""
 
     @classmethod
