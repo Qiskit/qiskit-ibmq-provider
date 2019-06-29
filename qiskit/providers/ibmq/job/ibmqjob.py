@@ -444,8 +444,8 @@ class IBMQJob(BaseJob):
             except Exception as err:  # pylint: disable=broad-except
                 # Fall back to submitting the Qobj via POST if object storage
                 # failed.
-                logger.warning('Submitting the job via object storage failed: '
-                               'retrying via regular POST upload.')
+                logger.info('Submitting the job via object storage failed: '
+                            'retrying via regular POST upload.')
                 # Disable object storage for this job.
                 self._use_object_storage = False
 
