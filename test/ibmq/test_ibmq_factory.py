@@ -20,7 +20,7 @@ from unittest import skipIf
 
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.exceptions import IBMQAccountError, IBMQApiUrlError
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory, QX_AUTH_URL
 from qiskit.providers.ibmq.ibmqprovider import IBMQProvider
 
 from ..ibmqtestcase import IBMQTestCase
@@ -223,6 +223,10 @@ class TestIBMQFactoryAccountsOnDisk(IBMQTestCase):
     @requires_new_api_auth
     def test_load_account_v2(self, qe_token, qe_url):
         """Test saving an API 2 account."""
+        if qe_url != QX_AUTH_URL:
+            # .save_account() expects an auth 2 production URL.
+            self.skipTest('Test requires production auth URL')
+
         with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             self.factory.save_account(qe_token, url=qe_url)
             self.factory.load_account()
