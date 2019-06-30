@@ -34,6 +34,7 @@ class AuthClient(BaseClient):
         """
         self.api_token = api_token
         self.auth_url = auth_url
+        self._service_urls = {}
 
         self.client_auth = Auth(RetrySession(auth_url, **request_kwargs))
         self.client_api = self._init_service_clients(**request_kwargs)
@@ -51,10 +52,10 @@ class AuthClient(BaseClient):
         access_token = self._request_access_token()
         # Use the token for the next auth server requests.
         self.client_auth.session.access_token = access_token
-        service_urls = self.user_urls()
+        self._service_urls = self.user_urls()
 
         # Create the api server client, using the access token.
-        client_api = Api(RetrySession(service_urls['http'], access_token,
+        client_api = Api(RetrySession(self._service_urls['http'], access_token,
                                       **request_kwargs))
 
         return client_api
@@ -145,3 +146,12 @@ class AuthClient(BaseClient):
             str: the access token in use.
         """
         return self.client_auth.session.access_token
+
+    def current_service_urls(self):
+        """Return the current service urls.
+
+        Returns:
+            dict: a dict with the base URLs for the services, in the same
+                format as `.user_urls()`.
+        """
+        return self._service_urls

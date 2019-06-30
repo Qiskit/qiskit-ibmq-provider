@@ -15,13 +15,13 @@
 """Test IBMQ online qasm simulator."""
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.test import QiskitTestCase
 from qiskit.compiler import assemble, transpile
 
+from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
 
 
-class TestIbmqQasmSimulator(QiskitTestCase):
+class TestIbmqQasmSimulator(IBMQTestCase):
     """Test IBM Q Qasm Simulator."""
 
     @requires_provider

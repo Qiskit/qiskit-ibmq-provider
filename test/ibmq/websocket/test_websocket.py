@@ -22,7 +22,8 @@ import websockets
 from qiskit.providers.ibmq.api_v2.exceptions import (
     WebsocketError, WebsocketTimeoutError, WebsocketIBMQProtocolError)
 from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketClient
-from qiskit.test import QiskitTestCase
+
+from ...ibmqtestcase import IBMQTestCase
 
 
 from .websocket_server import (
@@ -34,7 +35,7 @@ INVALID_PORT = 9876
 VALID_PORT = 8765
 
 
-class TestWebsocketClient(QiskitTestCase):
+class TestWebsocketClient(IBMQTestCase):
     """Tests for the websocket client."""
 
     def test_invalid_url(self):
@@ -46,7 +47,7 @@ class TestWebsocketClient(QiskitTestCase):
                 client.get_job_status('job_id'))
 
 
-class TestWebsocketClientMock(QiskitTestCase):
+class TestWebsocketClientMock(IBMQTestCase):
     """Tests for the the websocket client against a mock server."""
     @classmethod
     def setUpClass(cls):

@@ -16,13 +16,14 @@
 
 from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
                     QuantumRegister)
-from qiskit.test import QiskitTestCase, slow_test
+from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
 
+from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
 
 
-class TestIBMQBackends(QiskitTestCase):
+class TestIBMQBackends(IBMQTestCase):
     """Qiskit test for remote backend validation.
 
     Executes a series of circuits of special interest using

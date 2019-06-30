@@ -13,6 +13,7 @@
 # that they have been altered from the originals.
 
 """Test for the Websocket client integration."""
+
 from unittest import mock
 from threading import Thread
 from queue import Queue
@@ -25,12 +26,13 @@ from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketClient, Webs
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.test import QiskitTestCase, slow_test
+from qiskit.test import slow_test
 
+from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_qe_access, requires_new_api_auth
 
 
-class TestWebsocketIntegration(QiskitTestCase):
+class TestWebsocketIntegration(IBMQTestCase):
     """Websocket integration tests."""
 
     @classmethod

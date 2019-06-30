@@ -18,11 +18,12 @@ import os
 
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.result import Result
-from qiskit.test import QiskitTestCase
+
 from ..decorators import requires_new_api_auth, requires_qe_access
+from ..ibmqtestcase import IBMQTestCase
 
 
-class TestCircuits(QiskitTestCase):
+class TestCircuits(IBMQTestCase):
     """Tests IBM Q Circuits."""
 
     def setUp(self):

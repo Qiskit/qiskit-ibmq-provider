@@ -21,13 +21,13 @@ from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.api_v2.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api_v2.exceptions import ApiError, RequestsApiError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
-from qiskit.test import QiskitTestCase
 
+from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_new_api_auth, requires_qe_access
 from ..contextmanagers import custom_envs, no_envs
 
 
-class TestAccountClient(QiskitTestCase):
+class TestAccountClient(IBMQTestCase):
     """Tests for AccountClient."""
 
     def setUp(self):
@@ -89,7 +89,24 @@ class TestAccountClient(QiskitTestCase):
 
         # Run the job through the IBMQClient directly using object storage.
         api = backend._api
-        job = api.job_submit_object_storage(backend_name, qobj.to_dict())
+
+        try:
+            job = api.job_submit_object_storage(backend_name, qobj.to_dict())
+        except RequestsApiError as ex:
+            response = ex.original_exception.response
+            if response.status_code == 400:
+                try:
+                    api_code = response.json()['error']['code']
+
+                    # If we reach that point, it means the backend does not
+                    # support qobject storage.
+                    self.assertEqual(api_code,
+                                     'Q_OBJECT_STORAGE_IS_NOT_ALLOWED')
+                    return
+                except (ValueError, KeyError):
+                    pass
+            raise
+
         job_id = job['id']
         self.assertEqual(job['kind'], 'q-object-external-storage')
 
@@ -161,7 +178,7 @@ class TestAccountClient(QiskitTestCase):
                              api.client_api.session.headers['X-Qx-Client-Application'])
 
 
-class TestAccountClientJobs(QiskitTestCase):
+class TestAccountClientJobs(IBMQTestCase):
     """Tests for AccountClient methods related to jobs.
 
     This TestCase submits a Job during class invocation, available at
@@ -273,7 +290,7 @@ class TestAccountClientJobs(QiskitTestCase):
         self.assertIn('backend_name', result)
 
 
-class TestAuthClient(QiskitTestCase):
+class TestAuthClient(IBMQTestCase):
     """Tests for the AuthClient."""
 
     @requires_qe_access
