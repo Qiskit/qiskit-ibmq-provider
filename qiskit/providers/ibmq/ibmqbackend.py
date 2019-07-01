@@ -36,17 +36,19 @@ logger = logging.getLogger(__name__)
 class IBMQBackend(BaseBackend):
     """Backend class interfacing with an IBMQ backend."""
 
-    def __init__(self, configuration, provider, credentials, api):
+    def __init__(self, configuration, properties, provider, credentials, api):
         """Initialize remote backend for IBM Quantum Experience.
 
         Args:
             configuration (BackendConfiguration): configuration of backend.
+            properties (BackendProperties): properties of backend.
             provider (IBMQProvider): provider.
             credentials (Credentials): credentials.
             api (IBMQConnector):
                 api for communicating with the Quantum Experience.
         """
-        super().__init__(provider=provider, configuration=configuration)
+        super().__init__(provider=provider, configuration=configuration,
+                         properties=properties)
 
         self._api = api
         self._credentials = credentials
@@ -73,18 +75,6 @@ class IBMQBackend(BaseBackend):
         job.submit()
 
         return job
-
-    def properties(self):
-        """Return the online backend properties.
-
-        The return is via QX API call.
-
-        Returns:
-            BackendProperties: The properties of the backend.
-        """
-        api_properties = self._api.backend_properties(self.name())
-
-        return BackendProperties.from_dict(api_properties)
 
     def status(self):
         """Return the online backend status.
