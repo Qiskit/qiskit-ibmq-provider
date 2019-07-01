@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for accessing IBM Q."""
+"""Client for accessing an individual IBM Q account."""
 
 import asyncio
 
@@ -24,25 +24,28 @@ from .websocket import WebsocketClient
 
 
 class AccountClient(BaseClient):
-    """Client for programmatic access to the IBM Q API."""
+    """Client for accessing an individual IBM Q account.
 
-    def __init__(self, access_token, api_url, websockets_url, **request_kwargs):
+    This client provides access to an individual IBM Q hub/group/project.
+    """
+
+    def __init__(self, access_token, project_url, websockets_url, **request_kwargs):
         """AccountClient constructor.
 
         Args:
             access_token (str): IBM Q Experience access token.
-            api_url (str): IBM Q Experience URL.
+            project_url (str): IBM Q Experience URL for a specific h/g/p.
             websockets_url (str): URL for the websockets server.
             **request_kwargs (dict): arguments for the `requests` Session.
         """
-        self.client_api = Api(RetrySession(api_url, access_token,
+        self.client_api = Api(RetrySession(project_url, access_token,
                                            **request_kwargs))
         self.client_ws = WebsocketClient(websockets_url, access_token)
 
     # Backend-related public functions.
 
     def list_backends(self):
-        """Return a list of backends.
+        """Return the list of backends.
 
         Returns:
             list[dict]: a list of backends.
@@ -137,7 +140,7 @@ class AccountClient(BaseClient):
         return response['job']
 
     def job_download_qobj_object_storage(self, job_id):
-        """Return a Qobj from object storage.
+        """Retrieve and return a Qobj using object storage.
 
         Args:
             job_id (str): the id of the job.
@@ -154,7 +157,7 @@ class AccountClient(BaseClient):
         return job_api.get_object_storage(download_url)
 
     def job_result_object_storage(self, job_id):
-        """Return a result using object storage.
+        """Retrieve and return a result using object storage.
 
         Args:
             job_id (str): the id of the job.
@@ -282,16 +285,6 @@ class AccountClient(BaseClient):
             dict: job status.
         """
         return self.job_status(job_id)
-
-    # Miscellaneous public functions.
-
-    def api_version(self):
-        """Return the version of the API.
-
-        Returns:
-            dict: versions of the api components.
-        """
-        return self.client_api.version()
 
     # Endpoints for compatibility with classic IBMQConnector. These functions
     # are meant to facilitate the transition, and should be removed moving
