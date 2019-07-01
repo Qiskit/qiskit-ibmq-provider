@@ -15,12 +15,12 @@
 """Backends Filtering Test."""
 
 from qiskit.providers.ibmq import least_busy
-from qiskit.test import QiskitTestCase
 
+from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
 
 
-class TestBackendFilters(QiskitTestCase):
+class TestBackendFilters(IBMQTestCase):
     """Qiskit Backend Filtering Tests."""
 
     @requires_provider
