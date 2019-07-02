@@ -19,6 +19,7 @@ import json
 import logging
 import time
 from concurrent import futures
+import warnings
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
@@ -106,10 +107,14 @@ class WebsocketClient(BaseClient):
         try:
             # Authenticate against the server.
             auth_request = self._authentication_message()
-            yield from websocket.send(auth_request.as_json())
+            with warnings.catch_warnings():
+                # Suppress websockets deprecation warnings until the fix is available
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                yield from websocket.send(auth_request.as_json())
 
-            # Verify that the server acknowledged our authentication.
-            auth_response_raw = yield from websocket.recv()
+                # Verify that the server acknowledged our authentication.
+                auth_response_raw = yield from websocket.recv()
+
             auth_response = WebsocketMessage.from_bytes(auth_response_raw)
 
             if auth_response.type_ != 'authenticated':
