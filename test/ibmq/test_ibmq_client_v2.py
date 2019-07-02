@@ -224,8 +224,8 @@ class TestAccountClientJobs(IBMQTestCase):
 
     def test_job_get(self):
         """Test job_get."""
-        result = self.client.job_get(self.job_id)
-        self.assertIn('status', result)
+        response = self.client.job_get(self.job_id)
+        self.assertIn('status', response)
 
     def test_job_get_includes(self):
         """Check the include fields parameter for job_get."""
@@ -235,7 +235,7 @@ class TestAccountClientJobs(IBMQTestCase):
         job_included = self.client.job_get(self.job_id,
                                            included_fields=['backend', 'shots'])
 
-        # Ensure the result has only the included fields
+        # Ensure the response has only the included fields
         self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
 
     def test_job_get_excludes(self):
@@ -245,7 +245,7 @@ class TestAccountClientJobs(IBMQTestCase):
         self.assertIn('backend', self.job)
         job_excluded = self.client.job_get(self.job_id, excluded_fields=['backend'])
 
-        # Ensure the result only excludes the specified field
+        # Ensure the response only excludes the specified field
         self.assertNotIn('backend', job_excluded)
         self.assertIn('shots', self.job)
 
@@ -256,7 +256,7 @@ class TestAccountClientJobs(IBMQTestCase):
         job_included = self.client.job_get(self.job_id,
                                            included_fields=['dummy_include'])
 
-        # Ensure the result is empty, since no existing fields are included
+        # Ensure the response is empty, since no existing fields are included
         self.assertFalse(job_included)
 
     def test_job_get_excludes_nonexistent(self):
@@ -267,27 +267,28 @@ class TestAccountClientJobs(IBMQTestCase):
         job_excluded = self.client.job_get(self.job_id,
                                            excluded_fields=['dummy_exclude'])
 
-        # Ensure the result only excludes the specified field. We can't do a direct
+        # Ensure the response only excludes the specified field. We can't do a direct
         # comparison against the original job because some fields might have changed.
         self.assertIn('shots', job_excluded)
 
     def test_job_status(self):
         """Test getting job status."""
-        result = self.client.job_status(self.job_id)
-        self.assertIn('status', result)
+        response = self.client.job_status(self.job_id)
+        self.assertIn('status', response)
 
     def test_job_final_status_websocket(self):
         """Test getting a job's final status via websocket."""
-        result = self.client.job_final_status_websocket(self.job_id)
-        self.assertIn('status', result)
+        response = self.client.job_final_status_websocket(self.job_id)
+        self.assertIn('status', response)
 
     def test_job_properties(self):
         """Test getting job properties."""
         # Force the job to finish.
         _ = self.client.job_final_status_websocket(self.job_id)
 
-        result = self.client.job_properties(self.job_id)
-        self.assertIn('backend_name', result)
+        response = self.client.job_properties(self.job_id)
+        # Since the job is against a simulator, it will have no properties.
+        self.assertFalse(response)
 
 
 class TestAuthClient(IBMQTestCase):
