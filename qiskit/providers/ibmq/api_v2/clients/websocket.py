@@ -98,7 +98,10 @@ class WebsocketClient(BaseClient):
         """
         try:
             logger.debug('Starting new websocket connection: %s', url)
-            websocket = yield from connect(url)
+            with warnings.catch_warnings():
+                # Suppress websockets deprecation warnings until the fix is available
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                websocket = yield from connect(url)
 
         # pylint: disable=broad-except
         except Exception as ex:
