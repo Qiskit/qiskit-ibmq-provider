@@ -158,15 +158,18 @@ class WebsocketClient(BaseClient):
             # a timeout has been reached.
             while True:
                 try:
-                    if timeout:
-                        response_raw = yield from asyncio.wait_for(
-                            websocket.recv(), timeout=timeout)
+                    with warnings.catch_warnings():
+                        # Suppress websockets deprecation warnings until the fix is available
+                        warnings.filterwarnings("ignore", category=DeprecationWarning)
+                        if timeout:
+                            response_raw = yield from asyncio.wait_for(
+                                websocket.recv(), timeout=timeout)
 
-                        # Decrease the timeout, with a 5-second grace period.
-                        elapsed_time = time.time() - start_time
-                        timeout = max(5, int(original_timeout - elapsed_time))
-                    else:
-                        response_raw = yield from websocket.recv()
+                            # Decrease the timeout, with a 5-second grace period.
+                            elapsed_time = time.time() - start_time
+                            timeout = max(5, int(original_timeout - elapsed_time))
+                        else:
+                            response_raw = yield from websocket.recv()
                     logger.debug('Received message from websocket: %s',
                                  response_raw)
 
@@ -196,7 +199,10 @@ class WebsocketClient(BaseClient):
                     raise WebsocketError('Connection with websocket closed '
                                          'unexpectedly: {}'.format(message)) from ex
         finally:
-            yield from websocket.close()
+            with warnings.catch_warnings():
+                # Suppress websockets deprecation warnings until the fix is available
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                yield from websocket.close()
 
         return last_status
 
