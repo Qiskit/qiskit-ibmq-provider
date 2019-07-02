@@ -287,7 +287,8 @@ class TestAccountClientJobs(IBMQTestCase):
         _ = self.client.job_final_status_websocket(self.job_id)
 
         result = self.client.job_properties(self.job_id)
-        self.assertIn('backend_name', result)
+        # Since the job is against a simulator, it will have no properties.
+        self.assertFalse(result)
 
 
 class TestAuthClient(IBMQTestCase):
