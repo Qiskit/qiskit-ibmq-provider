@@ -410,19 +410,15 @@ class TestIBMQJob(JobTestCase):
         factory = IBMQFactory()
         factory.enable_account(qe_token, qe_url)
 
-        # TODO dynamically find backend when api is fixed
-        # backend = None
-        # for provider in factory.providers():
-        #     backends = provider.backends(open_pulse=True)
-        #     if backends:
-        #         backend = backends[0]
-        #         break
+        backend = None
+        for provider in factory.providers():
+            backends = provider.backends(open_pulse=True)
+            if backends:
+                backend = backends[0]
+                break
 
-        backend = factory.get_provider(hub='ibm-q-dev', group='system-software',
-                                       project='internal-test').get_backend('ibmq_poughkeepsie')
         self.assertIsNotNone(backend)
         config = backend.configuration()
-        # print(config.meas_levels)
         defaults = backend.defaults()
         cmd_def = defaults.build_cmd_def()
 
@@ -433,7 +429,7 @@ class TestIBMQJob(JobTestCase):
         excited_sched = x | measure
         schedules = [ground_sched, excited_sched]
 
-        qobj = assemble(schedules, backend, meas_level=2, shots=256)
+        qobj = assemble(schedules, backend, meas_level=1, shots=256)
         job = backend.run(qobj)
         _ = job.result()
 
