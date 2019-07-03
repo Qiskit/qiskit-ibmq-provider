@@ -19,6 +19,7 @@ import warnings
 from unittest import skipIf
 
 from qiskit.providers.ibmq.accountprovider import AccountProvider
+from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 from qiskit.providers.ibmq.exceptions import IBMQAccountError, IBMQApiUrlError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory, QX_AUTH_URL
 from qiskit.providers.ibmq.ibmqprovider import IBMQProvider
@@ -117,6 +118,21 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
 
         self.assertIn('already', str(context_manager.exception))
 
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_pass_bad_proxy(self, qe_token, qe_url):
+        """Test proxy pass through."""
+        PROXIES = {
+            'urls': {
+                'http': 'http://user:password@127.0.0.1:5678',
+                'https': 'https://user:password@127.0.0.1:5678'
+            }
+        }
+        ibmq = IBMQFactory()
+        with self.assertRaises(RequestsApiError) as context_manager:
+            ibmq.enable_account(qe_token, qe_url, proxies=PROXIES)
+        self.assertIn('ProxyError', str(context_manager.exception))
+
 
 class TestIBMQFactoryAccountsDeprecation(IBMQTestCase):
     """Tests for IBMQFactory account-related deprecated methods."""
@@ -192,9 +208,8 @@ class TestIBMQFactoryAccountsOnDisk(IBMQTestCase):
 
     def test_save_account_v1(self):
         """Test saving an API 1 account."""
-        with custom_qiskitrc():
-            with self.assertRaises(IBMQAccountError):
-                self.factory.save_account(self.v1_token, url=API1_URL)
+        with custom_qiskitrc(), self.assertRaises(IBMQAccountError):
+            self.factory.save_account(self.v1_token, url=API1_URL)
 
     def test_stored_account_v1(self):
         """Test listing a stored API 1 account."""
@@ -241,3 +256,54 @@ class TestIBMQFactoryAccountsOnDisk(IBMQTestCase):
             self.provider.save_account(self.v1_token, url=API1_URL)
             with self.assertRaises(IBMQAccountError):
                 self.factory.load_account()
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_disable_account_v2(self, qe_token, qe_url):
+        """Test disabling an API 2 account """
+        self.factory.enable_account(qe_token, qe_url)
+        self.factory.disable_account()
+        self.assertIsNone(self.factory._credentials)
+
+    @requires_qe_access
+    @requires_classic_api
+    def test_disable_account_v1(self, qe_token, qe_url):
+        """Test disabling an API 1 account """
+        self.factory.enable_account(qe_token, qe_url)
+        with self.assertRaises(IBMQAccountError):
+            self.factory.disable_account()
+
+
+class TestIBMQFactoryProvider(IBMQTestCase):
+    """Tests for IBMQFactory provider related methods."""
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def _get_provider(self, qe_token, qe_url):
+        return self.ibmq.enable_account(qe_token, qe_url)
+
+    def setUp(self):
+        super().setUp()
+
+        self.ibmq = IBMQFactory()
+        self.provider = self._get_provider()
+        self.credentials = self.provider.credentials
+
+    def test_get_provider(self):
+        """Test get single provider."""
+        got_provider = self.ibmq.get_provider(
+            hub=self.credentials.hub, group=self.credentials.group,
+            project=self.credentials.project)
+        self.assertEqual(self.provider, got_provider)
+
+    def test_providers_with_filter(self):
+        """Test providers with a filter."""
+        got_provider = self.ibmq.providers(
+            hub=self.credentials.hub, group=self.credentials.group,
+            project=self.credentials.project)[0]
+        self.assertEqual(self.provider, got_provider)
+
+    def test_providers_no_filter(self):
+        """Test providers without a filter."""
+        providers = self.ibmq.providers()
+        self.assertIn(self.provider, providers)

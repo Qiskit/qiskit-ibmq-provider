@@ -194,11 +194,17 @@ class IBMQFactory:
             IBMQAccountError: if attempting to save an IBM Q Experience 1
                 account.
         """
-        if url != QX_AUTH_URL:
-            raise IBMQAccountError('Saving IBM Q Experience 1 accounts is '
-                                   'deprecated. Please ')
-
         credentials = Credentials(token, url, **kwargs)
+        version_info = IBMQFactory._check_api_version(credentials)
+
+        # For API 1, delegate onto the IBMQProvider.
+        if not version_info['new_api']:
+            raise IBMQAccountError('Credentials from the API 1 found. Saving '
+                                   'IBM Q Experience 1 accounts is deprecated.')
+
+        if 'api-auth' not in version_info:
+            raise IBMQAccountError('Invalid credentials from the API 2 found.')
+
         store_credentials(credentials, overwrite=overwrite)
 
     @staticmethod
