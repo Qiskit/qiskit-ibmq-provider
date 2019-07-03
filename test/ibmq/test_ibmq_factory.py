@@ -161,6 +161,7 @@ class TestIBMQFactoryAccountsDeprecation(IBMQTestCase):
         for warn in warnings_list:
             self.assertTrue(issubclass(warn.category, DeprecationWarning))
 
+    @skipIf(os.name == 'nt', 'Test not supported in Windows')
     @requires_qe_access
     @requires_classic_api
     def test_api1_load_accounts(self, qe_token, qe_url):
@@ -178,6 +179,7 @@ class TestIBMQFactoryAccountsDeprecation(IBMQTestCase):
             list(ibmq_factory._v1_provider._accounts.values())[0].credentials.token,
             qe_token)
 
+    @skipIf(os.name == 'nt', 'Test not supported in Windows')
     def test_api1_delete_accounts(self):
         """Test backward compatibility for API 1 delete_accounts()."""
         ibmq_provider = IBMQProvider()
