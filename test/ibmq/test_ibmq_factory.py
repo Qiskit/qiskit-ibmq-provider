@@ -122,7 +122,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
     @requires_new_api_auth
     def test_pass_bad_proxy(self, qe_token, qe_url):
         """Test proxy pass through."""
-        PROXIES = {
+        proxies = {
             'urls': {
                 'http': 'http://user:password@127.0.0.1:5678',
                 'https': 'https://user:password@127.0.0.1:5678'
@@ -130,7 +130,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         }
         ibmq = IBMQFactory()
         with self.assertRaises(RequestsApiError) as context_manager:
-            ibmq.enable_account(qe_token, qe_url, proxies=PROXIES)
+            ibmq.enable_account(qe_token, qe_url, proxies=proxies)
         self.assertIn('ProxyError', str(context_manager.exception))
 
 
@@ -279,7 +279,7 @@ class TestIBMQFactoryProvider(IBMQTestCase):
 
     @requires_qe_access
     @requires_new_api_auth
-    def _get_provider(self, qe_token, qe_url):
+    def _get_provider(self, qe_token=None, qe_url=None):
         return self.ibmq.enable_account(qe_token, qe_url)
 
     def setUp(self):
