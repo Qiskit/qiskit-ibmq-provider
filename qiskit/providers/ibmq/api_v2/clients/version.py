@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for accessing IBM Q's version finder."""
+"""Client for determining the version of an IBM Q service."""
 
 from ..session import RetrySession
 from ..rest.version_finder import VersionFinder
@@ -21,7 +21,7 @@ from .base import BaseClient
 
 
 class VersionClient(BaseClient):
-    """Client for finding the API version being used."""
+    """Client for determining the version of an IBM Q service."""
 
     def __init__(self, url, **request_kwargs):
         """VersionClient constructor.
