@@ -135,7 +135,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
 
 
 class TestIBMQFactoryAccountsDeprecation(IBMQTestCase):
-    """Tests for IBMQFactory account-related deprecated methods."""
+    """Tests for IBMQFactory deprecated methods."""
 
     @classmethod
     def setUpClass(cls):
@@ -144,8 +144,8 @@ class TestIBMQFactoryAccountsDeprecation(IBMQTestCase):
 
     @requires_qe_access
     @requires_classic_api
-    def test_api1_accounts_compatibility(self, qe_token, qe_url):
-        """Test backward compatibility for IBMQProvider account methods."""
+    def test_api1_disable_accounts(self, qe_token, qe_url):
+        """Test backward compatibility for API 1 disable_accounts()."""
         ibmq = IBMQFactory()
         ibmq.enable_account(qe_token, qe_url)
 
@@ -163,8 +163,40 @@ class TestIBMQFactoryAccountsDeprecation(IBMQTestCase):
 
     @requires_qe_access
     @requires_classic_api
-    def test_backends(self, qe_token, qe_url):
-        """Test backward compatibility for IBMQProvider backends method."""
+    def test_api1_load_accounts(self, qe_token, qe_url):
+        """Test backward compatibility for API 1 load_accounts()."""
+        ibmq_provider = IBMQProvider()
+        ibmq_factory = IBMQFactory()
+
+        with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
+            ibmq_provider.save_account(qe_token, qe_url)
+
+            with self.assertWarns(DeprecationWarning):
+                ibmq_factory.load_accounts()
+
+        self.assertEqual(
+            list(ibmq_factory._v1_provider._accounts.values())[0].credentials.token,
+            qe_token)
+
+    def test_api1_delete_accounts(self):
+        """Test backward compatibility for API 1 delete_accounts()."""
+        ibmq_provider = IBMQProvider()
+        ibmq_factory = IBMQFactory()
+
+        with custom_qiskitrc():
+            ibmq_provider.save_account('QISKITRC_TOKEN', url=API1_URL)
+
+            with self.assertWarns(DeprecationWarning):
+                ibmq_factory.delete_accounts()
+            with self.assertWarns(DeprecationWarning):
+                stored_accounts = ibmq_factory.stored_accounts()
+
+        self.assertEqual(len(stored_accounts), 0)
+
+    @requires_qe_access
+    @requires_classic_api
+    def test_api1_backends(self, qe_token, qe_url):
+        """Test backward compatibility for API 1 backends()."""
         ibmq = IBMQFactory()
         ibmq.enable_account(qe_token, qe_url)
 
@@ -172,13 +204,27 @@ class TestIBMQFactoryAccountsDeprecation(IBMQTestCase):
         ibmq_provider.enable_account(qe_token, qe_url)
         ibmq_provider_backend_names = [b.name() for b in ibmq_provider.backends()]
 
-        with warnings.catch_warnings(record=True) as warnings_list:
+        with self.assertWarns(DeprecationWarning):
             ibmq_backend_names = [b.name() for b in ibmq.backends()]
 
         self.assertEqual(set(ibmq_backend_names),
                          set(ibmq_provider_backend_names))
-        self.assertTrue(issubclass(warnings_list[0].category,
-                                   DeprecationWarning))
+
+    @requires_qe_access
+    @requires_classic_api
+    def test_api1_get_backend(self, qe_token, qe_url):
+        """Test backward compatibility for API 1 get_backend()."""
+        ibmq = IBMQFactory()
+        ibmq.enable_account(qe_token, qe_url)
+
+        ibmq_provider = IBMQProvider()
+        ibmq_provider.enable_account(qe_token, qe_url)
+        backend = ibmq_provider.backends()[0]
+
+        with self.assertWarns(DeprecationWarning):
+            ibmq_backend = ibmq.get_backend(backend.name())
+
+        self.assertEqual(backend.name(), ibmq_backend.name())
 
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
@@ -237,7 +283,7 @@ class TestIBMQFactoryAccountsOnDisk(IBMQTestCase):
     @requires_qe_access
     @requires_new_api_auth
     def test_load_account_v2(self, qe_token, qe_url):
-        """Test saving an API 2 account."""
+        """Test loading an API 2 account."""
         if qe_url != QX_AUTH_URL:
             # .save_account() expects an auth 2 production URL.
             self.skipTest('Test requires production auth URL')
@@ -251,7 +297,7 @@ class TestIBMQFactoryAccountsOnDisk(IBMQTestCase):
         self.assertEqual(self.factory._v1_provider._accounts, {})
 
     def test_load_account_v1(self):
-        """Test saving an API 1 account."""
+        """Test loading an API 1 account."""
         with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             self.provider.save_account(self.v1_token, url=API1_URL)
             with self.assertRaises(IBMQAccountError):
