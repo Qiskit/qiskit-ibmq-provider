@@ -195,9 +195,9 @@ class IBMQFactory:
                 account.
         """
         credentials = Credentials(token, url, **kwargs)
-        version_info = IBMQFactory._check_api_version(credentials)
 
-        # For API 1, delegate onto the IBMQProvider.
+        # Verify the credentials are for v2.
+        version_info = IBMQFactory._check_api_version(credentials)
         if not version_info['new_api']:
             raise IBMQAccountError('Credentials from the API 1 found. Saving '
                                    'IBM Q Experience 1 accounts is deprecated.')
@@ -224,10 +224,18 @@ class IBMQFactory:
                                    'stored credentials.')
 
         credentials = list(stored_credentials.values())[0]
-        if credentials.url != QX_AUTH_URL:
+
+        # Verify the credentials are for v2.
+        version_info = IBMQFactory._check_api_version(credentials)
+        if not version_info['new_api']:
             raise IBMQAccountError('Credentials from the API 1 found. Please use '
                                    'IBMQ.update_account() for updating your '
                                    'stored credentials.')
+
+        if 'api-auth' not in version_info:
+            raise IBMQAccountError('Invalid credentials from the API 2 found.'
+                                   'Please use IBMQ.update_account() for '
+                                   'updating your stored credentials.')
 
         remove_credentials(credentials)
 
