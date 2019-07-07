@@ -79,7 +79,7 @@ def update_credentials(force=False):
                                                    verify=credentials.verify))
                 hub_lines.append(
                     "  provider{} = IBMQ.get_provider(hub='{}', group='{}',"
-                    "project='{})".format(provider_number,
+                    "project='{}')".format(provider_number,
                                           credentials.hub,
                                           credentials.group,
                                           credentials.project))
