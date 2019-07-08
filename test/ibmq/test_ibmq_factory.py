@@ -120,8 +120,8 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
 
     @requires_qe_access
     @requires_new_api_auth
-    def test_pass_bad_proxy(self, qe_token, qe_url):
-        """Test proxy pass through."""
+    def test_pass_unreachable_proxy(self, qe_token, qe_url):
+        """Test using an unreachable proxy while enabling an account."""
         proxies = {
             'urls': {
                 'http': 'http://user:password@127.0.0.1:5678',
@@ -134,7 +134,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         self.assertIn('ProxyError', str(context_manager.exception))
 
 
-class TestIBMQFactoryAccountsDeprecation(IBMQTestCase):
+class TestIBMQFactoryDeprecation(IBMQTestCase):
     """Tests for IBMQFactory deprecated methods."""
 
     @classmethod
@@ -339,19 +339,21 @@ class TestIBMQFactoryProvider(IBMQTestCase):
 
     def test_get_provider(self):
         """Test get single provider."""
-        got_provider = self.ibmq.get_provider(
-            hub=self.credentials.hub, group=self.credentials.group,
+        provider = self.ibmq.get_provider(
+            hub=self.credentials.hub,
+            group=self.credentials.group,
             project=self.credentials.project)
-        self.assertEqual(self.provider, got_provider)
+        self.assertEqual(self.provider, provider)
 
     def test_providers_with_filter(self):
-        """Test providers with a filter."""
-        got_provider = self.ibmq.providers(
-            hub=self.credentials.hub, group=self.credentials.group,
+        """Test providers() with a filter."""
+        provider = self.ibmq.providers(
+            hub=self.credentials.hub,
+            group=self.credentials.group,
             project=self.credentials.project)[0]
-        self.assertEqual(self.provider, got_provider)
+        self.assertEqual(self.provider, provider)
 
     def test_providers_no_filter(self):
-        """Test providers without a filter."""
+        """Test providers() without a filter."""
         providers = self.ibmq.providers()
         self.assertIn(self.provider, providers)
