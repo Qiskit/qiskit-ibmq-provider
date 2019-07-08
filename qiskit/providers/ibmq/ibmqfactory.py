@@ -259,6 +259,30 @@ class IBMQFactory:
             'url': credentials.url
         }
 
+    @deprecated
+    def active_account(self):
+        """List the IBM Q Experience v2 account currently in the session.
+
+        Returns:
+            list[dict]: a list with information about the account currently
+                in the session.
+
+        Raises:
+            IBMQAccountError: if no valid IBM Q Experience v2 credentials found.
+        """
+        if self._v1_provider._accounts:
+            raise IBMQAccountError(
+                'IBM Q Experience v1 accounts are enabled. Please use '
+                'IBMQ.active_accounts() to retrieve information about them.')
+
+        if not self._credentials:
+            raise IBMQAccountError('No account is in use for this session.')
+
+        return {
+            'token': self._credentials.token,
+            'url': self._credentials.url,
+        }
+
     @staticmethod
     def update_account(force=False):
         """Interactive helper from migrating stored credentials to IBM Q Experience v2.
@@ -476,7 +500,8 @@ class IBMQFactory:
     def backends(self, name=None, filters=None, **kwargs):
         """Return all backends accessible via IBMQ provider, subject to optional filtering.
 
-        Note: this method is being deprecated. Please use an IBM Q Experience v2 account, and::
+        Note: this method is being deprecated. Please use an IBM Q Experience v2
+            account, and::
 
             provider = IBMQ.get_provider(...)
             provider.backends()
@@ -521,7 +546,8 @@ class IBMQFactory:
     def get_backend(self, name=None, **kwargs):
         """Return a single backend matching the specified filtering.
 
-        Note: this method is being deprecated. Please use an IBM Q Experience v2 account, and::
+        Note: this method is being deprecated. Please use an IBM Q Experience v2
+            account, and::
 
             provider = IBMQ.get_provider(...)
             provider.get_backend('name')
