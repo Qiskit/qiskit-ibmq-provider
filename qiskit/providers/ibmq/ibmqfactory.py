@@ -29,11 +29,12 @@ from .credentials.configrc import (read_credentials_from_qiskitrc,
 from .credentials.updater import update_credentials
 from .exceptions import IBMQAccountError, IBMQApiUrlError, IBMQProviderError
 from .ibmqprovider import IBMQProvider
+from .utils.deprecation import deprecated, UPDATE_ACCOUNT_TEXT
+
 
 logger = logging.getLogger(__name__)
 
 QX_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
-UPDATE_ACCOUNT_TEXT = 'Please use IBMQ.update_account() to update your stored credentials.'
 
 
 class IBMQFactory:
@@ -146,7 +147,8 @@ class IBMQFactory:
         credentials_list = list(discover_credentials().values())
 
         if not credentials_list:
-            raise IBMQAccountError('No IBM Q Experience credentials found on disk.')
+            raise IBMQAccountError(
+                'No IBM Q Experience credentials found on disk.')
 
         if len(credentials_list) > 1:
             raise IBMQAccountError('Multiple IBM Q Experience credentials '
@@ -370,37 +372,7 @@ class IBMQFactory:
 
     # Deprecated account management functions for backward compatibility.
 
-    class _Decorators:
-        @classmethod
-        def _deprecated(cls, func):
-            """Decorator that signals that the function has been deprecated.
-
-            Args:
-                func (callable): function to be decorated.
-
-            Returns:
-                callable: the decorated function.
-            """
-            from functools import wraps
-
-            @wraps(func)
-            def _wrapper(self, *args, **kwargs):
-                if self._credentials:
-                    raise IBMQAccountError(
-                        'IBMQ.{}() is not available when using an IBM Q Experience '
-                        'v2 account. Please use IBMQ.{}() (note the singular form) '
-                        'instead.'.format(func.__name__, func.__name__[:-1]))
-
-                warnings.warn(
-                    'IBMQ.{}() is being deprecated. Please use IBM Q Experience v2 '
-                    'credentials and IBMQ.{}() (note the singular form) instead. You can '
-                    'use IBMQ.update_account() to update your stored credentials, '
-                    'if applicable.'.format(func.__name__, func.__name__[:-1]),
-                    DeprecationWarning)
-                return func(self, *args, **kwargs)
-
-            return _wrapper
-
+    @deprecated
     def active_accounts(self):
         """List all IBM Q Experience v1 accounts currently in the session.
 
@@ -415,21 +387,9 @@ class IBMQFactory:
             IBMQAccountError: if the method is used with an IBM Q Experience
                 v2 account.
         """
-        # active_accounts() doesn't have a corresponding v2 method so we
-        # can't use the decorator.
-        if self._credentials:
-            raise IBMQAccountError('IBMQ.active_accounts() is not available when '
-                                   'using an IBM Q Experience v2 account.')
-
-        warnings.warn(
-            'IBMQ.active_accounts() is being deprecated. Please use IBM Q Experience '
-            'v2 credentials instead. You can use IBMQ.update_account() '
-            'to update your stored credentials, if applicable.',
-            DeprecationWarning)
-
         return self._v1_provider.active_accounts()
 
-    @_Decorators._deprecated
+    @deprecated
     def disable_accounts(self, **kwargs):
         """Disable IBM Q Experience v1 accounts in the current session.
 
@@ -445,7 +405,7 @@ class IBMQFactory:
         """
         self._v1_provider.disable_accounts(**kwargs)
 
-    @_Decorators._deprecated
+    @deprecated
     def load_accounts(self, **kwargs):
         """Load IBM Q Experience v1 accounts found in the system into current session.
 
@@ -479,7 +439,7 @@ class IBMQFactory:
 
         self._v1_provider.load_accounts(**kwargs)
 
-    @_Decorators._deprecated
+    @deprecated
     def delete_accounts(self, **kwargs):
         """Delete saved IBM Q Experience v1 accounts from disk, subject to optional filtering.
 
@@ -495,7 +455,7 @@ class IBMQFactory:
         """
         self._v1_provider.delete_accounts(**kwargs)
 
-    @_Decorators._deprecated
+    @deprecated
     def stored_accounts(self):
         """List all IBM Q Experience v1 accounts stored to disk.
 
