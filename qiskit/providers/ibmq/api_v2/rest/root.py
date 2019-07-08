@@ -29,7 +29,7 @@ class Api(RestAdapterBase):
         'hubs': '/Network',
         'jobs': '/Jobs',
         'jobs_status': '/Jobs/status',
-        'circuit': '/QCircuitApiModels',
+        'circuit': '/qcircuit',
         'version': '/version'
     }
 
