@@ -23,10 +23,9 @@ from requests.exceptions import ProxyError
 from qiskit.providers.ibmq.api_v2.clients import (AuthClient,
                                                   VersionClient)
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
-from qiskit.test import requires_qe_access
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_new_api_auth
+from ..decorators import requires_qe_access, requires_new_api_auth
 
 
 ADDRESS = '127.0.0.1'
