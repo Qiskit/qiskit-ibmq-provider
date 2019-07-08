@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for accessing an individual IBM Q account."""
+"""Client for accessing an individual IBM Q Experience account."""
 
 import asyncio
 
@@ -24,7 +24,7 @@ from .websocket import WebsocketClient
 
 
 class AccountClient(BaseClient):
-    """Client for accessing an individual IBM Q account.
+    """Client for accessing an individual IBM Q Experience account.
 
     This client provides access to an individual IBM Q hub/group/project.
     """

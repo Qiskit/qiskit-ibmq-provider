@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for accessing authentication features of IBM Q."""
+"""Client for accessing authentication features of IBM Q Experience."""
 
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
 from ..rest import Api, Auth
@@ -22,7 +22,7 @@ from .base import BaseClient
 
 
 class AuthClient(BaseClient):
-    """Client for accessing authentication features of IBM Q."""
+    """Client for accessing authentication features of IBM Q Experience."""
 
     def __init__(self, api_token, auth_url, **request_kwargs):
         """AuthClient constructor.
@@ -89,7 +89,7 @@ class AuthClient(BaseClient):
     # User account-related public functions.
 
     def user_urls(self):
-        """Retrieve the API URLs from the auth server.
+        """Retrieve the API URLs from the authentication server.
 
         Returns:
             dict: a dict with the base URLs for the services. Currently
@@ -148,7 +148,7 @@ class AuthClient(BaseClient):
         return self.client_auth.session.access_token
 
     def current_service_urls(self):
-        """Return the current service urls.
+        """Return the current service URLs.
 
         Returns:
             dict: a dict with the base URLs for the services, in the same
