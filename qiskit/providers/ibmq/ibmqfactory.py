@@ -84,6 +84,10 @@ class IBMQFactory:
 
         # For API 1, delegate onto the IBMQProvider.
         if not version_info['new_api']:
+            warnings.warn(
+                'Using IBM Q Experience v1 credentials is being deprecated. '
+                'Please use IBM Q Experience v2 credentials instead.',
+                DeprecationWarning)
             self._v1_provider.enable_account(token, url, **kwargs)
             return self._v1_provider
 
