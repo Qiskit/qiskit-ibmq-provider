@@ -18,8 +18,8 @@ import os
 from functools import wraps
 from unittest import SkipTest
 
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test.testing_options import get_test_options
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory, QX_AUTH_URL
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
 
@@ -158,6 +158,12 @@ def _get_credentials():
         # load them from different environment variables. This assumes they
         # will always be in place, as is used by the Travis setup.
         return Credentials(os.getenv('IBMQ_TOKEN'), os.getenv('IBMQ_URL'))
+
+    if os.getenv('USE_NEW_API_URL', ''):
+        # Special case: instead of using the standard credentials mechanism,
+        # load the token from an environment variables and use the default
+        # API 2 authentication URL.
+        return Credentials(os.getenv('QE_TOKEN'), QX_AUTH_URL)
 
     # Attempt to read the standard credentials.
     discovered_credentials = discover_credentials()
