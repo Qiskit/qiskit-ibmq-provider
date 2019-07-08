@@ -259,16 +259,15 @@ class IBMQFactory:
             'url': credentials.url
         }
 
-    @deprecated
     def active_account(self):
         """List the IBM Q Experience v2 account currently in the session.
 
         Returns:
-            list[dict]: a list with information about the account currently
-                in the session.
+            dict: information about the account currently in the session.
 
         Raises:
-            IBMQAccountError: if no valid IBM Q Experience v2 credentials found.
+            IBMQAccountError: if an IBM Q Experience v1 account is already in
+                use.
         """
         if self._v1_provider.active_accounts():
             raise IBMQAccountError(
@@ -276,7 +275,9 @@ class IBMQFactory:
                 'IBMQ.active_accounts() to retrieve information about them.')
 
         if not self._credentials:
-            raise IBMQAccountError('No account is in use for this session.')
+            # Return None instead of raising, for compatibility with the
+            # previous active_accounts() behavior.
+            return None
 
         return {
             'token': self._credentials.token,
