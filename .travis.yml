@@ -82,6 +82,7 @@ stages:
   - lint and pure python test
   - test
   - ibmq
+  - new api
   - slow tests
 
 # Define the job matrix explicitly, as matrix expansion causes issues when
@@ -155,6 +156,16 @@ jobs:
       python: 3.6
       env: USE_ALTERNATE_ENV_CREDENTIALS=True
 
+    # "new api" stage
+    ###########################################################################
+    # GNU/Linux, Python 3.6, against IBM Q using the API 2
+    - stage: new api
+      name: Python 3.6 API 2
+      <<: *stage_linux
+      if: branch = master and repo = Qiskit/qiskit-ibmq-provider and type = push
+      python: 3.6
+      env: USE_NEW_API_URL=True
+
     # "slow tests" stage
     ###########################################################################
     # GNU/Linux, Python 3.5
@@ -166,3 +177,7 @@ jobs:
       script:
         # effectively increases timeout to 2h.
         - travis_wait 120 make test
+
+matrix:
+  allow_failures:
+  - name: Python 3.6 API 2
