@@ -84,16 +84,16 @@ provider_2 = IBMQ.get_provider(hub='MY_HUB', group='MY_GROUP', project='MY_PROJE
 
 Since July 2019 (and with version `0.3` of this `qiskit-ibmq-provider` package),
 the IBMQProvider defaults to using the new [IBM Q Experience], which supersedes
-the legacy Quantum Experience and Qconsole. The new IBM Q Experience is also referred
-as v2, whereas the legacy one and Qconsole as v1.  
+the legacy Quantum Experience and Qconsole. The new IBM Q Experience is also
+referred as `v2`, whereas the legacy one and Qconsole as `v1`.
 
 This section includes instructions for updating your accounts and programs.
 
 ### Updating your IBM Q Experience credentials
 
-If you have credentials for the legacy Quantum Experience or Qconsole stored in disk,
-you can make use of `IBMQ.update_account()` helper. This helper will read your
-current credentials stored in disk and attempt to convert them:
+If you have credentials for the legacy Quantum Experience or Qconsole stored in
+disk, you can make use of `IBMQ.update_account()` helper. This helper will read
+your current credentials stored in disk and attempt to convert them:
 
 ```python
 from qiskit import IBMQ
@@ -146,10 +146,11 @@ In a similar spirit, you can check the providers that you have access to via:
 IBMQ.providers()
 ```
 
-In addition, since the new IBM Q Experience provides only one set of credentials, 
-the account management methods in IBMQ are now in singular form. For example, you
-should use `IBMQ.load_account()` instead of `IBMQ.load_accounts()`. An `IBMQAccountError`
-exception is raised if you attempt to use the legacy methods with an IBM Q Experience v2 account.
+In addition, since the new IBM Q Experience provides only one set of
+credentials, the account management methods in IBMQ are now in singular form.
+For example, you should use `IBMQ.load_account()` instead of
+`IBMQ.load_accounts()`. An `IBMQAccountError` exception is raised if you
+attempt to use the legacy methods with an IBM Q Experience v2 account.
 
 ## Contribution Guidelines
 
