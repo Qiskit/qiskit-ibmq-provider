@@ -414,7 +414,7 @@ class TestIBMQJob(JobTestCase):
         for provider in factory.providers():
             backends = provider.backends(open_pulse=True)
             if backends:
-                backend = backends[0]
+                backend = least_busy(backends)
                 break
 
         self.assertIsNotNone(backend)
