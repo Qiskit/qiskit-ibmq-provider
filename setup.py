@@ -69,7 +69,8 @@ setup(
               'qiskit.providers.ibmq.api_v2.rest',
               'qiskit.providers.ibmq.circuits',
               'qiskit.providers.ibmq.credentials',
-              'qiskit.providers.ibmq.job'],
+              'qiskit.providers.ibmq.job,'
+              'qiskit.providers.ibmq.utils'],
     install_requires=requirements,
     include_package_data=True,
     python_requires=">=3.5"
