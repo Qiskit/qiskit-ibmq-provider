@@ -117,7 +117,7 @@ class IBMQFactory:
             IBMQAccountError: if IBM Q Experience API v1 credentials are found,
                 or if no account is in use in the session.
         """
-        if self._v1_provider._accounts:
+        if self._v1_provider.active_accounts():
             raise IBMQAccountError(
                 'IBM Q Experience v1 accounts are enabled. Please use '
                 'IBMQ.disable_accounts() to disable them.')
@@ -270,7 +270,7 @@ class IBMQFactory:
         Raises:
             IBMQAccountError: if no valid IBM Q Experience v2 credentials found.
         """
-        if self._v1_provider._accounts:
+        if self._v1_provider.active_accounts():
             raise IBMQAccountError(
                 'IBM Q Experience v1 accounts are enabled. Please use '
                 'IBMQ.active_accounts() to retrieve information about them.')
