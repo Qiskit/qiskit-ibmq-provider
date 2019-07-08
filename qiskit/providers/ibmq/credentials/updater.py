@@ -80,9 +80,9 @@ def update_credentials(force=False):
                 hub_lines.append(
                     "  provider{} = IBMQ.get_provider(hub='{}', group='{}',"
                     "project='{}')".format(provider_number,
-                                          credentials.hub,
-                                          credentials.group,
-                                          credentials.project))
+                                           credentials.hub,
+                                           credentials.group,
+                                           credentials.project))
                 provider_number += 1
             else:
                 # Unknown URL - do not act on it.
