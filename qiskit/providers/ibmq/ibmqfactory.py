@@ -199,6 +199,7 @@ class IBMQFactory:
                                    'deprecated. Please ')
 
         credentials = Credentials(token, url, **kwargs)
+
         store_credentials(credentials, overwrite=overwrite)
 
     @staticmethod
@@ -218,6 +219,7 @@ class IBMQFactory:
                                    'stored credentials.')
 
         credentials = list(stored_credentials.values())[0]
+
         if credentials.url != QX_AUTH_URL:
             raise IBMQAccountError('Credentials from the API 1 found. Please use '
                                    'IBMQ.update_account() for updating your '
