@@ -206,6 +206,7 @@ class IBMQFactory:
                                    'v2 credentials instead.')
 
         credentials = Credentials(token, url, **kwargs)
+
         store_credentials(credentials, overwrite=overwrite)
 
     @staticmethod
@@ -224,6 +225,7 @@ class IBMQFactory:
                                    UPDATE_ACCOUNT_TEXT)
 
         credentials = list(stored_credentials.values())[0]
+
         if credentials.url != QX_AUTH_URL:
             raise IBMQAccountError('IBM Q Experience v1 credentials found. ' +
                                    UPDATE_ACCOUNT_TEXT)
