@@ -74,7 +74,7 @@ class WebsocketClient(BaseClient):
 
     Attributes:
         websocket_url (str): URL for websocket communication with IBM Q.
-        access_token (str): access token for IBMQ.
+        access_token (str): access token for IBM Q.
     """
 
     def __init__(self, websocket_url, access_token):

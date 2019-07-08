@@ -94,8 +94,8 @@ class AuthClient(BaseClient):
         Returns:
             dict: a dict with the base URLs for the services. Currently
                 supported keys:
-                * ``http``: the api URL for http communication.
-                * ``ws``: the api URL for websocket communication.
+                * ``http``: the API URL for http communication.
+                * ``ws``: the API URL for websocket communication.
         """
         response = self.client_auth.user_info()
         return response['urls']
@@ -135,7 +135,7 @@ class AuthClient(BaseClient):
         """Return the version of the API.
 
         Returns:
-            dict: versions of the api components.
+            dict: versions of the API components.
         """
         return self.client_api.version()
 

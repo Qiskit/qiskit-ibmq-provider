@@ -150,6 +150,6 @@ class Api(RestAdapterBase):
         return self.session.post(url, json=payload).json()
 
     def version(self):
-        """Return the api versions."""
+        """Return the API versions."""
         url = self.get_url('version')
         return self.session.get(url).json()

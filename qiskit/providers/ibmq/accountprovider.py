@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Provider for a single IBMQ account."""
+"""Provider for a single IBM Quantum Experience account."""
 
 import logging
 from collections import OrderedDict
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class AccountProvider(BaseProvider):
-    """Provider for single IBM Quantum Experience accounts."""
+    """Provider for a single IBM Quantum Experience account."""
 
     def __init__(self, credentials, access_token):
         """Return a new AccountProvider.
