@@ -16,6 +16,7 @@
 
 import asyncio
 from contextlib import suppress
+import warnings
 
 import websockets
 
@@ -64,8 +65,12 @@ class TestWebsocketClientMock(IBMQTestCase):
         # Close the mock server.
         loop = asyncio.get_event_loop()
         loop.stop()
-        # Manually cancel any pending asyncio tasks.
-        pending = asyncio.Task.all_tasks()
+
+        with warnings.catch_warnings():
+            # Suppress websockets deprecation warning
+            warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
+            # Manually cancel any pending asyncio tasks.
+            pending = asyncio.Task.all_tasks()
         for task in pending:
             task.cancel()
             with suppress(asyncio.CancelledError):
