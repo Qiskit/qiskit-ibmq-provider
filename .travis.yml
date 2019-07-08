@@ -158,12 +158,13 @@ jobs:
 
     # "new api" stage
     ###########################################################################
-    # GNU/Linux, Python 3.6, against IBM Q using the new API
+    # GNU/Linux, Python 3.6, against IBM Q using the API 2
     - stage: new api
+      name: Python 3.6 API 2
       <<: *stage_linux
       if: branch = master and repo = Qiskit/qiskit-ibmq-provider and type = push
       python: 3.6
-      env: USE_NEW_API_CREDENTIALS=True
+      env: USE_NEW_API_URL=True
 
     # "slow tests" stage
     ###########################################################################
@@ -176,3 +177,7 @@ jobs:
       script:
         # effectively increases timeout to 2h.
         - travis_wait 120 make test
+
+matrix:
+  allow_failures:
+  - name: Python 3.6 API 2
