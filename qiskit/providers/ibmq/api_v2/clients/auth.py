@@ -28,12 +28,13 @@ class AuthClient(BaseClient):
         """AuthClient constructor.
 
         Args:
-            api_token (str): IBM Q api token.
+            api_token (str): IBM Q Experience API token.
             auth_url (str): URL for the authentication service.
             **request_kwargs (dict): arguments for the `requests` Session.
         """
         self.api_token = api_token
         self.auth_url = auth_url
+        self._service_urls = {}
 
         self.client_auth = Auth(RetrySession(auth_url, **request_kwargs))
         self.client_api = self._init_service_clients(**request_kwargs)
@@ -51,16 +52,16 @@ class AuthClient(BaseClient):
         access_token = self._request_access_token()
         # Use the token for the next auth server requests.
         self.client_auth.session.access_token = access_token
-        service_urls = self.user_urls()
+        self._service_urls = self.user_urls()
 
         # Create the api server client, using the access token.
-        client_api = Api(RetrySession(service_urls['http'], access_token,
+        client_api = Api(RetrySession(self._service_urls['http'], access_token,
                                       **request_kwargs))
 
         return client_api
 
     def _request_access_token(self):
-        """Request a new access token from the API.
+        """Request a new access token from the API authentication server.
 
         Returns:
             str: access token.
@@ -88,7 +89,7 @@ class AuthClient(BaseClient):
     # User account-related public functions.
 
     def user_urls(self):
-        """Retrieve the api URLs from the auth server.
+        """Retrieve the API URLs from the auth server.
 
         Returns:
             dict: a dict with the base URLs for the services. Currently
@@ -145,3 +146,12 @@ class AuthClient(BaseClient):
             str: the access token in use.
         """
         return self.client_auth.session.access_token
+
+    def current_service_urls(self):
+        """Return the current service urls.
+
+        Returns:
+            dict: a dict with the base URLs for the services, in the same
+                format as `.user_urls()`.
+        """
+        return self._service_urls

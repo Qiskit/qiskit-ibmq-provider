@@ -27,11 +27,19 @@ To install from source, follow the instructions in the
 
 Once the package is installed, you can access the provider from Qiskit.
 
+> **Note**: Since July 2019 (and with version `0.3` of this
+> `qiskit-ibmq-provider` package), using the new IBM Q Experience (v2) is the
+> default behavior. If you have been using an account for the legacy
+> Quantum Experience or QConsole (v1), please check the
+> [update instructions](#updating-to-the-new-IBM-Q-Experience).
+
 ### Configure your IBMQ credentials
 
-1. Create an IBM Q account or log in to your existing account by visiting the [IBM Q Experience login page].
+1. Create an IBM Q account or log in to your existing account by visiting
+   the [IBM Q Experience login page].
 
-2. Copy (and/or optionally regenerate) your API token from your [IBM Q Experience account page].
+2. Copy (and/or optionally regenerate) your API token from your
+   [IBM Q Experience account page].
 
 3. Take your token from step 2, here called `MY_API_TOKEN`, and run:
 
@@ -40,8 +48,7 @@ Once the package is installed, you can access the provider from Qiskit.
    IBMQ.save_account('MY_API_TOKEN')
    ```
 
-4. If you have access to the IBM Q Network features, you also need to pass the
-   url listed on your IBM Q account page to `save_account`.
+### Accessing your IBMQ backends
 
 After calling `IBMQ.save_account()`, your credentials will be stored on disk.
 Once they are stored, at any point in the future you can load and use them
@@ -49,15 +56,101 @@ in your program simply via:
 
 ```python
 from qiskit import IBMQ
-IBMQ.load_accounts()
+
+provider = IBMQ.load_account()
+provider.get_backend('ibmq_qasm_simulator')
 ```
 
-For those who do not want to save there credentials to disk please use
+Alternatively, if you do not want to save your credentials to disk and only
+intend to use them during the current session, you can use:
 
 ```python
 from qiskit import IBMQ
-IBMQ.enable_account('MY_API_TOKEN')
+
+provider = IBMQ.enable_account('MY_API_TOKEN')
+provider.get_backend()
 ```
+
+By default, all IBM Q accounts have access to the same, open project
+(hub: `ibm-q`, group: `open`, project: `main`). For convenience, the
+`IBMQ.load_account()` and `IBMQ.enable_account()` methods will return a provider
+for that project. If you have access to other projects, you can use:
+
+```python
+provider_2 = IBMQ.get_provider(hub='MY_HUB', group='MY_GROUP', project='MY_PROJECT')
+```
+
+## Updating to the new IBM Q Experience
+
+Since July 2019 (and with version `0.3` of this `qiskit-ibmq-provider` package),
+the IBMQProvider defaults to using the new [IBM Q Experience], which supersedes
+the legacy Quantum Experience and Qconsole. The new IBM Q Experience is also
+referred as `v2`, whereas the legacy one and Qconsole as `v1`.
+
+This section includes instructions for updating your accounts and programs.
+
+### Updating your IBM Q Experience credentials
+
+If you have credentials for the legacy Quantum Experience or Qconsole stored in
+disk, you can make use of `IBMQ.update_account()` helper. This helper will read
+your current credentials stored in disk and attempt to convert them:
+
+```python
+from qiskit import IBMQ
+
+IBMQ.update_account()
+```
+
+```
+Found 2 credentials.
+The credentials stored will be replaced with a single entry with token "MYTOKEN" and the new API 2 URL.
+
+In order to access the provider, please use the new "IBMQ.get_provider()" methods:
+
+  provider0 = IBMQ.load_account()
+  provider1 = IBMQ.get_provider(hub='A', group='B', project='C')
+  backends = provider0.backends()
+
+Update the credentials? [y/N]
+```
+
+Upon confirmation, your credentials will be overwritten with a valid IBM Q
+Experience set of credentials. For more complex cases, consider deleting your
+previous credentials via `IBMQ.delete_accounts()` and follow the instructions
+in the [IBM Q Experience account page].
+
+### Updating your programs
+
+With the introduction of support for the new IBM Q Experience support, a more
+structured approach for accessing backends has been introduced. Previously,
+access to all backends was centralized through:
+
+```python
+IBMQ.backends()
+IBMQ.get_backend('ibmq_qasm_simulator')
+```
+
+In version `0.3` onwards, the preferred way to access the backends is via a
+`Provider` for one of your projects instead of via the global `IBMQ` instance
+directly, allowing for more granular control over
+the project you are using:
+
+```python
+my_provider = IBMQ.get_provider()
+my_provider.backends()
+my_provider.get_backend('ibmq_qasm_simulator')
+```
+
+In a similar spirit, you can check the providers that you have access to via:
+```python
+IBMQ.providers()
+```
+
+In addition, since the new IBM Q Experience provides only one set of
+credentials, the account management methods in IBMQ are now in singular form.
+For example, you should use `IBMQ.load_account()` instead of
+`IBMQ.load_accounts()`. An `IBMQAccountError` exception is raised if you
+attempt to use the legacy methods with an IBM Q Experience v2 account.
 
 ## Contribution Guidelines
 
@@ -87,6 +180,7 @@ project at different levels. If you use Qiskit, please cite as per the included
 
 
 [IBM Q]: https://www.research.ibm.com/ibm-q/
+[IBM Q Experience]: https://quantum-computing.ibm.com
 [IBM Q Experience login page]:  https://quantum-computing.ibm.com/login
 [IBM Q Experience account page]: https://quantum-computing.ibm.com/account
 [contribution guidelines]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/CONTRIBUTING.md
@@ -96,6 +190,6 @@ project at different levels. If you use Qiskit, please cite as per the included
 [Qiskit.org]: https://qiskit.org
 [Stack Exchange]: https://quantumcomputing.stackexchange.com/questions/tagged/qiskit
 [Qiskit Tutorial]: https://github.com/Qiskit/qiskit-tutorial
-[many people]: https://github.com/Qiskit/qiskit-terra/graphs/contributors
+[many people]: https://github.com/Qiskit/qiskit-ibmq-provider/graphs/contributors
 [BibTeX file]: https://github.com/Qiskit/qiskit/blob/master/Qiskit.bib
 [Apache License 2.0]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/LICENSE.txt
