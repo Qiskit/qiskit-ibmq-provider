@@ -107,7 +107,7 @@ The credentials stored will be replaced with a single entry with token "MYTOKEN"
 In order to access the provider, please use the new "IBMQ.get_provider()" methods:
 
   provider0 = IBMQ.load_account()
-  provider1 = IBMQ.get_provider(hub='A', group='B',project='C)
+  provider1 = IBMQ.get_provider(hub='A', group='B', project='C')
   backends = provider0.backends()
 
 Update the credentials? [y/N]
