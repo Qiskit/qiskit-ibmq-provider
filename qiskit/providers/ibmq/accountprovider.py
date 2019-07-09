@@ -69,8 +69,7 @@ class AccountProvider(BaseProvider):
                     filters=lambda b: b.configuration['n_qubits'] > 5)
             kwargs: simple filters specifying a true/false criteria in the
                 backend configuration or backend status or provider credentials
-                e.g. AccountProvider.backends(
-                    n_qubits=5, operational=True, hub='internal')
+                e.g. AccountProvider.backends(n_qubits=5, operational=True)
 
         Returns:
             list[IBMQBackend]: list of backends available that match the filter
