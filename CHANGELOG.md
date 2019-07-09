@@ -27,6 +27,8 @@ The format is based on [Keep a Changelog].
 - Updated detection of classic vs. new api based on version endpoint. (\#95)
 - The `requires_qe_access` decorator, previously in terra, is now included in
   this package. (\#128)
+- `IBMQJob.job_id()` now accepts an optional `timeout` parameter, for allowing
+  users finer control over the waiting time. (\#238)
 
 ### Added
 
