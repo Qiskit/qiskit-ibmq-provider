@@ -36,22 +36,22 @@ logger = logging.getLogger(__name__)
 class IBMQBackend(BaseBackend):
     """Backend class interfacing with an IBMQ backend."""
 
-    def __init__(self, configuration, properties, provider, credentials, api):
+    def __init__(self, configuration, provider, credentials, api):
         """Initialize remote backend for IBM Quantum Experience.
 
         Args:
             configuration (BackendConfiguration): configuration of backend.
-            properties (BackendProperties): properties of backend.
             provider (IBMQProvider): provider.
             credentials (Credentials): credentials.
             api (IBMQConnector):
                 api for communicating with the Quantum Experience.
         """
-        super().__init__(provider=provider, configuration=configuration,
-                         properties=properties)
+        super().__init__(provider=provider, configuration=configuration)
 
         self._api = api
         self._credentials = credentials
+        self._properties = None
+        self._defaults = None
         self.hub = credentials.hub
         self.group = credentials.group
         self.project = credentials.project
@@ -76,6 +76,22 @@ class IBMQBackend(BaseBackend):
 
         return job
 
+    def properties(self, refresh=False):
+        """Return the online backend properties.
+
+        Args:
+            refresh (bool): if True, the return is via a QX API call.
+                Otherwise, a cached version is returned.
+
+        Returns:
+            BackendProperties: The properties of the backend.
+        """
+        if refresh or self._properties is None:
+            api_properties = self._api.backend_properties(self.name())
+            self._properties = BackendProperties.from_dict(api_properties)
+        
+        return self._properties
+
     def status(self):
         """Return the online backend status.
 
@@ -94,22 +110,28 @@ class IBMQBackend(BaseBackend):
             raise LookupError(
                 "Couldn't get backend status: {0}".format(ex))
 
-    def defaults(self):
+    def defaults(self, refresh=False):
         """Return the pulse defaults for the backend.
 
+        Args:
+            refresh (bool): if True, the return is via a QX API call.
+                Otherwise, a cached version is returned.
+
         Returns:
-            PulseDefaults: the pulse defaults for the backend. IF the backend
-            does not support defaults, it returns ``None``.
+            PulseDefaults: the pulse defaults for the backend. If the backend
+                does not support defaults, it returns ``None``.
         """
         if not self.configuration().open_pulse:
             return None
 
-        backend_defaults = self._api.backend_defaults(self.name())
+        if refresh or self._defaults is None:
+            api_defaults = self._api.backend_defaults(self.name())
+            if api_defaults:
+                self._defaults = PulseDefaults.from_dict(api_defaults)
+            else:
+                self._defaults = None
 
-        if backend_defaults:
-            return PulseDefaults.from_dict(backend_defaults)
-
-        return None
+        return self._defaults
 
     def jobs(self, limit=50, skip=0, status=None, db_filter=None):
         """Return the jobs submitted to this backend.

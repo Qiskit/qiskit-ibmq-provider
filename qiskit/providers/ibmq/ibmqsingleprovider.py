@@ -108,14 +108,8 @@ class IBMQSingleProvider(BaseProvider):
                 else:
                     config = QasmBackendConfiguration.from_dict(raw_config)
                 backend_cls = IBMQSimulator if config.simulator else IBMQBackend
-                if backend_cls is IBMQSimulator:
-                    props = None
-                else:
-                    raw_props = self._api.backend_properties(config.backend_name)
-                    props = BackendProperties.from_dict(raw_props)
                 ret[config.backend_name] = backend_cls(
                     configuration=config,
-                    properties=props,
                     provider=self._ibm_provider,
                     credentials=self.credentials,
                     api=self._api)

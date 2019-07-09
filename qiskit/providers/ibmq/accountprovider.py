@@ -19,8 +19,7 @@ from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
 from qiskit.providers.models import (QasmBackendConfiguration,
-                                     PulseBackendConfiguration,
-                                     BackendProperties)
+                                     PulseBackendConfiguration)
 from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
@@ -103,14 +102,8 @@ class AccountProvider(BaseProvider):
                 else:
                     config = QasmBackendConfiguration.from_dict(raw_config)
                 backend_cls = IBMQSimulator if config.simulator else IBMQBackend
-                if backend_cls is IBMQSimulator:
-                    props = None
-                else:
-                    raw_props = self._api.backend_properties(config.backend_name)
-                    props = BackendProperties.from_dict(raw_props)
                 ret[config.backend_name] = backend_cls(
                     configuration=config,
-                    properties=props,
                     provider=self,
                     credentials=self.credentials,
                     api=self._api)
