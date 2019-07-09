@@ -400,13 +400,19 @@ class IBMQJob(BaseJob):
         """Return creation date."""
         return self._creation_date
 
-    def job_id(self):
-        """Return backend determined id.
+    def job_id(self, timeout=60):
+        """Return the job ID assigned by the API.
 
-        If the Id is not set because the job is already initializing, this call
-        will block until we have an Id.
+        If the job ID is not set because the job is already initializing, this
+        call will block until a job ID is available of the timeout is reached.
+
+        Args:
+            timeout (float): number of seconds to wait for the job id.
+
+        Returns:
+            str: the job ID.
         """
-        self._wait_for_submission()
+        self._wait_for_submission(timeout)
         return self._job_id
 
     def submit(self):
