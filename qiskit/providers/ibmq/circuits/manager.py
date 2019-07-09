@@ -54,19 +54,19 @@ class CircuitsManager:
             response = self.client.circuit_run(name=name, **kwargs)
         except RequestsApiError as ex:
             # Revise the original requests exception to intercept.
-            response = ex.original_exception.response
+            error_response = ex.original_exception.response
 
             # Check for errors related to the submission.
             try:
-                body = response.json()
+                body = error_response.json()
             except ValueError:
                 body = {}
 
             # Generic authorization or unavailable endpoint error.
-            if response.status_code in (401, 404):
+            if error_response.status_code in (401, 404):
                 raise CircuitAvailabilityError() from None
 
-            if response.status_code == 400:
+            if error_response.status_code == 400:
                 # Hub permission error.
                 if body.get('error', {}).get('code') == 'HUB_NOT_FOUND':
                     raise CircuitAvailabilityError() from None
@@ -80,18 +80,6 @@ class CircuitsManager:
         except Exception as ex:
             # Handle non-requests exception as unexpected.
             raise CircuitSubmitError(str(ex))
-
-        # Extra check for IBMQConnector code path.
-        if 'error' in response:
-            # Hub permission error.
-            if response['error'].get('code') == 'HUB_NOT_FOUND':
-                raise CircuitAvailabilityError() from None
-
-            # Generic error.
-            if response['error'].get('code') == 'GENERIC_ERROR':
-                raise CircuitAvailabilityError() from None
-
-            raise CircuitSubmitError(str(response))
 
         # Create a Job for the circuit.
         try:
