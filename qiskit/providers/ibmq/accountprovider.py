@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Provider for a single IBMQ account."""
+"""Provider for a single IBM Quantum Experience account."""
 
 import logging
 from collections import OrderedDict
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class AccountProvider(BaseProvider):
-    """Provider for single IBM Quantum Experience accounts."""
+    """Provider for a single IBM Quantum Experience account."""
 
     def __init__(self, credentials, access_token):
         """Return a new AccountProvider.
@@ -60,6 +60,20 @@ class AccountProvider(BaseProvider):
         self._backends = None
 
     def backends(self, name=None, filters=None, **kwargs):
+        """Return all backends accessible via this provider, subject to optional filtering.
+
+        Args:
+            name (str): backend name to filter by
+            filters (callable): more complex filters, such as lambda functions
+                e.g. AccountProvider.backends(
+                    filters=lambda b: b.configuration['n_qubits'] > 5)
+            kwargs: simple filters specifying a true/false criteria in the
+                backend configuration or backend status or provider credentials
+                e.g. AccountProvider.backends(n_qubits=5, operational=True)
+
+        Returns:
+            list[IBMQBackend]: list of backends available that match the filter
+        """
         # pylint: disable=arguments-differ
         if self._backends is None:
             self._backends = self._discover_remote_backends()

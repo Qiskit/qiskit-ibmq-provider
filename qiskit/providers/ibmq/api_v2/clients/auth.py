@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for accessing authentication features of IBM Q."""
+"""Client for accessing authentication features of IBM Q Experience."""
 
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
 from ..rest import Api, Auth
@@ -22,7 +22,7 @@ from .base import BaseClient
 
 
 class AuthClient(BaseClient):
-    """Client for accessing authentication features of IBM Q."""
+    """Client for accessing authentication features of IBM Q Experience."""
 
     def __init__(self, api_token, auth_url, **request_kwargs):
         """AuthClient constructor.
@@ -89,13 +89,13 @@ class AuthClient(BaseClient):
     # User account-related public functions.
 
     def user_urls(self):
-        """Retrieve the API URLs from the auth server.
+        """Retrieve the API URLs from the authentication server.
 
         Returns:
             dict: a dict with the base URLs for the services. Currently
                 supported keys:
-                * ``http``: the api URL for http communication.
-                * ``ws``: the api URL for websocket communication.
+                * ``http``: the API URL for http communication.
+                * ``ws``: the API URL for websocket communication.
         """
         response = self.client_auth.user_info()
         return response['urls']
@@ -135,7 +135,7 @@ class AuthClient(BaseClient):
         """Return the version of the API.
 
         Returns:
-            dict: versions of the api components.
+            dict: versions of the API components.
         """
         return self.client_api.version()
 
@@ -148,7 +148,7 @@ class AuthClient(BaseClient):
         return self.client_auth.session.access_token
 
     def current_service_urls(self):
-        """Return the current service urls.
+        """Return the current service URLs.
 
         Returns:
             dict: a dict with the base URLs for the services, in the same
