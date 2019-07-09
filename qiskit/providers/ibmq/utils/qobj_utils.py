@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utilities related to the IBMQ Provider."""
+"""Utilities related to Qobj."""
 
 from qiskit.qobj import QobjHeader
 

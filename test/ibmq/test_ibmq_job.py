@@ -25,12 +25,13 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers import JobError, JobStatus
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider
+from ..decorators import requires_provider, requires_qe_access
 
 
 class TestIBMQJob(JobTestCase):
@@ -400,6 +401,37 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
         _ = job.properties()
+
+    @slow_test
+    @requires_qe_access
+    def test_pulse_job(self, qe_token, qe_url):
+        """Test running a pulse job."""
+
+        factory = IBMQFactory()
+        factory.enable_account(qe_token, qe_url)
+
+        backend = None
+        for provider in factory.providers():
+            backends = provider.backends(open_pulse=True)
+            if backends:
+                backend = least_busy(backends)
+                break
+
+        self.assertIsNotNone(backend)
+        config = backend.configuration()
+        defaults = backend.defaults()
+        cmd_def = defaults.build_cmd_def()
+
+        # Run 2 experiments - 1 with x pulse and 1 without
+        x = cmd_def.get('x', 0)
+        measure = cmd_def.get('measure', range(config.n_qubits)) << x.duration
+        ground_sched = measure
+        excited_sched = x | measure
+        schedules = [ground_sched, excited_sched]
+
+        qobj = assemble(schedules, backend, meas_level=1, shots=256)
+        job = backend.run(qobj)
+        _ = job.result()
 
 
 def _bell_circuit():

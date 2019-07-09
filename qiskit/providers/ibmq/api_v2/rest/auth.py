@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Auth REST adapter for the IBM Q Api version 2."""
+"""Authentication REST adapter for the IBM Q Experience v2 API."""
 
 from .base import RestAdapterBase
 

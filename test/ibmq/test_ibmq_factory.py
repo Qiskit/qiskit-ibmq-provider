@@ -230,8 +230,8 @@ class TestIBMQFactoryDeprecation(IBMQTestCase):
 
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
-class TestIBMQFactoryAccountsOnDisk(IBMQTestCase):
-    """Tests for the IBMQ account handling on disk."""
+class TestIBMQFactoryAccounts(IBMQTestCase):
+    """Tests for the IBMQ account handling."""
 
     @classmethod
     def setUpClass(cls):
@@ -320,6 +320,26 @@ class TestIBMQFactoryAccountsOnDisk(IBMQTestCase):
         self.factory.enable_account(qe_token, qe_url)
         with self.assertRaises(IBMQAccountError):
             self.factory.disable_account()
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_active_account_v2(self, qe_token, qe_url):
+        """Test active_account for an API 2 account """
+        self.assertIsNone(self.factory.active_account())
+
+        self.factory.enable_account(qe_token, qe_url)
+        active_account = self.factory.active_account()
+        self.assertIsNotNone(active_account)
+        self.assertEqual(active_account['token'], qe_token)
+        self.assertEqual(active_account['url'], qe_url)
+
+    @requires_qe_access
+    @requires_classic_api
+    def test_active_account_v1(self, qe_token, qe_url):
+        """Test active_account for an API 1 account """
+        self.factory.enable_account(qe_token, qe_url)
+        with self.assertRaises(IBMQAccountError):
+            self.factory.active_account()
 
 
 class TestIBMQFactoryProvider(IBMQTestCase):

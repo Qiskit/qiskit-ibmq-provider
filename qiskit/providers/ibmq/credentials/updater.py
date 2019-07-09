@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Helper for updating credentials from API 1 to API 2."""
+"""Helper for updating credentials from IBM Q Experience v1 to v2."""
 
 from .credentials import Credentials
 from .configrc import (read_credentials_from_qiskitrc,
@@ -33,7 +33,7 @@ def update_credentials(force=False):
     """Update or provide information about updating stored credentials.
 
     This function is an interactive helper to update credentials stored in
-    disk from the API version 1 to the API version 2. Upon invocation, the
+    disk from IBM Q Experience v1 to v2. Upon invocation, the
     function will inspect the credentials stored in disk and attempt to
     convert them to the new version, displaying the changes and asking for
     confirmation before overwriting the credentials.
@@ -49,8 +49,8 @@ def update_credentials(force=False):
             changes.
 
     Returns:
-        Credentials: if the updating is possible, credentials for the API
-            version 2; and `None` otherwise.
+        Credentials: if the updating is possible, credentials for IBM Q
+            Experience version 2; and `None` otherwise.
     """
     # Get the list of stored credentials.
     credentials_list = list(read_credentials_from_qiskitrc().values())
