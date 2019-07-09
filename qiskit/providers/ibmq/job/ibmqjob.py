@@ -403,11 +403,11 @@ class IBMQJob(BaseJob):
     def job_id(self, timeout=60):
         """Return the job ID assigned by the API.
 
-        If the job ID is not set because the job is already initializing, this
-        call will block until a job ID is available of the timeout is reached.
+        If the job ID is not set because the job is still initializing, this
+        call will block until a job ID is available or the timeout is reached.
 
         Args:
-            timeout (float): number of seconds to wait for the job id.
+            timeout (float): number of seconds to wait for the job ID.
 
         Returns:
             str: the job ID.
