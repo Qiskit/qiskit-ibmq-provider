@@ -12,9 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Base Client for accessing IBM Q Experience."""
+"""Utilities related to the IBMQ Provider."""
 
-
-class BaseClient:
-    """Abstract class for clients."""
-    pass
+from .deprecation import deprecated
+from .qobj_utils import update_qobj_config

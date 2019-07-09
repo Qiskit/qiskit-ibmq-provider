@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for websocket communication with the IBMQ API."""
+"""Client for websocket communication with the IBM Q Experience API."""
 
 import asyncio
 import json
@@ -70,11 +70,11 @@ class WebsocketMessage:
 
 
 class WebsocketClient(BaseClient):
-    """Client for websocket communication with the IBMQ API.
+    """Client for websocket communication with the IBM Q Experience API.
 
     Attributes:
         websocket_url (str): URL for websocket communication with IBM Q.
-        access_token (str): access token for IBMQ.
+        access_token (str): access token for IBM Q.
     """
 
     def __init__(self, websocket_url, access_token):
