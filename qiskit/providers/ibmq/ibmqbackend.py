@@ -50,11 +50,13 @@ class IBMQBackend(BaseBackend):
 
         self._api = api
         self._credentials = credentials
-        self._properties = None
-        self._defaults = None
         self.hub = credentials.hub
         self.group = credentials.group
         self.project = credentials.project
+
+        # Attributes used by caching functions.
+        self._properties = None
+        self._defaults = None
 
     def run(self, qobj):
         """Run a Qobj asynchronously.
@@ -86,10 +88,11 @@ class IBMQBackend(BaseBackend):
         Returns:
             BackendProperties: The properties of the backend.
         """
+        # pylint: disable=arguments-differ
         if refresh or self._properties is None:
             api_properties = self._api.backend_properties(self.name())
             self._properties = BackendProperties.from_dict(api_properties)
-        
+
         return self._properties
 
     def status(self):
@@ -296,7 +299,7 @@ class IBMQBackend(BaseBackend):
 class IBMQSimulator(IBMQBackend):
     """Backend class interfacing with an IBMQ simulator."""
 
-    def properties(self):
+    def properties(self, refresh=False):
         """Return the online backend properties.
 
         Returns:

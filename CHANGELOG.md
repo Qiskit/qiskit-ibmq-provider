@@ -38,8 +38,8 @@ The format is based on [Keep a Changelog].
   jobs. (\#110)
 - Added support for custom qx-client-application request header via the environment
   variable `QE_CUSTOM_CLIENT_APP_HEADER` when using the new API. (\#165)
-- A refresh flag to `backend.properties()` and `backend.defaults()`. When False,
-  cached data will be returned.
+- `backend.properties()` and `backend.defaults()` now accept a `refresh` flag.
+  When False, cached data will be returned. (\#224)
 
 
 ## [0.2.2] - 2019-05-07
