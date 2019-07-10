@@ -71,7 +71,7 @@ def update_credentials(force=False):
             if credentials.url == QE2_AUTH_URL:
                 # Credential is already for auth url.
                 warnings.append('The stored account with url "{}" is already '
-                                'an API 2 account.'.format(credentials.url))
+                                'an IBM Q Experience v2 account.'.format(credentials.url))
             elif credentials.is_ibmq():
                 new_credentials.append(Credentials(credentials.token,
                                                    QE2_AUTH_URL,
@@ -107,13 +107,13 @@ def update_credentials(force=False):
               for credentials in new_credentials]
 
     if not all(field_tuple == tuples[0] for field_tuple in tuples):
-        warnings.append('The credentials stored differ in several fields. The '
-                        'conversion will use the settings previously stored '
-                        'for the first v1 account.')
+        warnings.append('Multiple credentials found with different settings. The'
+                        'conversion will use the settings from the first '
+                        'IBM Q Experience v1 account found.')
 
     # Print a summary of the changes.
     print('The credentials stored will be replaced with a single entry with '
-          'token "{}" and the new API 2 URL.'.format(final_credentials.token))
+          'token "{}" and the new IBM Q Experience v2 URL.'.format(final_credentials.token))
     if final_credentials.proxies:
         print('The existing proxy configuration will be preserved.')
 
