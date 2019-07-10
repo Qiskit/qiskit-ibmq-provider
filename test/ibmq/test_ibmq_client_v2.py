@@ -15,6 +15,7 @@
 """Tests for the IBMQClient for API v2."""
 
 import re
+from unittest import skip
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
@@ -227,6 +228,7 @@ class TestAccountClientJobs(IBMQTestCase):
         response = self.client.job_get(self.job_id)
         self.assertIn('status', response)
 
+    @skip('TODO: reenable after api changes')
     def test_job_get_includes(self):
         """Check the include fields parameter for job_get."""
         # Get the job, including some fields.
@@ -238,6 +240,7 @@ class TestAccountClientJobs(IBMQTestCase):
         # Ensure the response has only the included fields
         self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
 
+    @skip('TODO: reenable after api changes')
     def test_job_get_excludes(self):
         """Check the exclude fields parameter for job_get."""
         # Get the job, excluding a field.
@@ -249,6 +252,7 @@ class TestAccountClientJobs(IBMQTestCase):
         self.assertNotIn('backend', job_excluded)
         self.assertIn('shots', self.job)
 
+    @skip('TODO: reenable after api changes')
     def test_job_get_includes_nonexistent(self):
         """Check job_get including nonexistent fields."""
         # Get the job, including an nonexistent field.
@@ -259,6 +263,7 @@ class TestAccountClientJobs(IBMQTestCase):
         # Ensure the response is empty, since no existing fields are included
         self.assertFalse(job_included)
 
+    @skip('TODO: reenable after api changes')
     def test_job_get_excludes_nonexistent(self):
         """Check job_get excluding nonexistent fields."""
         # Get the job, excluding an non-existent field.

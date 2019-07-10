@@ -14,7 +14,7 @@
 
 """Test for the Websocket client integration."""
 
-from unittest import mock
+from unittest import mock, skip
 from threading import Thread
 from queue import Queue
 
@@ -83,6 +83,7 @@ class TestWebsocketIntegration(IBMQTestCase):
 
         self.assertEqual(result.status, 'COMPLETED')
 
+    @skip('TODO: reenable after api changes')
     def test_websockets_job_final_state(self):
         """Test checking status of a job in a final state via websockets."""
         job = self.sim_backend.run(self.qobj)
