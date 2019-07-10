@@ -165,7 +165,7 @@ class TestAccountClient(IBMQTestCase):
                       "Original error code not in raised exception")
 
     def test_custom_client_app_header(self):
-        """Check custom client application header"""
+        """Check custom client application header."""
         custom_header = 'batman'
         with custom_envs({'QE_CUSTOM_CLIENT_APP_HEADER': custom_header}):
             api = self._get_client()
@@ -177,6 +177,42 @@ class TestAccountClient(IBMQTestCase):
             api = self._get_client()
             self.assertNotIn(custom_header,
                              api.client_api.session.headers['X-Qx-Client-Application'])
+
+    def test_list_backends(self):
+        """Test listing backends."""
+        api = self._get_client()
+        provider_backends = {b.name() for b in self.provider.backends()}
+        api_backends = {b['backend_name'] for b in api.list_backends()}
+
+        self.assertEqual(provider_backends, api_backends)
+
+    def test_job_cancel(self):
+        """Test canceling a job."""
+        # Build a large job so it will still be running when canceled
+        qr = QuantumRegister(2)
+        cr = ClassicalRegister(2)
+        qc = QuantumCircuit(qr, cr, name='qc')
+        for _ in range(1024):
+            qc.cx(qr[0], qr[1])
+            qc.h(qr[0])
+            qc.h(qr[1])
+        qc.measure(qr, cr)
+
+        backend_name = 'ibmq_qasm_simulator'
+        backend = self.provider.get_backend(backend_name)
+        circuit = transpile(qc, backend, seed_transpiler=self.seed)
+        qobj = assemble(circuit, backend, shots=1)
+
+        job = backend.run(qobj)
+        job_id = job.job_id()
+
+        api = backend._api
+        try:
+            api.job_cancel(job_id)
+        except RequestsApiError as ex:
+            if 'JOB_NOT_RUNNING' not in str(ex):
+                raise
+            print("Unable to cancel the job as it has completed.")
 
 
 class TestAccountClientJobs(IBMQTestCase):
@@ -294,6 +330,24 @@ class TestAccountClientJobs(IBMQTestCase):
         response = self.client.job_properties(self.job_id)
         # Since the job is against a simulator, it will have no properties.
         self.assertFalse(response)
+
+    def test_list_jobs_statuses_limit(self):
+        """Test listing job statuses with a limit."""
+        jobs_raw = self.client.list_jobs_statuses(limit=1)
+        self.assertEqual(len(jobs_raw), 1)
+        self.assertEqual(jobs_raw[0]['id'], self.job_id)
+
+    def test_list_jobs_statuses_skip(self):
+        """Test listing job statuses with an offset."""
+        jobs_raw = self.client.list_jobs_statuses(limit=1, skip=1)
+        self.assertEqual(len(jobs_raw), 1)
+        self.assertNotEqual(jobs_raw[0]['id'], self.job_id)
+
+    def test_list_jobs_statuses_filter(self):
+        """Test listing job statuses with a filter."""
+        jobs_raw = self.client.list_jobs_statuses(extra_filter={'id': self.job_id})
+        self.assertEqual(len(jobs_raw), 1)
+        self.assertEqual(jobs_raw[0]['id'], self.job_id)
 
 
 class TestAuthClient(IBMQTestCase):
