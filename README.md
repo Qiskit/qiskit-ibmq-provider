@@ -28,10 +28,10 @@ To install from source, follow the instructions in the
 Once the package is installed, you can access the provider from Qiskit.
 
 > **Note**: Since July 2019 (and with version `0.3` of this
-> `qiskit-ibmq-provider` package), using the new IBM Q Experience (v2) is the
-> default behavior. If you have been using an account for the legacy
-> Quantum Experience or QConsole (v1), please check the
-> [update instructions](#updating-to-the-new-IBM-Q-Experience).
+> `qiskit-ibmq-provider` package / version `0.11` of the `qiskit` package),
+> using the new IBM Q Experience (v2) is the default behavior. If you have
+> been using an account for the legacy Quantum Experience or QConsole (v1),
+> please check the [update instructions](#updating-to-the-new-IBM-Q-Experience).
 
 ### Configure your IBMQ credentials
 
@@ -103,7 +103,7 @@ IBMQ.update_account()
 
 ```
 Found 2 credentials.
-The credentials stored will be replaced with a single entry with token "MYTOKEN" and the new API 2 URL.
+The credentials stored will be replaced with a single entry with token "MYTOKEN" and the new IBM Q Experience v2 URL.
 
 In order to access the provider, please use the new "IBMQ.get_provider()" methods:
 
@@ -115,7 +115,7 @@ Update the credentials? [y/N]
 ```
 
 Upon confirmation, your credentials will be overwritten with a valid IBM Q
-Experience set of credentials. For more complex cases, consider deleting your
+Experience v2 set of credentials. For more complex cases, consider deleting your
 previous credentials via `IBMQ.delete_accounts()` and follow the instructions
 in the [IBM Q Experience account page].
 
@@ -151,6 +151,34 @@ credentials, the account management methods in IBMQ are now in singular form.
 For example, you should use `IBMQ.load_account()` instead of
 `IBMQ.load_accounts()`. An `IBMQAccountError` exception is raised if you
 attempt to use the legacy methods with an IBM Q Experience v2 account.
+
+The following tables contains a quick reference for the differences between the
+two versions. Please refer to the documentation of each method for more in
+depth details:
+
+### Account management
+
+| &lt;0.3 | &gt;=0.3 |
+| --- | --- |
+| N/A | `IBMQ.update_account()` |
+| `IBMQ.save_account(token, url)` | `IBMQ.save_account(token)`
+| `IBMQ.load_accounts()` | `provider = IBMQ.load_account()`
+| `IBMQ.enable_account()` | `provider = IBMQ.enable_account()`
+| `IBMQ.disable_accounts()` | `IBMQ.disable_account()`
+| `IBMQ.active_accounts()` | `IBMQ.active_account()`
+| `IBMQ.stored_accounts()` | `IBMQ.stored_account()`
+| `IBMQ.delete_accounts()` | `IBMQ.delete_account()`
+
+### Using backends
+
+| &lt;0.3 | &gt;=0.3 |
+| --- | --- |
+| N/A | `providers = IBMQ.providers()` |
+| `backend = IBMQ.get_backend(name, hub='HUB')` | `provider = IBMQ.get_provider(hub='HUB')` |
+|                                           | `backend = provider.get_backend(name)` |
+| `backends = IBMQ.backends(hub='HUB')` | `provider = IBMQ.get_provider(hub='HUB')` |
+|                                       | `backends = provider.backends()` |
+
 
 ## Contribution Guidelines
 
