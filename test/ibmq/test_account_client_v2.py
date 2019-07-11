@@ -181,8 +181,10 @@ class TestAccountClient(IBMQTestCase):
     def test_list_backends(self):
         """Test listing backends."""
         api = self._get_client()
-        provider_backends = {b.name() for b in self.provider.backends()}
-        api_backends = {b['backend_name'] for b in api.list_backends()}
+        provider_backends = {backend.name() for backend
+                             in self.provider.backends()}
+        api_backends = {backend_info['backend_name'] for backend_info
+                        in api.list_backends()}
 
         self.assertEqual(provider_backends, api_backends)
 
@@ -201,9 +203,9 @@ class TestAccountClient(IBMQTestCase):
         try:
             api.job_cancel(job_id)
         except RequestsApiError as ex:
+            # TODO: rewrite using assert
             if all(err not in str(ex) for err in ['JOB_NOT_RUNNING', 'JOB_NOT_CANCELLED']):
                 raise
-            print("Job is in a state that cannot be canceled.")
 
 
 class TestAccountClientJobs(IBMQTestCase):
