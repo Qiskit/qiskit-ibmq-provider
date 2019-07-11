@@ -15,8 +15,10 @@
 """Tests for the AuthClient and VersionClient proxy support."""
 
 
+from unittest import skipIf
 import urllib
 import subprocess
+import sys
 
 from requests.exceptions import ProxyError
 
@@ -35,6 +37,7 @@ INVALID_PORT_PROXIES = {'https': '{}:{}'.format(ADDRESS, '6666')}
 INVALID_ADDRESS_PROXIES = {'https': '{}:{}'.format('invalid', PORT)}
 
 
+@skipIf(sys.version_info >= (3, 7), 'pproxy version not supported in 3.7')
 class TestProxies(IBMQTestCase):
     """Tests for proxy capabilities."""
 
