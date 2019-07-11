@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Tests for the IBMQClient for API v2."""
+"""Tests for the AccountClient for IBM Q Experience v2."""
 
 import re
 from unittest import skip
@@ -60,7 +60,7 @@ class TestAccountClient(IBMQTestCase):
         return provider
 
     def _get_client(self):
-        """Helper for instantiating an IBMQClient."""
+        """Helper for instantiating an AccountClient."""
         return AccountClient(self.access_token,
                              self.provider.credentials.url,
                              self.provider.credentials.websockets_url)
@@ -73,7 +73,7 @@ class TestAccountClient(IBMQTestCase):
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
         qobj = assemble(circuit, backend, shots=1)
 
-        # Run the job through the IBMQClient directly.
+        # Run the job through the AccountClient directly.
         api = backend._api
         job = api.job_submit(backend_name, qobj.to_dict())
 
@@ -88,7 +88,7 @@ class TestAccountClient(IBMQTestCase):
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
         qobj = assemble(circuit, backend, shots=1)
 
-        # Run the job through the IBMQClient directly using object storage.
+        # Run the job through the AccountClient directly using object storage.
         api = backend._api
 
         try:
