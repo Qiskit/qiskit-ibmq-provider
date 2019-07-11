@@ -1,0 +1,66 @@
+# Python package
+# Create and test a Python package on multiple Python versions.
+# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
+
+trigger:
+- master
+- stable
+
+jobs:
+- job: 'Windows_PR_Tests'
+  pool: {vmImage: 'vs2017-win2016'}
+  condition: eq(variables['Build.Reason'], 'PullRequest')
+  strategy:
+    matrix:
+      Python35:
+        python.version: '3.5'
+      Python36:
+        python.version: '3.6'
+      Python37:
+        python.version: '3.7'
+  variables:
+    QISKIT_TESTS: 'skip_online'
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+      displayName: 'Use Python $(python.version)'
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -U -r requirements.txt
+        pip install -U -r requirements-dev.txt
+      displayName: 'Install dependencies'
+    - script: |
+        pip install pytest pytest-azurepipelines
+        pytest -s -v
+      displayName: 'pytest'
+
+- job: 'Windows_Merge_Tests'
+  pool: {vmImage: 'vs2017-win2016'}
+  condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+  strategy:
+    matrix:
+      Python35:
+        python.version: '3.5'
+#      Python36:
+#        python.version: '3.6'
+#      Python37:
+#        python.version: '3.7'
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+      displayName: 'Use Python $(python.version)'
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -U -r requirements.txt
+        pip install -U -r requirements-dev.txt
+      displayName: 'Install dependencies'
+    - script: |
+        pip install pytest pytest-azurepipelines
+        pytest -s -v
+      displayName: 'pytest'
+      env:
+        QE_TOKEN: $(QE_TOKEN)
+        QE_URL: $(QE_URL)

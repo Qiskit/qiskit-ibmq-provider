@@ -18,25 +18,51 @@ The format is based on [Keep a Changelog].
 
 ### Fixed
 
-- Fixed Qcircuit status checks according to latest API changes. (\#95)
+- Fixed Circuits status checks according to latest API changes. (\#95)
 - Fixed an authentication issue with the `backend_status` endpoint when using
   the new api. (\#101)
 
 ### Changed
 
+- The package defaults to connecting to the IBM Q Experience v2 by default, and
+  to using a single token and URL for accessing all the remote capabilities.
+  - an `IBMQ.update_account()` added for helping transitioning. (\#209)
+  - `qiskit.IBMQ` is no longer a `Provider`: providers for the individual
+    projects can be obtained via `IBMQ.get_provider()`. (\#214)
+  - the `qiskit.IBMQ` account-management methods have been revised, and act
+    on a single account. (\#186)
+  - the `qiskit.IBMQ` backend-management methods have been moved to the
+    individual `AccountProvider` instances. (\#186, \#212).
 - Updated detection of classic vs. new api based on version endpoint. (\#95)
 - The `requires_qe_access` decorator, previously in terra, is now included in
   this package. (\#128)
+- `IBMQJob.job_id()` now accepts an optional `timeout` parameter, for allowing
+  users finer control over the waiting time. (\#238)
 
 ### Added
 
 - Added support for pooling job status via websockets. Note this is only
   available when using the new API authentication. (\#100)
 - Added support for using object storage when submitting and retrieving
-  jobs. (\#110)
+  jobs. Note this is only available when using the new IBM Q Experience
+  v2. (\#110)
 - Added support for custom qx-client-application request header via the environment
-  variable `QE_CUSTOM_CLIENT_APP_HEADER` when using the new API. (\#165)
+  variable `QE_CUSTOM_CLIENT_APP_HEADER` when using the new IBM Q Experience
+  v2. (\#165)
+- `backend.properties()` and `backend.defaults()` now accept a `refresh` flag.
+  When False, cached data will be returned. (\#224)
 
+### Deprecated
+
+- Support for the legacy IBM Q Experience and Qconsole is on the process of
+  being deprecated. They will still be supported during the `0.3.x` versions,
+  but we encourage transitioning to the new IBM Q Experience. (\#232)
+  - the `IBMQ.load_accounts()` and account-management methods are replaced by
+    methods that work on a single token and URL.
+  - the `IBMQ.backends()` method has been moved to the provider instances:
+    `provider = IBMQ.get_provider(); provider.backends()`.
+  - the `IBMQ.get_backend(name)` method has been moved to the provider
+    instances: `provider = IBMQ.get_provider(); provider.get_backend(name)`.
 
 ## [0.2.2] - 2019-05-07
 

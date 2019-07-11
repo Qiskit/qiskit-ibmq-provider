@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Helper for updating credentials from API 1 to API 2."""
+"""Helper for updating credentials from IBM Q Experience v1 to v2."""
 
 from .credentials import Credentials
 from .configrc import (read_credentials_from_qiskitrc,
@@ -33,7 +33,7 @@ def update_credentials(force=False):
     """Update or provide information about updating stored credentials.
 
     This function is an interactive helper to update credentials stored in
-    disk from the API version 1 to the API version 2. Upon invocation, the
+    disk from IBM Q Experience v1 to v2. Upon invocation, the
     function will inspect the credentials stored in disk and attempt to
     convert them to the new version, displaying the changes and asking for
     confirmation before overwriting the credentials.
@@ -49,8 +49,8 @@ def update_credentials(force=False):
             changes.
 
     Returns:
-        Credentials: if the updating is possible, credentials for the API
-            version 2; and `None` otherwise.
+        Credentials: if the updating is possible, credentials for IBM Q
+            Experience version 2; and `None` otherwise.
     """
     # Get the list of stored credentials.
     credentials_list = list(read_credentials_from_qiskitrc().values())
@@ -71,18 +71,18 @@ def update_credentials(force=False):
             if credentials.url == QE2_AUTH_URL:
                 # Credential is already for auth url.
                 warnings.append('The stored account with url "{}" is already '
-                                'an API 2 account.'.format(credentials.url))
+                                'an IBM Q Experience v2 account.'.format(credentials.url))
             elif credentials.is_ibmq():
                 new_credentials.append(Credentials(credentials.token,
                                                    QE2_AUTH_URL,
                                                    proxies=credentials.proxies,
                                                    verify=credentials.verify))
                 hub_lines.append(
-                    "  provider{} = IBMQ.get_provider(hub='{}', group='{}',"
-                    "project='{})".format(provider_number,
-                                          credentials.hub,
-                                          credentials.group,
-                                          credentials.project))
+                    "  provider{} = IBMQ.get_provider(hub='{}', group='{}', "
+                    "project='{}')".format(provider_number,
+                                           credentials.hub,
+                                           credentials.group,
+                                           credentials.project))
                 provider_number += 1
             else:
                 # Unknown URL - do not act on it.
@@ -107,13 +107,13 @@ def update_credentials(force=False):
               for credentials in new_credentials]
 
     if not all(field_tuple == tuples[0] for field_tuple in tuples):
-        warnings.append('The credentials stored differ in several fields. The '
-                        'conversion will use the settings previously stored '
-                        'for the first v1 account.')
+        warnings.append('Multiple credentials found with different settings. The'
+                        'conversion will use the settings from the first '
+                        'IBM Q Experience v1 account found.')
 
     # Print a summary of the changes.
     print('The credentials stored will be replaced with a single entry with '
-          'token "{}" and the new API 2 URL.'.format(final_credentials.token))
+          'token "{}" and the new IBM Q Experience v2 URL.'.format(final_credentials.token))
     if final_credentials.proxies:
         print('The existing proxy configuration will be preserved.')
 

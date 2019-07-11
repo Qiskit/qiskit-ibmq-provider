@@ -12,13 +12,14 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utilities for IBM Q API connector."""
+"""Client for websocket communication with the IBM Q Experience API."""
 
 import asyncio
 import json
 import logging
 import time
 from concurrent import futures
+import warnings
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
@@ -69,11 +70,11 @@ class WebsocketMessage:
 
 
 class WebsocketClient(BaseClient):
-    """Client for websocket communication with the IBMQ API.
+    """Client for websocket communication with the IBM Q Experience API.
 
     Attributes:
         websocket_url (str): URL for websocket communication with IBM Q.
-        access_token (str): access token for IBMQ.
+        access_token (str): access token for IBM Q.
     """
 
     def __init__(self, websocket_url, access_token):
@@ -97,7 +98,10 @@ class WebsocketClient(BaseClient):
         """
         try:
             logger.debug('Starting new websocket connection: %s', url)
-            websocket = yield from connect(url)
+            with warnings.catch_warnings():
+                # Suppress websockets deprecation warnings until the fix is available
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                websocket = yield from connect(url)
 
         # pylint: disable=broad-except
         except Exception as ex:
@@ -106,10 +110,14 @@ class WebsocketClient(BaseClient):
         try:
             # Authenticate against the server.
             auth_request = self._authentication_message()
-            yield from websocket.send(auth_request.as_json())
+            with warnings.catch_warnings():
+                # Suppress websockets deprecation warnings until the fix is available
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                yield from websocket.send(auth_request.as_json())
 
-            # Verify that the server acknowledged our authentication.
-            auth_response_raw = yield from websocket.recv()
+                # Verify that the server acknowledged our authentication.
+                auth_response_raw = yield from websocket.recv()
+
             auth_response = WebsocketMessage.from_bytes(auth_response_raw)
 
             if auth_response.type_ != 'authenticated':
@@ -153,15 +161,18 @@ class WebsocketClient(BaseClient):
             # a timeout has been reached.
             while True:
                 try:
-                    if timeout:
-                        response_raw = yield from asyncio.wait_for(
-                            websocket.recv(), timeout=timeout)
+                    with warnings.catch_warnings():
+                        # Suppress websockets deprecation warnings until the fix is available
+                        warnings.filterwarnings("ignore", category=DeprecationWarning)
+                        if timeout:
+                            response_raw = yield from asyncio.wait_for(
+                                websocket.recv(), timeout=timeout)
 
-                        # Decrease the timeout, with a 5-second grace period.
-                        elapsed_time = time.time() - start_time
-                        timeout = max(5, int(original_timeout - elapsed_time))
-                    else:
-                        response_raw = yield from websocket.recv()
+                            # Decrease the timeout, with a 5-second grace period.
+                            elapsed_time = time.time() - start_time
+                            timeout = max(5, int(original_timeout - elapsed_time))
+                        else:
+                            response_raw = yield from websocket.recv()
                     logger.debug('Received message from websocket: %s',
                                  response_raw)
 
@@ -191,7 +202,10 @@ class WebsocketClient(BaseClient):
                     raise WebsocketError('Connection with websocket closed '
                                          'unexpectedly: {}'.format(message)) from ex
         finally:
-            yield from websocket.close()
+            with warnings.catch_warnings():
+                # Suppress websockets deprecation warnings until the fix is available
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                yield from websocket.close()
 
         return last_status
 

@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""REST clients for accessing IBM Q."""
+"""REST clients for accessing the IBM Q Experience v2 API."""
 
 
 class RestAdapterBase:

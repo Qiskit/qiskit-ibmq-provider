@@ -18,8 +18,8 @@ import os
 from functools import wraps
 from unittest import SkipTest
 
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test.testing_options import get_test_options
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
 

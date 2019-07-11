@@ -81,7 +81,7 @@ stage_osx: &stage_osx
 stages:
   - lint and pure python test
   - test
-  - ibmq
+  - old api
   - slow tests
 
 # Define the job matrix explicitly, as matrix expansion causes issues when
@@ -146,14 +146,23 @@ jobs:
         - MPLBACKEND=ps
         - PYTHON_VERSION=3.7.2
 
-    # "ibmq" stage
+    # "old api" stage
     ###########################################################################
-    # GNU/Linux, Python 3.6, against IBM Q
-    - stage: ibmq
+    # GNU/Linux, Python 3.6, against Qconsole v1
+    - stage: old api
+      name: Python 3.6 API v1 QConsole
       <<: *stage_linux
       if: branch = master and repo = Qiskit/qiskit-ibmq-provider and type = push
       python: 3.6
       env: USE_ALTERNATE_ENV_CREDENTIALS=True
+
+    # GNU/Linux, Python 3.6, against QE v1
+    - stage: old api
+      name: Python 3.6 API v1 QE
+      <<: *stage_linux
+      if: branch = master and repo = Qiskit/qiskit-ibmq-provider and type = push
+      python: 3.6
+      env: QE_URL="https://quantumexperience.ng.bluemix.net/api"
 
     # "slow tests" stage
     ###########################################################################

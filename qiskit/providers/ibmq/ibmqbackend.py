@@ -54,6 +54,10 @@ class IBMQBackend(BaseBackend):
         self.group = credentials.group
         self.project = credentials.project
 
+        # Attributes used by caching functions.
+        self._properties = None
+        self._defaults = None
+
     def run(self, qobj):
         """Run a Qobj asynchronously.
 
@@ -74,17 +78,22 @@ class IBMQBackend(BaseBackend):
 
         return job
 
-    def properties(self):
+    def properties(self, refresh=False):
         """Return the online backend properties.
 
-        The return is via QX API call.
+        Args:
+            refresh (bool): if True, the return is via a QX API call.
+                Otherwise, a cached version is returned.
 
         Returns:
             BackendProperties: The properties of the backend.
         """
-        api_properties = self._api.backend_properties(self.name())
+        # pylint: disable=arguments-differ
+        if refresh or self._properties is None:
+            api_properties = self._api.backend_properties(self.name())
+            self._properties = BackendProperties.from_dict(api_properties)
 
-        return BackendProperties.from_dict(api_properties)
+        return self._properties
 
     def status(self):
         """Return the online backend status.
@@ -104,22 +113,28 @@ class IBMQBackend(BaseBackend):
             raise LookupError(
                 "Couldn't get backend status: {0}".format(ex))
 
-    def defaults(self):
+    def defaults(self, refresh=False):
         """Return the pulse defaults for the backend.
 
+        Args:
+            refresh (bool): if True, the return is via a QX API call.
+                Otherwise, a cached version is returned.
+
         Returns:
-            PulseDefaults: the pulse defaults for the backend. IF the backend
-            does not support defaults, it returns ``None``.
+            PulseDefaults: the pulse defaults for the backend. If the backend
+                does not support defaults, it returns ``None``.
         """
         if not self.configuration().open_pulse:
             return None
 
-        backend_defaults = self._api.backend_defaults(self.name())
+        if refresh or self._defaults is None:
+            api_defaults = self._api.backend_defaults(self.name())
+            if api_defaults:
+                self._defaults = PulseDefaults.from_dict(api_defaults)
+            else:
+                self._defaults = None
 
-        if backend_defaults:
-            return PulseDefaults.from_dict(backend_defaults)
-
-        return None
+        return self._defaults
 
     def jobs(self, limit=50, skip=0, status=None, db_filter=None):
         """Return the jobs submitted to this backend.
@@ -130,8 +145,12 @@ class IBMQBackend(BaseBackend):
         in the returned list.
 
         Args:
-            limit (int): number of jobs to retrieve
-            skip (int): starting index of retrieval
+            limit (int): number of jobs to retrieve. Note that the limit
+                specified can be overridden by limits set by the API for
+                performance reasons, and might result in fewer jobs being
+                returned. In those cases, the `skip` parameter can be used
+                for pagination.
+            skip (int): starting index for the job retrieval.
             status (None or qiskit.providers.JobStatus or str): only get jobs
                 with this status, where status is e.g. `JobStatus.RUNNING` or
                 `'RUNNING'`
@@ -284,7 +303,7 @@ class IBMQBackend(BaseBackend):
 class IBMQSimulator(IBMQBackend):
     """Backend class interfacing with an IBMQ simulator."""
 
-    def properties(self):
+    def properties(self, refresh=False):
         """Return the online backend properties.
 
         Returns:
