@@ -145,8 +145,12 @@ class IBMQBackend(BaseBackend):
         in the returned list.
 
         Args:
-            limit (int): number of jobs to retrieve
-            skip (int): starting index of retrieval
+            limit (int): number of jobs to retrieve. Note that the limit
+                specified can be overridden by limits set by the API for
+                performance reasons, and might result in fewer jobs being
+                returned. In those cases, the `skip` parameter can be used
+                for pagination.
+            skip (int): starting index for the job retrieval.
             status (None or qiskit.providers.JobStatus or str): only get jobs
                 with this status, where status is e.g. `JobStatus.RUNNING` or
                 `'RUNNING'`
