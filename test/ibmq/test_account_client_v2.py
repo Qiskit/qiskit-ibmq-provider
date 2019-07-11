@@ -328,19 +328,16 @@ class TestAccountClientJobs(IBMQTestCase):
         """Test listing job statuses with a limit."""
         jobs_raw = self.client.list_jobs_statuses(limit=1)
         self.assertEqual(len(jobs_raw), 1)
-        self.assertEqual(jobs_raw[0]['id'], self.job_id)
 
     def test_list_jobs_statuses_skip(self):
         """Test listing job statuses with an offset."""
         jobs_raw = self.client.list_jobs_statuses(limit=1, skip=1)
         self.assertEqual(len(jobs_raw), 1)
-        self.assertNotEqual(jobs_raw[0]['id'], self.job_id)
 
     def test_list_jobs_statuses_filter(self):
         """Test listing job statuses with a filter."""
         jobs_raw = self.client.list_jobs_statuses(extra_filter={'id': self.job_id})
         self.assertEqual(len(jobs_raw), 1)
-        self.assertEqual(jobs_raw[0]['id'], self.job_id)
 
 
 class TestAuthClient(IBMQTestCase):
