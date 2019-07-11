@@ -115,7 +115,7 @@ Update the credentials? [y/N]
 ```
 
 Upon confirmation, your credentials will be overwritten with a valid IBM Q
-Experience set of credentials. For more complex cases, consider deleting your
+Experience v2 set of credentials. For more complex cases, consider deleting your
 previous credentials via `IBMQ.delete_accounts()` and follow the instructions
 in the [IBM Q Experience account page].
 
