@@ -294,8 +294,8 @@ class IBMQBackend(BaseBackend):
     def __repr__(self):
         credentials_info = ''
         if self.hub:
-            credentials_info = '{}, {}, {}'.format(self.hub, self.group,
-                                                   self.project)
+            credentials_info = "hub='{}', group='{}', project='{}'".format(
+                self.hub, self.group, self.project)
         return "<{}('{}') from IBMQ({})>".format(
             self.__class__.__name__, self.name(), credentials_info)
 
