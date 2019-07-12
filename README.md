@@ -88,6 +88,14 @@ the legacy Quantum Experience and Qconsole. The new IBM Q Experience is also
 referred as `v2`, whereas the legacy one and Qconsole as `v1`.
 
 This section includes instructions for updating your accounts and programs.
+Please note that:
+  * the IBM Q Experience `v1` credentials and the programs written for pre-0.3
+    versions will still be working during the `0.3.x` series. It is not
+    mandatory to update your accounts and programs, but recommended in order
+    to take advantage of the new features.
+  * updating your credentials to the IBM Q Experience `v2` implies that you
+    will need to update your programs. The sections below contain instructions
+    on how to perform the transition.
 
 ### Updating your IBM Q Experience credentials
 
@@ -158,7 +166,7 @@ depth details:
 
 ### Account management
 
-| &lt;0.3 | &gt;=0.3 |
+| &lt;0.3 / v1 credentials | &gt;=0.3 and v2 credentials |
 | --- | --- |
 | N/A | `IBMQ.update_account()` |
 | `IBMQ.save_account(token, url)` | `IBMQ.save_account(token)`
@@ -171,7 +179,7 @@ depth details:
 
 ### Using backends
 
-| &lt;0.3 | &gt;=0.3 |
+| &lt;0.3 / v1 credentials | &gt;=0.3 and v2 credentials |
 | --- | --- |
 | N/A | `providers = IBMQ.providers()` |
 | `backend = IBMQ.get_backend(name, hub='HUB')` | `provider = IBMQ.get_provider(hub='HUB')` |
