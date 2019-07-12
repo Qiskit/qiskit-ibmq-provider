@@ -111,13 +111,19 @@ IBMQ.update_account()
 
 ```
 Found 2 credentials.
-The credentials stored will be replaced with a single entry with token "MYTOKEN" and the new IBM Q Experience v2 URL.
+The credentials stored will be replaced with a single entry with token "MYTOKEN"
+and the new IBM Q Experience v2 URL (https://auth.quantum-computing.ibm.com/api).
 
 In order to access the provider, please use the new "IBMQ.get_provider()" methods:
 
   provider0 = IBMQ.load_account()
   provider1 = IBMQ.get_provider(hub='A', group='B', project='C')
+
+Note you need to update your programs in order to retrieve backends from a
+specific provider directly:
+
   backends = provider0.backends()
+  backend = provider0.get_backend('ibmq_qasm_simulator')
 
 Update the credentials? [y/N]
 ```
