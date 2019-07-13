@@ -140,9 +140,8 @@ class AccountProvider(BaseProvider):
         return self.credentials == other.credentials
 
     def __repr__(self):
-        credentials_info = '{}, {}, {}'.format(self.credentials.hub,
-                                               self.credentials.group,
-                                               self.credentials.project)
+        credentials_info = "hub='{}', group='{}', project='{}'".format(
+            self.credentials.hub, self.credentials.group, self.credentials.project)
 
         return "<{} for IBMQ({})>".format(
             self.__class__.__name__, credentials_info)

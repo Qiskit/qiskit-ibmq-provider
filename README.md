@@ -68,7 +68,7 @@ intend to use them during the current session, you can use:
 from qiskit import IBMQ
 
 provider = IBMQ.enable_account('MY_API_TOKEN')
-provider.get_backend()
+provider.get_backend('ibmq_qasm_simulator')
 ```
 
 By default, all IBM Q accounts have access to the same, open project
