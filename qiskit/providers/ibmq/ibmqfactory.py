@@ -194,6 +194,9 @@ class IBMQFactory:
     def save_account(token, url=QX_AUTH_URL, overwrite=False, **kwargs):
         """Save the account to disk for future use.
 
+        Note: IBM Q Experience v1 credentials are being deprecated. Please
+            use IBM Q Experience v2 credentials instead.
+
         Args:
             token (str): IBM Q Experience API token.
             url (str): URL for the IBM Q Experience authentication server.
@@ -201,15 +204,13 @@ class IBMQFactory:
             **kwargs (dict):
                 * proxies (dict): Proxy configuration for the API.
                 * verify (bool): If False, ignores SSL certificates errors
-
-        Raises:
-            IBMQAccountError: if attempting to save an IBM Q Experience v1
-                account.
         """
         if url != QX_AUTH_URL:
-            raise IBMQAccountError('Saving IBM Q Experience v1 credentials is '
-                                   'deprecated. Please use IBM Q Experience '
-                                   'v2 credentials instead.')
+            warnings.warn(
+                'IBM Q Experience v1 credentials are being deprecated. Please '
+                'use IBM Q Experience v2 credentials instead. You can use '
+                'IBMQ.update_account() to update your stored credentials, '
+                'if applicable.', DeprecationWarning)
 
         credentials = Credentials(token, url, **kwargs)
 
