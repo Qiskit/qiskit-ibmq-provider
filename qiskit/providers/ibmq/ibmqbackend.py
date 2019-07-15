@@ -136,7 +136,7 @@ class IBMQBackend(BaseBackend):
 
         return self._defaults
 
-    def jobs(self, limit=50, skip=0, status=None, db_filter=None):
+    def jobs(self, limit=10, skip=0, status=None, db_filter=None):
         """Return the jobs submitted to this backend.
 
         Return the jobs submitted to this backend, with optional filtering and
@@ -183,6 +183,11 @@ class IBMQBackend(BaseBackend):
         Raises:
             IBMQBackendValueError: status keyword value unrecognized
         """
+        # Re-set the limit.
+        if not limit:
+            limit = 10
+
+        # Build the filter for the query.
         backend_name = self.name()
         api_filter = {'backend.name': backend_name}
         if status:
@@ -207,10 +212,22 @@ class IBMQBackend(BaseBackend):
         if db_filter:
             # status takes precedence over db_filter for same keys
             api_filter = {**db_filter, **api_filter}
-        job_info_list = self._api.get_status_jobs(limit=limit, skip=skip,
-                                                  filter=api_filter)
+
+        # Retrieve the requested number of jobs, using pagination. The API
+        # might limit the number of jobs per request.
+        job_responses = []
+        job_page = self._api.get_status_jobs(limit=limit, skip=skip,
+                                             filter=api_filter)
+        job_responses += job_page
+
+        while len(job_responses) < limit and job_page:
+            skip = skip + len(job_page)
+            job_page = self._api.get_status_jobs(
+                limit=limit - len(job_responses), skip=skip, filter=api_filter)
+            job_responses += job_page
+
         job_list = []
-        for job_info in job_info_list:
+        for job_info in job_responses:
             kwargs = {}
             try:
                 job_kind = ApiJobKind(job_info.get('kind', None))
