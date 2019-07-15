@@ -88,6 +88,14 @@ the legacy Quantum Experience and Qconsole. The new IBM Q Experience is also
 referred as `v2`, whereas the legacy one and Qconsole as `v1`.
 
 This section includes instructions for updating your accounts and programs.
+Please note that:
+  * the IBM Q Experience `v1` credentials and the programs written for pre-0.3
+    versions will still be working during the `0.3.x` series. It is not
+    mandatory to update your accounts and programs, but recommended in order
+    to take advantage of the new features.
+  * updating your credentials to the IBM Q Experience `v2` implies that you
+    will need to update your programs. The sections below contain instructions
+    on how to perform the transition.
 
 ### Updating your IBM Q Experience credentials
 
@@ -103,13 +111,19 @@ IBMQ.update_account()
 
 ```
 Found 2 credentials.
-The credentials stored will be replaced with a single entry with token "MYTOKEN" and the new IBM Q Experience v2 URL.
+The credentials stored will be replaced with a single entry with token "MYTOKEN"
+and the new IBM Q Experience v2 URL (https://auth.quantum-computing.ibm.com/api).
 
 In order to access the provider, please use the new "IBMQ.get_provider()" methods:
 
   provider0 = IBMQ.load_account()
   provider1 = IBMQ.get_provider(hub='A', group='B', project='C')
+
+Note you need to update your programs in order to retrieve backends from a
+specific provider directly:
+
   backends = provider0.backends()
+  backend = provider0.get_backend('ibmq_qasm_simulator')
 
 Update the credentials? [y/N]
 ```
@@ -158,7 +172,7 @@ depth details:
 
 ### Account management
 
-| &lt;0.3 | &gt;=0.3 |
+| &lt;0.3 / v1 credentials | &gt;=0.3 and v2 credentials |
 | --- | --- |
 | N/A | `IBMQ.update_account()` |
 | `IBMQ.save_account(token, url)` | `IBMQ.save_account(token)`
@@ -171,7 +185,7 @@ depth details:
 
 ### Using backends
 
-| &lt;0.3 | &gt;=0.3 |
+| &lt;0.3 / v1 credentials | &gt;=0.3 and v2 credentials |
 | --- | --- |
 | N/A | `providers = IBMQ.providers()` |
 | `backend = IBMQ.get_backend(name, hub='HUB')` | `provider = IBMQ.get_provider(hub='HUB')` |

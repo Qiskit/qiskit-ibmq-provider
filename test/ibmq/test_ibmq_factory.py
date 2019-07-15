@@ -166,11 +166,11 @@ class TestIBMQFactoryDeprecation(IBMQTestCase):
     @requires_classic_api
     def test_api1_load_accounts(self, qe_token, qe_url):
         """Test backward compatibility for API 1 load_accounts()."""
-        ibmq_provider = IBMQProvider()
         ibmq_factory = IBMQFactory()
 
         with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
-            ibmq_provider.save_account(qe_token, qe_url)
+            with self.assertWarns(DeprecationWarning):
+                ibmq_factory.save_account(qe_token, qe_url)
 
             with self.assertWarns(DeprecationWarning):
                 ibmq_factory.load_accounts()
@@ -253,11 +253,6 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
         self.assertEqual(stored_cred['token'], self.v2_token)
         self.assertEqual(stored_cred['url'], AUTH_URL)
-
-    def test_save_account_v1(self):
-        """Test saving an API 1 account."""
-        with custom_qiskitrc(), self.assertRaises(IBMQAccountError):
-            self.factory.save_account(self.v1_token, url=API1_URL)
 
     def test_stored_account_v1(self):
         """Test listing a stored API 1 account."""
