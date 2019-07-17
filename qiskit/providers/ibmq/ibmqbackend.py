@@ -140,16 +140,17 @@ class IBMQBackend(BaseBackend):
         """Return the jobs submitted to this backend.
 
         Return the jobs submitted to this backend, with optional filtering and
-        pagination. Note that jobs submitted with earlier versions of Qiskit
+        pagination. Note that the API has a limit for the number of jobs
+        returned in a single call, and this function might involve making
+        several calls to the API. See also the `skip` parameter for more control
+        over pagination.
+
+        Note that jobs submitted with earlier versions of Qiskit
         (in particular, those that predate the Qobj format) are not included
         in the returned list.
 
         Args:
-            limit (int): number of jobs to retrieve. Note that the limit
-                specified can be overridden by limits set by the API for
-                performance reasons, and might result in fewer jobs being
-                returned. In those cases, the `skip` parameter can be used
-                for pagination.
+            limit (int): number of jobs to retrieve.
             skip (int): starting index for the job retrieval.
             status (None or qiskit.providers.JobStatus or str): only get jobs
                 with this status, where status is e.g. `JobStatus.RUNNING` or
