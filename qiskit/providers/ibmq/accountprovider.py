@@ -96,6 +96,12 @@ class AccountProvider(BaseProvider):
         ret = OrderedDict()
         configs_list = self._api.available_backends()
         for raw_config in configs_list:
+            # Make sure the raw_config is of proper type
+            if not isinstance(raw_config, dict):
+                logger.warning("An error occurred when retrieving backend "
+                               "information. Some backends might not be available.")
+                continue
+
             try:
                 if raw_config.get('open_pulse', False):
                     config = PulseBackendConfiguration.from_dict(raw_config)
