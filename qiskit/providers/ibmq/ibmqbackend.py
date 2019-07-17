@@ -183,10 +183,6 @@ class IBMQBackend(BaseBackend):
         Raises:
             IBMQBackendValueError: status keyword value unrecognized
         """
-        # Re-set the limit.
-        if not limit:
-            limit = 10
-
         # Build the filter for the query.
         backend_name = self.name()
         api_filter = {'backend.name': backend_name}
@@ -216,15 +212,25 @@ class IBMQBackend(BaseBackend):
         # Retrieve the requested number of jobs, using pagination. The API
         # might limit the number of jobs per request.
         job_responses = []
-        job_page = self._api.get_status_jobs(limit=limit, skip=skip,
-                                             filter=api_filter)
-        job_responses += job_page
+        current_page_limit = limit
 
-        while len(job_responses) < limit and job_page:
-            skip = skip + len(job_page)
-            job_page = self._api.get_status_jobs(
-                limit=limit - len(job_responses), skip=skip, filter=api_filter)
+        while True:
+            job_page = self._api.get_status_jobs(limit=current_page_limit,
+                                                 skip=skip, filter=api_filter)
             job_responses += job_page
+            skip = skip + len(job_page)
+
+            if not job_page:
+                # Stop if there are no more jobs returned by the API.
+                break
+
+            if limit:
+                if len(job_responses) >= limit:
+                    # Stop if we have reached the limit.
+                    break
+                current_page_limit = limit - len(job_responses)
+            else:
+                current_page_limit = 0
 
         job_list = []
         for job_info in job_responses:
