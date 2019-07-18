@@ -177,6 +177,10 @@ class IBMQJob(BaseJob):
             elif api_status == ApiJobStatus.CANCELLED.value:
                 self._status = JobStatus.CANCELLED
                 self._cancelled = True
+            elif api_status in (ApiJobStatus.ERROR_CREATING_JOB.value,
+                                ApiJobStatus.ERROR_VALIDATING_JOB.value,
+                                ApiJobStatus.ERROR_RUNNING_JOB.value):
+                self._status = JobStatus.ERROR
             else:
                 self._status = JobStatus.INITIALIZING
                 self.status()
