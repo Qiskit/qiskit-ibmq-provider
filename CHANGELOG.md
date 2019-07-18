@@ -14,6 +14,15 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [UNRELEASED]
+
+### Changed
+
+- The `backend.jobs()` function now has a default `limit` of 10 results, and
+  in the IBM Q Experience v2 will automatically perform several API calls in
+  order to retrieve the specified number of jobs, if higher. (#263)
+
+
 ## [0.3.0] - 2019-07-15
 
 ### Fixed
