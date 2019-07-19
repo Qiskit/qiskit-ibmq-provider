@@ -129,17 +129,22 @@ This section include some tips that will help you to push source code.
 **Note:**
 > We recommend using a self-contained environment, 
 > such as [Python virtual environments](https://docs.python.org/3/tutorial/venv.html) 
-> or Anaconda environments, to cleanly separate Qiskit from other applications 
+> or [Anaconda](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html#managing-python)
+> environments, to cleanly separate Qiskit from other applications 
 > and improve your experience.
 
 ### Setup with Conda virtual environment
 
+Issue the following command to create and activate the virtual environment:
+
 ``` {.sh}
 $ conda create -y -n QiskitDevenv python=3
-$ conda activate QiskitDevenv
+$ source activate QiskitDevenv
 ```
 
 ### Setup with Python virtual environment
+
+Issue the following command to create a virtual environment:
 
 ```{.sh}
 $ python -m venv QiskitDevenv
@@ -147,11 +152,15 @@ $ python -m venv QiskitDevenv
 
 #### Linux and Mac
 
+Issue the following command to activate the virtual environment:
+
 ```{.sh}
 $ source QiskitDevenv/bin/activate
 ```
 
 #### Windows
+
+Issue the following command to activate the virtual environment:
 
 ```{.sh}
 $ QiskitDevenv\Scripts\activate.bat
