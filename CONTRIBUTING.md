@@ -130,22 +130,27 @@ This section include some tips that will help you to push source code.
 > We recommend using [Python virtual environments](https://docs.python.org/3/tutorial/venv.html) 
 > to cleanly separate Qiskit from other applications and improve your experience.
 
-### Setup with an environment
-
-The simplest way to use environments is by using Anaconda
+### Setup with Conda virtual environment
 
 ``` {.sh}
-conda create -y -n QiskitDevenv python=3
-source activate QiskitDevenv
+$ conda create -y -n QiskitDevenv python=3
+$ conda activate QiskitDevenv
+```
+
+### Setup with Python virtual environment
+```{.sh}
+$ python -m venv QiskitDevenv
+$ source QiskitDevenv/bin/activate (Linux and Mac)
+$ QiskitDevenv\Scripts\activate.bat (Windows)
 ```
 
 For the python code, we need some libraries that can be installed in
 this way:
 
 ``` {.sh}
-cd qiskit-ibmq-provider
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+$ cd qiskit-ibmq-provider
+$ pip install -r requirements.txt
+$ pip install -r requirements-dev.txt
 ```
 
 ### Test
