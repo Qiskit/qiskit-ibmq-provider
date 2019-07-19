@@ -139,7 +139,7 @@ Issue the following command to create and activate the virtual environment:
 
 ``` {.sh}
 $ conda create -y -n QiskitDevenv python=3
-$ source activate QiskitDevenv
+$ conda activate QiskitDevenv
 ```
 
 ### Setup with Python virtual environment
