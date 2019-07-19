@@ -3,7 +3,7 @@ Contributing
 
 **We appreciate all kinds of help, so thank you!**
 
-Contributing to the project
+Contributing Qiskit IBMQ Provider
 ---------------------------
 
 You can contribute in many ways to this project.
@@ -40,17 +40,18 @@ comment on the pull request, including a link to accept the agreement.
 The [individual CLA](https://qiskit.org/license/qiskit-cla.pdf) document
 is available for review as a PDF.
 
-NOTE: If you work for a company that wants to allow you to contribute
-your work, then you\'ll need to sign a [corporate
-CLA](https://qiskit.org/license/qiskit-corporate-cla.pdf) and email it
-to us at <qiskit@us.ibm.com>.
+**Note:**
+> If you work for a company that wants to allow you to contribute
+> your work, then you will need to sign a [corporate CLA](https://qiskit.org/license/qiskit-corporate-cla.pdf) 
+> and email it to us at <qiskit@us.ibm.com>.
 
 ### Good first contributions
 
 You are welcome to contribute wherever in the code you want to, of
-course, but we recommend taking a look at the \"Good first
-contribution\" label into the issues and pick one. We would love to
-mentor you!
+course, but we recommend taking a look at the 
+[`good first contribution`
+](https://github.com/Qiskit/qiskit-ibmq-provider/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+) 
+label into the issues and pick one. We would love to mentor you!
 
 ### Documentation
 
@@ -59,9 +60,8 @@ update it if it\'s needed.
 
 ### Pull requests
 
-We use [GitHub pull
-requests](https://help.github.com/articles/about-pull-requests) to
-accept the contributions.
+We use [GitHub pull requests](https://help.github.com/articles/about-pull-requests) 
+to accept the contributions.
 
 A friendly reminder! We\'d love to have a previous discussion about the
 best way to implement the feature/bug you are contributing with. This is
@@ -126,15 +126,9 @@ Code
 
 This section include some tips that will help you to push source code.
 
-::: {.note}
-::: {.admonition-title}
-Note
-:::
-
-We recommend using [Python virtual
-environments](https://docs.python.org/3/tutorial/venv.html) to cleanly
-separate Qiskit from other applications and improve your experience.
-:::
+**Note:**
+> We recommend using [Python virtual environments](https://docs.python.org/3/tutorial/venv.html) 
+> to cleanly separate Qiskit from other applications and improve your experience.
 
 ### Setup with an environment
 
