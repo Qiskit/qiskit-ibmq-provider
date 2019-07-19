@@ -138,10 +138,21 @@ $ conda activate QiskitDevenv
 ```
 
 ### Setup with Python virtual environment
+
 ```{.sh}
 $ python -m venv QiskitDevenv
-$ source QiskitDevenv/bin/activate (Linux and Mac)
-$ QiskitDevenv\Scripts\activate.bat (Windows)
+```
+
+#### Linux and Mac
+
+```{.sh}
+$ source QiskitDevenv/bin/activate
+```
+
+#### Windows
+
+```{.sh}
+$ QiskitDevenv\Scripts\activate.bat
 ```
 
 For the python code, we need some libraries that can be installed in
