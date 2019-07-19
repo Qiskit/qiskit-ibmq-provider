@@ -177,7 +177,7 @@ C:\..\> python -m unittest test/test_something.py
 
 Note many of the tests will not be executed unless you have setup an
 IBMQ account. To set this up please go to this
-[page](https://quantumexperience.ng.bluemix.net/qx/account/advanced) and
+[page](https://quantum-computing.ibm.com/login) and
 register an account.
 
 By default, and if there is no user credentials available, the tests
