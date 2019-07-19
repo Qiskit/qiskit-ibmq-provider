@@ -107,13 +107,14 @@ def update_credentials(force=False):
               for credentials in new_credentials]
 
     if not all(field_tuple == tuples[0] for field_tuple in tuples):
-        warnings.append('Multiple credentials found with different settings. The'
+        warnings.append('Multiple credentials found with different settings. The '
                         'conversion will use the settings from the first '
                         'IBM Q Experience v1 account found.')
 
     # Print a summary of the changes.
     print('The credentials stored will be replaced with a single entry with '
-          'token "{}" and the new IBM Q Experience v2 URL.'.format(final_credentials.token))
+          'token "{}" and the new IBM Q Experience v2 URL ({}).'.format(
+              final_credentials.token, QE2_AUTH_URL))
     if final_credentials.proxies:
         print('The existing proxy configuration will be preserved.')
 
@@ -126,7 +127,10 @@ def update_credentials(force=False):
     print('\n  provider0 = IBMQ.load_account()')
     if hub_lines:
         print('\n'.join(hub_lines))
-    print('  backends = provider0.backends()')
+    print('\nNote you need to update your programs in order to retrieve '
+          'backends from a specific provider directly:')
+    print('\n  backends = provider0.backends()')
+    print("  backend = provider0.get_backend('ibmq_qasm_simulator')")
 
     # Ask for confirmation from the user.
     if not force:
