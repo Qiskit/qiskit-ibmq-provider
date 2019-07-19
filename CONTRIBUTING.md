@@ -1,38 +1,33 @@
----
-title: Contributing
----
+Contributing
+============
 
 **We appreciate all kinds of help, so thank you!**
 
 Contributing to the project
-===========================
+---------------------------
 
 You can contribute in many ways to this project.
 
-Issue reporting
----------------
+### Issue reporting
 
 This is a good point to start, when you find a problem please add it to
 the [issue
 tracker](https://github.com/Qiskit/qiskit-ibmq-provider/issues). The
 ideal report should include the steps to reproduce it.
 
-Doubts solving
---------------
+### Doubts solving
 
 To help less advanced users is another wonderful way to start. You can
 help us close some opened issues. This kind of tickets should be labeled
 as `question`.
 
-Improvement proposal
---------------------
+### Improvement proposal
 
 If you have an idea for a new feature please open a ticket labeled as
 `enhancement`. If you could also add a piece of code with the idea or a
 partial implementation it would be awesome.
 
-Contributor License Agreement
------------------------------
+### Contributor License Agreement
 
 We\'d love to accept your code! Before we can, we have to get a few
 legal requirements sorted out. By signing a contributor license
@@ -50,22 +45,19 @@ your work, then you\'ll need to sign a [corporate
 CLA](https://qiskit.org/license/qiskit-corporate-cla.pdf) and email it
 to us at <qiskit@us.ibm.com>.
 
-Good first contributions
-------------------------
+### Good first contributions
 
 You are welcome to contribute wherever in the code you want to, of
 course, but we recommend taking a look at the \"Good first
 contribution\" label into the issues and pick one. We would love to
 mentor you!
 
-Doc
----
+### Documentation
 
 Review the parts of the documentation regarding the new changes and
 update it if it\'s needed.
 
-Pull requests
--------------
+### Pull requests
 
 We use [GitHub pull
 requests](https://help.github.com/articles/about-pull-requests) to
@@ -93,7 +85,7 @@ here:
     **\[WIP\]** prefix from the description once the PR is ready to
     merge.
 
-### Pull request checklist
+#### Pull request checklist
 
 When submitting a pull request and you feel it is ready for review,
 please double check that:
@@ -110,7 +102,7 @@ please double check that:
     section, with the title of your pull request and its identifier (for
     example, \"`Replace OldComponent with FluxCapacitor (#123)`\".
 
-### Commit messages
+#### Commit messages
 
 Please follow the next rules for the commit messages:
 
@@ -130,7 +122,7 @@ Issue #190: Short summary of the issue
 ```
 
 Code
-====
+----
 
 This section include some tips that will help you to push source code.
 
@@ -144,8 +136,7 @@ environments](https://docs.python.org/3/tutorial/venv.html) to cleanly
 separate Qiskit from other applications and improve your experience.
 :::
 
-Setup with an environment
--------------------------
+### Setup with an environment
 
 The simplest way to use environments is by using Anaconda
 
@@ -163,8 +154,7 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
-Test
-----
+### Test
 
 New features often imply changes in the existent tests or new ones are
 needed. Once they\'re updated/added run this be sure they keep passing.
@@ -224,8 +214,7 @@ The order of precedence in the options is right to left. For example,
 `QISKIT_TESTS=skip_online,rec` will set the options as
 `skip_online == False` and `rec == True`.
 
-Style guide
------------
+### Style guide
 
 Please submit clean code and please make effort to follow existing
 conventions in order to keep it as readable as possible. We use
@@ -242,7 +231,7 @@ out$> make style
 ```
 
 Development cycle
-=================
+-----------------
 
 Our development cycle is straightforward, we define a roadmap with
 milestones for releases, and features that we want to include in these
@@ -254,8 +243,7 @@ since the latest version. The channels we\'ll use to announce new
 releases are still being discussed, but for now you can [follow
 us](https://twitter.com/qiskit) on Twitter!
 
-Branch model
-------------
+### Branch model
 
 There are two main branches in the repository:
 
@@ -282,8 +270,7 @@ There are two main branches in the repository:
     -   All the tags from the release versions are created from this
         branch.
 
-Release cycle
--------------
+### Release cycle
 
 From time to time, we will release brand new versions of the package.
 These are well-tested versions of the software.
