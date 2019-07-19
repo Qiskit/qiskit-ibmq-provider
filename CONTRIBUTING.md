@@ -129,7 +129,7 @@ This section include some tips that will help you to push source code.
 **Note:**
 > We recommend using a self-contained environment, 
 > such as [Python virtual environments](https://docs.python.org/3/tutorial/venv.html) 
-> or [Anaconda](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html#managing-python)
+> or [Anaconda](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html)
 > environments, to cleanly separate Qiskit from other applications 
 > and improve your experience.
 
