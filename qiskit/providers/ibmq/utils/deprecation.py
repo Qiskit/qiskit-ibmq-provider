@@ -35,7 +35,9 @@ def deprecated(func):
 
     @wraps(func)
     def _wrapper(self, *args, **kwargs):
-        if self._credentials:
+        # The special case of load_accounts is here for backward
+        # compatibility when using v2 credentials.
+        if self._credentials and func.__name__ != 'load_accounts':
             raise IBMQAccountError(
                 'IBMQ.{}() is not available when using an IBM Q Experience '
                 'v2 account. Please use IBMQ.{}() (note the singular form) '

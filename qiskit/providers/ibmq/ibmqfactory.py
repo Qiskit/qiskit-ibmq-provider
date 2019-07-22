@@ -455,15 +455,25 @@ class IBMQFactory:
                 account, or if no credentials are found.
             IBMQApiUrlError: if any of the credentials stored belong to a v2 account.
         """
-        api_version = None
+        api_version = 0
         for credentials in discover_credentials().values():
             # Explicitly check via an API call, to prevent credentials that
             # contain API 2 URL (but not auth) slipping through.
             version_info = self._check_api_version(credentials)
-            api_version = version_info['new_api']
+            api_version += version_info['new_api']
+
+        # Check if mixing v1 and v2 credentials
+        if api_version != len(discover_credentials().values()):
+            raise IBMQAccountError('Can not mix API v1 and v2'
+                                   'credentials.')
 
         # If calling using API v2 credentials
         if api_version:
+            warnings.warn(
+                'Calling IBMQ.load_accounts() with v2 credentials. '
+                'This is provided for backwards compatibility '
+                'and may lead to unexpected behaviour when mixing '
+                'v1 and v2 account credentials.', DeprecationWarning)
             self.load_account()
         else:
             # Old API v1 call
