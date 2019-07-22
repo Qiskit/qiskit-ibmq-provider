@@ -136,17 +136,22 @@ class IBMQBackend(BaseBackend):
 
         return self._defaults
 
-    def jobs(self, limit=50, skip=0, status=None, db_filter=None):
+    def jobs(self, limit=10, skip=0, status=None, db_filter=None):
         """Return the jobs submitted to this backend.
 
         Return the jobs submitted to this backend, with optional filtering and
-        pagination. Note that jobs submitted with earlier versions of Qiskit
+        pagination. Note that the API has a limit for the number of jobs
+        returned in a single call, and this function might involve making
+        several calls to the API. See also the `skip` parameter for more control
+        over pagination.
+
+        Note that jobs submitted with earlier versions of Qiskit
         (in particular, those that predate the Qobj format) are not included
         in the returned list.
 
         Args:
-            limit (int): number of jobs to retrieve
-            skip (int): starting index of retrieval
+            limit (int): number of jobs to retrieve.
+            skip (int): starting index for the job retrieval.
             status (None or qiskit.providers.JobStatus or str): only get jobs
                 with this status, where status is e.g. `JobStatus.RUNNING` or
                 `'RUNNING'`
@@ -179,6 +184,7 @@ class IBMQBackend(BaseBackend):
         Raises:
             IBMQBackendValueError: status keyword value unrecognized
         """
+        # Build the filter for the query.
         backend_name = self.name()
         api_filter = {'backend.name': backend_name}
         if status:
@@ -203,10 +209,32 @@ class IBMQBackend(BaseBackend):
         if db_filter:
             # status takes precedence over db_filter for same keys
             api_filter = {**db_filter, **api_filter}
-        job_info_list = self._api.get_status_jobs(limit=limit, skip=skip,
-                                                  filter=api_filter)
+
+        # Retrieve the requested number of jobs, using pagination. The API
+        # might limit the number of jobs per request.
+        job_responses = []
+        current_page_limit = limit
+
+        while True:
+            job_page = self._api.get_status_jobs(limit=current_page_limit,
+                                                 skip=skip, filter=api_filter)
+            job_responses += job_page
+            skip = skip + len(job_page)
+
+            if not job_page:
+                # Stop if there are no more jobs returned by the API.
+                break
+
+            if limit:
+                if len(job_responses) >= limit:
+                    # Stop if we have reached the limit.
+                    break
+                current_page_limit = limit - len(job_responses)
+            else:
+                current_page_limit = 0
+
         job_list = []
-        for job_info in job_info_list:
+        for job_info in job_responses:
             kwargs = {}
             try:
                 job_kind = ApiJobKind(job_info.get('kind', None))
@@ -290,8 +318,8 @@ class IBMQBackend(BaseBackend):
     def __repr__(self):
         credentials_info = ''
         if self.hub:
-            credentials_info = '{}, {}, {}'.format(self.hub, self.group,
-                                                   self.project)
+            credentials_info = "hub='{}', group='{}', project='{}'".format(
+                self.hub, self.group, self.project)
         return "<{}('{}') from IBMQ({})>".format(
             self.__class__.__name__, self.name(), credentials_info)
 

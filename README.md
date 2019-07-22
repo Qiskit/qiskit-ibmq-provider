@@ -28,10 +28,10 @@ To install from source, follow the instructions in the
 Once the package is installed, you can access the provider from Qiskit.
 
 > **Note**: Since July 2019 (and with version `0.3` of this
-> `qiskit-ibmq-provider` package), using the new IBM Q Experience (v2) is the
-> default behavior. If you have been using an account for the legacy
-> Quantum Experience or QConsole (v1), please check the
-> [update instructions](#updating-to-the-new-IBM-Q-Experience).
+> `qiskit-ibmq-provider` package / version `0.11` of the `qiskit` package),
+> using the new IBM Q Experience (v2) is the default behavior. If you have
+> been using an account for the legacy Quantum Experience or QConsole (v1),
+> please check the [update instructions](#updating-to-the-new-IBM-Q-Experience).
 
 ### Configure your IBMQ credentials
 
@@ -68,7 +68,7 @@ intend to use them during the current session, you can use:
 from qiskit import IBMQ
 
 provider = IBMQ.enable_account('MY_API_TOKEN')
-provider.get_backend()
+provider.get_backend('ibmq_qasm_simulator')
 ```
 
 By default, all IBM Q accounts have access to the same, open project
@@ -88,6 +88,14 @@ the legacy Quantum Experience and Qconsole. The new IBM Q Experience is also
 referred as `v2`, whereas the legacy one and Qconsole as `v1`.
 
 This section includes instructions for updating your accounts and programs.
+Please note that:
+  * the IBM Q Experience `v1` credentials and the programs written for pre-0.3
+    versions will still be working during the `0.3.x` series. It is not
+    mandatory to update your accounts and programs, but recommended in order
+    to take advantage of the new features.
+  * updating your credentials to the IBM Q Experience `v2` implies that you
+    will need to update your programs. The sections below contain instructions
+    on how to perform the transition.
 
 ### Updating your IBM Q Experience credentials
 
@@ -103,19 +111,25 @@ IBMQ.update_account()
 
 ```
 Found 2 credentials.
-The credentials stored will be replaced with a single entry with token "MYTOKEN" and the new API 2 URL.
+The credentials stored will be replaced with a single entry with token "MYTOKEN"
+and the new IBM Q Experience v2 URL (https://auth.quantum-computing.ibm.com/api).
 
 In order to access the provider, please use the new "IBMQ.get_provider()" methods:
 
   provider0 = IBMQ.load_account()
   provider1 = IBMQ.get_provider(hub='A', group='B', project='C')
+
+Note you need to update your programs in order to retrieve backends from a
+specific provider directly:
+
   backends = provider0.backends()
+  backend = provider0.get_backend('ibmq_qasm_simulator')
 
 Update the credentials? [y/N]
 ```
 
 Upon confirmation, your credentials will be overwritten with a valid IBM Q
-Experience set of credentials. For more complex cases, consider deleting your
+Experience v2 set of credentials. For more complex cases, consider deleting your
 previous credentials via `IBMQ.delete_accounts()` and follow the instructions
 in the [IBM Q Experience account page].
 
@@ -151,6 +165,34 @@ credentials, the account management methods in IBMQ are now in singular form.
 For example, you should use `IBMQ.load_account()` instead of
 `IBMQ.load_accounts()`. An `IBMQAccountError` exception is raised if you
 attempt to use the legacy methods with an IBM Q Experience v2 account.
+
+The following tables contains a quick reference for the differences between the
+two versions. Please refer to the documentation of each method for more in
+depth details:
+
+### Account management
+
+| &lt;0.3 / v1 credentials | &gt;=0.3 and v2 credentials |
+| --- | --- |
+| N/A | `IBMQ.update_account()` |
+| `IBMQ.save_account(token, url)` | `IBMQ.save_account(token)`
+| `IBMQ.load_accounts()` | `provider = IBMQ.load_account()`
+| `IBMQ.enable_account()` | `provider = IBMQ.enable_account()`
+| `IBMQ.disable_accounts()` | `IBMQ.disable_account()`
+| `IBMQ.active_accounts()` | `IBMQ.active_account()`
+| `IBMQ.stored_accounts()` | `IBMQ.stored_account()`
+| `IBMQ.delete_accounts()` | `IBMQ.delete_account()`
+
+### Using backends
+
+| &lt;0.3 / v1 credentials | &gt;=0.3 and v2 credentials |
+| --- | --- |
+| N/A | `providers = IBMQ.providers()` |
+| `backend = IBMQ.get_backend(name, hub='HUB')` | `provider = IBMQ.get_provider(hub='HUB')` |
+|                                           | `backend = provider.get_backend(name)` |
+| `backends = IBMQ.backends(hub='HUB')` | `provider = IBMQ.get_provider(hub='HUB')` |
+|                                       | `backends = provider.backends()` |
+
 
 ## Contribution Guidelines
 

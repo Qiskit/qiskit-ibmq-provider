@@ -96,6 +96,12 @@ class AccountProvider(BaseProvider):
         ret = OrderedDict()
         configs_list = self._api.available_backends()
         for raw_config in configs_list:
+            # Make sure the raw_config is of proper type
+            if not isinstance(raw_config, dict):
+                logger.warning("An error occurred when retrieving backend "
+                               "information. Some backends might not be available.")
+                continue
+
             try:
                 if raw_config.get('open_pulse', False):
                     config = PulseBackendConfiguration.from_dict(raw_config)
@@ -140,9 +146,8 @@ class AccountProvider(BaseProvider):
         return self.credentials == other.credentials
 
     def __repr__(self):
-        credentials_info = '{}, {}, {}'.format(self.credentials.hub,
-                                               self.credentials.group,
-                                               self.credentials.project)
+        credentials_info = "hub='{}', group='{}', project='{}'".format(
+            self.credentials.hub, self.credentials.group, self.credentials.project)
 
         return "<{} for IBMQ({})>".format(
             self.__class__.__name__, credentials_info)
