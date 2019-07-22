@@ -68,9 +68,9 @@ class TestIBMQProvider(IBMQTestCase, providers.ProviderTestCase):
     def test_remote_backends_instantiate_simulators(self):
         """Test if remote backends that are simulators are an IBMQSimulator instance."""
         remotes = self.provider.backends(simulator=True)
-
         for backend in remotes:
-            self.assertIsInstance(backend, IBMQSimulator)
+            with self.subTest(backend=backend):
+                self.assertIsInstance(backend, IBMQSimulator)
 
     def test_remote_backend_status(self):
         """Test backend_status."""
