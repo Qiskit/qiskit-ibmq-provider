@@ -455,16 +455,18 @@ class IBMQFactory:
                 account, or if no credentials are found.
             IBMQApiUrlError: if any of the credentials stored belong to a v2 account.
         """
-        # Check if any stored credentials are from API v2.
+        api_version = None
         for credentials in discover_credentials().values():
             # Explicitly check via an API call, to prevent credentials that
             # contain API 2 URL (but not auth) slipping through.
             version_info = self._check_api_version(credentials)
-            if version_info['new_api']:
-                break
-        if version_info['new_api']:
+            api_version = version_info['new_api']
+        
+        # If calling using API v2 credentials
+        if api_version:
             self.load_account()
         else:
+            # Old API v1 call
             self._v1_provider.load_accounts(**kwargs)
 
     @deprecated
