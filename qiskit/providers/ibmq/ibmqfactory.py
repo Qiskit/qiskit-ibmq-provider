@@ -461,7 +461,7 @@ class IBMQFactory:
             # contain API 2 URL (but not auth) slipping through.
             version_info = self._check_api_version(credentials)
             api_version = version_info['new_api']
-        
+
         # If calling using API v2 credentials
         if api_version:
             self.load_account()
