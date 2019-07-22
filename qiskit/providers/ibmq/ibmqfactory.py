@@ -461,13 +461,11 @@ class IBMQFactory:
             # contain API 2 URL (but not auth) slipping through.
             version_info = self._check_api_version(credentials)
             if version_info['new_api']:
-                raise IBMQApiUrlError(
-                    'Credentials for an IBM Q Experience v2 account have been '
-                    'found. Please use IBMQ.load_account() (note the singular form) '
-                    'instead. You can use IBMQ.update_account() to update '
-                    'your stored credentials.')
-
-        self._v1_provider.load_accounts(**kwargs)
+                break
+        if version_info['new_api']:
+            self.load_account()
+        else:
+            self._v1_provider.load_accounts(**kwargs)
 
     @deprecated
     def delete_accounts(self, **kwargs):
