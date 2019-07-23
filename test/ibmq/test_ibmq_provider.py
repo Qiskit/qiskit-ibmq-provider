@@ -20,6 +20,7 @@ from qiskit.providers.ibmq import IBMQProvider
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
+from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator
 from qiskit.qobj import QobjHeader
 from qiskit.test import slow_test, providers
 from qiskit.compiler import assemble, transpile
@@ -63,6 +64,13 @@ class TestIBMQProvider(IBMQTestCase, providers.ProviderTestCase):
         """Test if there are remote backends that are simulators."""
         remotes = self.provider.backends(simulator=True)
         self.assertTrue(remotes)
+
+    def test_remote_backends_instantiate_simulators(self):
+        """Test if remote backends that are simulators are an IBMQSimulator instance."""
+        remotes = self.provider.backends(simulator=True)
+        for backend in remotes:
+            with self.subTest(backend=backend):
+                self.assertIsInstance(backend, IBMQSimulator)
 
     def test_remote_backend_status(self):
         """Test backend_status."""
