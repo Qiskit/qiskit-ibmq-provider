@@ -19,8 +19,9 @@ from functools import wraps
 
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
 
-UPDATE_ACCOUNT_TEXT = ('Please use IBMQ.update_account() to update your '
-                       'stored credentials.')
+UPDATE_ACCOUNT_TEXT = (
+    'Please update your accounts and programs by following the instructions here:\n'
+    'https://github.com/Qiskit/qiskit-ibmq-provider#updating-to-the-new-ibm-q-experience')
 
 
 def deprecated(func):
@@ -44,8 +45,9 @@ def deprecated(func):
         warnings.warn(
             'IBMQ.{}() is being deprecated. Please use IBM Q Experience v2 '
             'credentials and IBMQ.{}() (note the singular form) instead. You can '
-            'use IBMQ.update_account() to update your stored credentials, '
-            'if applicable.'.format(func.__name__, func.__name__[:-1]),
+            'find the instructions to make the updates here: \n'
+            'https://github.com/Qiskit/qiskit-ibmq-provider#updating-to-the-new-ibm-q-experience'
+            .format(func.__name__, func.__name__[:-1]),
             DeprecationWarning)
         return func(self, *args, **kwargs)
 
