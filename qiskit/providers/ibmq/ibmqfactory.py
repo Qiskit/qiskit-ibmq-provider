@@ -463,7 +463,7 @@ class IBMQFactory:
             api_version += version_info['new_api']
 
         # Check if mixing v1 and v2 credentials
-        if api_version != len(discover_credentials().values()):
+        if api_version != 0 and api_version < len(discover_credentials().values()):
             raise IBMQAccountError('Can not mix API v1 and v2'
                                    'credentials.')
 
