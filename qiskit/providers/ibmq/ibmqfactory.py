@@ -439,6 +439,9 @@ class IBMQFactory:
     def load_accounts(self, **kwargs):
         """Load IBM Q Experience v1 accounts found in the system into current session.
 
+        Will also load v2 accounts for backward compatibility, but can lead to
+        issues if mixing v1 and v2 credentials in other method calls.
+
         Note: this method is being deprecated, and only available when using
             v1 accounts.
 
@@ -451,24 +454,22 @@ class IBMQFactory:
         3. in the `qiskitrc` configuration file
 
         Raises:
-            IBMQAccountError: if the method is used with an IBM Q Experience v2
-                account, or if no credentials are found.
-            IBMQApiUrlError: if any of the credentials stored belong to a v2 account.
+            IBMQAccountError: If mixing v1 and v2 account credentials
         """
-        api_version = 0
+        version_counter = 0
         for credentials in discover_credentials().values():
             # Explicitly check via an API call, to prevent credentials that
             # contain API 2 URL (but not auth) slipping through.
             version_info = self._check_api_version(credentials)
-            api_version += version_info['new_api']
+            version_counter += int(version_info['new_api'])
 
         # Check if mixing v1 and v2 credentials
-        if api_version != 0 and api_version < len(discover_credentials().values()):
+        if version_counter != 0 and version_counter < len(discover_credentials().values()):
             raise IBMQAccountError('Can not mix API v1 and v2'
                                    'credentials.')
 
         # If calling using API v2 credentials
-        if api_version:
+        if version_counter:
             warnings.warn(
                 'Calling IBMQ.load_accounts() with v2 credentials. '
                 'This is provided for backwards compatibility '

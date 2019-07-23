@@ -22,6 +22,12 @@ The format is based on [Keep a Changelog].
   in the IBM Q Experience v2 will automatically perform several API calls in
   order to retrieve the specified number of jobs, if higher. (#263)
 
+## [0.3.1] - 2019-07-23
+
+### Fixed
+
+- `load_accounts` dispatches to `load_account` if v2 credentials are stored,
+  allowing for backward compatibility.
 
 ## [0.3.0] - 2019-07-15
 
