@@ -86,7 +86,10 @@ class IBMQFactory:
         if not version_info['new_api']:
             warnings.warn(
                 'Using IBM Q Experience v1 credentials is being deprecated. '
-                'Please use IBM Q Experience v2 credentials instead.',
+                'Please use IBM Q Experience v2 credentials instead. '
+                'You can find the instructions to make the updates here:\n'
+                'https://github.com/Qiskit/qiskit-ibmq-provider#'
+                'updating-to-the-new-ibm-q-experience',
                 DeprecationWarning)
             self._v1_provider.enable_account(token, url, **kwargs)
             return self._v1_provider
@@ -208,9 +211,11 @@ class IBMQFactory:
         if url != QX_AUTH_URL:
             warnings.warn(
                 'IBM Q Experience v1 credentials are being deprecated. Please '
-                'use IBM Q Experience v2 credentials instead. You can use '
-                'IBMQ.update_account() to update your stored credentials, '
-                'if applicable.', DeprecationWarning)
+                'use IBM Q Experience v2 credentials instead. '
+                'You can find the instructions to make the updates here:\n'
+                'https://github.com/Qiskit/qiskit-ibmq-provider#'
+                'updating-to-the-new-ibm-q-experience',
+                DeprecationWarning)
 
         credentials = Credentials(token, url, **kwargs)
 
