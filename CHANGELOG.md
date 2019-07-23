@@ -20,12 +20,12 @@ The format is based on [Keep a Changelog].
 
 - The `backend.jobs()` function now has a default `limit` of 10 results, and
   in the IBM Q Experience v2 will automatically perform several API calls in
-  order to retrieve the specified number of jobs, if higher. (#263)
+  order to retrieve the specified number of jobs, if higher. (\#263)
 
 ### Fixed
 
 - `load_accounts` dispatches to `load_account` if v2 credentials are stored,
-  allowing for backward compatibility.
+  allowing for backward compatibility. (\#273)
 
 ## [0.3.0] - 2019-07-15
 
