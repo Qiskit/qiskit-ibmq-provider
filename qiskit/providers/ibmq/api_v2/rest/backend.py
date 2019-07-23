@@ -15,6 +15,7 @@
 """Backend REST adapter for the IBM Q Experience v2 API."""
 
 from .base import RestAdapterBase
+import json
 
 
 class Backend(RestAdapterBase):
@@ -36,10 +37,18 @@ class Backend(RestAdapterBase):
         self.backend_name = backend_name
         super().__init__(session, '/devices/{}'.format(backend_name))
 
-    def properties(self):
+    def properties(self, filter=None):
         """Return backend properties."""
         url = self.get_url('properties')
-        response = self.session.get(url, params={'version': 1}).json()
+
+        query = {
+            'version': 1
+        }
+        if filter:
+            extra_filter = json.dumps({"where": filter})
+            query['filter'] = extra_filter
+
+        response = self.session.get(url, params=query).json()
 
         # Adjust name of the backend.
         if response:
