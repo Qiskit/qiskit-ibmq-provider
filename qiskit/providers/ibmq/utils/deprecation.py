@@ -20,7 +20,7 @@ from functools import wraps
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
 
 UPDATE_ACCOUNT_TEXT = (
-    'Please update your account by following the instructions here:\n'
+    'Please update your accounts and programs by following the instructions here:\n'
     'https://github.com/Qiskit/qiskit-ibmq-provider#updating-to-the-new-ibm-q-experience')
 
 
@@ -45,7 +45,7 @@ def deprecated(func):
         warnings.warn(
             'IBMQ.{}() is being deprecated. Please use IBM Q Experience v2 '
             'credentials and IBMQ.{}() (note the singular form) instead. You can '
-            'find the instructions to update the accounts here: \n'
+            'find the instructions to make the updates here: \n'
             'https://github.com/Qiskit/qiskit-ibmq-provider#updating-to-the-new-ibm-q-experience'
             .format(func.__name__, func.__name__[:-1]),
             DeprecationWarning)

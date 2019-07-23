@@ -87,7 +87,7 @@ class IBMQFactory:
             warnings.warn(
                 'Using IBM Q Experience v1 credentials is being deprecated. '
                 'Please use IBM Q Experience v2 credentials instead. '
-                'You can find the instructions to update the accounts here:\n'
+                'You can find the instructions to make the updates here:\n'
                 'https://github.com/Qiskit/qiskit-ibmq-provider#'
                 'updating-to-the-new-ibm-q-experience',
                 DeprecationWarning)
@@ -212,7 +212,7 @@ class IBMQFactory:
             warnings.warn(
                 'IBM Q Experience v1 credentials are being deprecated. Please '
                 'use IBM Q Experience v2 credentials instead. '
-                'You can find the instructions to update the accounts here:\n'
+                'You can find the instructions to make the updates here:\n'
                 'https://github.com/Qiskit/qiskit-ibmq-provider#'
                 'updating-to-the-new-ibm-q-experience',
                 DeprecationWarning)
