@@ -200,12 +200,21 @@ class TestAccountClient(IBMQTestCase):
         job = backend.run(qobj)
         job_id = job.job_id()
 
-        try:
-            api.job_cancel(job_id)
-            self.assertEqual(job.status(), JobStatus.CANCELLED)
-        except RequestsApiError as ex:
-            self.assertTrue(any(err in str(ex) for err in
-                                ['JOB_NOT_RUNNING', 'JOB_NOT_CANCELLED']))
+        max_retry = 2
+        for _ in range(max_retry):
+            try:
+                api.job_cancel(job_id)
+                self.assertEqual(job.status(), JobStatus.CANCELLED)
+                break
+            except RequestsApiError as ex:
+                if 'JOB_NOT_RUNNING' in str(ex):
+                    self.assertEqual(job.status(), JobStatus.DONE)
+                    break
+                else:
+                    # We may hit the JOB_NOT_CANCELLED error if the job is
+                    # in a temporary, noncancellable state. In this case we'll
+                    # just retry.
+                    self.assertIn('JOB_NOT_CANCELLED', str(ex))
 
 
 class TestAccountClientJobs(IBMQTestCase):
