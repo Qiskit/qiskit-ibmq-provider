@@ -83,18 +83,21 @@ class TestWebsocketIntegration(IBMQTestCase):
 
         self.assertEqual(result.status, 'COMPLETED')
 
-    @skip('TODO: reenable after api changes')
     def test_websockets_job_final_state(self):
         """Test checking status of a job in a final state via websockets."""
         job = self.sim_backend.run(self.qobj)
 
+        init_state = job._status
+        job._wait_for_final_status()
+
         # Manually disable the non-websocket polling.
         job._wait_for_final_status = None
-        # Cancel the job to put it in a final (cancelled) state.
-        job.cancel()
-        job._wait_for_completion()
 
-        self.assertIs(job._status, JobStatus.CANCELLED)
+        # Pretend we haven't seen the final status
+        job._status = init_state
+
+        job._wait_for_completion()
+        self.assertIs(job._status, JobStatus.DONE)
 
     def test_websockets_retry_bad_url(self):
         """Test http retry after websocket error due to an invalid URL."""

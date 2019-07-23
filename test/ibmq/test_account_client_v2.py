@@ -22,6 +22,7 @@ from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.api_v2.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api_v2.exceptions import ApiError, RequestsApiError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
+from qiskit.providers.jobstatus import JobStatus
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_new_api_auth, requires_qe_access
@@ -188,7 +189,6 @@ class TestAccountClient(IBMQTestCase):
 
         self.assertEqual(provider_backends, api_backends)
 
-    @skip('TODO: reenable after api changes')
     def test_job_cancel(self):
         """Test canceling a job."""
         backend_name = 'ibmq_qasm_simulator'
@@ -202,10 +202,10 @@ class TestAccountClient(IBMQTestCase):
 
         try:
             api.job_cancel(job_id)
+            self.assertEqual(job.status(), JobStatus.CANCELLED)
         except RequestsApiError as ex:
-            # TODO: rewrite using assert
-            if all(err not in str(ex) for err in ['JOB_NOT_RUNNING', 'JOB_NOT_CANCELLED']):
-                raise
+            self.assertTrue(any(err in str(ex) for err in
+                                ['JOB_NOT_RUNNING', 'JOB_NOT_CANCELLED']))
 
 
 class TestAccountClientJobs(IBMQTestCase):
