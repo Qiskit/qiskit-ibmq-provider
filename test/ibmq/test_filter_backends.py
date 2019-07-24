@@ -76,5 +76,5 @@ class TestBackendFilters(IBMQTestCase):
         for backend in backends:
             with self.subTest(backend=backend):
                 properties = backend.properties(datetime_filter=datetime_filter)
-                # TODO: Bottom line fails for 'ibmqx2' backend.
+                # Todo: Insert test case. Consider case where ModelValidationError is thrown.
                 print("{} -> {}".format(backend, properties))
