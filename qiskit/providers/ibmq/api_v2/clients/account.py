@@ -63,7 +63,6 @@ class AccountClient(BaseClient):
         """
         return self.client_api.backend(backend_name).status()
 
-    #TODO: Update docstring for api_filter
     def backend_properties(self, backend_name, extra_filter=None):
         """Return the properties of a backend.
 

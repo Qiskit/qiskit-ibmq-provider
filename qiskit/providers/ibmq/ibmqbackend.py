@@ -79,7 +79,6 @@ class IBMQBackend(BaseBackend):
 
         return job
 
-    #TODO: Update docstring for db_filter
     def properties(self, refresh=False, datetime_filter=None):
         """Return the online backend properties.
 
