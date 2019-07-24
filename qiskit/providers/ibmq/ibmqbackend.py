@@ -22,6 +22,7 @@ from marshmallow import ValidationError
 from qiskit.providers import BaseBackend, JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults)
+from qiskit.validation.exceptions import ModelValidationError
 
 from .api import ApiError
 from .api_v2.clients import BaseClient
@@ -97,7 +98,11 @@ class IBMQBackend(BaseBackend):
 
         if refresh or self._properties is None:
             api_properties = self._api.backend_properties(self.name(), extra_filter=api_filter)
-            self._properties = BackendProperties.from_dict(api_properties)
+            # Todo: from_dict fails because it could map an empty dictionary to the BackendProperties Schema
+            try:
+                self._properties = BackendProperties.from_dict(api_properties)
+            except ModelValidationError as ex:
+                self._properties = ex
 
         return self._properties
 
