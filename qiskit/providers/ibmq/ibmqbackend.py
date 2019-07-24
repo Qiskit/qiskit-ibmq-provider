@@ -337,7 +337,7 @@ class IBMQBackend(BaseBackend):
 class IBMQSimulator(IBMQBackend):
     """Backend class interfacing with an IBMQ simulator."""
 
-    def properties(self, refresh=False):
+    def properties(self, refresh=False, datetime_filter=None):
         """Return the online backend properties.
 
         Returns:
