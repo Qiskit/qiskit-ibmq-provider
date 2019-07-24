@@ -39,6 +39,7 @@ class Backend(RestAdapterBase):
 
     def properties(self, filter=None):
         """Return backend properties."""
+        # pylint: disable=redefined-builtin
         url = self.get_url('properties')
 
         params = {
