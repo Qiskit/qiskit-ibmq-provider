@@ -72,11 +72,9 @@ class TestBackendFilters(IBMQTestCase):
         """Test retrieving properties from backends filtered by date."""
         backends = provider.backends(simulator=False)
 
-        my_filter = {'last_update_date': {'lt': '2019-01-01T00:00:00.000'}}
-        filter_date = datetime.fromisoformat(my_filter['last_update_date']['lt'])
-
+        datetime_filter = datetime.fromisoformat('2019-05-01T00:00:00.000')
         for backend in backends:
             with self.subTest(backend=backend):
-                properties = backend.properties(db_filter=my_filter)
+                properties = backend.properties(datetime_filter=datetime_filter)
                 # TODO: Bottom line fails for 'ibmqx2' backend.
                 print("{} -> {}".format(backend, properties))

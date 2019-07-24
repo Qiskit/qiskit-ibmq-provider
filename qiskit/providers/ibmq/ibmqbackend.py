@@ -79,20 +79,24 @@ class IBMQBackend(BaseBackend):
         return job
 
     #TODO: Update docstring for db_filter
-    def properties(self, refresh=False, db_filter=None):
+    def properties(self, refresh=False, datetime_filter=None):
         """Return the online backend properties.
 
         Args:
             refresh (bool): if True, the return is via a QX API call.
                 Otherwise, a cached version is returned.
-            db_filter (dict):
+            datetime_filter (datetime.datetime):
 
         Returns:
             BackendProperties: The properties of the backend.
         """
         # pylint: disable=arguments-differ
+        api_filter = {}
+        if datetime_filter:
+            api_filter['last_update_date'] = {'lt': datetime_filter.isoformat()}
+
         if refresh or self._properties is None:
-            api_properties = self._api.backend_properties(self.name(), api_filter=db_filter)
+            api_properties = self._api.backend_properties(self.name(), extra_filter=api_filter)
             self._properties = BackendProperties.from_dict(api_properties)
 
         return self._properties

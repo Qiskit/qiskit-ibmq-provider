@@ -41,14 +41,14 @@ class Backend(RestAdapterBase):
         """Return backend properties."""
         url = self.get_url('properties')
 
-        query = {
+        params = {
             'version': 1
         }
         if filter:
             extra_filter = json.dumps({"where": filter})
-            query['filter'] = extra_filter
+            params['filter'] = extra_filter
 
-        response = self.session.get(url, params=query).json()
+        response = self.session.get(url, params=params).json()
 
         # Adjust name of the backend.
         if response:

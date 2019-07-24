@@ -64,7 +64,7 @@ class AccountClient(BaseClient):
         return self.client_api.backend(backend_name).status()
 
     #TODO: Update docstring for api_filter
-    def backend_properties(self, backend_name, api_filter=None):
+    def backend_properties(self, backend_name, extra_filter=None):
         """Return the properties of a backend.
 
         Args:
@@ -74,7 +74,7 @@ class AccountClient(BaseClient):
         Returns:
             dict: backend properties.
         """
-        return self.client_api.backend(backend_name).properties(filter=api_filter)
+        return self.client_api.backend(backend_name).properties(filter=extra_filter)
 
     def backend_pulse_defaults(self, backend_name):
         """Return the pulse defaults of a backend.
