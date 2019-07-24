@@ -175,3 +175,11 @@ jobs:
       script:
         # effectively increases timeout to 2h.
         - travis_wait 120 make test
+    - if: tag IS present
+      python: "3.6"
+      env:
+        - TWINE_USERNAME=qiskit
+      install: pip install -U twine
+      script:
+        - python3 setup.py sdist bdist_wheel
+        - twine upload dist/qiskit*
