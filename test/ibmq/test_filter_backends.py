@@ -72,7 +72,7 @@ class TestBackendFilters(IBMQTestCase):
         """Test retrieving properties from backends filtered by date."""
         backends = provider.backends(simulator=False)
 
-        datetime_filter = datetime.fromisoformat('2019-05-01T00:00:00.000')
+        datetime_filter = datetime.fromisoformat('2019-02-01T00:00:00.000')
         for backend in backends:
             with self.subTest(backend=backend):
                 properties = backend.properties(datetime_filter=datetime_filter)
