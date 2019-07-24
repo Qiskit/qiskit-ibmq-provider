@@ -14,8 +14,8 @@
 
 """Backend REST adapter for the IBM Q Experience v2 API."""
 
-from .base import RestAdapterBase
 import json
+from .base import RestAdapterBase
 
 
 class Backend(RestAdapterBase):

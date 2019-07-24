@@ -14,8 +14,8 @@
 
 """Backends Filtering Test."""
 
-from qiskit.providers.ibmq import least_busy
 from datetime import datetime
+from qiskit.providers.ibmq import least_busy
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
