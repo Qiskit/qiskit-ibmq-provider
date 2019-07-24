@@ -86,7 +86,7 @@ class IBMQBackend(BaseBackend):
         Args:
             refresh (bool): if True, the return is via a QX API call.
                 Otherwise, a cached version is returned.
-            datetime_filter (datetime.datetime):
+            datetime_filter (datetime.datetime): datetime to filter properties.
 
         Returns:
             BackendProperties: The properties of the backend.
@@ -98,7 +98,6 @@ class IBMQBackend(BaseBackend):
 
         if refresh or self._properties is None:
             api_properties = self._api.backend_properties(self.name(), extra_filter=api_filter)
-            # Todo: from_dict fails because it could map an empty dictionary to the BackendProperties Schema
             try:
                 self._properties = BackendProperties.from_dict(api_properties)
             except ModelValidationError as ex:

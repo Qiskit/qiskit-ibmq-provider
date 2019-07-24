@@ -69,7 +69,7 @@ class AccountClient(BaseClient):
 
         Args:
             backend_name (str): the name of the backend.
-            api_filter (dict):
+            extra_filter (dict): additional filtering passed to the query.
 
         Returns:
             dict: backend properties.
