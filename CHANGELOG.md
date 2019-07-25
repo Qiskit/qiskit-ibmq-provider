@@ -21,6 +21,9 @@ The format is based on [Keep a Changelog].
 - The `backend.jobs()` function now has a default `limit` of 10 results, and
   in the IBM Q Experience v2 will automatically perform several API calls in
   order to retrieve the specified number of jobs, if higher. (\#263)
+- The `backend.properties()` function now accepts an optional `datetime_filter` 
+  parameter. If specified, the function returns the backend properties closest 
+  to, but less than, the specified datetime filter.
 
 ### Fixed
 
