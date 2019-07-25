@@ -14,9 +14,7 @@
 
 """Backends Filtering Test."""
 
-from datetime import datetime
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.models.backendproperties import BackendProperties
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
@@ -56,17 +54,3 @@ class TestBackendFilters(IBMQTestCase):
         backends = provider.backends()
         filtered_backends = least_busy(backends)
         self.assertTrue(filtered_backends)
-
-    @requires_provider
-    def test_get_properties_filter_date(self, provider):
-        """Test retrieving properties from backends filtered by date."""
-        backends = provider.backends(simulator=False)
-
-        datetime_filter = datetime.fromisoformat('2019-02-01T00:00:00.000')
-        for backend in backends:
-            with self.subTest(backend=backend):
-                properties = backend.properties(datetime_filter=datetime_filter)
-                if isinstance(properties, BackendProperties):
-                    self.assertLess(properties.last_update_date, datetime_filter)
-                else:
-                    self.assertEqual(properties, None)

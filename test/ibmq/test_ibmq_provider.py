@@ -14,7 +14,7 @@
 
 
 """Tests for all IBMQ backends."""
-
+from datetime import datetime
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQProvider
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
@@ -24,6 +24,7 @@ from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator
 from qiskit.qobj import QobjHeader
 from qiskit.test import slow_test, providers
 from qiskit.compiler import assemble, transpile
+from qiskit.providers.models.backendproperties import BackendProperties
 
 from ..decorators import (requires_qe_access,
                           requires_classic_api,
@@ -90,6 +91,19 @@ class TestIBMQProvider(IBMQTestCase, providers.ProviderTestCase):
             properties = backend.properties()
             if backend.configuration().simulator:
                 self.assertEqual(properties, None)
+
+    def test_remote_backend_properties_filter_date(self):
+        """Test backend properties filtered by date."""
+        backends = self.provider.backends(simulator=False)
+
+        datetime_filter = datetime.fromisoformat('2019-02-01T00:00:00.000')
+        for backend in backends:
+            with self.subTest(backend=backend):
+                properties = backend.properties(datetime_filter=datetime_filter)
+                if isinstance(properties, BackendProperties):
+                    self.assertLess(properties.last_update_date, datetime_filter)
+                else:
+                    self.assertEqual(properties, None)
 
     def test_remote_backend_defaults(self):
         """Test backend pulse defaults."""
