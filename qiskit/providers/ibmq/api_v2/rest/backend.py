@@ -37,16 +37,22 @@ class Backend(RestAdapterBase):
         self.backend_name = backend_name
         super().__init__(session, '/devices/{}'.format(backend_name))
 
-    def properties(self, filter=None):
-        """Return backend properties."""
-        # pylint: disable=redefined-builtin
+    def properties(self, api_filter=None):
+        """Return backend properties.
+
+        Args:
+            api_filter (dict): additional filtering passed to the query.
+
+        Returns:
+            dict: json response of backend properties.
+        """
         url = self.get_url('properties')
 
         params = {
             'version': 1
         }
-        if filter:
-            extra_filter = json.dumps({"where": filter})
+        if api_filter:
+            extra_filter = json.dumps({"where": api_filter})
             params['filter'] = extra_filter
 
         response = self.session.get(url, params=params).json()

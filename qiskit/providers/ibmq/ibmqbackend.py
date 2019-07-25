@@ -79,14 +79,14 @@ class IBMQBackend(BaseBackend):
         return job
 
     def properties(self, refresh=False, datetime_filter=None):
-        """Return the online backend properties.
+        """Return the online backend properties with optional filtering.
 
         Args:
             refresh (bool): if True, the return is via a QX API call.
                 Otherwise, a cached version is returned.
-            datetime_filter (datetime.datetime): By specifying a filter,
+            datetime_filter (datetime.datetime): by specifying a filter,
                 this function returns an instance of the BackendProperties whose
-                timestamp is closest to, but less than the specified datetime
+                timestamp is closest to, but older than the specified datetime
                 filter.
 
         Returns:
@@ -99,7 +99,7 @@ class IBMQBackend(BaseBackend):
             api_filter['last_update_date'] = {'lt': datetime_filter.isoformat()}
 
         if refresh or self._properties is None:
-            api_properties = self._api.backend_properties(self.name(), extra_filter=api_filter)
+            api_properties = self._api.backend_properties(self.name(), api_filter=api_filter)
             if not api_properties:
                 self._properties = None
             else:
