@@ -14,7 +14,7 @@
 
 """Test for the Websocket client integration."""
 
-from unittest import mock, skip
+from unittest import mock
 from threading import Thread
 from queue import Queue
 
