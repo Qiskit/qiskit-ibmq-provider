@@ -22,7 +22,6 @@ from marshmallow import ValidationError
 from qiskit.providers import BaseBackend, JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults)
-from qiskit.validation.exceptions import ModelValidationError
 
 from .api import ApiError
 from .api_v2.clients import BaseClient
