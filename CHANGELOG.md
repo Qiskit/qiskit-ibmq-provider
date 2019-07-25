@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [UNRELEASED]
+
 ## [0.3.1] - 2019-07-23
 
 ### Changed
