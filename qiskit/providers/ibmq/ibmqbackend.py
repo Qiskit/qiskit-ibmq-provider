@@ -85,7 +85,10 @@ class IBMQBackend(BaseBackend):
         Args:
             refresh (bool): if True, the return is via a QX API call.
                 Otherwise, a cached version is returned.
-            datetime_filter (datetime.datetime): datetime to filter properties.
+            datetime_filter (datetime.datetime): By specifying a filter,
+                this function returns an instance of the BackendProperties whose
+                timestamp is closest to, but less than the specified datetime
+                filter.
 
         Returns:
             BackendProperties: The properties of the backend.
