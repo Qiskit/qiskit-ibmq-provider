@@ -91,7 +91,8 @@ class IBMQBackend(BaseBackend):
                 filter.
 
         Returns:
-            BackendProperties: The properties of the backend.
+            BackendProperties: The properties of the backend. If the backend has
+                no properties to display, it returns ``None``.
         """
         # pylint: disable=arguments-differ
         api_filter = {}
@@ -100,10 +101,10 @@ class IBMQBackend(BaseBackend):
 
         if refresh or self._properties is None:
             api_properties = self._api.backend_properties(self.name(), extra_filter=api_filter)
-            try:
+            if not api_properties:
+                self._properties = None
+            else:
                 self._properties = BackendProperties.from_dict(api_properties)
-            except ModelValidationError as ex:
-                self._properties = ex
 
         return self._properties
 
