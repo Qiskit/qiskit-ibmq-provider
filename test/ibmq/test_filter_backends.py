@@ -16,6 +16,7 @@
 
 from datetime import datetime
 from qiskit.providers.ibmq import least_busy
+from qiskit.providers.models.backendproperties import BackendProperties
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
@@ -76,5 +77,7 @@ class TestBackendFilters(IBMQTestCase):
         for backend in backends:
             with self.subTest(backend=backend):
                 properties = backend.properties(datetime_filter=datetime_filter)
-                # Todo: Insert test case. Consider case where ModelValidationError is thrown.
-                print("{} -> {}".format(backend, properties))
+                if isinstance(properties, BackendProperties):
+                    self.assertLess(properties.last_update_date, datetime_filter)
+                else:
+                    self.assertEqual(properties, None)
