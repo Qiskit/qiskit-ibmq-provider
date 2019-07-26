@@ -16,6 +16,7 @@
 
 import logging
 from collections import OrderedDict
+from types import SimpleNamespace
 
 from qiskit.providers import BaseProvider
 from qiskit.providers.models import (QasmBackendConfiguration,
@@ -54,6 +55,8 @@ class AccountProvider(BaseProvider):
         # Initialize the internal list of backends, lazy-loading it on first
         # access.
         self._backends = None
+
+        self.provider_backends = ProviderBackends(self)
 
     def backends(self, name=None, filters=None, **kwargs):
         """Return all backends accessible via this provider, subject to optional filtering.
@@ -151,3 +154,32 @@ class AccountProvider(BaseProvider):
 
         return "<{} for IBMQ({})>".format(
             self.__class__.__name__, credentials_info)
+
+
+class ProviderBackends(SimpleNamespace):
+    """Backend namespace for the provider"""
+
+    def __init__(self, provider):
+        """Creates a new ProviderBackends instance.
+
+        Args:
+            provider (AccountProvider): IBM Q Experience account provider
+        """
+        self._provider = provider
+        self._initialized = False
+        super().__init__()
+
+    def _discover_backends(self):
+        """Discovers the remote backends if not already known."""
+        if not self._initialized:
+            for backend in self._provider.backends():
+                setattr(self, backend.name(), backend)
+            self._initialized = True
+
+    def __dir__(self):
+        self._discover_backends()
+        return super().__dir__()
+
+    def __getattr__(self, item):
+        self._discover_backends()
+        return super().__getattribute__(item)
