@@ -68,8 +68,8 @@ class AccountClient(BaseClient):
 
         Args:
             backend_name (str): the name of the backend.
-            datetime (datetime.datetime): datetime to
-                filter backend properties.
+            datetime (datetime.datetime): datetime for
+                additional filtering of backend properties.
 
         Returns:
             dict: backend properties.

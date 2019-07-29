@@ -41,7 +41,8 @@ class Backend(RestAdapterBase):
         """Return backend properties.
 
         Args:
-            datetime (datetime.datetime): additional filtering passed to the query.
+            datetime (datetime.datetime): datetime used for
+                additional filtering passed to the query.
 
         Returns:
             dict: json response of backend properties.
