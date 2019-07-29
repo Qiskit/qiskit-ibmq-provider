@@ -99,9 +99,9 @@ class TestIBMQProvider(IBMQTestCase, providers.ProviderTestCase):
         datetime_filter = datetime.fromisoformat('2019-02-01T00:00:00.000')
         for backend in backends:
             with self.subTest(backend=backend):
-                properties = backend.properties(datetime_filter=datetime_filter)
+                properties = backend.properties(datetime=datetime_filter)
                 if isinstance(properties, BackendProperties):
-                    self.assertLess(properties.last_update_date, datetime_filter)
+                    self.assertLessEqual(properties.last_update_date, datetime_filter)
                 else:
                     self.assertEqual(properties, None)
 
