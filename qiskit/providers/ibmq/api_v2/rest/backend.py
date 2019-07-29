@@ -37,11 +37,11 @@ class Backend(RestAdapterBase):
         self.backend_name = backend_name
         super().__init__(session, '/devices/{}'.format(backend_name))
 
-    def properties(self, api_filter=None):
+    def properties(self, datetime=None):
         """Return backend properties.
 
         Args:
-            api_filter (dict): additional filtering passed to the query.
+            datetime (datetime.datetime): additional filtering passed to the query.
 
         Returns:
             dict: json response of backend properties.
@@ -51,9 +51,12 @@ class Backend(RestAdapterBase):
         params = {
             'version': 1
         }
-        if api_filter:
-            extra_filter = json.dumps({"where": api_filter})
-            params['filter'] = extra_filter
+
+        query = {}
+        if datetime:
+            extra_filter = {'last_update_date': {'lt': datetime.isoformat()}}
+            query['where'] = extra_filter
+            params['filter'] = json.dumps(query)
 
         response = self.session.get(url, params=params).json()
 

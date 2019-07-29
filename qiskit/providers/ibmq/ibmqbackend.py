@@ -78,28 +78,23 @@ class IBMQBackend(BaseBackend):
 
         return job
 
-    def properties(self, refresh=False, datetime_filter=None):
+    def properties(self, refresh=False, datetime=None):
         """Return the online backend properties with optional filtering.
 
         Args:
             refresh (bool): if True, the return is via a QX API call.
                 Otherwise, a cached version is returned.
-            datetime_filter (datetime.datetime): by specifying a filter,
+            datetime (datetime.datetime): by specifying a datetime,
                 this function returns an instance of the BackendProperties whose
-                timestamp is closest to, but older than the specified datetime
-                filter.
+                timestamp is closest to, but older than, the specified datetime.
 
         Returns:
             BackendProperties: The properties of the backend. If the backend has
                 no properties to display, it returns ``None``.
         """
         # pylint: disable=arguments-differ
-        api_filter = {}
-        if datetime_filter:
-            api_filter['last_update_date'] = {'lt': datetime_filter.isoformat()}
-
         if refresh or self._properties is None:
-            api_properties = self._api.backend_properties(self.name(), api_filter=api_filter)
+            api_properties = self._api.backend_properties(self.name(), datetime=datetime)
             if not api_properties:
                 self._properties = None
             else:

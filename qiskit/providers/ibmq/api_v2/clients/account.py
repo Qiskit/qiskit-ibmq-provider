@@ -63,23 +63,18 @@ class AccountClient(BaseClient):
         """
         return self.client_api.backend(backend_name).status()
 
-    def backend_properties(self, backend_name, api_filter=None):
+    def backend_properties(self, backend_name, datetime=None):
         """Return the properties of a backend.
 
         Args:
             backend_name (str): the name of the backend.
-            api_filter (dict): `loopback-based filter
-                <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
-                This is an interface to a database ``where`` filter. Some
-                examples of how ``extra_filter`` could be used are:
-
-                Filtering backend properties by date::
-                    api_filter = { 'last_update_date': {'lt': '2019-02-01T00:00:00.000'}}
+            datetime (datetime.datetime): datetime to
+                filter backend properties.
 
         Returns:
             dict: backend properties.
         """
-        return self.client_api.backend(backend_name).properties(api_filter=api_filter)
+        return self.client_api.backend(backend_name).properties(datetime=datetime)
 
     def backend_pulse_defaults(self, backend_name):
         """Return the pulse defaults of a backend.
