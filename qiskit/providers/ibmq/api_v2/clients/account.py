@@ -154,7 +154,12 @@ class AccountClient(BaseClient):
         download_url = job_api.download_url()['url']
 
         # Download the result from object storage.
-        return job_api.get_object_storage(download_url)
+        object_storage = job_api.get_object_storage(download_url)
+
+        # Notify the API via the callback
+        _ = job_api.callback_download()
+
+        return object_storage
 
     def job_result_object_storage(self, job_id):
         """Retrieve and return a result using object storage.
