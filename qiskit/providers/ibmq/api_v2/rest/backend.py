@@ -14,6 +14,7 @@
 
 """Backend REST adapter for the IBM Q Experience v2 API."""
 
+import json
 from .base import RestAdapterBase
 
 
@@ -36,10 +37,29 @@ class Backend(RestAdapterBase):
         self.backend_name = backend_name
         super().__init__(session, '/devices/{}'.format(backend_name))
 
-    def properties(self):
-        """Return backend properties."""
+    def properties(self, datetime=None):
+        """Return backend properties.
+
+        Args:
+            datetime (datetime.datetime): datetime used for
+                additional filtering passed to the query.
+
+        Returns:
+            dict: json response of backend properties.
+        """
         url = self.get_url('properties')
-        response = self.session.get(url, params={'version': 1}).json()
+
+        params = {
+            'version': 1
+        }
+
+        query = {}
+        if datetime:
+            extra_filter = {'last_update_date': {'lt': datetime.isoformat()}}
+            query['where'] = extra_filter
+            params['filter'] = json.dumps(query)
+
+        response = self.session.get(url, params=params).json()
 
         # Adjust name of the backend.
         if response:

@@ -78,17 +78,28 @@ class IBMQBackend(BaseBackend):
 
         return job
 
-    def properties(self, refresh=False):
-        """Return the online backend properties.
+    def properties(self, refresh=False, datetime=None):
+        """Return the online backend properties with optional filtering.
 
         Args:
             refresh (bool): if True, the return is via a QX API call.
                 Otherwise, a cached version is returned.
+            datetime (datetime.datetime): by specifying a datetime,
+                this function returns an instance of the BackendProperties whose
+                timestamp is closest to, but older than, the specified datetime.
 
         Returns:
-            BackendProperties: The properties of the backend.
+            BackendProperties: The properties of the backend. If the backend has
+                no properties to display, it returns ``None``.
         """
         # pylint: disable=arguments-differ
+        if datetime:
+            # Do not use cache for specific datetime properties.
+            api_properties = self._api.backend_properties(self.name(), datetime=datetime)
+            if not api_properties:
+                return None
+            return BackendProperties.from_dict(api_properties)
+
         if refresh or self._properties is None:
             api_properties = self._api.backend_properties(self.name())
             self._properties = BackendProperties.from_dict(api_properties)
@@ -327,7 +338,7 @@ class IBMQBackend(BaseBackend):
 class IBMQSimulator(IBMQBackend):
     """Backend class interfacing with an IBMQ simulator."""
 
-    def properties(self, refresh=False):
+    def properties(self, refresh=False, datetime=None):
         """Return the online backend properties.
 
         Returns:
