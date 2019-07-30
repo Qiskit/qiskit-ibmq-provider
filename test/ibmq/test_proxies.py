@@ -15,20 +15,16 @@
 """Tests for the AuthClient and VersionClient proxy support."""
 
 
-from unittest import skipIf
-import urllib
 import subprocess
-import sys
+import urllib
 
 from requests.exceptions import ProxyError
 
 from qiskit.providers.ibmq.api_v2.clients import (AuthClient,
                                                   VersionClient)
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
-
-from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_qe_access, requires_new_api_auth
-
+from ..ibmqtestcase import IBMQTestCase
 
 ADDRESS = '127.0.0.1'
 PORT = 8080
