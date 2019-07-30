@@ -37,7 +37,6 @@ INVALID_PORT_PROXIES = {'https': '{}:{}'.format(ADDRESS, '6666')}
 INVALID_ADDRESS_PROXIES = {'https': '{}:{}'.format('invalid', PORT)}
 
 
-@skipIf(sys.version_info >= (3, 7), 'pproxy version not supported in 3.7')
 class TestProxies(IBMQTestCase):
     """Tests for proxy capabilities."""
 
@@ -45,7 +44,7 @@ class TestProxies(IBMQTestCase):
         super().setUp()
 
         # launch a mock server.
-        command = ['pproxy', '-v', '-i', 'http://{}:{}'.format(ADDRESS, PORT)]
+        command = ['pproxy', '-v', '-l', 'http://{}:{}'.format(ADDRESS, PORT)]
         self.proxy_process = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     def tearDown(self):
@@ -135,4 +134,4 @@ def pproxy_desired_access_log_line(url):
     """Return a desired pproxy log entry given a url."""
     qe_url_parts = urllib.parse.urlparse(url)
     protocol_port = '443' if qe_url_parts.scheme == 'https' else '80'
-    return 'http {}:{}'.format(qe_url_parts.hostname, protocol_port)
+    return '{}:{}'.format(qe_url_parts.hostname, protocol_port)
