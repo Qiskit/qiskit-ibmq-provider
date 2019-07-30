@@ -78,17 +78,28 @@ class IBMQBackend(BaseBackend):
 
         return job
 
-    def properties(self, refresh=False):
-        """Return the online backend properties.
+    def properties(self, refresh=False, datetime=None):
+        """Return the online backend properties with optional filtering.
 
         Args:
             refresh (bool): if True, the return is via a QX API call.
                 Otherwise, a cached version is returned.
+            datetime (datetime.datetime): by specifying a datetime,
+                this function returns an instance of the BackendProperties whose
+                timestamp is closest to, but older than, the specified datetime.
 
         Returns:
-            BackendProperties: The properties of the backend.
+            BackendProperties: The properties of the backend. If the backend has
+                no properties to display, it returns ``None``.
         """
         # pylint: disable=arguments-differ
+        if datetime:
+            # Do not use cache for specific datetime properties.
+            api_properties = self._api.backend_properties(self.name(), datetime=datetime)
+            if not api_properties:
+                return None
+            return BackendProperties.from_dict(api_properties)
+
         if refresh or self._properties is None:
             api_properties = self._api.backend_properties(self.name())
             self._properties = BackendProperties.from_dict(api_properties)
@@ -136,20 +147,21 @@ class IBMQBackend(BaseBackend):
 
         return self._defaults
 
-    def jobs(self, limit=50, skip=0, status=None, db_filter=None):
+    def jobs(self, limit=10, skip=0, status=None, db_filter=None):
         """Return the jobs submitted to this backend.
 
         Return the jobs submitted to this backend, with optional filtering and
-        pagination. Note that jobs submitted with earlier versions of Qiskit
+        pagination. Note that the API has a limit for the number of jobs
+        returned in a single call, and this function might involve making
+        several calls to the API. See also the `skip` parameter for more control
+        over pagination.
+
+        Note that jobs submitted with earlier versions of Qiskit
         (in particular, those that predate the Qobj format) are not included
         in the returned list.
 
         Args:
-            limit (int): number of jobs to retrieve. Note that the limit
-                specified can be overridden by limits set by the API for
-                performance reasons, and might result in fewer jobs being
-                returned. In those cases, the `skip` parameter can be used
-                for pagination.
+            limit (int): number of jobs to retrieve.
             skip (int): starting index for the job retrieval.
             status (None or qiskit.providers.JobStatus or str): only get jobs
                 with this status, where status is e.g. `JobStatus.RUNNING` or
@@ -183,6 +195,7 @@ class IBMQBackend(BaseBackend):
         Raises:
             IBMQBackendValueError: status keyword value unrecognized
         """
+        # Build the filter for the query.
         backend_name = self.name()
         api_filter = {'backend.name': backend_name}
         if status:
@@ -207,10 +220,32 @@ class IBMQBackend(BaseBackend):
         if db_filter:
             # status takes precedence over db_filter for same keys
             api_filter = {**db_filter, **api_filter}
-        job_info_list = self._api.get_status_jobs(limit=limit, skip=skip,
-                                                  filter=api_filter)
+
+        # Retrieve the requested number of jobs, using pagination. The API
+        # might limit the number of jobs per request.
+        job_responses = []
+        current_page_limit = limit
+
+        while True:
+            job_page = self._api.get_status_jobs(limit=current_page_limit,
+                                                 skip=skip, filter=api_filter)
+            job_responses += job_page
+            skip = skip + len(job_page)
+
+            if not job_page:
+                # Stop if there are no more jobs returned by the API.
+                break
+
+            if limit:
+                if len(job_responses) >= limit:
+                    # Stop if we have reached the limit.
+                    break
+                current_page_limit = limit - len(job_responses)
+            else:
+                current_page_limit = 0
+
         job_list = []
-        for job_info in job_info_list:
+        for job_info in job_responses:
             kwargs = {}
             try:
                 job_kind = ApiJobKind(job_info.get('kind', None))
@@ -303,7 +338,7 @@ class IBMQBackend(BaseBackend):
 class IBMQSimulator(IBMQBackend):
     """Backend class interfacing with an IBMQ simulator."""
 
-    def properties(self, refresh=False):
+    def properties(self, refresh=False, datetime=None):
         """Return the online backend properties.
 
         Returns:

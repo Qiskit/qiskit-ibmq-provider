@@ -86,7 +86,10 @@ class IBMQFactory:
         if not version_info['new_api']:
             warnings.warn(
                 'Using IBM Q Experience v1 credentials is being deprecated. '
-                'Please use IBM Q Experience v2 credentials instead.',
+                'Please use IBM Q Experience v2 credentials instead. '
+                'You can find the instructions to make the updates here:\n'
+                'https://github.com/Qiskit/qiskit-ibmq-provider#'
+                'updating-to-the-new-ibm-q-experience',
                 DeprecationWarning)
             self._v1_provider.enable_account(token, url, **kwargs)
             return self._v1_provider
@@ -208,9 +211,11 @@ class IBMQFactory:
         if url != QX_AUTH_URL:
             warnings.warn(
                 'IBM Q Experience v1 credentials are being deprecated. Please '
-                'use IBM Q Experience v2 credentials instead. You can use '
-                'IBMQ.update_account() to update your stored credentials, '
-                'if applicable.', DeprecationWarning)
+                'use IBM Q Experience v2 credentials instead. '
+                'You can find the instructions to make the updates here:\n'
+                'https://github.com/Qiskit/qiskit-ibmq-provider#'
+                'updating-to-the-new-ibm-q-experience',
+                DeprecationWarning)
 
         credentials = Credentials(token, url, **kwargs)
 
@@ -439,6 +444,9 @@ class IBMQFactory:
     def load_accounts(self, **kwargs):
         """Load IBM Q Experience v1 accounts found in the system into current session.
 
+        Will also load v2 accounts for backward compatibility, but can lead to
+        issues if mixing v1 and v2 credentials in other method calls.
+
         Note: this method is being deprecated, and only available when using
             v1 accounts.
 
@@ -451,23 +459,31 @@ class IBMQFactory:
         3. in the `qiskitrc` configuration file
 
         Raises:
-            IBMQAccountError: if the method is used with an IBM Q Experience v2
-                account, or if no credentials are found.
-            IBMQApiUrlError: if any of the credentials stored belong to a v2 account.
+            IBMQAccountError: If mixing v1 and v2 account credentials
         """
-        # Check if any stored credentials are from API v2.
+        version_counter = 0
         for credentials in discover_credentials().values():
             # Explicitly check via an API call, to prevent credentials that
             # contain API 2 URL (but not auth) slipping through.
             version_info = self._check_api_version(credentials)
-            if version_info['new_api']:
-                raise IBMQApiUrlError(
-                    'Credentials for an IBM Q Experience v2 account have been '
-                    'found. Please use IBMQ.load_account() (note the singular form) '
-                    'instead. You can use IBMQ.update_account() to update '
-                    'your stored credentials.')
+            version_counter += int(version_info['new_api'])
 
-        self._v1_provider.load_accounts(**kwargs)
+        # Check if mixing v1 and v2 credentials
+        if version_counter != 0 and version_counter < len(discover_credentials().values()):
+            raise IBMQAccountError('Can not mix API v1 and v2'
+                                   'credentials.')
+
+        # If calling using API v2 credentials
+        if version_counter:
+            warnings.warn(
+                'Calling IBMQ.load_accounts() with v2 credentials. '
+                'This is provided for backwards compatibility '
+                'and may lead to unexpected behaviour when mixing '
+                'v1 and v2 account credentials.', DeprecationWarning)
+            self.load_account()
+        else:
+            # Old API v1 call
+            self._v1_provider.load_accounts(**kwargs)
 
     @deprecated
     def delete_accounts(self, **kwargs):

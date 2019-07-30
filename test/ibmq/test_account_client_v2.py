@@ -22,6 +22,7 @@ from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.api_v2.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api_v2.exceptions import ApiError, RequestsApiError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
+from qiskit.providers.jobstatus import JobStatus
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_new_api_auth, requires_qe_access
@@ -188,7 +189,6 @@ class TestAccountClient(IBMQTestCase):
 
         self.assertEqual(provider_backends, api_backends)
 
-    @skip('TODO: reenable after api changes')
     def test_job_cancel(self):
         """Test canceling a job."""
         backend_name = 'ibmq_qasm_simulator'
@@ -200,12 +200,21 @@ class TestAccountClient(IBMQTestCase):
         job = backend.run(qobj)
         job_id = job.job_id()
 
-        try:
-            api.job_cancel(job_id)
-        except RequestsApiError as ex:
-            # TODO: rewrite using assert
-            if all(err not in str(ex) for err in ['JOB_NOT_RUNNING', 'JOB_NOT_CANCELLED']):
-                raise
+        max_retry = 2
+        for _ in range(max_retry):
+            try:
+                api.job_cancel(job_id)
+                self.assertEqual(job.status(), JobStatus.CANCELLED)
+                break
+            except RequestsApiError as ex:
+                if 'JOB_NOT_RUNNING' in str(ex):
+                    self.assertEqual(job.status(), JobStatus.DONE)
+                    break
+                else:
+                    # We may hit the JOB_NOT_CANCELLED error if the job is
+                    # in a temporary, noncancellable state. In this case we'll
+                    # just retry.
+                    self.assertIn('JOB_NOT_CANCELLED', str(ex))
 
 
 class TestAccountClientJobs(IBMQTestCase):
@@ -331,13 +340,18 @@ class TestAccountClientJobs(IBMQTestCase):
 
     def test_list_jobs_statuses_skip(self):
         """Test listing job statuses with an offset."""
-        jobs_raw = self.client.list_jobs_statuses(limit=1, skip=1)
-        self.assertEqual(len(jobs_raw), 1)
+        jobs_raw = self.client.list_jobs_statuses(limit=1, skip=1, extra_filter={
+            'creationDate': {'lte': self.job['creationDate']}})
+
+        # Ensure our job is skipped
+        for job in jobs_raw:
+            self.assertNotEqual(job['id'], self.job_id)
 
     def test_list_jobs_statuses_filter(self):
         """Test listing job statuses with a filter."""
         jobs_raw = self.client.list_jobs_statuses(extra_filter={'id': self.job_id})
         self.assertEqual(len(jobs_raw), 1)
+        self.assertEqual(jobs_raw[0]['id'], self.job_id)
 
 
 class TestAuthClient(IBMQTestCase):
