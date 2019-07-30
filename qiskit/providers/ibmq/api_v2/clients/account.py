@@ -63,16 +63,18 @@ class AccountClient(BaseClient):
         """
         return self.client_api.backend(backend_name).status()
 
-    def backend_properties(self, backend_name):
+    def backend_properties(self, backend_name, datetime=None):
         """Return the properties of a backend.
 
         Args:
             backend_name (str): the name of the backend.
+            datetime (datetime.datetime): datetime for
+                additional filtering of backend properties.
 
         Returns:
             dict: backend properties.
         """
-        return self.client_api.backend(backend_name).properties()
+        return self.client_api.backend(backend_name).properties(datetime=datetime)
 
     def backend_pulse_defaults(self, backend_name):
         """Return the pulse defaults of a backend.
