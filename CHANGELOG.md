@@ -18,9 +18,9 @@ The format is based on [Keep a Changelog].
 
 ### Changed
 
-- The `backend.properties()` function now accepts an optional `datetime_filter` 
+- The `backend.properties()` function now accepts an optional `datetime` 
   parameter. If specified, the function returns the backend properties closest 
-  to, but less than, the specified datetime filter (\#277).
+  to, but older than, the specified datetime filter (\#277).
 
 ## [0.3.1] - 2019-07-23
 
