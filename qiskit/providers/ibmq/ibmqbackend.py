@@ -93,18 +93,16 @@ class IBMQBackend(BaseBackend):
                 no properties to display, it returns ``None``.
         """
         # pylint: disable=arguments-differ
-        if refresh or datetime or self._properties is None:
+        if datetime:
+            # Do not use cache for specific datetime properties.
             api_properties = self._api.backend_properties(self.name(), datetime=datetime)
             if not api_properties:
-                # There are no configurations for the backend.
                 return None
+            return BackendProperties.from_dict(api_properties)
 
-            backend_properties = BackendProperties.from_dict(api_properties)
-            if datetime:
-                # Do not cache datetime results.
-                return backend_properties
-            else:
-                self._properties = backend_properties
+        if refresh or self._properties is None:
+            api_properties = self._api.backend_properties(self.name())
+            self._properties = BackendProperties.from_dict(api_properties)
 
         return self._properties
 
