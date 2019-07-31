@@ -18,6 +18,7 @@
 import subprocess
 import urllib
 from sys import version_info as python_version
+from unittest import skipIf
 
 from requests.exceptions import ProxyError
 
@@ -34,6 +35,7 @@ INVALID_PORT_PROXIES = {'https': '{}:{}'.format(ADDRESS, '6666')}
 INVALID_ADDRESS_PROXIES = {'https': '{}:{}'.format('invalid', PORT)}
 
 
+@skipIf(python_version < (2, 7), 'pproxy is supported only on or above python 2.7')
 class TestProxies(IBMQTestCase):
     """Tests for proxy capabilities."""
 
