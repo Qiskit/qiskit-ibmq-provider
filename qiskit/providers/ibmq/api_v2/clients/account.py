@@ -16,11 +16,10 @@
 
 import asyncio
 
-from ..rest import Api
-from ..session import RetrySession
-
 from .base import BaseClient
 from .websocket import WebsocketClient
+from ..rest import Api
+from ..session import RetrySession
 
 
 class AccountClient(BaseClient):
@@ -154,12 +153,12 @@ class AccountClient(BaseClient):
         download_url = job_api.download_url()['url']
 
         # Download the result from object storage.
-        object_storage = job_api.get_object_storage(download_url)
+        qobj_payload = job_api.get_object_storage(download_url)
 
         # Notify the API via the callback
         _ = job_api.callback_download()
 
-        return object_storage
+        return qobj_payload
 
     def job_result_object_storage(self, job_id):
         """Retrieve and return a result using object storage.
