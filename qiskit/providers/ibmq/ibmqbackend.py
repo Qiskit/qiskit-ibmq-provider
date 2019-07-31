@@ -98,6 +98,7 @@ class IBMQBackend(BaseBackend):
                 warnings.warn('Retrieving the properties of a '
                               'backend in a specific datetime is '
                               'only available when using IBM Q v2')
+                return None
 
             # Do not use cache for specific datetime properties.
             api_properties = self._api.backend_properties(self.name(), datetime=datetime)
