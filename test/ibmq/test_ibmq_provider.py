@@ -92,20 +92,6 @@ class TestIBMQProvider(IBMQTestCase, providers.ProviderTestCase):
             if backend.configuration().simulator:
                 self.assertEqual(properties, None)
 
-    def test_remote_backend_properties_filter_date(self):
-        """Test backend properties filtered by date."""
-        backends = self.provider.backends(simulator=False)
-
-        datetime_filter = datetime(2019, 2, 1).replace(tzinfo=None)
-        for backend in backends:
-            with self.subTest(backend=backend):
-                properties = backend.properties(datetime=datetime_filter)
-                if isinstance(properties, BackendProperties):
-                    last_update_date = properties.last_update_date.replace(tzinfo=None)
-                    self.assertLessEqual(last_update_date, datetime_filter)
-                else:
-                    self.assertEqual(properties, None)
-
     def test_remote_backend_defaults(self):
         """Test backend pulse defaults."""
         remotes = self.provider.backends(simulator=False)
@@ -190,3 +176,17 @@ class TestAccountProvider(TestIBMQProvider):
         # pylint: disable=arguments-differ
         ibmq = IBMQFactory()
         return ibmq.enable_account(qe_token, qe_url)
+
+    def test_remote_backend_properties_filter_date(self):
+        """Test backend properties filtered by date."""
+        backends = self.provider.backends(simulator=False)
+
+        datetime_filter = datetime(2019, 2, 1).replace(tzinfo=None)
+        for backend in backends:
+            with self.subTest(backend=backend):
+                properties = backend.properties(datetime=datetime_filter)
+                if isinstance(properties, BackendProperties):
+                    last_update_date = properties.last_update_date.replace(tzinfo=None)
+                    self.assertLessEqual(last_update_date, datetime_filter)
+                else:
+                    self.assertEqual(properties, None)
