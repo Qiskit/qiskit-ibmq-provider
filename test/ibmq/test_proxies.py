@@ -14,7 +14,7 @@
 
 """Tests for the AuthClient and VersionClient proxy support."""
 
-from pproxy.__doc__ import __version__ as pproxy_version
+
 from unittest import skipIf
 import urllib
 import subprocess
@@ -27,6 +27,12 @@ from qiskit.providers.ibmq.api_v2.clients import (AuthClient,
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_qe_access, requires_new_api_auth
+
+""" Fallback mechanism. Version variable is stored under __doc__ in new pproxy versions"""
+try:
+    from pproxy.__doc__ import __version__ as pproxy_version
+except ImportError:
+    from pproxy import __version__ as pproxy_version
 
 ADDRESS = '127.0.0.1'
 PORT = 8080
