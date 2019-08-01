@@ -42,7 +42,8 @@ INVALID_ADDRESS_PROXIES = {'https': '{}:{}'.format('invalid', PORT)}
 
 
 @skipIf((sys.version_info > (3, 5) and pproxy_version == '1.2.2') or
-        (sys.version_info == (3, 5) and pproxy_version > '1.2.2'), 'pproxy version is not supported')
+        (sys.version_info == (3, 5) and pproxy_version > '1.2.2'),
+        'pproxy version is not supported')
 class TestProxies(IBMQTestCase):
     """Tests for proxy capabilities."""
 
