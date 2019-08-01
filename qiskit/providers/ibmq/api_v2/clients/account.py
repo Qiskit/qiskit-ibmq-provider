@@ -16,10 +16,11 @@
 
 import asyncio
 
-from .base import BaseClient
-from .websocket import WebsocketClient
 from ..rest import Api
 from ..session import RetrySession
+
+from .base import BaseClient
+from .websocket import WebsocketClient
 
 
 class AccountClient(BaseClient):
