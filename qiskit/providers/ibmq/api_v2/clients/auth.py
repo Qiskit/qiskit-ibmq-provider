@@ -13,6 +13,7 @@
 # that they have been altered from the originals.
 
 """Client for accessing authentication features of IBM Q Experience."""
+from typing import Dict, List
 
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
 from ..rest import Api, Auth
@@ -20,11 +21,15 @@ from ..session import RetrySession
 
 from .base import BaseClient
 
+# Type aliases for type hints.
+Hubs = List[Dict[str, str]]
+ServiceUrls = Dict[str, str]
+
 
 class AuthClient(BaseClient):
     """Client for accessing authentication features of IBM Q Experience."""
 
-    def __init__(self, api_token, auth_url, **request_kwargs):
+    def __init__(self, api_token: str, auth_url: str, **request_kwargs: Dict) -> None:
         """AuthClient constructor.
 
         Args:
@@ -34,12 +39,12 @@ class AuthClient(BaseClient):
         """
         self.api_token = api_token
         self.auth_url = auth_url
-        self._service_urls = {}
+        self._service_urls = {} # type: ServiceUrls
 
         self.client_auth = Auth(RetrySession(auth_url, **request_kwargs))
         self.client_api = self._init_service_clients(**request_kwargs)
 
-    def _init_service_clients(self, **request_kwargs):
+    def _init_service_clients(self, **request_kwargs: Dict) -> Api:
         """Initialize the clients used for communicating with the API and ws.
 
         Args:
@@ -60,7 +65,7 @@ class AuthClient(BaseClient):
 
         return client_api
 
-    def _request_access_token(self):
+    def _request_access_token(self) -> str:
         """Request a new access token from the API authentication server.
 
         Returns:
@@ -88,7 +93,7 @@ class AuthClient(BaseClient):
 
     # User account-related public functions.
 
-    def user_urls(self):
+    def user_urls(self) -> Dict[str, str]:
         """Retrieve the API URLs from the authentication server.
 
         Returns:
@@ -100,7 +105,7 @@ class AuthClient(BaseClient):
         response = self.client_auth.user_info()
         return response['urls']
 
-    def user_hubs(self):
+    def user_hubs(self) -> Hubs:
         """Retrieve the hubs available to the user.
 
         The first entry in the list will be the default one, as indicated by
@@ -112,7 +117,7 @@ class AuthClient(BaseClient):
         """
         response = self.client_api.hubs()
 
-        hubs = []
+        hubs = [] # type: Hubs
         for hub in response:
             hub_name = hub['name']
             for group_name, group in hub['groups'].items():
@@ -131,7 +136,7 @@ class AuthClient(BaseClient):
 
     # Miscellaneous public functions.
 
-    def api_version(self):
+    def api_version(self) -> Dict[str, str]:
         """Return the version of the API.
 
         Returns:
@@ -139,7 +144,7 @@ class AuthClient(BaseClient):
         """
         return self.client_api.version()
 
-    def current_access_token(self):
+    def current_access_token(self) -> str:
         """Return the current access token.
 
         Returns:
@@ -147,7 +152,7 @@ class AuthClient(BaseClient):
         """
         return self.client_auth.session.access_token
 
-    def current_service_urls(self):
+    def current_service_urls(self) -> ServiceUrls:
         """Return the current service URLs.
 
         Returns:
