@@ -94,6 +94,12 @@ class IBMQBackend(BaseBackend):
         """
         # pylint: disable=arguments-differ
         if datetime:
+            if not isinstance(self._api, BaseClient):
+                warnings.warn('Retrieving the properties of a '
+                              'backend in a specific datetime is '
+                              'only available when using IBM Q v2')
+                return None
+
             # Do not use cache for specific datetime properties.
             api_properties = self._api.backend_properties(self.name(), datetime=datetime)
             if not api_properties:
