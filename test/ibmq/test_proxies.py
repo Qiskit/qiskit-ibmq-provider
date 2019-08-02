@@ -28,7 +28,7 @@ from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_qe_access, requires_new_api_auth
 
-""" Fallback mechanism. Version variable is stored under __doc__ in new pproxy versions"""
+# Fallback mechanism. Version variable is stored under __doc__ in new pproxy versions
 try:
     from pproxy.__doc__ import __version__ as pproxy_version
 except ImportError:
