@@ -18,7 +18,7 @@ import asyncio
 
 from typing import List, Dict, Union, Any
 # Disabled unused-import because datetime is used only for type hints.
-from datetime import datetime # pylint: disable=unused-import
+from datetime import datetime  # pylint: disable=unused-import
 
 from ..rest import Api
 from ..session import RetrySession
