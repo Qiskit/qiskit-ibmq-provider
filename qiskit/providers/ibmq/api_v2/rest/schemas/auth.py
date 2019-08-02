@@ -45,7 +45,7 @@ class UserSchema(BaseSchema):
     """Schema for User."""
 
     # Required properties.
-    urls = Dict(Url())
+    urls = Dict(Url(), required=True)
 
 
 @bind_schema(UserSchema)
