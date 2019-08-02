@@ -154,12 +154,7 @@ class AccountClient(BaseClient):
         download_url = job_api.download_url()['url']
 
         # Download the result from object storage.
-        qobj_payload = job_api.get_object_storage(download_url)
-
-        # Notify the API via the callback
-        _ = job_api.callback_download()
-
-        return qobj_payload
+        return job_api.get_object_storage(download_url)
 
     def job_result_object_storage(self, job_id):
         """Retrieve and return a result using object storage.
@@ -176,7 +171,13 @@ class AccountClient(BaseClient):
         download_url = job_api.result_url()['url']
 
         # Download the result from object storage.
-        return job_api.get_object_storage(download_url)
+        qobj_payload = job_api.get_object_storage(download_url)
+
+        # Notify the API via the callback
+        _ = job_api.callback_download()
+
+        return qobj_payload
+
 
     def job_get(self, job_id, excluded_fields=None, included_fields=None):
         """Return information about a job.
