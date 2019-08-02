@@ -178,7 +178,6 @@ class AccountClient(BaseClient):
 
         return qobj_payload
 
-
     def job_get(self, job_id, excluded_fields=None, included_fields=None):
         """Return information about a job.
 
