@@ -16,7 +16,7 @@
 
 import asyncio
 
-from typing import List, Dict, Union, Any
+from typing import List, Dict, Any
 # Disabled unused-import because datetime is used only for type hints.
 from datetime import datetime  # pylint: disable=unused-import
 
@@ -27,8 +27,6 @@ from .base import BaseClient
 from .websocket import WebsocketClient
 
 # Type aliases for type hints.
-QobjDict = Dict[str, Union[str, List[Dict[str, Any]], Dict[str, Any]]]
-JobStatus = Dict[str, str]
 
 
 class AccountClient(BaseClient):
@@ -66,7 +64,7 @@ class AccountClient(BaseClient):
         """
         return self.client_api.backends()
 
-    def backend_status(self, backend_name: str) -> Dict[str, Union[str, int, bool]]:
+    def backend_status(self, backend_name: str) -> Dict[str, Any]:
         """Return the status of a backend.
 
         Args:
@@ -81,7 +79,7 @@ class AccountClient(BaseClient):
             self,
             backend_name: str,
             datetime: datetime = None
-    ) -> Dict[str, Union[str, List[Dict]]]:
+    ) -> Dict[str, Any]:
         """Return the properties of a backend.
 
         Args:
@@ -112,8 +110,8 @@ class AccountClient(BaseClient):
             self,
             limit: int = 10,
             skip: int = 0,
-            extra_filter: Dict[str, Union[str, Dict[str, str]]] = None
-    ) -> List[Dict[str, str]]:
+            extra_filter: Dict[str, Any] = None
+    ) -> List[Dict[str, Any]]:
         """Return a list of statuses of jobs, with filtering and pagination.
 
         Args:
@@ -127,7 +125,7 @@ class AccountClient(BaseClient):
         return self.client_api.jobs(limit=limit, skip=skip,
                                     extra_filter=extra_filter)
 
-    def job_submit(self, backend_name: str, qobj_dict: QobjDict) -> Dict[str, Any]:
+    def job_submit(self, backend_name: str, qobj_dict: Dict[str, Any]) -> Dict[str, Any]:
         """Submit a Qobj to a device.
 
         Args:
@@ -139,7 +137,7 @@ class AccountClient(BaseClient):
         """
         return self.client_api.submit_job(backend_name, qobj_dict)
 
-    def job_submit_object_storage(self, backend_name: str, qobj_dict: QobjDict) -> Dict:
+    def job_submit_object_storage(self, backend_name: str, qobj_dict: Dict[str, Any]) -> Dict:
         """Submit a Qobj to a device using object storage.
 
         Args:
@@ -218,7 +216,7 @@ class AccountClient(BaseClient):
         return self.client_api.job(job_id).get(excluded_fields,
                                                included_fields)
 
-    def job_status(self, job_id: str) -> JobStatus:
+    def job_status(self, job_id: str) -> Dict[str, Any]:
         """Return the status of a job.
 
         Args:
@@ -229,7 +227,7 @@ class AccountClient(BaseClient):
         """
         return self.client_api.job(job_id).status()
 
-    def job_final_status_websocket(self, job_id: str, timeout: float = None) -> JobStatus:
+    def job_final_status_websocket(self, job_id: str, timeout: float = None) -> Dict[str, Any]:
         """Return the final status of a job via websocket.
 
         Args:
@@ -268,7 +266,7 @@ class AccountClient(BaseClient):
         """
         return self.client_api.job(job_id).properties()
 
-    def job_cancel(self, job_id: str) -> Dict[str, bool]:
+    def job_cancel(self, job_id: str) -> Dict[str, Any]:
         """Submit a request for cancelling a job.
 
         Args:
