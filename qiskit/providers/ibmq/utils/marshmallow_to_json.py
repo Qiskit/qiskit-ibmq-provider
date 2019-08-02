@@ -172,9 +172,10 @@ def main():
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s')
 
     parser = argparse.ArgumentParser(
-        description="This script converts Marshmallow schema(s) "
-                    "to JSON schema(s). It accepts a full path to a python file "
-                    "that contains Marshmallow schema(s), and generates JSON schema files.",
+        description="This script converts Marshmallow schema(s) to JSON schema(s)."
+                    "It accepts a full path to a python file or a directory with "
+                    "python files that contain Marshmallow schema(s), and "
+                    "generates corresponding JSON schema(s).",
         formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument("--schema", required=False, type=str,
@@ -188,7 +189,7 @@ def main():
     # Required arguments
     parser.add_argument("path", action=PathAction,
                         help="Path to a python file containing at least one Marshmallow schema "
-                             "OR Path to a directory that contains python files with "
+                             "OR path to a directory that contains python files with "
                              "at least one Marshmallow schema""")
 
     args = parser.parse_args()
