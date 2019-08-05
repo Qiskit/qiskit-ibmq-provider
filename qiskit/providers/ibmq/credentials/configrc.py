@@ -19,7 +19,7 @@ import os
 from ast import literal_eval
 from collections import OrderedDict
 from configparser import ConfigParser, ParsingError
-from typing import Dict, Union
+from typing import Dict, Optional
 
 from .credentials import Credentials, HubGroupProject
 from .exceptions import CredentialsError
@@ -29,7 +29,7 @@ DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
 
 
 def read_credentials_from_qiskitrc(
-        filename: Union[str, None] = None
+        filename: Optional[str] = None
 ) -> Dict[HubGroupProject, Credentials]:
     """Read a configuration file and return a dict with its sections.
 
@@ -75,7 +75,7 @@ def read_credentials_from_qiskitrc(
 
 def write_qiskit_rc(
         credentials: Dict[HubGroupProject, Credentials],
-        filename: Union[str, None] = None
+        filename: Optional[str] = None
 ) -> None:
     """Write credentials to the configuration file.
 
@@ -120,7 +120,7 @@ def write_qiskit_rc(
 def store_credentials(
         credentials: Credentials,
         overwrite: bool = False,
-        filename: Union[str, None] = None
+        filename: Optional[str] = None
 ) -> None:
     """Store the credentials for a single account in the configuration file.
 
@@ -146,7 +146,10 @@ def store_credentials(
     write_qiskit_rc(stored_credentials, filename)
 
 
-def remove_credentials(credentials: Credentials, filename: Union[str, None] = None) -> None:
+def remove_credentials(
+        credentials: Credentials,
+        filename: Optional[str] = None
+) -> None:
     """Remove credentials from qiskitrc.
 
     Args:
