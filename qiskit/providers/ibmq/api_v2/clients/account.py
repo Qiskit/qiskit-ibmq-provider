@@ -197,10 +197,12 @@ class AccountClient(BaseClient):
         # Download the result from object storage.
         return job_api.get_object_storage(download_url)
 
-    def job_get(self,
-                job_id: str,
-                excluded_fields: Optional[List[str]] = None,
-                included_fields: Optional[List[str]] = None) -> Dict[str, Any]:
+    def job_get(
+            self,
+            job_id: str,
+            excluded_fields: Optional[List[str]] = None,
+            included_fields: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
         """Return information about a job.
 
         Args:
@@ -227,7 +229,11 @@ class AccountClient(BaseClient):
         """
         return self.client_api.job(job_id).status()
 
-    def job_final_status_websocket(self, job_id: str, timeout: Optional[float] = None) -> Dict[str, Any]:
+    def job_final_status_websocket(
+            self,
+            job_id: str,
+            timeout: Optional[float] = None
+    ) -> Dict[str, Any]:
         """Return the final status of a job via websocket.
 
         Args:
