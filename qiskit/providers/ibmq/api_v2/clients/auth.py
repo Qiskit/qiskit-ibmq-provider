@@ -71,8 +71,8 @@ class AuthClient(BaseClient):
             RequestsApiError: if the request failed.
         """
         try:
-            login_token = self.client_auth.login(self.api_token)
-            return login_token.token_id
+            response = self.client_auth.login(self.api_token)
+            return response['id']
         except RequestsApiError as ex:
             response = ex.original_exception.response
             if response is not None and response.status_code == 401:
@@ -97,8 +97,8 @@ class AuthClient(BaseClient):
                 * ``http``: the API URL for http communication.
                 * ``ws``: the API URL for websocket communication.
         """
-        user = self.client_auth.user_info()
-        return user.urls
+        response = self.client_auth.user_info()
+        return response['urls']
 
     def user_hubs(self):
         """Retrieve the hubs available to the user.
