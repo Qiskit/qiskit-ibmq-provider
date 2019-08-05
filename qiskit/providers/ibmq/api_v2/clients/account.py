@@ -16,7 +16,7 @@
 
 import asyncio
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 # Disabled unused-import because datetime is used only for type hints.
 from datetime import datetime  # pylint: disable=unused-import
 
@@ -78,7 +78,7 @@ class AccountClient(BaseClient):
     def backend_properties(
             self,
             backend_name: str,
-            datetime: datetime = None
+            datetime: Optional[datetime] = None
     ) -> Dict[str, Any]:
         """Return the properties of a backend.
 
@@ -110,7 +110,7 @@ class AccountClient(BaseClient):
             self,
             limit: int = 10,
             skip: int = 0,
-            extra_filter: Dict[str, Any] = None
+            extra_filter: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """Return a list of statuses of jobs, with filtering and pagination.
 
@@ -199,8 +199,8 @@ class AccountClient(BaseClient):
 
     def job_get(self,
                 job_id: str,
-                excluded_fields: List[str] = None,
-                included_fields: List[str] = None) -> Dict[str, Any]:
+                excluded_fields: Optional[List[str]] = None,
+                included_fields: Optional[List[str]] = None) -> Dict[str, Any]:
         """Return information about a job.
 
         Args:
@@ -227,7 +227,7 @@ class AccountClient(BaseClient):
         """
         return self.client_api.job(job_id).status()
 
-    def job_final_status_websocket(self, job_id: str, timeout: float = None) -> Dict[str, Any]:
+    def job_final_status_websocket(self, job_id: str, timeout: Optional[float] = None) -> Dict[str, Any]:
         """Return the final status of a job via websocket.
 
         Args:
