@@ -14,6 +14,14 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [UNRELEASED]
+
+### Changed
+
+- The `backend.properties()` function now accepts an optional `datetime` 
+  parameter. If specified, the function returns the backend properties closest 
+  to, but older than, the specified datetime filter (\#277).
+
 ## [0.3.1] - 2019-07-23
 
 ### Changed
@@ -144,6 +152,7 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.1...HEAD
 [0.3.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.2...0.3.0
 [0.2.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.1...0.2.2

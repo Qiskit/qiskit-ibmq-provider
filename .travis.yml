@@ -96,6 +96,13 @@ jobs:
       if: type != cron
       script: make style && make lint
 
+    # Type checking using mypy
+    - stage: lint and pure python test
+      name: mypy type checking
+      <<: *stage_linux
+      if: type != cron
+      script: make mypy
+
     # Run the tests against without compilation (GNU/Linux, Python 3.5)
     - stage: lint and pure python test
       <<: *stage_linux
@@ -175,3 +182,15 @@ jobs:
       script:
         # effectively increases timeout to 2h.
         - travis_wait 120 make test
+    - if: tag IS present
+      python: "3.6"
+      env:
+        - TWINE_USERNAME=qiskit
+      install: pip install -U twine
+      script:
+        - python3 setup.py sdist bdist_wheel
+        - twine upload dist/qiskit*
+
+matrix:
+  allow_failures:
+  - name: mypy type checking
