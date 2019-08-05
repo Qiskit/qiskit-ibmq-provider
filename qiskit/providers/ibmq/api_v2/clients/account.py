@@ -26,8 +26,6 @@ from ..session import RetrySession
 from .base import BaseClient
 from .websocket import WebsocketClient
 
-# Type aliases for type hints.
-
 
 class AccountClient(BaseClient):
     """Client for accessing an individual IBM Q Experience account.
