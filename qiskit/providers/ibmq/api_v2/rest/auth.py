@@ -13,8 +13,8 @@
 # that they have been altered from the originals.
 
 """Authentication REST adapter for the IBM Q Experience v2 API."""
+
 from .base import RestAdapterBase
-from .schemas import User, Token
 
 
 class Auth(RestAdapterBase):
@@ -32,14 +32,14 @@ class Auth(RestAdapterBase):
             api_token (str): API token.
 
         Returns:
-            Token: Token Login response.
+            dict: json response.
         """
         url = self.get_url('login')
-        response = self.session.post(url, json={'apiToken': api_token}).json()
-        return Token.from_dict(response)
+        return self.session.post(url, json={'apiToken': api_token}).json()
 
     def user_info(self):
         """Return user information."""
         url = self.get_url('user_info')
         response = self.session.get(url).json()
-        return User.from_dict(response)
+
+        return response
