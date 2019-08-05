@@ -21,10 +21,6 @@ from ..session import RetrySession
 
 from .base import BaseClient
 
-# Type aliases for type hints.
-Hubs = List[Dict[str, str]]
-ServiceUrls = Dict[str, str]
-
 
 class AuthClient(BaseClient):
     """Client for accessing authentication features of IBM Q Experience."""
@@ -39,7 +35,7 @@ class AuthClient(BaseClient):
         """
         self.api_token = api_token
         self.auth_url = auth_url
-        self._service_urls = {}  # type: ServiceUrls
+        self._service_urls = {}
 
         self.client_auth = Auth(RetrySession(auth_url, **request_kwargs))
         self.client_api = self._init_service_clients(**request_kwargs)
@@ -105,7 +101,7 @@ class AuthClient(BaseClient):
         response = self.client_auth.user_info()
         return response['urls']
 
-    def user_hubs(self) -> Hubs:
+    def user_hubs(self) -> List[Dict[str, str]]:
         """Retrieve the hubs available to the user.
 
         The first entry in the list will be the default one, as indicated by
@@ -117,7 +113,7 @@ class AuthClient(BaseClient):
         """
         response = self.client_api.hubs()
 
-        hubs = []  # type: Hubs
+        hubs = []
         for hub in response:
             hub_name = hub['name']
             for group_name, group in hub['groups'].items():
@@ -152,7 +148,7 @@ class AuthClient(BaseClient):
         """
         return self.client_auth.session.access_token
 
-    def current_service_urls(self) -> ServiceUrls:
+    def current_service_urls(self) -> Dict[str, str]:
         """Return the current service URLs.
 
         Returns:
