@@ -17,18 +17,30 @@
 import logging
 import warnings
 
+from typing import Dict, List, Union, Optional, Any, TYPE_CHECKING
+from datetime import datetime  # pylint: disable=unused-import
 from marshmallow import ValidationError
 
+from qiskit.qobj import Qobj
 from qiskit.providers import BaseBackend, JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
-                                     PulseDefaults)
+                                     PulseDefaults, BackendConfiguration)
 
-from .api import ApiError
+from .api import ApiError, IBMQConnector
 from .api_v2.clients import BaseClient
 from .apiconstants import ApiJobStatus, ApiJobKind
+from .credentials import Credentials
 from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .job import IBMQJob
 from .utils import update_qobj_config
+
+# IBMQProvider is only used for type checking,
+# but importing it results in the circular dependency:
+#     ibmqbackend.py -> ibmqprovider.py -> ibmqsingleprovider.py
+# This conditional ensures the module is only imported during
+# type checking and not runtime, effectively handling the circular dependency.
+if TYPE_CHECKING:
+    from .ibmqprovider import IBMQProvider  # pylint: disable=cyclic-import
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +48,13 @@ logger = logging.getLogger(__name__)
 class IBMQBackend(BaseBackend):
     """Backend class interfacing with an IBMQ backend."""
 
-    def __init__(self, configuration, provider, credentials, api):
+    def __init__(
+            self,
+            configuration: BackendConfiguration,
+            provider: 'IBMQProvider',
+            credentials: Credentials,
+            api: IBMQConnector
+    ) -> None:
         """Initialize remote backend for IBM Quantum Experience.
 
         Args:
@@ -58,7 +76,7 @@ class IBMQBackend(BaseBackend):
         self._properties = None
         self._defaults = None
 
-    def run(self, qobj):
+    def run(self, qobj: Qobj) -> IBMQJob:
         """Run a Qobj asynchronously.
 
         Args:
@@ -78,7 +96,11 @@ class IBMQBackend(BaseBackend):
 
         return job
 
-    def properties(self, refresh=False, datetime=None):
+    def properties(
+            self,
+            refresh: bool = False,
+            datetime: Optional[datetime] = None  # pylint: disable=redefined-outer-name
+    ) -> Optional[BackendProperties]:
         """Return the online backend properties with optional filtering.
 
         Args:
@@ -112,7 +134,7 @@ class IBMQBackend(BaseBackend):
 
         return self._properties
 
-    def status(self):
+    def status(self) -> BackendStatus:
         """Return the online backend status.
 
         Returns:
@@ -130,7 +152,7 @@ class IBMQBackend(BaseBackend):
             raise LookupError(
                 "Couldn't get backend status: {0}".format(ex))
 
-    def defaults(self, refresh=False):
+    def defaults(self, refresh: bool = False) -> Optional[PulseDefaults]:
         """Return the pulse defaults for the backend.
 
         Args:
@@ -153,7 +175,13 @@ class IBMQBackend(BaseBackend):
 
         return self._defaults
 
-    def jobs(self, limit=10, skip=0, status=None, db_filter=None):
+    def jobs(
+            self,
+            limit: int = 10,
+            skip: int = 0,
+            status: Union[None, JobStatus, str] = None,
+            db_filter: Optional[Dict[str, Any]] = None
+    ) -> List[IBMQJob]:
         """Return the jobs submitted to this backend.
 
         Return the jobs submitted to this backend, with optional filtering and
@@ -273,7 +301,7 @@ class IBMQBackend(BaseBackend):
 
         return job_list
 
-    def retrieve_job(self, job_id):
+    def retrieve_job(self, job_id: str) -> IBMQJob:
         """Return a job submitted to this backend.
 
         Args:
@@ -332,7 +360,7 @@ class IBMQBackend(BaseBackend):
 
         return job
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         credentials_info = ''
         if self.hub:
             credentials_info = "hub='{}', group='{}', project='{}'".format(
@@ -344,7 +372,11 @@ class IBMQBackend(BaseBackend):
 class IBMQSimulator(IBMQBackend):
     """Backend class interfacing with an IBMQ simulator."""
 
-    def properties(self, refresh=False, datetime=None):
+    def properties(
+            self,
+            refresh: bool = False,
+            datetime: Optional[datetime] = None  # pylint: disable=redefined-outer-name
+    ) -> None:
         """Return the online backend properties.
 
         Returns:
@@ -352,7 +384,12 @@ class IBMQSimulator(IBMQBackend):
         """
         return None
 
-    def run(self, qobj, backend_options=None, noise_model=None):
+    def run(
+            self,
+            qobj: Qobj,
+            backend_options: Optional[Dict] = None,
+            noise_model: Optional[Any] = None
+    ) -> IBMQJob:
         """Run qobj asynchronously.
 
         Args:
