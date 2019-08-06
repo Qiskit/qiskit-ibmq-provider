@@ -13,50 +13,75 @@
 # that they have been altered from the originals.
 
 """Model and schema for authentication."""
-from marshmallow.fields import String, Url, Dict
-from qiskit.validation import BaseSchema, bind_schema, BaseModel
+from marshmallow import fields
+from qiskit.validation import BaseSchema, bind_schema
 
 
-class TokenSchema(BaseSchema):
-    """Schema for Token."""
+class LoginTokenRequestSchema(BaseSchema):
+    """Schema for LoginTokenRequest"""
+
+    # Required properties
+    api_token = fields.String(attribute='apiToken', required=True,
+                              metadata='api token associated to the user')
+
+
+class LoginTokenResponseSchema(BaseSchema):
+    """Schema for LoginTokenResponse."""
 
     # Required properties.
-    token_id = String('id', required=True)
+    id = fields.String(required=True, metadata='long term access token')
 
 
-@bind_schema(TokenSchema)
-class Token(BaseModel):
-    """Model for Token.
+class UserApiUrlResponseSchema(BaseSchema):
+    """Nested schema for UserInfoResponse"""
+
+    # Required properties.
+    protocol = fields.String(required=True, metadata='api protocol')
+    url = fields.Url(required=True, metadata='URL address to the api')
+
+
+class UserInfoResponseSchema(BaseSchema):
+    """Schema for UserInfoResponse."""
+
+    # Required properties.
+    urls = fields.Dict(fields.Nested(UserApiUrlResponseSchema), many=True, required=True,
+                       metadata='urls and corresponding protocols associated with APIs')
+
+
+@bind_schema(LoginTokenRequestSchema)
+class LoginTokenRequest:
+    """Model for LoginTokenRequestSchema.
 
     Please note that this class only describes the required fields. For the
-    full description of the model, please check ``TokenSchema``.
-
-    Attributes:
-        token_id (str): long term access token.
+    full description of the model, please check ``LoginTokenRequestSchema``.
     """
 
-    def __init__(self, token_id, **kwargs):
-        self.token_id = token_id
+    def __init__(self, api_token, **kwargs):
+        self.api_token = api_token
 
         super().__init__(**kwargs)
 
 
-class UserSchema(BaseSchema):
-    """Schema for User."""
-
-    # Required properties.
-    urls = Dict(Url(), required=True)
-
-
-@bind_schema(UserSchema)
-class User(BaseModel):
-    """Model for User.
+@bind_schema(LoginTokenResponseSchema)
+class LoginTokenResponse:
+    """Model for LoginTokenResponseSchema.
 
     Please note that this class only describes the required fields. For the
-    full description of the model, please check ``UserSchema``.
+    full description of the model, please check ``LoginTokenResponseSchema``.
+    """
 
-    Attributes:
-        urls (str): urls associated with APIs.
+    def __init__(self, id, **kwargs):
+        self.id = id
+
+        super().__init__(**kwargs)
+
+
+@bind_schema(UserInfoResponseSchema)
+class UserInfoResponse:
+    """Model for UserInfoResponseSchema.
+
+    Please note that this class only describes the required fields. For the
+    full description of the model, please check ``UserInfoResponseSchema``.
     """
 
     def __init__(self, urls, **kwargs):

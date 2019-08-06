@@ -13,5 +13,3 @@
 # that they have been altered from the originals.
 
 """Qiskit IBMQ Provider schema-conformant objects"""
-
-from .auth import Token, User
