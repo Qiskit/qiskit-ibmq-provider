@@ -123,30 +123,34 @@ class AccountClient(BaseClient):
         return self.client_api.jobs(limit=limit, skip=skip,
                                     extra_filter=extra_filter)
 
-    def job_submit(self, backend_name: str, qobj_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def job_submit(self, backend_name: str, qobj_dict: Dict[str, Any],
+                   job_name: str = None) -> Dict[str, Any]:
         """Submit a Qobj to a device.
 
         Args:
             backend_name (str): the name of the backend.
             qobj_dict (dict): the Qobj to be executed, as a dictionary.
+            job_name (str): custom name to be assigned to the job.
 
         Returns:
             dict: job status.
         """
-        return self.client_api.submit_job(backend_name, qobj_dict)
+        return self.client_api.submit_job(backend_name, qobj_dict, job_name)
 
-    def job_submit_object_storage(self, backend_name: str, qobj_dict: Dict[str, Any]) -> Dict:
+    def job_submit_object_storage(self, backend_name: str, qobj_dict: Dict[str, Any],
+                                  job_name: str = None) -> Dict:
         """Submit a Qobj to a device using object storage.
 
         Args:
             backend_name (str): the name of the backend.
             qobj_dict (dict): the Qobj to be executed, as a dictionary.
+            job_name (str): custom name to be assigned to the job.
 
         Returns:
             dict: job status.
         """
         # Get the job via object storage.
-        job_info = self.client_api.submit_job_object_storage(backend_name)
+        job_info = self.client_api.submit_job_object_storage(backend_name, job_name=job_name)
 
         # Get the upload URL.
         job_id = job_info['id']
@@ -325,9 +329,9 @@ class AccountClient(BaseClient):
         # pylint: disable=missing-docstring
         return self.job_status(id_job)
 
-    def submit_job(self, qobj_dict, backend_name):
+    def submit_job(self, qobj_dict, backend_name, job_name=None):
         # pylint: disable=missing-docstring
-        return self.job_submit(backend_name, qobj_dict)
+        return self.job_submit(backend_name, qobj_dict, job_name)
 
     def get_jobs(self, limit=10, skip=0, backend=None, only_completed=False,
                  filter=None):

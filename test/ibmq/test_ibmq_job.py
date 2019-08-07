@@ -433,6 +433,37 @@ class TestIBMQJob(JobTestCase):
         job = backend.run(qobj)
         _ = job.result()
 
+    @requires_provider
+    def test_custom_job_name(self, provider):
+        """Test assigning a custom job name."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        # Use a unique job name
+        job_name = str(time.time()).replace('.', '')
+        job_id = backend.run(qobj, job_name=job_name).job_id()
+
+        job_list = backend.jobs(limit=1, job_name=job_name)
+        self.assertEqual(len(job_list), 1)
+        self.assertEqual(job_id, job_list[0].job_id())
+
+    @requires_provider
+    def test_duplicate_job_name(self, provider):
+        """Test multiple jobs with the same custom job name."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        # Use a unique job name
+        job_name = str(time.time()).replace('.', '')
+        job_ids = []
+        for _ in range(2):
+            job_ids.insert(0, backend.run(qobj, job_name=job_name).job_id())
+
+        job_list = backend.jobs(job_name=job_name)
+        self.assertEqual(len(job_list), 2)
+        job_list_ids = [job.job_id() for job in job_list]
+        self.assertEqual(job_ids, job_list_ids)
+
 
 def _bell_circuit():
     qr = QuantumRegister(2, 'q')

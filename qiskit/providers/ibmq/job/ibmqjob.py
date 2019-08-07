@@ -32,6 +32,7 @@ from qiskit.tools.events.pubsub import Publisher
 
 from ..api import ApiError
 from ..apiconstants import ApiJobStatus
+from ..api_v2.clients import BaseClient
 from ..api_v2.exceptions import WebsocketTimeoutError, WebsocketError
 
 from .utils import current_utc_time, build_error_report, is_job_queued
@@ -111,7 +112,8 @@ class IBMQJob(BaseJob):
 
     def __init__(self, backend, job_id, api, qobj=None,
                  creation_date=None, api_status=None,
-                 use_object_storage=False, use_websockets=False):
+                 use_object_storage=False, use_websockets=False,
+                 job_name=None):
         """IBMQJob init function.
 
         We can instantiate jobs from two sources: A QObj, and an already submitted job returned by
@@ -130,6 +132,8 @@ class IBMQJob(BaseJob):
                 retrieving results.
             use_websockets (bool): if `True`, signals that the Job will
                 _attempt_ to use websockets when pooling for final status.
+            job_name (str): custom name to be assigned to the job. This is
+                only applicable when ``qobj`` is specified.
 
         Notes:
             It is mandatory to pass either ``qobj`` or ``job_id``. Passing a ``qobj``
@@ -161,10 +165,12 @@ class IBMQJob(BaseJob):
             validate_qobj_against_schema(qobj)
             self._qobj_payload = qobj.to_dict()
             self._status = JobStatus.INITIALIZING
+            self._job_name = job_name
         else:
             # In case of not providing a `qobj`, it is assumed the job already
             # exists in the API (with `job_id`).
             self._qobj_payload = {}
+            self._job_name = None
 
             # Some API calls (`get_status_jobs`, `get_status_job`) provide
             # enough information to recreate the `Job`. If that is the case, try
@@ -450,10 +456,12 @@ class IBMQJob(BaseJob):
             try:
                 submit_info = self._api.job_submit_object_storage(
                     backend_name=backend_name,
-                    qobj_dict=self._qobj_payload)
+                    qobj_dict=self._qobj_payload,
+                    job_name=self._job_name)
             except Exception as err:  # pylint: disable=broad-except
                 # Fall back to submitting the Qobj via POST if object storage
                 # failed.
+                print(f"obj stor failed, err={err}")
                 logger.info('Submitting the job via object storage failed: '
                             'retrying via regular POST upload.')
                 # Disable object storage for this job.
@@ -461,9 +469,13 @@ class IBMQJob(BaseJob):
 
         if not submit_info:
             try:
+                kwargs = {}
+                if isinstance(self._api, BaseClient):
+                    kwargs = {'job_name': self._job_name}
                 submit_info = self._api.submit_job(
                     backend_name=backend_name,
-                    qobj_dict=self._qobj_payload)
+                    qobj_dict=self._qobj_payload,
+                    **kwargs)
             except Exception as err:  # pylint: disable=broad-except
                 # Undefined error during submission:
                 # Capture and keep it for raising it when calling status().

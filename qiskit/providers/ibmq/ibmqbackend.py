@@ -58,11 +58,12 @@ class IBMQBackend(BaseBackend):
         self._properties = None
         self._defaults = None
 
-    def run(self, qobj):
+    def run(self, qobj, job_name=None):
         """Run a Qobj asynchronously.
 
         Args:
             qobj (Qobj): description of job
+            job_name (str): custom name to be assigned to the job
 
         Returns:
             IBMQJob: an instance derived from BaseJob
@@ -71,7 +72,8 @@ class IBMQBackend(BaseBackend):
         if isinstance(self._api, BaseClient):
             # Default to using object storage and websockets for new API.
             kwargs = {'use_object_storage': True,
-                      'use_websockets': True}
+                      'use_websockets': True,
+                      'job_name': job_name}
 
         job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
         job.submit()
@@ -153,7 +155,7 @@ class IBMQBackend(BaseBackend):
 
         return self._defaults
 
-    def jobs(self, limit=10, skip=0, status=None, db_filter=None):
+    def jobs(self, limit=10, skip=0, status=None, db_filter=None, job_name=None):
         """Return the jobs submitted to this backend.
 
         Return the jobs submitted to this backend, with optional filtering and
@@ -194,6 +196,7 @@ class IBMQBackend(BaseBackend):
                    past_date = datetime.datetime.now() - datetime.timedelta(days=30)
                    date_filter = {'creationDate': {'lt': past_date.isoformat()}}
                    job_list = backend.jobs(limit=5, db_filter=date_filter)
+            job_name (str): only get jobs with this job name.
 
         Returns:
             list(IBMQJob): list of IBMQJob instances
@@ -223,6 +226,10 @@ class IBMQBackend(BaseBackend):
                 raise IBMQBackendValueError('unrecognized value for "status" keyword '
                                             'in job filter')
             api_filter.update(this_filter)
+
+        if job_name:
+            api_filter['job_name'] = job_name
+
         if db_filter:
             # status takes precedence over db_filter for same keys
             api_filter = {**db_filter, **api_filter}
@@ -352,17 +359,18 @@ class IBMQSimulator(IBMQBackend):
         """
         return None
 
-    def run(self, qobj, backend_options=None, noise_model=None):
+    def run(self, qobj, backend_options=None, noise_model=None, job_name=None):
         """Run qobj asynchronously.
 
         Args:
             qobj (Qobj): description of job
             backend_options (dict): backend options
             noise_model (NoiseModel): noise model
+            job_name (str): custom name to be assigned to the job
 
         Returns:
             IBMQJob: an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
-        return super(IBMQSimulator, self).run(qobj)
+        return super(IBMQSimulator, self).run(qobj, job_name)

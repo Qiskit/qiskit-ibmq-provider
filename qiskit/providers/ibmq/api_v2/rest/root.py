@@ -89,43 +89,49 @@ class Api(RestAdapterBase):
         return self.session.get(
             url, params={'filter': json.dumps(query)}).json()
 
-    def submit_job(self, backend_name, qobj_dict):
+    def submit_job(self, backend_name, qobj_dict, job_name=None):
         """Submit a job for executing.
 
         Args:
             backend_name (str): the name of the backend.
             qobj_dict (dict): the Qobj to be executed, as a dictionary.
+            job_name (str): custom name to be assigned to the job.
 
         Returns:
             dict: json response.
         """
         url = self.get_url('jobs')
+        print(f">>>>>> submitting job normally")
 
         payload = {
             'qObject': qobj_dict,
             'backend': {'name': backend_name},
-            'shots': qobj_dict.get('config', {}).get('shots', 1)
+            'shots': qobj_dict.get('config', {}).get('shots', 1),
+            'job_name': job_name
         }
 
         return self.session.post(url, json=payload).json()
 
-    def submit_job_object_storage(self, backend_name, shots=1):
+    def submit_job_object_storage(self, backend_name, shots=1, job_name=None):
         """Submit a job for executing, using object storage.
 
         Args:
             backend_name (str): the name of the backend.
             shots (int): number of shots.
+            job_name (str): custom name to be assigned to the job.
 
         Returns:
             dict: json response.
         """
         url = self.get_url('jobs')
+        print(">>>>>> submitting job using obj storage")
 
         # TODO: "shots" is currently required by the API.
         payload = {
             'backend': {'name': backend_name},
             'shots': shots,
-            'allowObjectStorage': True
+            'allowObjectStorage': True,
+            'job_name': job_name
         }
 
         return self.session.post(url, json=payload).json()

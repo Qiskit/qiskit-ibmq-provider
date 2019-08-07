@@ -18,6 +18,11 @@ The format is based on [Keep a Changelog].
 
 ### Changed
 
+- The `bakcend.run()` function now accepts an optional `job_name` parameter.
+  If specified, the `job_name` is assigned to the job. This `job_name` can 
+  subsequently be used as a filter in the `backend.jobs()` function, which
+  now accepts an optional `job_name` parameter. The same `job_name` can be 
+  assigned to multiple jobs.
 - The `backend.properties()` function now accepts an optional `datetime` 
   parameter. If specified, the function returns the backend properties closest 
   to, but older than, the specified datetime filter (\#277).
