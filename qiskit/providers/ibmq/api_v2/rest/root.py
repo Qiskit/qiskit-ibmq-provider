@@ -105,9 +105,11 @@ class Api(RestAdapterBase):
         payload = {
             'qObject': qobj_dict,
             'backend': {'name': backend_name},
-            'shots': qobj_dict.get('config', {}).get('shots', 1),
-            'job_name': job_name
+            'shots': qobj_dict.get('config', {}).get('shots', 1)
         }
+
+        if job_name:
+            payload['name'] = job_name
 
         return self.session.post(url, json=payload).json()
 
@@ -128,9 +130,11 @@ class Api(RestAdapterBase):
         payload = {
             'backend': {'name': backend_name},
             'shots': shots,
-            'allowObjectStorage': True,
-            'job_name': job_name
+            'allowObjectStorage': True
         }
+
+        if job_name:
+            payload['name'] = job_name
 
         return self.session.post(url, json=payload).json()
 
