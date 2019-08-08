@@ -193,12 +193,12 @@ class AccountClient(BaseClient):
         download_url = job_api.result_url()['url']
 
         # Download the result from object storage.
-        qobj_payload = job_api.get_object_storage(download_url)
+        result_response = job_api.get_object_storage(download_url)
 
         # Notify the API via the callback
         _ = job_api.callback_download()
 
-        return qobj_payload
+        return result_response
 
     def job_get(
             self,
