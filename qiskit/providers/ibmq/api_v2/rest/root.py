@@ -16,6 +16,8 @@
 
 import json
 
+from typing import Dict, List, Any
+
 from .base import RestAdapterBase
 from .backend import Backend
 from .job import Job
@@ -33,7 +35,7 @@ class Api(RestAdapterBase):
         'version': '/version'
     }
 
-    def backend(self, backend_name):
+    def backend(self, backend_name: str) -> Backend:
         """Return a adapter for a specific backend.
 
         Args:
@@ -44,7 +46,7 @@ class Api(RestAdapterBase):
         """
         return Backend(self.session, backend_name)
 
-    def job(self, job_id):
+    def job(self, job_id: str) -> Job:
         """Return a adapter for a specific job.
 
         Args:
@@ -55,17 +57,22 @@ class Api(RestAdapterBase):
         """
         return Job(self.session, job_id)
 
-    def backends(self):
+    def backends(self) -> List[Dict[str, Any]]:
         """Return the list of backends."""
         url = self.get_url('backends')
         return self.session.get(url).json()
 
-    def hubs(self):
+    def hubs(self) -> List[Dict[str, Any]]:
         """Return the list of hubs available to the user."""
         url = self.get_url('hubs')
         return self.session.get(url).json()
 
-    def jobs(self, limit=10, skip=0, extra_filter=None):
+    def jobs(
+            self,
+            limit: int = 10,
+            skip: int = 0,
+            extra_filter: Dict[str, Any] = None
+    ) -> List[Dict[str, Any]]:
         """Return a list of jobs statuses.
 
         Args:
@@ -89,7 +96,11 @@ class Api(RestAdapterBase):
         return self.session.get(
             url, params={'filter': json.dumps(query)}).json()
 
-    def submit_job(self, backend_name, qobj_dict):
+    def submit_job(
+            self,
+            backend_name: str,
+            qobj_dict: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Submit a job for executing.
 
         Args:
@@ -109,7 +120,11 @@ class Api(RestAdapterBase):
 
         return self.session.post(url, json=payload).json()
 
-    def submit_job_object_storage(self, backend_name, shots=1):
+    def submit_job_object_storage(
+            self,
+            backend_name: str,
+            shots: int = 1
+    ) -> Dict[str, Any]:
         """Submit a job for executing, using object storage.
 
         Args:
@@ -130,7 +145,7 @@ class Api(RestAdapterBase):
 
         return self.session.post(url, json=payload).json()
 
-    def circuit(self, name, **kwargs):
+    def circuit(self, name: str, **kwargs: Dict) -> Dict[str, Any]:
         """Execute a Circuit.
 
         Args:
@@ -149,7 +164,7 @@ class Api(RestAdapterBase):
 
         return self.session.post(url, json=payload).json()
 
-    def version(self):
+    def version(self) -> Dict[str, Any]:
         """Return the API versions."""
         url = self.get_url('version')
         return self.session.get(url).json()
