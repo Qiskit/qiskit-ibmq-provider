@@ -28,7 +28,7 @@ class LoginTokenResponseSchema(BaseSchema):
     """Schema for LoginTokenResponse."""
 
     # Required properties.
-    # pylint: disable=C0103
+    # pylint: disable=invalid-name
     id = fields.String(required=True, description='access token.')
 
 
@@ -37,7 +37,7 @@ class UserApiUrlResponseSchema(BaseSchema):
 
     # Required properties.
     http = fields.Url(required=True, description='the API URL for http communication.')
-    # pylint: disable=C0103
+    # pylint: disable=invalid-name
     ws = fields.String(required=True, description='the API URL for websocket communication.')
 
 
