@@ -14,6 +14,7 @@
 
 """Helper for updating credentials from IBM Q Experience v1 to v2."""
 
+from typing import Optional
 from .credentials import Credentials
 from .configrc import (read_credentials_from_qiskitrc,
                        remove_credentials,
@@ -29,7 +30,7 @@ QCONSOLE2_URL = 'https://api-qcon.quantum-computing.ibm.com/api'
 QE2_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 
 
-def update_credentials(force=False):
+def update_credentials(force: bool = False) -> Optional[Credentials]:
     """Update or provide information about updating stored credentials.
 
     This function is an interactive helper to update credentials stored in
@@ -146,7 +147,7 @@ def update_credentials(force=False):
     return final_credentials
 
 
-def is_directly_updatable(credentials):
+def is_directly_updatable(credentials: Credentials) -> bool:
     """Returns `True` if credentials can be updated directly."""
     if credentials.base_url == QE_URL:
         return True
