@@ -62,12 +62,13 @@ class IBMQBackend(BaseBackend):
         """Run a Qobj asynchronously.
 
         Args:
-            qobj (Qobj): description of job
-            job_name (str): custom name to be assigned to the job
+            qobj (Qobj): description of job.
+            job_name (str): custom name to be assigned to the job.
 
         Returns:
             IBMQJob: an instance derived from BaseJob
         """
+        # pylint: disable=arguments-differ
         kwargs = {}
         if isinstance(self._api, BaseClient):
             # Default to using object storage and websockets for new API.
@@ -228,7 +229,7 @@ class IBMQBackend(BaseBackend):
             api_filter.update(this_filter)
 
         if job_name:
-            api_filter['job_name'] = job_name
+            api_filter['name'] = job_name
 
         if db_filter:
             # status takes precedence over db_filter for same keys

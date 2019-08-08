@@ -101,13 +101,12 @@ class Api(RestAdapterBase):
             dict: json response.
         """
         url = self.get_url('jobs')
-        print(f">>>>>> submitting job normally")
 
         payload = {
             'qObject': qobj_dict,
             'backend': {'name': backend_name},
             'shots': qobj_dict.get('config', {}).get('shots', 1),
-            'job_name': job_name
+            'name': job_name
         }
 
         return self.session.post(url, json=payload).json()
@@ -124,14 +123,13 @@ class Api(RestAdapterBase):
             dict: json response.
         """
         url = self.get_url('jobs')
-        print(">>>>>> submitting job using obj storage")
 
         # TODO: "shots" is currently required by the API.
         payload = {
             'backend': {'name': backend_name},
             'shots': shots,
             'allowObjectStorage': True,
-            'job_name': job_name
+            'name': job_name
         }
 
         return self.session.post(url, json=payload).json()
