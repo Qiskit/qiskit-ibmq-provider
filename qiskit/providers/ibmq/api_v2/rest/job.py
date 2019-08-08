@@ -16,7 +16,10 @@
 
 import json
 
+from typing import Dict, List, Any
+
 from .base import RestAdapterBase
+from ..session import RetrySession
 
 
 class Job(RestAdapterBase):
@@ -33,7 +36,7 @@ class Job(RestAdapterBase):
         'upload_url': '/jobUploadUrl'
     }
 
-    def __init__(self, session, job_id):
+    def __init__(self, session: RetrySession, job_id: str) -> None:
         """Job constructor.
 
         Args:
@@ -43,7 +46,7 @@ class Job(RestAdapterBase):
         self.job_id = job_id
         super().__init__(session, '/Jobs/{}'.format(job_id))
 
-    def get(self, excluded_fields, included_fields):
+    def get(self, excluded_fields: List[str], included_fields: List[str]) -> Dict[str, Any]:
         """Return a job.
 
         Args:
@@ -66,42 +69,42 @@ class Job(RestAdapterBase):
 
         return response
 
-    def callback_upload(self):
+    def callback_upload(self) -> Dict[str, Any]:
         """Notify the API after uploading a Qobj via object storage."""
         url = self.get_url('callback_upload')
         return self.session.post(url).json()
 
-    def cancel(self):
+    def cancel(self) -> Dict[str, Any]:
         """Cancel a job."""
         url = self.get_url('cancel')
         return self.session.post(url).json()
 
-    def download_url(self):
+    def download_url(self) -> Dict[str, Any]:
         """Return an object storage URL for downloading the Qobj."""
         url = self.get_url('download_url')
         return self.session.get(url).json()
 
-    def properties(self):
+    def properties(self) -> Dict[str, Any]:
         """Return the backend properties of a job."""
         url = self.get_url('properties')
         return self.session.get(url).json()
 
-    def result_url(self):
+    def result_url(self) -> Dict[str, Any]:
         """Return an object storage URL for downloading results."""
         url = self.get_url('result_url')
         return self.session.get(url).json()
 
-    def status(self):
+    def status(self) -> Dict[str, Any]:
         """Return the status of a job."""
         url = self.get_url('status')
         return self.session.get(url).json()
 
-    def upload_url(self):
+    def upload_url(self) -> Dict[str, Any]:
         """Return an object storage URL for uploading the Qobj."""
         url = self.get_url('upload_url')
         return self.session.get(url).json()
 
-    def put_object_storage(self, url, qobj_dict):
+    def put_object_storage(self, url: str, qobj_dict: Dict[str, Any]) -> str:
         """Upload a Qobj via object storage.
 
         Args:
@@ -115,7 +118,7 @@ class Job(RestAdapterBase):
         response = self.session.put(url, json=qobj_dict, bare=True)
         return response.text
 
-    def get_object_storage(self, url):
+    def get_object_storage(self, url: str) -> Dict[str, Any]:
         """Get via object_storage.
 
         Args:
@@ -127,7 +130,7 @@ class Job(RestAdapterBase):
         return self.session.get(url, bare=True).json()
 
 
-def build_url_filter(excluded_fields, included_fields):
+def build_url_filter(excluded_fields: List[str], included_fields: List[str]) -> Dict[str, Any]:
     """Return a URL filter based on included and excluded fields.
 
     If a field appears in both excluded_fields and included_fields, it
