@@ -16,8 +16,9 @@
 
 import os
 from collections import OrderedDict
+from typing import Dict
 
-from .credentials import Credentials
+from .credentials import Credentials, HubGroupProject
 
 # Dictionary that maps `ENV_VARIABLE_NAME` to credential parameter.
 VARIABLES_MAP = {
@@ -29,7 +30,7 @@ VARIABLES_MAP = {
 }
 
 
-def read_credentials_from_environ():
+def read_credentials_from_environ() -> Dict[HubGroupProject, Credentials]:
     """Read the environment variables and return its credentials.
 
     Returns:

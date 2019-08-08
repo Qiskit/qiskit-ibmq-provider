@@ -16,16 +16,17 @@
 
 import os
 from collections import OrderedDict
+from typing import Dict
 from importlib.util import module_from_spec, spec_from_file_location
 
-from .credentials import Credentials
+from .credentials import Credentials, HubGroupProject
 from .exceptions import CredentialsError
 
 DEFAULT_QCONFIG_FILE = 'Qconfig.py'
 QE_URL = 'https://quantumexperience.ng.bluemix.net/api'
 
 
-def read_credentials_from_qconfig():
+def read_credentials_from_qconfig() -> Dict[HubGroupProject, Credentials]:
     """Read a `QConfig.py` file and return its credentials.
 
     Returns:
