@@ -17,7 +17,7 @@
 import logging
 import warnings
 
-from typing import Dict, List, Union, Optional, Any, TYPE_CHECKING
+from typing import Dict, List, Union, Optional, Any
 from datetime import datetime  # pylint: disable=unused-import
 from marshmallow import ValidationError
 
@@ -34,14 +34,6 @@ from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .job import IBMQJob
 from .utils import update_qobj_config
 
-# IBMQProvider is only used for type checking,
-# but importing it results in the circular dependency:
-#     ibmqbackend.py -> ibmqprovider.py -> ibmqsingleprovider.py
-# This conditional ensures the module is only imported during
-# type checking and not runtime, effectively handling the circular dependency.
-if TYPE_CHECKING:
-    from .ibmqprovider import IBMQProvider  # pylint: disable=cyclic-import
-
 logger = logging.getLogger(__name__)
 
 
@@ -51,7 +43,7 @@ class IBMQBackend(BaseBackend):
     def __init__(
             self,
             configuration: BackendConfiguration,
-            provider: 'IBMQProvider',
+            provider,
             credentials: Credentials,
             api: IBMQConnector
     ) -> None:
@@ -179,7 +171,7 @@ class IBMQBackend(BaseBackend):
             self,
             limit: int = 10,
             skip: int = 0,
-            status: Union[None, JobStatus, str] = None,
+            status: Optional[Union[JobStatus, str]] = None,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return the jobs submitted to this backend.
@@ -388,7 +380,7 @@ class IBMQSimulator(IBMQBackend):
             self,
             qobj: Qobj,
             backend_options: Optional[Dict] = None,
-            noise_model: Optional[Any] = None
+            noise_model=None
     ) -> IBMQJob:
         """Run qobj asynchronously.
 
