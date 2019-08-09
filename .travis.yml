@@ -194,3 +194,5 @@ jobs:
 matrix:
   allow_failures:
   - name: mypy type checking
+  - name: Python 3.6 API v1 QConsole
+  - name: Python 3.6 API v1 QE

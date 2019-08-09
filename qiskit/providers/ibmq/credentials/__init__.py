@@ -15,9 +15,10 @@
 """Utilities for working with credentials for the IBMQ package."""
 
 from collections import OrderedDict
+from typing import Dict, Optional
 import logging
 
-from .credentials import Credentials
+from .credentials import Credentials, HubGroupProject
 from .exceptions import CredentialsError
 from .configrc import read_credentials_from_qiskitrc, store_credentials
 from .environ import read_credentials_from_environ
@@ -26,7 +27,9 @@ from .qconfig import read_credentials_from_qconfig
 logger = logging.getLogger(__name__)
 
 
-def discover_credentials(qiskitrc_filename=None):
+def discover_credentials(
+        qiskitrc_filename: Optional[str] = None
+) -> Dict[HubGroupProject, Credentials]:
     """Automatically discover credentials for IBM Q.
 
     This method looks for credentials in the following locations, in order,
