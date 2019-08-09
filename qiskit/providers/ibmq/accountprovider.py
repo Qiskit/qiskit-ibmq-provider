@@ -25,6 +25,7 @@ from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api_v2.clients import AccountClient
+from .api_v2.exceptions import RequestsApiError
 from .circuits import CircuitsManager
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 
@@ -58,7 +59,7 @@ class AccountProvider(BaseProvider):
 
         self.provider_backends = ProviderBackends(self)
 
-    def backends(self, name=None, filters=None, **kwargs):
+    def backends(self, name=None, filters=None, timeout=None, **kwargs):
         """Return all backends accessible via this provider, subject to optional filtering.
 
         Args:
@@ -66,6 +67,7 @@ class AccountProvider(BaseProvider):
             filters (callable): more complex filters, such as lambda functions
                 e.g. AccountProvider.backends(
                     filters=lambda b: b.configuration['n_qubits'] > 5)
+            timeout (float): number of seconds to wait for backend discovery.
             kwargs: simple filters specifying a true/false criteria in the
                 backend configuration or backend status or provider credentials
                 e.g. AccountProvider.backends(n_qubits=5, operational=True)
@@ -75,7 +77,7 @@ class AccountProvider(BaseProvider):
         """
         # pylint: disable=arguments-differ
         if self._backends is None:
-            self._backends = self._discover_remote_backends()
+            self._backends = self._discover_remote_backends(timeout=timeout)
 
         backends = self._backends.values()
 
@@ -89,15 +91,18 @@ class AccountProvider(BaseProvider):
 
         return filter_backends(backends, filters=filters, **kwargs)
 
-    def _discover_remote_backends(self):
+    def _discover_remote_backends(self, timeout=None):
         """Return the remote backends available.
+
+        Args:
+            timeout (float): number of seconds to wait for the discovery.
 
         Returns:
             dict[str:IBMQBackend]: a dict of the remote backend instances,
                 keyed by backend name.
         """
         ret = OrderedDict()
-        configs_list = self._api.available_backends()
+        configs_list = self._api.available_backends(timeout=timeout)
         for raw_config in configs_list:
             # Make sure the raw_config is of proper type
             if not isinstance(raw_config, dict):
@@ -172,9 +177,13 @@ class ProviderBackends(SimpleNamespace):
     def _discover_backends(self):
         """Discovers the remote backends if not already known."""
         if not self._initialized:
-            for backend in self._provider.backends():
-                setattr(self, backend.name(), backend)
-            self._initialized = True
+            try:
+                for backend in self._provider.backends():
+                    setattr(self, backend.name(), backend)
+                self._initialized = True
+            except RequestsApiError:
+                # Ignore any networking errors since this is a convenience feature
+                pass
 
     def __dir__(self):
         self._discover_backends()

@@ -44,13 +44,16 @@ class AccountClient(BaseClient):
 
     # Backend-related public functions.
 
-    def list_backends(self):
+    def list_backends(self, timeout=None):
         """Return the list of backends.
+
+        Args:
+            timeout (float): number of seconds to wait for the request.
 
         Returns:
             list[dict]: a list of backends.
         """
-        return self.client_api.backends()
+        return self.client_api.backends(timeout=timeout)
 
     def backend_status(self, backend_name):
         """Return the status of a backend.
@@ -322,9 +325,9 @@ class AccountClient(BaseClient):
         # pylint: disable=missing-docstring
         return self.backend_pulse_defaults(backend)
 
-    def available_backends(self):
+    def available_backends(self, timeout=None):
         # pylint: disable=missing-docstring
-        return self.list_backends()
+        return self.list_backends(timeout=timeout)
 
     def get_job(self, id_job, exclude_fields=None, include_fields=None):
         # pylint: disable=missing-docstring
