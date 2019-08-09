@@ -27,6 +27,7 @@ class Job(RestAdapterBase):
 
     URL_MAP = {
         'callback_upload': '/jobDataUploaded',
+        'callback_download': '/resultDownloaded',
         'cancel': '/cancel',
         'download_url': '/jobDownloadUrl',
         'self': '',
@@ -72,6 +73,11 @@ class Job(RestAdapterBase):
     def callback_upload(self) -> Dict[str, Any]:
         """Notify the API after uploading a Qobj via object storage."""
         url = self.get_url('callback_upload')
+        return self.session.post(url).json()
+
+    def callback_download(self):
+        """Notify the API after downloading a Qobj via object storage."""
+        url = self.get_url("callback_download")
         return self.session.post(url).json()
 
     def cancel(self) -> Dict[str, Any]:
