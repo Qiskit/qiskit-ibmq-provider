@@ -130,7 +130,7 @@ class Job(RestAdapterBase):
         return self.session.get(url, bare=True).json()
 
 
-def build_url_filter(excluded_fields: List[str], included_fields: List[str]) -> Dict[str, Any]:
+def build_url_filter(excluded_fields: List[str], included_fields: List[str]) -> Dict[str, Dict[str, bool]]:
     """Return a URL filter based on included and excluded fields.
 
     If a field appears in both excluded_fields and included_fields, it
