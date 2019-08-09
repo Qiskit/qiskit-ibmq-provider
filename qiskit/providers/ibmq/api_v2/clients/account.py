@@ -124,7 +124,7 @@ class AccountClient(BaseClient):
                                     extra_filter=extra_filter)
 
     def job_submit(self, backend_name: str, qobj_dict: Dict[str, Any],
-                   job_name: str = None) -> Dict[str, Any]:
+                   job_name: Optional[str] = None) -> Dict[str, Any]:
         """Submit a Qobj to a device.
 
         Args:
@@ -138,7 +138,7 @@ class AccountClient(BaseClient):
         return self.client_api.submit_job(backend_name, qobj_dict, job_name)
 
     def job_submit_object_storage(self, backend_name: str, qobj_dict: Dict[str, Any],
-                                  job_name: str = None) -> Dict:
+                                  job_name: Optional[str] = None) -> Dict:
         """Submit a Qobj to a device using object storage.
 
         Args:

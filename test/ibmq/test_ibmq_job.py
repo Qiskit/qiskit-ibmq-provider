@@ -455,14 +455,14 @@ class TestIBMQJob(JobTestCase):
 
         # Use a unique job name
         job_name = str(time.time()).replace('.', '')
-        job_ids = []
+        job_ids = set()
         for _ in range(2):
-            job_ids.insert(0, backend.run(qobj, job_name=job_name).job_id())
+            job_ids.add(backend.run(qobj, job_name=job_name).job_id())
 
-        job_list = backend.jobs(job_name=job_name)
-        self.assertEqual(len(job_list), 2)
-        job_list_ids = [job.job_id() for job in job_list]
-        self.assertEqual(job_ids, job_list_ids)
+        retrieved_jobs = backend.jobs(job_name=job_name)
+        self.assertEqual(len(retrieved_jobs), 2)
+        retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
+        self.assertEqual(job_ids, retrieved_job_ids)
 
 
 def _bell_circuit():

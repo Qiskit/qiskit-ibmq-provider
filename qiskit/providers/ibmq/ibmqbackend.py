@@ -63,7 +63,10 @@ class IBMQBackend(BaseBackend):
 
         Args:
             qobj (Qobj): description of job.
-            job_name (str): custom name to be assigned to the job.
+            job_name (str): custom name to be assigned to the job. This job
+                name can subsequently be used as a filter in the
+                ``jobs()`` function call. Job names do not need to be unique.
+                This parameter is ignored if IBM Q Experience v1 account is used.
 
         Returns:
             IBMQJob: an instance derived from BaseJob
@@ -73,11 +76,10 @@ class IBMQBackend(BaseBackend):
         if isinstance(self._api, BaseClient):
             # Default to using object storage and websockets for new API.
             kwargs = {'use_object_storage': True,
-                      'use_websockets': True,
-                      'job_name': job_name}
+                      'use_websockets': True}
 
         job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
-        job.submit()
+        job.submit(job_name=job_name)
 
         return job
 
@@ -156,7 +158,7 @@ class IBMQBackend(BaseBackend):
 
         return self._defaults
 
-    def jobs(self, limit=10, skip=0, status=None, db_filter=None, job_name=None):
+    def jobs(self, limit=10, skip=0, status=None, job_name=None, db_filter=None):
         """Return the jobs submitted to this backend.
 
         Return the jobs submitted to this backend, with optional filtering and

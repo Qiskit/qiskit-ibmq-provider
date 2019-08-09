@@ -22,7 +22,10 @@ The format is based on [Keep a Changelog].
   If specified, the `job_name` is assigned to the job. This `job_name` can 
   subsequently be used as a filter in the `IBMQBackend.jobs()` function, which
   now accepts an optional `job_name` parameter. `job_name` does not need to be 
-  unique among jobs. 
+  unique among jobs. These new parameters are ignored if IBM Q Experience 
+  v1 account is used (\#300).
+- The signature of `IBMQBackend.jobs()` is changed. `db_filter`, which was the 
+  4th parameter, is now the 5th parameter (\#300).
 - The `backend.properties()` function now accepts an optional `datetime` 
   parameter. If specified, the function returns the backend properties closest 
   to, but older than, the specified datetime filter (\#277).

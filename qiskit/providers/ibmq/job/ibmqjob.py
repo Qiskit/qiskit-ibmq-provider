@@ -112,8 +112,7 @@ class IBMQJob(BaseJob):
 
     def __init__(self, backend, job_id, api, qobj=None,
                  creation_date=None, api_status=None,
-                 use_object_storage=False, use_websockets=False,
-                 job_name=None):
+                 use_object_storage=False, use_websockets=False):
         """IBMQJob init function.
 
         We can instantiate jobs from two sources: A QObj, and an already submitted job returned by
@@ -132,8 +131,6 @@ class IBMQJob(BaseJob):
                 retrieving results.
             use_websockets (bool): if `True`, signals that the Job will
                 _attempt_ to use websockets when pooling for final status.
-            job_name (str): custom name to be assigned to the job. This is
-                only applicable when ``qobj`` is specified.
 
         Notes:
             It is mandatory to pass either ``qobj`` or ``job_id``. Passing a ``qobj``
@@ -165,12 +162,10 @@ class IBMQJob(BaseJob):
             validate_qobj_against_schema(qobj)
             self._qobj_payload = qobj.to_dict()
             self._status = JobStatus.INITIALIZING
-            self._job_name = job_name
         else:
             # In case of not providing a `qobj`, it is assumed the job already
             # exists in the API (with `job_id`).
             self._qobj_payload = {}
-            self._job_name = None
 
             # Some API calls (`get_status_jobs`, `get_status_job`) provide
             # enough information to recreate the `Job`. If that is the case, try
@@ -425,8 +420,11 @@ class IBMQJob(BaseJob):
         self._wait_for_submission(timeout)
         return self._job_id
 
-    def submit(self):
+    def submit(self, job_name=None):
         """Submit job to IBM-Q.
+
+        Args:
+            job_name (str): custom name to be assigned to the job.
 
         Events:
             ibmq.job.start: The job has started.
@@ -439,11 +437,14 @@ class IBMQJob(BaseJob):
         # can raise QobjValidationError.
         if self._future is not None or self._job_id is not None:
             raise JobError("We have already submitted the job!")
-        self._future = self._executor.submit(self._submit_callback)
+        self._future = self._executor.submit(self._submit_callback, job_name)
         Publisher().publish("ibmq.job.start", self)
 
-    def _submit_callback(self):
+    def _submit_callback(self, job_name=None):
         """Submit qobj job to IBM-Q.
+
+        Args:
+            job_name (str): custom name to be assigned to the job.
 
         Returns:
             dict: A dictionary with the response of the submitted job
@@ -457,7 +458,7 @@ class IBMQJob(BaseJob):
                 submit_info = self._api.job_submit_object_storage(
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload,
-                    job_name=self._job_name)
+                    job_name=job_name)
             except Exception as err:  # pylint: disable=broad-except
                 # Fall back to submitting the Qobj via POST if object storage
                 # failed.
@@ -470,7 +471,7 @@ class IBMQJob(BaseJob):
             try:
                 kwargs = {}
                 if isinstance(self._api, BaseClient):
-                    kwargs = {'job_name': self._job_name}
+                    kwargs = {'job_name': job_name}
                 submit_info = self._api.submit_job(
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload,
