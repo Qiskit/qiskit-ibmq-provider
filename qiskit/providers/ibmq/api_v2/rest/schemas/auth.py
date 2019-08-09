@@ -13,15 +13,16 @@
 # that they have been altered from the originals.
 
 """Model and schema for authentication."""
-from qiskit.validation import BaseSchema, fields
+from qiskit.validation import BaseSchema
+from qiskit.validation.fields import String, Url, Nested
 
 
 class LoginTokenRequestSchema(BaseSchema):
     """Schema for LoginTokenRequest"""
 
     # Required properties
-    api_token = fields.String(attribute='apiToken', required=True,
-                              description='API token.')
+    api_token = String(attribute='apiToken', required=True,
+                       description='API token.')
 
 
 class LoginTokenResponseSchema(BaseSchema):
@@ -29,22 +30,22 @@ class LoginTokenResponseSchema(BaseSchema):
 
     # Required properties.
     # pylint: disable=invalid-name
-    id = fields.String(required=True, description='access token.')
+    id = String(required=True, description='access token.')
 
 
 class UserApiUrlResponseSchema(BaseSchema):
     """Nested schema for UserInfoResponse"""
 
     # Required properties.
-    http = fields.Url(required=True, description='the API URL for http communication.')
+    http = Url(required=True, description='the API URL for http communication.')
     # pylint: disable=invalid-name
-    ws = fields.String(required=True, description='the API URL for websocket communication.')
+    ws = String(required=True, description='the API URL for websocket communication.')
 
 
 class UserInfoResponseSchema(BaseSchema):
     """Schema for UserInfoResponse."""
 
     # Required properties.
-    urls = fields.Nested(UserApiUrlResponseSchema, required=True,
-                         description='base URLs for the services. Currently supported keys: '
-                                     'http and ws')
+    urls = Nested(UserApiUrlResponseSchema, required=True,
+                  description='base URLs for the services. Currently supported keys: '
+                              'http and ws')
