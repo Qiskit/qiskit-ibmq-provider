@@ -177,6 +177,7 @@ class IBMQBackend(BaseBackend):
             status (None or qiskit.providers.JobStatus or str): only get jobs
                 with this status, where status is e.g. `JobStatus.RUNNING` or
                 `'RUNNING'`
+            job_name (str): only get jobs with this job name.
             db_filter (dict): `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -199,7 +200,6 @@ class IBMQBackend(BaseBackend):
                    past_date = datetime.datetime.now() - datetime.timedelta(days=30)
                    date_filter = {'creationDate': {'lt': past_date.isoformat()}}
                    job_list = backend.jobs(limit=5, db_filter=date_filter)
-            job_name (str): only get jobs with this job name.
 
         Returns:
             list(IBMQJob): list of IBMQJob instances
