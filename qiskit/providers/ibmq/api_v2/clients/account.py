@@ -62,7 +62,7 @@ class AccountClient(BaseClient):
         """Return the list of backends.
 
         Args:
-            timeout (float): number of seconds to wait for the request.
+            timeout (float or None): number of seconds to wait for the request.
 
         Returns:
             list[dict]: a list of backends.

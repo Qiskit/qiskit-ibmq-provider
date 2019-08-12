@@ -74,7 +74,7 @@ class AccountProvider(BaseProvider):
             filters (callable): more complex filters, such as lambda functions
                 e.g. AccountProvider.backends(
                     filters=lambda b: b.configuration['n_qubits'] > 5)
-            timeout (float): number of seconds to wait for backend discovery.
+            timeout (float or None): number of seconds to wait for backend discovery.
             kwargs: simple filters specifying a true/false criteria in the
                 backend configuration or backend status or provider credentials
                 e.g. AccountProvider.backends(n_qubits=5, operational=True)
@@ -102,7 +102,7 @@ class AccountProvider(BaseProvider):
         """Return the remote backends available.
 
         Args:
-            timeout (float): number of seconds to wait for the discovery.
+            timeout (float or None): number of seconds to wait for the discovery.
 
         Returns:
             dict[str:IBMQBackend]: a dict of the remote backend instances,
@@ -185,6 +185,8 @@ class ProviderBackends(SimpleNamespace):
         """Discovers the remote backends if not already known."""
         if not self._initialized:
             try:
+                # Python identifiers can only contain alphanumeric characters
+                # and underscores and cannot start with a digit.
                 pattern = re.compile(r"\W|^(?=\d)", re.ASCII)
                 for backend in self._provider.backends(timeout=3):
                     backend_name = backend.name()
