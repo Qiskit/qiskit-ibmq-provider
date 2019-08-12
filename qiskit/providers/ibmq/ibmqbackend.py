@@ -17,15 +17,19 @@
 import logging
 import warnings
 
+from typing import Dict, List, Union, Optional, Any
+from datetime import datetime  # pylint: disable=unused-import
 from marshmallow import ValidationError
 
+from qiskit.qobj import Qobj
 from qiskit.providers import BaseBackend, JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
-                                     PulseDefaults)
+                                     PulseDefaults, BackendConfiguration)
 
-from .api import ApiError
-from .api_v2.clients import BaseClient
+from .api import ApiError, IBMQConnector
+from .api_v2.clients import BaseClient, AccountClient
 from .apiconstants import ApiJobStatus, ApiJobKind
+from .credentials import Credentials
 from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .job import IBMQJob
 from .utils import update_qobj_config
@@ -36,14 +40,20 @@ logger = logging.getLogger(__name__)
 class IBMQBackend(BaseBackend):
     """Backend class interfacing with an IBMQ backend."""
 
-    def __init__(self, configuration, provider, credentials, api):
+    def __init__(
+            self,
+            configuration: BackendConfiguration,
+            provider,
+            credentials: Credentials,
+            api: Union[AccountClient, IBMQConnector]
+    ) -> None:
         """Initialize remote backend for IBM Quantum Experience.
 
         Args:
             configuration (BackendConfiguration): configuration of backend.
             provider (IBMQProvider): provider.
             credentials (Credentials): credentials.
-            api (IBMQConnector):
+            api (Union[AccountClient, IBMQConnector]):
                 api for communicating with the Quantum Experience.
         """
         super().__init__(provider=provider, configuration=configuration)
@@ -58,15 +68,20 @@ class IBMQBackend(BaseBackend):
         self._properties = None
         self._defaults = None
 
-    def run(self, qobj):
+    def run(self, qobj: Qobj, job_name: str) -> IBMQJob:
         """Run a Qobj asynchronously.
 
         Args:
-            qobj (Qobj): description of job
+            qobj (Qobj): description of job.
+            job_name (str): custom name to be assigned to the job. This job
+                name can subsequently be used as a filter in the
+                ``jobs()`` function call. Job names do not need to be unique.
+                This parameter is ignored if IBM Q Experience v1 account is used.
 
         Returns:
             IBMQJob: an instance derived from BaseJob
         """
+        # pylint: disable=arguments-differ
         kwargs = {}
         if isinstance(self._api, BaseClient):
             # Default to using object storage and websockets for new API.
@@ -74,11 +89,15 @@ class IBMQBackend(BaseBackend):
                       'use_websockets': True}
 
         job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
-        job.submit()
+        job.submit(job_name=job_name)
 
         return job
 
-    def properties(self, refresh=False, datetime=None):
+    def properties(
+            self,
+            refresh: bool = False,
+            datetime: Optional[datetime] = None  # pylint: disable=redefined-outer-name
+    ) -> Optional[BackendProperties]:
         """Return the online backend properties with optional filtering.
 
         Args:
@@ -112,7 +131,7 @@ class IBMQBackend(BaseBackend):
 
         return self._properties
 
-    def status(self):
+    def status(self) -> BackendStatus:
         """Return the online backend status.
 
         Returns:
@@ -130,7 +149,7 @@ class IBMQBackend(BaseBackend):
             raise LookupError(
                 "Couldn't get backend status: {0}".format(ex))
 
-    def defaults(self, refresh=False):
+    def defaults(self, refresh: bool = False) -> Optional[PulseDefaults]:
         """Return the pulse defaults for the backend.
 
         Args:
@@ -153,7 +172,14 @@ class IBMQBackend(BaseBackend):
 
         return self._defaults
 
-    def jobs(self, limit=10, skip=0, status=None, db_filter=None):
+    def jobs(
+            self,
+            limit: int = 10,
+            skip: int = 0,
+            status: Optional[Union[JobStatus, str]] = None,
+            job_name: Optional[str] = None,
+            db_filter: Optional[Dict[str, Any]] = None
+    ) -> List[IBMQJob]:
         """Return the jobs submitted to this backend.
 
         Return the jobs submitted to this backend, with optional filtering and
@@ -172,6 +198,7 @@ class IBMQBackend(BaseBackend):
             status (None or qiskit.providers.JobStatus or str): only get jobs
                 with this status, where status is e.g. `JobStatus.RUNNING` or
                 `'RUNNING'`
+            job_name (str): only get jobs with this job name.
             db_filter (dict): `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -223,6 +250,10 @@ class IBMQBackend(BaseBackend):
                 raise IBMQBackendValueError('unrecognized value for "status" keyword '
                                             'in job filter')
             api_filter.update(this_filter)
+
+        if job_name:
+            api_filter['name'] = job_name
+
         if db_filter:
             # status takes precedence over db_filter for same keys
             api_filter = {**db_filter, **api_filter}
@@ -273,7 +304,7 @@ class IBMQBackend(BaseBackend):
 
         return job_list
 
-    def retrieve_job(self, job_id):
+    def retrieve_job(self, job_id: str) -> IBMQJob:
         """Return a job submitted to this backend.
 
         Args:
@@ -332,7 +363,7 @@ class IBMQBackend(BaseBackend):
 
         return job
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         credentials_info = ''
         if self.hub:
             credentials_info = "hub='{}', group='{}', project='{}'".format(
@@ -344,7 +375,11 @@ class IBMQBackend(BaseBackend):
 class IBMQSimulator(IBMQBackend):
     """Backend class interfacing with an IBMQ simulator."""
 
-    def properties(self, refresh=False, datetime=None):
+    def properties(
+            self,
+            refresh: bool = False,
+            datetime: Optional[datetime] = None  # pylint: disable=redefined-outer-name
+    ) -> None:
         """Return the online backend properties.
 
         Returns:
@@ -352,17 +387,24 @@ class IBMQSimulator(IBMQBackend):
         """
         return None
 
-    def run(self, qobj, backend_options=None, noise_model=None):
+    def run(
+            self,
+            qobj: Qobj,
+            backend_options: Optional[Dict] = None,
+            noise_model=None,
+            job_name: Optional[str] = None
+    ) -> IBMQJob:
         """Run qobj asynchronously.
 
         Args:
             qobj (Qobj): description of job
             backend_options (dict): backend options
             noise_model (NoiseModel): noise model
+            job_name (str): custom name to be assigned to the job
 
         Returns:
             IBMQJob: an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
-        return super(IBMQSimulator, self).run(qobj)
+        return super(IBMQSimulator, self).run(qobj, job_name)
