@@ -16,7 +16,7 @@
 
 import json
 
-from typing import Dict, List, Any
+from typing import Dict, List, Optional, Any
 
 from .base import RestAdapterBase
 from .backend import Backend
@@ -99,13 +99,15 @@ class Api(RestAdapterBase):
     def submit_job(
             self,
             backend_name: str,
-            qobj_dict: Dict[str, Any]
+            qobj_dict: Dict[str, Any],
+            job_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """Submit a job for executing.
 
         Args:
             backend_name (str): the name of the backend.
             qobj_dict (dict): the Qobj to be executed, as a dictionary.
+            job_name (str): custom name to be assigned to the job.
 
         Returns:
             dict: json response.
@@ -118,18 +120,23 @@ class Api(RestAdapterBase):
             'shots': qobj_dict.get('config', {}).get('shots', 1)
         }
 
+        if job_name:
+            payload['name'] = job_name
+
         return self.session.post(url, json=payload).json()
 
     def submit_job_object_storage(
             self,
             backend_name: str,
-            shots: int = 1
+            shots: int = 1,
+            job_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """Submit a job for executing, using object storage.
 
         Args:
             backend_name (str): the name of the backend.
             shots (int): number of shots.
+            job_name (str): custom name to be assigned to the job.
 
         Returns:
             dict: json response.
@@ -142,6 +149,9 @@ class Api(RestAdapterBase):
             'shots': shots,
             'allowObjectStorage': True
         }
+
+        if job_name:
+            payload['name'] = job_name
 
         return self.session.post(url, json=payload).json()
 
