@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog].
 ### Added
 
 - Added support for backend autocompletion. A user can now use 
-`AccountProvider.provider_backends.<tab>` to see a list of backend names (\#TBD).
+`AccountProvider.provider_backends.<tab>` to see a list of backend names (\#303).
 
 ### Changed
 
