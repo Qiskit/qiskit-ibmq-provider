@@ -15,16 +15,20 @@
 """Client for accessing an individual IBM Q Experience account."""
 
 import asyncio
+import logging
 
 from typing import List, Dict, Any, Optional
 # Disabled unused-import because datetime is used only for type hints.
 from datetime import datetime  # pylint: disable=unused-import
 
+from ..exceptions import RequestsApiError
 from ..rest import Api
 from ..session import RetrySession
 
 from .base import BaseClient
 from .websocket import WebsocketClient
+
+logger = logging.getLogger(__name__)
 
 
 class AccountClient(BaseClient):
@@ -197,7 +201,15 @@ class AccountClient(BaseClient):
         download_url = job_api.result_url()['url']
 
         # Download the result from object storage.
-        return job_api.get_object_storage(download_url)
+        result_response = job_api.get_object_storage(download_url)
+
+        # Notify the API via the callback
+        try:
+            _ = job_api.callback_download()
+        except (RequestsApiError, ValueError) as ex:
+            logger.warning("An error occurred while sending download completion acknowledgement: "
+                           "%s", ex)
+        return result_response
 
     def job_get(
             self,
