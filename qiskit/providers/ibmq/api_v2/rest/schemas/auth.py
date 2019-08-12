@@ -21,8 +21,8 @@ class LoginTokenRequestSchema(BaseSchema):
     """Schema for LoginTokenRequest"""
 
     # Required properties
-    api_token = String(attribute='apiToken', required=True,
-                       description='API token.')
+    apiToken = String(required=True,
+                      description='API token.')
 
 
 class LoginTokenResponseSchema(BaseSchema):
