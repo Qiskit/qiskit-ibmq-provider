@@ -15,6 +15,8 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
+import re
+import keyword
 from collections import OrderedDict
 from types import SimpleNamespace
 
@@ -37,6 +39,11 @@ class AccountProvider(BaseProvider):
 
     def __init__(self, credentials, access_token):
         """Return a new AccountProvider.
+
+        The ``provider_backends`` attribute can be used to autocomplete
+        backend names, by pressing ``tab`` after
+        ``AccountProvider.provider_backends.``. Note that this feature may
+        not be available if an error occurs during backend discovery.
 
         Args:
             credentials (Credentials): IBM Q Experience credentials.
@@ -162,7 +169,7 @@ class AccountProvider(BaseProvider):
 
 
 class ProviderBackends(SimpleNamespace):
-    """Backend namespace for the provider"""
+    """Backend namespace for the provider."""
 
     def __init__(self, provider):
         """Creates a new ProviderBackends instance.
@@ -178,11 +185,23 @@ class ProviderBackends(SimpleNamespace):
         """Discovers the remote backends if not already known."""
         if not self._initialized:
             try:
-                for backend in self._provider.backends():
-                    setattr(self, backend.name(), backend)
+                pattern = re.compile(r"\W|^(?=\d)", re.ASCII)
+                for backend in self._provider.backends(timeout=3):
+                    backend_name = backend.name()
+
+                    # Make it a valid identifier
+                    if not backend_name.isidentifier():
+                        backend_name = re.sub(pattern, '_', backend_name)
+
+                    # Append _ if is keyword or duplicate
+                    while keyword.iskeyword(backend_name) or backend_name in self.__dict__:
+                        backend_name += '_'
+
+                    setattr(self, backend_name, backend)
                 self._initialized = True
             except RequestsApiError:
-                # Ignore any networking errors since this is a convenience feature
+                # Ignore any networking errors since this is a convenience
+                # feature meant for interactive sessions.
                 pass
 
     def __dir__(self):

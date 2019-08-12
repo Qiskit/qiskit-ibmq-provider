@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Added
+
+- Added support for backend autocompletion. A user can now use 
+`AccountProvider.provider_backends.<tab>` to see a list of backend names (\#TBD).
+
 ### Changed
 
 - The `backend.properties()` function now accepts an optional `datetime` 
