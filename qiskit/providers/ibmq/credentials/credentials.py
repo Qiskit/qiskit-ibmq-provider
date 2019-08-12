@@ -16,6 +16,7 @@
 
 import re
 
+from typing import Dict, Tuple, Optional, Any
 from requests_ntlm import HttpNtlmAuth
 
 from .hubgroupproject import HubGroupProject
@@ -39,9 +40,17 @@ class Credentials:
     The `unique_id()` returns the unique identifier.
     """
 
-    def __init__(self, token, url, websockets_url=None,
-                 hub=None, group=None, project=None,
-                 proxies=None, verify=True):
+    def __init__(
+            self,
+            token: str,
+            url: str,
+            websockets_url: Optional[str] = None,
+            hub: Optional[str] = None,
+            group: Optional[str] = None,
+            project: Optional[str] = None,
+            proxies: Optional[Dict] = None,
+            verify: bool = True
+    ) -> None:
         """Return new set of credentials.
 
         Args:
@@ -69,14 +78,14 @@ class Credentials:
         self.proxies = proxies or {}
         self.verify = verify
 
-    def is_ibmq(self):
+    def is_ibmq(self) -> bool:
         """Return whether the credentials represent a IBMQ account."""
         return all([self.hub, self.group, self.project])
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return self.__dict__ == other.__dict__
 
-    def unique_id(self):
+    def unique_id(self) -> HubGroupProject:
         """Return a value that uniquely identifies these credentials.
 
         By convention, we assume (hub, group, project) is always unique.
@@ -86,7 +95,7 @@ class Credentials:
         """
         return HubGroupProject(self.hub, self.group, self.project)
 
-    def connection_parameters(self):
+    def connection_parameters(self) -> Dict[str, Any]:
         """Return a dict of kwargs in the format expected by `requests`.
 
         Returns:
@@ -111,7 +120,12 @@ class Credentials:
         return request_kwargs
 
 
-def _unify_ibmq_url(url, hub=None, group=None, project=None):
+def _unify_ibmq_url(
+        url: str,
+        hub: Optional[str] = None,
+        group: Optional[str] = None,
+        project: Optional[str] = None
+) -> Tuple[str, str, Optional[str], Optional[str], Optional[str]]:
     """Return a new-style set of credential values (url and hub parameters).
 
     Args:

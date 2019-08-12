@@ -15,12 +15,20 @@
 """Client for accessing an individual IBM Q Experience account."""
 
 import asyncio
+import logging
 
+from typing import List, Dict, Any, Optional
+# Disabled unused-import because datetime is used only for type hints.
+from datetime import datetime  # pylint: disable=unused-import
+
+from ..exceptions import RequestsApiError
 from ..rest import Api
 from ..session import RetrySession
 
 from .base import BaseClient
 from .websocket import WebsocketClient
+
+logger = logging.getLogger(__name__)
 
 
 class AccountClient(BaseClient):
@@ -29,7 +37,13 @@ class AccountClient(BaseClient):
     This client provides access to an individual IBM Q hub/group/project.
     """
 
-    def __init__(self, access_token, project_url, websockets_url, **request_kwargs):
+    def __init__(
+            self,
+            access_token: str,
+            project_url: str,
+            websockets_url: str,
+            **request_kwargs: Dict
+    ) -> None:
         """AccountClient constructor.
 
         Args:
@@ -44,7 +58,7 @@ class AccountClient(BaseClient):
 
     # Backend-related public functions.
 
-    def list_backends(self, timeout=None):
+    def list_backends(self, timeout: Optional[float] = None) -> List[Dict[str, Any]]:
         """Return the list of backends.
 
         Args:
@@ -55,7 +69,7 @@ class AccountClient(BaseClient):
         """
         return self.client_api.backends(timeout=timeout)
 
-    def backend_status(self, backend_name):
+    def backend_status(self, backend_name: str) -> Dict[str, Any]:
         """Return the status of a backend.
 
         Args:
@@ -66,7 +80,11 @@ class AccountClient(BaseClient):
         """
         return self.client_api.backend(backend_name).status()
 
-    def backend_properties(self, backend_name, datetime=None):
+    def backend_properties(
+            self,
+            backend_name: str,
+            datetime: Optional[datetime] = None
+    ) -> Dict[str, Any]:
         """Return the properties of a backend.
 
         Args:
@@ -77,9 +95,10 @@ class AccountClient(BaseClient):
         Returns:
             dict: backend properties.
         """
+        # pylint: disable=redefined-outer-name
         return self.client_api.backend(backend_name).properties(datetime=datetime)
 
-    def backend_pulse_defaults(self, backend_name):
+    def backend_pulse_defaults(self, backend_name: str) -> Dict:
         """Return the pulse defaults of a backend.
 
         Args:
@@ -92,7 +111,12 @@ class AccountClient(BaseClient):
 
     # Jobs-related public functions.
 
-    def list_jobs_statuses(self, limit=10, skip=0, extra_filter=None):
+    def list_jobs_statuses(
+            self,
+            limit: int = 10,
+            skip: int = 0,
+            extra_filter: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """Return a list of statuses of jobs, with filtering and pagination.
 
         Args:
@@ -106,30 +130,34 @@ class AccountClient(BaseClient):
         return self.client_api.jobs(limit=limit, skip=skip,
                                     extra_filter=extra_filter)
 
-    def job_submit(self, backend_name, qobj_dict):
+    def job_submit(self, backend_name: str, qobj_dict: Dict[str, Any],
+                   job_name: Optional[str] = None) -> Dict[str, Any]:
         """Submit a Qobj to a device.
 
         Args:
             backend_name (str): the name of the backend.
             qobj_dict (dict): the Qobj to be executed, as a dictionary.
+            job_name (str): custom name to be assigned to the job.
 
         Returns:
             dict: job status.
         """
-        return self.client_api.submit_job(backend_name, qobj_dict)
+        return self.client_api.submit_job(backend_name, qobj_dict, job_name)
 
-    def job_submit_object_storage(self, backend_name, qobj_dict):
+    def job_submit_object_storage(self, backend_name: str, qobj_dict: Dict[str, Any],
+                                  job_name: Optional[str] = None) -> Dict:
         """Submit a Qobj to a device using object storage.
 
         Args:
             backend_name (str): the name of the backend.
             qobj_dict (dict): the Qobj to be executed, as a dictionary.
+            job_name (str): custom name to be assigned to the job.
 
         Returns:
             dict: job status.
         """
         # Get the job via object storage.
-        job_info = self.client_api.submit_job_object_storage(backend_name)
+        job_info = self.client_api.submit_job_object_storage(backend_name, job_name=job_name)
 
         # Get the upload URL.
         job_id = job_info['id']
@@ -144,7 +172,7 @@ class AccountClient(BaseClient):
 
         return response['job']
 
-    def job_download_qobj_object_storage(self, job_id):
+    def job_download_qobj_object_storage(self, job_id: str) -> Dict:
         """Retrieve and return a Qobj using object storage.
 
         Args:
@@ -161,7 +189,7 @@ class AccountClient(BaseClient):
         # Download the result from object storage.
         return job_api.get_object_storage(download_url)
 
-    def job_result_object_storage(self, job_id):
+    def job_result_object_storage(self, job_id: str) -> Dict:
         """Retrieve and return a result using object storage.
 
         Args:
@@ -176,9 +204,22 @@ class AccountClient(BaseClient):
         download_url = job_api.result_url()['url']
 
         # Download the result from object storage.
-        return job_api.get_object_storage(download_url)
+        result_response = job_api.get_object_storage(download_url)
 
-    def job_get(self, job_id, excluded_fields=None, included_fields=None):
+        # Notify the API via the callback
+        try:
+            _ = job_api.callback_download()
+        except (RequestsApiError, ValueError) as ex:
+            logger.warning("An error occurred while sending download completion acknowledgement: "
+                           "%s", ex)
+        return result_response
+
+    def job_get(
+            self,
+            job_id: str,
+            excluded_fields: Optional[List[str]] = None,
+            included_fields: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
         """Return information about a job.
 
         Args:
@@ -194,7 +235,7 @@ class AccountClient(BaseClient):
         return self.client_api.job(job_id).get(excluded_fields,
                                                included_fields)
 
-    def job_status(self, job_id):
+    def job_status(self, job_id: str) -> Dict[str, Any]:
         """Return the status of a job.
 
         Args:
@@ -205,7 +246,11 @@ class AccountClient(BaseClient):
         """
         return self.client_api.job(job_id).status()
 
-    def job_final_status_websocket(self, job_id, timeout=None):
+    def job_final_status_websocket(
+            self,
+            job_id: str,
+            timeout: Optional[float] = None
+    ) -> Dict[str, Any]:
         """Return the final status of a job via websocket.
 
         Args:
@@ -233,7 +278,7 @@ class AccountClient(BaseClient):
         return loop.run_until_complete(
             self.client_ws.get_job_status(job_id, timeout=timeout))
 
-    def job_properties(self, job_id):
+    def job_properties(self, job_id: str) -> Dict:
         """Return the backend properties of a job.
 
         Args:
@@ -244,7 +289,7 @@ class AccountClient(BaseClient):
         """
         return self.client_api.job(job_id).properties()
 
-    def job_cancel(self, job_id):
+    def job_cancel(self, job_id: str) -> Dict[str, Any]:
         """Submit a request for cancelling a job.
 
         Args:
@@ -257,7 +302,7 @@ class AccountClient(BaseClient):
 
     # Circuits-related public functions.
 
-    def circuit_run(self, name, **kwargs):
+    def circuit_run(self, name: str, **kwargs: Dict) -> Dict:
         """Execute a Circuit.
 
         Args:
@@ -269,7 +314,7 @@ class AccountClient(BaseClient):
         """
         return self.client_api.circuit(name, **kwargs)
 
-    def circuit_job_get(self, job_id):
+    def circuit_job_get(self, job_id: str) -> Dict:
         """Return information about a Circuit job.
 
         Args:
@@ -280,7 +325,7 @@ class AccountClient(BaseClient):
         """
         return self.client_api.job(job_id).get([], [])
 
-    def circuit_job_status(self, job_id):
+    def circuit_job_status(self, job_id: str) -> Dict:
         """Return the status of a Circuits job.
 
         Args:
@@ -299,9 +344,9 @@ class AccountClient(BaseClient):
         # pylint: disable=missing-docstring
         return self.job_status(id_job)
 
-    def submit_job(self, qobj_dict, backend_name):
+    def submit_job(self, qobj_dict, backend_name, job_name=None):
         # pylint: disable=missing-docstring
-        return self.job_submit(backend_name, qobj_dict)
+        return self.job_submit(backend_name, qobj_dict, job_name)
 
     def get_jobs(self, limit=10, skip=0, backend=None, only_completed=False,
                  filter=None):

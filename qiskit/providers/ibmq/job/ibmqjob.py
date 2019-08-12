@@ -32,6 +32,7 @@ from qiskit.tools.events.pubsub import Publisher
 
 from ..api import ApiError
 from ..apiconstants import ApiJobStatus
+from ..api_v2.clients import BaseClient
 from ..api_v2.exceptions import WebsocketTimeoutError, WebsocketError
 
 from .utils import current_utc_time, build_error_report, is_job_queued
@@ -419,8 +420,11 @@ class IBMQJob(BaseJob):
         self._wait_for_submission(timeout)
         return self._job_id
 
-    def submit(self):
+    def submit(self, job_name=None):
         """Submit job to IBM-Q.
+
+        Args:
+            job_name (str): custom name to be assigned to the job.
 
         Events:
             ibmq.job.start: The job has started.
@@ -433,11 +437,14 @@ class IBMQJob(BaseJob):
         # can raise QobjValidationError.
         if self._future is not None or self._job_id is not None:
             raise JobError("We have already submitted the job!")
-        self._future = self._executor.submit(self._submit_callback)
+        self._future = self._executor.submit(self._submit_callback, job_name)
         Publisher().publish("ibmq.job.start", self)
 
-    def _submit_callback(self):
+    def _submit_callback(self, job_name=None):
         """Submit qobj job to IBM-Q.
+
+        Args:
+            job_name (str): custom name to be assigned to the job.
 
         Returns:
             dict: A dictionary with the response of the submitted job
@@ -450,7 +457,8 @@ class IBMQJob(BaseJob):
             try:
                 submit_info = self._api.job_submit_object_storage(
                     backend_name=backend_name,
-                    qobj_dict=self._qobj_payload)
+                    qobj_dict=self._qobj_payload,
+                    job_name=job_name)
             except Exception as err:  # pylint: disable=broad-except
                 # Fall back to submitting the Qobj via POST if object storage
                 # failed.
@@ -461,9 +469,13 @@ class IBMQJob(BaseJob):
 
         if not submit_info:
             try:
+                kwargs = {}
+                if isinstance(self._api, BaseClient):
+                    kwargs = {'job_name': job_name}
                 submit_info = self._api.submit_job(
                     backend_name=backend_name,
-                    qobj_dict=self._qobj_payload)
+                    qobj_dict=self._qobj_payload,
+                    **kwargs)
             except Exception as err:  # pylint: disable=broad-except
                 # Undefined error during submission:
                 # Capture and keep it for raising it when calling status().
