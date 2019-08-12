@@ -68,15 +68,20 @@ class IBMQBackend(BaseBackend):
         self._properties = None
         self._defaults = None
 
-    def run(self, qobj: Qobj) -> IBMQJob:
+    def run(self, qobj: Qobj, job_name: str) -> IBMQJob:
         """Run a Qobj asynchronously.
 
         Args:
-            qobj (Qobj): description of job
+            qobj (Qobj): description of job.
+            job_name (str): custom name to be assigned to the job. This job
+                name can subsequently be used as a filter in the
+                ``jobs()`` function call. Job names do not need to be unique.
+                This parameter is ignored if IBM Q Experience v1 account is used.
 
         Returns:
             IBMQJob: an instance derived from BaseJob
         """
+        # pylint: disable=arguments-differ
         kwargs = {}
         if isinstance(self._api, BaseClient):
             # Default to using object storage and websockets for new API.
@@ -84,7 +89,7 @@ class IBMQBackend(BaseBackend):
                       'use_websockets': True}
 
         job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
-        job.submit()
+        job.submit(job_name=job_name)
 
         return job
 
@@ -172,6 +177,7 @@ class IBMQBackend(BaseBackend):
             limit: int = 10,
             skip: int = 0,
             status: Optional[Union[JobStatus, str]] = None,
+            job_name: Optional[str] = None,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return the jobs submitted to this backend.
@@ -192,6 +198,7 @@ class IBMQBackend(BaseBackend):
             status (None or qiskit.providers.JobStatus or str): only get jobs
                 with this status, where status is e.g. `JobStatus.RUNNING` or
                 `'RUNNING'`
+            job_name (str): only get jobs with this job name.
             db_filter (dict): `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -243,6 +250,10 @@ class IBMQBackend(BaseBackend):
                 raise IBMQBackendValueError('unrecognized value for "status" keyword '
                                             'in job filter')
             api_filter.update(this_filter)
+
+        if job_name:
+            api_filter['name'] = job_name
+
         if db_filter:
             # status takes precedence over db_filter for same keys
             api_filter = {**db_filter, **api_filter}
@@ -380,7 +391,8 @@ class IBMQSimulator(IBMQBackend):
             self,
             qobj: Qobj,
             backend_options: Optional[Dict] = None,
-            noise_model=None
+            noise_model=None,
+            job_name: Optional[str] = None
     ) -> IBMQJob:
         """Run qobj asynchronously.
 
@@ -388,10 +400,11 @@ class IBMQSimulator(IBMQBackend):
             qobj (Qobj): description of job
             backend_options (dict): backend options
             noise_model (NoiseModel): noise model
+            job_name (str): custom name to be assigned to the job
 
         Returns:
             IBMQJob: an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
-        return super(IBMQSimulator, self).run(qobj)
+        return super(IBMQSimulator, self).run(qobj, job_name)
