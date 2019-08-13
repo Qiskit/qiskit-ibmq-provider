@@ -15,6 +15,7 @@
 """Version finder for the IBM Q Experience v2 API."""
 
 from json import JSONDecodeError
+from typing import Dict, Union
 
 from .base import RestAdapterBase
 
@@ -26,7 +27,7 @@ class VersionFinder(RestAdapterBase):
         'version': '/version'
     }
 
-    def version(self):
+    def version(self) -> Dict[str, Union[str, bool]]:
         """Return the version info.
 
         Returns:

@@ -15,7 +15,10 @@
 """Backend REST adapter for the IBM Q Experience v2 API."""
 
 import json
+from typing import Dict, Optional, Any
+from datetime import datetime  # pylint: disable=unused-import
 from .base import RestAdapterBase
+from ..session import RetrySession
 
 
 class Backend(RestAdapterBase):
@@ -27,7 +30,7 @@ class Backend(RestAdapterBase):
         'status': '/queue/status',
     }
 
-    def __init__(self, session, backend_name):
+    def __init__(self, session: RetrySession, backend_name: str) -> None:
         """Backend constructor.
 
         Args:
@@ -37,7 +40,7 @@ class Backend(RestAdapterBase):
         self.backend_name = backend_name
         super().__init__(session, '/devices/{}'.format(backend_name))
 
-    def properties(self, datetime=None):
+    def properties(self, datetime: Optional[datetime] = None) -> Dict[str, Any]:
         """Return backend properties.
 
         Args:
@@ -47,6 +50,7 @@ class Backend(RestAdapterBase):
         Returns:
             dict: json response of backend properties.
         """
+        # pylint: disable=redefined-outer-name
         url = self.get_url('properties')
 
         params = {
@@ -67,12 +71,12 @@ class Backend(RestAdapterBase):
 
         return response
 
-    def pulse_defaults(self):
+    def pulse_defaults(self) -> Dict[str, Any]:
         """Return backend pulse defaults."""
         url = self.get_url('pulse_defaults')
         return self.session.get(url).json()
 
-    def status(self):
+    def status(self) -> Dict[str, Any]:
         """Return backend status."""
         url = self.get_url('status')
         response = self.session.get(url).json()
