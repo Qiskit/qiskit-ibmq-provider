@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2017, 2019.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Model and schema for authentication."""
+"""Schemas for authentication."""
 
 from qiskit.validation import BaseSchema
 from qiskit.validation.fields import String, Url, Nested
@@ -32,14 +32,14 @@ class UserApiUrlResponseSchema(BaseSchema):
 # Endpoint schemas.
 
 class LoginRequestSchema(BaseSchema):
-    """Schema for LoginTokenRequest"""
+    """Schema for LoginRequest"""
 
     # Required properties
     apiToken = String(required=True, description='API token.')
 
 
 class LoginResponseSchema(BaseSchema):
-    """Schema for LoginTokenResponse."""
+    """Schema for LoginResponse."""
     # pylint: disable=invalid-name
 
     # Required properties.
