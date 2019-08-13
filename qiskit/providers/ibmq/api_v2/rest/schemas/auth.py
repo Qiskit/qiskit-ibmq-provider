@@ -13,33 +13,37 @@
 # that they have been altered from the originals.
 
 """Model and schema for authentication."""
+
 from qiskit.validation import BaseSchema
 from qiskit.validation.fields import String, Url, Nested
 
 
-class LoginTokenRequestSchema(BaseSchema):
-    """Schema for LoginTokenRequest"""
-
-    # Required properties
-    apiToken = String(required=True,
-                      description='API token.')
-
-
-class LoginTokenResponseSchema(BaseSchema):
-    """Schema for LoginTokenResponse."""
-
-    # Required properties.
-    # pylint: disable=invalid-name
-    id = String(required=True, description='access token.')
-
+# Helper schemas.
 
 class UserApiUrlResponseSchema(BaseSchema):
     """Nested schema for UserInfoResponse"""
+    # pylint: disable=invalid-name
 
     # Required properties.
     http = Url(required=True, description='the API URL for http communication.')
-    # pylint: disable=invalid-name
     ws = String(required=True, description='the API URL for websocket communication.')
+
+
+# Endpoint schemas.
+
+class LoginRequestSchema(BaseSchema):
+    """Schema for LoginTokenRequest"""
+
+    # Required properties
+    apiToken = String(required=True, description='API token.')
+
+
+class LoginResponseSchema(BaseSchema):
+    """Schema for LoginTokenResponse."""
+    # pylint: disable=invalid-name
+
+    # Required properties.
+    id = String(required=True, description='access token.')
 
 
 class UserInfoResponseSchema(BaseSchema):
