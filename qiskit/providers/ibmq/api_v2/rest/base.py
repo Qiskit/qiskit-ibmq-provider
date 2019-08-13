@@ -14,6 +14,8 @@
 
 """REST clients for accessing the IBM Q Experience v2 API."""
 
+from ..session import RetrySession
+
 
 class RestAdapterBase:
     """Base class for REST adaptors."""
@@ -21,7 +23,7 @@ class RestAdapterBase:
     URL_MAP = {}
     """Mapping between the internal name of an endpoint and the actual URL"""
 
-    def __init__(self, session, prefix_url=''):
+    def __init__(self, session: RetrySession, prefix_url: str = '') -> None:
         """RestAdapterBase constructor.
 
         Args:
@@ -31,7 +33,7 @@ class RestAdapterBase:
         self.session = session
         self.prefix_url = prefix_url
 
-    def get_url(self, identifier):
+    def get_url(self, identifier: str) -> str:
         """Return the resolved URL for the specified identifier.
 
         Args:

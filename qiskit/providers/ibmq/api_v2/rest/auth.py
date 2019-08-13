@@ -14,6 +14,7 @@
 
 """Authentication REST adapter for the IBM Q Experience v2 API."""
 
+from typing import Dict, Any
 from .base import RestAdapterBase
 
 
@@ -25,7 +26,7 @@ class Auth(RestAdapterBase):
         'user_info': '/users/me',
     }
 
-    def login(self, api_token):
+    def login(self, api_token: str) -> Dict[str, Any]:
         """Login with token.
 
         Args:
@@ -37,7 +38,7 @@ class Auth(RestAdapterBase):
         url = self.get_url('login')
         return self.session.post(url, json={'apiToken': api_token}).json()
 
-    def user_info(self):
+    def user_info(self) -> Dict[str, Any]:
         """Return user information."""
         url = self.get_url('user_info')
         response = self.session.get(url).json()
