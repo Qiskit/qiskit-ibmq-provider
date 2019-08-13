@@ -31,7 +31,7 @@ from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider, requires_qe_access
+from ..decorators import requires_provider, requires_qe_access, requires_new_api_auth
 
 
 class TestIBMQJob(JobTestCase):
@@ -433,9 +433,13 @@ class TestIBMQJob(JobTestCase):
         job = backend.run(qobj)
         _ = job.result()
 
-    @requires_provider
-    def test_custom_job_name(self, provider):
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_custom_job_name(self, qe_token, qe_url):
         """Test assigning a custom job name."""
+        factory = IBMQFactory()
+        provider = factory.enable_account(qe_token, qe_url)
+
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 
@@ -447,9 +451,13 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(len(job_list), 1)
         self.assertEqual(job_id, job_list[0].job_id())
 
-    @requires_provider
-    def test_duplicate_job_name(self, provider):
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_duplicate_job_name(self, qe_token, qe_url):
         """Test multiple jobs with the same custom job name."""
+        factory = IBMQFactory()
+        provider = factory.enable_account(qe_token, qe_url)
+
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 
