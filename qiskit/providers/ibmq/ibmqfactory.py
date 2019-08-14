@@ -323,9 +323,9 @@ class IBMQFactory:
 
     def providers(
             self,
-            hub: str = None,
-            group: str = None,
-            project: str = None
+            hub: Optional[str] = None,
+            group: Optional[str] = None,
+            project: Optional[str] = None
     ) -> List[AccountProvider]:
         """Return a list of providers with optional filtering.
 
@@ -354,9 +354,9 @@ class IBMQFactory:
 
     def get_provider(
             self,
-            hub: str = None,
-            group: str = None,
-            project: str = None
+            hub: Optional[str] = None,
+            group: Optional[str] = None,
+            project: Optional[str] = None
     ) -> AccountProvider:
         """Return a provider for a single hub/group/project combination.
 

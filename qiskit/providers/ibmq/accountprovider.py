@@ -61,7 +61,7 @@ class AccountProvider(BaseProvider):
     def backends(
             self,
             name: Optional[str] = None,
-            filters: Optional[Callable[[IBMQBackend], bool]] = None,
+            filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
             **kwargs: Dict
     ) -> List[IBMQBackend]:
         """Return all backends accessible via this provider, subject to optional filtering.
