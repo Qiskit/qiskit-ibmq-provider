@@ -15,7 +15,7 @@
 """Schemas for authentication."""
 
 from qiskit.validation import BaseSchema
-from qiskit.validation.fields import String, Url, Nested, Boolean
+from qiskit.validation.fields import String, Url, Nested
 
 
 # Helper schemas.
@@ -57,9 +57,6 @@ class UserInfoResponseSchema(BaseSchema):
 
 class VersionResponseSchema(BaseSchema):
     """Schema for VersionResponse"""
-
-    # Custom properties
-    new_api = Boolean(missing=False, required=False)
 
     # Required properties.
     api_auth = String(load_from='api-auth', required=True,
