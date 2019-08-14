@@ -60,7 +60,7 @@ class RetrySession(Session):
             backoff_factor (float): backoff factor between retry attempts.
             verify (bool): enable SSL verification.
             proxies (dict): proxy URLs mapped by protocol.
-            auth (AuthBase): authentication handler or `None`.
+            auth (AuthBase): authentication handler.
         """
         super().__init__()
 
