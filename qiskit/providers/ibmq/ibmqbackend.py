@@ -68,7 +68,7 @@ class IBMQBackend(BaseBackend):
         self._properties = None
         self._defaults = None
 
-    def run(self, qobj: Qobj, job_name: str) -> IBMQJob:
+    def run(self, qobj: Qobj, job_name: Optional[str] = None) -> IBMQJob:
         """Run a Qobj asynchronously.
 
         Args:
