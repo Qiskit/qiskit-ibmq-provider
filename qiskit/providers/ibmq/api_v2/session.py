@@ -81,7 +81,7 @@ class RetrySession(Session):
         return self._access_token
 
     @access_token.setter
-    def access_token(self, value: str) -> None:
+    def access_token(self, value: Optional[str]) -> None:
         """Set the session access token."""
         self._access_token = value
         if value:
