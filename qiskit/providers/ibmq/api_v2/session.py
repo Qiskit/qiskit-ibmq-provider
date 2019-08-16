@@ -15,8 +15,10 @@
 """Session customized for IBM Q Experience access."""
 
 import os
-from requests import Session, RequestException
+from typing import Dict, Optional
+from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
+from requests.auth import AuthBase
 from urllib3.util.retry import Retry
 
 from .exceptions import RequestsApiError
@@ -39,9 +41,16 @@ class RetrySession(Session):
     ``requests.Session``.
     """
 
-    def __init__(self, base_url, access_token=None,
-                 retries=5, backoff_factor=0.5,
-                 verify=True, proxies=None, auth=None):
+    def __init__(
+            self,
+            base_url: str,
+            access_token: Optional[str] = None,
+            retries: int = 5,
+            backoff_factor: float = 0.5,
+            verify: bool = True,
+            proxies: Optional[Dict[str, str]] = None,
+            auth: Optional[AuthBase] = None
+    ) -> None:
         """RetrySession constructor.
 
         Args:
@@ -62,17 +71,17 @@ class RetrySession(Session):
         self._initialize_retry(retries, backoff_factor)
         self._initialize_session_parameters(verify, proxies or {}, auth)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """RetrySession destructor. Closes the session."""
         self.close()
 
     @property
-    def access_token(self):
+    def access_token(self) -> Optional[str]:
         """Return the session access token."""
         return self._access_token
 
     @access_token.setter
-    def access_token(self, value):
+    def access_token(self, value: Optional[str]) -> None:
         """Set the session access token."""
         self._access_token = value
         if value:
@@ -80,7 +89,7 @@ class RetrySession(Session):
         else:
             self.params.pop('access_token', None)
 
-    def _initialize_retry(self, retries, backoff_factor):
+    def _initialize_retry(self, retries: int, backoff_factor: float) -> None:
         """Set the Session retry policy.
 
         Args:
@@ -97,7 +106,12 @@ class RetrySession(Session):
         self.mount('http://', retry_adapter)
         self.mount('https://', retry_adapter)
 
-    def _initialize_session_parameters(self, verify, proxies, auth):
+    def _initialize_session_parameters(
+            self,
+            verify: bool,
+            proxies: Dict[str, str],
+            auth: Optional[AuthBase] = None
+    ) -> None:
         """Set the Session parameters and attributes.
 
         Args:
@@ -118,7 +132,7 @@ class RetrySession(Session):
         self.proxies = proxies or {}
         self.verify = verify
 
-    def request(self, method, url, bare=False, **kwargs):
+    def request(self, method: str, url: str, bare: bool = False, **kwargs: Dict) -> Response:
         """Constructs a Request, prepending the base url.
 
         Args:
@@ -129,7 +143,7 @@ class RetrySession(Session):
             kwargs (dict): additional arguments for the request.
 
         Returns:
-            Request: Request object.
+            Response: Response object.
 
         Raises:
             RequestsApiError: if the request failed.
