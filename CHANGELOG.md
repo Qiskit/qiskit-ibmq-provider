@@ -13,6 +13,11 @@ The format is based on [Keep a Changelog].
 > - **Fixed**: for any bug fixes.
 > - **Security**: in case of vulnerabilities.
 
+## [0.3.2] - 2019-08-20
+### Changed
+
+- Pin version of nest\_asyncio requirement
+
 
 ## [0.3.1] - 2019-07-23
 
@@ -143,7 +148,7 @@ The format is based on [Keep a Changelog].
 
 - Support for non-qobj format has been removed. (\#26, \#28)
 
-
+[0.3.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.2...0.3.0
 [0.2.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.1...0.2.2
