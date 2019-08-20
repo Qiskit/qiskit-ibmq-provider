@@ -30,6 +30,11 @@ The format is based on [Keep a Changelog].
   parameter. If specified, the function returns the backend properties closest 
   to, but older than, the specified datetime filter (\#277).
 
+## [0.3.2] - 2019-08-20
+### Changed
+
+- Pin version of nest\_asyncio requirement
+
 ## [0.3.1] - 2019-07-23
 
 ### Changed
@@ -160,7 +165,8 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.1...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.2...HEAD
+[0.3.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.2...0.3.0
 [0.2.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.1...0.2.2
