@@ -395,3 +395,11 @@ class TestAuthClient(IBMQTestCase):
         api = AuthClient(qe_token, qe_url)
         version = api.api_version()
         self.assertIsNotNone(version)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_user_urls(self, qe_token, qe_url):
+        """Check the user urls of the QX API."""
+        api = AuthClient(qe_token, qe_url)
+        user_urls = api.user_urls()
+        self.assertIsNotNone(user_urls)
