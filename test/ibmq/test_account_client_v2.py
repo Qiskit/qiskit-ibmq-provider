@@ -403,3 +403,11 @@ class TestAuthClient(IBMQTestCase):
         api = AuthClient(qe_token, qe_url)
         user_urls = api.user_urls()
         self.assertIsNotNone(user_urls)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_user_hubs(self, qe_token, qe_url):
+        """Check the user hubs of the QX API."""
+        api = AuthClient(qe_token, qe_url)
+        user_hubs = api.user_hubs()
+        self.assertIsNotNone(user_hubs)
