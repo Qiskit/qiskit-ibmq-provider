@@ -146,7 +146,7 @@ class TestAccountClient(IBMQTestCase):
         self.assertIsNotNone(properties)
 
     def test_backend_pulse_defaults(self):
-        """  """
+        """Check the backend pulse defaults of each backend."""
         api = self._get_client()
         api_backends = [backend_info for backend_info
                         in api.list_backends()]
