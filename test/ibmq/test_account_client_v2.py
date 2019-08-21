@@ -403,8 +403,7 @@ class TestAuthClient(IBMQTestCase):
         api = AuthClient(qe_token, qe_url)
         user_urls = api.user_urls()
         self.assertIsNotNone(user_urls)
-        self.assertTrue('http' in user_urls)
-        self.assertTrue('ws' in user_urls)
+        self.assertTrue('http' in user_urls and 'ws' in user_urls)
 
     @requires_qe_access
     @requires_new_api_auth
