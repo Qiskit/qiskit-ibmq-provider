@@ -148,8 +148,7 @@ class TestAccountClient(IBMQTestCase):
     def test_backend_pulse_defaults(self):
         """Check the backend pulse defaults of each backend."""
         api = self._get_client()
-        api_backends = [backend_info for backend_info
-                        in api.list_backends()]
+        api_backends = api.list_backends()
 
         for backend_info in api_backends:
             backend_name = backend_info['backend_name']
