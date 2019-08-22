@@ -145,6 +145,22 @@ class TestAccountClient(IBMQTestCase):
         properties = api.backend_properties(backend_name)
         self.assertIsNotNone(properties)
 
+    def test_backend_pulse_defaults(self):
+        """Check the backend pulse defaults of each backend."""
+        api = self._get_client()
+        api_backends = api.list_backends()
+
+        for backend_info in api_backends:
+            backend_name = backend_info['backend_name']
+            with self.subTest(backend_name=backend_name):
+                defaults = api.backend_pulse_defaults(backend_name=backend_name)
+                is_open_pulse = backend_info['open_pulse']
+
+                if is_open_pulse:
+                    self.assertTrue(defaults)
+                else:
+                    self.assertFalse(defaults)
+
     def test_available_backends(self):
         """Check the backends available."""
         api = self._get_client()
