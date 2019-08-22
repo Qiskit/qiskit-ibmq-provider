@@ -53,3 +53,11 @@ class UserInfoResponseSchema(BaseSchema):
     urls = Nested(UserApiUrlResponseSchema, required=True,
                   description='base URLs for the services. Currently supported keys: '
                               'http and ws')
+
+
+class VersionResponseSchema(BaseSchema):
+    """Schema for VersionResponse"""
+
+    # Required properties.
+    api_auth = String(load_from='api-auth', required=True,
+                      description='the versions of auth API component')
