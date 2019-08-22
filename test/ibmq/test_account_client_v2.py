@@ -411,3 +411,25 @@ class TestAuthClient(IBMQTestCase):
         api = AuthClient(qe_token, qe_url)
         version = api.api_version()
         self.assertIsNotNone(version)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_user_urls(self, qe_token, qe_url):
+        """Check the user urls of the QX API."""
+        api = AuthClient(qe_token, qe_url)
+        user_urls = api.user_urls()
+        self.assertIsNotNone(user_urls)
+        self.assertTrue('http' in user_urls and 'ws' in user_urls)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_user_hubs(self, qe_token, qe_url):
+        """Check the user hubs of the QX API."""
+        api = AuthClient(qe_token, qe_url)
+        user_hubs = api.user_hubs()
+        self.assertIsNotNone(user_hubs)
+        for user_hub in user_hubs:
+            with self.subTest(user_hub=user_hub):
+                self.assertTrue('hub' in user_hub
+                                and 'group' in user_hub
+                                and 'project' in user_hub)
