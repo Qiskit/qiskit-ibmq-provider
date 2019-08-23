@@ -130,7 +130,7 @@ class WebsocketClient(BaseClient):
         return websocket
 
     @asyncio.coroutine
-    def get_job_status(self, job_id, timeout=None, retry_max=1):
+    def get_job_status(self, job_id, timeout=None):
         """Return the status of a job.
 
         Reads status messages from the API, which are issued at regular
@@ -140,9 +140,6 @@ class WebsocketClient(BaseClient):
         Args:
             job_id (str): id of the job.
             timeout (int): timeout, in seconds.
-            retry_max (int): max number of retries to
-                attempt, in case of wesocket connection
-                closing.
 
         Returns:
             dict: the API response for the status of a job, as a dict that
@@ -153,81 +150,72 @@ class WebsocketClient(BaseClient):
             WebsocketTimeoutError: if the timeout has been reached.
         """
         url = '{}/jobs/{}/status'.format(self.websocket_url, job_id)
+        websocket = yield from self._connect(url)
 
-        current_retry = 0
-        while current_retry <= retry_max:
-            websocket = yield from self._connect(url)
+        original_timeout = timeout
+        start_time = time.time()
+        attempt_retry = True  # By default, attempt to retry if the websocket connection closes.
+        last_status = None
 
-            connection_closed_ex_code = None
-            original_timeout = timeout
-            start_time = time.time()
-            last_status = None
+        try:
+            # Read messages from the server until the connection is closed or
+            # a timeout has been reached.
+            while True:
+                try:
+                    with warnings.catch_warnings():
+                        # Suppress websockets deprecation warnings until the fix is available
+                        warnings.filterwarnings("ignore", category=DeprecationWarning)
+                        if timeout:
+                            response_raw = yield from asyncio.wait_for(
+                                websocket.recv(), timeout=timeout)
 
-            try:
-                # Read messages from the server until the connection is closed or
-                # a timeout has been reached.
-                while True:
-                    try:
-                        with warnings.catch_warnings():
-                            # Suppress websockets deprecation warnings until the fix is available
-                            warnings.filterwarnings("ignore", category=DeprecationWarning)
-                            if timeout:
-                                response_raw = yield from asyncio.wait_for(
-                                    websocket.recv(), timeout=timeout)
+                            # Decrease the timeout, with a 5-second grace period.
+                            elapsed_time = time.time() - start_time
+                            timeout = max(5, int(original_timeout - elapsed_time))
+                        else:
+                            response_raw = yield from websocket.recv()
+                    logger.debug('Received message from websocket: %s',
+                                 response_raw)
 
-                                # Decrease the timeout, with a 5-second grace period.
-                                elapsed_time = time.time() - start_time
-                                timeout = max(5, int(original_timeout - elapsed_time))
-                            else:
-                                response_raw = yield from websocket.recv()
-                        logger.debug('Received message from websocket: %s',
-                                     response_raw)
+                    response = WebsocketMessage.from_bytes(response_raw)
+                    last_status = response.data
 
-                        response = WebsocketMessage.from_bytes(response_raw)
-                        last_status = response.data
+                    job_status = response.data.get('status')
+                    if (job_status and
+                            ApiJobStatus(job_status) in API_JOB_FINAL_STATES):
+                        break
 
-                        job_status = response.data.get('status')
-                        if (job_status and
-                                ApiJobStatus(job_status) in API_JOB_FINAL_STATES):
-                            break
+                except futures.TimeoutError:
+                    # Timeout during our wait.
+                    raise WebsocketTimeoutError('Timeout reached') from None
+                except ConnectionClosed as ex:
+                    # From the API:
+                    # 4001: closed due to an internal errors
+                    # 4002: closed on purpose (no more updates to send)
+                    # 4003: closed due to job not found.
+                    message = 'Unexpected error'
+                    if ex.code == 4001:
+                        message = 'Internal server error'
+                    elif ex.code == 4002:
+                        break
+                    elif ex.code == 4003:
+                        attempt_retry = False  # No point in retrying.
+                        message = 'Job id not found'
 
-                    except futures.TimeoutError:
-                        # Timeout during our wait.
-                        raise WebsocketTimeoutError('Timeout reached') from None
-                    except ConnectionClosed as ex:
-                        # From the API:
-                        # 4001: closed due to an internal errors
-                        # 4002: closed on purpose (no more updates to send)
-                        # 4003: closed due to job not found.
-                        connection_closed_ex_code = ex.code
-                        message = 'Unexpected error'
+                    if attempt_retry:
+                        attempt_retry = False  # Disallow further retries.
+                        websocket = yield from self._connect(url)
+                        continue
 
-                        if ex.code == 4001:
-                            message = 'Internal server error'
-                        elif ex.code == 4002:
-                            break
-                        elif ex.code == 4003:
-                            message = 'Job id not found'
-                        raise WebsocketError('Connection with websocket closed '
-                                             'unexpectedly: {}'.format(message)) from ex
-            except WebsocketError as ex:
-                # Maxed out the number of retries.
-                if current_retry >= retry_max:
-                    raise ex
-                # Job id not found. No point of retrying.
-                if connection_closed_ex_code == 4003:
-                    raise ex
+                    raise WebsocketError('Connection with websocket closed '
+                                         'unexpectedly: {}'.format(message)) from ex
+        finally:
+            with warnings.catch_warnings():
+                # Suppress websockets deprecation warnings until the fix is available
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                yield from websocket.close()
 
-                current_retry = current_retry + 1
-                # Retry: Continue next iteration after finally is executed.
-                continue
-            finally:
-                with warnings.catch_warnings():
-                    # Suppress websockets deprecation warnings until the fix is available
-                    warnings.filterwarnings("ignore", category=DeprecationWarning)
-                    yield from websocket.close()
-
-            return last_status
+        return last_status
 
     def _authentication_message(self):
         """Return the message used for authenticating against the server."""
