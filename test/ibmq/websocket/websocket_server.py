@@ -25,8 +25,6 @@ TOKEN_JOB_TRANSITION = 'token_job_transition'
 TOKEN_TIMEOUT = 'token_timeout'
 TOKEN_WRONG_FORMAT = 'token_wrong_format'
 TOKEN_WEBSOCKET_RETRY_SUCCESS = 'token_websocket_retry_success'
-TOKEN_WEBSOCKET_RETRY_LIMIT_EXCEEDED = 'token_websocket_retry_limit_exceeded'
-RETRY_MAX = 1
 
 
 @asyncio.coroutine
