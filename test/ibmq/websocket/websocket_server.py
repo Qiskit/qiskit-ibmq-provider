@@ -18,6 +18,7 @@ import asyncio
 import json
 
 from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketMessage
+from test.decorators import static_vars
 
 
 TOKEN_JOB_COMPLETED = 'token_job_completed'
@@ -106,15 +107,6 @@ def handle_token_wrong_format(websocket):
     """Return a status in an invalid format."""
     yield from websocket.send('INVALID'.encode('utf8'))
     yield from websocket.close()
-
-
-# Decorator function to keep track of a websocket connect retry.
-def static_vars(**kwargs):
-    def decorate(func):
-        for k in kwargs:
-            setattr(func, k, kwargs[k])
-        return func
-    return decorate
 
 
 @static_vars(attempt_retry=True)
