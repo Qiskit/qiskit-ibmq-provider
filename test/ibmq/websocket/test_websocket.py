@@ -115,6 +115,7 @@ class TestWebsocketClientMock(IBMQTestCase):
                 client.get_job_status('job_id'))
 
     def test_websocket_retry_success(self):
+        """Test retrieving a job status during a retry attempt."""
         client = WebsocketClient('ws://{}:{}'.format(
             TEST_IP_ADDRESS, VALID_PORT), TOKEN_WEBSOCKET_RETRY_SUCCESS)
         response = asyncio.get_event_loop().run_until_complete(
@@ -124,6 +125,7 @@ class TestWebsocketClientMock(IBMQTestCase):
         self.assertEqual(response['status'], 'COMPLETED')
 
     def test_websocket_retry_failure(self):
+        """Test exceeding the retry limit for retrieving a job status."""
         client = WebsocketClient('ws://{}:{}'.format(
             TEST_IP_ADDRESS, VALID_PORT), TOKEN_WEBSOCKET_RETRY_LIMIT_EXCEEDED)
         with self.assertRaises(WebsocketError):
@@ -131,6 +133,7 @@ class TestWebsocketClientMock(IBMQTestCase):
                 client.get_job_status('job_id'))
 
     def test_websocket_job_not_found(self):
+        """Test retrieving a job status for an non existent id."""
         client = WebsocketClient('ws://{}:{}'.format(
             TEST_IP_ADDRESS, VALID_PORT), TOKEN_WEBSOCKET_JOB_NOT_FOUND)
         with self.assertRaises(WebsocketError):
