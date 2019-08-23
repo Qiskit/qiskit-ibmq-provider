@@ -16,7 +16,7 @@
 from marshmallow.validate import OneOf
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
 from qiskit.validation import BaseSchema
-from qiskit.validation.fields import String, Url, Nested, Number, Boolean
+from qiskit.validation.fields import String, Url, Nested, Number
 
 
 # Helper schemas.
@@ -24,9 +24,11 @@ from qiskit.validation.fields import String, Url, Nested, Number, Boolean
 class InfoQueueResponseSchema(BaseSchema):
     """Nested schema for StatusResponseSchema"""
 
+    # Optional properties
+    position = Number(required=False, missing=0)
+
     # Required properties
     status = String(required=True)
-    position = Number(required=True, missing=0)
 
 
 class JobResponseSchema(BaseSchema):
