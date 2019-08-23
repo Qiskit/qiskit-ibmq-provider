@@ -108,6 +108,7 @@ def handle_token_wrong_format(websocket):
     yield from websocket.close()
 
 
+# Decorator function to keep track of a websocket connect retry.
 def static_vars(**kwargs):
     def decorate(func):
         for k in kwargs:
@@ -119,7 +120,7 @@ def static_vars(**kwargs):
 @static_vars(attempt_retry=True)
 @asyncio.coroutine
 def handle_token_websocket_retry_success(websocket):
-    """Close the socket to force a retry."""
+    """Close the socket once and force a retry."""
     attempt_retry = handle_token_websocket_retry_success.attempt_retry
 
     if attempt_retry:
@@ -134,12 +135,12 @@ def handle_token_websocket_retry_success(websocket):
 
 @asyncio.coroutine
 def handle_token_websocket_retry_failure(websocket):
-    """Continually close the connection, so both the first attempt and retry fail."""
+    """Continually close the socket, until both the first attempt and retry fail."""
     yield from websocket.close()
 
 
 @asyncio.coroutine
 def handle_token_websocket_job_not_found(websocket):
-    """Close the socket and raise WebsocketError because job is not found."""
+    """Close the socket, specifying code for job not found."""
     yield from websocket.close(code=4003)
 
