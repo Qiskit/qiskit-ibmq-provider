@@ -29,7 +29,8 @@ from ...ibmqtestcase import IBMQTestCase
 
 from .websocket_server import (
     TOKEN_JOB_COMPLETED, TOKEN_JOB_TRANSITION, TOKEN_WRONG_FORMAT,
-    TOKEN_TIMEOUT, websocket_handler)
+    TOKEN_TIMEOUT, TOKEN_WEBSOCKET_RETRY_SUCCESS, TOKEN_WEBSOCKET_RETRY_LIMIT_EXCEEDED,
+    websocket_handler)
 
 TEST_IP_ADDRESS = '127.0.0.1'
 INVALID_PORT = 9876
@@ -111,3 +112,12 @@ class TestWebsocketClientMock(IBMQTestCase):
         with self.assertRaises(WebsocketIBMQProtocolError):
             _ = asyncio.get_event_loop().run_until_complete(
                 client.get_job_status('job_id'))
+
+    def test_websocket_retry_success(self):
+        client = WebsocketClient('ws://{}:{}'.format(
+            TEST_IP_ADDRESS, VALID_PORT), TOKEN_WEBSOCKET_RETRY_SUCCESS)
+        response = asyncio.get_event_loop().run_until_complete(
+            client.get_job_status('job_id'))
+        self.assertIsInstance(response, dict)
+        self.assertIn('status', response)
+        self.assertEqual(response['status'], 'COMPLETED')

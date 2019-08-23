@@ -24,6 +24,9 @@ TOKEN_JOB_COMPLETED = 'token_job_completed'
 TOKEN_JOB_TRANSITION = 'token_job_transition'
 TOKEN_TIMEOUT = 'token_timeout'
 TOKEN_WRONG_FORMAT = 'token_wrong_format'
+TOKEN_WEBSOCKET_RETRY_SUCCESS = 'token_websocket_retry_success'
+TOKEN_WEBSOCKET_RETRY_LIMIT_EXCEEDED = 'token_websocket_retry_limit_exceeded'
+RETRY_MAX = 1
 
 
 @asyncio.coroutine
@@ -39,7 +42,8 @@ def websocket_handler(websocket, path):
     if token in (TOKEN_JOB_COMPLETED,
                  TOKEN_JOB_TRANSITION,
                  TOKEN_TIMEOUT,
-                 TOKEN_WRONG_FORMAT):
+                 TOKEN_WRONG_FORMAT,
+                 TOKEN_WEBSOCKET_RETRY_SUCCESS):
         msg_out = json.dumps({'type': 'authenticated'})
         yield from websocket.send(msg_out.encode('utf8'))
     else:
@@ -55,6 +59,8 @@ def websocket_handler(websocket, path):
         yield from handle_token_timeout(websocket)
     elif token == TOKEN_WRONG_FORMAT:
         yield from handle_token_wrong_format(websocket)
+    elif token == TOKEN_WEBSOCKET_RETRY_SUCCESS:
+        yield from handle_token_websocket_retry_success(websocket)
 
 
 @asyncio.coroutine
@@ -94,3 +100,26 @@ def handle_token_wrong_format(websocket):
     """Return a status in an invalid format."""
     yield from websocket.send('INVALID'.encode('utf8'))
     yield from websocket.close()
+
+
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
+
+
+@static_vars(attempt_retry=True)
+def handle_token_websocket_retry_success(websocket):
+    """Retry websocket connection."""
+    attempt_retry = handle_token_websocket_retry_success.attempt_retry
+
+    if attempt_retry:
+        handle_token_websocket_retry_success.attempt_retry = False
+        yield from websocket.close()  # Force connection to close, in order to retry.
+    else:
+        msg_out = WebsocketMessage(type_='job-status',
+                                   data={'status': 'COMPLETED'})
+        yield from websocket.send(msg_out.as_json().encode('utf8'))
+        yield from websocket.close(code=4002)
