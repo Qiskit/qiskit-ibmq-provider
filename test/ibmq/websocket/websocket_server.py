@@ -111,7 +111,7 @@ def static_vars(**kwargs):
 @static_vars(attempt_retry=True)
 @asyncio.coroutine
 def handle_token_websocket_retry_success(websocket):
-    """Retry websocket connection."""
+    """Close the socket to force a retry."""
     attempt_retry = handle_token_websocket_retry_success.attempt_retry
 
     if attempt_retry:
