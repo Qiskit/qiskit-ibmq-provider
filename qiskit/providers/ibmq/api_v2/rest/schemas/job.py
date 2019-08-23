@@ -63,11 +63,6 @@ class CancelResponseSchema(BaseSchema):
     # Optional properties
     error = String(required=False)
 
-    # Required properties
-    cancelled = Boolean(required=True, description="True if job can be cancelled, else False. "
-                                                   "Note this operation might not be possible "
-                                                   "depending on the environment.")
-
 
 class UploadUrlResponseSchema(BaseSchema):
     """Schema for UploadUrlResponse"""
