@@ -145,7 +145,7 @@ class JobsResponseSchema(BaseSchema):
 
     # Required properties
     id = String(required=True)
-    status = String(required=True, validate=OneOf([status.name for status in JobStatus]))
+    status = String(required=True, validate=OneOf([status.value for status in JobStatus]))
     creationDate = String(required=True)
 
 
