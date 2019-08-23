@@ -135,7 +135,8 @@ class WebsocketClient(BaseClient):
 
         Reads status messages from the API, which are issued at regular
         intervals (20 seconds). When a final state is reached, the server
-        closes the socket.
+        closes the socket. If the websocket connection is closed without
+        a reason, there is an attempt to retry one time.
 
         Args:
             job_id (str): id of the job.
