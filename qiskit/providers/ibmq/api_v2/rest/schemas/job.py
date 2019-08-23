@@ -52,7 +52,7 @@ class StatusResponseSchema(BaseSchema):
     infoQueue = Nested(InfoQueueResponseSchema, required=False)
 
     # Required properties
-    status = String(required=True, validate=OneOf([status.name for status in ApiJobStatus]))
+    status = String(required=True, validate=OneOf([status.value for status in ApiJobStatus]))
 
 
 class CancelResponseSchema(BaseSchema):
