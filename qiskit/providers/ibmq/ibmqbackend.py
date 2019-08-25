@@ -31,7 +31,7 @@ from .api_v2.clients import BaseClient, AccountClient
 from .apiconstants import ApiJobStatus, ApiJobKind
 from .credentials import Credentials
 from .exceptions import IBMQBackendError, IBMQBackendValueError
-from .job import IBMQJob
+from .job import IBMQJob, IBMQJob2
 from .utils import update_qobj_config
 
 logger = logging.getLogger(__name__)
@@ -82,15 +82,21 @@ class IBMQBackend(BaseBackend):
             IBMQJob: an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
-        kwargs = {}
-        if isinstance(self._api, BaseClient):
-            # Default to using object storage and websockets for new API.
-            kwargs = {'use_object_storage': True,
-                      'use_websockets': True}
+        # kwargs = {}
+        # if isinstance(self._api, BaseClient):
+        #     # Default to using object storage and websockets for new API.
+        #     kwargs = {'use_object_storage': True,
+        #               'use_websockets': True}
 
-        job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
-        job.submit(job_name=job_name)
+        # job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
+        # job.submit(job_name=job_name)
 
+        d = {"backend": self,
+             "id": None,
+             "api": self._api,
+             "qobj": qobj}
+        job = IBMQJob2(self, None, self._api, qobj=qobj)
+        job.submit()
         return job
 
     def properties(

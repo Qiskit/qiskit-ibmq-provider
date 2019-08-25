@@ -29,18 +29,21 @@ from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.result import Result
 from qiskit.tools.events.pubsub import Publisher
+from qiskit.validation import bind_schema
+from qiskit.validation.exceptions import ModelValidationError
 
 from ..api import ApiError
 from ..apiconstants import ApiJobStatus
 from ..api_v2.clients import BaseClient
 from ..api_v2.exceptions import WebsocketTimeoutError, WebsocketError
+from ..api_v2.rest.schemas.job import JobModel, JobErrorModel
 
 from .utils import current_utc_time, build_error_report, is_job_queued
 
 logger = logging.getLogger(__name__)
 
 
-class IBMQJob(BaseJob):
+class IBMQJob2(JobModel, BaseJob):
     """Representation of a job that will be execute on a IBMQ backend.
 
     Represent the jobs that will be executed on IBM-Q simulators and real
@@ -110,9 +113,9 @@ class IBMQJob(BaseJob):
     """
     _executor = futures.ThreadPoolExecutor()
 
-    def __init__(self, backend, job_id, api, qobj=None,
+    def __init__(self, backend, id, api, qobj=None,
                  creation_date=None, api_status=None,
-                 use_object_storage=False, use_websockets=False):
+                 use_object_storage=False, use_websockets=False, **kwargs):
         """IBMQJob init function.
 
         We can instantiate jobs from two sources: A QObj, and an already submitted job returned by
@@ -139,12 +142,13 @@ class IBMQJob(BaseJob):
             representing an already-created job retrieved from the API server.
         """
         # pylint: disable=unused-argument
-        super().__init__(backend, job_id)
+
+        BaseJob.__init__(self, backend, id)
 
         # Properties common to all Jobs.
         self._api = api
         self._backend = backend
-        self._creation_date = creation_date or current_utc_time()
+        self._creation_date = kwargs.pop('creationDate', current_utc_time())
         self._future = None
         self._future_captured_exception = None
 
@@ -153,38 +157,42 @@ class IBMQJob(BaseJob):
         self._api_error_msg = None
         self._result = None
         self._queue_position = None
+        self._qobj_payload = {}
 
         # Properties used for deciding the underlying API features to use.
         self._use_object_storage = use_object_storage
         self._use_websockets = use_websockets
 
         if qobj:
-            validate_qobj_against_schema(qobj)
-            self._qobj_payload = qobj.to_dict()
+            self._qobj_raw = qobj
+            # validate_qobj_against_schema(qobj)      # TODO
+            # self._qobj_payload = qobj.to_dict()
             self._status = JobStatus.INITIALIZING
         else:
+            self._init_job_model(**kwargs)
             # In case of not providing a `qobj`, it is assumed the job already
             # exists in the API (with `job_id`).
-            self._qobj_payload = {}
+            self._qobj_raw = None
+            # self._qobj_payload = {}
 
             # Some API calls (`get_status_jobs`, `get_status_job`) provide
             # enough information to recreate the `Job`. If that is the case, try
             # to make use of that information during instantiation, as
             # `self.status()` involves an extra call to the API.
-            if api_status == ApiJobStatus.VALIDATING.value:
-                self._status = JobStatus.VALIDATING
-            elif api_status == ApiJobStatus.COMPLETED.value:
-                self._status = JobStatus.DONE
-            elif api_status == ApiJobStatus.CANCELLED.value:
-                self._status = JobStatus.CANCELLED
-                self._cancelled = True
-            elif api_status in (ApiJobStatus.ERROR_CREATING_JOB.value,
-                                ApiJobStatus.ERROR_VALIDATING_JOB.value,
-                                ApiJobStatus.ERROR_RUNNING_JOB.value):
-                self._status = JobStatus.ERROR
-            else:
-                self._status = JobStatus.INITIALIZING
-                self.status()
+            # if api_status == ApiJobStatus.VALIDATING.value:
+            #     self._status = JobStatus.VALIDATING
+            # elif api_status == ApiJobStatus.COMPLETED.value:
+            #     self._status = JobStatus.DONE
+            # elif api_status == ApiJobStatus.CANCELLED.value:
+            #     self._status = JobStatus.CANCELLED
+            #     self._cancelled = True
+            # elif api_status in (ApiJobStatus.ERROR_CREATING_JOB.value,
+            #                     ApiJobStatus.ERROR_VALIDATING_JOB.value,
+            #                     ApiJobStatus.ERROR_RUNNING_JOB.value):
+            #     self._status = JobStatus.ERROR
+            # else:
+            #     self._status = JobStatus.INITIALIZING
+            #     self.status()
 
     def qobj(self):
         """Return the Qobj submitted for this job.
@@ -435,8 +443,14 @@ class IBMQJob(BaseJob):
         # TODO: Validation against the schema should be done here and not
         # during initialization. Once done, we should document that the method
         # can raise QobjValidationError.
+        print(">>>>>> ibmqjob2 submitting job")
         if self._future is not None or self._job_id is not None:
             raise JobError("We have already submitted the job!")
+
+        # Validate the qobj
+        validate_qobj_against_schema(self._qobj_raw)
+        self._qobj_payload = self._qobj_raw.to_dict()
+
         self._future = self._executor.submit(self._submit_callback, job_name)
         Publisher().publish("ibmq.job.start", self)
 
@@ -451,49 +465,38 @@ class IBMQJob(BaseJob):
         """
         backend_name = self.backend().name()
 
-        submit_info = None
-        if self._use_object_storage:
-            # Attempt to use object storage.
-            try:
-                submit_info = self._api.job_submit_object_storage(
-                    backend_name=backend_name,
-                    qobj_dict=self._qobj_payload,
-                    job_name=job_name)
-            except Exception as err:  # pylint: disable=broad-except
-                # Fall back to submitting the Qobj via POST if object storage
-                # failed.
-                logger.info('Submitting the job via object storage failed: '
-                            'retrying via regular POST upload.')
-                # Disable object storage for this job.
-                self._use_object_storage = False
+        try:
+            kwargs = {}
+            if isinstance(self._api, BaseClient):
+                kwargs = {'job_name': job_name}
+            submit_info = self._api.submit_job(
+                backend_name=backend_name,
+                qobj_dict=self._qobj_payload,
+                **kwargs)
 
-        if not submit_info:
-            try:
-                kwargs = {}
-                if isinstance(self._api, BaseClient):
-                    kwargs = {'job_name': job_name}
-                submit_info = self._api.submit_job(
-                    backend_name=backend_name,
-                    qobj_dict=self._qobj_payload,
-                    **kwargs)
-            except Exception as err:  # pylint: disable=broad-except
-                # Undefined error during submission:
-                # Capture and keep it for raising it when calling status().
-                self._future_captured_exception = err
-                return None
+            # Error in the job after submission:
+            # Transition to the `ERROR` final state.
+            if 'error' in submit_info:
+                self._status = JobStatus.ERROR
+                self._api_error_msg = str(submit_info['error'])
+                return submit_info
 
-        # Error in the job after submission:
-        # Transition to the `ERROR` final state.
-        if 'error' in submit_info:
-            self._status = JobStatus.ERROR
-            self._api_error_msg = str(submit_info['error'])
-            return submit_info
+            # Submission success.
+            self._init_job_model(**submit_info)
+            self._status = JobStatus.QUEUED
 
-        # Submission success.
-        self._creation_date = submit_info.get('creationDate')
-        self._status = JobStatus.QUEUED
-        self._job_id = submit_info.get('id')
-        return submit_info
+        except Exception as err:  # pylint: disable=broad-except
+            # Undefined error during submission:
+            # Capture and keep it for raising it when calling status().
+
+            import traceback
+            traceback.print_exc()
+            print(f">>>>>> err is {err}")
+
+            self._future_captured_exception = err
+            # return None
+
+        # return submit_info
 
     def _wait_for_job(self, timeout=None, wait=5):
         """Blocks until the job is complete and returns the job content from the
@@ -585,17 +588,15 @@ class IBMQJob(BaseJob):
             if self._future is None:
                 raise JobError("You have to submit the job before doing a job related operation!")
             try:
-                submit_info = self._future.result(timeout=timeout)
+                self._future.result(timeout=timeout)
                 if self._future_captured_exception is not None:
                     raise self._future_captured_exception
             except TimeoutError as ex:
                 raise JobTimeoutError(
                     "Timeout waiting for the job being submitted: {}".format(ex)
                 )
-            if 'error' in submit_info:
-                self._status = JobStatus.ERROR
-                self._api_error_msg = str(submit_info['error'])
-                raise JobError(str(submit_info['error']))
+            if self._status is JobStatus.ERROR:
+                raise JobError(self._api_error_msg)
 
     def _wait_for_final_status(self, timeout=None, wait=5):
         """Wait until the job progress to a final state.
@@ -642,25 +643,7 @@ class IBMQJob(BaseJob):
             raise JobTimeoutError(
                 'Timeout while waiting for job {}'.format(self._job_id))
 
+    def _init_job_model(self, **kwargs):
+        JobModel.__init__(self, **kwargs)
 
-# from qiskit.validation import BaseSchema, BaseModel, bind_schema
-# from ..api_v2.rest.schemas.job import JobByIdResponseSchema, JobByIdModel
-#
-# @bind_schema(JobByIdResponseSchema)
-# class IBMQJob2(JobByIdModel, BaseJob):
-#
-#     def __init__(self, id, backend, api, **kwargs):
-#         JobByIdModel.__init__(self, id, backend, **kwargs)
-#         BaseJob.__init__(self, backend, id)
-#
-#     def submit(self):
-#         pass
-#
-#     def result(self):
-#         pass
-#
-#     def cancel(self):
-#         pass
-#
-#     def status(self):
-#         pass
+        self._update_status({'status': self._api_status})
