@@ -25,7 +25,7 @@ TOKEN_JOB_TRANSITION = 'token_job_transition'
 TOKEN_TIMEOUT = 'token_timeout'
 TOKEN_WRONG_FORMAT = 'token_wrong_format'
 TOKEN_WEBSOCKET_RETRY_SUCCESS = 'token_websocket_retry_success'
-TOKEN_WEBSOCKET_RETRY_LIMIT_EXCEEDED = 'token_websocket_retry_limit_exceeded'
+TOKEN_WEBSOCKET_RETRY_FAILURE = 'token_websocket_retry_failure'
 TOKEN_WEBSOCKET_JOB_NOT_FOUND = 'token_websocket_job_not_found'
 
 
@@ -44,7 +44,7 @@ def websocket_handler(websocket, path):
                  TOKEN_TIMEOUT,
                  TOKEN_WRONG_FORMAT,
                  TOKEN_WEBSOCKET_RETRY_SUCCESS,
-                 TOKEN_WEBSOCKET_RETRY_LIMIT_EXCEEDED,
+                 TOKEN_WEBSOCKET_RETRY_FAILURE,
                  TOKEN_WEBSOCKET_JOB_NOT_FOUND):
         msg_out = json.dumps({'type': 'authenticated'})
         yield from websocket.send(msg_out.encode('utf8'))
@@ -63,7 +63,7 @@ def websocket_handler(websocket, path):
         yield from handle_token_wrong_format(websocket)
     elif token == TOKEN_WEBSOCKET_RETRY_SUCCESS:
         yield from handle_token_retry_success(websocket)
-    elif token == TOKEN_WEBSOCKET_RETRY_LIMIT_EXCEEDED:
+    elif token == TOKEN_WEBSOCKET_RETRY_FAILURE:
         yield from handle_token_retry_failure(websocket)
     elif token == TOKEN_WEBSOCKET_JOB_NOT_FOUND:
         yield from handle_token_job_not_found(websocket)

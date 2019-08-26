@@ -30,7 +30,7 @@ from ...ibmqtestcase import IBMQTestCase
 from .websocket_server import (
     TOKEN_JOB_COMPLETED, TOKEN_JOB_TRANSITION, TOKEN_WRONG_FORMAT,
     TOKEN_TIMEOUT, TOKEN_WEBSOCKET_RETRY_SUCCESS,
-    TOKEN_WEBSOCKET_RETRY_LIMIT_EXCEEDED, TOKEN_WEBSOCKET_JOB_NOT_FOUND,
+    TOKEN_WEBSOCKET_RETRY_FAILURE, TOKEN_WEBSOCKET_JOB_NOT_FOUND,
     websocket_handler)
 
 TEST_IP_ADDRESS = '127.0.0.1'
@@ -127,7 +127,7 @@ class TestWebsocketClientMock(IBMQTestCase):
     def test_websocket_retry_failure(self):
         """Test exceeding the retry limit for retrieving a job status."""
         client = WebsocketClient('ws://{}:{}'.format(
-            TEST_IP_ADDRESS, VALID_PORT), TOKEN_WEBSOCKET_RETRY_LIMIT_EXCEEDED)
+            TEST_IP_ADDRESS, VALID_PORT), TOKEN_WEBSOCKET_RETRY_FAILURE)
         with self.assertRaises(WebsocketError):
             _ = asyncio.get_event_loop().run_until_complete(
                 client.get_job_status('job_id'))
