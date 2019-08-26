@@ -17,7 +17,6 @@
 import asyncio
 import json
 
-from test.decorators import static_vars
 from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketMessage
 
 

@@ -175,21 +175,3 @@ def _get_credentials():
         return list(discovered_credentials.values())[0]
 
     raise Exception('Could not locate valid credentials.') from None
-
-
-def static_vars(**kwargs):
-    """Decorator that imitates static variables by setting
-        attribute values.
-
-    Args:
-        kwargs (dict): dict containing keys and values
-            to set as attributes.
-
-    Returns:
-        callable: the decorated function.
-    """
-    def decorate(func):
-        for k in kwargs:
-            setattr(func, k, kwargs[k])
-        return func
-    return decorate
