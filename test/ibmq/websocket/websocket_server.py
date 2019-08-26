@@ -115,7 +115,7 @@ def handle_token_retry_success(websocket):
         setattr(handle_token_retry_success, 'retry_attempt', True)
         yield from handle_token_retry_failure(websocket)
     else:
-        yield from handle_token_retry_success(websocket)
+        yield from handle_token_job_completed(websocket)
 
 
 @asyncio.coroutine
