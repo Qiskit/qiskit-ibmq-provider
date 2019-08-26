@@ -17,8 +17,8 @@
 import asyncio
 import json
 
-from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketMessage
 from test.decorators import static_vars
+from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketMessage
 
 
 TOKEN_JOB_COMPLETED = 'token_job_completed'
@@ -63,11 +63,11 @@ def websocket_handler(websocket, path):
     elif token == TOKEN_WRONG_FORMAT:
         yield from handle_token_wrong_format(websocket)
     elif token == TOKEN_WEBSOCKET_RETRY_SUCCESS:
-        yield from handle_token_websocket_retry_success(websocket)
+        yield from handle_token_retry_success(websocket)
     elif token == TOKEN_WEBSOCKET_RETRY_LIMIT_EXCEEDED:
-        yield from handle_token_websocket_retry_failure(websocket)
+        yield from handle_token_retry_failure(websocket)
     elif token == TOKEN_WEBSOCKET_JOB_NOT_FOUND:
-        yield from handle_token_websocket_job_not_found(websocket)
+        yield from handle_token_job_not_found(websocket)
 
 
 @asyncio.coroutine
@@ -111,12 +111,12 @@ def handle_token_wrong_format(websocket):
 
 @static_vars(attempt_retry=True)
 @asyncio.coroutine
-def handle_token_websocket_retry_success(websocket):
+def handle_token_retry_success(websocket):
     """Close the socket once and force a retry."""
-    attempt_retry = handle_token_websocket_retry_success.attempt_retry
+    attempt_retry = handle_token_retry_success.attempt_retry
 
     if attempt_retry:
-        handle_token_websocket_retry_success.attempt_retry = False
+        handle_token_retry_success.attempt_retry = False
         yield from websocket.close()  # Force connection to close, in order to retry.
     else:
         msg_out = WebsocketMessage(type_='job-status',
@@ -126,13 +126,12 @@ def handle_token_websocket_retry_success(websocket):
 
 
 @asyncio.coroutine
-def handle_token_websocket_retry_failure(websocket):
+def handle_token_retry_failure(websocket):
     """Continually close the socket, until both the first attempt and retry fail."""
     yield from websocket.close()
 
 
 @asyncio.coroutine
-def handle_token_websocket_job_not_found(websocket):
+def handle_token_job_not_found(websocket):
     """Close the socket, specifying code for job not found."""
     yield from websocket.close(code=4003)
-
