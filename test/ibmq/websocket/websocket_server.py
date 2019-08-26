@@ -109,20 +109,14 @@ def handle_token_wrong_format(websocket):
     yield from websocket.close()
 
 
-@static_vars(attempt_retry=True)
 @asyncio.coroutine
 def handle_token_retry_success(websocket):
     """Close the socket once and force a retry."""
-    attempt_retry = handle_token_retry_success.attempt_retry
-
-    if attempt_retry:
-        handle_token_retry_success.attempt_retry = False
-        yield from websocket.close()  # Force connection to close, in order to retry.
+    if not hasattr(handle_token_retry_success, 'retry_attempt'):
+        setattr(handle_token_retry_success, 'retry_attempt', True)
+        yield from handle_token_retry_failure(websocket)
     else:
-        msg_out = WebsocketMessage(type_='job-status',
-                                   data={'status': 'COMPLETED'})
-        yield from websocket.send(msg_out.as_json().encode('utf8'))
-        yield from websocket.close(code=4002)
+        yield from handle_token_retry_success(websocket)
 
 
 @asyncio.coroutine
