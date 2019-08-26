@@ -204,6 +204,8 @@ class WebsocketClient(BaseClient):
                         message = 'Job id not found'
 
                     if attempt_retry:
+                        logger.warning('Connection with the websocket closed '
+                                       'unexpectedly: %s(status_code=%s)', message, ex.code)
                         attempt_retry = False  # Disallow further retries.
                         websocket = yield from self._connect(url)
                         continue
