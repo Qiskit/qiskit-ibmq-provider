@@ -41,6 +41,7 @@ class JobResponseSchema(BaseSchema):
     # Required properties
     id = String(required=True)
     kind = String(required=True)
+    creationDate = String(required=True, description="when the job was run")
 
 
 # Endpoint schemas.
