@@ -22,6 +22,7 @@ from qiskit.test.testing_options import get_test_options
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
+from qiskit.providers.ibmq.exceptions import IBMQAccountError
 
 
 def requires_new_api_auth(func):
@@ -139,6 +140,49 @@ def requires_provider(func):
         kwargs.update({'provider': provider})
 
         return func(*args, **kwargs)
+
+    return _wrapper
+
+
+def run_on_staging(func):
+    """Decorator that signals that the test runs on the staging system.
+
+    It involves:
+        * reads the `QE_STG_TOKEN` and `QE_STG_URL` environment variables.
+        * if both variables are set, then their values are used as the
+            credentials; otherwise the test is skipped.
+        * if the test is not skipped, it appends `qe_token` and `qe_url` as
+            arguments to the test function.
+
+    Args:
+        func (callable): test function to be decorated.
+
+    Returns:
+        callable: the decorated function.
+    """
+    @wraps(func)
+    def _wrapper(obj, *args, **kwargs):
+        stg_token = os.getenv('QE_STG_TOKEN')
+        stg_url = os.getenv('QE_STG_URL')
+        if not (stg_token and stg_url):
+            raise SkipTest('Skipping staging tests')
+
+        credentials = Credentials(stg_token, stg_url)
+        obj.using_ibmq_credentials = credentials.is_ibmq()
+        stg_hub = os.getenv('QE_STG_HUB')
+        ibmq_factory = IBMQFactory()
+
+        try:
+            # Disable account in case one is already in use
+            ibmq_factory.disable_account()
+        except IBMQAccountError:
+            pass
+
+        ibmq_factory.enable_account(credentials.token, credentials.url)
+        provider = ibmq_factory.get_provider(hub=stg_hub)
+        kwargs.update({'provider': provider})
+
+        return func(obj, *args, **kwargs)
 
     return _wrapper
 

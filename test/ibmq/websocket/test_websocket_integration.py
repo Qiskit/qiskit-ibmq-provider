@@ -29,7 +29,7 @@ from qiskit.providers.jobstatus import JobStatus
 from qiskit.test import slow_test
 
 from ...ibmqtestcase import IBMQTestCase
-from ...decorators import requires_qe_access, requires_new_api_auth
+from ...decorators import requires_qe_access, requires_new_api_auth, run_on_staging
 
 
 class TestWebsocketIntegration(IBMQTestCase):
@@ -68,10 +68,12 @@ class TestWebsocketIntegration(IBMQTestCase):
 
         self.assertEqual(result.status, 'COMPLETED')
 
-    @slow_test
-    def test_websockets_device(self):
+    @run_on_staging
+    def test_websockets_device(self, provider):
         """Test checking status of a job via websockets for a device."""
-        backend = least_busy(self.provider.backends(simulator=False))
+        # TODO revert back to least_busy when API is fixed
+        # backend = least_busy(provider.backends(simulator=False))
+        backend = provider.backends(simulator=False)[0]
 
         qc = transpile(self.qc1, backend=backend)
         qobj = assemble(qc, backend=backend)
@@ -81,7 +83,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         job._wait_for_final_status = None
         result = job.result()
 
-        self.assertEqual(result.status, 'COMPLETED')
+        self.assertTrue(result.success)
 
     def test_websockets_job_final_state(self):
         """Test checking status of a job in a final state via websockets."""
@@ -151,7 +153,6 @@ class TestWebsocketIntegration(IBMQTestCase):
             job._wait_for_completion()
             self.assertIs(job._status, JobStatus.DONE)
 
-    @slow_test
     def test_websockets_timeout(self):
         """Test timeout checking status of a job via websockets."""
         backend = least_busy(self.provider.backends(simulator=False))
