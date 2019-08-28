@@ -183,6 +183,7 @@ jobs:
         # effectively increases timeout to 2h.
         - travis_wait 120 make test
     - if: tag IS present
+      language: python
       python: "3.6"
       env:
         - TWINE_USERNAME=qiskit

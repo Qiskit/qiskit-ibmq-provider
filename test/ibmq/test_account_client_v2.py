@@ -145,6 +145,22 @@ class TestAccountClient(IBMQTestCase):
         properties = api.backend_properties(backend_name)
         self.assertIsNotNone(properties)
 
+    def test_backend_pulse_defaults(self):
+        """Check the backend pulse defaults of each backend."""
+        api = self._get_client()
+        api_backends = api.list_backends()
+
+        for backend_info in api_backends:
+            backend_name = backend_info['backend_name']
+            with self.subTest(backend_name=backend_name):
+                defaults = api.backend_pulse_defaults(backend_name=backend_name)
+                is_open_pulse = backend_info['open_pulse']
+
+                if is_open_pulse:
+                    self.assertTrue(defaults)
+                else:
+                    self.assertFalse(defaults)
+
     def test_available_backends(self):
         """Check the backends available."""
         api = self._get_client()
@@ -395,3 +411,25 @@ class TestAuthClient(IBMQTestCase):
         api = AuthClient(qe_token, qe_url)
         version = api.api_version()
         self.assertIsNotNone(version)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_user_urls(self, qe_token, qe_url):
+        """Check the user urls of the QX API."""
+        api = AuthClient(qe_token, qe_url)
+        user_urls = api.user_urls()
+        self.assertIsNotNone(user_urls)
+        self.assertTrue('http' in user_urls and 'ws' in user_urls)
+
+    @requires_qe_access
+    @requires_new_api_auth
+    def test_user_hubs(self, qe_token, qe_url):
+        """Check the user hubs of the QX API."""
+        api = AuthClient(qe_token, qe_url)
+        user_hubs = api.user_hubs()
+        self.assertIsNotNone(user_hubs)
+        for user_hub in user_hubs:
+            with self.subTest(user_hub=user_hub):
+                self.assertTrue('hub' in user_hub
+                                and 'group' in user_hub
+                                and 'project' in user_hub)

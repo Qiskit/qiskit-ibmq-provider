@@ -15,6 +15,7 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
+from typing import Dict, List, Callable, Optional
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
@@ -26,7 +27,9 @@ from qiskit.validation.exceptions import ModelValidationError
 from .api_v2.clients import AccountClient
 from .circuits import CircuitsManager
 from .ibmqbackend import IBMQBackend, IBMQSimulator
+from .credentials import Credentials
 from .providerbackends import ProviderBackends
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +37,7 @@ logger = logging.getLogger(__name__)
 class AccountProvider(BaseProvider):
     """Provider for a single IBM Quantum Experience account."""
 
-    def __init__(self, credentials, access_token):
+    def __init__(self, credentials: Credentials, access_token: str) -> None:
         """Return a new AccountProvider.
 
         The ``provider_backends`` attribute can be used to autocomplete
@@ -63,7 +66,13 @@ class AccountProvider(BaseProvider):
 
         self.provider_backends = ProviderBackends(self)
 
-    def backends(self, name=None, filters=None, timeout=None, **kwargs):
+    def backends(
+            self,
+            name: Optional[str] = None,
+            filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
+            timeout: Optional[float] = None,
+            **kwargs: Dict
+    ) -> List[IBMQBackend]:
         """Return all backends accessible via this provider, subject to optional filtering.
 
         Args:
@@ -95,7 +104,7 @@ class AccountProvider(BaseProvider):
 
         return filter_backends(backends, filters=filters, **kwargs)
 
-    def _discover_remote_backends(self, timeout=None):
+    def _discover_remote_backends(self, timeout: Optional[float] = None) -> Dict[str, IBMQBackend]:
         """Return the remote backends available.
 
         Args:
@@ -136,7 +145,7 @@ class AccountProvider(BaseProvider):
         return ret
 
     @staticmethod
-    def _deprecated_backend_names():
+    def _deprecated_backend_names() -> Dict[str, str]:
         """Returns deprecated backend names."""
         return {
             'ibmqx_qasm_simulator': 'ibmq_qasm_simulator',
@@ -145,7 +154,7 @@ class AccountProvider(BaseProvider):
             }
 
     @staticmethod
-    def _aliased_backend_names():
+    def _aliased_backend_names() -> Dict[str, str]:
         """Returns aliased backend names."""
         return {
             'ibmq_5_yorktown': 'ibmqx2',
@@ -154,10 +163,10 @@ class AccountProvider(BaseProvider):
             'ibmq_20_austin': 'QS1_1'
             }
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'AccountProvider') -> bool:
         return self.credentials == other.credentials
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         credentials_info = "hub='{}', group='{}', project='{}'".format(
             self.credentials.hub, self.credentials.group, self.credentials.project)
 

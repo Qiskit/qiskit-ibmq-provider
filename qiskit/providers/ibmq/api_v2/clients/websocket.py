@@ -135,7 +135,8 @@ class WebsocketClient(BaseClient):
 
         Reads status messages from the API, which are issued at regular
         intervals (20 seconds). When a final state is reached, the server
-        closes the socket.
+        closes the socket. If the websocket connection is closed without
+        a reason, there is an attempt to retry one time.
 
         Args:
             job_id (str): id of the job.
@@ -154,6 +155,7 @@ class WebsocketClient(BaseClient):
 
         original_timeout = timeout
         start_time = time.time()
+        attempt_retry = True  # By default, attempt to retry if the websocket connection closes.
         last_status = None
 
         try:
@@ -198,7 +200,17 @@ class WebsocketClient(BaseClient):
                     elif ex.code == 4002:
                         break
                     elif ex.code == 4003:
+                        attempt_retry = False  # No point in retrying.
                         message = 'Job id not found'
+
+                    if attempt_retry:
+                        logger.warning('Connection with the websocket closed '
+                                       'unexpectedly: %s(status_code=%s). '
+                                       'Retrying get_job_status.', message, ex.code)
+                        attempt_retry = False  # Disallow further retries.
+                        websocket = yield from self._connect(url)
+                        continue
+
                     raise WebsocketError('Connection with websocket closed '
                                          'unexpectedly: {}'.format(message)) from ex
         finally:
