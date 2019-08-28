@@ -16,6 +16,21 @@
 
 from datetime import datetime, timezone
 
+from ..apiconstants import ApiJobStatus
+from qiskit.providers.jobstatus import JobStatus
+
+
+API_TO_JOB_STATUS = {
+    (ApiJobStatus.CREATING, ApiJobStatus.CREATED): JobStatus.INITIALIZING,
+    ApiJobStatus.VALIDATING: JobStatus.VALIDATING,
+    ApiJobStatus.VALIDATED: JobStatus.QUEUED,
+    ApiJobStatus.RUNNING: JobStatus.RUNNING,
+    ApiJobStatus.COMPLETED: JobStatus.DONE,
+    ApiJobStatus.CANCELLED: JobStatus.CANCELLED,
+    (ApiJobStatus.ERROR_CREATING_JOB, ApiJobStatus.ERROR_VALIDATING_JOB,
+     ApiJobStatus.ERROR_RUNNING_JOB): JobStatus.ERROR
+}
+
 
 def current_utc_time():
     """Gets the current time in UTC format.
@@ -62,3 +77,15 @@ def build_error_report(results):
 
     error_report = 'The following experiments failed:\n{}'.format('\n'.join(error_list))
     return error_report
+
+
+def api_status_to_job_status(api_status):
+    """Returns the corresponding job status for the input API job status.
+
+    Args:
+        api_status (ApiJobStatus): API job status
+
+    Returns:
+        JobStatus: job status
+    """
+    return API_TO_JOB_STATUS[api_status]

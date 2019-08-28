@@ -32,7 +32,9 @@ from .websocket import WebsocketClient
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from qiskit.providers import JobError
-from ..rest.schemas.job import JobModel, JobErrorModel
+from ..rest.schemas.job import JobStatusResponseSchema
+from qiskit.validation.exceptions import ModelValidationError
+from marshmallow.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -135,20 +137,6 @@ class AccountClient(BaseClient):
         return self.client_api.jobs(limit=limit, skip=skip,
                                     extra_filter=extra_filter)
 
-    def _job_submit_post(self, backend_name: str, qobj_dict: Dict[str, Any],
-                   job_name: Optional[str] = None) -> Dict[str, Any]:
-        """Submit a Qobj to a device.
-
-        Args:
-            backend_name (str): the name of the backend.
-            qobj_dict (dict): the Qobj to be executed, as a dictionary.
-            job_name (str): custom name to be assigned to the job.
-
-        Returns:
-            dict: job status.
-        """
-        return self.client_api.submit_job(backend_name, qobj_dict, job_name)
-
     def job_submit(self, backend_name: str, qobj_dict: Dict[str, Any],
                    job_name: Optional[str] = None):
         submit_info = None
@@ -172,6 +160,20 @@ class AccountClient(BaseClient):
 
         print(f">>>>>> submit_info_raw is {submit_info}")
         return submit_info
+
+    def _job_submit_post(self, backend_name: str, qobj_dict: Dict[str, Any],
+                   job_name: Optional[str] = None) -> Dict[str, Any]:
+        """Submit a Qobj to a device.
+
+        Args:
+            backend_name (str): the name of the backend.
+            qobj_dict (dict): the Qobj to be executed, as a dictionary.
+            job_name (str): custom name to be assigned to the job.
+
+        Returns:
+            dict: job status.
+        """
+        return self.client_api.submit_job(backend_name, qobj_dict, job_name)
 
     def _job_submit_object_storage(self, backend_name: str, qobj_dict: Dict[str, Any],
                                   job_name: Optional[str] = None) -> Dict:
@@ -201,6 +203,12 @@ class AccountClient(BaseClient):
 
         return response['job']
 
+    def job_download_qobj(self, job_id: str) -> Dict:
+        if self._use_object_storage:
+            return self.job_download_qobj_object_storage(job_id)
+        else:
+            return self.job_get(job_id).get('qObject', {})
+
     def job_download_qobj_object_storage(self, job_id: str) -> Dict:
         """Retrieve and return a Qobj using object storage.
 
@@ -217,6 +225,12 @@ class AccountClient(BaseClient):
 
         # Download the result from object storage.
         return job_api.get_object_storage(download_url)
+
+    def job_result(self, job_id: str) -> Dict:
+        if self._use_object_storage:
+            return self.job_result_object_storage(job_id)
+        else:
+            return self.job_get(job_id)['qObjectResult']
 
     def job_result_object_storage(self, job_id: str) -> Dict:
         """Retrieve and return a result using object storage.
@@ -274,9 +288,12 @@ class AccountClient(BaseClient):
             dict: job status.
         """
         api_response = self.client_api.job(job_id).status()
-        if 'status' not in api_response:
+        try:
+            # Validate the response
+            JobStatusResponseSchema().validate(api_response)
+        except ValidationError as err:
             raise RequestsApiError('Unrecognized answer from server: \n{}'.format(
-                pprint.pformat(api_response)))
+                pprint.pformat(api_response))) from err
         return api_response
 
     def job_final_status(self, job_id, timeout=None, wait=5):
@@ -311,7 +328,6 @@ class AccountClient(BaseClient):
                 timeout -= (time.time() - start_time)
 
         # Use traditional http requests if websocket not available or failed.
-
         start_time = time.time()
         status_response = self.job_status(job_id)
         while status_response['status'] not in API_JOB_FINAL_STATES:

@@ -34,11 +34,12 @@ from qiskit.validation.exceptions import ModelValidationError
 
 from ..api import ApiError
 from ..apiconstants import ApiJobStatus
-from ..api_v2.clients import BaseClient
+from ..api_v2.clients import BaseClient, AccountClient
 from ..api_v2.exceptions import WebsocketTimeoutError, WebsocketError
 from ..api_v2.rest.schemas.job import JobModel, JobErrorModel
 
-from .utils import current_utc_time, build_error_report, is_job_queued
+from .utils import (current_utc_time, build_error_report, is_job_queued,
+                    api_status_to_job_status)
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,7 @@ class IBMQJob2(JobModel, BaseJob):
     """
     _executor = futures.ThreadPoolExecutor()
 
-    def __init__(self, backend, id, api, qobj=None,
+    def __init__(self, backend, job_id, api, qobj=None,
                  creation_date=None, api_status=None,
                  use_object_storage=False, use_websockets=False, **kwargs):
         """IBMQJob init function.
@@ -143,12 +144,12 @@ class IBMQJob2(JobModel, BaseJob):
         """
         # pylint: disable=unused-argument
 
-        BaseJob.__init__(self, backend, id)
+        BaseJob.__init__(self, backend, job_id)
 
         # Properties common to all Jobs.
         self._api = api
         self._backend = backend
-        self._creation_date = kwargs.pop('creationDate', current_utc_time())
+        # self._creation_date = kwargs.pop('creationDate', current_utc_time())
         self._future = None
         self._future_captured_exception = None
 
@@ -160,20 +161,21 @@ class IBMQJob2(JobModel, BaseJob):
         self._qobj_payload = {}
 
         # Properties used for deciding the underlying API features to use.
-        self._use_object_storage = use_object_storage
-        self._use_websockets = use_websockets
+        # self._use_object_storage = use_object_storage
+        # self._use_websockets = use_websockets
 
         if qobj:
             self._qobj_raw = qobj
             # validate_qobj_against_schema(qobj)      # TODO
             # self._qobj_payload = qobj.to_dict()
             self._status = JobStatus.INITIALIZING
+            self._creation_date = current_utc_time()
         else:
+            kwargs['id'] = job_id
             self._init_job_model(**kwargs)
             # In case of not providing a `qobj`, it is assumed the job already
             # exists in the API (with `job_id`).
             self._qobj_raw = None
-            # self._qobj_payload = {}
 
             # Some API calls (`get_status_jobs`, `get_status_job`) provide
             # enough information to recreate the `Job`. If that is the case, try
@@ -205,7 +207,15 @@ class IBMQJob2(JobModel, BaseJob):
         """
         if not self._qobj_payload:
             # Populate self._qobj_payload by retrieving the results.
-            self._wait_for_job()
+            self._wait_for_completion_not_cancelled()
+
+            try:
+                if isinstance(self._api, AccountClient):
+                    self._qobj_payload = self._api.job_download_qobj(self.job_id())
+                else:
+                    self._qobj_payload = self._api.get_job(self._job_id)
+            except ApiError as api_err:
+                raise JobError(str(api_err))
 
         return Qobj.from_dict(self._qobj_payload)
 
@@ -255,21 +265,17 @@ class IBMQJob2(JobModel, BaseJob):
         Raises:
             JobError: if attempted to recover a result on a failed job.
         """
-        self._wait_for_completion(timeout=timeout, wait=wait)
+        self._wait_for_completion_not_cancelled(timeout=timeout, wait=wait)
 
-        status = self.status()
-        if status is not JobStatus.DONE:
-            raise JobError('Invalid job state. The job should be DONE but '
-                           'it is {}'.format(str(status)))
+        if self._status is not JobStatus.DONE:
+            raise JobError('Unable to retrieve job result. Job status '
+                           'is {}'.format(str(self._status)))
 
         if not self._result:
-            if self._use_object_storage:
-                # Retrieve the results via object storage.
-                result_response = self._api.job_result_object_storage(
-                    self._job_id)
-                self._result = Result.from_dict(result_response)
+            if isinstance(self._api, AccountClient):
+                self._result = self._api.job_result(self.job_id())
             else:
-                job_response = self._get_job()
+                job_response = self._api.get_job(self._job_id)
                 self._result = Result.from_dict(job_response['qObjectResult'])
 
         return self._result
@@ -306,7 +312,7 @@ class IBMQJob2(JobModel, BaseJob):
             qiskit.providers.JobStatus: The status of the job, once updated.
 
         Raises:
-            JobError: if there was an exception in the future being executed
+            JobError: if there was an exception during job submit
                           or the server sent an unknown answer.
         """
         # Implies self._job_id is None
@@ -335,6 +341,7 @@ class IBMQJob2(JobModel, BaseJob):
         Raises:
             JobError: if the API response could not be parsed.
         """
+        # TODO we won't need to validate response once IBMQConnector goes away
         if 'status' not in api_response:
             raise JobError('Unrecognized answer from server: \n{}'.format(
                 pprint.pformat(api_response)))
@@ -345,26 +352,11 @@ class IBMQJob2(JobModel, BaseJob):
             raise JobError('Unrecognized status from server: {}'.format(
                 api_response['status']))
 
-        if api_status is ApiJobStatus.VALIDATING:
-            self._status = JobStatus.VALIDATING
-
-        elif api_status is ApiJobStatus.RUNNING:
-            self._status = JobStatus.RUNNING
+        self._status = api_status_to_job_status(api_status)
+        if api_status is ApiJobStatus.RUNNING:
             queued, self._queue_position = is_job_queued(api_response)
             if queued:
                 self._status = JobStatus.QUEUED
-
-        elif api_status is ApiJobStatus.COMPLETED:
-            self._status = JobStatus.DONE
-
-        elif api_status is ApiJobStatus.CANCELLED:
-            self._status = JobStatus.CANCELLED
-            self._cancelled = True
-
-        elif api_status in (ApiJobStatus.ERROR_CREATING_JOB,
-                            ApiJobStatus.ERROR_VALIDATING_JOB,
-                            ApiJobStatus.ERROR_RUNNING_JOB):
-            self._status = JobStatus.ERROR
 
     def error_message(self):
         """Provide details about the reason of failure.
@@ -388,7 +380,7 @@ class IBMQJob2(JobModel, BaseJob):
             return None
 
         if not self._api_error_msg:
-            job_response = self._get_job()
+            job_response = self._api.get_job(self._job_id)
             if 'qObjectResult' in job_response:
                 results = job_response['qObjectResult']['results']
                 self._api_error_msg = build_error_report(results)
@@ -407,6 +399,7 @@ class IBMQJob2(JobModel, BaseJob):
         Returns:
             Number: Position in the queue.
         """
+        # TODO should call status()
         return self._queue_position
 
     def creation_date(self):
@@ -439,11 +432,8 @@ class IBMQJob2(JobModel, BaseJob):
 
         Raises:
             JobError: If we have already submitted the job.
+            SchemaValidationError: If the job validation fails.
         """
-        # TODO: Validation against the schema should be done here and not
-        # during initialization. Once done, we should document that the method
-        # can raise QobjValidationError.
-        print(">>>>>> ibmqjob2 submitting job")
         if self._future is not None or self._job_id is not None:
             raise JobError("We have already submitted the job!")
 
@@ -467,6 +457,7 @@ class IBMQJob2(JobModel, BaseJob):
 
         try:
             kwargs = {}
+            # TODO: job_name really should be a job attribute
             if isinstance(self._api, BaseClient):
                 kwargs = {'job_name': job_name}
             submit_info = self._api.submit_job(
@@ -479,7 +470,7 @@ class IBMQJob2(JobModel, BaseJob):
             if 'error' in submit_info:
                 self._status = JobStatus.ERROR
                 self._api_error_msg = str(submit_info['error'])
-                return submit_info
+                return
 
             # Submission success.
             self._init_job_model(**submit_info)
@@ -498,53 +489,12 @@ class IBMQJob2(JobModel, BaseJob):
 
         # return submit_info
 
-    def _wait_for_job(self, timeout=None, wait=5):
-        """Blocks until the job is complete and returns the job content from the
-        API, consuming it.
+    def _wait_for_completion_not_cancelled(self, timeout=None, wait=5):
+        if not self._cancelled:
+            self._wait_for_completion(timeout, wait)
 
-        Args:
-            timeout (float): number of seconds to wait for job.
-            wait (int): time between queries to IBM Q server.
-
-        Return:
-            dict: a dictionary with the contents of the job.
-
-        Raises:
-            JobError: if there is an error while requesting the results.
-        """
-        self._wait_for_completion(timeout, wait)
-
-        try:
-            job_response = self._get_job()
-            if not self._qobj_payload:
-                if self._use_object_storage:
-                    # Attempt to use object storage.
-                    self._qobj_payload = self._api.job_download_qobj_object_storage(
-                        self._job_id)
-                else:
-                    self._qobj_payload = job_response.get('qObject', {})
-        except ApiError as api_err:
-            raise JobError(str(api_err))
-
-        return job_response
-
-    def _get_job(self):
-        """Query the API for retrieving the job complete state, consuming it.
-
-        Returns:
-            dict: a dictionary with the contents of the result.
-
-        Raises:
-            JobTimeoutError: if the job does not return results before a
-                specified timeout.
-            JobError: if something wrong happened in some of the server API
-                calls.
-        """
-        if self._cancelled:
-            raise JobError(
-                'Job result impossible to retrieve. The job was cancelled.')
-
-        return self._api.get_job(self._job_id)
+        if self._cancelled or self._status is JobStatus.CANCELLED:
+            raise JobError("Job result impossible to retrieve. The job was cancelled.")
 
     def _wait_for_completion(self, timeout=None, wait=5):
         """Wait until the job progress to a final state such as DONE or ERROR.
@@ -560,27 +510,15 @@ class IBMQJob2(JobModel, BaseJob):
         """
         self._wait_for_submission(timeout)
 
-        # Attempt to use websocket if available.
-        if self._use_websockets:
-            start_time = time.time()
-            try:
-                self._wait_for_final_status_websocket(timeout)
-                return
-            except WebsocketError as ex:
-                logger.warning('Error checking job status using websocket, '
-                               'retrying using HTTP.')
-                logger.debug(ex)
-            except JobTimeoutError as ex:
-                logger.warning('Timeout checking job status using websocket, '
-                               'retrying using HTTP')
-                logger.debug(ex)
+        if self._status in JOB_FINAL_STATES:
+            return
 
-            # Adjust timeout for HTTP retry.
-            if timeout is not None:
-                timeout -= (time.time() - start_time)
-
-        # Use traditional http requests if websocket not available or failed.
-        self._wait_for_final_status(timeout, wait)
+        # TODO need to set job status
+        if isinstance(self._api, AccountClient):
+            self._api.job_final_status(self._job_id, timeout=timeout, wait=wait)
+        else:
+            # Use traditional http requests
+            self._wait_for_final_status(timeout, wait)
 
     def _wait_for_submission(self, timeout=60):
         """Waits for the request to return a job ID"""
@@ -589,13 +527,13 @@ class IBMQJob2(JobModel, BaseJob):
                 raise JobError("You have to submit the job before doing a job related operation!")
             try:
                 self._future.result(timeout=timeout)
-                if self._future_captured_exception is not None:
-                    raise self._future_captured_exception
             except TimeoutError as ex:
                 raise JobTimeoutError(
                     "Timeout waiting for the job being submitted: {}".format(ex)
                 )
-            if self._status is JobStatus.ERROR:
+            if self._future_captured_exception is not None:
+                raise self._future_captured_exception
+            if self._api_error_msg:
                 raise JobError(self._api_error_msg)
 
     def _wait_for_final_status(self, timeout=None, wait=5):
@@ -620,30 +558,19 @@ class IBMQJob2(JobModel, BaseJob):
             logger.info('status = %s (%d seconds)', self._status, elapsed_time)
             time.sleep(wait)
 
-    def _wait_for_final_status_websocket(self, timeout=None):
-        """Wait until the job progress to a final state using websockets.
+    def _init_job_model(self, **kwargs):
+        """Initialize the job model attributes
 
         Args:
-            timeout (float or None): seconds to wait for job. If None, wait
-                indefinitely.
-
-        Raises:
-            JobTimeoutError: if the job does not return results before a
-                specified timeout.
+            kwargs (dict): attribute dictionary
         """
-        # Avoid the websocket invocation if already in a final state.
-        if self._status in JOB_FINAL_STATES:
-            return
 
-        try:
-            status_response = self._api.job_final_status_websocket(
-                self._job_id, timeout=timeout)
-            self._update_status(status_response)
-        except WebsocketTimeoutError:
-            raise JobTimeoutError(
-                'Timeout while waiting for job {}'.format(self._job_id))
+        # job_model = JobModel.from_dict(**kwargs)
+        data = self.from_dict(kwargs)
+        # data, _ = self.schema.load(kwargs)
 
-    def _init_job_model(self, **kwargs):
-        JobModel.__init__(self, **kwargs)
+        print(f">>>>>> loaded data is {data}")
+        JobModel.__init__(self, **data)
+        # Convert ApiJobStatus to JobStatus
+        api_status_to_job_status(self._api_job_status)
 
-        self._update_status({'status': self._api_status})

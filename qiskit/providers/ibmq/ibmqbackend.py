@@ -91,10 +91,6 @@ class IBMQBackend(BaseBackend):
         # job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
         # job.submit(job_name=job_name)
 
-        d = {"backend": self,
-             "id": None,
-             "api": self._api,
-             "qobj": qobj}
         job = IBMQJob2(self, None, self._api, qobj=qobj)
         job.submit()
         return job
