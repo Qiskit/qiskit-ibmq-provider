@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Added
+
+- Added support for autocompleting backend names. A user can now use 
+`AccountProvider.provider_backends.<tab>` to see a list of backend names (\#303).
+
 ### Changed
 
 - The `IBMQBackend.run()` function now accepts an optional `job_name` parameter.
