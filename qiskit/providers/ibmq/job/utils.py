@@ -16,19 +16,22 @@
 
 from datetime import datetime, timezone
 
-from ..apiconstants import ApiJobStatus
 from qiskit.providers.jobstatus import JobStatus
+
+from ..apiconstants import ApiJobStatus
 
 
 API_TO_JOB_STATUS = {
-    (ApiJobStatus.CREATING, ApiJobStatus.CREATED): JobStatus.INITIALIZING,
+    ApiJobStatus.CREATING: JobStatus.INITIALIZING,
+    ApiJobStatus.CREATED: JobStatus.INITIALIZING,
     ApiJobStatus.VALIDATING: JobStatus.VALIDATING,
     ApiJobStatus.VALIDATED: JobStatus.QUEUED,
     ApiJobStatus.RUNNING: JobStatus.RUNNING,
     ApiJobStatus.COMPLETED: JobStatus.DONE,
     ApiJobStatus.CANCELLED: JobStatus.CANCELLED,
-    (ApiJobStatus.ERROR_CREATING_JOB, ApiJobStatus.ERROR_VALIDATING_JOB,
-     ApiJobStatus.ERROR_RUNNING_JOB): JobStatus.ERROR
+    ApiJobStatus.ERROR_CREATING_JOB: JobStatus.ERROR,
+    ApiJobStatus.ERROR_VALIDATING_JOB: JobStatus.ERROR,
+    ApiJobStatus.ERROR_RUNNING_JOB: JobStatus.ERROR
 }
 
 
@@ -79,7 +82,7 @@ def build_error_report(results):
     return error_report
 
 
-def api_status_to_job_status(api_status):
+def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
     """Returns the corresponding job status for the input API job status.
 
     Args:

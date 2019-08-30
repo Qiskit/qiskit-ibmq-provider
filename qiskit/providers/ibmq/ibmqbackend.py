@@ -22,16 +22,16 @@ from datetime import datetime  # pylint: disable=unused-import
 from marshmallow import ValidationError
 
 from qiskit.qobj import Qobj
-from qiskit.providers import BaseBackend, JobStatus
+from qiskit.providers import BaseBackend, JobStatus, JobError
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration)
 
 from .api import ApiError, IBMQConnector
 from .api_v2.clients import BaseClient, AccountClient
-from .apiconstants import ApiJobStatus, ApiJobKind
+from .apiconstants import ApiJobStatus
 from .credentials import Credentials
 from .exceptions import IBMQBackendError, IBMQBackendValueError
-from .job import IBMQJob, IBMQJob2
+from .job import IBMQJob
 from .utils import update_qobj_config
 
 logger = logging.getLogger(__name__)
@@ -82,17 +82,9 @@ class IBMQBackend(BaseBackend):
             IBMQJob: an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
-        # kwargs = {}
-        # if isinstance(self._api, BaseClient):
-        #     # Default to using object storage and websockets for new API.
-        #     kwargs = {'use_object_storage': True,
-        #               'use_websockets': True}
 
-        # job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
-        # job.submit(job_name=job_name)
-
-        job = IBMQJob2(self, None, self._api, qobj=qobj)
-        job.submit()
+        job = IBMQJob(self, None, self._api, qobj=qobj)
+        job.submit(job_name=job_name)
         return job
 
     def properties(
@@ -285,23 +277,18 @@ class IBMQBackend(BaseBackend):
 
         job_list = []
         for job_info in job_responses:
-            kwargs = {}
-            try:
-                job_kind = ApiJobKind(job_info.get('kind', None))
-            except ValueError:
+            if 'kind' not in job_info:
                 # Discard pre-qobj jobs.
                 break
 
-            if isinstance(self._api, BaseClient):
-                # Default to using websockets for new API.
-                kwargs['use_websockets'] = True
-            if job_kind == ApiJobKind.QOBJECT_STORAGE:
-                kwargs['use_object_storage'] = True
+            job_id = job_info.pop('id', "")
+            try:
+                job = IBMQJob(self, job_id, self._api, **job_info)
+            except JobError:
+                warnings.warn('Discarding job "{}" because it contains invalid data.'
+                              .format(job_id))
+                break
 
-            job = IBMQJob(self, job_info.get('id'), self._api,
-                          creation_date=job_info.get('creationDate'),
-                          api_status=job_info.get('status'),
-                          **kwargs)
             job_list.append(job)
 
         return job_list
@@ -320,48 +307,42 @@ class IBMQBackend(BaseBackend):
         """
         try:
             job_info = self._api.get_job(job_id)
-
-            # Check for generic errors.
-            if 'error' in job_info:
-                raise IBMQBackendError('Failed to get job "{}": {}'
-                                       .format(job_id, job_info['error']))
-
-            # Check for jobs from a different backend.
-            job_backend_name = job_info['backend']['name']
-            if job_backend_name != self.name():
-                warnings.warn('Job "{}" belongs to another backend than the one queried. '
-                              'The query was made on backend "{}", '
-                              'but the job actually belongs to backend "{}".'
-                              .format(job_id, self.name(), job_backend_name))
-                raise IBMQBackendError('Failed to get job "{}": '
-                                       'job does not belong to backend "{}".'
-                                       .format(job_id, self.name()))
-
-            # Check for pre-qobj jobs.
-            kwargs = {}
-            try:
-                job_kind = ApiJobKind(job_info.get('kind', None))
-
-                if isinstance(self._api, BaseClient):
-                    # Default to using websockets for new API.
-                    kwargs['use_websockets'] = True
-                if job_kind == ApiJobKind.QOBJECT_STORAGE:
-                    kwargs['use_object_storage'] = True
-
-            except ValueError:
-                warnings.warn('The result of job {} is in a no longer supported format. '
-                              'Please send the job using Qiskit 0.8+.'.format(job_id),
-                              DeprecationWarning)
-                raise IBMQBackendError('Failed to get job "{}": {}'
-                                       .format(job_id, 'job in pre-qobj format'))
         except ApiError as ex:
             raise IBMQBackendError('Failed to get job "{}": {}'
                                    .format(job_id, str(ex)))
 
-        job = IBMQJob(self, job_info.get('id'), self._api,
-                      creation_date=job_info.get('creationDate'),
-                      api_status=job_info.get('status'),
-                      **kwargs)
+        # Check for generic errors.
+        if 'error' in job_info:
+            raise IBMQBackendError('Failed to get job "{}": {}'
+                                   .format(job_id, job_info['error']))
+
+        # Check for jobs from a different backend.
+        job_backend_name = job_info['backend']['name']
+        if job_backend_name != self.name():
+            warnings.warn('Job "{}" belongs to another backend than the one queried. '
+                          'The query was made on backend "{}", '
+                          'but the job actually belongs to backend "{}".'
+                          .format(job_id, self.name(), job_backend_name))
+            raise IBMQBackendError('Failed to get job "{}": '
+                                   'job does not belong to backend "{}".'
+                                   .format(job_id, self.name()))
+
+        # Check for pre-qobj jobs.
+        if 'kind' not in job_info:
+            warnings.warn('The result of job {} is in a no longer supported format. '
+                          'Please send the job using Qiskit 0.8+.'.format(job_id),
+                          DeprecationWarning)
+            raise IBMQBackendError('Failed to get job "{}": {}'
+                                   .format(job_id, 'job in pre-qobj format'))
+
+        # Remove keywords to be passed directly to IBMQJob
+        job_info.pop('id', None)
+        job_info.pop('backend', None)
+
+        try:
+            job = IBMQJob(self, job_id, self._api, **job_info)
+        except JobError as err:
+            raise IBMQBackendError(str(err))
 
         return job
 

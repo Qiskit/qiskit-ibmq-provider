@@ -15,20 +15,14 @@
 """Schemas for job."""
 from types import SimpleNamespace
 
-from marshmallow import Schema, post_load, post_dump
-from marshmallow.validate import OneOf, Range
+from marshmallow import Schema
+from marshmallow.validate import Range
 from marshmallow.exceptions import ValidationError
 
 from qiskit.validation import BaseSchema
 from qiskit.validation import BaseModel, bind_schema, ModelTypeValidator
-from qiskit.validation.fields import String, Dict, Integer, Nested
-from qiskit.providers.jobstatus import JobStatus
+from qiskit.validation.fields import String, Integer, Nested
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
-
-
-# class JobPostResponseSchema(BaseSchema):
-#     id = String(required=True)
-#     creationDate = String(required=True)
 
 
 class JobBaseSchema(Schema):
@@ -51,13 +45,9 @@ class JobBaseSchema(Schema):
 
     model_cls = SimpleNamespace
 
-    # @post_load
-    # def make_model(self, data):
-    #     """Make ``load`` return a ``model_cls`` instance instead of a dict."""
-    #     return self.model_cls(**data)
 
-
-class BaseEnumType(ModelTypeValidator):
+class EnumType(ModelTypeValidator):
+    """Field for enums."""
 
     def __init__(self, enum_cls, *args, **kwargs):
         self.valid_types = (str, enum_cls)
@@ -66,12 +56,10 @@ class BaseEnumType(ModelTypeValidator):
         super().__init__(*args, **kwargs)
 
     def _serialize(self, value, attr, obj):
-        # print(f">>>>>>> serialize, value={value}, attr={attr}, obj={obj}")
         return value.value
 
     def _deserialize(self, value, attr, data):
         # value is the data, attr is original field name, data is original dictionary
-        # print(f">>>>>>> _deserialize, value={value}, attr={attr}, data={data}")
         self.check_type(value, attr, data)
         return self.enum_cls(value)
 
@@ -84,24 +72,18 @@ class BaseEnumType(ModelTypeValidator):
 
 
 class JobResponseSchema(JobBaseSchema):
-    """Schema for GET /Jobs/{id} or POST /Jobs response."""
-    # pylint: disable=invalid-name
+    """Schema for GetJobs, GetJobsById, and PostJobs responses."""
 
     # Required properties.
-    # _job_id = String(required=True, load_from='id', dump_to='id')
     id = String(required=True)
-    kind = BaseEnumType(enum_cls=ApiJobKind, required=True)
-    status = String(required=True, validate=OneOf([stat.value for stat in ApiJobStatus]))
+    kind = EnumType(enum_cls=ApiJobKind, required=True)
+    status = EnumType(required=True, enum_cls=ApiJobStatus)
     creation_date = String(required=True, load_from='creationDate', dump_to='creationDate')
     shots = Integer(required=False, validate=Range(min=0))
 
 
-class JobErrorResponseSchema(BaseSchema):
-    error = Dict(required=True)
-
-
 class InfoQueueResponseSchema(BaseSchema):
-    """Nested schema for StatusResponseSchema"""
+    """Nested schema for JobStatusResponseSchema."""
 
     # Optional properties
     position = Integer(required=False, missing=0)
@@ -109,45 +91,20 @@ class InfoQueueResponseSchema(BaseSchema):
 
 
 class JobStatusResponseSchema(BaseSchema):
-    # status = String(required=True, validate=OneOf([stat.value for stat in ApiJobStatus]))
-    status = BaseEnumType(required=True, enum_cls=ApiJobStatus)
+    """Schema for JobStatusResponse."""
+    status = EnumType(required=True, enum_cls=ApiJobStatus)
     # Optional properties
     infoQueue = Nested(InfoQueueResponseSchema, required=False)
 
 
 @bind_schema(JobResponseSchema)
 class JobModel(BaseModel):
-    """Model for JobByIdModel.
-
-    """
+    """Model for GetJobs, GetJobsById, and PostJobs."""
 
     def __init__(self, id, kind, status, creation_date, **kwargs):
         self._job_id = id
         self._job_kind = kind
         self._creation_date = creation_date
         self._api_job_status = status
-
-        print(f">>>>>>>> JobModel.__init__, kwargs is {kwargs}")
-
-        # Remove conflicting attributes
-        kwargs.pop('backend', None)
-
-        super().__init__(**kwargs)
-
-# @bind_schema(JobPostResponseSchema)
-# class JobPostModel(BaseModel):
-#
-#     def __init__(self, id, creationDate, **kwargs):
-#         self.id = id
-#         self.creation_date = creationDate
-#
-#         super().__init__(**kwargs)
-
-
-@bind_schema(JobErrorResponseSchema)
-class JobErrorModel(BaseModel):
-
-    def __init__(self, error, **kwargs):
-        self.error = error
 
         super().__init__(**kwargs)

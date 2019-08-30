@@ -30,10 +30,9 @@ from ..session import RetrySession
 from .base import BaseClient
 from .websocket import WebsocketClient
 
-from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
+from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
 from qiskit.providers import JobError
 from ..rest.schemas.job import JobStatusResponseSchema
-from qiskit.validation.exceptions import ModelValidationError
 from marshmallow.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -158,11 +157,10 @@ class AccountClient(BaseClient):
         if not submit_info:
             submit_info = self._job_submit_post(backend_name, qobj_dict, job_name)
 
-        print(f">>>>>> submit_info_raw is {submit_info}")
         return submit_info
 
     def _job_submit_post(self, backend_name: str, qobj_dict: Dict[str, Any],
-                   job_name: Optional[str] = None) -> Dict[str, Any]:
+                         job_name: Optional[str] = None) -> Dict[str, Any]:
         """Submit a Qobj to a device.
 
         Args:
@@ -175,8 +173,9 @@ class AccountClient(BaseClient):
         """
         return self.client_api.submit_job(backend_name, qobj_dict, job_name)
 
-    def _job_submit_object_storage(self, backend_name: str, qobj_dict: Dict[str, Any],
-                                  job_name: Optional[str] = None) -> Dict:
+    def _job_submit_object_storage(
+            self, backend_name: str, qobj_dict: Dict[str, Any],
+            job_name: Optional[str] = None) -> Dict:
         """Submit a Qobj to a device using object storage.
 
         Args:
@@ -205,11 +204,11 @@ class AccountClient(BaseClient):
 
     def job_download_qobj(self, job_id: str) -> Dict:
         if self._use_object_storage:
-            return self.job_download_qobj_object_storage(job_id)
+            return self._job_download_qobj_object_storage(job_id)
         else:
             return self.job_get(job_id).get('qObject', {})
 
-    def job_download_qobj_object_storage(self, job_id: str) -> Dict:
+    def _job_download_qobj_object_storage(self, job_id: str) -> Dict:
         """Retrieve and return a Qobj using object storage.
 
         Args:
@@ -228,11 +227,11 @@ class AccountClient(BaseClient):
 
     def job_result(self, job_id: str) -> Dict:
         if self._use_object_storage:
-            return self.job_result_object_storage(job_id)
+            return self._job_result_object_storage(job_id)
         else:
             return self.job_get(job_id)['qObjectResult']
 
-    def job_result_object_storage(self, job_id: str) -> Dict:
+    def _job_result_object_storage(self, job_id: str) -> Dict:
         """Retrieve and return a result using object storage.
 
         Args:
@@ -296,10 +295,12 @@ class AccountClient(BaseClient):
                 pprint.pformat(api_response))) from err
         return api_response
 
-    def job_final_status(self, job_id, timeout=None, wait=5):
+    def job_final_status(self, job_id: str, timeout: Optional[float] = None,
+                         wait: float = 5):
         """Wait until the job progress to a final state.
 
         Args:
+            job_id (str): the id of the job
             timeout (float or None): seconds to wait for job. If None, wait
                 indefinitely.
             wait (float): seconds between queries.
@@ -312,7 +313,7 @@ class AccountClient(BaseClient):
         if self._use_websockets:
             start_time = time.time()
             try:
-                status_response = self.job_final_status_websocket(job_id, timeout)
+                status_response = self._job_final_status_websocket(job_id, timeout)
                 return status_response
             except (RuntimeError, WebsocketError) as ex:
                 logger.warning('Error checking job status using websocket, '
@@ -330,7 +331,7 @@ class AccountClient(BaseClient):
         # Use traditional http requests if websocket not available or failed.
         start_time = time.time()
         status_response = self.job_status(job_id)
-        while status_response['status'] not in API_JOB_FINAL_STATES:
+        while ApiJobStatus(status_response['status']) not in API_JOB_FINAL_STATES:
             elapsed_time = time.time() - start_time
             if timeout is not None and elapsed_time >= timeout:
                 raise JobError('Timeout while waiting for job {}'.format(job_id))
@@ -342,7 +343,7 @@ class AccountClient(BaseClient):
 
         return status_response
 
-    def job_final_status_websocket(
+    def _job_final_status_websocket(
             self,
             job_id: str,
             timeout: Optional[float] = None

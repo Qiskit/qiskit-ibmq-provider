@@ -97,6 +97,14 @@ VALID_QOBJ_RESPONSE = {
 }
 
 
+VALID_JOB_RESPONSE = {
+    'id': 'TEST_ID',
+    'kind': 'q-object',
+    'status': 'CREATING',
+    'creationDate': '2019-01-01T13:15:58.425972'
+}
+
+
 class TestIBMQJobStates(JobTestCase):
     """Test the states of an IBMQJob."""
 
@@ -370,7 +378,7 @@ class BaseFakeAPI:
 
     def submit_job(self, *_args, **_kwargs):
         time.sleep(0.2)
-        return {'id': 'TEST_ID'}
+        return VALID_JOB_RESPONSE
 
     def cancel_job(self, job_id, *_args, **_kwargs):
         if not job_id:

@@ -93,7 +93,7 @@ class TestAccountClient(IBMQTestCase):
         api = backend._api
 
         try:
-            job = api.job_submit_object_storage(backend_name, qobj.to_dict())
+            job = api._job_submit_object_storage(backend_name, qobj.to_dict())
         except RequestsApiError as ex:
             response = ex.original_exception.response
             if response.status_code == 400:
@@ -113,11 +113,11 @@ class TestAccountClient(IBMQTestCase):
         self.assertEqual(job['kind'], 'q-object-external-storage')
 
         # Wait for completion.
-        api.job_final_status_websocket(job_id)
+        api.job_final_status(job_id)
 
         # Fetch results and qobj via object storage.
-        result = api.job_result_object_storage(job_id)
-        qobj_downloaded = api.job_download_qobj_object_storage(job_id)
+        result = api._job_result_object_storage(job_id)
+        qobj_downloaded = api._job_download_qobj_object_storage(job_id)
 
         self.assertEqual(qobj_downloaded, qobj.to_dict())
         self.assertEqual(result['status'], 'COMPLETED')
