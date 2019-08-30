@@ -26,7 +26,7 @@ class InfoQueueResponseSchema(BaseSchema):
 
     # Optional properties
     position = Integer(required=False, missing=0)
-    status = String(required=False, missing=False)
+    status = String(required=False)
 
 
 class JobResponseSchema(BaseSchema):
