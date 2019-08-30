@@ -15,6 +15,9 @@
 
 """Tests for all IBMQ backends."""
 from datetime import datetime
+from unittest.mock import patch
+from requests.exceptions import Timeout
+
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.ibmq import IBMQProvider
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
@@ -25,6 +28,7 @@ from qiskit.qobj import QobjHeader
 from qiskit.test import slow_test, providers
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.models.backendproperties import BackendProperties
+from qiskit.providers.ibmq.api_v2.session import Session
 
 from ..decorators import (requires_qe_access,
                           requires_classic_api,
@@ -190,3 +194,18 @@ class TestAccountProvider(TestIBMQProvider):
                     self.assertLessEqual(last_update_date, datetime_filter)
                 else:
                     self.assertEqual(properties, None)
+
+    def test_provider_backends(self):
+        """Test provider_backends have correct attributes."""
+        provider_backends = {back for back in dir(self.provider.provider_backends)
+                             if not back.startswith('_')}
+        backends = {back.name() for back in self.provider.backends()}
+        self.assertEqual(provider_backends, backends)
+
+    def test_provider_backends_timeout(self):
+        """Test provider_backends timeout."""
+        with patch.object(Session, "request", side_effect=Timeout):
+            provider_backends = {
+                back for back in dir(self.provider.provider_backends)
+                if not back.startswith('_')}
+        self.assertEqual(len(provider_backends), 0)

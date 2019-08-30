@@ -57,10 +57,17 @@ class Api(RestAdapterBase):
         """
         return Job(self.session, job_id)
 
-    def backends(self) -> List[Dict[str, Any]]:
-        """Return the list of backends."""
+    def backends(self, timeout: Optional[float] = None) -> List[Dict[str, Any]]:
+        """Return the list of backends.
+
+        Args:
+            timeout (float or None): number of seconds to wait for the request.
+
+        Returns:
+            list[dict]: json response.
+        """
         url = self.get_url('backends')
-        return self.session.get(url).json()
+        return self.session.get(url, timeout=timeout).json()
 
     def hubs(self) -> List[Dict[str, Any]]:
         """Return the list of hubs available to the user."""

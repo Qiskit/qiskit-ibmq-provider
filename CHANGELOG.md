@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Added
+
+- Added support for autocompleting backend names. A user can now use 
+`AccountProvider.provider_backends.<tab>` to see a list of backend names (\#303).
+
 ### Changed
 
 - The `IBMQBackend.run()` function now accepts an optional `job_name` parameter.
@@ -164,7 +169,6 @@ The format is based on [Keep a Changelog].
 
 - Support for non-qobj format has been removed. (\#26, \#28)
 
-<<<<<<< HEAD
 
 [UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.2...HEAD
 [0.3.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.1...0.3.2
