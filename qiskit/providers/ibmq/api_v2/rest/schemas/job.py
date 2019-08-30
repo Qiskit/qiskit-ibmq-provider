@@ -75,7 +75,7 @@ class JobResponseSchema(JobBaseSchema):
     """Schema for GetJobs, GetJobsById, and PostJobs responses."""
 
     # Required properties.
-    id = String(required=True)
+    job_id = String(required=True, load_from='id', dump_to='id')
     kind = EnumType(enum_cls=ApiJobKind, required=True)
     status = EnumType(required=True, enum_cls=ApiJobStatus)
     creation_date = String(required=True, load_from='creationDate', dump_to='creationDate')
@@ -101,8 +101,8 @@ class JobStatusResponseSchema(BaseSchema):
 class JobModel(BaseModel):
     """Model for GetJobs, GetJobsById, and PostJobs."""
 
-    def __init__(self, id, kind, status, creation_date, **kwargs):
-        self._job_id = id
+    def __init__(self, job_id, kind, status, creation_date, **kwargs):
+        self._job_id = job_id
         self._job_kind = kind
         self._creation_date = creation_date
         self._api_job_status = status

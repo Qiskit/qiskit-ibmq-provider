@@ -22,18 +22,17 @@ import pprint
 from typing import List, Dict, Any, Optional
 # Disabled unused-import because datetime is used only for type hints.
 from datetime import datetime  # pylint: disable=unused-import
-
-from ..exceptions import RequestsApiError, WebsocketError, WebsocketTimeoutError
-from ..rest import Api
-from ..session import RetrySession
-
-from .base import BaseClient
-from .websocket import WebsocketClient
+from marshmallow.exceptions import ValidationError
 
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
-from qiskit.providers import JobError
+
+from ..exceptions import (RequestsApiError, WebsocketError,
+                          WebsocketTimeoutError, UserTimeoutExceededError)
+from ..rest import Api
+from ..session import RetrySession
+from .base import BaseClient
+from .websocket import WebsocketClient
 from ..rest.schemas.job import JobStatusResponseSchema
-from marshmallow.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +140,16 @@ class AccountClient(BaseClient):
 
     def job_submit(self, backend_name: str, qobj_dict: Dict[str, Any],
                    job_name: Optional[str] = None):
+        """Submit a Qobj to a device.
+
+        Args:
+            backend_name (str): the name of the backend.
+            qobj_dict (dict): the Qobj to be executed, as a dictionary.
+            job_name (str): custom name to be assigned to the job.
+
+        Returns:
+            dict: job status.
+        """
         submit_info = None
         if self._use_object_storage:
             # Attempt to use object storage.
@@ -154,6 +163,7 @@ class AccountClient(BaseClient):
                 # failed.
                 logger.info('Submitting the job via object storage failed: '
                             'retrying via regular POST upload.')
+                logger.debug(err)
                 # Disable object storage for this job.
                 self._use_object_storage = False
 
@@ -164,7 +174,7 @@ class AccountClient(BaseClient):
 
     def _job_submit_post(self, backend_name: str, qobj_dict: Dict[str, Any],
                          job_name: Optional[str] = None) -> Dict[str, Any]:
-        """Submit a Qobj to a device.
+        """Submit a Qobj to a device using HTTP POST.
 
         Args:
             backend_name (str): the name of the backend.
@@ -206,6 +216,14 @@ class AccountClient(BaseClient):
         return response['job']
 
     def job_download_qobj(self, job_id: str) -> Dict:
+        """Retrieve and return a Qobj.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: Qobj, in dict form.
+        """
         if self._use_object_storage:
             return self._job_download_qobj_object_storage(job_id)
         else:
@@ -229,6 +247,14 @@ class AccountClient(BaseClient):
         return job_api.get_object_storage(download_url)
 
     def job_result(self, job_id: str) -> Dict:
+        """Retrieve and return a job result using object storage.
+
+        Args:
+            job_id (str): the id of the job.
+
+        Returns:
+            dict: job information.
+        """
         if self._use_object_storage:
             return self._job_result_object_storage(job_id)
         else:
@@ -288,6 +314,8 @@ class AccountClient(BaseClient):
 
         Returns:
             dict: job status.
+        Raises:
+            RequestsApiError: if an unexpected result is received from the server.
         """
         api_response = self.client_api.job(job_id).status()
         try:
@@ -308,9 +336,12 @@ class AccountClient(BaseClient):
                 indefinitely.
             wait (float): seconds between queries.
 
+        Returns:
+            dict: job status.
+
         Raises:
-            JobTimeoutError: if the job does not return results before a
-                specified timeout.
+            UserTimeoutExceededError: if the job does not return results
+                before a specified timeout.
         """
         # Attempt to use websocket if available.
         if self._use_websockets:
@@ -318,13 +349,13 @@ class AccountClient(BaseClient):
             try:
                 status_response = self._job_final_status_websocket(job_id, timeout)
                 return status_response
-            except (RuntimeError, WebsocketError) as ex:
-                logger.warning('Error checking job status using websocket, '
-                               'retrying using HTTP.')
-                logger.debug(ex)
             except WebsocketTimeoutError as ex:
                 logger.warning('Timeout checking job status using websocket, '
                                'retrying using HTTP')
+                logger.debug(ex)
+            except (RuntimeError, WebsocketError) as ex:
+                logger.warning('Error checking job status using websocket, '
+                               'retrying using HTTP.')
                 logger.debug(ex)
 
             # Adjust timeout for HTTP retry.
@@ -337,7 +368,8 @@ class AccountClient(BaseClient):
         while ApiJobStatus(status_response['status']) not in API_JOB_FINAL_STATES:
             elapsed_time = time.time() - start_time
             if timeout is not None and elapsed_time >= timeout:
-                raise JobError('Timeout while waiting for job {}'.format(job_id))
+                raise UserTimeoutExceededError(
+                    'Timeout while waiting for job {}'.format(job_id))
 
             logger.info('API job status = %s (%d seconds)',
                         status_response['status'], elapsed_time)

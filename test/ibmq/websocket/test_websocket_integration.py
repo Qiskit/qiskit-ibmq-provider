@@ -133,6 +133,7 @@ class TestWebsocketIntegration(IBMQTestCase):
 
         def _job_status_side_effect(*args, **kwargs):
             """Side effect function to restore job ID"""
+            # pylint: disable=unused-argument
             job._job_id = saved_job_id
             return saved_job_status(saved_job_id)
 

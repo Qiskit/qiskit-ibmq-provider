@@ -36,6 +36,7 @@ from ..api import ApiError, IBMQConnector
 from ..apiconstants import ApiJobStatus
 from ..api_v2.clients import BaseClient, AccountClient
 from ..api_v2.rest.schemas.job import JobModel
+from ..api_v2.exceptions import UserTimeoutExceededError
 
 from .utils import (current_utc_time, build_error_report, is_job_queued,
                     api_status_to_job_status)
@@ -118,7 +119,7 @@ class IBMQJob(JobModel, BaseJob):
                  job_id: Optional[str],
                  api: Union[IBMQConnector, AccountClient],
                  qobj: Optional[Qobj] = None,
-                 **kwargs) -> None:
+                 **kwargs: Dict) -> None:
         """IBMQJob init function.
 
         We can instantiate jobs from two sources: A QObj, and an already submitted job returned by
@@ -130,6 +131,7 @@ class IBMQJob(JobModel, BaseJob):
                 Pass `None` if you are creating a new job.
             api (IBMQConnector or BaseClient): object for connecting to the API.
             qobj (Qobj): The Quantum Object. See notes below
+            kwargs (dict): Additional job attributes
 
         Notes:
             It is mandatory to pass either ``qobj`` or ``job_id``. Passing a ``qobj``
@@ -137,7 +139,7 @@ class IBMQJob(JobModel, BaseJob):
             API server for job creation. Passing only a `job_id` will create an instance
             representing an already-created job retrieved from the API server.
         """
-        # pylint: disable=unused-argument
+        # pylint: disable=super-init-not-called
 
         BaseJob.__init__(self, backend, job_id)
 
@@ -159,7 +161,7 @@ class IBMQJob(JobModel, BaseJob):
             self._status = JobStatus.INITIALIZING
             self._creation_date = current_utc_time()
         else:
-            kwargs['id'] = job_id
+            kwargs['job_id'] = job_id
             self._init_job_model(**kwargs)
             # In case of not providing a `qobj`, it is assumed the job already
             # exists in the API (with `job_id`).
@@ -173,6 +175,9 @@ class IBMQJob(JobModel, BaseJob):
 
         Returns:
             Qobj: the Qobj submitted for this job.
+
+        Raises:
+            JobError: if there was some unexpected failure in the server.
         """
         if not self._qobj_payload:
             # Populate self._qobj_payload by retrieving the results.
@@ -451,11 +456,6 @@ class IBMQJob(JobModel, BaseJob):
         except Exception as err:  # pylint: disable=broad-except
             # Undefined error during submission:
             # Capture and keep it for raising it when calling status().
-
-            import traceback
-            traceback.print_exc()
-            print(f">>>>>> err is {err}")
-
             self._future_captured_exception = err
 
     def _wait_for_completion(
@@ -477,8 +477,12 @@ class IBMQJob(JobModel, BaseJob):
             return
 
         if isinstance(self._api, AccountClient):
-            status_response = self._api.job_final_status(
-                self.job_id(), timeout=timeout, wait=wait)
+            try:
+                status_response = self._api.job_final_status(
+                    self.job_id(), timeout=timeout, wait=wait)
+            except UserTimeoutExceededError:
+                raise JobTimeoutError(
+                    'Timeout while waiting for job {}'.format(self._job_id))
             self._update_status(status_response)
         else:
             # Use traditional http requests
@@ -527,6 +531,9 @@ class IBMQJob(JobModel, BaseJob):
 
         Args:
             kwargs (dict): attribute dictionary
+
+        Raises:
+            JobError: if invalid job data received from the server.
         """
         try:
             # from_dict() verifies data meets schema specification

@@ -29,6 +29,11 @@ class RequestsApiError(ApiError):
         super().__init__(*args, **kwargs)
 
 
+class UserTimeoutExceededError(ApiError):
+    """Exceptions related to exceeding user defined timeout."""
+    pass
+
+
 class WebsocketError(ApiError):
     """Exceptions related to websockets."""
     pass
