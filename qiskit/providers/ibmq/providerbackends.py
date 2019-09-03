@@ -16,15 +16,17 @@
 
 import re
 import keyword
+from typing import Iterable, Any
 from types import SimpleNamespace
 
+from .ibmqbackend import IBMQBackend
 from .api_v2.exceptions import RequestsApiError
 
 
 class ProviderBackends(SimpleNamespace):
     """Backend namespace for an IBM Quantum Experience account provider."""
 
-    def __init__(self, provider):
+    def __init__(self, provider: 'AccountProvider') -> None:
         """Creates a new ProviderBackends instance.
 
         Args:
@@ -34,7 +36,7 @@ class ProviderBackends(SimpleNamespace):
         self._initialized = False
         super().__init__()
 
-    def _discover_backends(self):
+    def _discover_backends(self) -> None:
         """Discovers the remote backends if not already known."""
         if not self._initialized:
             try:
@@ -59,10 +61,10 @@ class ProviderBackends(SimpleNamespace):
                 # feature meant for interactive sessions.
                 pass
 
-    def __dir__(self):
+    def __dir__(self) -> Iterable[str]:
         self._discover_backends()
         return super().__dir__()
 
-    def __getattr__(self, item):
+    def __getattr__(self, item) -> IBMQBackend:
         self._discover_backends()
         return super().__getattribute__(item)
