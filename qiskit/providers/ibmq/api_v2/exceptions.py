@@ -14,7 +14,9 @@
 
 """Exceptions related to the IBM Q Experience API."""
 
+from requests.exceptions import RequestException
 from ..api import ApiError as ApiErrorV1
+from typing import Any
 
 
 class ApiError(ApiErrorV1):
@@ -24,7 +26,7 @@ class ApiError(ApiErrorV1):
 
 class RequestsApiError(ApiError):
     """Exception re-raising a RequestException."""
-    def __init__(self, original_exception, *args, **kwargs):
+    def __init__(self, original_exception: RequestException, *args: Any, **kwargs: Any):
         self.original_exception = original_exception
         super().__init__(*args, **kwargs)
 
