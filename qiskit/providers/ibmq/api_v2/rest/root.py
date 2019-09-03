@@ -162,7 +162,7 @@ class Api(RestAdapterBase):
 
         return self.session.post(url, json=payload).json()
 
-    def circuit(self, name: str, **kwargs: Dict) -> Dict[str, Any]:
+    def circuit(self, name: str, **kwargs: Any) -> Dict[str, Any]:
         """Execute a Circuit.
 
         Args:
