@@ -25,8 +25,6 @@ from qiskit.qobj import Qobj
 from qiskit.providers import BaseBackend, JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration)
-from qiskit.providers.ibmq.accountprovider import AccountProvider
-from qiskit.providers.ibmq.ibmqprovider import IBMQProvider
 
 from .api import ApiError, IBMQConnector
 from .api_v2.clients import BaseClient, AccountClient
@@ -45,7 +43,7 @@ class IBMQBackend(BaseBackend):
     def __init__(
             self,
             configuration: BackendConfiguration,
-            provider: Union[AccountProvider, IBMQProvider],
+            provider: Union['AccountProvider', 'IBMQProvider'],
             credentials: Credentials,
             api: Union[AccountClient, IBMQConnector]
     ) -> None:
