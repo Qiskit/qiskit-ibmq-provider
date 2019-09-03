@@ -13,7 +13,7 @@
 # that they have been altered from the originals.
 
 """Client for accessing authentication features of IBM Q Experience."""
-from typing import Dict, List, Any
+from typing import Dict, List, Optional, Any
 
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
 from ..rest import Api, Auth
@@ -140,7 +140,7 @@ class AuthClient(BaseClient):
         """
         return self.client_api.version()
 
-    def current_access_token(self) -> str:
+    def current_access_token(self) -> Optional[str]:
         """Return the current access token.
 
         Returns:
