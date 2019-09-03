@@ -15,7 +15,7 @@
 """Session customized for IBM Q Experience access."""
 
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
@@ -132,7 +132,7 @@ class RetrySession(Session):
         self.proxies = proxies or {}
         self.verify = verify
 
-    def request(self, method: str, url: str, bare: bool = False, **kwargs: Dict) -> Response:
+    def request(self, method: str, url: str, bare: bool = False, **kwargs: Any) -> Response:
         """Constructs a Request, prepending the base url.
 
         Args:

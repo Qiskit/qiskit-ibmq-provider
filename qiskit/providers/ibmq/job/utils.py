@@ -23,7 +23,7 @@ def current_utc_time():
     Returns:
         str: current time in UTC format.
     """
-    datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
 
 def is_job_queued(api_job_status_response):

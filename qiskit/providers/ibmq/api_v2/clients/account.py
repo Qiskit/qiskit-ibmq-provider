@@ -42,7 +42,7 @@ class AccountClient(BaseClient):
             access_token: str,
             project_url: str,
             websockets_url: str,
-            **request_kwargs: Dict
+            **request_kwargs: Any
     ) -> None:
         """AccountClient constructor.
 
@@ -302,7 +302,7 @@ class AccountClient(BaseClient):
 
     # Circuits-related public functions.
 
-    def circuit_run(self, name: str, **kwargs: Dict) -> Dict:
+    def circuit_run(self, name: str, **kwargs: Any) -> Dict:
         """Execute a Circuit.
 
         Args:
