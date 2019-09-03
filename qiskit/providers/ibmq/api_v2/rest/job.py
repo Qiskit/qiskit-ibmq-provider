@@ -75,7 +75,7 @@ class Job(RestAdapterBase):
         url = self.get_url('callback_upload')
         return self.session.post(url).json()
 
-    def callback_download(self):
+    def callback_download(self) -> Dict[str, Any]:
         """Notify the API after downloading a Qobj via object storage."""
         url = self.get_url("callback_download")
         return self.session.post(url).json()
