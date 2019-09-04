@@ -68,7 +68,7 @@ class BackendRequestSchema(BaseSchema):
     name = String(required=True, description="the name of the backend.")
 
 
-class JobsStatusFilterRequestSchema(BaseSchema):
+class JobsStatusFilterQueryParamRequestSchema(BaseSchema):
     """Nested schema for JobsStatusRequestSchema"""
 
     # Optional properties
@@ -153,7 +153,7 @@ class JobsStatusRequestSchema(BaseSchema):
     """Schema for JobsStatusRequest"""
 
     # Required properties
-    filter = Nested(JobsStatusFilterRequestSchema, required=True)
+    filter = Nested(JobsStatusFilterQueryParamRequestSchema, required=True)
 
 
 class JobsStatusResponseSchema(BaseSchema):
