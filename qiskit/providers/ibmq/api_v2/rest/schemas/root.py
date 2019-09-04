@@ -91,11 +91,6 @@ class HubsResponseSchema(BaseSchema):
     groups = Dict(Nested(GroupsResponseSchema), required=True)
 
 
-class VersionResponseSchema(BaseSchema):
-    """Schema for VersionResponse"""
-    pass
-
-
 class CircuitRequestSchema(BaseSchema):
     """Schema for CircuitRequest"""
 
