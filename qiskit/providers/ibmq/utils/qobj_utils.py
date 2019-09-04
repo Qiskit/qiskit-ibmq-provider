@@ -14,8 +14,9 @@
 
 """Utilities related to Qobj."""
 
-from qiskit.qobj import QobjHeader, Qobj
 from typing import Dict, Any, Optional
+
+from qiskit.qobj import QobjHeader, Qobj
 
 
 def _serialize_noise_model(config: Dict[str, Any]) -> Dict[str, Any]:

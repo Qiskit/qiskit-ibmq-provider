@@ -14,9 +14,10 @@
 
 """Exceptions related to the IBM Q Experience API."""
 
-from requests.exceptions import RequestException
-from ..api import ApiError as ApiErrorV1
 from typing import Any
+from requests.exceptions import RequestException
+
+from ..api import ApiError as ApiErrorV1
 
 
 class ApiError(ApiErrorV1):
