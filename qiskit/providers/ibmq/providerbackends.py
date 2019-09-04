@@ -16,7 +16,7 @@
 
 import re
 import keyword
-from typing import Iterable, Any
+from typing import Iterable
 from types import SimpleNamespace
 
 from .ibmqbackend import IBMQBackend
