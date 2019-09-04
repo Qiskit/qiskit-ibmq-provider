@@ -132,7 +132,7 @@ class JobsRequestSchema(BaseSchema):
 
     # Required properties
     qObject = Dict(required=True, description="the Qobj to be executed, as a dictionary.")
-    backend = Nested(BackendConfigurationSchema, required=True)
+    backend = String(required=True, description="the name of the backend.")
     shots = Number(required=True)
 
 
