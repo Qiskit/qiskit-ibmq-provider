@@ -14,7 +14,7 @@
 
 """Client for determining the version of an IBM Q Experience service."""
 
-from typing import Dict, Union
+from typing import Dict, Union, Any
 
 from ..session import RetrySession
 from ..rest.version_finder import VersionFinder
@@ -25,7 +25,7 @@ from .base import BaseClient
 class VersionClient(BaseClient):
     """Client for determining the version of an IBM Q Experience service."""
 
-    def __init__(self, url: str, **request_kwargs: Dict) -> None:
+    def __init__(self, url: str, **request_kwargs: Any) -> None:
         """VersionClient constructor.
 
         Args:

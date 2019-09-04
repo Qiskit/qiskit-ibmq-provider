@@ -15,7 +15,7 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
-from typing import Dict, List, Callable, Optional
+from typing import Dict, List, Callable, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
@@ -71,7 +71,7 @@ class AccountProvider(BaseProvider):
             name: Optional[str] = None,
             filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
             timeout: Optional[float] = None,
-            **kwargs: Dict
+            **kwargs: Any
     ) -> List[IBMQBackend]:
         """Return all backends accessible via this provider, subject to optional filtering.
 

@@ -16,7 +16,7 @@
 
 import logging
 import warnings
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
@@ -52,7 +52,7 @@ class IBMQFactory:
             self,
             token: str,
             url: str = QX_AUTH_URL,
-            **kwargs: Dict
+            **kwargs: Any
     ) -> Optional[Union[AccountProvider, IBMQProvider]]:
         """Authenticate against IBM Q Experience for use during this session.
 
@@ -204,7 +204,7 @@ class IBMQFactory:
             token: str,
             url: str = QX_AUTH_URL,
             overwrite: bool = False,
-            **kwargs: Dict
+            **kwargs: Any
     ) -> None:
         """Save the account to disk for future use.
 
