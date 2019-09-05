@@ -13,13 +13,21 @@
 # that they have been altered from the originals.
 
 """Schemas for job."""
+from marshmallow.fields import Bool
 from marshmallow.validate import OneOf
-from qiskit.providers.ibmq.apiconstants import ApiJobStatus
+from qiskit.providers.ibmq.apiconstants import ApiJobStatus, ApiJobKind
 from qiskit.validation import BaseSchema
-from qiskit.validation.fields import String, Url, Nested, Integer
+from qiskit.validation.fields import Dict, String, Url, Nested, Integer
 
 
 # Helper schemas.
+
+class FieldsFilterRequestSchema(BaseSchema):
+    """Nested schema for SelfFilterQueryParamRequestSchema"""
+
+    # Required properties
+    fields = Dict(keys=String, values=Bool)
+
 
 class InfoQueueResponseSchema(BaseSchema):
     """Nested schema for StatusResponseSchema"""
@@ -43,6 +51,26 @@ class JobResponseSchema(BaseSchema):
 
 
 # Endpoint schemas.
+
+class SelfFilterQueryParamRequestSchema(BaseSchema):
+    """Schema for SelfFilterQueryParamRequest"""
+
+    # Required properties
+    filter = Nested(FieldsFilterRequestSchema, required=True)
+
+
+class SelfResponseSchema(BaseSchema):
+    """Schema for SelfResponseSchema"""
+    # pylint: disable=invalid-name
+
+    # Optional properties
+    error = String(required=False)
+
+    id = String(required=True)
+    kind = String(required=True, validate=OneOf([kind.value for kind in ApiJobKind]))
+    status = String(required=True, validate=OneOf([status.value for status in ApiJobStatus]))
+    creationDate = String(required=True, description="when the job was run")
+
 
 class PropertiesResponseSchema(BaseSchema):
     """Schema for PropertiesResponse"""
