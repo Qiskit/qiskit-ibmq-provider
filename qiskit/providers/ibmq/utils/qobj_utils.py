@@ -14,10 +14,12 @@
 
 """Utilities related to Qobj."""
 
-from qiskit.qobj import QobjHeader
+from typing import Dict, Any, Optional
+
+from qiskit.qobj import QobjHeader, Qobj
 
 
-def _serialize_noise_model(config):
+def _serialize_noise_model(config: Dict[str, Any]) -> Dict[str, Any]:
     """Traverse the dictionary looking for noise_model keys and apply
        a transformation so it can be serialized.
 
@@ -42,7 +44,11 @@ def _serialize_noise_model(config):
     return config
 
 
-def update_qobj_config(qobj, backend_options=None, noise_model=None):
+def update_qobj_config(
+        qobj: Qobj,
+        backend_options: Optional[Dict] = None,
+        noise_model: Any = None
+) -> Qobj:
     """Update a Qobj configuration from options and noise model.
 
     Args:

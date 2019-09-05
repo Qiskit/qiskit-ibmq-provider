@@ -340,21 +340,21 @@ class AccountClient(BaseClient):
     # are meant to facilitate the transition, and should be removed moving
     # forward.
 
-    def get_status_job(self, id_job):
+    def get_status_job(self, id_job):  # type: ignore
         # pylint: disable=missing-docstring
         return self.job_status(id_job)
 
-    def submit_job(self, qobj_dict, backend_name, job_name=None):
+    def submit_job(self, qobj_dict, backend_name, job_name=None):  # type: ignore
         # pylint: disable=missing-docstring
         return self.job_submit(backend_name, qobj_dict, job_name)
 
-    def get_jobs(self, limit=10, skip=0, backend=None, only_completed=False,
+    def get_jobs(self, limit=10, skip=0, backend=None, only_completed=False,  # type: ignore
                  filter=None):
         # pylint: disable=missing-docstring,redefined-builtin
         # TODO: this function seems to be unused currently in IBMQConnector.
         raise NotImplementedError
 
-    def get_status_jobs(self, limit=10, skip=0, backend=None, filter=None):
+    def get_status_jobs(self, limit=10, skip=0, backend=None, filter=None):   # type: ignore
         # pylint: disable=missing-docstring,redefined-builtin
         if backend:
             filter = filter or {}
@@ -362,18 +362,18 @@ class AccountClient(BaseClient):
 
         return self.list_jobs_statuses(limit, skip, filter)
 
-    def cancel_job(self, id_job):
+    def cancel_job(self, id_job):  # type: ignore
         # pylint: disable=missing-docstring
         return self.job_cancel(id_job)
 
-    def backend_defaults(self, backend):
+    def backend_defaults(self, backend):  # type: ignore
         # pylint: disable=missing-docstring
         return self.backend_pulse_defaults(backend)
 
-    def available_backends(self, timeout=None):
+    def available_backends(self, timeout=None):  # type: ignore
         # pylint: disable=missing-docstring
         return self.list_backends(timeout=timeout)
 
-    def get_job(self, id_job, exclude_fields=None, include_fields=None):
+    def get_job(self, id_job, exclude_fields=None, include_fields=None):  # type: ignore
         # pylint: disable=missing-docstring
         return self.job_get(id_job, exclude_fields, include_fields)
