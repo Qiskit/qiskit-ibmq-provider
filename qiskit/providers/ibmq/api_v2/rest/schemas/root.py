@@ -85,10 +85,14 @@ class JobsStatusFilterQueryParamRequestSchema(BaseSchema):
 
 class HubsResponseSchema(BaseSchema):
     """Schema for HubsResponse"""
+    pass
 
+    # pylint: disable=pointless-string-statement
+    """ Commented out until https://github.com/Qiskit/qiskit-terra/issues/3021 is addressed
     # Required properties.
     name = String(required=True)
     groups = Dict(Nested(GroupsResponseSchema), required=True)
+    """
 
 
 class CircuitRequestSchema(BaseSchema):
