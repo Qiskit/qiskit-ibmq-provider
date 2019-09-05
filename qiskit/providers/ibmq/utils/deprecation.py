@@ -24,7 +24,7 @@ UPDATE_ACCOUNT_TEXT = (
     'https://github.com/Qiskit/qiskit-ibmq-provider#updating-to-the-new-ibm-q-experience')
 
 
-def deprecated(func):
+def deprecated(func):  # type: ignore
     """Decorator that signals that the function has been deprecated.
 
     Args:
@@ -35,7 +35,7 @@ def deprecated(func):
     """
 
     @wraps(func)
-    def _wrapper(self, *args, **kwargs):
+    def _wrapper(self, *args, **kwargs):  # type: ignore
         # The special case of load_accounts is here for backward
         # compatibility when using v2 credentials.
         if self._credentials and func.__name__ != 'load_accounts':
