@@ -26,7 +26,6 @@ from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketClient, Webs
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.test import slow_test
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_qe_access, requires_new_api_auth, run_on_staging
@@ -71,9 +70,7 @@ class TestWebsocketIntegration(IBMQTestCase):
     @run_on_staging
     def test_websockets_device(self, provider):
         """Test checking status of a job via websockets for a device."""
-        # TODO revert back to least_busy when API is fixed
-        # backend = least_busy(provider.backends(simulator=False))
-        backend = provider.backends(simulator=False)[0]
+        backend = least_busy(provider.backends(simulator=False))
 
         qc = transpile(self.qc1, backend=backend)
         qobj = assemble(qc, backend=backend)

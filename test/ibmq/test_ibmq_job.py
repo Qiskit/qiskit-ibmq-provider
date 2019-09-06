@@ -154,9 +154,7 @@ class TestIBMQJob(JobTestCase):
     @run_on_staging
     def test_run_async_device(self, provider):
         """Test running in a real device asynchronously."""
-        # TODO revert back to least_busy when API is fixed
-        # backend = least_busy(provider.backends(simulator=False))
-        backend = provider.backends(simulator=False)[0]
+        backend = least_busy(provider.backends(simulator=False))
 
         self.log.info('submitting to backend %s', backend.name())
         num_qubits = 5
@@ -205,9 +203,7 @@ class TestIBMQJob(JobTestCase):
     @run_on_staging
     def test_cancel(self, provider):
         """Test job cancelation."""
-        # TODO revert back to least_busy when API is fixed
-        # backend = least_busy(provider.backends(simulator=False))
-        backend = provider.backends(simulator=False)[0]
+        backend = least_busy(provider.backends(simulator=False))
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
@@ -393,9 +389,7 @@ class TestIBMQJob(JobTestCase):
     @run_on_staging
     def test_running_job_properties(self, provider):
         """Test fetching properties of a running job."""
-        # TODO revert back to least_busy when API is fixed
-        # backend = least_busy(provider.backends(simulator=False))
-        backend = provider.backends(simulator=False)[0]
+        backend = least_busy(provider.backends(simulator=False))
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
