@@ -19,7 +19,7 @@ import os
 from ast import literal_eval
 from collections import OrderedDict
 from configparser import ConfigParser, ParsingError
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from .credentials import Credentials, HubGroupProject
 from .exceptions import CredentialsError
@@ -87,12 +87,12 @@ def write_qiskit_rc(
         filename (str): full path to the qiskitrc file. If `None`, the default
             location is used (`HOME/.qiskit/qiskitrc`).
     """
-    def _credentials_object_to_dict(obj):
+    def _credentials_object_to_dict(obj: Credentials) -> Dict[str, Any]:
         return {key: getattr(obj, key) for key in
                 ['token', 'url', 'proxies', 'verify']
                 if getattr(obj, key)}
 
-    def _section_name(credentials_):
+    def _section_name(credentials_: Credentials) -> str:
         """Return a string suitable for use as a unique section name."""
         base_name = 'ibmq'
         if credentials_.is_ibmq():

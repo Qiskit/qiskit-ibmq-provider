@@ -43,7 +43,7 @@ class IBMQBackend(BaseBackend):
     def __init__(
             self,
             configuration: BackendConfiguration,
-            provider,
+            provider: Union['AccountProvider', 'IBMQProvider'],
             credentials: Credentials,
             api: Union[AccountClient, IBMQConnector]
     ) -> None:
@@ -391,7 +391,7 @@ class IBMQSimulator(IBMQBackend):
             self,
             qobj: Qobj,
             backend_options: Optional[Dict] = None,
-            noise_model=None,
+            noise_model: Any = None,
             job_name: Optional[str] = None
     ) -> IBMQJob:
         """Run qobj asynchronously.

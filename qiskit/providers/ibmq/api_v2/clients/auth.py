@@ -13,7 +13,7 @@
 # that they have been altered from the originals.
 
 """Client for accessing authentication features of IBM Q Experience."""
-from typing import Dict, List
+from typing import Dict, List, Optional, Any
 
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
 from ..rest import Api, Auth
@@ -25,7 +25,7 @@ from .base import BaseClient
 class AuthClient(BaseClient):
     """Client for accessing authentication features of IBM Q Experience."""
 
-    def __init__(self, api_token: str, auth_url: str, **request_kwargs: Dict) -> None:
+    def __init__(self, api_token: str, auth_url: str, **request_kwargs: Any) -> None:
         """AuthClient constructor.
 
         Args:
@@ -40,7 +40,7 @@ class AuthClient(BaseClient):
         self.client_auth = Auth(RetrySession(auth_url, **request_kwargs))
         self.client_api = self._init_service_clients(**request_kwargs)
 
-    def _init_service_clients(self, **request_kwargs: Dict) -> Api:
+    def _init_service_clients(self, **request_kwargs: Any) -> Api:
         """Initialize the clients used for communicating with the API and ws.
 
         Args:
@@ -140,7 +140,7 @@ class AuthClient(BaseClient):
         """
         return self.client_api.version()
 
-    def current_access_token(self) -> str:
+    def current_access_token(self) -> Optional[str]:
         """Return the current access token.
 
         Returns:

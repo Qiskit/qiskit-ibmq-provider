@@ -16,7 +16,7 @@
 
 import logging
 import warnings
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
@@ -52,7 +52,7 @@ class IBMQFactory:
             self,
             token: str,
             url: str = QX_AUTH_URL,
-            **kwargs: Dict
+            **kwargs: Any
     ) -> Optional[Union[AccountProvider, IBMQProvider]]:
         """Authenticate against IBM Q Experience for use during this session.
 
@@ -204,7 +204,7 @@ class IBMQFactory:
             token: str,
             url: str = QX_AUTH_URL,
             overwrite: bool = False,
-            **kwargs: Dict
+            **kwargs: Any
     ) -> None:
         """Save the account to disk for future use.
 
@@ -429,7 +429,7 @@ class IBMQFactory:
     # Deprecated account management functions for backward compatibility.
 
     @deprecated
-    def active_accounts(self):
+    def active_accounts(self):  # type: ignore
         """List all IBM Q Experience v1 accounts currently in the session.
 
         Note: this method is being deprecated, and is only available when using
@@ -446,7 +446,7 @@ class IBMQFactory:
         return self._v1_provider.active_accounts()
 
     @deprecated
-    def disable_accounts(self, **kwargs):
+    def disable_accounts(self, **kwargs):  # type: ignore
         """Disable IBM Q Experience v1 accounts in the current session.
 
         Note: this method is being deprecated, and only available when using
@@ -462,7 +462,7 @@ class IBMQFactory:
         self._v1_provider.disable_accounts(**kwargs)
 
     @deprecated
-    def load_accounts(self, **kwargs):
+    def load_accounts(self, **kwargs):  # type: ignore
         """Load IBM Q Experience v1 accounts found in the system into current session.
 
         Will also load v2 accounts for backward compatibility, but can lead to
@@ -507,7 +507,7 @@ class IBMQFactory:
             self._v1_provider.load_accounts(**kwargs)
 
     @deprecated
-    def delete_accounts(self, **kwargs):
+    def delete_accounts(self, **kwargs):  # type: ignore
         """Delete saved IBM Q Experience v1 accounts from disk, subject to optional filtering.
 
         Note: this method is being deprecated, and only available when using
@@ -523,7 +523,7 @@ class IBMQFactory:
         self._v1_provider.delete_accounts(**kwargs)
 
     @deprecated
-    def stored_accounts(self):
+    def stored_accounts(self):  # type: ignore
         """List all IBM Q Experience v1 accounts stored to disk.
 
         Note: this method is being deprecated, and only available when using
@@ -540,7 +540,7 @@ class IBMQFactory:
 
     # Deprecated backend-related functionality.
 
-    def backends(self, name=None, filters=None, **kwargs):
+    def backends(self, name=None, filters=None, **kwargs):  # type: ignore
         """Return all backends accessible via IBMQ provider, subject to optional filtering.
 
         Note: this method is being deprecated. Please use an IBM Q Experience v2
@@ -586,7 +586,7 @@ class IBMQFactory:
         else:
             return self._v1_provider.backends(name, filters, **kwargs)
 
-    def get_backend(self, name=None, **kwargs):
+    def get_backend(self, name=None, **kwargs):  # type: ignore
         """Return a single backend matching the specified filtering.
 
         Note: this method is being deprecated. Please use an IBM Q Experience v2

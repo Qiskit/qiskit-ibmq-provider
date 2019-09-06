@@ -15,7 +15,7 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
-from typing import Dict, List, Callable, Optional
+from typing import Dict, List, Callable, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
@@ -28,6 +28,7 @@ from .api_v2.clients import AccountClient
 from .circuits import CircuitsManager
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
+from .providerbackends import ProviderBackends
 
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,11 @@ class AccountProvider(BaseProvider):
 
     def __init__(self, credentials: Credentials, access_token: str) -> None:
         """Return a new AccountProvider.
+
+        The ``provider_backends`` attribute can be used to autocomplete
+        backend names, by pressing ``tab`` after
+        ``AccountProvider.provider_backends.``. Note that this feature may
+        not be available if an error occurs during backend discovery.
 
         Args:
             credentials (Credentials): IBM Q Experience credentials.
@@ -58,11 +64,14 @@ class AccountProvider(BaseProvider):
         # access.
         self._backends = None
 
+        self.provider_backends = ProviderBackends(self)
+
     def backends(
             self,
             name: Optional[str] = None,
             filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
-            **kwargs: Dict
+            timeout: Optional[float] = None,
+            **kwargs: Any
     ) -> List[IBMQBackend]:
         """Return all backends accessible via this provider, subject to optional filtering.
 
@@ -71,6 +80,7 @@ class AccountProvider(BaseProvider):
             filters (callable): more complex filters, such as lambda functions
                 e.g. AccountProvider.backends(
                     filters=lambda b: b.configuration['n_qubits'] > 5)
+            timeout (float or None): number of seconds to wait for backend discovery.
             kwargs: simple filters specifying a true/false criteria in the
                 backend configuration or backend status or provider credentials
                 e.g. AccountProvider.backends(n_qubits=5, operational=True)
@@ -80,7 +90,7 @@ class AccountProvider(BaseProvider):
         """
         # pylint: disable=arguments-differ
         if self._backends is None:
-            self._backends = self._discover_remote_backends()
+            self._backends = self._discover_remote_backends(timeout=timeout)
 
         backends = self._backends.values()
 
@@ -94,15 +104,18 @@ class AccountProvider(BaseProvider):
 
         return filter_backends(backends, filters=filters, **kwargs)
 
-    def _discover_remote_backends(self) -> Dict[str, IBMQBackend]:
+    def _discover_remote_backends(self, timeout: Optional[float] = None) -> Dict[str, IBMQBackend]:
         """Return the remote backends available.
+
+        Args:
+            timeout (float or None): number of seconds to wait for the discovery.
 
         Returns:
             dict[str:IBMQBackend]: a dict of the remote backend instances,
                 keyed by backend name.
         """
         ret = OrderedDict()
-        configs_list = self._api.available_backends()
+        configs_list = self._api.available_backends(timeout=timeout)
         for raw_config in configs_list:
             # Make sure the raw_config is of proper type
             if not isinstance(raw_config, dict):
