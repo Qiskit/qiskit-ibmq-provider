@@ -16,6 +16,7 @@
 
 import logging
 import warnings
+from typing import Dict, List, Union, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
@@ -40,14 +41,19 @@ QX_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 class IBMQFactory:
     """Factory and credentials manager for IBM Q Experience."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._credentials = None
         self._providers = OrderedDict()
         self._v1_provider = IBMQProvider()
 
     # Account management functions.
 
-    def enable_account(self, token, url=QX_AUTH_URL, **kwargs):
+    def enable_account(
+            self,
+            token: str,
+            url: str = QX_AUTH_URL,
+            **kwargs: Any
+    ) -> Optional[Union[AccountProvider, IBMQProvider]]:
         """Authenticate against IBM Q Experience for use during this session.
 
         Note: with version 0.3 of this qiskit-ibmq-provider package, use of
@@ -117,7 +123,7 @@ class IBMQFactory:
 
         return providers[0]
 
-    def disable_account(self):
+    def disable_account(self) -> None:
         """Disable the account in the current session.
 
         Raises:
@@ -135,7 +141,7 @@ class IBMQFactory:
         self._credentials = None
         self._providers = OrderedDict()
 
-    def load_account(self):
+    def load_account(self) -> Optional[AccountProvider]:
         """Authenticate against IBM Q Experience from stored credentials.
 
         Returns:
@@ -194,7 +200,12 @@ class IBMQFactory:
         return providers[0]
 
     @staticmethod
-    def save_account(token, url=QX_AUTH_URL, overwrite=False, **kwargs):
+    def save_account(
+            token: str,
+            url: str = QX_AUTH_URL,
+            overwrite: bool = False,
+            **kwargs: Any
+    ) -> None:
         """Save the account to disk for future use.
 
         Note: IBM Q Experience v1 credentials are being deprecated. Please
@@ -222,7 +233,7 @@ class IBMQFactory:
         store_credentials(credentials, overwrite=overwrite)
 
     @staticmethod
-    def delete_account():
+    def delete_account() -> None:
         """Delete the saved account from disk.
 
         Raises:
@@ -245,7 +256,7 @@ class IBMQFactory:
         remove_credentials(credentials)
 
     @staticmethod
-    def stored_account():
+    def stored_account() -> Dict[str, str]:
         """List the account stored on disk.
 
         Returns:
@@ -269,7 +280,7 @@ class IBMQFactory:
             'url': credentials.url
         }
 
-    def active_account(self):
+    def active_account(self) -> Optional[Dict[str, str]]:
         """List the IBM Q Experience v2 account currently in the session.
 
         Returns:
@@ -295,7 +306,7 @@ class IBMQFactory:
         }
 
     @staticmethod
-    def update_account(force=False):
+    def update_account(force: bool = False) -> Optional[Credentials]:
         """Interactive helper from migrating stored credentials to IBM Q Experience v2.
 
         Args:
@@ -310,7 +321,12 @@ class IBMQFactory:
 
     # Provider management functions.
 
-    def providers(self, hub=None, group=None, project=None):
+    def providers(
+            self,
+            hub: Optional[str] = None,
+            group: Optional[str] = None,
+            project: Optional[str] = None
+    ) -> List[AccountProvider]:
         """Return a list of providers with optional filtering.
 
         Args:
@@ -336,7 +352,12 @@ class IBMQFactory:
 
         return providers
 
-    def get_provider(self, hub=None, group=None, project=None):
+    def get_provider(
+            self,
+            hub: Optional[str] = None,
+            group: Optional[str] = None,
+            project: Optional[str] = None
+    ) -> AccountProvider:
         """Return a provider for a single hub/group/project combination.
 
         Returns:
@@ -359,7 +380,7 @@ class IBMQFactory:
     # Private functions.
 
     @staticmethod
-    def _check_api_version(credentials):
+    def _check_api_version(credentials: Credentials) -> Dict[str, Union[bool, str]]:
         """Check the version of the API in a set of credentials.
 
         Returns:
@@ -369,7 +390,7 @@ class IBMQFactory:
                                        **credentials.connection_parameters())
         return version_finder.version()
 
-    def _initialize_providers(self, credentials):
+    def _initialize_providers(self, credentials: Credentials) -> None:
         """Authenticate against IBM Q Experience and populate the providers.
 
         Args:
@@ -408,7 +429,7 @@ class IBMQFactory:
     # Deprecated account management functions for backward compatibility.
 
     @deprecated
-    def active_accounts(self):
+    def active_accounts(self):  # type: ignore
         """List all IBM Q Experience v1 accounts currently in the session.
 
         Note: this method is being deprecated, and is only available when using
@@ -425,7 +446,7 @@ class IBMQFactory:
         return self._v1_provider.active_accounts()
 
     @deprecated
-    def disable_accounts(self, **kwargs):
+    def disable_accounts(self, **kwargs):  # type: ignore
         """Disable IBM Q Experience v1 accounts in the current session.
 
         Note: this method is being deprecated, and only available when using
@@ -441,7 +462,7 @@ class IBMQFactory:
         self._v1_provider.disable_accounts(**kwargs)
 
     @deprecated
-    def load_accounts(self, **kwargs):
+    def load_accounts(self, **kwargs):  # type: ignore
         """Load IBM Q Experience v1 accounts found in the system into current session.
 
         Will also load v2 accounts for backward compatibility, but can lead to
@@ -486,7 +507,7 @@ class IBMQFactory:
             self._v1_provider.load_accounts(**kwargs)
 
     @deprecated
-    def delete_accounts(self, **kwargs):
+    def delete_accounts(self, **kwargs):  # type: ignore
         """Delete saved IBM Q Experience v1 accounts from disk, subject to optional filtering.
 
         Note: this method is being deprecated, and only available when using
@@ -502,7 +523,7 @@ class IBMQFactory:
         self._v1_provider.delete_accounts(**kwargs)
 
     @deprecated
-    def stored_accounts(self):
+    def stored_accounts(self):  # type: ignore
         """List all IBM Q Experience v1 accounts stored to disk.
 
         Note: this method is being deprecated, and only available when using
@@ -519,7 +540,7 @@ class IBMQFactory:
 
     # Deprecated backend-related functionality.
 
-    def backends(self, name=None, filters=None, **kwargs):
+    def backends(self, name=None, filters=None, **kwargs):  # type: ignore
         """Return all backends accessible via IBMQ provider, subject to optional filtering.
 
         Note: this method is being deprecated. Please use an IBM Q Experience v2
@@ -565,7 +586,7 @@ class IBMQFactory:
         else:
             return self._v1_provider.backends(name, filters, **kwargs)
 
-    def get_backend(self, name=None, **kwargs):
+    def get_backend(self, name=None, **kwargs):  # type: ignore
         """Return a single backend matching the specified filtering.
 
         Note: this method is being deprecated. Please use an IBM Q Experience v2

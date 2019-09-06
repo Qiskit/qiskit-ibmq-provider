@@ -17,7 +17,7 @@ import os
 from setuptools import setup
 
 requirements = [
-    "nest-asyncio>=1.0.0",
+    "nest-asyncio>=1.0.0,!=1.1.0",
     "qiskit-terra>=0.8",
     "requests>=2.19",
     "requests-ntlm>=1.1.0",

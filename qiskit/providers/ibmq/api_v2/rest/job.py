@@ -16,7 +16,7 @@
 
 import json
 
-from typing import Dict, List, Any
+from typing import Dict, List, Optional, Any
 
 from .base import RestAdapterBase
 from ..session import RetrySession
@@ -47,7 +47,11 @@ class Job(RestAdapterBase):
         self.job_id = job_id
         super().__init__(session, '/Jobs/{}'.format(job_id))
 
-    def get(self, excluded_fields: List[str], included_fields: List[str]) -> Dict[str, Any]:
+    def get(
+            self,
+            excluded_fields: Optional[List[str]],
+            included_fields: Optional[List[str]]
+    ) -> Dict[str, Any]:
         """Return a job.
 
         Args:
@@ -75,7 +79,7 @@ class Job(RestAdapterBase):
         url = self.get_url('callback_upload')
         return self.session.post(url).json()
 
-    def callback_download(self):
+    def callback_download(self) -> Dict[str, Any]:
         """Notify the API after downloading a Qobj via object storage."""
         url = self.get_url("callback_download")
         return self.session.post(url).json()
@@ -137,8 +141,8 @@ class Job(RestAdapterBase):
 
 
 def build_url_filter(
-        excluded_fields: List[str],
-        included_fields: List[str]
+        excluded_fields: Optional[List[str]],
+        included_fields: Optional[List[str]]
 ) -> Dict[str, Dict[str, bool]]:
     """Return a URL filter based on included and excluded fields.
 
