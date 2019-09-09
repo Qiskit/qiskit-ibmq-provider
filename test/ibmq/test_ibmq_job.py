@@ -206,7 +206,7 @@ class TestIBMQJob(JobTestCase):
     @requires_provider
     def test_cancel(self, provider):
         """Test job cancelation."""
-        backend_name = ('ibmq_20_tokyo'
+        backend_name = ('ibmq_boeblingen'
                         if self.using_ibmq_credentials else 'ibmqx4')
         backend = provider.get_backend(backend_name)
 
