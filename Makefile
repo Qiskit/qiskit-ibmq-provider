@@ -17,7 +17,7 @@ lint:
 	pylint -rn qiskit/providers/ibmq test
 
 mypy:
-	mypy --module qiskit.providers.ibmq
+	mypy --allow-redefinition --module qiskit.providers.ibmq
 
 style:
 	pycodestyle qiskit test
