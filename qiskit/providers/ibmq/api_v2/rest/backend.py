@@ -55,7 +55,7 @@ class Backend(RestAdapterBase):
 
         params = {
             'version': 1
-        }  # type: Dict[str, Union[str, bool]]
+        }  # type: Dict[str, Any]
 
         query = {}
         if datetime:
