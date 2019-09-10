@@ -229,12 +229,12 @@ class WebsocketClient(BaseClient):
                                        'unexpectedly: %s(status_code=%s). '
                                        'Retrying get_job_status.', message, ex.code)
 
+                        # Block asyncio loop for a given backoff value.
+                        yield from self._sleep_backoff(backoff_factor, current_retry_attempt)
+
                         # Reestablish websocket connection and increment retry counter.
                         websocket = yield from self._connect(url)
                         current_retry_attempt = current_retry_attempt + 1
-
-                        # Block asyncio loop for a given backoff value.
-                        yield from self._sleep_backoff(backoff_factor, current_retry_attempt)
                         continue
 
                     raise WebsocketError('Connection with websocket closed '
