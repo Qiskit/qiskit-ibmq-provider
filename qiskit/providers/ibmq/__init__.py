@@ -14,10 +14,13 @@
 
 """Backends provided by IBM Quantum Experience."""
 
+from typing import List
+
 from qiskit.exceptions import QiskitError
 from .ibmqfactory import IBMQFactory
 from .ibmqprovider import IBMQProvider
 from .ibmqbackend import IBMQBackend
+from .ibmqbackend import BaseBackend
 from .job import IBMQJob
 
 from .version import __version__
@@ -26,7 +29,7 @@ from .version import __version__
 IBMQ = IBMQFactory()
 
 
-def least_busy(backends):
+def least_busy(backends: List[BaseBackend]) -> BaseBackend:
     """Return the least busy backend from a list.
 
     Return the least busy available backend for those that
