@@ -130,7 +130,7 @@ class TestAccountClient(IBMQTestCase):
 
     def test_backend_status(self):
         """Check the status of a real chip."""
-        backend_name = ('ibmq_20_tokyo'
+        backend_name = ('ibmq_boeblingen'
                         if self.using_ibmq_credentials else 'ibmqx4')
         api = self._get_client()
         is_available = api.backend_status(backend_name)
@@ -138,7 +138,7 @@ class TestAccountClient(IBMQTestCase):
 
     def test_backend_properties(self):
         """Check the properties of calibration of a real chip."""
-        backend_name = ('ibmq_20_tokyo'
+        backend_name = ('ibmq_boeblingen'
                         if self.using_ibmq_credentials else 'ibmqx4')
         api = self._get_client()
 
