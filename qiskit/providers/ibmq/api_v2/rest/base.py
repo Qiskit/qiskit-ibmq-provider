@@ -14,13 +14,15 @@
 
 """REST clients for accessing the IBM Q Experience v2 API."""
 
+from typing import Dict
+
 from ..session import RetrySession
 
 
 class RestAdapterBase:
     """Base class for REST adaptors."""
 
-    URL_MAP = {}
+    URL_MAP = {}  # type: Dict[str, str]
     """Mapping between the internal name of an endpoint and the actual URL"""
 
     def __init__(self, session: RetrySession, prefix_url: str = '') -> None:

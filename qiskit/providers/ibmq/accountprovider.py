@@ -62,7 +62,7 @@ class AccountProvider(BaseProvider):
 
         # Initialize the internal list of backends, lazy-loading it on first
         # access.
-        self._backends = None
+        self._backends = None  # type: Optional[Dict[str, IBMQBackend]]
 
         self.provider_backends = ProviderBackends(self)
 
@@ -114,7 +114,7 @@ class AccountProvider(BaseProvider):
             dict[str:IBMQBackend]: a dict of the remote backend instances,
                 keyed by backend name.
         """
-        ret = OrderedDict()
+        ret = OrderedDict()  # type: Dict[str, IBMQBackend]
         configs_list = self._api.available_backends(timeout=timeout)
         for raw_config in configs_list:
             # Make sure the raw_config is of proper type

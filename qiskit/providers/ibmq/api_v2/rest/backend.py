@@ -15,7 +15,7 @@
 """Backend REST adapter for the IBM Q Experience v2 API."""
 
 import json
-from typing import Dict, Optional, Any
+from typing import Dict, Union, Optional, Any
 from datetime import datetime  # pylint: disable=unused-import
 from .base import RestAdapterBase
 from ..session import RetrySession
@@ -55,7 +55,7 @@ class Backend(RestAdapterBase):
 
         params = {
             'version': 1
-        }
+        }  # type: Dict[str, Union[str, bool]]
 
         query = {}
         if datetime:

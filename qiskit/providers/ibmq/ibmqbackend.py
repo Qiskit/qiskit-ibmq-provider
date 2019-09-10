@@ -82,7 +82,7 @@ class IBMQBackend(BaseBackend):
             IBMQJob: an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
-        kwargs = {}
+        kwargs = {}  # type: Dict[str, bool]
         if isinstance(self._api, BaseClient):
             # Default to using object storage and websockets for new API.
             kwargs = {'use_object_storage': True,

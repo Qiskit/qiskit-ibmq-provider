@@ -161,7 +161,7 @@ def build_url_filter(
     excluded_fields = excluded_fields or []
     included_fields = included_fields or []
     field_flags = {}
-    ret = {}
+    ret = {}  # type: Dict[str, Dict[str, bool]]
 
     # Build a map of fields to bool.
     for field_ in excluded_fields:

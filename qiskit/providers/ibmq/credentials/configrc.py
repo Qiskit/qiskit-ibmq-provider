@@ -19,7 +19,7 @@ import os
 from ast import literal_eval
 from collections import OrderedDict
 from configparser import ConfigParser, ParsingError
-from typing import Dict, Optional, Any
+from typing import Dict, Union, Optional, Any
 
 from .credentials import Credentials, HubGroupProject
 from .exceptions import CredentialsError
@@ -56,9 +56,9 @@ def read_credentials_from_qiskitrc(
         raise CredentialsError(str(ex))
 
     # Build the credentials dictionary.
-    credentials_dict = OrderedDict()
+    credentials_dict = OrderedDict()  # type: Dict[HubGroupProject, Credentials]
     for name in config_parser.sections():
-        single_credentials = dict(config_parser.items(name))
+        single_credentials = dict(config_parser.items(name))  # type: Dict[str, Union[str, bool]]
         # Individually convert keys to their right types.
         # TODO: consider generalizing, moving to json configuration or a more
         # robust alternative.
