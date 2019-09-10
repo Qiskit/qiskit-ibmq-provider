@@ -76,7 +76,7 @@ class WebsocketClient(BaseClient):
         websocket_url (str): URL for websocket communication with IBM Q.
         access_token (str): access token for IBM Q.
     """
-    BACKOFF_MAX = 120  # Maximum backoff value.
+    BACKOFF_MAX = 8  # Maximum backoff value.
 
     def __init__(self, websocket_url, access_token):
         self.websocket_url = websocket_url.rstrip('/')
