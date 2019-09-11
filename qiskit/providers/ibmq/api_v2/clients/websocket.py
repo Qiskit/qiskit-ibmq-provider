@@ -138,18 +138,19 @@ class WebsocketClient(BaseClient):
         intervals (20 seconds). When a final state is reached, the server
         closes the socket. If the websocket connection is closed without
         a reason, the exponential backoff algorithm is used as a basis to
-        reestablish connections. The algorithm is takes effect when a socket
-        closes, it is given by:
+        reestablish connections. The algorithm takes effect when a
+        connection closes, it is given by:
 
-            1. When a connection closes, retrieve another socket and
-                increment a retry counter.
-            2. Sleep for a given backoff time.
+            1. When a connection closes, sleep for a calculated backoff
+                time.
+            2. Try to retrieve another socket and increment a retry
+                counter.
             3. Attempt to get the job status.
                 - If the connection is closed, go back to step 1.
                 - If the job status is read successfully, reset the retry
                     counter.
-            4. Continue until job status is complete or maximum number of
-                retries is met.
+            4. Continue until the job status is complete or the maximum
+                number of retries is met.
 
         Args:
             job_id (str): id of the job.
@@ -229,7 +230,7 @@ class WebsocketClient(BaseClient):
                                        'unexpectedly: %s(status_code=%s). '
                                        'Retrying get_job_status.', message, ex.code)
 
-                        # Block asyncio loop for a given backoff value.
+                        # Block asyncio loop for a given backoff time.
                         yield from self._sleep_backoff(backoff_factor, current_retry_attempt)
 
                         try:
@@ -253,20 +254,19 @@ class WebsocketClient(BaseClient):
 
     @asyncio.coroutine
     def _sleep_backoff(self, backoff_factor, current_retry_attempt):
-        """Block the asyncio loop for a given backoff value.
+        """Block the asyncio loop for a calculated backoff time.
 
-            Exponential backoff value formula:
-                {backoff_factor} * (2 ** (total_number_of_retries - 1))
+            Exponential backoff time formula:
+                {backoff_factor} * (2 ** (current_retry_attempt - 1))
 
             Args:
-                backoff_factor (float): backoff factor, in seconds,
-                    used to calculate the exponential backoff value.
+                backoff_factor (float): backoff factor, in seconds.
                 current_retry_attempt (int): current number of retry
                     attempts.
         """
-        backoff_value = backoff_factor * (2 ** (current_retry_attempt - 1))
-        backoff_value = min(self.BACKOFF_MAX, backoff_value)
-        yield from asyncio.sleep(backoff_value)
+        backoff_time = backoff_factor * (2 ** (current_retry_attempt - 1))
+        backoff_time = min(self.BACKOFF_MAX, backoff_time)
+        yield from asyncio.sleep(backoff_time)
 
     def _authentication_message(self):
         """Return the message used for authenticating against the server."""
