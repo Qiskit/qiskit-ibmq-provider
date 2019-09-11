@@ -232,9 +232,13 @@ class WebsocketClient(BaseClient):
                         # Block asyncio loop for a given backoff value.
                         yield from self._sleep_backoff(backoff_factor, current_retry_attempt)
 
-                        # Reestablish websocket connection and increment retry counter.
-                        websocket = yield from self._connect(url)
-                        current_retry_attempt = current_retry_attempt + 1
+                        try:
+                            websocket = yield from self._connect(url)
+                        except Exception:  # pylint: disable=broad-except
+                            pass
+                        finally:
+                            current_retry_attempt = current_retry_attempt + 1
+
                         continue
 
                     raise WebsocketError('Connection with websocket closed '
