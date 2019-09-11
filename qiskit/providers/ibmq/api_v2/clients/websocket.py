@@ -235,7 +235,7 @@ class WebsocketClient(BaseClient):
 
                         try:
                             websocket = yield from self._connect(url)
-                        except Exception:  # pylint: disable=broad-except
+                        except (WebsocketError, WebsocketAuthenticationError):
                             pass
                         finally:
                             current_retry_attempt = current_retry_attempt + 1
