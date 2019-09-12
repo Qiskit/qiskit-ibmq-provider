@@ -34,6 +34,11 @@ The format is based on [Keep a Changelog].
 - The `backend.properties()` function now accepts an optional `datetime` 
   parameter. If specified, the function returns the backend properties closest 
   to, but older than, the specified datetime filter (\#277).
+- The `WebsocketClient.get_job_status()` method now accepts two optional 
+  parameters: `retries` and `backoff_factor`. `retries` specifies the 
+  maximum number of retries to attempt in case a websocket connection 
+  is closed. `backoff_factor` is used to calculate the amount of time to 
+  wait between retries.
 
 ## [0.3.2] - 2019-08-20
 ### Changed
