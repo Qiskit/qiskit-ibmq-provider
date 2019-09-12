@@ -226,9 +226,11 @@ class WebsocketClient(BaseClient):
 
                     # Attempt to retry.
                     if current_retry_attempt < retries and attempt_retry:
+                        current_retry_attempt = current_retry_attempt + 1
                         logger.warning('Connection with the websocket closed '
                                        'unexpectedly: %s(status_code=%s). '
-                                       'Retrying get_job_status.', message, ex.code)
+                                       'Retrying get_job_status: Attempt #%s',
+                                       message, ex.code, current_retry_attempt)
 
                         # Block asyncio loop for a given backoff time.
                         yield from self._sleep_backoff(backoff_factor, current_retry_attempt)
@@ -237,9 +239,8 @@ class WebsocketClient(BaseClient):
                             websocket = yield from self._connect(url)
                         except (WebsocketError, WebsocketAuthenticationError):
                             pass
-                        finally:
-                            current_retry_attempt = current_retry_attempt + 1
 
+                        # Continue to the next retry.
                         continue
 
                     raise WebsocketError('Connection with websocket closed '
