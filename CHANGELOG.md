@@ -38,7 +38,7 @@ The format is based on [Keep a Changelog].
   parameters: `retries` and `backoff_factor`. `retries` specifies the 
   maximum number of retries to attempt in case a websocket connection 
   is closed. `backoff_factor` is used to calculate the amount of time to 
-  wait between retries.
+  wait between retries (\#341).
 
 ## [0.3.2] - 2019-08-20
 ### Changed
