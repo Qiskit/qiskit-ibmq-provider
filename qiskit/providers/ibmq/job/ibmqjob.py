@@ -452,21 +452,15 @@ class IBMQJob(BaseJob):
         backend_name = self.backend().name()
 
         submit_info = None
-        if self._use_object_storage:
-            # Submit Qobj via object storage.
-            try:
+        try:
+            if self._use_object_storage:
+                # Submit Qobj via object storage.
                 submit_info = self._api.job_submit_object_storage(
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload,
                     job_name=job_name)
-            except Exception as err:  # pylint: disable=broad-except
-                # Undefined error during submission:
-                # Capture and keep it for raising it when calling status().
-                self._future_captured_exception = err
-                return None
-        else:
-            # Submit Qobj via HTTP.
-            try:
+            else:
+                # Submit Qobj via HTTP.
                 kwargs = {}
                 if isinstance(self._api, BaseClient):
                     kwargs = {'job_name': job_name}
@@ -474,11 +468,12 @@ class IBMQJob(BaseJob):
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload,
                     **kwargs)
-            except Exception as err:  # pylint: disable=broad-except
-                # Undefined error during submission:
-                # Capture and keep it for raising it when calling status().
-                self._future_captured_exception = err
-                return None
+
+        except Exception as err:  # pylint: disable=broad-except
+            # Undefined error during submission:
+            # Capture and keep it for raising it when calling status().
+            self._future_captured_exception = err
+            return None
 
         # Error in the job after submission:
         # Transition to the `ERROR` final state.
