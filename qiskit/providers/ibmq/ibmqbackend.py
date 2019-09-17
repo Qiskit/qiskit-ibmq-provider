@@ -85,7 +85,9 @@ class IBMQBackend(BaseBackend):
         kwargs = {}
         if isinstance(self._api, BaseClient):
             # Default to using object storage and websockets for new API.
-            kwargs = {'use_object_storage': True,
+
+            use_object_storage = self._configuration['allow_object_storage']  # placeholder, attribute name might differ
+            kwargs = {'use_object_storage': use_object_storage,
                       'use_websockets': True}
 
         job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
