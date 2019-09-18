@@ -24,7 +24,6 @@ class IBMQTestCase(QiskitTestCase):
         # Reset the default providers, as in practice they acts as a singleton
         # due to importing the wrapper from qiskit.
         from qiskit.providers.ibmq import IBMQ
-        IBMQ._v1_provider._accounts.clear()
         IBMQ._providers.clear()
         IBMQ._credentials = None
 
