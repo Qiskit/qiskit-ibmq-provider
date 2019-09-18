@@ -62,39 +62,6 @@ class TestIBMQConnector(IBMQTestCase):
 
     @requires_qe_access
     @requires_classic_api
-    def test_api_run_job(self, qe_token, qe_url):
-        """Test running a job against a simulator."""
-        IBMQ.enable_account(qe_token, qe_url)
-
-        backend_name = 'ibmq_qasm_simulator'
-        backend = IBMQ.get_backend(backend_name)
-        qobj = assemble(transpile(self.qc1, backend=backend, seed_transpiler=self.seed),
-                        backend=backend, shots=1)
-
-        api = backend._api
-        job = api.submit_job(qobj.to_dict(), backend_name)
-        check_status = None
-        if 'status' in job:
-            check_status = job['status']
-        self.assertIsNotNone(check_status)
-
-    @requires_qe_access
-    @requires_classic_api
-    def test_api_run_job_fail_backend(self, qe_token, qe_url):
-        """Test running a job against an invalid backend."""
-        IBMQ.enable_account(qe_token, qe_url)
-
-        backend_name = 'ibmq_qasm_simulator'
-        backend = IBMQ.get_backend(backend_name)
-        qobj = assemble(transpile(self.qc1, backend=backend, seed_transpiler=self.seed),
-                        backend=backend, shots=1)
-
-        api = backend._api
-        self.assertRaises(BadBackendError, api.submit_job, qobj.to_dict(),
-                          'INVALID_BACKEND_NAME')
-
-    @requires_qe_access
-    @requires_classic_api
     def test_api_get_jobs(self, qe_token, qe_url):
         """Check get jobs by user authenticated."""
         api = self._get_api(qe_token, qe_url)
@@ -108,27 +75,6 @@ class TestIBMQConnector(IBMQTestCase):
         api = self._get_api(qe_token, qe_url)
         jobs = api.get_status_jobs(1)
         self.assertEqual(len(jobs), 1)
-
-    @requires_qe_access
-    @requires_classic_api
-    def test_api_backend_status(self, qe_token, qe_url):
-        """Check the status of a real chip."""
-        backend_name = ('ibmq_boeblingen'
-                        if self.using_ibmq_credentials else 'ibmqx4')
-        api = self._get_api(qe_token, qe_url)
-        is_available = api.backend_status(backend_name)
-        self.assertIsNotNone(is_available['operational'])
-
-    @requires_qe_access
-    @requires_classic_api
-    def test_api_backend_properties(self, qe_token, qe_url):
-        """Check the properties of calibration of a real chip."""
-        backend_name = ('ibmq_boeblingen'
-                        if self.using_ibmq_credentials else 'ibmqx4')
-        api = self._get_api(qe_token, qe_url)
-
-        properties = api.backend_properties(backend_name)
-        self.assertIsNotNone(properties)
 
     @requires_qe_access
     @requires_classic_api
