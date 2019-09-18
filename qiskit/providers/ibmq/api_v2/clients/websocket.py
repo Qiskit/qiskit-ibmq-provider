@@ -150,7 +150,7 @@ class WebsocketClient(BaseClient):
 
         Args:
             job_id (str): id of the job.
-            timeout (int): timeout, in seconds.
+            timeout (float): timeout, in seconds.
 
         Returns:
             dict: the API response for the status of a job, as a dict that
