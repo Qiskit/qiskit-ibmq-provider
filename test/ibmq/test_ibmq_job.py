@@ -207,7 +207,7 @@ class TestIBMQJob(JobTestCase):
     def test_cancel(self, provider):
         """Test job cancelation."""
         backend_name = ('ibmq_boeblingen'
-                        if self.using_ibmq_credentials else 'ibmqx4')
+                        if self.using_ibmq_credentials else 'ibmqx2')
         backend = provider.get_backend(backend_name)
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
