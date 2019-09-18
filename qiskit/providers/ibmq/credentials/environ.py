@@ -43,10 +43,10 @@ def read_credentials_from_environ() -> Dict[HubGroupProject, Credentials]:
         return OrderedDict()
 
     # Build the credentials based on environment variables.
-    credentials = {}
+    credentials_dict = {}
     for envar_name, credential_key in VARIABLES_MAP.items():
         if os.getenv(envar_name):
-            credentials[credential_key] = os.getenv(envar_name)
+            credentials_dict[credential_key] = os.getenv(envar_name)
 
-    credentials = Credentials(**credentials)
+    credentials = Credentials(**credentials_dict)
     return OrderedDict({credentials.unique_id(): credentials})
