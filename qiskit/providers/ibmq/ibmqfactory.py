@@ -171,9 +171,6 @@ class IBMQFactory:
     ) -> None:
         """Save the account to disk for future use.
 
-        Note: IBM Q Experience v1 credentials are being deprecated. Please
-            use IBM Q Experience v2 credentials instead.
-
         Args:
             token (str): IBM Q Experience API token.
             url (str): URL for the IBM Q Experience authentication server.
@@ -181,15 +178,14 @@ class IBMQFactory:
             **kwargs (dict):
                 * proxies (dict): Proxy configuration for the API.
                 * verify (bool): If False, ignores SSL certificates errors
+
+        IBMQApiUrlError: if the URL is not a valid IBM Q Experience
+            authentication URL.
         """
         if url != QX_AUTH_URL:
-            warnings.warn(
-                'IBM Q Experience v1 credentials are being deprecated. Please '
-                'use IBM Q Experience v2 credentials instead. '
-                'You can find the instructions to make the updates here:\n'
-                'https://github.com/Qiskit/qiskit-ibmq-provider#'
-                'updating-to-the-new-ibm-q-experience',
-                DeprecationWarning)
+            raise IBMQApiUrlError(
+                'The URL specified ({}) is not an IBM Q Experience '
+                'authentication URL'.format(url))
 
         credentials = Credentials(token, url, **kwargs)
 
@@ -200,7 +196,7 @@ class IBMQFactory:
         """Delete the saved account from disk.
 
         Raises:
-            IBMQAccountError: if no valid IBM Q Experience v2 credentials found.
+            IBMQAccountError: if no valid IBM Q Experience credentials found.
         """
         stored_credentials = read_credentials_from_qiskitrc()
         if not stored_credentials:
@@ -226,7 +222,7 @@ class IBMQFactory:
             dict: dictionary with information about the account stored on disk.
 
         Raises:
-            IBMQAccountError: if no valid IBM Q Experience v2 credentials found.
+            IBMQAccountError: if no valid IBM Q Experience credentials found.
         """
         stored_credentials = read_credentials_from_qiskitrc()
         if not stored_credentials:
