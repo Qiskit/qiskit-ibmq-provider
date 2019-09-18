@@ -14,19 +14,13 @@
 
 """Exceptions for IBMQ Connector."""
 
-from typing import Optional
-
 from ..exceptions import IBMQError
 
 
 class ApiError(IBMQError):
     """IBMQConnector API error handling base class."""
 
-    def __init__(
-            self,
-            usr_msg: str = None,
-            dev_msg: Optional[str] = None
-    ) -> None:
+    def __init__(self, usr_msg=None, dev_msg=None):
         """ApiError.
 
         Args:
