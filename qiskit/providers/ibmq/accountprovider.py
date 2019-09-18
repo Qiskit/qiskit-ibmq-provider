@@ -62,7 +62,7 @@ class AccountProvider(BaseProvider):
 
         # Initialize the internal list of backends, lazy-loading it on first
         # access.
-        self._backends = None
+        self._backends = None  # type: Dict[str, IBMQBackend]
 
         self.provider_backends = ProviderBackends(self)
 
