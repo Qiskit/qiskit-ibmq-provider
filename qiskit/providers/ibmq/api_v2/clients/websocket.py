@@ -18,11 +18,13 @@ import asyncio
 import json
 import logging
 import time
+from typing import Dict, Generator, Union, Optional, Any
 from concurrent import futures
 import warnings
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
+from websockets.client import Connect
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from ..exceptions import (WebsocketError, WebsocketTimeoutError,
@@ -47,11 +49,15 @@ class WebsocketMessage:
         type_ (str): message type.
         data (dict): message data.
     """
-    def __init__(self, type_, data=None):
+    def __init__(
+            self,
+            type_: str,
+            data: Optional[Union[str, Dict[str, str]]] = None
+    ) -> None:
         self.type_ = type_
         self.data = data
 
-    def as_json(self):
+    def as_json(self) -> str:
         """Return a json representation of the message."""
         parsed_dict = {'type': self.type_}
         if self.data:
@@ -59,7 +65,7 @@ class WebsocketMessage:
         return json.dumps(parsed_dict)
 
     @classmethod
-    def from_bytes(cls, json_string):
+    def from_bytes(cls, json_string: bytes) -> 'WebsocketMessage':
         """Instantiate a message from a bytes response."""
         try:
             parsed_dict = json.loads(json_string.decode('utf8'))
@@ -82,7 +88,7 @@ class WebsocketClient(BaseClient):
         self.access_token = access_token
 
     @asyncio.coroutine
-    def _connect(self, url):
+    def _connect(self, url: str) -> Generator[Any, None, Connect]:
         """Authenticate against the websocket server, returning the connection.
 
         Returns:
@@ -130,7 +136,11 @@ class WebsocketClient(BaseClient):
         return websocket
 
     @asyncio.coroutine
-    def get_job_status(self, job_id, timeout=None):
+    def get_job_status(
+            self,
+            job_id: str,
+            timeout: Optional[float] = None
+    ) -> Generator[Any, None, Dict[str, str]]:
         """Return the status of a job.
 
         Reads status messages from the API, which are issued at regular
@@ -221,7 +231,7 @@ class WebsocketClient(BaseClient):
 
         return last_status
 
-    def _authentication_message(self):
+    def _authentication_message(self) -> 'WebsocketMessage':
         """Return the message used for authenticating against the server."""
         return WebsocketMessage(type_='authentication',
                                 data=self.access_token)
