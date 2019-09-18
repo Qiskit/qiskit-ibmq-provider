@@ -86,7 +86,7 @@ class IBMQBackend(BaseBackend):
         if isinstance(self._api, BaseClient):
             # Default to using object storage and websockets for new API.
 
-            use_object_storage = self._configuration['allow_object_storage']  # placeholder, attribute name might differ
+            use_object_storage = self._configuration['allow_object_storage']
             kwargs = {'use_object_storage': use_object_storage,
                       'use_websockets': True}
 
