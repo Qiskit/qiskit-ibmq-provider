@@ -65,6 +65,6 @@ class ProviderBackends(SimpleNamespace):
         self._discover_backends()
         return super().__dir__()
 
-    def __getattr__(self, item) -> IBMQBackend:
+    def __getattr__(self, item: str) -> IBMQBackend:
         self._discover_backends()
         return super().__getattribute__(item)
