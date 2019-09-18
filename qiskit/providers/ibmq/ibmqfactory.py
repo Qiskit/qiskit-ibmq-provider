@@ -177,8 +177,9 @@ class IBMQFactory:
                 * proxies (dict): Proxy configuration for the API.
                 * verify (bool): If False, ignores SSL certificates errors
 
-        IBMQApiUrlError: if the URL is not a valid IBM Q Experience
-            authentication URL.
+        Raises:
+            IBMQApiUrlError: if the URL is not a valid IBM Q Experience
+                authentication URL.
         """
         if url != QX_AUTH_URL:
             raise IBMQApiUrlError(

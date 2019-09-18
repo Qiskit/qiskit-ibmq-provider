@@ -17,9 +17,7 @@
 import re
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.compiler import assemble, transpile
-from qiskit.providers.ibmq import IBMQ
-from qiskit.providers.ibmq.api import (ApiError, BadBackendError, IBMQConnector)
+from qiskit.providers.ibmq.api import (ApiError, IBMQConnector)
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_classic_api, requires_qe_access

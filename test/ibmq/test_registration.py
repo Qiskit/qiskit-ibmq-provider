@@ -265,7 +265,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
     def test_multiple_credentials(self):
         """Test converting multiple credentials."""
         with custom_qiskitrc():
-            store_credentials(Credentials('A',url=QE2_AUTH_URL))
+            store_credentials(Credentials('A', url=QE2_AUTH_URL))
             store_credentials(Credentials('B',
                                           url=IBMQ_TEMPLATE.format('a', 'b', 'c')))
             store_credentials(Credentials('C',
