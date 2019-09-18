@@ -83,7 +83,7 @@ class WebsocketClient(BaseClient):
         access_token (str): access token for IBM Q.
     """
 
-    def __init__(self, websocket_url, access_token):
+    def __init__(self, websocket_url: str, access_token: str) -> None:
         self.websocket_url = websocket_url.rstrip('/')
         self.access_token = access_token
 
