@@ -18,7 +18,6 @@ from typing import List
 
 from qiskit.exceptions import QiskitError
 from .ibmqfactory import IBMQFactory
-from .ibmqprovider import IBMQProvider
 from .ibmqbackend import IBMQBackend, BaseBackend
 from .job import IBMQJob
 
