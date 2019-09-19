@@ -19,7 +19,6 @@ from typing import List
 from qiskit.exceptions import QiskitError
 from .ibmqfactory import IBMQFactory
 from .ibmqbackend import IBMQBackend, BaseBackend
-from .ibmqbackend import IBMQBackend
 from .job import IBMQJob
 
 from .version import __version__
