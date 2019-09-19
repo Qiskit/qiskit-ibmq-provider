@@ -245,8 +245,8 @@ class IBMQFactory:
             dict: information about the account currently in the session.
         """
         if not self._credentials:
-            # Return None instead of raising, for compatibility with the
-            # previous active_accounts() behavior.
+            # Return None instead of raising, maintaining the same behavior
+            # of the classic active_accounts() method.
             return None
 
         return {

@@ -20,7 +20,7 @@ The format is based on [Keep a Changelog].
 
 - Added support for autocompleting backend names. A user can now use 
   `AccountProvider.provider_backends.<tab>` to see a list of backend
-  names (\#344).
+  names (\#303).
 
 ### Changed
 
@@ -39,7 +39,7 @@ The format is based on [Keep a Changelog].
 ### Deprecated
 
 - Support for the legacy Quantum Experience and QConsole is fully deprecated.
-  Only credentials from the new Quantum Experience can be used. (\#268)
+  Only credentials from the new Quantum Experience can be used. (\#344)
 
 
 ## [0.3.2] - 2019-08-20

@@ -63,7 +63,6 @@ class TestCredentials(IBMQTestCase):
         credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
         credentials2 = Credentials('QISKITRC_TOKEN_2', url=QE2_AUTH_URL)
 
-        # Use an IBMQProvider instead of a Factory.
         factory = IBMQFactory()
 
         with custom_qiskitrc():
