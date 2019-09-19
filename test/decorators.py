@@ -119,9 +119,12 @@ def requires_qe_access(func):
 def requires_provider(func):
     """Decorator that signals the test uses the online API, via a provider.
 
-    This decorator delegates into the `requires_qe_access` decorator, but
-    instead of the credentials it appends a `provider` argument to the
-    decorated function.
+    This decorator delegates into the `requires_qe_access` and
+    `requires_new_api_auth` decorators, but instead of the credentials it
+    appends a `provider` argument to the decorated function.
+
+    Note: this decorator skips the test if the credentials do not belong to
+        an IBM Q Experience authentication URL.
 
     Args:
         func (callable): test function to be decorated.
@@ -131,6 +134,7 @@ def requires_provider(func):
     """
     @wraps(func)
     @requires_qe_access
+    @requires_new_api_auth
     def _wrapper(*args, **kwargs):
         ibmq_factory = IBMQFactory()
         qe_token = kwargs.pop('qe_token')

@@ -43,7 +43,7 @@ class IBMQBackend(BaseBackend):
     def __init__(
             self,
             configuration: BackendConfiguration,
-            provider: Union['AccountProvider', 'IBMQProvider'],
+            provider: 'AccountProvider',
             credentials: Credentials,
             api: Union[AccountClient, IBMQConnector]
     ) -> None:
@@ -51,7 +51,7 @@ class IBMQBackend(BaseBackend):
 
         Args:
             configuration (BackendConfiguration): configuration of backend.
-            provider (IBMQProvider): provider.
+            provider (AccountProvider): provider.
             credentials (Credentials): credentials.
             api (Union[AccountClient, IBMQConnector]):
                 api for communicating with the Quantum Experience.
