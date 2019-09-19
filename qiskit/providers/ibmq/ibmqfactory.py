@@ -40,7 +40,7 @@ class IBMQFactory:
     """Factory and credentials manager for IBM Q Experience."""
 
     def __init__(self) -> None:
-        self._credentials = None
+        self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()
 
     # Account management functions.
