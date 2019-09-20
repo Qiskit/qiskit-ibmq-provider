@@ -122,7 +122,7 @@ class IBMQJob(BaseJob):
             backend (BaseBackend): The backend instance used to run this job.
             job_id (str or None): The job ID of an already submitted job.
                 Pass `None` if you are creating a new job.
-            api (IBMQConnector or BaseClient): object for connecting to the API.
+            api (AccountClient): object for connecting to the API.
             qobj (Qobj): The Quantum Object. See notes below
             creation_date (str): When the job was run.
             api_status (str): `status` field directly from the API response.
@@ -284,7 +284,7 @@ class IBMQJob(BaseJob):
         self._wait_for_submission()
 
         try:
-            response = self._api.cancel_job(self._job_id)
+            response = self._api.job_cancel(self._job_id)
             self._cancelled = 'error' not in response
             return self._cancelled
         except ApiError as error:
@@ -310,7 +310,7 @@ class IBMQJob(BaseJob):
 
         try:
             # TODO: See result values
-            api_response = self._api.get_status_job(self._job_id)
+            api_response = self._api.job_status(self._job_id)
             self._update_status(api_response)
         # pylint: disable=broad-except
         except Exception as err:
@@ -472,7 +472,7 @@ class IBMQJob(BaseJob):
                 kwargs = {}
                 if isinstance(self._api, BaseClient):
                     kwargs = {'job_name': job_name}
-                submit_info = self._api.submit_job(
+                submit_info = self._api.job_submit(
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload,
                     **kwargs)
@@ -541,7 +541,7 @@ class IBMQJob(BaseJob):
             raise JobError(
                 'Job result impossible to retrieve. The job was cancelled.')
 
-        return self._api.get_job(self._job_id)
+        return self._api.job_get(self._job_id)
 
     def _wait_for_completion(self, timeout=None, wait=5):
         """Wait until the job progress to a final state such as DONE or ERROR.

@@ -122,10 +122,10 @@ class TestAccountClient(IBMQTestCase):
         self.assertEqual(qobj_downloaded, qobj.to_dict())
         self.assertEqual(result['status'], 'COMPLETED')
 
-    def test_get_status_jobs(self):
+    def test_list_jobs_statuses(self):
         """Check get status jobs by user authenticated."""
         api = self._get_client()
-        jobs = api.get_status_jobs(limit=2)
+        jobs = api.list_jobs_statuses(limit=2)
         self.assertEqual(len(jobs), 2)
 
     def test_backend_status(self):
@@ -160,12 +160,6 @@ class TestAccountClient(IBMQTestCase):
                     self.assertTrue(defaults)
                 else:
                     self.assertFalse(defaults)
-
-    def test_available_backends(self):
-        """Check the backends available."""
-        api = self._get_client()
-        backends = api.available_backends()
-        self.assertGreaterEqual(len(backends), 1)
 
     def test_exception_message(self):
         """Check exception has proper message."""
@@ -248,8 +242,8 @@ class TestAccountClientJobs(IBMQTestCase):
         backend_name = 'ibmq_qasm_simulator'
         backend = cls.provider.get_backend(backend_name)
         cls.client = backend._api
-        cls.job = cls.client.submit_job(cls._get_qobj(backend).to_dict(),
-                                        backend_name)
+        cls.job = cls.client.job_submit(backend_name,
+                                        cls._get_qobj(backend).to_dict())
         cls.job_id = cls.job['id']
 
     @classmethod

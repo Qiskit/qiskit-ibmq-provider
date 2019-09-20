@@ -26,7 +26,7 @@ from qiskit.providers import BaseBackend, JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration)
 
-from .api import ApiError, IBMQConnector
+from .api import ApiError
 from .api_v2.clients import BaseClient, AccountClient
 from .apiconstants import ApiJobStatus, ApiJobKind
 from .credentials import Credentials
@@ -45,7 +45,7 @@ class IBMQBackend(BaseBackend):
             configuration: BackendConfiguration,
             provider: 'AccountProvider',
             credentials: Credentials,
-            api: Union[AccountClient, IBMQConnector]
+            api: AccountClient
     ) -> None:
         """Initialize remote backend for IBM Quantum Experience.
 
@@ -53,7 +53,7 @@ class IBMQBackend(BaseBackend):
             configuration (BackendConfiguration): configuration of backend.
             provider (AccountProvider): provider.
             credentials (Credentials): credentials.
-            api (Union[AccountClient, IBMQConnector]):
+            api (AccountClient):
                 api for communicating with the Quantum Experience.
         """
         super().__init__(provider=provider, configuration=configuration)
@@ -164,7 +164,7 @@ class IBMQBackend(BaseBackend):
             return None
 
         if refresh or self._defaults is None:
-            api_defaults = self._api.backend_defaults(self.name())
+            api_defaults = self._api.backend_pulse_defaults(self.name())
             if api_defaults:
                 self._defaults = PulseDefaults.from_dict(api_defaults)
             else:
@@ -264,8 +264,9 @@ class IBMQBackend(BaseBackend):
         current_page_limit = limit
 
         while True:
-            job_page = self._api.get_status_jobs(limit=current_page_limit,
-                                                 skip=skip, filter=api_filter)
+            job_page = self._api.list_jobs_statuses(limit=current_page_limit,
+                                                    skip=skip,
+                                                    extra_filter=api_filter)
             job_responses += job_page
             skip = skip + len(job_page)
 
@@ -317,7 +318,7 @@ class IBMQBackend(BaseBackend):
             IBMQBackendError: if retrieval failed
         """
         try:
-            job_info = self._api.get_job(job_id)
+            job_info = self._api.job_get(job_id)
 
             # Check for generic errors.
             if 'error' in job_info:
