@@ -27,7 +27,7 @@ from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration)
 
 from .api import ApiError
-from .api_v2.clients import BaseClient, AccountClient
+from .api_v2.clients import AccountClient
 from .apiconstants import ApiJobStatus, ApiJobKind
 from .credentials import Credentials
 from .exceptions import IBMQBackendError, IBMQBackendValueError
@@ -82,12 +82,8 @@ class IBMQBackend(BaseBackend):
             IBMQJob: an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
-        kwargs = {}
-        if isinstance(self._api, BaseClient):
-            # Default to using object storage and websockets for new API.
-            kwargs = {'use_object_storage': True,
-                      'use_websockets': True}
-
+        kwargs = {'use_object_storage': True,
+                  'use_websockets': True}
         job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
         job.submit(job_name=job_name)
 
@@ -113,12 +109,6 @@ class IBMQBackend(BaseBackend):
         """
         # pylint: disable=arguments-differ
         if datetime:
-            if not isinstance(self._api, BaseClient):
-                warnings.warn('Retrieving the properties of a '
-                              'backend in a specific datetime is '
-                              'only available when using IBM Q v2')
-                return None
-
             # Do not use cache for specific datetime properties.
             api_properties = self._api.backend_properties(self.name(), datetime=datetime)
             if not api_properties:
@@ -291,9 +281,7 @@ class IBMQBackend(BaseBackend):
                 # Discard pre-qobj jobs.
                 break
 
-            if isinstance(self._api, BaseClient):
-                # Default to using websockets for new API.
-                kwargs['use_websockets'] = True
+            kwargs['use_websockets'] = True
             if job_kind == ApiJobKind.QOBJECT_STORAGE:
                 kwargs['use_object_storage'] = True
 
@@ -341,9 +329,7 @@ class IBMQBackend(BaseBackend):
             try:
                 job_kind = ApiJobKind(job_info.get('kind', None))
 
-                if isinstance(self._api, BaseClient):
-                    # Default to using websockets for new API.
-                    kwargs['use_websockets'] = True
+                kwargs['use_websockets'] = True
                 if job_kind == ApiJobKind.QOBJECT_STORAGE:
                     kwargs['use_object_storage'] = True
 
