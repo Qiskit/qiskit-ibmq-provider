@@ -32,7 +32,6 @@ from qiskit.tools.events.pubsub import Publisher
 
 from ..api import ApiError
 from ..apiconstants import ApiJobStatus
-from ..api_v2.clients import BaseClient
 from ..api_v2.exceptions import WebsocketTimeoutError, WebsocketError
 
 from .utils import current_utc_time, build_error_report, is_job_queued
@@ -469,9 +468,7 @@ class IBMQJob(BaseJob):
 
         if not submit_info:
             try:
-                kwargs = {}
-                if isinstance(self._api, BaseClient):
-                    kwargs = {'job_name': job_name}
+                kwargs = {'job_name': job_name}
                 submit_info = self._api.job_submit(
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload,
