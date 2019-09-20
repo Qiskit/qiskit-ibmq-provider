@@ -36,7 +36,7 @@ The format is based on [Keep a Changelog].
   parameter. If specified, the function returns the backend properties closest 
   to, but older than, the specified datetime filter (\#277).
 
-### Deprecated
+### Removed
 
 - Support for the legacy Quantum Experience and QConsole is fully deprecated.
   Only credentials from the new Quantum Experience can be used. (\#344)
