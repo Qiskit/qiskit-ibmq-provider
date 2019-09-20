@@ -161,10 +161,10 @@ class TestAccountClient(IBMQTestCase):
                 else:
                     self.assertFalse(defaults)
 
-    def test_available_backends(self):
+    def test_list_backends(self):
         """Check the backends available."""
         api = self._get_client()
-        backends = api.available_backends()
+        backends = api.list_backends()
         self.assertGreaterEqual(len(backends), 1)
 
     def test_exception_message(self):

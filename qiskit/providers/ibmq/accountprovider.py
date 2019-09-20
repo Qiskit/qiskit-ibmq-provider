@@ -115,7 +115,7 @@ class AccountProvider(BaseProvider):
                 keyed by backend name.
         """
         ret = OrderedDict()
-        configs_list = self._api.available_backends(timeout=timeout)
+        configs_list = self._api.list_backends(timeout=timeout)
         for raw_config in configs_list:
             # Make sure the raw_config is of proper type
             if not isinstance(raw_config, dict):
