@@ -37,28 +37,3 @@ class ApiError(IBMQError):
 
     def __str__(self):
         return str(self.usr_msg)
-
-
-class BadBackendError(ApiError):
-    """Unavailable backend error."""
-
-    def __init__(self, backend):
-        """BadBackendError.
-
-        Args:
-            backend (str): name of backend.
-        """
-        usr_msg = 'Could not find backend "{0}" available.'.format(backend)
-        dev_msg = ('Backend "{0}" does not exist. Please use '
-                   'available_backends to see options').format(backend)
-        super().__init__(usr_msg, dev_msg)
-
-
-class CredentialsError(ApiError):
-    """Exception associated with bad server credentials."""
-    pass
-
-
-class RegisterSizeError(ApiError):
-    """Exception due to exceeding the maximum number of allowed qubits."""
-    pass
