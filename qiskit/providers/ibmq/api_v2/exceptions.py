@@ -17,10 +17,10 @@
 from typing import Any
 from requests.exceptions import RequestException
 
-from ..api import ApiError as ApiErrorV1
+from ..exceptions import IBMQError
 
 
-class ApiError(ApiErrorV1):
+class ApiError(IBMQError):
     """Generic IBM Q API error."""
     pass
 
@@ -30,11 +30,10 @@ class RequestsApiError(ApiError):
     def __init__(
             self,
             original_exception: RequestException,
-            *args: Any,
-            **kwargs: Any
+            *args: Any
     ) -> None:
         self.original_exception = original_exception
-        super().__init__(*args, **kwargs)
+        super().__init__(*args)
 
 
 class WebsocketError(ApiError):

@@ -30,9 +30,9 @@ from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.result import Result
 from qiskit.tools.events.pubsub import Publisher
 
-from ..api import ApiError
 from ..apiconstants import ApiJobStatus
-from ..api_v2.exceptions import WebsocketTimeoutError, WebsocketError
+from ..api_v2.clients import BaseClient
+from ..api_v2.exceptions import ApiError, WebsocketTimeoutError, WebsocketError
 
 from .utils import current_utc_time, build_error_report, is_job_queued
 
