@@ -26,7 +26,7 @@ from qiskit.providers import BaseBackend, JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration)
 
-from .api import ApiError, IBMQConnector
+from .api import ApiError
 from .api_v2.clients import BaseClient, AccountClient
 from .apiconstants import ApiJobStatus, ApiJobKind
 from .credentials import Credentials
@@ -45,7 +45,7 @@ class IBMQBackend(BaseBackend):
             configuration: BackendConfiguration,
             provider: 'AccountProvider',
             credentials: Credentials,
-            api: Union[AccountClient, IBMQConnector]
+            api: AccountClient
     ) -> None:
         """Initialize remote backend for IBM Quantum Experience.
 
@@ -53,7 +53,7 @@ class IBMQBackend(BaseBackend):
             configuration (BackendConfiguration): configuration of backend.
             provider (AccountProvider): provider.
             credentials (Credentials): credentials.
-            api (Union[AccountClient, IBMQConnector]):
+            api (AccountClient):
                 api for communicating with the Quantum Experience.
         """
         super().__init__(provider=provider, configuration=configuration)

@@ -15,4 +15,3 @@
 """IBM Q API connector."""
 
 from .exceptions import ApiError, BadBackendError, RegisterSizeError
-from .ibmqconnector import IBMQConnector
