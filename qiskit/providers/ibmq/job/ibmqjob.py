@@ -541,7 +541,7 @@ class IBMQJob(BaseJob):
             raise JobError(
                 'Job result impossible to retrieve. The job was cancelled.')
 
-        return self._api.get_job(self._job_id)
+        return self._api.job_get(self._job_id)
 
     def _wait_for_completion(self, timeout=None, wait=5):
         """Wait until the job progress to a final state such as DONE or ERROR.

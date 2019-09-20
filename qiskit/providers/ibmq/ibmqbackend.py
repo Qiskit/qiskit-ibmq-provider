@@ -317,7 +317,7 @@ class IBMQBackend(BaseBackend):
             IBMQBackendError: if retrieval failed
         """
         try:
-            job_info = self._api.get_job(job_id)
+            job_info = self._api.job_get(job_id)
 
             # Check for generic errors.
             if 'error' in job_info:

@@ -357,14 +357,14 @@ class BaseFakeAPI:
                 'project': 'test-project'
             })
 
-    def get_job(self, job_id):
+    def job_get(self, job_id):
         if not job_id:
             return {'status': 'Error', 'error': 'Job ID not specified'}
         return self._job_status[self._state]
 
     def job_status(self, job_id):
         summary_fields = ['status', 'error', 'infoQueue']
-        complete_response = self.get_job(job_id)
+        complete_response = self.job_get(job_id)
         return {key: value for key, value in complete_response.items()
                 if key in summary_fields}
 
@@ -470,7 +470,7 @@ class ThrowingAPI(BaseFakeAPI):
         {'status': 'RUNNING'}
     ]
 
-    def get_job(self, job_id):
+    def job_get(self, job_id):
         raise ApiError()
 
 
@@ -487,17 +487,17 @@ class ThrowingNonJobRelatedErrorAPI(BaseFakeAPI):
         super().__init__()
         self._number_of_exceptions_to_throw = errors_before_success
 
-    def get_job(self, job_id):
+    def job_get(self, job_id):
         if self._number_of_exceptions_to_throw != 0:
             self._number_of_exceptions_to_throw -= 1
             raise ApiError()
 
-        return super().get_job(job_id)
+        return super().job_get(job_id)
 
 
 class ThrowingGetJobAPI(BaseFakeAPI):
     """Class for emulating an API throwing in the middle of execution. But not in
-       get_status_job() , just in get_job().
+       get_status_job(), just in job_get().
        """
 
     _job_status = [
@@ -507,7 +507,7 @@ class ThrowingGetJobAPI(BaseFakeAPI):
     def job_status(self, job_id):
         return self._job_status[self._state]
 
-    def get_job(self, job_id):
+    def job_get(self, job_id):
         raise ApiError('Unexpected error')
 
 
