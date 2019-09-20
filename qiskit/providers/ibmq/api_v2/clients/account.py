@@ -348,10 +348,6 @@ class AccountClient(BaseClient):
 
         return self.list_jobs_statuses(limit, skip, filter)
 
-    def backend_defaults(self, backend):  # type: ignore
-        # pylint: disable=missing-docstring
-        return self.backend_pulse_defaults(backend)
-
     def available_backends(self, timeout=None):  # type: ignore
         # pylint: disable=missing-docstring
         return self.list_backends(timeout=timeout)

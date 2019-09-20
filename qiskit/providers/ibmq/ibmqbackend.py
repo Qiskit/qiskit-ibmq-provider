@@ -164,7 +164,7 @@ class IBMQBackend(BaseBackend):
             return None
 
         if refresh or self._defaults is None:
-            api_defaults = self._api.backend_defaults(self.name())
+            api_defaults = self._api.backend_pulse_defaults(self.name())
             if api_defaults:
                 self._defaults = PulseDefaults.from_dict(api_defaults)
             else:
