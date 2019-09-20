@@ -142,7 +142,7 @@ class AccountClient(BaseClient):
         Returns:
             dict: job status.
         """
-        return self.client_api.submit_job(backend_name, qobj_dict, job_name)
+        return self.client_api.job_submit(backend_name, qobj_dict, job_name)
 
     def job_submit_object_storage(self, backend_name: str, qobj_dict: Dict[str, Any],
                                   job_name: Optional[str] = None) -> Dict:
@@ -339,10 +339,6 @@ class AccountClient(BaseClient):
     # Endpoints for compatibility with classic IBMQConnector. These functions
     # are meant to facilitate the transition, and should be removed moving
     # forward.
-
-    def submit_job(self, qobj_dict, backend_name, job_name=None):  # type: ignore
-        # pylint: disable=missing-docstring
-        return self.job_submit(backend_name, qobj_dict, job_name)
 
     def get_status_jobs(self, limit=10, skip=0, backend=None, filter=None):   # type: ignore
         # pylint: disable=missing-docstring,redefined-builtin

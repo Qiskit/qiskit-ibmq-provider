@@ -103,7 +103,7 @@ class Api(RestAdapterBase):
         return self.session.get(
             url, params={'filter': json.dumps(query)}).json()
 
-    def submit_job(
+    def job_submit(
             self,
             backend_name: str,
             qobj_dict: Dict[str, Any],
