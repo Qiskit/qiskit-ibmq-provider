@@ -310,13 +310,13 @@ class TestIBMQJobStates(JobTestCase):
                 with suppress(BaseFakeAPI.NoMoreStatesError):
                     self._current_api.progress()
 
-                with mock.patch.object(self._current_api, 'get_job',
-                                       wraps=self._current_api.get_job):
+                with mock.patch.object(self._current_api, 'job_get',
+                                       wraps=self._current_api.job_get):
                     job.status()
                     if ApiJobStatus(status) in API_JOB_FINAL_STATES:
-                        self.assertTrue(self._current_api.get_job.called)
+                        self.assertTrue(self._current_api.job_get.called)
                     else:
-                        self.assertFalse(self._current_api.get_job.called)
+                        self.assertFalse(self._current_api.job_get.called)
 
     def run_with_api(self, api):
         """Creates a new ``IBMQJob`` running with the provided API object."""
