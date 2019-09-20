@@ -288,7 +288,7 @@ class IBMQJob(BaseJob):
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
-            raise JobError('Error cancelling job: %s' % error.usr_msg)
+            raise JobError('Error cancelling job: %s' % error)
 
     def status(self):
         """Query the API to update the status.
