@@ -348,10 +348,6 @@ class AccountClient(BaseClient):
 
         return self.list_jobs_statuses(limit, skip, filter)
 
-    def cancel_job(self, id_job):  # type: ignore
-        # pylint: disable=missing-docstring
-        return self.job_cancel(id_job)
-
     def backend_defaults(self, backend):  # type: ignore
         # pylint: disable=missing-docstring
         return self.backend_pulse_defaults(backend)

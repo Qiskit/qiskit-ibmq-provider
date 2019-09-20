@@ -372,7 +372,7 @@ class BaseFakeAPI:
         time.sleep(0.2)
         return {'id': 'TEST_ID'}
 
-    def cancel_job(self, job_id, *_args, **_kwargs):
+    def job_cancel(self, job_id, *_args, **_kwargs):
         if not job_id:
             return {'status': 'Error', 'error': 'Job ID not specified'}
         return {} if self._can_cancel else {
@@ -545,5 +545,5 @@ class ErroredCancellationAPI(BaseFakeAPI):
 
     _can_cancel = True
 
-    def cancel_job(self, job_id, *_args, **_kwargs):
+    def job_cancel(self, job_id, *_args, **_kwargs):
         return {'status': 'Error', 'error': 'test-error-while-cancelling'}

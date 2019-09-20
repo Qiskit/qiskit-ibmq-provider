@@ -284,7 +284,7 @@ class IBMQJob(BaseJob):
         self._wait_for_submission()
 
         try:
-            response = self._api.cancel_job(self._job_id)
+            response = self._api.job_cancel(self._job_id)
             self._cancelled = 'error' not in response
             return self._cancelled
         except ApiError as error:
