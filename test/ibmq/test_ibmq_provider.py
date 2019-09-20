@@ -94,7 +94,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
             if backend.configuration().simulator:
                 self.assertEqual(properties, None)
 
-    def test_remote_backend_defaults(self):
+    def test_remote_backend_pulse_defaults(self):
         """Test backend pulse defaults."""
         remotes = self.provider.backends(simulator=False)
         for backend in remotes:
