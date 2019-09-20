@@ -122,10 +122,10 @@ class TestAccountClient(IBMQTestCase):
         self.assertEqual(qobj_downloaded, qobj.to_dict())
         self.assertEqual(result['status'], 'COMPLETED')
 
-    def test_get_status_jobs(self):
+    def test_list_jobs_statuses(self):
         """Check get status jobs by user authenticated."""
         api = self._get_client()
-        jobs = api.get_status_jobs(limit=2)
+        jobs = api.list_jobs_statuses(limit=2)
         self.assertEqual(len(jobs), 2)
 
     def test_backend_status(self):

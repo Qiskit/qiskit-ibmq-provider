@@ -335,15 +335,3 @@ class AccountClient(BaseClient):
             dict: job status.
         """
         return self.job_status(job_id)
-
-    # Endpoints for compatibility with classic IBMQConnector. These functions
-    # are meant to facilitate the transition, and should be removed moving
-    # forward.
-
-    def get_status_jobs(self, limit=10, skip=0, backend=None, filter=None):   # type: ignore
-        # pylint: disable=missing-docstring,redefined-builtin
-        if backend:
-            filter = filter or {}
-            filter.update({'backend.name': backend})
-
-        return self.list_jobs_statuses(limit, skip, filter)

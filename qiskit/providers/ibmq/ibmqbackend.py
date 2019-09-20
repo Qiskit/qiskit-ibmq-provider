@@ -264,8 +264,9 @@ class IBMQBackend(BaseBackend):
         current_page_limit = limit
 
         while True:
-            job_page = self._api.get_status_jobs(limit=current_page_limit,
-                                                 skip=skip, filter=api_filter)
+            job_page = self._api.list_jobs_statuses(limit=current_page_limit,
+                                                    skip=skip,
+                                                    extra_filter=api_filter)
             job_responses += job_page
             skip = skip + len(job_page)
 
