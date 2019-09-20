@@ -340,10 +340,6 @@ class AccountClient(BaseClient):
     # are meant to facilitate the transition, and should be removed moving
     # forward.
 
-    def get_status_job(self, id_job):  # type: ignore
-        # pylint: disable=missing-docstring
-        return self.job_status(id_job)
-
     def submit_job(self, qobj_dict, backend_name, job_name=None):  # type: ignore
         # pylint: disable=missing-docstring
         return self.job_submit(backend_name, qobj_dict, job_name)

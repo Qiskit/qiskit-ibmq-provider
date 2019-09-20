@@ -310,7 +310,7 @@ class IBMQJob(BaseJob):
 
         try:
             # TODO: See result values
-            api_response = self._api.get_status_job(self._job_id)
+            api_response = self._api.job_status(self._job_id)
             self._update_status(api_response)
         # pylint: disable=broad-except
         except Exception as err:

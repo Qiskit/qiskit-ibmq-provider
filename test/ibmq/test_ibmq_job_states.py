@@ -362,7 +362,7 @@ class BaseFakeAPI:
             return {'status': 'Error', 'error': 'Job ID not specified'}
         return self._job_status[self._state]
 
-    def get_status_job(self, job_id):
+    def job_status(self, job_id):
         summary_fields = ['status', 'error', 'infoQueue']
         complete_response = self.get_job(job_id)
         return {key: value for key, value in complete_response.items()
@@ -504,7 +504,7 @@ class ThrowingGetJobAPI(BaseFakeAPI):
         {'status': 'COMPLETED'}
     ]
 
-    def get_status_job(self, job_id):
+    def job_status(self, job_id):
         return self._job_status[self._state]
 
     def get_job(self, job_id):
