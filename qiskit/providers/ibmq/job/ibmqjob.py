@@ -31,8 +31,8 @@ from qiskit.result import Result
 from qiskit.tools.events.pubsub import Publisher
 
 from ..apiconstants import ApiJobStatus
-from ..api_v2.clients import BaseClient
-from ..api_v2.exceptions import ApiError, WebsocketTimeoutError, WebsocketError
+from ..api.clients import BaseClient
+from ..api.exceptions import ApiError, WebsocketTimeoutError, WebsocketError
 
 from .utils import current_utc_time, build_error_report, is_job_queued
 

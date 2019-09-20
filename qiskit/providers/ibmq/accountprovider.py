@@ -24,7 +24,7 @@ from qiskit.providers.models import (QasmBackendConfiguration,
 from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
-from .api_v2.clients import AccountClient
+from .api.clients import AccountClient
 from .circuits import CircuitsManager
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
