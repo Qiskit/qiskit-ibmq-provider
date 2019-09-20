@@ -344,12 +344,6 @@ class AccountClient(BaseClient):
         # pylint: disable=missing-docstring
         return self.job_submit(backend_name, qobj_dict, job_name)
 
-    def get_jobs(self, limit=10, skip=0, backend=None, only_completed=False,  # type: ignore
-                 filter=None):
-        # pylint: disable=missing-docstring,redefined-builtin
-        # TODO: this function seems to be unused currently in IBMQConnector.
-        raise NotImplementedError
-
     def get_status_jobs(self, limit=10, skip=0, backend=None, filter=None):   # type: ignore
         # pylint: disable=missing-docstring,redefined-builtin
         if backend:
