@@ -28,12 +28,14 @@ from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    store_credentials)
 from .credentials.updater import update_credentials
 from .exceptions import IBMQAccountError, IBMQApiUrlError, IBMQProviderError
-from .utils.deprecation import UPDATE_ACCOUNT_TEXT
 
 
 logger = logging.getLogger(__name__)
 
 QX_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
+UPDATE_ACCOUNT_TEXT = (
+    'Please update your accounts and programs by following the instructions here:\n'
+    'https://github.com/Qiskit/qiskit-ibmq-provider#updating-to-the-new-ibm-q-experience')
 
 
 class IBMQFactory:
