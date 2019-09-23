@@ -26,7 +26,7 @@ from qiskit.providers.ibmq.api.clients import (AuthClient,
                                                VersionClient)
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_qe_access, requires_new_api_auth
+from ..decorators import requires_qe_access
 
 # Fallback mechanism. Version variable is stored under __doc__ in new pproxy versions
 try:
@@ -66,7 +66,6 @@ class TestProxies(IBMQTestCase):
             self.proxy_process.wait()
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_proxies_authclient(self, qe_token, qe_url):
         """Should reach the proxy using IBMQClient."""
         pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
@@ -79,7 +78,6 @@ class TestProxies(IBMQTestCase):
 
     # pylint: disable=unused-argument
     @requires_qe_access
-    @requires_new_api_auth
     def test_proxies_versionclient(self, qe_token, qe_url):
         """Should reach the proxy using IBMQVersionFinder."""
         pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
@@ -92,7 +90,6 @@ class TestProxies(IBMQTestCase):
                       self.proxy_process.stdout.read().decode('utf-8'))
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_invalid_proxy_port_authclient(self, qe_token, qe_url):
         """Should raise RequestApiError with ProxyError using AuthClient."""
         with self.assertRaises(RequestsApiError) as context_manager:
@@ -103,7 +100,6 @@ class TestProxies(IBMQTestCase):
 
     # pylint: disable=unused-argument
     @requires_qe_access
-    @requires_new_api_auth
     def test_invalid_proxy_port_versionclient(self, qe_token, qe_url):
         """Should raise RequestApiError with ProxyError using VersionClient."""
         with self.assertRaises(RequestsApiError) as context_manager:
@@ -114,7 +110,6 @@ class TestProxies(IBMQTestCase):
                               ProxyError)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_invalid_proxy_address_authclient(self, qe_token, qe_url):
         """Should raise RequestApiError with ProxyError using AuthClient."""
         with self.assertRaises(RequestsApiError) as context_manager:
@@ -124,7 +119,6 @@ class TestProxies(IBMQTestCase):
                               ProxyError)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_invalid_proxy_address_versionclient(self, qe_token, qe_url):
         """Should raise RequestApiError with ProxyError using VersionClient."""
         # pylint: disable=unused-argument
