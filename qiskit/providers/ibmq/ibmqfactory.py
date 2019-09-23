@@ -182,9 +182,8 @@ class IBMQFactory:
                 authentication URL.
         """
         if url != QX_AUTH_URL:
-            raise IBMQApiUrlError(
-                'The URL specified ({}) is not an IBM Q Experience '
-                'authentication URL'.format(url))
+            raise IBMQApiUrlError('Invalid IBM Q Experience credentials '
+                                  'found. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = Credentials(token, url, **kwargs)
 
@@ -208,8 +207,8 @@ class IBMQFactory:
         credentials = list(stored_credentials.values())[0]
 
         if credentials.url != QX_AUTH_URL:
-            raise IBMQAccountError('IBM Q Experience v1 credentials found. ' +
-                                   UPDATE_ACCOUNT_TEXT)
+            raise IBMQApiUrlError('Invalid IBM Q Experience credentials '
+                                  'found. ' + UPDATE_ACCOUNT_TEXT)
 
         remove_credentials(credentials)
 
@@ -229,8 +228,8 @@ class IBMQFactory:
 
         if (len(stored_credentials) > 1 or
                 list(stored_credentials.values())[0].url != QX_AUTH_URL):
-            raise IBMQAccountError('IBM Q Experience v1 credentials found. ' +
-                                   UPDATE_ACCOUNT_TEXT)
+            raise IBMQApiUrlError('Invalid IBM Q Experience credentials '
+                                  'found. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = list(stored_credentials.values())[0]
         return {
