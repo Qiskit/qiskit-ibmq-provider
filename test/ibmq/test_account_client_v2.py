@@ -19,8 +19,8 @@ from unittest import skip
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
-from qiskit.providers.ibmq.api_v2.clients import AccountClient, AuthClient
-from qiskit.providers.ibmq.api_v2.exceptions import ApiError, RequestsApiError
+from qiskit.providers.ibmq.api.clients import AccountClient, AuthClient
+from qiskit.providers.ibmq.api.exceptions import ApiError, RequestsApiError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
 

@@ -28,7 +28,7 @@ from qiskit.qobj import QobjHeader
 from qiskit.test import slow_test, providers
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.models.backendproperties import BackendProperties
-from qiskit.providers.ibmq.api_v2.session import Session
+from qiskit.providers.ibmq.api.session import Session
 
 from ..decorators import (requires_qe_access,
                           requires_new_api_auth)

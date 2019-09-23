@@ -18,7 +18,7 @@ import os
 from unittest import skipIf
 
 from qiskit.providers.ibmq.accountprovider import AccountProvider
-from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
+from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from qiskit.providers.ibmq.exceptions import IBMQAccountError, IBMQApiUrlError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory, QX_AUTH_URL
 

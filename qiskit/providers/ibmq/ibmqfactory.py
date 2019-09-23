@@ -21,7 +21,7 @@ from typing import Dict, List, Union, Optional, Any
 from collections import OrderedDict
 
 from .accountprovider import AccountProvider
-from .api_v2.clients import AuthClient, VersionClient
+from .api.clients import AuthClient, VersionClient
 from .credentials import Credentials, discover_credentials
 from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    remove_credentials,

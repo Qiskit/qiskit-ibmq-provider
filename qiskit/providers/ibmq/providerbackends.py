@@ -20,7 +20,7 @@ from typing import Iterable
 from types import SimpleNamespace
 
 from .ibmqbackend import IBMQBackend
-from .api_v2.exceptions import RequestsApiError
+from .api.exceptions import RequestsApiError
 
 
 class ProviderBackends(SimpleNamespace):
