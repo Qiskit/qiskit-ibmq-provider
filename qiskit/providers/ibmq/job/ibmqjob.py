@@ -30,9 +30,8 @@ from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.result import Result
 from qiskit.tools.events.pubsub import Publisher
 
-from ..api import ApiError
 from ..apiconstants import ApiJobStatus
-from ..api_v2.exceptions import WebsocketTimeoutError, WebsocketError
+from ..api.exceptions import ApiError, WebsocketTimeoutError, WebsocketError
 
 from .utils import current_utc_time, build_error_report, is_job_queued
 
@@ -288,7 +287,7 @@ class IBMQJob(BaseJob):
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
-            raise JobError('Error cancelling job: %s' % error.usr_msg)
+            raise JobError('Error cancelling job: %s' % error)
 
     def status(self):
         """Query the API to update the status.

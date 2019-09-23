@@ -20,9 +20,9 @@ import warnings
 
 import websockets
 
-from qiskit.providers.ibmq.api_v2.exceptions import (
+from qiskit.providers.ibmq.api.exceptions import (
     WebsocketError, WebsocketTimeoutError, WebsocketIBMQProtocolError)
-from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketClient
+from qiskit.providers.ibmq.api.clients.websocket import WebsocketClient
 
 from ...ibmqtestcase import IBMQTestCase
 

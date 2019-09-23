@@ -19,8 +19,8 @@ from typing import List, Any
 from qiskit.providers import JobStatus
 from qiskit.result import Result
 
-from ..api_v2.clients import AccountClient
-from ..api_v2.exceptions import RequestsApiError
+from ..api.clients import AccountClient
+from ..api.exceptions import RequestsApiError
 from ..job.circuitjob import CircuitJob
 from .exceptions import (CircuitError,
                          CircuitAvailabilityError, CircuitResultError,
