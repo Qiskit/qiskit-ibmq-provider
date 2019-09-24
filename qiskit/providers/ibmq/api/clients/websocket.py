@@ -24,7 +24,7 @@ import warnings
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
-from websockets.client import Connect
+from websockets.client import WebSocketClientProtocol
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from ..exceptions import (WebsocketError, WebsocketTimeoutError,
@@ -89,7 +89,7 @@ class WebsocketClient(BaseClient):
         self.access_token = access_token
 
     @asyncio.coroutine
-    def _connect(self, url: str) -> Generator[Any, None, Connect]:
+    def _connect(self, url: str) -> Generator[Any, None, WebSocketClientProtocol]:
         """Authenticate against the websocket server, returning the connection.
 
         Returns:
