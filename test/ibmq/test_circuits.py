@@ -19,7 +19,7 @@ import os
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.result import Result
 
-from ..decorators import requires_new_api_auth, requires_qe_access
+from ..decorators import requires_qe_access
 from ..ibmqtestcase import IBMQTestCase
 
 
@@ -33,7 +33,6 @@ class TestCircuits(IBMQTestCase):
             self.skipTest('Circut tests disable')
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_circuit_random_uniform(self, qe_token, qe_url):
         """Test random_uniform circuit."""
         ibmq_factory = IBMQFactory()

@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Backend REST adapter for the IBM Q Experience v2 API."""
+"""Backend REST adapter for the IBM Q Experience API."""
 
 import json
 from typing import Dict, Optional, Any

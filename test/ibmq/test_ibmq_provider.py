@@ -30,8 +30,7 @@ from qiskit.compiler import assemble, transpile
 from qiskit.providers.models.backendproperties import BackendProperties
 from qiskit.providers.ibmq.api.session import Session
 
-from ..decorators import (requires_qe_access,
-                          requires_new_api_auth)
+from ..decorators import requires_qe_access
 from ..ibmqtestcase import IBMQTestCase
 
 
@@ -51,7 +50,6 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
         self.qc1.measure(qr, cr)
 
     @requires_qe_access
-    @requires_new_api_auth
     def _get_provider(self, qe_token, qe_url):
         """Return an instance of a Provider."""
         # pylint: disable=arguments-differ
