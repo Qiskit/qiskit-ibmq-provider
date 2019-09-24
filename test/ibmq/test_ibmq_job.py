@@ -31,7 +31,7 @@ from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider, requires_qe_access, requires_new_api_auth
+from ..decorators import requires_provider, requires_qe_access
 
 
 class TestIBMQJob(JobTestCase):
@@ -434,7 +434,6 @@ class TestIBMQJob(JobTestCase):
         _ = job.result()
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_custom_job_name(self, qe_token, qe_url):
         """Test assigning a custom job name."""
         factory = IBMQFactory()
@@ -452,7 +451,6 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(job_id, job_list[0].job_id())
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_duplicate_job_name(self, qe_token, qe_url):
         """Test multiple jobs with the same custom job name."""
         factory = IBMQFactory()
