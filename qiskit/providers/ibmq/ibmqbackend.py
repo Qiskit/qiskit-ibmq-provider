@@ -76,7 +76,6 @@ class IBMQBackend(BaseBackend):
             job_name (str): custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
-                This parameter is ignored if IBM Q Experience v1 account is used.
 
         Returns:
             IBMQJob: an instance derived from BaseJob

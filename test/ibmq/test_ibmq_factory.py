@@ -23,33 +23,31 @@ from qiskit.providers.ibmq.exceptions import IBMQAccountError, IBMQApiUrlError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory, QX_AUTH_URL
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import (requires_qe_access,
-                          requires_new_api_auth,
-                          requires_classic_api)
+from ..decorators import requires_qe_access
 from ..contextmanagers import (custom_qiskitrc, no_file, no_envs,
                                CREDENTIAL_ENV_VARS)
 
 
-API1_URL = 'https://quantumexperience.ng.bluemix.net/api'
-API2_URL = 'https://api.quantum-computing.ibm.com/api'
+API_URL = 'https://api.quantum-computing.ibm.com/api'
 AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
+API1_URL = 'https://quantumexperience.ng.bluemix.net/api'
 
 
 class TestIBMQFactoryEnableAccount(IBMQTestCase):
     """Tests for IBMQFactory `enable_account()`."""
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_auth_url(self, qe_token, qe_url):
-        """Test login into an API 2 auth account."""
+        """Test login into an auth account."""
         ibmq = IBMQFactory()
         provider = ibmq.enable_account(qe_token, qe_url)
         self.assertIsInstance(provider, AccountProvider)
 
-    @requires_qe_access
-    @requires_classic_api
-    def test_api1_url(self, qe_token, qe_url):
-        """Test login into an API 1 auth account."""
+    def test_old_api_url(self):
+        """Test login into an API v1 auth account."""
+        qe_token = 'invalid'
+        qe_url = API1_URL
+
         with self.assertRaises(IBMQApiUrlError) as context_manager:
             ibmq = IBMQFactory()
             ibmq.enable_account(qe_token, qe_url)
@@ -57,9 +55,9 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         self.assertIn('authentication URL', str(context_manager.exception))
 
     def test_non_auth_url(self):
-        """Test login into an API 2 non-auth account."""
+        """Test login into a non-auth account."""
         qe_token = 'invalid'
-        qe_url = API2_URL
+        qe_url = API_URL
 
         with self.assertRaises(IBMQApiUrlError) as context_manager:
             ibmq = IBMQFactory()
@@ -68,9 +66,9 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         self.assertIn('authentication URL', str(context_manager.exception))
 
     def test_non_auth_url_with_hub(self):
-        """Test login into an API 2 non-auth account with h/g/p."""
+        """Test login into a non-auth account with h/g/p."""
         qe_token = 'invalid'
-        qe_url = API2_URL + '/Hubs/X/Groups/Y/Projects/Z'
+        qe_url = API_URL + '/Hubs/X/Groups/Y/Projects/Z'
 
         with self.assertRaises(IBMQApiUrlError) as context_manager:
             ibmq = IBMQFactory()
@@ -79,8 +77,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         self.assertIn('authentication URL', str(context_manager.exception))
 
     @requires_qe_access
-    @requires_new_api_auth
-    def test_api2_after_api2(self, qe_token, qe_url):
+    def test_enable_twice(self, qe_token, qe_url):
         """Test login into an already logged-in account."""
         ibmq = IBMQFactory()
         ibmq.enable_account(qe_token, qe_url)
@@ -91,9 +88,8 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         self.assertIn('already', str(context_manager.exception))
 
     @requires_qe_access
-    @requires_new_api_auth
-    def test_api1_after_api2(self, qe_token, qe_url):
-        """Test login into API 1 during an already logged-in API 2 account."""
+    def test_enable_twice_invalid(self, qe_token, qe_url):
+        """Test login into an invalid account during an already logged-in account."""
         ibmq = IBMQFactory()
         ibmq.enable_account(qe_token, qe_url)
 
@@ -105,7 +101,6 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         self.assertIn('already', str(context_manager.exception))
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_pass_unreachable_proxy(self, qe_token, qe_url):
         """Test using an unreachable proxy while enabling an account."""
         proxies = {
@@ -126,8 +121,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.v2_token = 'API2_TOKEN'
-        cls.v1_token = 'API1_TOKEN'
+        cls.token = 'API_TOKEN'
 
     def setUp(self):
         super().setUp()
@@ -135,30 +129,29 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
         # Reference for saving accounts.
         self.factory = IBMQFactory()
 
-    def test_save_account_v2(self):
-        """Test saving an API 2 account."""
+    def test_save_account(self):
+        """Test saving an account."""
         with custom_qiskitrc():
-            self.factory.save_account(self.v2_token, url=AUTH_URL)
+            self.factory.save_account(self.token, url=AUTH_URL)
             stored_cred = self.factory.stored_account()
 
-        self.assertEqual(stored_cred['token'], self.v2_token)
+        self.assertEqual(stored_cred['token'], self.token)
         self.assertEqual(stored_cred['url'], AUTH_URL)
 
-    def test_delete_account_v2(self):
-        """Test deleting an API 2 account."""
+    def test_delete_account(self):
+        """Test deleting an account."""
         with custom_qiskitrc():
-            self.factory.save_account(self.v2_token, url=AUTH_URL)
+            self.factory.save_account(self.token, url=AUTH_URL)
             self.factory.delete_account()
             stored_cred = self.factory.stored_account()
 
         self.assertEqual(len(stored_cred), 0)
 
     @requires_qe_access
-    @requires_new_api_auth
-    def test_load_account_v2(self, qe_token, qe_url):
-        """Test loading an API 2 account."""
+    def test_load_account(self, qe_token, qe_url):
+        """Test loading an account."""
         if qe_url != QX_AUTH_URL:
-            # .save_account() expects an auth 2 production URL.
+            # .save_account() expects an auth production URL.
             self.skipTest('Test requires production auth URL')
 
         with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
@@ -169,17 +162,15 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
         self.assertEqual(self.factory._credentials.url, qe_url)
 
     @requires_qe_access
-    @requires_new_api_auth
-    def test_disable_account_v2(self, qe_token, qe_url):
-        """Test disabling an API 2 account """
+    def test_disable_account(self, qe_token, qe_url):
+        """Test disabling an account """
         self.factory.enable_account(qe_token, qe_url)
         self.factory.disable_account()
         self.assertIsNone(self.factory._credentials)
 
     @requires_qe_access
-    @requires_new_api_auth
-    def test_active_account_v2(self, qe_token, qe_url):
-        """Test active_account for an API 2 account """
+    def test_active_account(self, qe_token, qe_url):
+        """Test active_account for an account """
         self.assertIsNone(self.factory.active_account())
 
         self.factory.enable_account(qe_token, qe_url)
@@ -193,7 +184,6 @@ class TestIBMQFactoryProvider(IBMQTestCase):
     """Tests for IBMQFactory provider related methods."""
 
     @requires_qe_access
-    @requires_new_api_auth
     def _get_provider(self, qe_token=None, qe_url=None):
         return self.ibmq.enable_account(qe_token, qe_url)
 
