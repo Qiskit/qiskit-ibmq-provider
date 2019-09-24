@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Root REST adapter for the IBM Q Experience v2 API."""
+"""Root REST adapter for the IBM Q Experience API."""
 
 import json
 
