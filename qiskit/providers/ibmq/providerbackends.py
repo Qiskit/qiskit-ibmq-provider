@@ -20,7 +20,7 @@ from typing import Iterable
 from types import SimpleNamespace
 
 from .ibmqbackend import IBMQBackend
-from .api_v2.exceptions import RequestsApiError
+from .api.exceptions import RequestsApiError
 
 
 class ProviderBackends(SimpleNamespace):
@@ -65,6 +65,6 @@ class ProviderBackends(SimpleNamespace):
         self._discover_backends()
         return super().__dir__()
 
-    def __getattr__(self, item) -> IBMQBackend:
+    def __getattr__(self, item: str) -> IBMQBackend:
         self._discover_backends()
         return super().__getattribute__(item)

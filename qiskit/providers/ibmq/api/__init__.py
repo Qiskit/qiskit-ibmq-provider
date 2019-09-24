@@ -12,7 +12,4 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Q API connector."""
-
-from .exceptions import ApiError, BadBackendError, RegisterSizeError
-from .ibmqconnector import IBMQConnector
+"""IBM Q Experience v2 API connector and utilities."""

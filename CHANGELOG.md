@@ -19,7 +19,8 @@ The format is based on [Keep a Changelog].
 ### Added
 
 - Added support for autocompleting backend names. A user can now use 
-`AccountProvider.provider_backends.<tab>` to see a list of backend names (\#303).
+  `AccountProvider.provider_backends.<tab>` to see a list of backend
+  names (\#303).
 
 ### Changed
 
@@ -35,10 +36,17 @@ The format is based on [Keep a Changelog].
   parameter. If specified, the function returns the backend properties closest 
   to, but older than, the specified datetime filter (\#277).
 
+### Removed
+
+- Support for the legacy Quantum Experience and QConsole is fully deprecated.
+  Only credentials from the new Quantum Experience can be used. (\#344)
+
+
 ## [0.3.2] - 2019-08-20
+
 ### Changed
 
-- Pin version of nest\_asyncio requirement
+- Pin version of `nest_asyncio` requirement. (\#312)
 
 ## [0.3.1] - 2019-07-23
 
