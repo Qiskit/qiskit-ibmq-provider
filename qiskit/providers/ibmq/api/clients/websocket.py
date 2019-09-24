@@ -248,7 +248,7 @@ class WebsocketClient(BaseClient):
 
             # Errors related to websocket connection, attempt retrying.
             except (WebsocketError, WebsocketAuthenticationError) as ex:
-                logger.warning('%s', ex.usr_msg)
+                logger.warning('%s', ex)
 
                 current_retry_attempt = current_retry_attempt + 1
                 if current_retry_attempt > retries:
