@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Tests for the AccountClient for IBM Q Experience v2."""
+"""Tests for the AccountClient for IBM Q Experience."""
 
 import re
 from unittest import skip
@@ -25,7 +25,7 @@ from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_new_api_auth, requires_qe_access
+from ..decorators import requires_qe_access
 from ..contextmanagers import custom_envs, no_envs
 
 
@@ -53,7 +53,6 @@ class TestAccountClient(IBMQTestCase):
 
     @classmethod
     @requires_qe_access
-    @requires_new_api_auth
     def _get_provider(cls, qe_token=None, qe_url=None):
         """Helper for getting account credentials."""
         ibmq_factory = IBMQFactory()
@@ -248,7 +247,6 @@ class TestAccountClientJobs(IBMQTestCase):
 
     @classmethod
     @requires_qe_access
-    @requires_new_api_auth
     def _get_provider(cls, qe_token=None, qe_url=None):
         """Helper for getting account credentials."""
         ibmq_factory = IBMQFactory()
@@ -368,14 +366,12 @@ class TestAuthClient(IBMQTestCase):
     """Tests for the AuthClient."""
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_valid_login(self, qe_token, qe_url):
         """Test valid authenticating against IBM Q."""
         client = AuthClient(qe_token, qe_url)
         self.assertTrue(client.client_api.session.access_token)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_url_404(self, qe_token, qe_url):
         """Test login against a 404 URL"""
         url_404 = re.sub(r'/api.*$', '/api/TEST_404', qe_url)
@@ -383,7 +379,6 @@ class TestAuthClient(IBMQTestCase):
             _ = AuthClient(qe_token, url_404)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_invalid_token(self, qe_token, qe_url):
         """Test login using invalid token."""
         qe_token = 'INVALID_TOKEN'
@@ -391,7 +386,6 @@ class TestAuthClient(IBMQTestCase):
             _ = AuthClient(qe_token, qe_url)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_url_unreachable(self, qe_token, qe_url):
         """Test login against an invalid (malformed) URL."""
         qe_url = 'INVALID_URL'
@@ -399,7 +393,6 @@ class TestAuthClient(IBMQTestCase):
             _ = AuthClient(qe_token, qe_url)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_api_version(self, qe_token, qe_url):
         """Check the version of the QX API."""
         api = AuthClient(qe_token, qe_url)
@@ -407,7 +400,6 @@ class TestAuthClient(IBMQTestCase):
         self.assertIsNotNone(version)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_user_urls(self, qe_token, qe_url):
         """Check the user urls of the QX API."""
         api = AuthClient(qe_token, qe_url)
@@ -416,7 +408,6 @@ class TestAuthClient(IBMQTestCase):
         self.assertTrue('http' in user_urls and 'ws' in user_urls)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_user_hubs(self, qe_token, qe_url):
         """Check the user hubs of the QX API."""
         api = AuthClient(qe_token, qe_url)
