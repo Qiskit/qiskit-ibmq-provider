@@ -14,12 +14,12 @@
 
 
 """Tests for all IBMQ backends."""
+
 from datetime import datetime
 from unittest.mock import patch
 from requests.exceptions import Timeout
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers.ibmq import IBMQProvider
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
@@ -28,18 +28,17 @@ from qiskit.qobj import QobjHeader
 from qiskit.test import slow_test, providers
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.models.backendproperties import BackendProperties
-from qiskit.providers.ibmq.api_v2.session import Session
+from qiskit.providers.ibmq.api.session import Session
 
 from ..decorators import (requires_qe_access,
-                          requires_classic_api,
                           requires_new_api_auth)
 from ..ibmqtestcase import IBMQTestCase
 
 
-class TestIBMQProvider(IBMQTestCase, providers.ProviderTestCase):
-    """Tests for all the IBMQ backends through the classic API."""
+class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
+    """Tests for all the IBMQ backends through the new API."""
 
-    provider_cls = IBMQProvider
+    provider_cls = AccountProvider
     backend_name = 'ibmq_qasm_simulator'
 
     def setUp(self):
@@ -52,13 +51,12 @@ class TestIBMQProvider(IBMQTestCase, providers.ProviderTestCase):
         self.qc1.measure(qr, cr)
 
     @requires_qe_access
-    @requires_classic_api
+    @requires_new_api_auth
     def _get_provider(self, qe_token, qe_url):
         """Return an instance of a Provider."""
         # pylint: disable=arguments-differ
-        provider = self.provider_cls()
-        provider.enable_account(qe_token, qe_url)
-        return provider
+        ibmq = IBMQFactory()
+        return ibmq.enable_account(qe_token, qe_url)
 
     def test_remote_backends_exist_real_device(self):
         """Test if there are remote backends that are devices."""
@@ -96,7 +94,7 @@ class TestIBMQProvider(IBMQTestCase, providers.ProviderTestCase):
             if backend.configuration().simulator:
                 self.assertEqual(properties, None)
 
-    def test_remote_backend_defaults(self):
+    def test_remote_backend_pulse_defaults(self):
         """Test backend pulse defaults."""
         remotes = self.provider.backends(simulator=False)
         for backend in remotes:
@@ -166,20 +164,6 @@ class TestIBMQProvider(IBMQTestCase, providers.ProviderTestCase):
                     self.assertEqual(backend_by_name, backend_by_display_name)
                     self.assertEqual(
                         backend_by_display_name.name(), backend_name)
-
-
-class TestAccountProvider(TestIBMQProvider):
-    """Tests for all the IBMQ backends through the new API."""
-
-    provider_cls = AccountProvider
-
-    @requires_qe_access
-    @requires_new_api_auth
-    def _get_provider(self, qe_token, qe_url):
-        """Return an instance of a Provider."""
-        # pylint: disable=arguments-differ
-        ibmq = IBMQFactory()
-        return ibmq.enable_account(qe_token, qe_url)
 
     def test_remote_backend_properties_filter_date(self):
         """Test backend properties filtered by date."""

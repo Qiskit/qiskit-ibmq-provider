@@ -18,11 +18,13 @@ import asyncio
 import json
 import logging
 import time
+from typing import Dict, Generator, Union, Optional, Any
 from concurrent import futures
 import warnings
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
+from websockets.client import Connect
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from ..exceptions import (WebsocketError, WebsocketTimeoutError,
@@ -47,11 +49,15 @@ class WebsocketMessage:
         type_ (str): message type.
         data (dict): message data.
     """
-    def __init__(self, type_, data=None):
+    def __init__(
+            self,
+            type_: str,
+            data: Optional[Union[str, Dict[str, str]]] = None
+    ) -> None:
         self.type_ = type_
         self.data = data
 
-    def as_json(self):
+    def as_json(self) -> str:
         """Return a json representation of the message."""
         parsed_dict = {'type': self.type_}
         if self.data:
@@ -59,7 +65,7 @@ class WebsocketMessage:
         return json.dumps(parsed_dict)
 
     @classmethod
-    def from_bytes(cls, json_string):
+    def from_bytes(cls, json_string: bytes) -> 'WebsocketMessage':
         """Instantiate a message from a bytes response."""
         try:
             parsed_dict = json.loads(json_string.decode('utf8'))
@@ -78,12 +84,12 @@ class WebsocketClient(BaseClient):
     """
     BACKOFF_MAX = 8  # Maximum time to wait between retries.
 
-    def __init__(self, websocket_url, access_token):
+    def __init__(self, websocket_url: str, access_token: str) -> None:
         self.websocket_url = websocket_url.rstrip('/')
         self.access_token = access_token
 
     @asyncio.coroutine
-    def _connect(self, url):
+    def _connect(self, url: str) -> Generator[Any, None, Connect]:
         """Authenticate against the websocket server, returning the connection.
 
         Returns:
@@ -131,7 +137,13 @@ class WebsocketClient(BaseClient):
         return websocket
 
     @asyncio.coroutine
-    def get_job_status(self, job_id, timeout=None, retries=5, backoff_factor=0.5):
+    def get_job_status(
+            self,
+            job_id: str,
+            timeout: Optional[float] = None,
+            retries: int = 5,
+            backoff_factor: float = 0.5
+    ) -> Generator[Any, None, Dict[str, str]]:
         """Return the status of a job.
 
         Reads status messages from the API, which are issued at regular
@@ -154,7 +166,7 @@ class WebsocketClient(BaseClient):
 
         Args:
             job_id (str): id of the job.
-            timeout (int): timeout, in seconds.
+            timeout (float): timeout, in seconds.
             retries (int): max number of retries.
             backoff_factor (float): backoff factor used to calculate the
                 time to wait between retries.
@@ -282,7 +294,7 @@ class WebsocketClient(BaseClient):
         backoff_time = backoff_factor * (2 ** (current_retry_attempt - 1))
         return min(self.BACKOFF_MAX, backoff_time)
 
-    def _authentication_message(self):
+    def _authentication_message(self) -> 'WebsocketMessage':
         """Return the message used for authenticating against the server."""
         return WebsocketMessage(type_='authentication',
                                 data=self.access_token)

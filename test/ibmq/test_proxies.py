@@ -22,9 +22,9 @@ import sys
 
 from requests.exceptions import ProxyError
 
-from qiskit.providers.ibmq.api_v2.clients import (AuthClient,
-                                                  VersionClient)
-from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
+from qiskit.providers.ibmq.api.clients import (AuthClient,
+                                               VersionClient)
+from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_qe_access, requires_new_api_auth
 

@@ -22,7 +22,7 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers import JobTimeoutError
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketClient, WebsocketMessage
+from qiskit.providers.ibmq.api.clients.websocket import WebsocketClient, WebsocketMessage
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
