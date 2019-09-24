@@ -460,7 +460,7 @@ class IBMQJob(BaseJob):
             else:
                 # Submit Qobj via HTTP.
                 kwargs = {'job_name': job_name}
-                submit_info = self._api.submit_job(
+                submit_info = self._api.job_submit(
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload,
                     **kwargs)
