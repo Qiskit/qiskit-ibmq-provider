@@ -32,11 +32,11 @@ from qiskit.result import Result
 from qiskit.tools.events.pubsub import Publisher
 from qiskit.validation.exceptions import ModelValidationError
 
-from ..api import ApiError, IBMQConnector
 from ..apiconstants import ApiJobStatus
 from ..api_v2.clients import BaseClient, AccountClient
 from ..api_v2.rest.schemas.job import JobModel
 from ..api_v2.exceptions import UserTimeoutExceededError
+from ..api.exceptions import ApiError, WebsocketTimeoutError, WebsocketError
 
 from .utils import (current_utc_time, build_error_report, is_job_queued,
                     api_status_to_job_status)
@@ -129,7 +129,7 @@ class IBMQJob(JobModel, BaseJob):
             backend (BaseBackend): The backend instance used to run this job.
             job_id (str or None): The job ID of an already submitted job.
                 Pass `None` if you are creating a new job.
-            api (IBMQConnector or BaseClient): object for connecting to the API.
+            api (AccountClient): object for connecting to the API.
             qobj (Qobj): The Quantum Object. See notes below
             kwargs (dict): Additional job attributes
 
@@ -273,12 +273,12 @@ class IBMQJob(JobModel, BaseJob):
         self._wait_for_submission()
 
         try:
-            response = self._api.cancel_job(self._job_id)
+            response = self._api.job_cancel(self._job_id)
             self._cancelled = 'error' not in response
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
-            raise JobError('Error cancelling job: %s' % error.usr_msg)
+            raise JobError('Error cancelling job: %s' % error)
 
     def status(self) -> JobStatus:
         """Query the API to update the status.
@@ -299,7 +299,7 @@ class IBMQJob(JobModel, BaseJob):
 
         try:
             # TODO: See result values
-            api_response = self._api.get_status_job(self._job_id)
+            api_response = self._api.job_status(self._job_id)
             self._update_status(api_response)
         # pylint: disable=broad-except
         except Exception as err:
@@ -433,6 +433,7 @@ class IBMQJob(JobModel, BaseJob):
         backend_name = self.backend().name()
 
         try:
+            # TODO some object storage stuff
             kwargs = {}
             # TODO: job_name really should be a job attribute
             if isinstance(self._api, BaseClient):

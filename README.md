@@ -26,11 +26,9 @@ To install from source, follow the instructions in the
 
 Once the package is installed, you can access the provider from Qiskit.
 
-> **Note**: Since July 2019 (and with version `0.3` of this
-> `qiskit-ibmq-provider` package / version `0.11` of the `qiskit` package),
-> using the new IBM Q Experience (v2) is the default behavior. If you have
-> been using an account for the legacy Quantum Experience or QConsole (v1),
-> please check the [update instructions](#updating-to-the-new-IBM-Q-Experience).
+> **Note**: Since September 2019 (and with version `0.4` of this
+> `qiskit-ibmq-provider` package / version `0.13` of the `qiskit` package)
+> legacy Quantum Experience or QConsole (v1) accounts are not supported.
 
 ### Configure your IBMQ credentials
 
@@ -81,17 +79,17 @@ provider_2 = IBMQ.get_provider(hub='MY_HUB', group='MY_GROUP', project='MY_PROJE
 
 ## Updating to the new IBM Q Experience
 
-Since July 2019 (and with version `0.3` of this `qiskit-ibmq-provider` package),
-the IBMQProvider defaults to using the new [IBM Q Experience], which supersedes
-the legacy Quantum Experience and Qconsole. The new IBM Q Experience is also
-referred as `v2`, whereas the legacy one and Qconsole as `v1`.
+Since September 2019 (and with version `0.4` of this `qiskit-ibmq-provider`
+package), the IBMQProvider only supports the new [IBM Q Experience], dropping
+support for the legacy Quantum Experience and Qconsole accounts. The new IBM Q
+Experience is also referred as `v2`, whereas the legacy one and Qconsole as `v1`.
 
 This section includes instructions for updating your accounts and programs.
 Please note that:
   * the IBM Q Experience `v1` credentials and the programs written for pre-0.3
-    versions will still be working during the `0.3.x` series. It is not
-    mandatory to update your accounts and programs, but recommended in order
-    to take advantage of the new features.
+    versions will still be working during the `0.3.x` series. From 0.4 onwards,
+    only `v2` credentials are supported, and it is recommended to updgrade
+    in order to take advantage of the new features.
   * updating your credentials to the IBM Q Experience `v2` implies that you
     will need to update your programs. The sections below contain instructions
     on how to perform the transition.

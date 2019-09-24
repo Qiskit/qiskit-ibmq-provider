@@ -15,6 +15,7 @@
 """Utilities for working with IBM Q Jobs."""
 
 from datetime import datetime, timezone
+from typing import Dict, List, Tuple, Any
 
 from qiskit.providers.jobstatus import JobStatus
 
@@ -35,7 +36,7 @@ API_TO_JOB_STATUS = {
 }
 
 
-def current_utc_time():
+def current_utc_time() -> str:
     """Gets the current time in UTC format.
 
     Returns:
@@ -44,7 +45,7 @@ def current_utc_time():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
 
-def is_job_queued(api_job_status_response):
+def is_job_queued(api_job_status_response: Dict[str, Any]) -> Tuple[bool, int]:
     """Checks whether a job has been queued or not.
 
     Args:
@@ -64,7 +65,7 @@ def is_job_queued(api_job_status_response):
     return is_queued, position
 
 
-def build_error_report(results):
+def build_error_report(results: List[Dict[str, Any]]) -> str:
     """Build an user-friendly error report for a failed job.
 
     Args:

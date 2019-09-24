@@ -15,7 +15,7 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
-from typing import Dict, List, Callable, Optional
+from typing import Dict, List, Callable, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
@@ -24,7 +24,7 @@ from qiskit.providers.models import (QasmBackendConfiguration,
 from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
-from .api_v2.clients import AccountClient
+from .api.clients import AccountClient
 from .circuits import CircuitsManager
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
@@ -62,7 +62,7 @@ class AccountProvider(BaseProvider):
 
         # Initialize the internal list of backends, lazy-loading it on first
         # access.
-        self._backends = None
+        self._backends = None  # type: Optional[Dict[str, IBMQBackend]]
 
         self.provider_backends = ProviderBackends(self)
 
@@ -71,7 +71,7 @@ class AccountProvider(BaseProvider):
             name: Optional[str] = None,
             filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
             timeout: Optional[float] = None,
-            **kwargs: Dict
+            **kwargs: Any
     ) -> List[IBMQBackend]:
         """Return all backends accessible via this provider, subject to optional filtering.
 
@@ -115,7 +115,7 @@ class AccountProvider(BaseProvider):
                 keyed by backend name.
         """
         ret = OrderedDict()
-        configs_list = self._api.available_backends(timeout=timeout)
+        configs_list = self._api.list_backends(timeout=timeout)
         for raw_config in configs_list:
             # Make sure the raw_config is of proper type
             if not isinstance(raw_config, dict):

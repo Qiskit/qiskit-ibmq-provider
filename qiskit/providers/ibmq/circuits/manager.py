@@ -14,9 +14,13 @@
 
 """Manager for interacting with Circuits."""
 
-from qiskit.providers import JobStatus
+from typing import List, Any
 
-from ..api_v2.exceptions import RequestsApiError
+from qiskit.providers import JobStatus
+from qiskit.result import Result
+
+from ..api.clients import AccountClient
+from ..api.exceptions import RequestsApiError
 from ..job.circuitjob import CircuitJob
 from .exceptions import (CircuitError,
                          CircuitAvailabilityError, CircuitResultError,
@@ -31,10 +35,10 @@ RANDOM_UNIFORM = 'random_uniform'
 class CircuitsManager:
     """Class that provides access to the different Circuits."""
 
-    def __init__(self, client):
+    def __init__(self, client: AccountClient) -> None:
         self.client = client
 
-    def _call_circuit(self, name, **kwargs):
+    def _call_circuit(self, name: str, **kwargs: Any) -> Result:
         """Execute a Circuit.
 
         Args:
@@ -100,7 +104,12 @@ class CircuitsManager:
 
         return job.result()
 
-    def graph_state(self, number_of_qubits, adjacency_matrix, angles):
+    def graph_state(
+            self,
+            number_of_qubits: int,
+            adjacency_matrix: List[List],
+            angles: List[float]
+    ) -> Result:
         """Execute the graph state Circuit.
 
         This circuit implements graph state circuits that are measured in a
@@ -138,7 +147,11 @@ class CircuitsManager:
                                   adjacency_matrix=adjacency_matrix,
                                   angles=angles)
 
-    def hardware_efficient(self, number_of_qubits, angles):
+    def hardware_efficient(
+            self,
+            number_of_qubits: int,
+            angles: List[float]
+    ) -> Result:
         """Execute the hardware efficient Circuit.
 
         This circuit implements the random lattice circuit across a user
@@ -166,7 +179,10 @@ class CircuitsManager:
                                   number_of_qubits=number_of_qubits,
                                   angles=angles)
 
-    def random_uniform(self, number_of_qubits=None):
+    def random_uniform(
+            self,
+            number_of_qubits: int = None
+    ) -> Result:
         """Execute the random uniform Circuit.
 
         This circuit implements hadamard gates across all available qubits on

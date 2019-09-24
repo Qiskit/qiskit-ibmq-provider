@@ -12,30 +12,22 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for determining the version of an IBM Q Experience service."""
+"""Version finder for the IBM Q Experience API."""
 
+from json import JSONDecodeError
 from typing import Dict, Union
 
-from ..session import RetrySession
-from ..rest.version_finder import VersionFinder
-
-from .base import BaseClient
+from .base import RestAdapterBase
 
 
-class VersionClient(BaseClient):
-    """Client for determining the version of an IBM Q Experience service."""
+class VersionFinder(RestAdapterBase):
+    """Rest adapter for the version finder."""
 
-    def __init__(self, url: str, **request_kwargs: Dict) -> None:
-        """VersionClient constructor.
+    URL_MAP = {
+        'version': '/version'
+    }
 
-        Args:
-            url (str): URL for the service.
-            **request_kwargs (dict): arguments for the `requests` Session.
-        """
-        self.client_version_finder = VersionFinder(
-            RetrySession(url, **request_kwargs))
-
-    def version(self) -> Dict[str, Union[bool, str]]:
+    def version(self) -> Dict[str, Union[str, bool]]:
         """Return the version info.
 
         Returns:
@@ -45,4 +37,16 @@ class VersionClient(BaseClient):
             And the following optional keys:
                 * `api-*` (str): the versions of each individual API component
         """
-        return self.client_version_finder.version()
+        url = self.get_url('version')
+        response = self.session.get(url)
+
+        try:
+            version_info = response.json()
+            version_info['new_api'] = True
+        except JSONDecodeError:
+            return {
+                'new_api': False,
+                'api': response.text
+            }
+
+        return version_info

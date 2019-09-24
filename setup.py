@@ -17,7 +17,7 @@ import os
 from setuptools import setup
 
 requirements = [
-    "nest-asyncio==1.0.0",
+    "nest-asyncio>=1.0.0,!=1.1.0",
     "qiskit-terra>=0.8",
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
@@ -64,9 +64,8 @@ setup(
     keywords="qiskit sdk quantum api ibmq",
     packages=['qiskit.providers.ibmq',
               'qiskit.providers.ibmq.api',
-              'qiskit.providers.ibmq.api_v2',
-              'qiskit.providers.ibmq.api_v2.clients',
-              'qiskit.providers.ibmq.api_v2.rest',
+              'qiskit.providers.ibmq.api.clients',
+              'qiskit.providers.ibmq.api.rest',
               'qiskit.providers.ibmq.circuits',
               'qiskit.providers.ibmq.credentials',
               'qiskit.providers.ibmq.job',

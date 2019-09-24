@@ -30,19 +30,19 @@ class CircuitError(IBMQError):
 class CircuitAvailabilityError(CircuitError):
     """Error while accessing a Circuit."""
 
-    def __init__(self, message=''):
+    def __init__(self, message: str = ''):
         super().__init__(message or CIRCUIT_NOT_ALLOWED)
 
 
 class CircuitSubmitError(CircuitError):
     """Error while submitting a Circuit."""
 
-    def __init__(self, message):
+    def __init__(self, message: str):
         super().__init__(CIRCUIT_SUBMIT_ERROR.format(message))
 
 
 class CircuitResultError(CircuitError):
     """Error during the results of a Circuit."""
 
-    def __init__(self, message):
+    def __init__(self, message: str):
         super().__init__(CIRCUIT_RESULT_ERROR.format(message))
