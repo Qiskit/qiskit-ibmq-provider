@@ -452,13 +452,13 @@ class IBMQJob(BaseJob):
         submit_info = None
         try:
             if self._use_object_storage:
-                # Submit Qobj via object storage.
+                # Submit Job via object storage.
                 submit_info = self._api.job_submit_object_storage(
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload,
                     job_name=job_name)
             else:
-                # Submit Qobj via HTTP.
+                # Submit Job via HTTP.
                 kwargs = {'job_name': job_name}
                 submit_info = self._api.job_submit(
                     backend_name=backend_name,
