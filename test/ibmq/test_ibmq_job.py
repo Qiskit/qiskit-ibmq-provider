@@ -17,6 +17,7 @@
 import time
 import warnings
 from concurrent import futures
+from unittest import mock
 
 import numpy
 from scipy.stats import chi2_contingency
@@ -469,6 +470,14 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(len(retrieved_jobs), 2)
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)
+
+    @requires_provider
+    def test_bad_job_schema(self, provider):
+        """Test creating a job with bad job schema."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        bad_job_info = {}
+        with self.assertRaises(JobError):
+            IBMQJob(backend, 'TEST_ID', mock.Mock(), **bad_job_info)
 
 
 def _bell_circuit():

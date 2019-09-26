@@ -19,9 +19,8 @@ IBM Q Experience.
 """
 
 import logging
-import time
 from concurrent import futures
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 from qiskit.providers import BaseJob, JobError, JobTimeoutError, BaseBackend
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
@@ -183,6 +182,7 @@ class IBMQJob(JobModel, BaseJob):
         """
         if not self._qobj_dict:
             # Populate self._qobj_dict by retrieving the results.
+            # TODO Can qobj be retrieved if the job was cancelled?
             self._wait_for_completion()
             with api_to_job_error():
                 self._qobj_dict = self._api.job_download_qobj(
@@ -240,9 +240,9 @@ class IBMQJob(JobModel, BaseJob):
         Raises:
             JobError: if attempted to recover a result on a failed job.
         """
-        self._wait_for_completion(timeout=timeout, wait=wait)
 
-        if self._status is not JobStatus.DONE:
+        if not self._wait_for_completion(timeout=timeout, wait=wait,
+                                         required_status=(JobStatus.DONE,)):
             raise JobError('Unable to retrieve job result. Job status '
                            'is {}'.format(str(self._status)))
 
@@ -333,8 +333,7 @@ class IBMQJob(JobModel, BaseJob):
         Returns:
             str: An error report if the job errored or ``None`` otherwise.
         """
-        self._wait_for_completion()
-        if self.status() is not JobStatus.ERROR:
+        if not self._wait_for_completion(required_status=(JobStatus.ERROR,)):
             return None
 
         if not self._api_error_msg:
@@ -432,13 +431,21 @@ class IBMQJob(JobModel, BaseJob):
             self._future_captured_exception = err
 
     def _wait_for_completion(
-            self, timeout: Optional[float] = None, wait: float = 5) -> None:
+            self,
+            timeout: Optional[float] = None,
+            wait: float = 5,
+            required_status: Tuple[JobStatus] = JOB_FINAL_STATES
+    ) -> bool:
         """Wait until the job progress to a final state such as DONE or ERROR.
 
         Args:
             timeout (float or None): seconds to wait for job. If None, wait
                 indefinitely.
             wait (float): seconds between queries.
+            required_status (tuple[JobStatus]): the final job status required.
+
+        Returns:
+            bool: True if the final job status matches one of the required states.
 
         Raises:
             JobTimeoutError: if the job does not return results before a
@@ -447,7 +454,7 @@ class IBMQJob(JobModel, BaseJob):
         self._wait_for_submission(timeout)
 
         if self._status in JOB_FINAL_STATES:
-            return
+            return self._status in required_status
 
         with api_to_job_error():
             try:
@@ -457,6 +464,7 @@ class IBMQJob(JobModel, BaseJob):
                 raise JobTimeoutError(
                     'Timeout while waiting for job {}'.format(self._job_id))
         self._update_status_position(status_response)
+        return self._status in required_status
 
     def _wait_for_submission(self, timeout: float = 60) -> None:
         """Waits for the request to return a job ID"""
@@ -473,28 +481,6 @@ class IBMQJob(JobModel, BaseJob):
                 raise self._future_captured_exception
             if self._api_error_msg:
                 raise JobError(self._api_error_msg)
-
-    def _wait_for_final_status(self, timeout: Optional[float] = None, wait: float = 5):
-        """Wait until the job progress to a final state.
-
-        Args:
-            timeout (float or None): seconds to wait for job. If None, wait
-                indefinitely.
-            wait (float): seconds between queries.
-
-        Raises:
-            JobTimeoutError: if the job does not return results before a
-                specified timeout.
-        """
-        start_time = time.time()
-        while self.status() not in JOB_FINAL_STATES:
-            elapsed_time = time.time() - start_time
-            if timeout is not None and elapsed_time >= timeout:
-                raise JobTimeoutError(
-                    'Timeout while waiting for job {}'.format(self._job_id))
-
-            logger.info('status = %s (%d seconds)', self._status, elapsed_time)
-            time.sleep(wait)
 
     def _init_job_model(self, **kwargs: Dict) -> None:
         """Initialize the job model attributes.
