@@ -450,33 +450,26 @@ class IBMQJob(BaseJob):
         backend_name = self.backend().name()
 
         submit_info = None
-        if self._use_object_storage:
-            # Attempt to use object storage.
-            try:
+        try:
+            if self._use_object_storage:
+                # Submit Job via object storage.
                 submit_info = self._api.job_submit_object_storage(
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload,
                     job_name=job_name)
-            except Exception as err:  # pylint: disable=broad-except
-                # Fall back to submitting the Qobj via POST if object storage
-                # failed.
-                logger.info('Submitting the job via object storage failed: '
-                            'retrying via regular POST upload.')
-                # Disable object storage for this job.
-                self._use_object_storage = False
-
-        if not submit_info:
-            try:
+            else:
+                # Submit Job via HTTP.
                 kwargs = {'job_name': job_name}
                 submit_info = self._api.job_submit(
                     backend_name=backend_name,
                     qobj_dict=self._qobj_payload,
                     **kwargs)
-            except Exception as err:  # pylint: disable=broad-except
-                # Undefined error during submission:
-                # Capture and keep it for raising it when calling status().
-                self._future_captured_exception = err
-                return None
+
+        except Exception as err:  # pylint: disable=broad-except
+            # Undefined error during submission:
+            # Capture and keep it for raising it when calling status().
+            self._future_captured_exception = err
+            return None
 
         # Error in the job after submission:
         # Transition to the `ERROR` final state.
