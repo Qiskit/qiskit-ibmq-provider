@@ -199,10 +199,10 @@ class JobModel(BaseModel):
         self.shots = kwargs.pop('shots', None)
         self.time_per_step = kwargs.pop('timePerStep', None)
 
-        if not self.name:
+        if not self.__dict__.get('name', None):
             self.name = kwargs.pop('name', None)
 
-        if not self._qobj_dict:
+        if not self.__dict__.get('_qobj_dict', None):
             self._qobj_dict = kwargs.pop('qObject', None)
 
         # Additional attributes, converted to Python identifiers

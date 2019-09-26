@@ -391,11 +391,12 @@ class BaseFakeAPI:
         return {} if self._can_cancel else {
             'error': 'testing fake API can not cancel'}
 
-    def job_final_status(self, job_id, timeout=None, *_args, **_kwargs):
+    def job_final_status(self, job_id, *_args, **_kwargs):
         start_time = time.time()
         status_response = self.job_status(job_id)
         while ApiJobStatus(status_response['status']) not in API_JOB_FINAL_STATES:
             elapsed_time = time.time() - start_time
+            timeout = _kwargs.get('timeout', None)
             if timeout is not None and elapsed_time >= timeout:
                 raise UserTimeoutExceededError(
                     'Timeout while waiting for job {}'.format(job_id))
