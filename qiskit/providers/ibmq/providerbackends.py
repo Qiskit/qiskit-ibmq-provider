@@ -68,3 +68,37 @@ class ProviderBackends(SimpleNamespace):
     def __getattr__(self, item: str) -> IBMQBackend:
         self._discover_backends()
         return super().__getattribute__(item)
+
+    def __call__(
+            self,
+            name: Optional[str] = None,
+            filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
+            timeout: Optional[float] = None,
+            **kwargs: Any
+    ) -> List[IBMQBackend]:
+        """Return all backends accessible via this provider, subject to optional filtering.
+
+        Args:
+            name (str): backend name to filter by
+            filters (callable): more complex filters, such as lambda functions
+                e.g. AccountProvider.backends(
+                    filters=lambda b: b.configuration['n_qubits'] > 5)
+            timeout (float or None): number of seconds to wait for backend discovery.
+            kwargs: simple filters specifying a true/false criteria in the
+                backend configuration or backend status or provider credentials
+                e.g. AccountProvider.backends(n_qubits=5, operational=True)
+
+        Returns:
+            list[IBMQBackend]: list of backends available that match the filter
+        """
+        backends = self._provider._backends.values()
+
+        # Special handling of the `name` parameter, to support alias
+        # resolution.
+        if name:
+            aliases = self._aliased_backend_names()
+            aliases.update(self._deprecated_backend_names())
+            name = aliases.get(name, name)
+            kwargs['backend_name'] = name
+
+        return filter_backends(backends, filters=filters, **kwargs)
