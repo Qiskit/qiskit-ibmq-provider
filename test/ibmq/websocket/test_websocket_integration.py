@@ -86,14 +86,13 @@ class TestWebsocketIntegration(IBMQTestCase):
         """Test checking status of a job in a final state via websockets."""
         job = self.sim_backend.run(self.qobj)
 
-        init_state = job._status
-        job._wait_for_final_status()
+        job._wait_for_completion()
 
         # Manually disable the non-websocket polling.
         job._api._job_final_status_polling = None
 
         # Pretend we haven't seen the final status
-        job._status = init_state
+        job._status = JobStatus.RUNNING
 
         job._wait_for_completion()
         self.assertIs(job._status, JobStatus.DONE)
