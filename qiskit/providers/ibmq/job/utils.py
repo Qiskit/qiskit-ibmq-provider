@@ -16,10 +16,13 @@
 
 from datetime import datetime, timezone
 from typing import Dict, List, Tuple, Any
+from contextlib import contextmanager
 
 from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers import JobError
 
 from ..apiconstants import ApiJobStatus
+from ..api.exceptions import ApiError
 
 
 API_TO_JOB_STATUS = {
@@ -84,7 +87,7 @@ def build_error_report(results: List[Dict[str, Any]]) -> str:
 
 
 def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
-    """Returns the corresponding job status for the input API job status.
+    """Return the corresponding job status for the input API job status.
 
     Args:
         api_status (ApiJobStatus): API job status
@@ -93,3 +96,12 @@ def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
         JobStatus: job status
     """
     return API_TO_JOB_STATUS[api_status]
+
+
+@contextmanager
+def api_to_job_error():
+    """Convert an ApiError to a JobError."""
+    try:
+        yield
+    except ApiError as api_err:
+        raise JobError(str(api_err))

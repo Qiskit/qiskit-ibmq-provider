@@ -82,8 +82,8 @@ class IBMQBackend(BaseBackend):
         """
         # pylint: disable=arguments-differ
 
-        job = IBMQJob(self, None, self._api, qobj=qobj)
-        job.submit(job_name=job_name)
+        job = IBMQJob(self, None, self._api, qobj=qobj, name=job_name)
+        job.submit()
         return job
 
     def properties(

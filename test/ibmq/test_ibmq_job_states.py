@@ -22,7 +22,8 @@ from contextlib import suppress
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
 from qiskit.test.mock import new_fake_qobj, FakeRueschlikon
 from qiskit.providers import JobError, JobTimeoutError
-from qiskit.providers.ibmq.api.exceptions import ApiError
+from qiskit.providers.ibmq.api.exceptions import (ApiError, UserTimeoutExceededError,
+                                                  ApiIBMQProtocolError)
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
 
@@ -249,7 +250,7 @@ class TestIBMQJobStates(JobTestCase):
     def test_errored_result(self):
         job = self.run_with_api(ThrowingGetJobAPI())
         self.wait_for_initialization(job)
-        with self.assertRaises(ApiError):
+        with self.assertRaises(JobError):
             job.result()
 
     def test_completed_result(self):
@@ -336,7 +337,7 @@ class TestIBMQJobStates(JobTestCase):
 
 
 def _auto_progress_api(api, interval=0.2):
-    """Progress a `BaseFakeAPI` instacn every `interval` seconds until reaching
+    """Progress a `BaseFakeAPI` instance every `interval` seconds until reaching
     the final state.
     """
     with suppress(BaseFakeAPI.NoMoreStatesError):
@@ -373,6 +374,10 @@ class BaseFakeAPI:
     def job_status(self, job_id):
         summary_fields = ['status', 'error', 'infoQueue']
         complete_response = self.job_get(job_id)
+        try:
+            ApiJobStatus(complete_response['status'])
+        except ValueError:
+            raise ApiIBMQProtocolError
         return {key: value for key, value in complete_response.items()
                 if key in summary_fields}
 
@@ -385,6 +390,21 @@ class BaseFakeAPI:
             return {'status': 'Error', 'error': 'Job ID not specified'}
         return {} if self._can_cancel else {
             'error': 'testing fake API can not cancel'}
+
+    def job_final_status(self, job_id, timeout=None, *_args, **_kwargs):
+        start_time = time.time()
+        status_response = self.job_status(job_id)
+        while ApiJobStatus(status_response['status']) not in API_JOB_FINAL_STATES:
+            elapsed_time = time.time() - start_time
+            if timeout is not None and elapsed_time >= timeout:
+                raise UserTimeoutExceededError(
+                    'Timeout while waiting for job {}'.format(job_id))
+            time.sleep(5)
+            status_response = self.job_status(job_id)
+        return status_response
+
+    def job_result(self, job_id, *_args, **_kwargs):
+        return self.job_get(job_id)['qObjectResult']
 
     def progress(self):
         if self._state == len(self._job_status) - 1:

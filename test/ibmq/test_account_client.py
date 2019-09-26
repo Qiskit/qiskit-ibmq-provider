@@ -241,8 +241,9 @@ class TestAccountClientJobs(IBMQTestCase):
         backend_name = 'ibmq_qasm_simulator'
         backend = cls.provider.get_backend(backend_name)
         cls.client = backend._api
-        cls.job = cls.client.job_submit(backend_name,
-                                        cls._get_qobj(backend).to_dict())
+        cls.job = cls.client.job_submit(
+            backend_name, cls._get_qobj(backend).to_dict(),
+            use_object_storage=backend.configuration().allow_object_storage)
         cls.job_id = cls.job['id']
 
     @classmethod
