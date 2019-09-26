@@ -75,7 +75,7 @@ class TestAccountClient(IBMQTestCase):
 
         # Run the job through the AccountClient directly.
         api = backend._api
-        job = api.job_submit(backend_name, qobj.to_dict())
+        job = api.job_submit(backend_name, qobj.to_dict(), use_object_storage=False)
 
         self.assertIn('status', job)
         self.assertIsNotNone(job['status'])
@@ -329,13 +329,13 @@ class TestAccountClientJobs(IBMQTestCase):
 
     def test_job_final_status_websocket(self):
         """Test getting a job's final status via websocket."""
-        response = self.client.job_final_status_websocket(self.job_id)
+        response = self.client._job_final_status_websocket(self.job_id)
         self.assertIn('status', response)
 
     def test_job_properties(self):
         """Test getting job properties."""
         # Force the job to finish.
-        _ = self.client.job_final_status_websocket(self.job_id)
+        _ = self.client._job_final_status_websocket(self.job_id)
 
         response = self.client.job_properties(self.job_id)
         # Since the job is against a simulator, it will have no properties.

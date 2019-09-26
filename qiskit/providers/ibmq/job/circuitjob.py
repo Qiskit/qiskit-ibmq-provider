@@ -46,7 +46,7 @@ class CircuitJob(IBMQJob):
         try:
             # TODO: See result values
             api_response = self._api.circuit_job_status(self._job_id)
-            self._update_status(api_response)
+            self._update_status_position(api_response)
         # pylint: disable=broad-except
         except Exception as err:
             raise JobError(str(err))

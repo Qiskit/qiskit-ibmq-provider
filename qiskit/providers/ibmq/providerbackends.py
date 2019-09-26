@@ -14,13 +14,12 @@
 
 """Backend namespace for an IBM Quantum Experience account provider."""
 
-import re
-import keyword
 from typing import Iterable
 from types import SimpleNamespace
 
 from .ibmqbackend import IBMQBackend
 from .api.exceptions import RequestsApiError
+from .utils import to_python_identifier
 
 
 class ProviderBackends(SimpleNamespace):
@@ -40,18 +39,11 @@ class ProviderBackends(SimpleNamespace):
         """Discovers the remote backends if not already known."""
         if not self._initialized:
             try:
-                # Python identifiers can only contain alphanumeric characters
-                # and underscores and cannot start with a digit.
-                pattern = re.compile(r"\W|^(?=\d)", re.ASCII)
                 for backend in self._provider.backends(timeout=3):
-                    backend_name = backend.name()
+                    backend_name = to_python_identifier(backend.name())
 
-                    # Make it a valid identifier
-                    if not backend_name.isidentifier():
-                        backend_name = re.sub(pattern, '_', backend_name)
-
-                    # Append _ if is keyword or duplicate
-                    while keyword.iskeyword(backend_name) or backend_name in self.__dict__:
+                    # Append _ if duplicate
+                    while backend_name in self.__dict__:
                         backend_name += '_'
 
                     setattr(self, backend_name, backend)

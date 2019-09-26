@@ -23,6 +23,7 @@ from qiskit.compiler import assemble, transpile
 from qiskit.providers import JobTimeoutError
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.api.clients.websocket import WebsocketClient, WebsocketMessage
+from qiskit.providers.ibmq.api.clients import AccountClient
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.test import slow_test

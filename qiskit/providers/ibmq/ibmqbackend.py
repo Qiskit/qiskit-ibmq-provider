@@ -26,10 +26,9 @@ from qiskit.providers import BaseBackend, JobStatus, JobError
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration)
 
-from .api import ApiError
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
-from .apiconstants import ApiJobStatus, ApiJobKind
+from .apiconstants import ApiJobStatus
 from .credentials import Credentials
 from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .job import IBMQJob
@@ -276,7 +275,7 @@ class IBMQBackend(BaseBackend):
                 # Discard pre-qobj jobs.
                 break
 
-            job_id = job_info.pop('id', "")
+            job_id = job_info.get('id', "")
             try:
                 job = IBMQJob(self, job_id, self._api, **job_info)
             except JobError:
@@ -323,17 +322,12 @@ class IBMQBackend(BaseBackend):
                                    .format(job_id, self.name()))
 
         # Check for pre-qobj jobs.
-        # TODO need ot check job_kind == ApiJobKind.QOBJECT_STORAGE
         if 'kind' not in job_info:
             warnings.warn('The result of job {} is in a no longer supported format. '
                           'Please send the job using Qiskit 0.8+.'.format(job_id),
                           DeprecationWarning)
             raise IBMQBackendError('Failed to get job "{}": {}'
                                    .format(job_id, 'job in pre-qobj format'))
-
-        # Remove keywords to be passed directly to IBMQJob
-        job_info.pop('id', None)
-        job_info.pop('backend', None)
 
         try:
             job = IBMQJob(self, job_id, self._api, **job_info)
