@@ -219,7 +219,7 @@ class WebsocketClient(BaseClient):
                         job_status = response.data.get('status')
                         if (job_status and
                                 ApiJobStatus(job_status) in API_JOB_FINAL_STATES):
-                            break
+                            return last_status
 
                     except futures.TimeoutError:
                         # Timeout during our wait.
@@ -233,7 +233,7 @@ class WebsocketClient(BaseClient):
                         if ex.code == 4001:
                             message = 'Internal server error'
                         elif ex.code == 4002:
-                            break
+                            return last_status
                         elif ex.code == 4003:
                             attempt_retry = False  # No point in retrying.
                             message = 'Job id not found'
