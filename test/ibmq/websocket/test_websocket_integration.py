@@ -62,7 +62,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         job = self.sim_backend.run(self.qobj)
 
         # Manually disable the non-websocket polling.
-        job._wait_for_final_status = None
+        job._api._job_final_status_polling = None
         result = job.result()
 
         self.assertEqual(result.status, 'COMPLETED')
@@ -77,7 +77,7 @@ class TestWebsocketIntegration(IBMQTestCase):
 
         job = backend.run(qobj)
         # Manually disable the non-websocket polling.
-        job._wait_for_final_status = None
+        job._api._job_final_status_polling = None
         result = job.result()
 
         self.assertEqual(result.status, 'COMPLETED')
@@ -90,7 +90,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         job._wait_for_final_status()
 
         # Manually disable the non-websocket polling.
-        job._wait_for_final_status = None
+        job._api._job_final_status_polling = None
 
         # Pretend we haven't seen the final status
         job._status = init_state
@@ -170,7 +170,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         def _run_job_get_result(q):
             job = self.sim_backend.run(self.qobj)
             # Manually disable the non-websocket polling.
-            job._wait_for_final_status = None
+            job._api._job_final_status_polling = None
             job._wait_for_completion()
             if job._status is not JobStatus.DONE:
                 q.put(False)

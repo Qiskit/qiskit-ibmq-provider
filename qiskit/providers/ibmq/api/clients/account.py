@@ -321,8 +321,12 @@ class AccountClient(BaseClient):
                 pprint.pformat(api_response))) from err
         return api_response
 
-    def job_final_status(self, job_id: str, timeout: Optional[float] = None,
-                         wait: float = 5):
+    def job_final_status(
+            self,
+            job_id: str,
+            timeout: Optional[float] = None,
+            wait: float = 5
+    ) -> Dict[str, Any]:
         """Wait until the job progress to a final state.
 
         Args:
@@ -357,20 +361,7 @@ class AccountClient(BaseClient):
         if timeout is not None:
             timeout -= (time.time() - start_time)
 
-        start_time = time.time()
-        status_response = self.job_status(job_id)
-        while ApiJobStatus(status_response['status']) not in API_JOB_FINAL_STATES:
-            elapsed_time = time.time() - start_time
-            if timeout is not None and elapsed_time >= timeout:
-                raise UserTimeoutExceededError(
-                    'Timeout while waiting for job {}'.format(job_id))
-
-            logger.info('API job status = %s (%d seconds)',
-                        status_response['status'], elapsed_time)
-            time.sleep(wait)
-            status_response = self.job_status(job_id)
-
-        return status_response
+        return self._job_final_status_polling(job_id, timeout, wait)
 
     def _job_final_status_websocket(
             self,
@@ -405,6 +396,41 @@ class AccountClient(BaseClient):
                 raise
         return loop.run_until_complete(
             self.client_ws.get_job_status(job_id, timeout=timeout))
+
+    def _job_final_status_polling(
+            self,
+            job_id: str,
+            timeout: Optional[float] = None,
+            wait: float = 5
+    ) -> Dict[str, Any]:
+        """Return the final status of a job via polling.
+
+        Args:
+            job_id (str): the id of the job.
+            timeout (float or None): seconds to wait for job. If None, wait
+                indefinitely.
+            wait (float): seconds between queries.
+
+        Returns:
+            dict: job status.
+
+        Raises:
+            UserTimeoutExceededError: if the user specified timeout has been exceeded.
+        """
+        start_time = time.time()
+        status_response = self.job_status(job_id)
+        while ApiJobStatus(status_response['status']) not in API_JOB_FINAL_STATES:
+            elapsed_time = time.time() - start_time
+            if timeout is not None and elapsed_time >= timeout:
+                raise UserTimeoutExceededError(
+                    'Timeout while waiting for job {}'.format(job_id))
+
+            logger.info('API job status = %s (%d seconds)',
+                        status_response['status'], elapsed_time)
+            time.sleep(wait)
+            status_response = self.job_status(job_id)
+
+        return status_response
 
     def job_properties(self, job_id: str) -> Dict:
         """Return the backend properties of a job.
