@@ -247,9 +247,7 @@ class WebsocketClient(BaseClient):
                 logger.warning('%s', ex)
 
                 current_retry_attempt = current_retry_attempt + 1
-                if current_retry_attempt > retries:
-                    break  # Attempted maximum number of retries already.
-                if not attempt_retry:
+                if (current_retry_attempt > retries) or (not attempt_retry):
                     raise ex
 
                 # Sleep, and then `continue` with retrying.
@@ -267,8 +265,7 @@ class WebsocketClient(BaseClient):
                     if websocket is not None:
                         yield from websocket.close()
 
-            return last_status
-
+        # Execution should not reach here, sanity check.
         raise WebsocketError('Failed to establish a websocket '
                              'connection after {} retries.'.format(retries))
 
