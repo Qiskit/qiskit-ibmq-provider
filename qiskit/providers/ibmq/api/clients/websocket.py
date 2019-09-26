@@ -210,11 +210,11 @@ class WebsocketClient(BaseClient):
                         logger.debug('Received message from websocket: %s',
                                      response_raw)
 
-                        # Successfully received a message, reset retry counter.
-                        current_retry_attempt = 0
-
                         response = WebsocketMessage.from_bytes(response_raw)
                         last_status = response.data
+
+                        # Successfully received and parsed a message, reset retry counter.
+                        current_retry_attempt = 0
 
                         job_status = response.data.get('status')
                         if (job_status and
