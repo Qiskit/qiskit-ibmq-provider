@@ -15,13 +15,12 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
-from typing import Dict, List, Callable, Optional, Any
+from typing import Dict, List, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
-from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api.clients import AccountClient
@@ -110,25 +109,6 @@ class AccountProvider(BaseProvider):
                     ex)
 
         return ret
-
-    @staticmethod
-    def _deprecated_backend_names() -> Dict[str, str]:
-        """Returns deprecated backend names."""
-        return {
-            'ibmqx_qasm_simulator': 'ibmq_qasm_simulator',
-            'ibmqx_hpc_qasm_simulator': 'ibmq_qasm_simulator',
-            'real': 'ibmqx1'
-            }
-
-    @staticmethod
-    def _aliased_backend_names() -> Dict[str, str]:
-        """Returns aliased backend names."""
-        return {
-            'ibmq_5_yorktown': 'ibmqx2',
-            'ibmq_5_tenerife': 'ibmqx4',
-            'ibmq_16_rueschlikon': 'ibmqx5',
-            'ibmq_20_austin': 'QS1_1'
-            }
 
     def __eq__(self, other: 'AccountProvider') -> bool:
         return self.credentials == other.credentials
