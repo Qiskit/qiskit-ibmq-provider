@@ -101,6 +101,7 @@ class JobResponseSchema(JobResponseBaseSchema):
     # Optional properties
     allowObjectStorage = Bool(required=False)
     backend = Nested(JobResponseBackendSchema, required=False)
+    error = String(required=False)
     name = String(required=False)
     qObjectResult = Nested(ResultSchema, required=False)
     qObject = Nested(QobjSchema, required=False)
@@ -161,13 +162,8 @@ class ResultUrlResponseSchema(BaseSchema):
 class CallbackUploadResponseSchema(BaseSchema):
     """Schema for CallbackUploadResponse"""
 
-    # Optional properties
-    error = String(required=False)
-
     # Required properties
-    id = String(required=True)
-    kind = String(required=True)
-    creationDate = String(required=True, description="when the job was run")
+    job = Nested(JobResponseSchema, required=True)
 
 
 class CallbackDownloadResponseSchema(BaseSchema):
