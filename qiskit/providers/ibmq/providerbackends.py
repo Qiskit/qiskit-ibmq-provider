@@ -192,7 +192,7 @@ class ProviderBackends(SimpleNamespace):
         current_page_limit = limit
 
         while True:
-            job_page = self.provider._api.list_jobs_statuses(
+            job_page = self._provider._api.list_jobs_statuses(
                 limit=current_page_limit, skip=skip, extra_filter=api_filter)
             job_responses += job_page
             skip = skip + len(job_page)
@@ -222,7 +222,7 @@ class ProviderBackends(SimpleNamespace):
             if job_kind == ApiJobKind.QOBJECT_STORAGE:
                 kwargs['use_object_storage'] = True
 
-            job = IBMQJob(self, job_info.get('id'), self.provider._api,
+            job = IBMQJob(self, job_info.get('id'), self._provider._api,
                           creation_date=job_info.get('creationDate'),
                           api_status=job_info.get('status'),
                           **kwargs)
@@ -243,7 +243,7 @@ class ProviderBackends(SimpleNamespace):
             IBMQBackendError: if retrieval failed
         """
         try:
-            job_info = self.provider._api.job_get(job_id)
+            job_info = self._provider._api.job_get(job_id)
 
             # Check for generic errors.
             if 'error' in job_info:
@@ -269,7 +269,7 @@ class ProviderBackends(SimpleNamespace):
             raise IBMQBackendError('Failed to get job "{}": {}'
                                    .format(job_id, str(ex)))
 
-        job = IBMQJob(self, job_info.get('id'), self.provider._api,
+        job = IBMQJob(self, job_info.get('id'), self._provider._api,
                       creation_date=job_info.get('creationDate'),
                       api_status=job_info.get('status'),
                       **kwargs)
