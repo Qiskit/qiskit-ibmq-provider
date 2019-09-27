@@ -114,6 +114,7 @@ class IBMQJob(JobModel, BaseJob):
                  api: AccountClient,
                  qobj: Optional[Qobj] = None,
                  name: Optional[str] = None,
+                 use_websockets: bool = True,
                  **kwargs: Dict) -> None:
         """IBMQJob init function.
 
@@ -126,8 +127,10 @@ class IBMQJob(JobModel, BaseJob):
                 Pass `None` if you are creating a new job.
             api (AccountClient): object for connecting to the API.
             qobj (Qobj): The Quantum Object. See notes below.
-            name (str): Name to assign to the job.
-            kwargs (dict): Additional job attributes.
+            name (str): name to assign to the job.
+            use_websockets (bool): if `True`, signals that the Job will
+                _attempt_ to use websockets when pooling for final status.
+            kwargs (dict): additional job attributes.
 
         Notes:
             It is mandatory to pass either ``qobj`` or ``job_id``. Passing a ``qobj``
@@ -148,6 +151,9 @@ class IBMQJob(JobModel, BaseJob):
         self._result = None
         self._queue_position = None
         self._qobj_dict = None
+
+        # Properties used for deciding the underlying API features to use.
+        self._use_websockets = use_websockets
 
         if qobj:
             # This is a new job.
@@ -436,7 +442,8 @@ class IBMQJob(JobModel, BaseJob):
         with api_to_job_error():
             try:
                 status_response = self._api.job_final_status(
-                    self.job_id(), timeout=timeout, wait=wait)
+                    self.job_id(), timeout=timeout, wait=wait,
+                    use_websockets=self._use_websockets)
             except UserTimeoutExceededError:
                 raise JobTimeoutError(
                     'Timeout while waiting for job {}'.format(self._job_id))

@@ -154,12 +154,21 @@ class AccountClient(BaseClient):
         Returns:
             dict: job status.
         """
+        submit_info = None
         if use_object_storage:
-            submit_info = self._job_submit_object_storage(
-                backend_name=backend_name,
-                qobj_dict=qobj_dict,
-                job_name=job_name)
-        else:
+            # Attempt to use object storage.
+            try:
+                submit_info = self._job_submit_object_storage(
+                    backend_name=backend_name,
+                    qobj_dict=qobj_dict,
+                    job_name=job_name)
+            except Exception:  # pylint: disable=broad-except
+                # Fall back to submitting the Qobj via POST if object storage
+                # failed.
+                logger.info('Submitting the job via object storage failed: '
+                            'retrying via regular POST upload.')
+
+        if not submit_info:
             # Submit Qobj via HTTP.
             submit_info = self._job_submit_post(backend_name, qobj_dict, job_name)
 
@@ -332,7 +341,8 @@ class AccountClient(BaseClient):
             self,
             job_id: str,
             timeout: Optional[float] = None,
-            wait: float = 5
+            wait: float = 5,
+            use_websockets: bool = True
     ) -> Dict[str, Any]:
         """Wait until the job progress to a final state.
 
@@ -341,6 +351,7 @@ class AccountClient(BaseClient):
             timeout (float or None): seconds to wait for job. If None, wait
                 indefinitely.
             wait (float): seconds between queries.
+            use_websockets (bool): whether to use webscokets to get final status.
 
         Returns:
             dict: job status.
@@ -350,24 +361,25 @@ class AccountClient(BaseClient):
                 before a specified timeout.
         """
         # Attempt to use websocket if available.
-        start_time = time.time()
-        try:
-            status_response = self._job_final_status_websocket(job_id, timeout)
-            return status_response
-        except WebsocketTimeoutError as ex:
-            logger.warning('Timeout checking job status using websocket, '
-                           'retrying using HTTP')
-            logger.debug(ex)
-        except (RuntimeError, WebsocketError) as ex:
-            logger.warning('Error checking job status using websocket, '
-                           'retrying using HTTP.')
-            logger.debug(ex)
+        if use_websockets:
+            start_time = time.time()
+            try:
+                status_response = self._job_final_status_websocket(job_id, timeout)
+                return status_response
+            except WebsocketTimeoutError as ex:
+                logger.warning('Timeout checking job status using websocket, '
+                               'retrying using HTTP')
+                logger.debug(ex)
+            except (RuntimeError, WebsocketError) as ex:
+                logger.warning('Error checking job status using websocket, '
+                               'retrying using HTTP.')
+                logger.debug(ex)
+
+            # Adjust timeout for HTTP retry.
+            if timeout is not None:
+                timeout -= (time.time() - start_time)
 
         # Use traditional http requests if websocket not available or failed.
-        # Adjust timeout for HTTP retry.
-        if timeout is not None:
-            timeout -= (time.time() - start_time)
-
         return self._job_final_status_polling(job_id, timeout, wait)
 
     def _job_final_status_websocket(
