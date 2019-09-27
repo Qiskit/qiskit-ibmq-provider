@@ -165,8 +165,12 @@ class AccountClient(BaseClient):
 
         return submit_info
 
-    def _job_submit_post(self, backend_name: str, qobj_dict: Dict[str, Any],
-                         job_name: Optional[str] = None) -> Dict[str, Any]:
+    def _job_submit_post(
+            self,
+            backend_name: str,
+            qobj_dict: Dict[str, Any],
+            job_name: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Submit a Qobj to a device using HTTP POST.
 
         Args:
@@ -180,8 +184,11 @@ class AccountClient(BaseClient):
         return self.client_api.job_submit(backend_name, qobj_dict, job_name)
 
     def _job_submit_object_storage(
-            self, backend_name: str, qobj_dict: Dict[str, Any],
-            job_name: Optional[str] = None) -> Dict:
+            self,
+            backend_name: str,
+            qobj_dict: Dict[str, Any],
+            job_name: Optional[str] = None
+    ) -> Dict:
         """Submit a Qobj to a device using object storage.
 
         Args:

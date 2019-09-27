@@ -20,12 +20,11 @@ from marshmallow.validate import OneOf, Range
 from marshmallow.exceptions import ValidationError
 
 from qiskit.validation import BaseSchema
-from qiskit.validation import BaseModel, bind_schema, ModelTypeValidator
+from qiskit.validation import ModelTypeValidator
 from qiskit.validation.fields import Dict, String, Url, Nested, Integer
 from qiskit.qobj.qobj import QobjSchema
 from qiskit.result.models import ResultSchema
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
-from qiskit.providers.ibmq.utils import to_python_identifier
 
 
 class JobResponseBaseSchema(BaseSchema):
@@ -176,37 +175,3 @@ class JobStatusResponseSchema(BaseSchema):
     status = EnumType(required=True, enum_cls=ApiJobStatus)
     # Optional properties
     infoQueue = Nested(InfoQueueResponseSchema, required=False)
-
-
-# Models
-
-@bind_schema(JobResponseSchema)
-class JobModel(BaseModel):
-    """Model for GetJobs, GetJobsById, and PostJobs."""
-
-    def __init__(self, creationDate, id, kind, status, **kwargs):
-        # pylint: disable=redefined-builtin
-        # pylint: disable=invalid-name
-
-        # Private attributes
-        self._creation_date = creationDate
-        self._job_id = id
-        self._job_kind = kind
-        self._api_job_status = status
-        self._use_object_storage = (kind == ApiJobKind.QOBJECT_STORAGE)
-
-        # Optional attributes. These are specifically defined to allow
-        # auto-completion in an IDE.
-        self.shots = kwargs.pop('shots', None)
-        self.time_per_step = kwargs.pop('timePerStep', None)
-
-        if not self.__dict__.get('name', None):
-            self.name = kwargs.pop('name', None)
-
-        if not self.__dict__.get('_qobj_dict', None):
-            self._qobj_dict = kwargs.pop('qObject', None)
-
-        # Additional attributes, converted to Python identifiers
-        new_kwargs = {to_python_identifier(key): value for key, value in kwargs.items()}
-
-        super().__init__(**new_kwargs)

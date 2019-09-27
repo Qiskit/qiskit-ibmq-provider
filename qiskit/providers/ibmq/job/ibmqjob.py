@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2017, 2019.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -30,9 +30,9 @@ from qiskit.result import Result
 from qiskit.tools.events.pubsub import Publisher
 from qiskit.validation.exceptions import ModelValidationError
 
-from ..apiconstants import ApiJobStatus
+from .models import JobModel
+from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
-from ..api.rest.schemas.job import JobModel
 from ..api.exceptions import ApiError, UserTimeoutExceededError
 from .utils import (current_utc_time, build_error_report, is_job_queued,
                     api_status_to_job_status, api_to_job_error)
@@ -501,3 +501,4 @@ class IBMQJob(JobModel, BaseJob):
 
         # Convert ApiJobStatus to JobStatus
         self._status = api_status_to_job_status(self._api_job_status)
+        self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
