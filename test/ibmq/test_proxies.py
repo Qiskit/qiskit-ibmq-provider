@@ -22,10 +22,10 @@ import sys
 
 from requests.exceptions import ProxyError
 
+from qiskit.providers.ibmq import IBMQFactory
 from qiskit.providers.ibmq.api_v2.clients import (AuthClient,
                                                   VersionClient)
 from qiskit.providers.ibmq.api_v2.exceptions import RequestsApiError
-
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_qe_access, requires_new_api_auth
 
@@ -60,9 +60,27 @@ class TestProxies(IBMQTestCase):
             self.proxy_process.wait()
 
     @requires_qe_access
+    def test_proxies_factory(self, qe_token, qe_url):
+        """Should reach the proxy using factory.enable_account."""
+        factory = IBMQFactory()
+        provider = factory.enable_account(qe_token, qe_url,
+                                          proxies={'urls': VALID_PROXIES})
+
+        self.proxy_process.terminate()  # kill to be able of reading the output
+
+        auth_line = pproxy_desired_access_log_line(qe_url)
+        api_line = pproxy_desired_access_log_line(provider.credentials.url)
+        proxy_output = self.proxy_process.stdout.read().decode('utf-8')
+
+        # Check if the authentication call went through proxy.
+        self.assertIn(auth_line, proxy_output)
+        # Check if the API call (querying providers list) went through proxy.
+        self.assertIn(api_line, proxy_output)
+
+    @requires_qe_access
     @requires_new_api_auth
     def test_proxies_authclient(self, qe_token, qe_url):
-        """Should reach the proxy using IBMQClient."""
+        """Should reach the proxy using AuthClient."""
         pproxy_desired_access_log_line_ = pproxy_desired_access_log_line(qe_url)
 
         _ = AuthClient(qe_token, qe_url, proxies=VALID_PROXIES)
