@@ -35,6 +35,10 @@ The format is based on [Keep a Changelog].
 - The `backend.properties()` function now accepts an optional `datetime` 
   parameter. If specified, the function returns the backend properties closest 
   to, but older than, the specified datetime filter (\#277).
+- `IBMQJob.submit()`, called by `IBMQBackend.run()`, now waits for the server
+  to acknowledge the job reception before returning. As a result, 
+  `IBMQBackend.run()` will raise a `JobError` if an error occurred while 
+  submitting the job and no `IBMQJob` instance is returned (\#329).  
 
 ### Removed
 

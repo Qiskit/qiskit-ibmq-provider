@@ -277,7 +277,9 @@ class IBMQBackend(BaseBackend):
 
             job_id = job_info.get('id', "")
             try:
-                job = IBMQJob(self, job_id, self._api, **job_info)
+                # TODO Extract job name from job_info instead of passing it in
+                # once it becomes available from the API.
+                job = IBMQJob(self, job_id, self._api, name=job_name, **job_info)
             except JobError:
                 warnings.warn('Discarding job "{}" because it contains invalid data.'
                               .format(job_id))

@@ -194,16 +194,8 @@ class TestIBMQJobStates(JobTestCase):
         self.assertEqual(job.status(), JobStatus.RUNNING)
 
     def test_status_flow_for_unable_to_run_valid_qobj(self):
-        """Contrary to other tests, this one is expected to fail even for a
-        non-job-related issue. If the API fails while sending a job, we don't
-        get an id so we can not query for the job status."""
-        job = self.run_with_api(UnavailableRunAPI())
-
         with self.assertRaises(JobError):
-            self.wait_for_initialization(job)
-
-        with self.assertRaises(JobError):
-            job.status()
+            self.run_with_api(UnavailableRunAPI())
 
     def test_api_throws_temporarily_but_job_is_finished(self):
         job = self.run_with_api(ThrowingNonJobRelatedErrorAPI(errors_before_success=2))
@@ -222,9 +214,8 @@ class TestIBMQJobStates(JobTestCase):
         self.assertEqual(job.status(), JobStatus.DONE)
 
     def test_status_flow_for_unable_to_run_invalid_qobj(self):
-        job = self.run_with_api(RejectingJobAPI())
-        self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.ERROR)
+        with self.assertRaises(JobError):
+            self.run_with_api(RejectingJobAPI())
 
     def test_error_while_running_job(self):
         job = self.run_with_api(ErrorWhileRunningAPI())
