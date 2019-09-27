@@ -311,40 +311,42 @@ class IBMQBackend(BaseBackend):
         """
         try:
             job_info = self._api.job_get(job_id)
+
+            # Check for generic errors.
+            if 'error' in job_info:
+                raise IBMQBackendError('Failed to get job "{}": {}'
+                                       .format(job_id, job_info['error']))
+
+            # Check for jobs from a different backend.
+            job_backend_name = job_info['backend']['name']
+            if job_backend_name != self.name():
+                warnings.warn('Job "{}" belongs to another backend than the one queried. '
+                              'The query was made on backend "{}", '
+                              'but the job actually belongs to backend "{}".'
+                              .format(job_id, self.name(), job_backend_name))
+                raise IBMQBackendError('Failed to get job "{}": '
+                                       'job does not belong to backend "{}".'
+                                       .format(job_id, self.name()))
+
+            # Check for pre-qobj jobs.
+            if 'kind' not in job_info:
+                warnings.warn('The result of job {} is in a no longer supported format. '
+                              'Please send the job using Qiskit 0.8+.'.format(job_id),
+                              DeprecationWarning)
+                raise IBMQBackendError('Failed to get job "{}": {}'
+                                       .format(job_id, 'job in pre-qobj format'))
+
+            use_websockets = True
+            if self._credentials.proxies:
+                # Disable using websockets through proxies.
+                use_websockets = False
         except ApiError as ex:
             raise IBMQBackendError('Failed to get job "{}": {}'
                                    .format(job_id, str(ex)))
 
-        # Check for generic errors.
-        if 'error' in job_info:
-            raise IBMQBackendError('Failed to get job "{}": {}'
-                                   .format(job_id, job_info['error']))
-
-        # Check for jobs from a different backend.
-        job_backend_name = job_info['backend']['name']
-        if job_backend_name != self.name():
-            warnings.warn('Job "{}" belongs to another backend than the one queried. '
-                          'The query was made on backend "{}", '
-                          'but the job actually belongs to backend "{}".'
-                          .format(job_id, self.name(), job_backend_name))
-            raise IBMQBackendError('Failed to get job "{}": '
-                                   'job does not belong to backend "{}".'
-                                   .format(job_id, self.name()))
-
-        # Check for pre-qobj jobs.
-        if 'kind' not in job_info:
-            warnings.warn('The result of job {} is in a no longer supported format. '
-                          'Please send the job using Qiskit 0.8+.'.format(job_id),
-                          DeprecationWarning)
-            raise IBMQBackendError('Failed to get job "{}": {}'
-                                   .format(job_id, 'job in pre-qobj format'))
-
-        use_websockets = True
-        if self._credentials.proxies:
-            # Disable using websockets through proxies.
-            use_websockets = False
         try:
-            job = IBMQJob(self, job_id, self._api, use_websockets=use_websockets, **job_info)
+            job = IBMQJob(self, job_info.get('id'), self._api,
+                          use_websockets=use_websockets, **job_info)
         except JobError as err:
             raise IBMQBackendError(str(err))
 
