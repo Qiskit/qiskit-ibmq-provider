@@ -81,8 +81,9 @@ class IBMQBackend(BaseBackend):
             IBMQJob: an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
-        job = IBMQJob(self, None, self._api, qobj=qobj,
-                      use_object_storage=self.configuration().allow_object_storage)
+        kwargs = {'use_object_storage': True,
+                  'use_websockets': True}
+        job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
         job.submit(job_name=job_name)
 
         return job
