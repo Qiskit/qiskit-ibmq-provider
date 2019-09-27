@@ -136,7 +136,6 @@ class TestWebsocketIntegration(IBMQTestCase):
             return saved_job_status(saved_job_id)
 
         job = self.sim_backend.run(self.qobj)
-        job._wait_for_submission()
 
         # Save the originals.
         saved_job_id = job._job_id
@@ -159,7 +158,6 @@ class TestWebsocketIntegration(IBMQTestCase):
         qobj = assemble(qc, backend=backend)
         job = backend.run(qobj)
 
-        job._wait_for_submission()
         with self.assertRaises(JobTimeoutError):
             job.result(timeout=0.1)
 

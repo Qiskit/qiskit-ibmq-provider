@@ -273,7 +273,7 @@ class IBMQBackend(BaseBackend):
         for job_info in job_responses:
             if 'kind' not in job_info:
                 # Discard pre-qobj jobs.
-                break
+                continue
 
             job_id = job_info.get('id', "")
             try:
@@ -281,7 +281,7 @@ class IBMQBackend(BaseBackend):
             except JobError:
                 warnings.warn('Discarding job "{}" because it contains invalid data.'
                               .format(job_id))
-                break
+                continue
 
             job_list.append(job)
 

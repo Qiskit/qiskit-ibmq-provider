@@ -37,6 +37,7 @@ class JobModel(BaseModel):
         # auto-completion in an IDE.
         self.shots = kwargs.pop('shots', None)
         self.time_per_step = kwargs.pop('timePerStep', None)
+        self._api_backend = kwargs.pop('backend', None)
 
         if not self.__dict__.get('name', None):
             self.name = kwargs.pop('name', None)

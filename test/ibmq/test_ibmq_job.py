@@ -447,6 +447,7 @@ class TestIBMQJob(JobTestCase):
         job_name = str(time.time()).replace('.', '')
         job_id = backend.run(qobj, job_name=job_name).job_id()
 
+        time.sleep(3)
         job_list = backend.jobs(limit=1, job_name=job_name)
         self.assertEqual(len(job_list), 1)
         self.assertEqual(job_id, job_list[0].job_id())
@@ -478,6 +479,14 @@ class TestIBMQJob(JobTestCase):
         bad_job_info = {}
         with self.assertRaises(JobError):
             IBMQJob(backend, 'TEST_ID', mock.Mock(), **bad_job_info)
+
+    @requires_provider
+    def test_unsubmitted_job(self, provider):
+        """Test retrieving results for an unsubmitted job."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        job = IBMQJob(backend_obj=backend, job_id=None, api=mock.Mock(), qobj=mock.Mock)
+        with self.assertRaises(JobError):
+            job.result()
 
 
 def _bell_circuit():
