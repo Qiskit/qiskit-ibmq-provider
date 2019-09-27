@@ -46,7 +46,7 @@ The format is based on [Keep a Changelog].
 ### Fixed
 
 - Fixed an issue where proxy parameters were not fully passed to the final
-  sessions, leading to incomplete proxy support.
+  sessions, leading to incomplete proxy support. (\#353)
 
 ## [0.3.2] - 2019-08-20
 
