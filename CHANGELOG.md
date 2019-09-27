@@ -45,6 +45,12 @@ The format is based on [Keep a Changelog].
 - Support for the legacy Quantum Experience and QConsole is fully deprecated.
   Only credentials from the new Quantum Experience can be used. (\#344)
 
+## [0.3.3] - 2019-09-30
+
+### Fixed
+
+- Fixed an issue where proxy parameters were not fully passed to the final
+  sessions, leading to incomplete proxy support. (\#353)
 
 ## [0.3.2] - 2019-08-20
 
@@ -182,7 +188,8 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.2...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.3...HEAD
+[0.3.3]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.2.2...0.3.0
