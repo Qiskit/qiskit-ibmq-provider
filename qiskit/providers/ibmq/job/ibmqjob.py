@@ -23,7 +23,7 @@ import pprint
 import time
 from concurrent import futures
 
-from qiskit.providers import BaseJob, JobError, JobTimeoutError
+from qiskit.providers import BaseJob, JobError, JobTimeoutError  # type: ignore[attr-defined]
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj, validate_qobj_against_schema

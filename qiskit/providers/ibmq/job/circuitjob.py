@@ -14,7 +14,7 @@
 
 """Job specific for Circuits."""
 
-from qiskit.providers import JobError
+from qiskit.providers import JobError  # type: ignore[attr-defined]
 from qiskit.providers.jobstatus import JOB_FINAL_STATES
 
 from .ibmqjob import IBMQJob

@@ -16,7 +16,7 @@
 
 from typing import List, Any
 
-from qiskit.providers import JobStatus
+from qiskit.providers import JobStatus  # type: ignore[attr-defined]
 from qiskit.result import Result
 
 from ..api.clients import AccountClient

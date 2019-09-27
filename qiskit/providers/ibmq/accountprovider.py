@@ -18,7 +18,7 @@ import logging
 from typing import Dict, List, Callable, Optional, Any
 from collections import OrderedDict
 
-from qiskit.providers import BaseProvider
+from qiskit.providers import BaseProvider  # type: ignore[attr-defined]
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 from qiskit.providers.providerutils import filter_backends

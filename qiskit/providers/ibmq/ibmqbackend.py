@@ -22,7 +22,7 @@ from datetime import datetime  # pylint: disable=unused-import
 from marshmallow import ValidationError
 
 from qiskit.qobj import Qobj
-from qiskit.providers import BaseBackend, JobStatus
+from qiskit.providers import BaseBackend, JobStatus  # type: ignore[attr-defined]
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration)
 

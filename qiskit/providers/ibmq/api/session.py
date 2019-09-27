@@ -85,9 +85,9 @@ class RetrySession(Session):
         """Set the session access token."""
         self._access_token = value
         if value:
-            self.params.update({'access_token': value})
+            self.params.update({'access_token': value})  # type: ignore[attr-defined]
         else:
-            self.params.pop('access_token', None)
+            self.params.pop('access_token', None)  # type: ignore[attr-defined]
 
     def _initialize_retry(self, retries: int, backoff_factor: float) -> None:
         """Set the Session retry policy.
