@@ -157,7 +157,7 @@ class ProviderBackends(SimpleNamespace):
         api_filter = {}
 
         if backend_name:
-            api_filter['backend_name'] = backend_name
+            api_filter['backend.name'] = backend_name
 
         if status:
             if isinstance(status, str):
