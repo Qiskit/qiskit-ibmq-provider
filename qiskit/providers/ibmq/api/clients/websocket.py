@@ -20,6 +20,7 @@ import logging
 import time
 from typing import Dict, Generator, Union, Optional, Any
 from concurrent import futures
+from ssl import SSLError
 import warnings
 
 import nest_asyncio
@@ -112,6 +113,9 @@ class WebsocketClient(BaseClient):
 
         # pylint: disable=broad-except
         except Exception as ex:
+            # Isolate specific exceptions, so they are not retried in `get_job_status`.
+            if isinstance(ex, (SSLError,)):
+                raise ex
             raise WebsocketError('Could not connect to server') from ex
 
         try:
