@@ -103,6 +103,8 @@ class WebsocketClient(BaseClient):
                 was established, but the authentication failed.
             WebsocketIBMQProtocolError: if the connection to the websocket
                 server was established, but the answer was unexpected.
+            SSLError: if the connection to the websocket server could not
+                be established due to SSL certificate errors.
         """
         try:
             logger.debug('Starting new websocket connection: %s', url)
@@ -111,11 +113,12 @@ class WebsocketClient(BaseClient):
                 warnings.filterwarnings("ignore", category=DeprecationWarning)
                 websocket = yield from connect(url)
 
+        # Isolate specific exceptions, so they are not retried in `get_job_status`.
+        except (SSLError,) as ex:
+            raise ex
+
         # pylint: disable=broad-except
         except Exception as ex:
-            # Isolate specific exceptions, so they are not retried in `get_job_status`.
-            if isinstance(ex, (SSLError,)):
-                raise ex
             raise WebsocketError('Could not connect to server') from ex
 
         try:
