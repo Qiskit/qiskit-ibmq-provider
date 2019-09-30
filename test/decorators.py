@@ -25,63 +25,6 @@ from qiskit.providers.ibmq.credentials import (Credentials,
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
 
 
-def requires_new_api_auth(func):
-    """Decorator that signals that the test requires new API auth credentials.
-
-    Note: this decorator is meant to be used *after* ``requires_qe_access``, as
-    it depends on the ``qe_url`` parameter.
-
-    Args:
-        func (callable): test function to be decorated.
-
-    Returns:
-        callable: the decorated function.
-
-    Raises:
-        SkipTest: if no new API auth credentials were found.
-    """
-    @wraps(func)
-    def _wrapper(*args, **kwargs):
-        qe_url = kwargs.get('qe_url')
-        # TODO: provide a way to check it in a more robust way.
-        if not ('quantum-computing.ibm.com/api' in qe_url and
-                'auth' in qe_url):
-            raise SkipTest(
-                'Skipping test that requires new API auth credentials')
-
-        return func(*args, **kwargs)
-
-    return _wrapper
-
-
-def requires_classic_api(func):
-    """Decorator that signals that the test requires classic API credentials.
-
-    Note: this decorator is meant to be used *after* ``requires_qe_access``, as
-    it depends on the ``qe_url`` parameter.
-
-    Args:
-        func (callable): test function to be decorated.
-
-    Returns:
-        callable: the decorated function.
-
-    Raises:
-        SkipTest: if no classic API credentials were found.
-    """
-    @wraps(func)
-    def _wrapper(*args, **kwargs):
-        qe_url = kwargs.get('qe_url')
-        # TODO: provide a way to check it in a more robust way.
-        if 'quantum-computing.ibm.com/api' in qe_url:
-            raise SkipTest(
-                'Skipping test that requires classic API auth credentials')
-
-        return func(*args, **kwargs)
-
-    return _wrapper
-
-
 def requires_qe_access(func):
     """Decorator that signals that the test uses the online API.
 
@@ -120,12 +63,9 @@ def requires_qe_access(func):
 def requires_provider(func):
     """Decorator that signals the test uses the online API, via a provider.
 
-    This decorator delegates into the `requires_qe_access` and
-    `requires_new_api_auth` decorators, but instead of the credentials it
-    appends a `provider` argument to the decorated function.
-
-    Note: this decorator skips the test if the credentials do not belong to
-        an IBM Q Experience authentication URL.
+    This decorator delegates into the `requires_qe_access` decorator, but
+    instead of the credentials it appends a `provider` argument to the decorated
+    function.
 
     Args:
         func (callable): test function to be decorated.
@@ -135,7 +75,6 @@ def requires_provider(func):
     """
     @wraps(func)
     @requires_qe_access
-    @requires_new_api_auth
     def _wrapper(*args, **kwargs):
         ibmq_factory = IBMQFactory()
         qe_token = kwargs.pop('qe_token')

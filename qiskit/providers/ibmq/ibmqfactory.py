@@ -28,12 +28,14 @@ from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    store_credentials)
 from .credentials.updater import update_credentials
 from .exceptions import IBMQAccountError, IBMQApiUrlError, IBMQProviderError
-from .utils.deprecation import UPDATE_ACCOUNT_TEXT
 
 
 logger = logging.getLogger(__name__)
 
 QX_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
+UPDATE_ACCOUNT_TEXT = (
+    'Please update your accounts and programs by following the instructions here:\n'
+    'https://github.com/Qiskit/qiskit-ibmq-provider#updating-to-the-new-ibm-q-experience')
 
 
 class IBMQFactory:
@@ -182,9 +184,8 @@ class IBMQFactory:
                 authentication URL.
         """
         if url != QX_AUTH_URL:
-            raise IBMQApiUrlError(
-                'The URL specified ({}) is not an IBM Q Experience '
-                'authentication URL'.format(url))
+            raise IBMQApiUrlError('Invalid IBM Q Experience credentials '
+                                  'found. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = Credentials(token, url, **kwargs)
 
@@ -208,8 +209,8 @@ class IBMQFactory:
         credentials = list(stored_credentials.values())[0]
 
         if credentials.url != QX_AUTH_URL:
-            raise IBMQAccountError('IBM Q Experience v1 credentials found. ' +
-                                   UPDATE_ACCOUNT_TEXT)
+            raise IBMQAccountError('Invalid IBM Q Experience credentials '
+                                   'found. ' + UPDATE_ACCOUNT_TEXT)
 
         remove_credentials(credentials)
 
@@ -229,8 +230,8 @@ class IBMQFactory:
 
         if (len(stored_credentials) > 1 or
                 list(stored_credentials.values())[0].url != QX_AUTH_URL):
-            raise IBMQAccountError('IBM Q Experience v1 credentials found. ' +
-                                   UPDATE_ACCOUNT_TEXT)
+            raise IBMQAccountError('Invalid IBM Q Experience credentials '
+                                   'found. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = list(stored_credentials.values())[0]
         return {
@@ -350,7 +351,8 @@ class IBMQFactory:
                 Experience authentication URL.
         """
         auth_client = AuthClient(credentials.token,
-                                 credentials.base_url)
+                                 credentials.base_url,
+                                 **credentials.connection_parameters())
         service_urls = auth_client.current_service_urls()
         user_hubs = auth_client.user_hubs()
 

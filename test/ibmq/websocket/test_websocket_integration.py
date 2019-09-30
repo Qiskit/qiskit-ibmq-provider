@@ -28,7 +28,7 @@ from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
 
 from ...ibmqtestcase import IBMQTestCase
-from ...decorators import requires_qe_access, requires_new_api_auth, run_on_staging
+from ...decorators import requires_qe_access, run_on_staging
 
 
 class TestWebsocketIntegration(IBMQTestCase):
@@ -36,7 +36,6 @@ class TestWebsocketIntegration(IBMQTestCase):
 
     @classmethod
     @requires_qe_access
-    @requires_new_api_auth
     def _get_provider(cls, qe_token=None, qe_url=None):
         """Helper for getting account credentials."""
         ibmq_factory = IBMQFactory()
