@@ -26,6 +26,7 @@ from qiskit.providers.ibmq.api.clients.websocket import WebsocketClient, Websock
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
+from qiskit.test import slow_test
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_qe_access, run_on_staging
@@ -149,6 +150,7 @@ class TestWebsocketIntegration(IBMQTestCase):
             job._wait_for_completion()
             self.assertIs(job._status, JobStatus.DONE)
 
+    @slow_test
     def test_websockets_timeout(self):
         """Test timeout checking status of a job via websockets."""
         backend = least_busy(self.provider.backends(simulator=False))
