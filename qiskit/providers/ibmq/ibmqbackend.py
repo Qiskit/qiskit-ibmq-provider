@@ -78,9 +78,13 @@ class IBMQBackend(BaseBackend):
             IBMQJob: an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
-        kwargs = {'use_object_storage': True,
-                  'use_websockets': True}
-        job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
+        use_websockets = True
+        if self._credentials.proxies:
+            # Disable using websockets through proxies.
+            use_websockets = False
+        job = IBMQJob(self, None, self._api, qobj=qobj,
+                      use_object_storage=True,
+                      use_websockets=use_websockets)
         job.submit(job_name=job_name)
 
         return job
