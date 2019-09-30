@@ -84,7 +84,7 @@ class IBMQBackend(BaseBackend):
         use_websockets = True
         if self._credentials.proxies:
             use_websockets = False
-        job = IBMQJob(self, None, self._api, qobj=qobj, name=job_name,
+        job = IBMQJob(self, self._api, job_id=None, qobj=qobj, name=job_name,
                       use_websockets=use_websockets)
         job.submit()
         return job
@@ -286,7 +286,7 @@ class IBMQBackend(BaseBackend):
             try:
                 # TODO Extract job name from job_info instead of passing it in
                 # once it becomes available from the API.
-                job = IBMQJob(self, job_id, self._api, name=job_name,
+                job = IBMQJob(self, self._api, job_id=job_id, name=job_name,
                               use_websockets=use_websockets, **job_info)
             except JobError:
                 warnings.warn('Discarding job "{}" because it contains invalid data.'
@@ -345,7 +345,7 @@ class IBMQBackend(BaseBackend):
                                    .format(job_id, str(ex)))
 
         try:
-            job = IBMQJob(self, job_info.get('id'), self._api,
+            job = IBMQJob(self, self._api, job_info.get('id'),
                           use_websockets=use_websockets, **job_info)
         except JobError as err:
             raise IBMQBackendError(str(err))

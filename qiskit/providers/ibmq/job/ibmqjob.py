@@ -19,7 +19,7 @@ IBM Q Experience.
 """
 
 import logging
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Any
 
 from qiskit.providers import BaseJob, JobError, JobTimeoutError, BaseBackend
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
@@ -110,12 +110,12 @@ class IBMQJob(JobModel, BaseJob):
 
     def __init__(self,
                  backend_obj: Optional[BaseBackend],
-                 job_id: Optional[str],
                  api: AccountClient,
+                 job_id: Optional[str] = None,
                  qobj: Optional[Qobj] = None,
                  name: Optional[str] = None,
                  use_websockets: bool = True,
-                 **kwargs: Dict) -> None:
+                 **kwargs: Any) -> None:
         """IBMQJob init function.
 
         We can instantiate jobs from two sources: A QObj, and an already submitted job returned by
@@ -123,9 +123,9 @@ class IBMQJob(JobModel, BaseJob):
 
         Args:
             backend_obj (BaseBackend): The backend instance used to run this job.
+            api (AccountClient): object for connecting to the API.
             job_id (str or None): The job ID of an already submitted job.
                 Pass `None` if you are creating a new job.
-            api (AccountClient): object for connecting to the API.
             qobj (Qobj): The Quantum Object. See notes below.
             name (str): name to assign to the job.
             use_websockets (bool): if `True`, signals that the Job will
@@ -344,7 +344,7 @@ class IBMQJob(JobModel, BaseJob):
 
         return self._api_error_msg
 
-    def queue_position(self) -> int:
+    def queue_position(self) -> Optional[int]:
         """Return the position in the server queue.
 
         Returns:
@@ -450,7 +450,7 @@ class IBMQJob(JobModel, BaseJob):
         self._update_status_position(status_response)
         return self._status in required_status
 
-    def _init_job_model(self, **kwargs: Dict) -> None:
+    def _init_job_model(self, **kwargs: Any) -> None:
         """Initialize the job model attributes.
 
         Args:

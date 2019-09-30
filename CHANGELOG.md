@@ -38,7 +38,8 @@ The format is based on [Keep a Changelog].
 - `IBMQJob.submit()`, called by `IBMQBackend.run()`, now waits for the server
   to acknowledge the job reception before returning. As a result, 
   `IBMQBackend.run()` will raise a `JobError` if an error occurred while 
-  submitting the job and no `IBMQJob` instance is returned (\#329).  
+  submitting the job and no `IBMQJob` instance is returned (\#329).
+- `IBMQJob` constructor signature has changed (\#329).
 
 ### Removed
 

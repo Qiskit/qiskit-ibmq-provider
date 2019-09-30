@@ -478,7 +478,7 @@ class TestIBMQJob(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         bad_job_info = {}
         with self.assertRaises(JobError):
-            IBMQJob(backend, 'TEST_ID', mock.Mock(), **bad_job_info)
+            IBMQJob(backend, mock.Mock(), job_id='TEST_ID', **bad_job_info)
 
     @requires_provider
     def test_unsubmitted_job(self, provider):

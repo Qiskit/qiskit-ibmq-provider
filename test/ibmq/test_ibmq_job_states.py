@@ -322,7 +322,7 @@ class TestIBMQJobStates(JobTestCase):
         """Creates a new ``IBMQJob`` running with the provided API object."""
         backend = FakeRueschlikon()
         self._current_api = api
-        self._current_qjob = IBMQJob(backend, None, api, qobj=new_fake_qobj())
+        self._current_qjob = IBMQJob(backend, api, job_id=None, qobj=new_fake_qobj())
         self._current_qjob.submit()
         return self._current_qjob
 
