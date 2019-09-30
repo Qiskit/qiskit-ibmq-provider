@@ -380,7 +380,8 @@ class IBMQFactory:
                 Experience authentication URL.
         """
         auth_client = AuthClient(credentials.token,
-                                 credentials.base_url)
+                                 credentials.base_url,
+                                 **credentials.connection_parameters())
         service_urls = auth_client.current_service_urls()
         user_hubs = auth_client.user_hubs()
 

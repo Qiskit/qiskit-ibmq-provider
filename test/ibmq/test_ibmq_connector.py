@@ -114,7 +114,7 @@ class TestIBMQConnector(IBMQTestCase):
     def test_api_backend_status(self, qe_token, qe_url):
         """Check the status of a real chip."""
         backend_name = ('ibmq_20_tokyo'
-                        if self.using_ibmq_credentials else 'ibmqx4')
+                        if self.using_ibmq_credentials else 'ibmqx2')
         api = self._get_api(qe_token, qe_url)
         is_available = api.backend_status(backend_name)
         self.assertIsNotNone(is_available['operational'])
@@ -124,7 +124,7 @@ class TestIBMQConnector(IBMQTestCase):
     def test_api_backend_properties(self, qe_token, qe_url):
         """Check the properties of calibration of a real chip."""
         backend_name = ('ibmq_20_tokyo'
-                        if self.using_ibmq_credentials else 'ibmqx4')
+                        if self.using_ibmq_credentials else 'ibmqx2')
         api = self._get_api(qe_token, qe_url)
 
         properties = api.backend_properties(backend_name)

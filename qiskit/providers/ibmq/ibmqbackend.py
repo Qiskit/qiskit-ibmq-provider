@@ -67,11 +67,15 @@ class IBMQBackend(BaseBackend):
         Returns:
             IBMQJob: an instance derived from BaseJob
         """
+        # pylint: disable=arguments-differ
         kwargs = {}
         if isinstance(self._api, BaseClient):
             # Default to using object storage and websockets for new API.
             kwargs = {'use_object_storage': True,
                       'use_websockets': True}
+            if self._credentials.proxies:
+                # Disable using websockets through proxies.
+                kwargs['use_websockets'] = False
 
         job = IBMQJob(self, None, self._api, qobj=qobj, **kwargs)
         job.submit()
@@ -245,6 +249,9 @@ class IBMQBackend(BaseBackend):
             if isinstance(self._api, BaseClient):
                 # Default to using websockets for new API.
                 kwargs['use_websockets'] = True
+                if self._credentials.proxies:
+                    # Disable using websockets through proxies.
+                    kwargs['use_websockets'] = False
             if job_kind == ApiJobKind.QOBJECT_STORAGE:
                 kwargs['use_object_storage'] = True
 
@@ -295,6 +302,9 @@ class IBMQBackend(BaseBackend):
                 if isinstance(self._api, BaseClient):
                     # Default to using websockets for new API.
                     kwargs['use_websockets'] = True
+                    if self._credentials.proxies:
+                        # Disable using websockets through proxies.
+                        kwargs['use_websockets'] = False
                 if job_kind == ApiJobKind.QOBJECT_STORAGE:
                     kwargs['use_object_storage'] = True
 
