@@ -66,6 +66,7 @@ setup(
               'qiskit.providers.ibmq.api',
               'qiskit.providers.ibmq.api.clients',
               'qiskit.providers.ibmq.api.rest',
+              'qiskit.providers.ibmq.api.rest.schemas',
               'qiskit.providers.ibmq.circuits',
               'qiskit.providers.ibmq.credentials',
               'qiskit.providers.ibmq.job',
