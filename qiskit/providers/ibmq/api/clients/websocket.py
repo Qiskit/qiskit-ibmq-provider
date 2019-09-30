@@ -182,8 +182,6 @@ class WebsocketClient(BaseClient):
 
                             # Decrease the timeout.
                             timeout = original_timeout - (time.time() - start_time)
-                            if timeout <= 0:
-                                raise WebsocketTimeoutError('Timeout reached')
                         else:
                             response_raw = yield from websocket.recv()
                     logger.debug('Received message from websocket: %s',
@@ -196,6 +194,9 @@ class WebsocketClient(BaseClient):
                     if (job_status and
                             ApiJobStatus(job_status) in API_JOB_FINAL_STATES):
                         break
+
+                    if timeout and timeout <= 0:
+                        raise WebsocketTimeoutError('Timeout reached')
 
                 except futures.TimeoutError:
                     # Timeout during our wait.
