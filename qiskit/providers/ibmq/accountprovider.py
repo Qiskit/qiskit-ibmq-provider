@@ -27,7 +27,7 @@ from .api.clients import AccountClient
 from .circuits import CircuitsManager
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
-from .providerbackends import ProviderBackends
+from .ibmqbackendservice import IBMQBackendService
 
 
 logger = logging.getLogger(__name__)
@@ -61,13 +61,13 @@ class AccountProvider(BaseProvider):
 
         # Initialize the internal list of backends.
         self._backends = self._discover_remote_backends()
-        self.backends = ProviderBackends(self)
+        self.backends = IBMQBackendService(self)
 
     def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
         # pylint: disable=method-hidden
         # This method is only for faking the subclassing of `BaseProvider`, as
         # `.backends()` is an abstract method. Upon initialization, it is
-        # replaced by a `ProviderBackends` instance.
+        # replaced by a `IBMQBackendService` instance.
         pass
 
     def _discover_remote_backends(self, timeout: Optional[float] = None) -> Dict[str, IBMQBackend]:

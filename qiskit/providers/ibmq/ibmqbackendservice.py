@@ -30,11 +30,11 @@ from .ibmqbackend import IBMQBackend
 from .job import IBMQJob
 
 
-class ProviderBackends(SimpleNamespace):
+class IBMQBackendService(SimpleNamespace):
     """Backend namespace for an IBM Quantum Experience account provider."""
 
     def __init__(self, provider: 'AccountProvider') -> None:
-        """Creates a new ProviderBackends instance.
+        """Creates a new IBMQBackendService instance.
 
         Args:
             provider (AccountProvider): IBM Q Experience account provider
