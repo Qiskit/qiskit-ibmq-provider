@@ -26,6 +26,7 @@ import warnings
 import nest_asyncio
 from websockets import connect, ConnectionClosed
 from websockets.client import WebSocketClientProtocol
+from websockets.exceptions import InvalidURI
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from ..exceptions import (WebsocketError, WebsocketTimeoutError,
@@ -114,7 +115,7 @@ class WebsocketClient(BaseClient):
                 websocket = yield from connect(url)
 
         # Isolate specific exceptions, so they are not retried in `get_job_status`.
-        except (SSLError,) as ex:
+        except (SSLError, InvalidURI) as ex:
             raise ex
 
         # pylint: disable=broad-except
