@@ -41,6 +41,12 @@ The format is based on [Keep a Changelog].
 - Support for the legacy Quantum Experience and QConsole is fully deprecated.
   Only credentials from the new Quantum Experience can be used. (\#344)
 
+### Deprecated
+
+- `Backend.jobs()` and `Backend.retrieve_job()` have been deprecated in favour
+  of `provider.backends().jobs()` and `provider.backends().retrieve_job()`.
+  (\#354).
+
 ## [0.3.3] - 2019-09-30
 
 ### Fixed
