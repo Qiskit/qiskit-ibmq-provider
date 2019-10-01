@@ -260,6 +260,7 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(job.result().get_counts(), rjob.result().get_counts())
         self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
 
+    @slow_test
     @requires_provider
     def test_retrieve_job_uses_appropriate_backend(self, provider):
         """Test that retrieved jobs come from their appropriate backend."""
