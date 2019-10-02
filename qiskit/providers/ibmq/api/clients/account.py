@@ -25,6 +25,7 @@ from datetime import datetime  # pylint: disable=unused-import
 from marshmallow.exceptions import ValidationError
 
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
+from qiskit.providers.ibmq.job.schema import JobStatusResponseSchema
 
 from ..exceptions import (RequestsApiError, WebsocketError,
                           WebsocketTimeoutError, ApiIBMQProtocolError, UserTimeoutExceededError)
@@ -32,7 +33,6 @@ from ..rest import Api
 from ..session import RetrySession
 from .base import BaseClient
 from .websocket import WebsocketClient
-from ..rest.schemas.job import JobStatusResponseSchema
 
 logger = logging.getLogger(__name__)
 

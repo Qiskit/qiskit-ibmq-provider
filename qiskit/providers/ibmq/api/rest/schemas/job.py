@@ -13,49 +13,11 @@
 # that they have been altered from the originals.
 
 """Schemas for job."""
-
-from marshmallow import post_load
 from marshmallow.fields import Bool
-from marshmallow.validate import OneOf, Range
-from marshmallow.exceptions import ValidationError
-
-from qiskit.validation import BaseSchema, ModelTypeValidator
+from marshmallow.validate import OneOf
+from qiskit.providers.ibmq.apiconstants import ApiJobStatus, ApiJobKind
+from qiskit.validation import BaseSchema
 from qiskit.validation.fields import Dict, String, Url, Nested, Integer
-from qiskit.qobj.qobj import QobjSchema
-from qiskit.result.models import ResultSchema
-from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
-
-
-class JobResponseBaseSchema(BaseSchema):
-    """Base schema for job responses."""
-
-    @post_load
-    def make_model(self, data):
-        """Overwrite parent method to return a dict instead of a model instance."""
-        return data
-
-
-class EnumType(ModelTypeValidator):
-    """Field for enums."""
-
-    def __init__(self, enum_cls, *args, **kwargs):
-        self.valid_types = (str, enum_cls)
-        self.valid_strs = [elem.value for elem in enum_cls]
-        self.enum_cls = enum_cls
-        super().__init__(*args, **kwargs)
-
-    def _serialize(self, value, attr, obj):
-        return value.value
-
-    def _deserialize(self, value, attr, data):
-        return self.enum_cls(value)
-
-    def check_type(self, value, attr, data):
-        # Quick check of the type
-        super().check_type(value, attr, data)
-
-        if (isinstance(value, str)) and (value not in self.valid_strs):
-            raise ValidationError("{} is {}, which is not an expected value.".format(attr, value))
 
 
 # Helper schemas.
@@ -75,41 +37,39 @@ class InfoQueueResponseSchema(BaseSchema):
     status = String(required=False)
 
 
-class JobResponseBackendSchema(BaseSchema):
-    """Nested schema for JobResponseSchema"""
+class JobResponseSchema(BaseSchema):
+    """Nested schema for CallbackUploadResponseSchema"""
+    # pylint: disable=invalid-name
+
+    # Optional properties
+    error = String(required=False)
 
     # Required properties
-    name = String(required=True)
+    id = String(required=True)
+    kind = String(required=True)
+    creationDate = String(required=True, description="when the job was run")
 
 
 # Endpoint schemas.
-
-class JobResponseSchema(BaseSchema):
-    """Schema for GET Jobs, GET Jobs/{id}, and POST Jobs responses."""
-    # pylint: disable=invalid-name
-
-    # Required properties.
-    creationDate = String(required=True)
-    id = String(required=True)
-    kind = EnumType(required=True, enum_cls=ApiJobKind)
-    status = EnumType(required=True, enum_cls=ApiJobStatus)
-
-    # Optional properties
-    allowObjectStorage = Bool(required=False)
-    backend = Nested(JobResponseBackendSchema, required=False)
-    error = String(required=False)
-    name = String(required=False)
-    qObjectResult = Nested(ResultSchema, required=False)
-    qObject = Nested(QobjSchema, required=False)
-    shots = Integer(required=False, validate=Range(min=0))
-    timePerStep = Dict(required=False, keys=String, values=String)
-
 
 class SelfFilterQueryParamRequestSchema(BaseSchema):
     """Schema for SelfFilterQueryParamRequest"""
 
     # Required properties
     filter = Nested(FieldsFilterRequestSchema, required=True)
+
+
+class SelfResponseSchema(BaseSchema):
+    """Schema for SelfResponseSchema"""
+    # pylint: disable=invalid-name
+
+    # Optional properties
+    error = String(required=False)
+
+    id = String(required=True)
+    kind = String(required=True, validate=OneOf([kind.value for kind in ApiJobKind]))
+    status = String(required=True, validate=OneOf([status.value for status in ApiJobStatus]))
+    creationDate = String(required=True, description="when the job was run")
 
 
 class PropertiesResponseSchema(BaseSchema):
@@ -165,10 +125,3 @@ class CallbackUploadResponseSchema(BaseSchema):
 class CallbackDownloadResponseSchema(BaseSchema):
     """Schema for CallbackDownloadResponse"""
     pass
-
-
-class JobStatusResponseSchema(BaseSchema):
-    """Schema for JobStatusResponse."""
-    status = EnumType(required=True, enum_cls=ApiJobStatus)
-    # Optional properties
-    infoQueue = Nested(InfoQueueResponseSchema, required=False)

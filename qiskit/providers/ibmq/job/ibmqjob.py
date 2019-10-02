@@ -31,7 +31,7 @@ from qiskit.validation import BaseModel, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
-from ..api.rest.schemas.job import JobResponseSchema
+from .schema import JobResponseSchema
 from .utils import (build_error_report, is_job_queued,
                     api_status_to_job_status, api_to_job_error)
 from ..utils.utils import to_python_identifier
