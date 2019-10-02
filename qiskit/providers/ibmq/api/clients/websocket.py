@@ -153,7 +153,7 @@ class WebsocketClient(BaseClient):
         """Return the status of a job.
 
         Reads status messages from the API, which are issued at regular
-        intervals (20 seconds). When a final state is reached, the server
+        intervals. When a final state is reached, the server
         closes the socket. If the websocket connection is closed without
         a reason, the exponential backoff algorithm is used as a basis to
         reestablish connections. The algorithm takes effect when a
@@ -208,13 +208,12 @@ class WebsocketClient(BaseClient):
                                 response_raw = yield from asyncio.wait_for(
                                     websocket.recv(), timeout=timeout)
 
-                                # Decrease the timeout, with a 5-second grace period.
-                                elapsed_time = time.time() - start_time
-                                timeout = max(5, int(original_timeout - elapsed_time))
+                                # Decrease the timeout.
+                                timeout = original_timeout - (time.time() - start_time)
                             else:
                                 response_raw = yield from websocket.recv()
                         logger.debug('Received message from websocket: %s',
-                                     response_raw)
+                                 response_raw)
 
                         response = WebsocketMessage.from_bytes(response_raw)
                         last_status = response.data
@@ -226,6 +225,9 @@ class WebsocketClient(BaseClient):
                         if (job_status and
                                 ApiJobStatus(job_status) in API_JOB_FINAL_STATES):
                             return last_status
+
+                        if timeout and timeout <= 0:
+                            raise WebsocketTimeoutError('Timeout reached')
 
                     except futures.TimeoutError:
                         # Timeout during our wait.
