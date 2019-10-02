@@ -132,7 +132,13 @@ class RetrySession(Session):
         self.proxies = proxies or {}
         self.verify = verify
 
-    def request(self, method: str, url: str, bare: bool = False, **kwargs: Any) -> Response:
+    def request(  # type: ignore[override]
+            self,
+            method: str,
+            url: str,
+            bare: bool = False,
+            **kwargs: Any
+    ) -> Response:
         """Constructs a Request, prepending the base url.
 
         Args:
