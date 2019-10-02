@@ -250,6 +250,10 @@ class WebsocketClient(BaseClient):
                                              'unexpectedly: {}(status_code={})'
                                              .format(message, ex.code)) from ex
 
+            # Errors not related to websocket connection, attempt retrying.
+            except WebsocketTimeoutError as ex:
+                raise ex
+
             # Errors related to websocket connection, attempt retrying.
             except (WebsocketError, WebsocketAuthenticationError) as ex:
                 logger.warning('%s', ex)
