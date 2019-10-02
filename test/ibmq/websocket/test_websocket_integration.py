@@ -150,14 +150,11 @@ class TestWebsocketIntegration(IBMQTestCase):
             job._wait_for_completion()
             self.assertIs(job._status, JobStatus.DONE)
 
-    @slow_test
     def test_websockets_timeout(self):
         """Test timeout checking status of a job via websockets."""
-        backend = least_busy(self.provider.backends(simulator=False))
-
-        qc = transpile(self.qc1, backend=backend)
-        qobj = assemble(qc, backend=backend)
-        job = backend.run(qobj)
+        qc = transpile(self.qc1, backend=self.sim_backend)
+        qobj = assemble(qc, backend=self.sim_backend, shots=2048)
+        job = self.sim_backend.run(qobj)
 
         job._wait_for_submission()
         with self.assertRaises(JobTimeoutError):
