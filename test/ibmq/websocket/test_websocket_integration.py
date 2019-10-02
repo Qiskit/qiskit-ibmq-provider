@@ -22,14 +22,14 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers import JobTimeoutError
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketClient, WebsocketMessage
+from qiskit.providers.ibmq.api.clients.websocket import WebsocketClient, WebsocketMessage
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.test import slow_test
 
 from ...ibmqtestcase import IBMQTestCase
-from ...decorators import requires_qe_access, requires_new_api_auth
+from ...decorators import requires_qe_access
 
 
 class TestWebsocketIntegration(IBMQTestCase):
@@ -37,7 +37,6 @@ class TestWebsocketIntegration(IBMQTestCase):
 
     @classmethod
     @requires_qe_access
-    @requires_new_api_auth
     def _get_provider(cls, qe_token=None, qe_url=None):
         """Helper for getting account credentials."""
         ibmq_factory = IBMQFactory()

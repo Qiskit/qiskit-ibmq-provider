@@ -12,10 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Q Experience v2 API clients."""
+"""REST adaptors for the IBM Q Experience API."""
 
-from .base import BaseClient
-from .account import AccountClient
-from .auth import AuthClient
-from .version import VersionClient
-from .websocket import WebsocketClient
+from .auth import Auth
+from .root import Api

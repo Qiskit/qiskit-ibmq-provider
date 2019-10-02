@@ -98,21 +98,21 @@ class UploadUrlResponseSchema(BaseSchema):
     """Schema for UploadUrlResponse"""
 
     # Required properties
-    upload_url = Url(required=True, description="upload object storage URL.")
+    url = Url(required=True, description="upload object storage URL.")
 
 
 class DownloadUrlResponseSchema(BaseSchema):
     """Schema for DownloadUrlResponse"""
 
     # Required properties
-    download_url = Url(required=True, description="download object storage URL.")
+    url = Url(required=True, description="download object storage URL.")
 
 
 class ResultUrlResponseSchema(BaseSchema):
     """Schema for ResultUrlResponse"""
 
     # Required properties
-    download_url = Url(required=True, description="object storage URL.")
+    url = Url(required=True, description="object storage URL.")
 
 
 class CallbackUploadResponseSchema(BaseSchema):

@@ -12,20 +12,20 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Tests for the AccountClient for IBM Q Experience v2."""
+"""Tests for the AccountClient for IBM Q Experience."""
 
 import re
 from unittest import skip
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
-from qiskit.providers.ibmq.api_v2.clients import AccountClient, AuthClient
-from qiskit.providers.ibmq.api_v2.exceptions import ApiError, RequestsApiError
+from qiskit.providers.ibmq.api.clients import AccountClient, AuthClient
+from qiskit.providers.ibmq.api.exceptions import ApiError, RequestsApiError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_new_api_auth, requires_qe_access
+from ..decorators import requires_qe_access
 from ..contextmanagers import custom_envs, no_envs
 
 
@@ -53,7 +53,6 @@ class TestAccountClient(IBMQTestCase):
 
     @classmethod
     @requires_qe_access
-    @requires_new_api_auth
     def _get_provider(cls, qe_token=None, qe_url=None):
         """Helper for getting account credentials."""
         ibmq_factory = IBMQFactory()
@@ -122,16 +121,16 @@ class TestAccountClient(IBMQTestCase):
         self.assertEqual(qobj_downloaded, qobj.to_dict())
         self.assertEqual(result['status'], 'COMPLETED')
 
-    def test_get_status_jobs(self):
+    def test_list_jobs_statuses(self):
         """Check get status jobs by user authenticated."""
         api = self._get_client()
-        jobs = api.get_status_jobs(limit=2)
+        jobs = api.list_jobs_statuses(limit=2)
         self.assertEqual(len(jobs), 2)
 
     def test_backend_status(self):
         """Check the status of a real chip."""
         backend_name = ('ibmq_boeblingen'
-                        if self.using_ibmq_credentials else 'ibmqx4')
+                        if self.using_ibmq_credentials else 'ibmqx2')
         api = self._get_client()
         is_available = api.backend_status(backend_name)
         self.assertIsNotNone(is_available['operational'])
@@ -139,7 +138,7 @@ class TestAccountClient(IBMQTestCase):
     def test_backend_properties(self):
         """Check the properties of calibration of a real chip."""
         backend_name = ('ibmq_boeblingen'
-                        if self.using_ibmq_credentials else 'ibmqx4')
+                        if self.using_ibmq_credentials else 'ibmqx2')
         api = self._get_client()
 
         properties = api.backend_properties(backend_name)
@@ -160,12 +159,6 @@ class TestAccountClient(IBMQTestCase):
                     self.assertTrue(defaults)
                 else:
                     self.assertFalse(defaults)
-
-    def test_available_backends(self):
-        """Check the backends available."""
-        api = self._get_client()
-        backends = api.available_backends()
-        self.assertGreaterEqual(len(backends), 1)
 
     def test_exception_message(self):
         """Check exception has proper message."""
@@ -248,13 +241,12 @@ class TestAccountClientJobs(IBMQTestCase):
         backend_name = 'ibmq_qasm_simulator'
         backend = cls.provider.get_backend(backend_name)
         cls.client = backend._api
-        cls.job = cls.client.submit_job(cls._get_qobj(backend).to_dict(),
-                                        backend_name)
+        cls.job = cls.client.job_submit(backend_name,
+                                        cls._get_qobj(backend).to_dict())
         cls.job_id = cls.job['id']
 
     @classmethod
     @requires_qe_access
-    @requires_new_api_auth
     def _get_provider(cls, qe_token=None, qe_url=None):
         """Helper for getting account credentials."""
         ibmq_factory = IBMQFactory()
@@ -374,14 +366,12 @@ class TestAuthClient(IBMQTestCase):
     """Tests for the AuthClient."""
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_valid_login(self, qe_token, qe_url):
         """Test valid authenticating against IBM Q."""
         client = AuthClient(qe_token, qe_url)
         self.assertTrue(client.client_api.session.access_token)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_url_404(self, qe_token, qe_url):
         """Test login against a 404 URL"""
         url_404 = re.sub(r'/api.*$', '/api/TEST_404', qe_url)
@@ -389,7 +379,6 @@ class TestAuthClient(IBMQTestCase):
             _ = AuthClient(qe_token, url_404)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_invalid_token(self, qe_token, qe_url):
         """Test login using invalid token."""
         qe_token = 'INVALID_TOKEN'
@@ -397,7 +386,6 @@ class TestAuthClient(IBMQTestCase):
             _ = AuthClient(qe_token, qe_url)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_url_unreachable(self, qe_token, qe_url):
         """Test login against an invalid (malformed) URL."""
         qe_url = 'INVALID_URL'
@@ -405,7 +393,6 @@ class TestAuthClient(IBMQTestCase):
             _ = AuthClient(qe_token, qe_url)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_api_version(self, qe_token, qe_url):
         """Check the version of the QX API."""
         api = AuthClient(qe_token, qe_url)
@@ -413,7 +400,6 @@ class TestAuthClient(IBMQTestCase):
         self.assertIsNotNone(version)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_user_urls(self, qe_token, qe_url):
         """Check the user urls of the QX API."""
         api = AuthClient(qe_token, qe_url)
@@ -422,7 +408,6 @@ class TestAuthClient(IBMQTestCase):
         self.assertTrue('http' in user_urls and 'ws' in user_urls)
 
     @requires_qe_access
-    @requires_new_api_auth
     def test_user_hubs(self, qe_token, qe_url):
         """Check the user hubs of the QX API."""
         api = AuthClient(qe_token, qe_url)

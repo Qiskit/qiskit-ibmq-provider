@@ -23,14 +23,13 @@ from unittest import skipIf
 from unittest.mock import patch
 from requests_ntlm import HttpNtlmAuth
 
-from qiskit.providers.ibmq import IBMQ
+from qiskit.providers.ibmq import IBMQ, IBMQFactory
 from qiskit.providers.ibmq.credentials import (
     Credentials, discover_credentials, qconfig,
     read_credentials_from_qiskitrc, store_credentials)
-from qiskit.providers.ibmq.credentials.updater import update_credentials, QE2_AUTH_URL, QE2_URL
+from qiskit.providers.ibmq.credentials.updater import (
+    update_credentials, QE2_AUTH_URL, QE2_URL, QE_URL)
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
-from qiskit.providers.ibmq.ibmqprovider import QE_URL, IBMQProvider
-from qiskit.providers.ibmq.ibmqsingleprovider import IBMQSingleProvider
 
 from ..ibmqtestcase import IBMQTestCase
 from ..contextmanagers import custom_envs, no_envs, custom_qiskitrc, no_file, CREDENTIAL_ENV_VARS
@@ -48,137 +47,6 @@ PROXIES = {
 
 # TODO: NamedTemporaryFiles do not support name in Windows
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
-class TestIBMQProviderAccounts(IBMQTestCase):
-    """Tests for the IBMQProvider account handling."""
-
-    def setUp(self):
-        super().setUp()
-
-        # Use an IBMQProvider instead of a Factory.
-        self.provider = IBMQProvider()
-
-    def test_enable_account(self):
-        """Test enabling one account."""
-        with custom_qiskitrc(), mock_ibmq_provider():
-            self.provider.enable_account('QISKITRC_TOKEN', url='someurl',
-                                         proxies=PROXIES)
-
-            # Compare the session accounts with the ones stored in file.
-            loaded_accounts = read_credentials_from_qiskitrc()
-            _, provider = list(self.provider._accounts.items())[0]
-
-            self.assertEqual(loaded_accounts, {})
-            self.assertEqual('QISKITRC_TOKEN', provider.credentials.token)
-            self.assertEqual('someurl', provider.credentials.url)
-            self.assertEqual(PROXIES, provider.credentials.proxies)
-
-    def test_enable_multiple_accounts(self):
-        """Test enabling multiple accounts, combining QX and IBMQ."""
-        with custom_qiskitrc(), mock_ibmq_provider():
-            self.provider.enable_account('QISKITRC_TOKEN')
-            self.provider.enable_account('QISKITRC_TOKEN',
-                                         url=IBMQ_TEMPLATE.format('a', 'b', 'c'))
-            self.provider.enable_account('QISKITRC_TOKEN',
-                                         url=IBMQ_TEMPLATE.format('a', 'b', 'X'))
-
-            # Compare the session accounts with the ones stored in file.
-            loaded_accounts = read_credentials_from_qiskitrc()
-            self.assertEqual(loaded_accounts, {})
-            self.assertEqual(len(self.provider._accounts), 3)
-
-    def test_enable_duplicate_accounts(self):
-        """Test enabling the same credentials twice."""
-        with custom_qiskitrc(), mock_ibmq_provider():
-            self.provider.enable_account('QISKITRC_TOKEN')
-
-            self.assertEqual(len(self.provider._accounts), 1)
-
-    def test_save_account(self):
-        """Test saving one account."""
-        with custom_qiskitrc(), mock_ibmq_provider():
-            self.provider.save_account('QISKITRC_TOKEN', url=QE_URL,
-                                       proxies=PROXIES)
-
-            # Compare the session accounts with the ones stored in file.
-            stored_accounts = read_credentials_from_qiskitrc()
-            self.assertEqual(len(stored_accounts.keys()), 1)
-
-    def test_save_multiple_accounts(self):
-        """Test saving several accounts, combining QX and IBMQ"""
-        with custom_qiskitrc(), mock_ibmq_provider():
-            self.provider.save_account('QISKITRC_TOKEN')
-            self.provider.save_account('QISKITRC_TOKEN',
-                                       url=IBMQ_TEMPLATE.format('a', 'b', 'c'))
-            self.provider.save_account('QISKITRC_TOKEN',
-                                       IBMQ_TEMPLATE.format('a', 'b', 'X'))
-
-            # Compare the session accounts with the ones stored in file.
-            stored_accounts = read_credentials_from_qiskitrc()
-            self.assertEqual(len(stored_accounts), 3)
-            for account_name, provider in self.provider._accounts.items():
-                self.assertEqual(provider.credentials,
-                                 stored_accounts[account_name])
-
-    def test_save_duplicate_accounts(self):
-        """Test saving the same credentials twice."""
-        with custom_qiskitrc(), mock_ibmq_provider():
-            self.provider.save_account('QISKITRC_TOKEN')
-            with self.assertWarns(UserWarning) as context_manager:
-                self.provider.save_account('QISKITRC_TOKEN')
-
-            self.assertIn('Set overwrite', str(context_manager.warning))
-            # Compare the session accounts with the ones stored in file.
-            stored_accounts = read_credentials_from_qiskitrc()
-            self.assertEqual(len(stored_accounts), 1)
-
-    def test_disable_accounts(self):
-        """Test disabling an account in a session."""
-        with custom_qiskitrc(), mock_ibmq_provider():
-            self.provider.enable_account('QISKITRC_TOKEN')
-            self.provider.disable_accounts(token='QISKITRC_TOKEN')
-
-            self.assertEqual(len(self.provider._accounts), 0)
-
-    def test_delete_accounts(self):
-        """Test deleting an account from disk."""
-        with custom_qiskitrc(), mock_ibmq_provider():
-            self.provider.save_account('QISKITRC_TOKEN')
-            self.assertEqual(len(read_credentials_from_qiskitrc()), 1)
-
-            self.provider._accounts.clear()
-            self.provider.delete_accounts(token='QISKITRC_TOKEN')
-            self.assertEqual(len(read_credentials_from_qiskitrc()), 0)
-
-    def test_disable_all_accounts(self):
-        """Test disabling all accounts from session."""
-        with custom_qiskitrc(), mock_ibmq_provider():
-            self.provider.enable_account('QISKITRC_TOKEN')
-            self.provider.enable_account('QISKITRC_TOKEN',
-                                         url=IBMQ_TEMPLATE.format('a', 'b', 'c'))
-            self.provider.disable_accounts()
-            self.assertEqual(len(self.provider._accounts), 0)
-
-    def test_delete_all_accounts(self):
-        """Test deleting all accounts from disk."""
-        with custom_qiskitrc(), mock_ibmq_provider():
-            self.provider.save_account('QISKITRC_TOKEN')
-            self.provider.save_account('QISKITRC_TOKEN',
-                                       url=IBMQ_TEMPLATE.format('a', 'b', 'c'))
-            self.assertEqual(len(read_credentials_from_qiskitrc()), 2)
-            self.provider.delete_accounts()
-            self.assertEqual(len(self.provider._accounts), 0)
-            self.assertEqual(len(read_credentials_from_qiskitrc()), 0)
-
-    def test_pass_bad_proxy(self):
-        """Test proxy pass through."""
-        with self.assertRaises(ConnectionError) as context_manager:
-            self.provider.enable_account('dummy_token', 'https://dummy_url',
-                                         proxies=PROXIES)
-        self.assertIn('ProxyError', str(context_manager.exception))
-
-
-# TODO: NamedTemporaryFiles do not support name in Windows
-@skipIf(os.name == 'nt', 'Test not supported in Windows')
 class TestCredentials(IBMQTestCase):
     """Tests for the credential subsystem."""
 
@@ -186,17 +54,16 @@ class TestCredentials(IBMQTestCase):
         """Test register() with no credentials available."""
         with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             with self.assertRaises(IBMQAccountError) as context_manager:
-                IBMQ.load_accounts()
+                IBMQ.load_account()
 
-        self.assertIn('No IBMQ credentials found', str(context_manager.exception))
+        self.assertIn('No IBM Q Experience credentials found', str(context_manager.exception))
 
     def test_store_credentials_overwrite(self):
         """Test overwriting qiskitrc credentials."""
-        credentials = Credentials('QISKITRC_TOKEN', url=QE_URL, hub='HUB')
-        credentials2 = Credentials('QISKITRC_TOKEN_2', url=QE_URL)
+        credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
+        credentials2 = Credentials('QISKITRC_TOKEN_2', url=QE2_AUTH_URL)
 
-        # Use an IBMQProvider instead of a Factory.
-        provider = IBMQProvider()
+        factory = IBMQFactory()
 
         with custom_qiskitrc():
             store_credentials(credentials)
@@ -210,17 +77,14 @@ class TestCredentials(IBMQTestCase):
             with no_file('Qconfig.py'), no_envs(CREDENTIAL_ENV_VARS), mock_ibmq_provider():
                 # Attempt overwriting.
                 store_credentials(credentials2, overwrite=True)
-                provider.load_accounts()
+                factory.load_account()
 
-        # Ensure that the credentials are the overwritten ones - note that the
-        # 'hub' parameter was removed.
-        self.assertEqual(len(provider._accounts), 1)
-        self.assertEqual(list(provider._accounts.values())[0].credentials.token,
-                         'QISKITRC_TOKEN_2')
+        # Ensure that the credentials are the overwritten ones.
+        self.assertEqual(factory._credentials, credentials2)
 
     def test_environ_over_qiskitrc(self):
         """Test order, without qconfig"""
-        credentials = Credentials('QISKITRC_TOKEN', url=QE_URL)
+        credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
 
         with custom_qiskitrc():
             # Prepare the credentials: both env and qiskitrc present
@@ -234,7 +98,7 @@ class TestCredentials(IBMQTestCase):
 
     def test_qconfig_over_all(self):
         """Test order, with qconfig"""
-        credentials = Credentials('QISKITRC_TOKEN', url=QE_URL)
+        credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
 
         with custom_qiskitrc():
             # Prepare the credentials: qconfig, env and qiskitrc present
@@ -339,9 +203,6 @@ class TestIBMQAccountUpdater(IBMQTestCase):
     def setUp(self):
         super().setUp()
 
-        # Reference for saving accounts.
-        self.ibmq = IBMQProvider()
-
         # Avoid stdout output during tests.
         self.patcher = patch('sys.stdout', new=StringIO())
         self.patcher.start()
@@ -366,7 +227,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
     def test_qe_credentials(self):
         """Test converting QE credentials."""
         with custom_qiskitrc():
-            self.ibmq.save_account('A', url=QE_URL)
+            store_credentials(Credentials('A', url=QE_URL))
             _ = update_credentials(force=True)
 
             # Assert over the stored (updated) credentials.
@@ -376,8 +237,8 @@ class TestIBMQAccountUpdater(IBMQTestCase):
     def test_qconsole_credentials(self):
         """Test converting Qconsole credentials."""
         with custom_qiskitrc():
-            self.ibmq.save_account('A',
-                                   url=IBMQ_TEMPLATE.format('a', 'b', 'c'))
+            store_credentials(Credentials('A',
+                                          url=IBMQ_TEMPLATE.format('a', 'b', 'c')))
             _ = update_credentials(force=True)
 
             # Assert over the stored (updated) credentials.
@@ -387,9 +248,9 @@ class TestIBMQAccountUpdater(IBMQTestCase):
     def test_proxy_credentials(self):
         """Test converting credentials with proxy values."""
         with custom_qiskitrc():
-            self.ibmq.save_account('A',
-                                   url=IBMQ_TEMPLATE.format('a', 'b', 'c'),
-                                   proxies=PROXIES)
+            store_credentials(Credentials('A',
+                                          url=IBMQ_TEMPLATE.format('a', 'b', 'c'),
+                                          proxies=PROXIES))
             _ = update_credentials(force=True)
 
             # Assert over the stored (updated) credentials.
@@ -403,12 +264,11 @@ class TestIBMQAccountUpdater(IBMQTestCase):
     def test_multiple_credentials(self):
         """Test converting multiple credentials."""
         with custom_qiskitrc():
-            self.ibmq.save_account('A', url=QE_URL)
-            self.ibmq.save_account('B',
-                                   url=IBMQ_TEMPLATE.format('a', 'b', 'c'))
-            self.ibmq.save_account('C',
-                                   url=IBMQ_TEMPLATE.format('d', 'e', 'f'))
-
+            store_credentials(Credentials('A', url=QE2_AUTH_URL))
+            store_credentials(Credentials('B',
+                                          url=IBMQ_TEMPLATE.format('a', 'b', 'c')))
+            store_credentials(Credentials('C',
+                                          url=IBMQ_TEMPLATE.format('d', 'e', 'f')))
             _ = update_credentials(force=True)
 
             # Assert over the stored (updated) credentials.
@@ -420,7 +280,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
     def test_api2_non_auth_credentials(self):
         """Test converting api 2 non auth credentials."""
         with custom_qiskitrc():
-            self.ibmq.save_account('A', url=QE2_URL)
+            store_credentials(Credentials('A', url=QE2_URL))
             _ = update_credentials(force=True)
 
             # Assert over the stored (updated) credentials.
@@ -430,7 +290,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
     def test_auth2_credentials(self):
         """Test converting already API 2 auth credentials."""
         with custom_qiskitrc():
-            self.ibmq.save_account('A', url=QE2_AUTH_URL)
+            store_credentials(Credentials('A', url=QE2_AUTH_URL))
             credentials = update_credentials(force=True)
 
             # No credentials should be returned.
@@ -439,7 +299,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
     def test_unknown_credentials(self):
         """Test converting credentials with an unknown URL."""
         with custom_qiskitrc():
-            self.ibmq.save_account('A', url='UNKNOWN_URL')
+            store_credentials(Credentials('A', url='UNKNOWN_URL'))
             credentials = update_credentials(force=True)
 
             # No credentials should be returned nor updated.
@@ -470,11 +330,19 @@ def custom_qconfig(contents=b''):
     qconfig.DEFAULT_QCONFIG_FILE = default_qconfig_file_original
 
 
+def _mocked_initialize_provider(self, credentials: Credentials):
+    """Mock `_initialize_provider()`, just storing the credentials."""
+    self._credentials = credentials
+
+
 @contextmanager
 def mock_ibmq_provider():
-    """Mock the initialization of IBMQSingleProvider, so it does not query the api."""
-    patcher = patch.object(IBMQSingleProvider, '_authenticate', return_value=None)
-    patcher2 = patch.object(IBMQSingleProvider, '_discover_remote_backends', return_value={})
+    """Mock the initialization of IBMQFactory, so it does not query the api."""
+    patcher = patch.object(IBMQFactory, '_initialize_providers',
+                           side_effect=_mocked_initialize_provider,
+                           autospec=True)
+    patcher2 = patch.object(IBMQFactory, '_check_api_version',
+                            return_value={'new_api': True, 'api-auth': '0.1'})
     patcher.start()
     patcher2.start()
     yield
