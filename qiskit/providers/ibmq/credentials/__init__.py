@@ -63,7 +63,7 @@ def discover_credentials(
     # Attempt to read the credentials from the different sources.
     for display_name, (reader_function, kwargs) in readers.items():
         try:
-            credentials = reader_function(**kwargs)
+            credentials = reader_function(**kwargs)  # type: ignore[arg-type]
             logger.info('Using credentials from %s', display_name)
             if credentials:
                 break
