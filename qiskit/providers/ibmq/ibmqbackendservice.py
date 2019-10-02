@@ -222,7 +222,11 @@ class IBMQBackendService(SimpleNamespace):
             if job_kind == ApiJobKind.QOBJECT_STORAGE:
                 kwargs['use_object_storage'] = True
 
-            job = IBMQJob(self, job_info.get('id'), self._provider._api,
+            # TODO: first argument for IBMQJob should be a Backend, but as
+            # `job_responses` comes from `jobs_statuses`, the backend name
+            # might not be present. Revise during IBMQJob refactoring.
+
+            job = IBMQJob(None, job_info.get('id'), self._provider._api,
                           creation_date=job_info.get('creationDate'),
                           api_status=job_info.get('status'),
                           **kwargs)
@@ -269,7 +273,10 @@ class IBMQBackendService(SimpleNamespace):
             raise IBMQBackendError('Failed to get job "{}": {}'
                                    .format(job_id, str(ex)))
 
-        job = IBMQJob(self, job_info.get('id'), self._provider._api,
+        # TODO: in a similar way to IBMQJob creation during `.jobs()`,
+        # temporarily leaving the first argument as `None`.
+
+        job = IBMQJob(None, job_info.get('id'), self._provider._api,
                       creation_date=job_info.get('creationDate'),
                       api_status=job_info.get('status'),
                       **kwargs)
