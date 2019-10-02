@@ -250,13 +250,12 @@ class WebsocketClient(BaseClient):
                                              'unexpectedly: {}(status_code={})'
                                              .format(message, ex.code)) from ex
 
-            # Errors not related to websocket connection, attempt retrying.
-            except WebsocketTimeoutError as ex:
-                raise ex
-
-            # Errors related to websocket connection, attempt retrying.
-            except (WebsocketError, WebsocketAuthenticationError) as ex:
+            except WebsocketError as ex:
                 logger.warning('%s', ex)
+
+                # Specific `WebsocketError` exceptions that are not worth retrying.
+                if isinstance(ex, (WebsocketTimeoutError, WebsocketIBMQProtocolError)):
+                    raise ex
 
                 current_retry_attempt = current_retry_attempt + 1
                 if (current_retry_attempt > retries) or (not attempt_retry):
