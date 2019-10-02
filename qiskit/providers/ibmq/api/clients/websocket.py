@@ -104,8 +104,6 @@ class WebsocketClient(BaseClient):
                 was established, but the authentication failed.
             WebsocketIBMQProtocolError: if the connection to the websocket
                 server was established, but the answer was unexpected.
-            SSLError: if the connection to the websocket server could not
-                be established due to SSL certificate errors.
         """
         try:
             logger.debug('Starting new websocket connection: %s', url)
