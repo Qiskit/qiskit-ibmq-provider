@@ -88,7 +88,7 @@ class CircuitsManager:
         # Create a Job for the circuit.
         try:
             job = CircuitJob(backend_obj=None,
-                             job_id=response['id'],
+                             id=response['id'],
                              api=self.client,
                              **response)
         except Exception as ex:

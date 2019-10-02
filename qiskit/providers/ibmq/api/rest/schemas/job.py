@@ -19,8 +19,7 @@ from marshmallow.fields import Bool
 from marshmallow.validate import OneOf, Range
 from marshmallow.exceptions import ValidationError
 
-from qiskit.validation import BaseSchema
-from qiskit.validation import ModelTypeValidator
+from qiskit.validation import BaseSchema, ModelTypeValidator
 from qiskit.validation.fields import Dict, String, Url, Nested, Integer
 from qiskit.qobj.qobj import QobjSchema
 from qiskit.result.models import ResultSchema
@@ -49,8 +48,6 @@ class EnumType(ModelTypeValidator):
         return value.value
 
     def _deserialize(self, value, attr, data):
-        # value is the data, attr is original field name, data is original dictionary
-        self.check_type(value, attr, data)
         return self.enum_cls(value)
 
     def check_type(self, value, attr, data):
@@ -87,7 +84,7 @@ class JobResponseBackendSchema(BaseSchema):
 
 # Endpoint schemas.
 
-class JobResponseSchema(JobResponseBaseSchema):
+class JobResponseSchema(BaseSchema):
     """Schema for GET Jobs, GET Jobs/{id}, and POST Jobs responses."""
     # pylint: disable=invalid-name
 

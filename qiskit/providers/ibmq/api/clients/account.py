@@ -48,6 +48,7 @@ class AccountClient(BaseClient):
             access_token: str,
             project_url: str,
             websockets_url: str,
+            use_websockets: bool,
             **request_kwargs: Any
     ) -> None:
         """AccountClient constructor.
@@ -56,11 +57,13 @@ class AccountClient(BaseClient):
             access_token (str): IBM Q Experience access token.
             project_url (str): IBM Q Experience URL for a specific h/g/p.
             websockets_url (str): URL for the websockets server.
+            use_websockets (bool): whether to use webscokets
             **request_kwargs (dict): arguments for the `requests` Session.
         """
         self.client_api = Api(RetrySession(project_url, access_token,
                                            **request_kwargs))
         self.client_ws = WebsocketClient(websockets_url, access_token)
+        self._use_websockets = use_websockets
 
     # Backend-related public functions.
 
@@ -341,8 +344,7 @@ class AccountClient(BaseClient):
             self,
             job_id: str,
             timeout: Optional[float] = None,
-            wait: float = 5,
-            use_websockets: bool = True
+            wait: float = 5
     ) -> Dict[str, Any]:
         """Wait until the job progress to a final state.
 
@@ -351,7 +353,6 @@ class AccountClient(BaseClient):
             timeout (float or None): seconds to wait for job. If None, wait
                 indefinitely.
             wait (float): seconds between queries.
-            use_websockets (bool): whether to use webscokets to get final status.
 
         Returns:
             dict: job status.
@@ -359,13 +360,14 @@ class AccountClient(BaseClient):
         Raises:
             UserTimeoutExceededError: if the job does not return results
                 before a specified timeout.
+            ApiIBMQProtocolError: if an unexpected result is received from the server.
         """
+        status_response = None
         # Attempt to use websocket if available.
-        if use_websockets:
+        if self._use_websockets:
             start_time = time.time()
             try:
                 status_response = self._job_final_status_websocket(job_id, timeout)
-                return status_response
             except WebsocketTimeoutError as ex:
                 logger.warning('Timeout checking job status using websocket, '
                                'retrying using HTTP')
@@ -379,8 +381,18 @@ class AccountClient(BaseClient):
             if timeout is not None:
                 timeout -= (time.time() - start_time)
 
-        # Use traditional http requests if websocket not available or failed.
-        return self._job_final_status_polling(job_id, timeout, wait)
+        if not status_response:
+            # Use traditional http requests if websocket not available or failed.
+            status_response = self._job_final_status_polling(job_id, timeout, wait)
+
+        try:
+            # Validate the response.
+            JobStatusResponseSchema().validate(status_response)
+        except ValidationError as err:
+            raise ApiIBMQProtocolError('Unrecognized answer from server: \n{}'.format(
+                pprint.pformat(status_response))) from err
+
+        return status_response
 
     def _job_final_status_websocket(
             self,

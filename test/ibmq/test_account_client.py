@@ -63,7 +63,8 @@ class TestAccountClient(IBMQTestCase):
         """Helper for instantiating an AccountClient."""
         return AccountClient(self.access_token,
                              self.provider.credentials.url,
-                             self.provider.credentials.websockets_url)
+                             self.provider.credentials.websockets_url,
+                             use_websockets=True)
 
     def test_job_submit(self):
         """Test job_submit, running a job against a simulator."""

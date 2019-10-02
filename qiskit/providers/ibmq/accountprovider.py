@@ -57,6 +57,7 @@ class AccountProvider(BaseProvider):
         self._api = AccountClient(access_token,
                                   credentials.url,
                                   credentials.websockets_url,
+                                  use_websockets=(not credentials.proxies),
                                   **credentials.connection_parameters())
         self.circuits = CircuitsManager(self._api)
 

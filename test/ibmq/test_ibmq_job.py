@@ -17,7 +17,6 @@
 import time
 import warnings
 from concurrent import futures
-from unittest import mock
 
 import numpy
 from scipy.stats import chi2_contingency
@@ -30,6 +29,8 @@ from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
+from qiskit.validation.exceptions import ModelValidationError
+from qiskit.validation.jsonschema.exceptions import SchemaValidationError
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, requires_qe_access
@@ -472,21 +473,19 @@ class TestIBMQJob(JobTestCase):
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)
 
-    @requires_provider
-    def test_bad_job_schema(self, provider):
+    def test_bad_job_schema(self):
         """Test creating a job with bad job schema."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        bad_job_info = {}
-        with self.assertRaises(JobError):
-            IBMQJob(backend, mock.Mock(), job_id='TEST_ID', **bad_job_info)
+        bad_job_info = {'id': 'TEST_ID'}
+        with self.assertRaises(ModelValidationError):
+            IBMQJob.from_dict(bad_job_info)
 
     @requires_provider
-    def test_unsubmitted_job(self, provider):
-        """Test retrieving results for an unsubmitted job."""
+    def test_invalid_qobj(self, provider):
+        """Test submitting an invalid qobj."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        job = IBMQJob(backend_obj=backend, job_id=None, api=mock.Mock(), qobj=mock.Mock)
-        with self.assertRaises(JobError):
-            job.result()
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        delattr(qobj, 'qobj_id')
+        self.assertRaises(SchemaValidationError, backend.run, qobj)
 
 
 def _bell_circuit():

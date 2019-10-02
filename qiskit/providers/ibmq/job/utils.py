@@ -15,7 +15,7 @@
 """Utilities for working with IBM Q Jobs."""
 
 from datetime import datetime, timezone
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional
 from contextlib import contextmanager
 
 from qiskit.providers.jobstatus import JobStatus
@@ -48,23 +48,23 @@ def current_utc_time() -> str:
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
 
-def is_job_queued(api_job_status_response: Dict[str, Any]) -> Tuple[bool, int]:
+def is_job_queued(info_queue: Optional[Dict] = None) -> Tuple[bool, int]:
     """Checks whether a job has been queued or not.
 
     Args:
-        api_job_status_response (dict): status response of the job.
+        info_queue (dict): queue information from the API response.
 
     Returns:
         Pair[boolean, int]: a pair indicating if the job is queued and in which
             position.
     """
     is_queued, position = False, 0
-    if 'infoQueue' in api_job_status_response:
-        if 'status' in api_job_status_response['infoQueue']:
-            queue_status = api_job_status_response['infoQueue']['status']
+    if info_queue:
+        if 'status' in info_queue:
+            queue_status = info_queue['status']
             is_queued = queue_status == 'PENDING_IN_QUEUE'
-        if 'position' in api_job_status_response['infoQueue']:
-            position = api_job_status_response['infoQueue']['position']
+        if 'position' in info_queue:
+            position = info_queue['position']
     return is_queued, position
 
 

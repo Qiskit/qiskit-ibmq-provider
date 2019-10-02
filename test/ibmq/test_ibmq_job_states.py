@@ -18,14 +18,16 @@
 
 import time
 from contextlib import suppress
+from unittest import mock
 
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
-from qiskit.test.mock import new_fake_qobj, FakeRueschlikon
+from qiskit.test.mock import new_fake_qobj
 from qiskit.providers import JobError, JobTimeoutError
 from qiskit.providers.ibmq.api.exceptions import (ApiError, UserTimeoutExceededError,
                                                   ApiIBMQProtocolError)
-from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
 from ..jobtestcase import JobTestCase
 
@@ -194,7 +196,7 @@ class TestIBMQJobStates(JobTestCase):
         self.assertEqual(job.status(), JobStatus.RUNNING)
 
     def test_status_flow_for_unable_to_run_valid_qobj(self):
-        with self.assertRaises(JobError):
+        with self.assertRaises(IBMQBackendError):
             self.run_with_api(UnavailableRunAPI())
 
     def test_api_throws_temporarily_but_job_is_finished(self):
@@ -212,10 +214,6 @@ class TestIBMQJobStates(JobTestCase):
 
         # Now the API gets fixed and doesn't throw anymore.
         self.assertEqual(job.status(), JobStatus.DONE)
-
-    def test_status_flow_for_unable_to_run_invalid_qobj(self):
-        with self.assertRaises(JobError):
-            self.run_with_api(RejectingJobAPI())
 
     def test_error_while_running_job(self):
         job = self.run_with_api(ErrorWhileRunningAPI())
@@ -293,8 +291,6 @@ class TestIBMQJobStates(JobTestCase):
             job.result(timeout=0.2)
 
     def test_only_final_states_cause_detailed_request(self):
-        from unittest import mock
-
         # The state ERROR_CREATING_JOB is only handled when running the job,
         # and not while checking the status, so it is not tested.
         all_state_apis = {'COMPLETED': NonQueuedAPI,
@@ -320,10 +316,9 @@ class TestIBMQJobStates(JobTestCase):
 
     def run_with_api(self, api):
         """Creates a new ``IBMQJob`` running with the provided API object."""
-        backend = FakeRueschlikon()
+        backend = IBMQBackend(mock.Mock(), mock.Mock(), mock.Mock(), api=api)
         self._current_api = api
-        self._current_qjob = IBMQJob(backend, api, job_id=None, qobj=new_fake_qobj())
-        self._current_qjob.submit()
+        self._current_qjob = backend.run(qobj=new_fake_qobj())
         return self._current_qjob
 
 
