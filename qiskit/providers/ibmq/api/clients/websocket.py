@@ -95,7 +95,7 @@ class WebsocketClient(BaseClient):
         """Authenticate against the websocket server, returning the connection.
 
         Returns:
-            Connect: an open websocket connection.
+            WebSocketClientProtocol: an open websocket connection.
 
         Raises:
             WebsocketError: if the connection to the websocket server could
