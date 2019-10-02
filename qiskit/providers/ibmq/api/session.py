@@ -189,8 +189,7 @@ class RetrySession(Session):
             path (string): A path string
 
         Returns:
-            A URL string.
-
+            str: A URL string.
         """
         parts = self.base_url.split(r'?', maxsplit=1)
         if len(parts) == 1:
