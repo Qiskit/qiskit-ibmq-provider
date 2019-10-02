@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog].
 ### Added
 
 - Added support for autocompleting backend names. A user can now use 
-  `AccountProvider.provider_backends.<tab>` to see a list of backend
+  `AccountProvider.backends.<tab>` to see a list of backend
   names (\#303).
 
 ### Changed
@@ -35,16 +35,25 @@ The format is based on [Keep a Changelog].
 - The `backend.properties()` function now accepts an optional `datetime` 
   parameter. If specified, the function returns the backend properties closest 
   to, but older than, the specified datetime filter (\#277).
-- `IBMQJob.submit()`, called by `IBMQBackend.run()`, now waits for the server
-  to acknowledge the job reception before returning. As a result, 
-  `IBMQBackend.run()` will raise a `JobError` if an error occurred while 
-  submitting the job and no `IBMQJob` instance is returned (\#329).
+- The `WebsocketClient.get_job_status()` method now accepts two optional 
+  parameters: `retries` and `backoff_factor`. `retries` specifies the 
+  maximum number of retries to attempt in case a websocket connection 
+  is closed. `backoff_factor` is used to calculate the amount of time to 
+  wait between retries (\#341).
 - `IBMQJob` constructor signature has changed (\#329).
+- `IBMQJob.submit()` can no longer be called directly, and jobs are expected
+  to be submitted via `IBMQBackend.run()` (\#329).
 
 ### Removed
 
 - Support for the legacy Quantum Experience and QConsole is fully deprecated.
   Only credentials from the new Quantum Experience can be used. (\#344)
+
+### Deprecated
+
+- `Backend.jobs()` and `Backend.retrieve_job()` have been deprecated in favour
+  of `provider.backends().jobs()` and `provider.backends().retrieve_job()`.
+  (\#354).
 
 ## [0.3.3] - 2019-09-30
 

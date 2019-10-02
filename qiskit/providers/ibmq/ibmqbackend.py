@@ -32,7 +32,7 @@ from .api.clients import AccountClient
 from .api.exceptions import ApiError
 from .apiconstants import ApiJobStatus
 from .credentials import Credentials
-from .exceptions import IBMQBackendError, IBMQBackendValueError
+from .exceptions import IBMQBackendError
 from .job import IBMQJob
 from .utils import update_qobj_config
 
@@ -264,84 +264,12 @@ class IBMQBackend(BaseBackend):
         Raises:
             IBMQBackendValueError: status keyword value unrecognized
         """
-        # Build the filter for the query.
-        backend_name = self.name()
-        api_filter = {'backend.name': backend_name}
-        if status:
-            if isinstance(status, str):
-                status = JobStatus[status]
-            if status == JobStatus.RUNNING:
-                this_filter = {'status': ApiJobStatus.RUNNING.value,
-                               'infoQueue': {'exists': False}}
-            elif status == JobStatus.QUEUED:
-                this_filter = {'status': ApiJobStatus.RUNNING.value,
-                               'infoQueue.status': 'PENDING_IN_QUEUE'}
-            elif status == JobStatus.CANCELLED:
-                this_filter = {'status': ApiJobStatus.CANCELLED.value}
-            elif status == JobStatus.DONE:
-                this_filter = {'status': ApiJobStatus.COMPLETED.value}
-            elif status == JobStatus.ERROR:
-                this_filter = {'status': {'regexp': '^ERROR'}}
-            else:
-                raise IBMQBackendValueError('unrecognized value for "status" keyword '
-                                            'in job filter')
-            api_filter.update(this_filter)
+        warnings.warn('backend.jobs() is deprecated and will be removed after '
+                      '0.5. Please use provider.backends.jobs(backend_name='
+                      '"{}") instead.'.format(self.name()), DeprecationWarning)
 
-        if job_name:
-            api_filter['name'] = job_name
-
-        if db_filter:
-            # status takes precedence over db_filter for same keys
-            api_filter = {**db_filter, **api_filter}
-
-        # Retrieve the requested number of jobs, using pagination. The API
-        # might limit the number of jobs per request.
-        job_responses = []
-        current_page_limit = limit
-
-        while True:
-            job_page = self._api.list_jobs_statuses(limit=current_page_limit,
-                                                    skip=skip,
-                                                    extra_filter=api_filter)
-            job_responses += job_page
-            skip = skip + len(job_page)
-
-            if not job_page:
-                # Stop if there are no more jobs returned by the API.
-                break
-
-            if limit:
-                if len(job_responses) >= limit:
-                    # Stop if we have reached the limit.
-                    break
-                current_page_limit = limit - len(job_responses)
-            else:
-                current_page_limit = 0
-
-        job_list = []
-        for job_info in job_responses:
-            if 'kind' not in job_info:
-                # Discard pre-qobj jobs.
-                continue
-
-            job_id = job_info.get('id', "")
-            try:
-                # TODO Extract job name from job_info instead of passing it in
-                # once it becomes available from the API.
-                job_info.update({
-                    'backend_obj': self,
-                    'api': self._api,
-                    'name': job_name
-                })
-                job = IBMQJob.from_dict(job_info)
-            except ModelValidationError:
-                warnings.warn('Discarding job "{}" because it contains invalid data.'
-                              .format(job_id))
-                continue
-
-            job_list.append(job)
-
-        return job_list
+        return self._provider.backends.jobs(
+            limit, skip, self.name(), status, job_name, db_filter)
 
     def retrieve_job(self, job_id: str) -> IBMQJob:
         """Return a job submitted to this backend.
@@ -355,48 +283,10 @@ class IBMQBackend(BaseBackend):
         Raises:
             IBMQBackendError: if retrieval failed
         """
-        try:
-            job_info = self._api.job_get(job_id)
-
-            # Check for generic errors.
-            if 'error' in job_info:
-                raise IBMQBackendError('Failed to get job "{}": {}'
-                                       .format(job_id, job_info['error']))
-
-            # Check for jobs from a different backend.
-            job_backend_name = job_info['backend']['name']
-            if job_backend_name != self.name():
-                warnings.warn('Job "{}" belongs to another backend than the one queried. '
-                              'The query was made on backend "{}", '
-                              'but the job actually belongs to backend "{}".'
-                              .format(job_id, self.name(), job_backend_name))
-                raise IBMQBackendError('Failed to get job "{}": '
-                                       'job does not belong to backend "{}".'
-                                       .format(job_id, self.name()))
-
-            # Check for pre-qobj jobs.
-            if 'kind' not in job_info:
-                warnings.warn('The result of job {} is in a no longer supported format. '
-                              'Please send the job using Qiskit 0.8+.'.format(job_id),
-                              DeprecationWarning)
-                raise IBMQBackendError('Failed to get job "{}": {}'
-                                       .format(job_id, 'job in pre-qobj format'))
-
-        except ApiError as ex:
-            raise IBMQBackendError('Failed to get job "{}": {}'
-                                   .format(job_id, str(ex)))
-
-        try:
-            job_info.update({
-                'backend_obj': self,
-                'api': self._api
-            })
-            job = IBMQJob.from_dict(job_info)
-        except ModelValidationError as ex:
-            raise IBMQBackendError('Failed to get job "{}": {}'
-                                   .format(job_id, str(ex)))
-
-        return job
+        warnings.warn('backend.retrieve_job() is deprecated and will be removed'
+                      'after 0.5. Please use provider.backends.retrieve_job()'
+                      'instead.', DeprecationWarning)
+        return self._provider.backends.retrieve_job(job_id)
 
     def __repr__(self) -> str:
         credentials_info = ''
