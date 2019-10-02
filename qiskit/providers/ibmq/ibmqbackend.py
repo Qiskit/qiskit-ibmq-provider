@@ -82,9 +82,11 @@ class IBMQBackend(BaseBackend):
         if self._credentials.proxies:
             # Disable using websockets through proxies.
             use_websockets = False
-        job = IBMQJob(self, None, self._api, qobj=qobj,
-                      use_object_storage=True,
-                      use_websockets=use_websockets)
+        job = IBMQJob(
+            self, None, self._api,
+            qobj=qobj,
+            use_object_storage=getattr(self.configuration(), 'allow_object_storage', False),
+            use_websockets=use_websockets)
         job.submit(job_name=job_name)
 
         return job
