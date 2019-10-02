@@ -26,7 +26,6 @@ from qiskit.providers.ibmq.api.clients.websocket import WebsocketClient, Websock
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.test import slow_test
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_qe_access, run_on_staging
