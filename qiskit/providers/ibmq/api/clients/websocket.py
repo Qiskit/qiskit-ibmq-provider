@@ -20,11 +20,13 @@ import logging
 import time
 from typing import Dict, Generator, Union, Optional, Any
 from concurrent import futures
+from ssl import SSLError
 import warnings
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
-from websockets.client import Connect
+from websockets.client import WebSocketClientProtocol
+from websockets.exceptions import InvalidURI
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from ..exceptions import (WebsocketError, WebsocketTimeoutError,
@@ -82,17 +84,18 @@ class WebsocketClient(BaseClient):
         websocket_url (str): URL for websocket communication with IBM Q.
         access_token (str): access token for IBM Q.
     """
+    BACKOFF_MAX = 8  # Maximum time to wait between retries.
 
     def __init__(self, websocket_url: str, access_token: str) -> None:
         self.websocket_url = websocket_url.rstrip('/')
         self.access_token = access_token
 
     @asyncio.coroutine
-    def _connect(self, url: str) -> Generator[Any, None, Connect]:
+    def _connect(self, url: str) -> Generator[Any, None, WebSocketClientProtocol]:
         """Authenticate against the websocket server, returning the connection.
 
         Returns:
-            Connect: an open websocket connection.
+            WebSocketClientProtocol: an open websocket connection.
 
         Raises:
             WebsocketError: if the connection to the websocket server could
@@ -108,6 +111,10 @@ class WebsocketClient(BaseClient):
                 # Suppress websockets deprecation warnings until the fix is available
                 warnings.filterwarnings("ignore", category=DeprecationWarning)
                 websocket = yield from connect(url)
+
+        # Isolate specific exceptions, so they are not retried in `get_job_status`.
+        except (SSLError, InvalidURI) as ex:
+            raise ex
 
         # pylint: disable=broad-except
         except Exception as ex:
@@ -139,18 +146,36 @@ class WebsocketClient(BaseClient):
     def get_job_status(
             self,
             job_id: str,
-            timeout: Optional[float] = None
+            timeout: Optional[float] = None,
+            retries: int = 5,
+            backoff_factor: float = 0.5
     ) -> Generator[Any, None, Dict[str, str]]:
         """Return the status of a job.
 
         Reads status messages from the API, which are issued at regular
         intervals. When a final state is reached, the server
         closes the socket. If the websocket connection is closed without
-        a reason, there is an attempt to retry one time.
+        a reason, the exponential backoff algorithm is used as a basis to
+        reestablish connections. The algorithm takes effect when a
+        connection closes, it is given by:
+
+            1. When a connection closes, sleep for a calculated backoff
+                time.
+            2. Try to retrieve another socket and increment a retry
+                counter.
+            3. Attempt to get the job status.
+                - If the connection is closed, go back to step 1.
+                - If the job status is read successfully, reset the retry
+                    counter.
+            4. Continue until the job status is complete or the maximum
+                number of retries is met.
 
         Args:
             job_id (str): id of the job.
             timeout (float): timeout, in seconds.
+            retries (int): max number of retries.
+            backoff_factor (float): backoff factor used to calculate the
+                time to wait between retries.
 
         Returns:
             dict: the API response for the status of a job, as a dict that
@@ -161,77 +186,117 @@ class WebsocketClient(BaseClient):
             WebsocketTimeoutError: if the timeout has been reached.
         """
         url = '{}/jobs/{}/status'.format(self.websocket_url, job_id)
-        websocket = yield from self._connect(url)
 
         original_timeout = timeout
         start_time = time.time()
         attempt_retry = True  # By default, attempt to retry if the websocket connection closes.
+        current_retry_attempt = 0
         last_status = None
+        websocket = None
 
-        try:
-            # Read messages from the server until the connection is closed or
-            # a timeout has been reached.
-            while True:
-                try:
-                    with warnings.catch_warnings():
-                        # Suppress websockets deprecation warnings until the fix is available
-                        warnings.filterwarnings("ignore", category=DeprecationWarning)
-                        if timeout:
-                            response_raw = yield from asyncio.wait_for(
-                                websocket.recv(), timeout=timeout)
+        while current_retry_attempt <= retries:
+            try:
+                websocket = yield from self._connect(url)
+                # Read messages from the server until the connection is closed or
+                # a timeout has been reached.
+                while True:
+                    try:
+                        with warnings.catch_warnings():
+                            # Suppress websockets deprecation warnings until the fix is available
+                            warnings.filterwarnings("ignore", category=DeprecationWarning)
+                            if timeout:
+                                response_raw = yield from asyncio.wait_for(
+                                    websocket.recv(), timeout=timeout)
 
-                            # Decrease the timeout.
-                            timeout = original_timeout - (time.time() - start_time)
-                        else:
-                            response_raw = yield from websocket.recv()
-                    logger.debug('Received message from websocket: %s',
-                                 response_raw)
+                                # Decrease the timeout.
+                                timeout = original_timeout - (time.time() - start_time)
+                            else:
+                                response_raw = yield from websocket.recv()
+                        logger.debug('Received message from websocket: %s',
+                                     response_raw)
 
-                    response = WebsocketMessage.from_bytes(response_raw)
-                    last_status = response.data
+                        response = WebsocketMessage.from_bytes(response_raw)
+                        last_status = response.data
 
-                    job_status = response.data.get('status')
-                    if (job_status and
-                            ApiJobStatus(job_status) in API_JOB_FINAL_STATES):
-                        break
+                        # Successfully received and parsed a message, reset retry counter.
+                        current_retry_attempt = 0
 
-                    if timeout and timeout <= 0:
-                        raise WebsocketTimeoutError('Timeout reached')
+                        job_status = response.data.get('status')
+                        if (job_status and
+                                ApiJobStatus(job_status) in API_JOB_FINAL_STATES):
+                            return last_status
 
-                except futures.TimeoutError:
-                    # Timeout during our wait.
-                    raise WebsocketTimeoutError('Timeout reached') from None
-                except ConnectionClosed as ex:
-                    # From the API:
-                    # 4001: closed due to an internal errors
-                    # 4002: closed on purpose (no more updates to send)
-                    # 4003: closed due to job not found.
-                    message = 'Unexpected error'
-                    if ex.code == 4001:
-                        message = 'Internal server error'
-                    elif ex.code == 4002:
-                        break
-                    elif ex.code == 4003:
-                        attempt_retry = False  # No point in retrying.
-                        message = 'Job id not found'
+                        if timeout and timeout <= 0:
+                            raise WebsocketTimeoutError('Timeout reached')
 
-                    if attempt_retry:
-                        logger.warning('Connection with the websocket closed '
-                                       'unexpectedly: %s(status_code=%s). '
-                                       'Retrying get_job_status.', message, ex.code)
-                        attempt_retry = False  # Disallow further retries.
-                        websocket = yield from self._connect(url)
-                        continue
+                    except futures.TimeoutError:
+                        # Timeout during our wait.
+                        raise WebsocketTimeoutError('Timeout reached') from None
+                    except ConnectionClosed as ex:
+                        # From the API:
+                        # 4001: closed due to an internal errors
+                        # 4002: closed on purpose (no more updates to send)
+                        # 4003: closed due to job not found.
+                        message = 'Unexpected error'
+                        if ex.code == 4001:
+                            message = 'Internal server error'
+                        elif ex.code == 4002:
+                            return last_status
+                        elif ex.code == 4003:
+                            attempt_retry = False  # No point in retrying.
+                            message = 'Job id not found'
 
-                    raise WebsocketError('Connection with websocket closed '
-                                         'unexpectedly: {}'.format(message)) from ex
-        finally:
-            with warnings.catch_warnings():
-                # Suppress websockets deprecation warnings until the fix is available
-                warnings.filterwarnings("ignore", category=DeprecationWarning)
-                yield from websocket.close()
+                        raise WebsocketError('Connection with websocket closed '
+                                             'unexpectedly: {}(status_code={})'
+                                             .format(message, ex.code)) from ex
 
-        return last_status
+            except WebsocketError as ex:
+                logger.warning('%s', ex)
+
+                # Specific `WebsocketError` exceptions that are not worth retrying.
+                if isinstance(ex, (WebsocketTimeoutError, WebsocketIBMQProtocolError)):
+                    raise ex
+
+                current_retry_attempt = current_retry_attempt + 1
+                if (current_retry_attempt > retries) or (not attempt_retry):
+                    raise ex
+
+                # Sleep, and then `continue` with retrying.
+                backoff_time = self._backoff_time(backoff_factor, current_retry_attempt)
+                logger.warning('Retrying get_job_status after %s seconds: '
+                               'Attempt #%s.', backoff_time, current_retry_attempt)
+                yield from asyncio.sleep(backoff_time)  # Block asyncio loop for given backoff time.
+
+                continue  # Continues next iteration after `finally` block.
+
+            finally:
+                with warnings.catch_warnings():
+                    # Suppress websockets deprecation warnings until the fix is available
+                    warnings.filterwarnings("ignore", category=DeprecationWarning)
+                    if websocket is not None:
+                        yield from websocket.close()
+
+        # Execution should not reach here, sanity check.
+        raise WebsocketError('Failed to establish a websocket '
+                             'connection after {} retries.'.format(retries))
+
+    def _backoff_time(self, backoff_factor, current_retry_attempt):
+        """Calculate the backoff time to sleep for.
+
+        Exponential backoff time formula:
+                {backoff_factor} * (2 ** (current_retry_attempt - 1))
+
+        Args:
+            backoff_factor (float): backoff factor, in seconds.
+            current_retry_attempt (int): current number of retry
+                attempts.
+
+        Returns:
+            float: The number of seconds to sleep for, before a
+                retry attempt is made.
+        """
+        backoff_time = backoff_factor * (2 ** (current_retry_attempt - 1))
+        return min(self.BACKOFF_MAX, backoff_time)
 
     def _authentication_message(self) -> 'WebsocketMessage':
         """Return the message used for authenticating against the server."""
