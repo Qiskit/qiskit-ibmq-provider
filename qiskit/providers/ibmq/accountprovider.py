@@ -163,7 +163,10 @@ class AccountProvider(BaseProvider):
             'ibmq_20_austin': 'QS1_1'
             }
 
-    def __eq__(self, other: 'AccountProvider') -> bool:
+    def __eq__(  # type: ignore[overide]
+            self,
+            other: 'AccountProvider'
+    ) -> bool:
         return self.credentials == other.credentials
 
     def __repr__(self) -> str:
