@@ -20,6 +20,7 @@ from unittest import skip
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.api.clients import AccountClient, AuthClient
+from qiskit.providers.ibmq.api.session import RetrySession
 from qiskit.providers.ibmq.api.exceptions import ApiError, RequestsApiError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
@@ -168,7 +169,8 @@ class TestAccountClient(IBMQTestCase):
             api.job_status('foo')
 
         raised_exception = exception_context.exception
-        original_error = raised_exception.original_exception.response.json()['error']
+        original_error = raised_exception.original_exception.response.json()[
+            'error']
         self.assertIn(original_error['message'], raised_exception.message,
                       "Original error message not in raised exception")
         self.assertIn(original_error['code'], raised_exception.message,
@@ -292,7 +294,8 @@ class TestAccountClientJobs(IBMQTestCase):
         # Get the job, excluding a field.
         self.assertIn('shots', self.job)
         self.assertIn('backend', self.job)
-        job_excluded = self.client.job_get(self.job_id, excluded_fields=['backend'])
+        job_excluded = self.client.job_get(
+            self.job_id, excluded_fields=['backend'])
 
         # Ensure the response only excludes the specified field
         self.assertNotIn('backend', job_excluded)
@@ -357,7 +360,8 @@ class TestAccountClientJobs(IBMQTestCase):
 
     def test_list_jobs_statuses_filter(self):
         """Test listing job statuses with a filter."""
-        jobs_raw = self.client.list_jobs_statuses(extra_filter={'id': self.job_id})
+        jobs_raw = self.client.list_jobs_statuses(
+            extra_filter={'id': self.job_id})
         self.assertEqual(len(jobs_raw), 1)
         self.assertEqual(jobs_raw[0]['id'], self.job_id)
 
@@ -418,3 +422,14 @@ class TestAuthClient(IBMQTestCase):
                 self.assertTrue('hub' in user_hub
                                 and 'group' in user_hub
                                 and 'project' in user_hub)
+
+    def test_url_append(self):
+        """Test the url append function in the retry session client"""
+        path = '/Network'
+        session = RetrySession('http://api.quantum-computing.local/api')
+        url = session._url_append_path(path)
+        self.assertEqual(url, session.base_url + path)
+        session = RetrySession('http://api.quantum-computing.local/api?public=true')
+        url = session._url_append_path(path)
+        base_url_split = session.base_url.split(r'?', maxsplit=1)
+        self.assertEqual(url, base_url_split[0] + path + '?' + base_url_split[1])

@@ -156,7 +156,7 @@ class RetrySession(Session):
             params.update({'access_token': None})
             kwargs.update({'params': params})
         else:
-            final_url = self.base_url + url
+            final_url = self._url_append_path(url)
 
         try:
             response = super().request(method, final_url, **kwargs)
@@ -180,3 +180,20 @@ class RetrySession(Session):
             raise RequestsApiError(ex, message) from None
 
         return response
+
+    def _url_append_path(self, path):
+        """Appends a path to the base url taking care
+        to reposition any query parameters already in the base url.
+
+        Args:
+            path (string): A path string
+
+        Returns:
+            A URL string.
+
+        """
+        parts = self.base_url.split(r'?', maxsplit=1)
+        if len(parts) == 1:
+            return self.base_url + path
+
+        return "{}{}?{}".format(parts[0], path, parts[1])
