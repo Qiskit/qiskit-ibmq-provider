@@ -16,19 +16,16 @@
 """Tests for all IBMQ backends."""
 
 from datetime import datetime
-from unittest.mock import patch
-from requests.exceptions import Timeout
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
-from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator
+from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator, IBMQBackend
 from qiskit.qobj import QobjHeader
 from qiskit.test import slow_test, providers
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.models.backendproperties import BackendProperties
-from qiskit.providers.ibmq.api.session import Session
 
 from ..decorators import requires_qe_access
 from ..ibmqtestcase import IBMQTestCase
@@ -146,7 +143,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
 
     def test_aliases(self):
         """Test that display names of devices map the regular names."""
-        aliased_names = self.provider._aliased_backend_names()
+        aliased_names = self.provider.backends._aliased_backend_names()
 
         for display_name, backend_name in aliased_names.items():
             with self.subTest(display_name=display_name,
@@ -179,15 +176,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
 
     def test_provider_backends(self):
         """Test provider_backends have correct attributes."""
-        provider_backends = {back for back in dir(self.provider.provider_backends)
-                             if not back.startswith('_')}
-        backends = {back.name() for back in self.provider.backends()}
+        provider_backends = {back for back in dir(self.provider.backends)
+                             if isinstance(getattr(self.provider.backends, back), IBMQBackend)}
+        backends = {back.name() for back in self.provider._backends.values()}
         self.assertEqual(provider_backends, backends)
-
-    def test_provider_backends_timeout(self):
-        """Test provider_backends timeout."""
-        with patch.object(Session, "request", side_effect=Timeout):
-            provider_backends = {
-                back for back in dir(self.provider.provider_backends)
-                if not back.startswith('_')}
-        self.assertEqual(len(provider_backends), 0)

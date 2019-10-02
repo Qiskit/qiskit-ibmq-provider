@@ -242,7 +242,8 @@ class TestIBMQJob(JobTestCase):
         backend = least_busy(provider.backends())
 
         start_time = time.time()
-        job_list = backend.jobs(limit=5, skip=0)
+        job_list = provider.backends.jobs(backend_name=backend.name(),
+                                          limit=5, skip=0)
         self.log.info('time to get jobs: %0.3f s', time.time() - start_time)
         self.log.info('found %s jobs on backend %s',
                       len(job_list), backend.name())
@@ -260,7 +261,7 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
 
-        rjob = backend.retrieve_job(job.job_id())
+        rjob = provider.backends.retrieve_job(job.job_id())
         self.assertEqual(job.job_id(), rjob.job_id())
         self.assertEqual(job.result().get_counts(), rjob.result().get_counts())
         self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
@@ -269,6 +270,7 @@ class TestIBMQJob(JobTestCase):
     @requires_provider
     def test_retrieve_job_uses_appropriate_backend(self, provider):
         """Test that retrieved jobs come from their appropriate backend."""
+        # TODO: remove after backend.retrieve_job() deprecation
         simulator_backend = provider.get_backend('ibmq_qasm_simulator')
         backends = provider.backends(simulator=False)
         real_backend = least_busy(backends)
@@ -300,10 +302,7 @@ class TestIBMQJob(JobTestCase):
     @requires_provider
     def test_retrieve_job_error(self, provider):
         """Test retrieving an invalid job."""
-        backends = provider.backends(simulator=False)
-        backend = least_busy(backends)
-
-        self.assertRaises(IBMQBackendError, backend.retrieve_job, 'BAD_JOB_ID')
+        self.assertRaises(IBMQBackendError, provider.backends.retrieve_job, 'BAD_JOB_ID')
 
     @requires_provider
     def test_get_jobs_filter_job_status(self, provider):
@@ -316,7 +315,8 @@ class TestIBMQJob(JobTestCase):
             warnings.filterwarnings('ignore',
                                     category=DeprecationWarning,
                                     module='qiskit.providers.ibmq.ibmqbackend')
-            job_list = backend.jobs(limit=5, skip=0, status=JobStatus.DONE)
+            job_list = provider.backends.jobs(backend_name=backend.name(),
+                                              limit=5, skip=0, status=JobStatus.DONE)
 
         for job in job_list:
             self.assertTrue(job.status() is JobStatus.DONE)
@@ -339,7 +339,8 @@ class TestIBMQJob(JobTestCase):
             warnings.filterwarnings('ignore',
                                     category=DeprecationWarning,
                                     module='qiskit.providers.ibmq.ibmqbackend')
-            job_list = backend.jobs(limit=5, skip=0, db_filter=my_filter)
+            job_list = provider.backends.jobs(backend_name=backend.name(),
+                                              limit=5, skip=0, db_filter=my_filter)
 
         for i, job in enumerate(job_list):
             self.log.info('match #%d', i)
@@ -354,7 +355,8 @@ class TestIBMQJob(JobTestCase):
         backend = least_busy(backends)
 
         my_filter = {'creationDate': {'lt': '2017-01-01T00:00:00.00'}}
-        job_list = backend.jobs(limit=5, db_filter=my_filter)
+        job_list = provider.backends.jobs(backend_name=backend.name(),
+                                          limit=5, db_filter=my_filter)
         self.log.info('found %s matching jobs', len(job_list))
         for i, job in enumerate(job_list):
             self.log.info('match #%d: %s', i, job.creation_date)
@@ -446,7 +448,8 @@ class TestIBMQJob(JobTestCase):
         job_name = str(time.time()).replace('.', '')
         job_id = backend.run(qobj, job_name=job_name).job_id()
 
-        job_list = backend.jobs(limit=1, job_name=job_name)
+        job_list = provider.backends.jobs(backend_name=backend.name(),
+                                          limit=1, job_name=job_name)
         self.assertEqual(len(job_list), 1)
         self.assertEqual(job_id, job_list[0].job_id())
 
@@ -465,7 +468,8 @@ class TestIBMQJob(JobTestCase):
         for _ in range(2):
             job_ids.add(backend.run(qobj, job_name=job_name).job_id())
 
-        retrieved_jobs = backend.jobs(job_name=job_name)
+        retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
+                                                job_name=job_name)
         self.assertEqual(len(retrieved_jobs), 2)
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)
