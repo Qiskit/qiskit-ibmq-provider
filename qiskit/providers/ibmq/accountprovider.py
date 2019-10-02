@@ -15,20 +15,19 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
-from typing import Dict, List, Callable, Optional, Any
+from typing import Dict, List, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
-from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api.clients import AccountClient
 from .circuits import CircuitsManager
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
-from .providerbackends import ProviderBackends
+from .ibmqbackendservice import IBMQBackendService
 
 
 logger = logging.getLogger(__name__)
@@ -60,49 +59,16 @@ class AccountProvider(BaseProvider):
                                   **credentials.connection_parameters())
         self.circuits = CircuitsManager(self._api)
 
-        # Initialize the internal list of backends, lazy-loading it on first
-        # access.
-        self._backends = None  # type: Optional[Dict[str, IBMQBackend]]
+        # Initialize the internal list of backends.
+        self._backends = self._discover_remote_backends()
+        self.backends = IBMQBackendService(self)
 
-        self.provider_backends = ProviderBackends(self)
-
-    def backends(
-            self,
-            name: Optional[str] = None,
-            filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
-            timeout: Optional[float] = None,
-            **kwargs: Any
-    ) -> List[IBMQBackend]:
-        """Return all backends accessible via this provider, subject to optional filtering.
-
-        Args:
-            name (str): backend name to filter by
-            filters (callable): more complex filters, such as lambda functions
-                e.g. AccountProvider.backends(
-                    filters=lambda b: b.configuration['n_qubits'] > 5)
-            timeout (float or None): number of seconds to wait for backend discovery.
-            kwargs: simple filters specifying a true/false criteria in the
-                backend configuration or backend status or provider credentials
-                e.g. AccountProvider.backends(n_qubits=5, operational=True)
-
-        Returns:
-            list[IBMQBackend]: list of backends available that match the filter
-        """
-        # pylint: disable=arguments-differ
-        if self._backends is None:
-            self._backends = self._discover_remote_backends(timeout=timeout)
-
-        backends = self._backends.values()
-
-        # Special handling of the `name` parameter, to support alias
-        # resolution.
-        if name:
-            aliases = self._aliased_backend_names()
-            aliases.update(self._deprecated_backend_names())
-            name = aliases.get(name, name)
-            kwargs['backend_name'] = name
-
-        return filter_backends(backends, filters=filters, **kwargs)
+    def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
+        # pylint: disable=method-hidden
+        # This method is only for faking the subclassing of `BaseProvider`, as
+        # `.backends()` is an abstract method. Upon initialization, it is
+        # replaced by a `IBMQBackendService` instance.
+        pass
 
     def _discover_remote_backends(self, timeout: Optional[float] = None) -> Dict[str, IBMQBackend]:
         """Return the remote backends available.
@@ -143,25 +109,6 @@ class AccountProvider(BaseProvider):
                     ex)
 
         return ret
-
-    @staticmethod
-    def _deprecated_backend_names() -> Dict[str, str]:
-        """Returns deprecated backend names."""
-        return {
-            'ibmqx_qasm_simulator': 'ibmq_qasm_simulator',
-            'ibmqx_hpc_qasm_simulator': 'ibmq_qasm_simulator',
-            'real': 'ibmqx1'
-            }
-
-    @staticmethod
-    def _aliased_backend_names() -> Dict[str, str]:
-        """Returns aliased backend names."""
-        return {
-            'ibmq_5_yorktown': 'ibmqx2',
-            'ibmq_5_tenerife': 'ibmqx4',
-            'ibmq_16_rueschlikon': 'ibmqx5',
-            'ibmq_20_austin': 'QS1_1'
-            }
 
     def __eq__(self, other: 'AccountProvider') -> bool:
         return self.credentials == other.credentials
