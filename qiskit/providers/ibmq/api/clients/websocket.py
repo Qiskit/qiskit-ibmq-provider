@@ -213,7 +213,7 @@ class WebsocketClient(BaseClient):
                             else:
                                 response_raw = yield from websocket.recv()
                         logger.debug('Received message from websocket: %s',
-                                 response_raw)
+                                     response_raw)
 
                         response = WebsocketMessage.from_bytes(response_raw)
                         last_status = response.data
