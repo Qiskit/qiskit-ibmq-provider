@@ -375,9 +375,9 @@ class IBMQSimulator(IBMQBackend):
     def run(
             self,
             qobj: Qobj,
+            job_name: Optional[str] = None,
             backend_options: Optional[Dict] = None,
             noise_model: Any = None,
-            job_name: Optional[str] = None
     ) -> IBMQJob:
         """Run qobj asynchronously.
 
