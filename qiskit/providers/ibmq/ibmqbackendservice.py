@@ -20,7 +20,7 @@ import warnings
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
 
-from qiskit.providers import JobStatus
+from qiskit.providers import JobStatus  # type: ignore[attr-defined]
 from qiskit.providers.providerutils import filter_backends
 
 from .api.exceptions import ApiError
