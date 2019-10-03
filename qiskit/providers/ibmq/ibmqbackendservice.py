@@ -177,7 +177,7 @@ class IBMQBackendService(SimpleNamespace):
             else:
                 raise IBMQBackendValueError('unrecognized value for "status" keyword '
                                             'in job filter')
-            api_filter.update(this_filter)
+            api_filter.update(this_filter)  # type: ignore[assignment]
 
         if job_name:
             api_filter['name'] = job_name
