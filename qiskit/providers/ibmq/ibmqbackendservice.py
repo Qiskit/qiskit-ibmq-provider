@@ -14,21 +14,21 @@
 
 """Backend namespace for an IBM Quantum Experience account provider."""
 
-import re
-import keyword
 import warnings
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
 
-from qiskit.providers import JobStatus  # type: ignore[attr-defined]
+from qiskit.providers import JobStatus
 from qiskit.providers.providerutils import filter_backends
+from qiskit.validation.exceptions import ModelValidationError
 from qiskit.providers.ibmq import accountprovider
 
 from .api.exceptions import ApiError
-from .apiconstants import ApiJobStatus, ApiJobKind
+from .apiconstants import ApiJobStatus
 from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .ibmqbackend import IBMQBackend
 from .job import IBMQJob
+from .utils import to_python_identifier
 
 
 class IBMQBackendService(SimpleNamespace):
@@ -47,18 +47,11 @@ class IBMQBackendService(SimpleNamespace):
 
     def _discover_backends(self) -> None:
         """Discovers the remote backends if not already known."""
-        # Python identifiers can only contain alphanumeric characters
-        # and underscores and cannot start with a digit.
-        pattern = re.compile(r"\W|^(?=\d)", re.ASCII)
         for backend in self._provider._backends.values():
-            backend_name = backend.name()
+            backend_name = to_python_identifier(backend.name())
 
-            # Make it a valid identifier
-            if not backend_name.isidentifier():
-                backend_name = re.sub(pattern, '_', backend_name)
-
-            # Append _ if is keyword or duplicate
-            while keyword.iskeyword(backend_name) or backend_name in self.__dict__:
+            # Append _ if duplicate
+            while backend_name in self.__dict__:
                 backend_name += '_'
 
             setattr(self, backend_name, backend)
@@ -212,25 +205,28 @@ class IBMQBackendService(SimpleNamespace):
 
         job_list = []
         for job_info in job_responses:
-            kwargs = {}
-            try:
-                job_kind = ApiJobKind(job_info.get('kind', None))
-            except ValueError:
+            if 'kind' not in job_info:
                 # Discard pre-qobj jobs.
-                break
+                continue
 
-            kwargs['use_websockets'] = True
-            if job_kind == ApiJobKind.QOBJECT_STORAGE:
-                kwargs['use_object_storage'] = True
-
+            job_id = job_info.get('id', "")
+            # TODO Extract job name from job_info instead of passing it in
+            # once it becomes available from the API.
             # TODO: first argument for IBMQJob should be a Backend, but as
             # `job_responses` comes from `jobs_statuses`, the backend name
             # might not be present. Revise during IBMQJob refactoring.
+            job_info.update({
+                'backend_obj': None,
+                'api': self._provider._api,
+                'name': job_name
+            })
+            try:
+                job = IBMQJob.from_dict(job_info)
+            except ModelValidationError:
+                warnings.warn('Discarding job "{}" because it contains invalid data.'
+                              .format(job_id))
+                continue
 
-            job = IBMQJob(None, job_info.get('id'), self._provider._api,
-                          creation_date=job_info.get('creationDate'),
-                          api_status=job_info.get('status'),
-                          **kwargs)
             job_list.append(job)
 
         return job_list
@@ -256,15 +252,7 @@ class IBMQBackendService(SimpleNamespace):
                                        .format(job_id, job_info['error']))
 
             # Check for pre-qobj jobs.
-            kwargs = {}
-            try:
-                job_kind = ApiJobKind(job_info.get('kind', None))
-
-                kwargs['use_websockets'] = True
-                if job_kind == ApiJobKind.QOBJECT_STORAGE:
-                    kwargs['use_object_storage'] = True
-
-            except ValueError:
+            if 'kind' not in job_info:
                 warnings.warn('The result of job {} is in a no longer supported format. '
                               'Please send the job using Qiskit 0.8+.'.format(job_id),
                               DeprecationWarning)
@@ -276,11 +264,15 @@ class IBMQBackendService(SimpleNamespace):
 
         # TODO: in a similar way to IBMQJob creation during `.jobs()`,
         # temporarily leaving the first argument as `None`.
-
-        job = IBMQJob(None, job_info.get('id'), self._provider._api,
-                      creation_date=job_info.get('creationDate'),
-                      api_status=job_info.get('status'),
-                      **kwargs)
+        job_info.update({
+            'backend_obj': None,
+            'api': self._provider._api
+        })
+        try:
+            job = IBMQJob.from_dict(job_info)
+        except ModelValidationError as ex:
+            raise IBMQBackendError('Failed to get job "{}": {}'
+                                   .format(job_id, str(ex)))
 
         return job
 

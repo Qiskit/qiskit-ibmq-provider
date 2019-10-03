@@ -87,12 +87,10 @@ class CircuitsManager:
 
         # Create a Job for the circuit.
         try:
-            job = CircuitJob(backend=None,
-                             job_id=response['id'],
+            job = CircuitJob(backend_obj=None,
+                             id=response['id'],
                              api=self.client,
-                             creation_date=response['creationDate'],
-                             api_status=response['status'],
-                             use_websockets=True)
+                             **response)
         except Exception as ex:
             raise CircuitResultError(str(ex))
 

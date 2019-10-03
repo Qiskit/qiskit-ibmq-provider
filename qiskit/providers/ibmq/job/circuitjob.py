@@ -18,6 +18,7 @@ from qiskit.providers import JobError  # type: ignore[attr-defined]
 from qiskit.providers.jobstatus import JOB_FINAL_STATES
 
 from .ibmqjob import IBMQJob
+from ..apiconstants import ApiJobStatus
 
 
 class CircuitJob(IBMQJob):
@@ -36,17 +37,14 @@ class CircuitJob(IBMQJob):
     """
 
     def status(self):
-        # Implies self._job_id is None
-        if self._future_captured_exception is not None:
-            raise JobError(str(self._future_captured_exception))
-
-        if self._job_id is None or self._status in JOB_FINAL_STATES:
+        if self._status in JOB_FINAL_STATES:
             return self._status
 
         try:
             # TODO: See result values
             api_response = self._api.circuit_job_status(self._job_id)
-            self._update_status(api_response)
+            self._update_status_position(ApiJobStatus(api_response['status']),
+                                         api_response.get('infoQueue', None))
         # pylint: disable=broad-except
         except Exception as err:
             raise JobError(str(err))

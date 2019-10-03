@@ -63,7 +63,8 @@ class TestAccountClient(IBMQTestCase):
         """Helper for instantiating an AccountClient."""
         return AccountClient(self.access_token,
                              self.provider.credentials.url,
-                             self.provider.credentials.websockets_url)
+                             self.provider.credentials.websockets_url,
+                             use_websockets=True)
 
     def test_job_submit(self):
         """Test job_submit, running a job against a simulator."""
@@ -75,7 +76,7 @@ class TestAccountClient(IBMQTestCase):
 
         # Run the job through the AccountClient directly.
         api = backend._api
-        job = api.job_submit(backend_name, qobj.to_dict())
+        job = api.job_submit(backend_name, qobj.to_dict(), use_object_storage=False)
 
         self.assertIn('status', job)
         self.assertIsNotNone(job['status'])
@@ -92,7 +93,7 @@ class TestAccountClient(IBMQTestCase):
         api = backend._api
 
         try:
-            job = api.job_submit_object_storage(backend_name, qobj.to_dict())
+            job = api._job_submit_object_storage(backend_name, qobj.to_dict())
         except RequestsApiError as ex:
             response = ex.original_exception.response
             if response.status_code == 400:
@@ -112,11 +113,11 @@ class TestAccountClient(IBMQTestCase):
         self.assertEqual(job['kind'], 'q-object-external-storage')
 
         # Wait for completion.
-        api.job_final_status_websocket(job_id)
+        api.job_final_status(job_id)
 
         # Fetch results and qobj via object storage.
-        result = api.job_result_object_storage(job_id)
-        qobj_downloaded = api.job_download_qobj_object_storage(job_id)
+        result = api._job_result_object_storage(job_id)
+        qobj_downloaded = api._job_download_qobj_object_storage(job_id)
 
         self.assertEqual(qobj_downloaded, qobj.to_dict())
         self.assertEqual(result['status'], 'COMPLETED')
@@ -241,8 +242,9 @@ class TestAccountClientJobs(IBMQTestCase):
         backend_name = 'ibmq_qasm_simulator'
         backend = cls.provider.get_backend(backend_name)
         cls.client = backend._api
-        cls.job = cls.client.job_submit(backend_name,
-                                        cls._get_qobj(backend).to_dict())
+        cls.job = cls.client.job_submit(
+            backend_name, cls._get_qobj(backend).to_dict(),
+            use_object_storage=backend.configuration().allow_object_storage)
         cls.job_id = cls.job['id']
 
     @classmethod
@@ -329,13 +331,13 @@ class TestAccountClientJobs(IBMQTestCase):
 
     def test_job_final_status_websocket(self):
         """Test getting a job's final status via websocket."""
-        response = self.client.job_final_status_websocket(self.job_id)
+        response = self.client._job_final_status_websocket(self.job_id)
         self.assertIn('status', response)
 
     def test_job_properties(self):
         """Test getting job properties."""
         # Force the job to finish.
-        _ = self.client.job_final_status_websocket(self.job_id)
+        _ = self.client._job_final_status_websocket(self.job_id)
 
         response = self.client.job_properties(self.job_id)
         # Since the job is against a simulator, it will have no properties.
