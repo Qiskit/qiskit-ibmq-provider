@@ -141,9 +141,9 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Properties used for caching.
         self._cancelled = False
-        self._api_error_msg = None
+        self._api_error_msg = None  # type: str
         self._result = None
-        self._queue_position = None
+        self._queue_position = None  # type: int
 
     def qobj(self) -> Qobj:
         """Return the Qobj for this job.
