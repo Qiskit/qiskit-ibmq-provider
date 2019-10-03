@@ -98,10 +98,10 @@ class IBMQJob(BaseModel, BaseJob):
     def __init__(self,
                  backend_obj: BaseBackend,
                  api: AccountClient,
-                 id: str,
-                 creationDate: str,
+                 _job_id: str,
+                 creation_date: str,
                  kind: ApiJobKind,
-                 status: ApiJobStatus,
+                 _status: ApiJobStatus,
                  **kwargs: Any) -> None:
         """IBMQJob init function.
 
@@ -115,35 +115,19 @@ class IBMQJob(BaseModel, BaseJob):
             kwargs (dict): additional job attributes.
         """
         # pylint: disable=redefined-builtin
+        BaseModel.__init__(self, _job_id=_job_id, creation_date=creation_date,
+                           kind=kind, _status=_status, **kwargs)
+        BaseJob.__init__(self, backend_obj, self.job_id())
 
         # Model attributes.
         self._api = api
-        self._creation_date = creationDate
-        self._job_kind = kind
-        self._use_object_storage = (self._job_kind == ApiJobKind.QOBJECT_STORAGE)
-        self._update_status_position(status, kwargs.pop('infoQueue', None))
-
-        # Optional attributes. These are specifically defined to allow
-        # auto-completion in an IDE.
-        self.shots = kwargs.pop('shots', None)
-        self.time_per_step = kwargs.pop('timePerStep', None)
-        self.name = kwargs.pop('name', None)
-        self._api_backend = kwargs.pop('backend', None)
-
-        # Get Qobj from either the API result (qObject) or user input (qobj)
-        qobj_dict = kwargs.pop('qObject', None)
-        self._qobj = Qobj.from_dict(qobj_dict) if qobj_dict else kwargs.pop('qobj', None)
-
-        # Additional attributes, converted to Python identifiers
-        new_kwargs = {to_python_identifier(key): value for key, value in kwargs.items()}
-        BaseModel.__init__(self, **new_kwargs)
-        BaseJob.__init__(self, backend_obj, id)
+        self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
+        self._queue_position = None
+        self._update_status_position(_status, kwargs.pop('infoQueue', None))
 
         # Properties used for caching.
         self._cancelled = False
         self._api_error_msg = None
-        self._result = None
-        self._queue_position = None
 
     def qobj(self) -> Qobj:
         """Return the Qobj for this job.

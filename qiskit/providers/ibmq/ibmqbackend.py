@@ -110,9 +110,10 @@ class IBMQBackend(BaseBackend):
                 the job.
         """
         try:
+            qobj_dict = qobj.to_dict()
             submit_info = self._api.job_submit(
                 backend_name=self.name(),
-                qobj_dict=qobj.to_dict(),
+                qobj_dict=qobj_dict,
                 use_object_storage=getattr(self.configuration(), 'allow_object_storage', False),
                 job_name=job_name)
         except ApiError as ex:
@@ -127,7 +128,7 @@ class IBMQBackend(BaseBackend):
         submit_info.update({
             'backend_obj': self,
             'api': self._api,
-            'qobj': qobj
+            '_qobj': qobj_dict
         })
         try:
             job = IBMQJob.from_dict(submit_info)

@@ -31,9 +31,9 @@ from ..utils.validators import EnumType
 # Mapping between 'API job field': 'IBMQJob attribute', for solving name
 # clashes.
 FIELDS_MAP = {
-    'id': 'job_id',
+    'id': '_job_id',
     'status': '_status',
-    'backend': 'backend_info',
+    'backend': '_backend_info',
     'qObject': 'qobj',
     'qObjectResult': '_result'
 }
@@ -56,19 +56,21 @@ class JobResponseSchema(BaseSchema):
 
     # Required properties.
     creation_date = String(required=True)
-    id = String(required=True)
     kind = EnumType(required=True, enum_cls=ApiJobKind)
-    status = EnumType(required=True, enum_cls=ApiJobStatus)
+    _job_id = String(required=True)
+    _status = EnumType(required=True, enum_cls=ApiJobStatus)
+
+    # Optional properties with a default value.
+    name = String(missing=None)
+    shots = Integer(validate=Range(min=0), missing=None)
+    time_per_step = Dict(keys=String, values=String, missing=None)
+    _result = Nested(ResultSchema, missing=None)
+    _qobj = Nested(QobjSchema, missing=None)
 
     # Optional properties
-    allow_object_storage = Bool(required=False)
-    backend = Nested(JobResponseBackendSchema, required=False)
-    error = String(required=False)
-    name = String(required=False)
-    _result = Nested(ResultSchema, required=False)
-    _qobj = Nested(QobjSchema, required=False)
-    shots = Integer(required=False, validate=Range(min=0))
-    time_per_step = Dict(required=False, keys=String, values=String)
+    _backend_info = Nested(JobResponseBackendSchema)
+    allow_object_storage = Bool()
+    error = String()
 
     @pre_load
     def preprocess_field_names(self, data):
