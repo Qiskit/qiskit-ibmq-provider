@@ -56,3 +56,24 @@ class JobResponseSchema(BaseSchema):
     qObject = Nested(QobjSchema, required=False)
     shots = Integer(required=False, validate=Range(min=0))
     timePerStep = Dict(required=False, keys=String, values=String)
+
+    @pre_load
+    def preprocess_field_names(self, data):
+        """Pre-process the job response fields.
+
+        Rename selected fields of the job response due to name clashes, and
+        convert from camel-case the rest of the fields.
+
+        TODO: when updating to terra 0.10, check if changes related to
+        marshmallow 3 allow to use directly `data_key`, as in 0.9 terra
+        duplicates the unknown keys.
+        """
+        rename_map = {}
+        for field_name in data:
+            if field_name in FIELDS_MAP:
+                rename_map[field_name] = FIELDS_MAP[field_name]
+            else:
+                rename_map[field_name] = to_python_identifier(field_name)
+
+        for old_name, new_name in rename_map.items():
+            data[new_name] = data.pop(old_name)
