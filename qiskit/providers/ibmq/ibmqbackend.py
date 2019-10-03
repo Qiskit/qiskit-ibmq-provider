@@ -27,7 +27,7 @@ from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration)
 from qiskit.validation.exceptions import ModelValidationError
 from qiskit.tools.events.pubsub import Publisher
-from qiskit.providers.ibmq import accountprovider
+from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .api.clients import AccountClient
 from .api.exceptions import ApiError

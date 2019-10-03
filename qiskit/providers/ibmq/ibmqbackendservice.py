@@ -21,7 +21,7 @@ from types import SimpleNamespace
 from qiskit.providers import JobStatus  # type: ignore[attr-defined]
 from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
-from qiskit.providers.ibmq import accountprovider
+from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .api.exceptions import ApiError
 from .apiconstants import ApiJobStatus

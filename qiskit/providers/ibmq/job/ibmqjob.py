@@ -21,7 +21,8 @@ import logging
 from typing import Dict, Optional, Tuple, Any
 import warnings
 
-from qiskit.providers import BaseJob, JobError, JobTimeoutError, BaseBackend  # type: ignore[attr-defined]
+from qiskit.providers import (BaseJob, JobError,  # type: ignore[attr-defined]
+                              JobTimeoutError, BaseBackend)
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj
