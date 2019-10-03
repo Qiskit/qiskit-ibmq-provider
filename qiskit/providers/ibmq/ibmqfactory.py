@@ -298,7 +298,7 @@ class IBMQFactory:
             filters.append(lambda hgp: hgp.project == project)
 
         providers = [provider for key, provider in self._providers.items()
-                     if all(f(key) for f in filters)]
+                     if all(f(key) for f in filters)]  # type: ignore[arg-type]
 
         return providers
 
