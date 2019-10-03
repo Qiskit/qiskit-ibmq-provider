@@ -59,3 +59,13 @@ class WebsocketTimeoutError(WebsocketError):
 class AuthenticationLicenseError(ApiError):
     """Exception due to user not accepting latest license agreement via web."""
     pass
+
+
+class ApiIBMQProtocolError(ApiError):
+    """Exception related to IBM Q API protocol error."""
+    pass
+
+
+class UserTimeoutExceededError(ApiError):
+    """Exceptions related to exceeding user defined timeout."""
+    pass

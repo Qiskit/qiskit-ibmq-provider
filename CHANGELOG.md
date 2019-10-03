@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog].
 ### Added
 
 - Added support for autocompleting backend names. A user can now use 
-  `AccountProvider.provider_backends.<tab>` to see a list of backend
+  `AccountProvider.backends.<tab>` to see a list of backend
   names (\#303).
 
 ### Changed
@@ -40,6 +40,9 @@ The format is based on [Keep a Changelog].
   maximum number of retries to attempt in case a websocket connection 
   is closed. `backoff_factor` is used to calculate the amount of time to 
   wait between retries (\#341).
+- `IBMQJob` constructor signature has changed (\#329).
+- `IBMQJob.submit()` can no longer be called directly, and jobs are expected
+  to be submitted via `IBMQBackend.run()` (\#329).
 
 ### Removed
 

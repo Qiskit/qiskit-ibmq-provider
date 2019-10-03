@@ -53,6 +53,8 @@ class TestIBMQBackends(IBMQTestCase):
         result_local = self._local_backend.run(qobj).result()
 
         for remote_backend in self._remote_backends:
+            if not remote_backend.status().operational:
+                continue
             with self.subTest(backend=remote_backend):
                 result_remote = remote_backend.run(qobj).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),

@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2017, 2019.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -21,13 +21,17 @@ from typing import Dict, List, Union, Optional, Any
 from datetime import datetime  # pylint: disable=unused-import
 from marshmallow import ValidationError
 
-from qiskit.qobj import Qobj
+from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.providers import BaseBackend, JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration)
+from qiskit.validation.exceptions import ModelValidationError
+from qiskit.tools.events.pubsub import Publisher
 
 from .api.clients import AccountClient
+from .api.exceptions import ApiError
 from .credentials import Credentials
+from .exceptions import IBMQBackendError
 from .job import IBMQJob
 from .utils import update_qobj_config
 
@@ -76,19 +80,61 @@ class IBMQBackend(BaseBackend):
 
         Returns:
             IBMQJob: an instance derived from BaseJob
+
+        Raises:
+            SchemaValidationError: If the job validation fails.
+            IBMQBackendError: If an unexpected error occurred while submitting
+                the job.
         """
         # pylint: disable=arguments-differ
-        use_websockets = True
-        if self._credentials.proxies:
-            # Disable using websockets through proxies.
-            use_websockets = False
-        job = IBMQJob(
-            self, None, self._api,
-            qobj=qobj,
-            use_object_storage=getattr(self.configuration(), 'allow_object_storage', False),
-            use_websockets=use_websockets)
-        job.submit(job_name=job_name)
 
+        validate_qobj_against_schema(qobj)
+        return self._submit_job(qobj, job_name)
+
+    def _submit_job(self, qobj: Qobj, job_name: Optional[str] = None) -> IBMQJob:
+        """Submit qobj job to IBM-Q.
+        Args:
+            qobj (Qobj): description of job.
+            job_name (str): custom name to be assigned to the job. This job
+                name can subsequently be used as a filter in the
+                ``jobs()`` function call. Job names do not need to be unique.
+
+        Returns:
+            IBMQJob: an instance derived from BaseJob
+
+        Events:
+            ibmq.job.start: The job has started.
+
+        Raises:
+            IBMQBackendError: If an unexpected error occurred while submitting
+                the job.
+        """
+        try:
+            submit_info = self._api.job_submit(
+                backend_name=self.name(),
+                qobj_dict=qobj.to_dict(),
+                use_object_storage=getattr(self.configuration(), 'allow_object_storage', False),
+                job_name=job_name)
+        except ApiError as ex:
+            raise IBMQBackendError('Error submitting job: {}'.format(str(ex)))
+
+        # Error in the job after submission:
+        # Transition to the `ERROR` final state.
+        if 'error' in submit_info:
+            raise IBMQBackendError('Error submitting job: {}'.format(str(submit_info['error'])))
+
+        # Submission success.
+        submit_info.update({
+            'backend_obj': self,
+            'api': self._api,
+            'qobj': qobj
+        })
+        try:
+            job = IBMQJob.from_dict(submit_info)
+        except ModelValidationError as err:
+            raise IBMQBackendError('Unexpected return value from the server when '
+                                   'submitting job: {}'.format(str(err)))
+        Publisher().publish("ibmq.job.start", job)
         return job
 
     def properties(
