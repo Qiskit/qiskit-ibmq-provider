@@ -25,6 +25,7 @@ from qiskit.qobj import Qobj
 from qiskit.providers import BaseBackend, JobStatus  # type: ignore[attr-defined]
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration)
+from qiskit.providers.ibmq import accountprovider
 
 from .api.clients import AccountClient
 from .credentials import Credentials
@@ -40,7 +41,7 @@ class IBMQBackend(BaseBackend):
     def __init__(
             self,
             configuration: BackendConfiguration,
-            provider: 'AccountProvider',
+            provider: 'accountprovider.AccountProvider',
             credentials: Credentials,
             api: AccountClient
     ) -> None:

@@ -22,6 +22,7 @@ from types import SimpleNamespace
 
 from qiskit.providers import JobStatus  # type: ignore[attr-defined]
 from qiskit.providers.providerutils import filter_backends
+from qiskit.providers.ibmq import accountprovider
 
 from .api.exceptions import ApiError
 from .apiconstants import ApiJobStatus, ApiJobKind
@@ -33,7 +34,7 @@ from .job import IBMQJob
 class IBMQBackendService(SimpleNamespace):
     """Backend namespace for an IBM Quantum Experience account provider."""
 
-    def __init__(self, provider: 'AccountProvider') -> None:
+    def __init__(self, provider: 'accountprovider.AccountProvider') -> None:
         """Creates a new IBMQBackendService instance.
 
         Args:
