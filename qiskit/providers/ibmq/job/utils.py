@@ -19,7 +19,7 @@ from typing import Dict, List, Tuple, Any, Optional
 from contextlib import contextmanager
 
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers import JobError
+from qiskit.providers import JobError  # type: ignore[attr-defined]
 
 from ..apiconstants import ApiJobStatus
 from ..api.exceptions import ApiError
