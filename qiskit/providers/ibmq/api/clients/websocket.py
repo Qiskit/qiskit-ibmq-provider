@@ -18,7 +18,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import Dict, Generator, Union, Optional, Any
+from typing import Dict, Generator, Optional, Any
 from concurrent import futures
 from ssl import SSLError
 import warnings
