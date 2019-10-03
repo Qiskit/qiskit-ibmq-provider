@@ -54,7 +54,7 @@ class WebsocketMessage:
     def __init__(
             self,
             type_: str,
-            data: Optional[Union[str, Dict[str, str]]] = None
+            data: Optional[Dict[str, str]] = None
     ) -> None:
         self.type_ = type_
         self.data = data
@@ -63,7 +63,11 @@ class WebsocketMessage:
         """Return a json representation of the message."""
         parsed_dict = {'type': self.type_}
         if self.data:
-            parsed_dict['data'] = self.data
+            if 'access_token' in self.data:
+                # Authentication Message: Set `data` to access token (expected by API).
+                parsed_dict['data'] = self.data['access_token']
+            else:
+                parsed_dict['data'] = self.data  # type: ignore[assignment]
         return json.dumps(parsed_dict)
 
     @classmethod
@@ -301,4 +305,4 @@ class WebsocketClient(BaseClient):
     def _authentication_message(self) -> 'WebsocketMessage':
         """Return the message used for authenticating against the server."""
         return WebsocketMessage(type_='authentication',
-                                data=self.access_token)
+                                data={'access_token': self.access_token})
