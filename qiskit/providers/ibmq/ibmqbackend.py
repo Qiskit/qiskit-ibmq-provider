@@ -102,6 +102,9 @@ class IBMQBackend(BaseBackend):
         Returns:
             IBMQJob: an instance derived from BaseJob
 
+        Events:
+            ibmq.job.start: The job has started.
+
         Raises:
             IBMQBackendError: If an unexpected error occurred while submitting
                 the job.

@@ -76,8 +76,7 @@ class AccountClient(BaseClient):
         Returns:
             list[dict]: a list of backends.
         """
-        b = self.client_api.backends(timeout=timeout)
-        return b
+        return self.client_api.backends(timeout=timeout)
 
     def backend_status(self, backend_name: str) -> Dict[str, Any]:
         """Return the status of a backend.

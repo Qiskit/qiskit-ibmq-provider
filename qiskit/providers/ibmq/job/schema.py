@@ -14,7 +14,6 @@
 
 """Schemas for job."""
 
-from marshmallow import post_load
 from marshmallow.fields import Bool
 from marshmallow.validate import Range
 
@@ -25,15 +24,6 @@ from qiskit.result.models import ResultSchema
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
 
 from ..utils.validators import EnumType
-
-
-class JobResponseBaseSchema(BaseSchema):
-    """Base schema for job responses."""
-
-    @post_load
-    def make_model(self, data):
-        """Overwrite parent method to return a dict instead of a model instance."""
-        return data
 
 
 # Helper schemas.
