@@ -15,7 +15,7 @@
 """Utilities for working with IBM Q Jobs."""
 
 from datetime import datetime, timezone
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Tuple, Generator, Optional, Any
 from contextlib import contextmanager
 
 from qiskit.providers.jobstatus import JobStatus
@@ -99,7 +99,7 @@ def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
 
 
 @contextmanager
-def api_to_job_error():
+def api_to_job_error() -> Generator[None, None, None]:
     """Convert an ApiError to a JobError."""
     try:
         yield
