@@ -49,7 +49,7 @@ def discover_credentials(
 
             {credentials_unique_id: Credentials}
     """
-    credentials = OrderedDict()
+    credentials = OrderedDict()  # type: ignore[var-annotated]
 
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.

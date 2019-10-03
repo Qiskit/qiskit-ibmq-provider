@@ -80,7 +80,7 @@ class AccountProvider(BaseProvider):
             dict[str:IBMQBackend]: a dict of the remote backend instances,
                 keyed by backend name.
         """
-        ret = OrderedDict()
+        ret = OrderedDict()  # type: ignore[var-annotated]
         configs_list = self._api.list_backends(timeout=timeout)
         for raw_config in configs_list:
             # Make sure the raw_config is of proper type

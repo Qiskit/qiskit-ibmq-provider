@@ -35,7 +35,7 @@ class AuthClient(BaseClient):
         """
         self.api_token = api_token
         self.auth_url = auth_url
-        self._service_urls = {}
+        self._service_urls = {}  # type: ignore[var-annotated]
 
         self.client_auth = Auth(RetrySession(auth_url, **request_kwargs))
         self.client_api = self._init_service_clients(**request_kwargs)
@@ -113,7 +113,7 @@ class AuthClient(BaseClient):
         """
         response = self.client_api.hubs()
 
-        hubs = []
+        hubs = []  # type: ignore[var-annotated]
         for hub in response:
             hub_name = hub['name']
             for group_name, group in hub['groups'].items():

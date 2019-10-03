@@ -22,7 +22,7 @@ from collections import OrderedDict
 
 from .accountprovider import AccountProvider
 from .api.clients import AuthClient, VersionClient
-from .credentials import Credentials, discover_credentials
+from .credentials import Credentials, HubGroupProject, discover_credentials
 from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    remove_credentials,
                                    store_credentials)
@@ -43,7 +43,7 @@ class IBMQFactory:
 
     def __init__(self) -> None:
         self._credentials = None  # type: Optional[Credentials]
-        self._providers = OrderedDict()
+        self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
 
     # Account management functions.
 

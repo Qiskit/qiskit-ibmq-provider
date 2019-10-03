@@ -56,7 +56,7 @@ def read_credentials_from_qiskitrc(
         raise CredentialsError(str(ex))
 
     # Build the credentials dictionary.
-    credentials_dict = OrderedDict()
+    credentials_dict = OrderedDict()  # type: ignore[var-annotated]
     for name in config_parser.sections():
         single_credentials = dict(config_parser.items(name))
         # Individually convert keys to their right types.

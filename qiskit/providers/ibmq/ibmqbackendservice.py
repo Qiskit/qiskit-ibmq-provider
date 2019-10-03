@@ -188,7 +188,7 @@ class IBMQBackendService(SimpleNamespace):
 
         # Retrieve the requested number of jobs, using pagination. The API
         # might limit the number of jobs per request.
-        job_responses = []
+        job_responses = []  # type: ignore[var-annotated]
         current_page_limit = limit
 
         while True:
