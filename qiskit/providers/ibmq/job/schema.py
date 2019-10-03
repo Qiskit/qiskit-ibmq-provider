@@ -17,13 +17,14 @@
 from marshmallow import post_load
 from marshmallow.fields import Bool
 from marshmallow.validate import Range
-from marshmallow.exceptions import ValidationError
 
-from qiskit.validation import BaseSchema, ModelTypeValidator
+from qiskit.validation import BaseSchema
 from qiskit.validation.fields import Dict, String, Nested, Integer
 from qiskit.qobj.qobj import QobjSchema
 from qiskit.result.models import ResultSchema
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
+
+from ..utils.validators import EnumType
 
 
 class JobResponseBaseSchema(BaseSchema):
@@ -35,29 +36,6 @@ class JobResponseBaseSchema(BaseSchema):
         return data
 
 
-class EnumType(ModelTypeValidator):
-    """Field for enums."""
-
-    def __init__(self, enum_cls, *args, **kwargs):
-        self.valid_types = (str, enum_cls)
-        self.valid_strs = [elem.value for elem in enum_cls]
-        self.enum_cls = enum_cls
-        super().__init__(*args, **kwargs)
-
-    def _serialize(self, value, attr, obj):
-        return value.value
-
-    def _deserialize(self, value, attr, data):
-        return self.enum_cls(value)
-
-    def check_type(self, value, attr, data):
-        # Quick check of the type
-        super().check_type(value, attr, data)
-
-        if (isinstance(value, str)) and (value not in self.valid_strs):
-            raise ValidationError("{} is {}, which is not an expected value.".format(attr, value))
-
-
 # Helper schemas.
 
 class JobResponseBackendSchema(BaseSchema):
@@ -65,14 +43,6 @@ class JobResponseBackendSchema(BaseSchema):
 
     # Required properties
     name = String(required=True)
-
-
-class InfoQueueResponseSchema(BaseSchema):
-    """Nested schema for JobStatusResponseSchema"""
-
-    # Optional properties
-    position = Integer(required=False, missing=0)
-    status = String(required=False)
 
 
 # Endpoint schemas.
@@ -96,10 +66,3 @@ class JobResponseSchema(BaseSchema):
     qObject = Nested(QobjSchema, required=False)
     shots = Integer(required=False, validate=Range(min=0))
     timePerStep = Dict(required=False, keys=String, values=String)
-
-
-class JobStatusResponseSchema(BaseSchema):
-    """Schema for JobStatusResponse."""
-    status = EnumType(required=True, enum_cls=ApiJobStatus)
-    # Optional properties
-    infoQueue = Nested(InfoQueueResponseSchema, required=False)

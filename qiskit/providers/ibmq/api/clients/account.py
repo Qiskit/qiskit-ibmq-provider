@@ -25,7 +25,6 @@ from datetime import datetime  # pylint: disable=unused-import
 from marshmallow.exceptions import ValidationError
 
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
-from qiskit.providers.ibmq.job.schema import JobStatusResponseSchema
 
 from ..exceptions import (RequestsApiError, WebsocketError,
                           WebsocketTimeoutError, ApiIBMQProtocolError, UserTimeoutExceededError)
@@ -33,6 +32,7 @@ from ..rest import Api
 from ..session import RetrySession
 from .base import BaseClient
 from .websocket import WebsocketClient
+from .schema import JobStatusResponseSchema
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,8 @@ class AccountClient(BaseClient):
         Returns:
             list[dict]: a list of backends.
         """
-        return self.client_api.backends(timeout=timeout)
+        b = self.client_api.backends(timeout=timeout)
+        return b
 
     def backend_status(self, backend_name: str) -> Dict[str, Any]:
         """Return the status of a backend.

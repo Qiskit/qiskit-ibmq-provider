@@ -30,7 +30,6 @@ from qiskit.tools.events.pubsub import Publisher
 
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
-from .apiconstants import ApiJobStatus
 from .credentials import Credentials
 from .exceptions import IBMQBackendError
 from .job import IBMQJob
