@@ -66,7 +66,8 @@ def read_credentials_from_qiskitrc(
             single_credentials['proxies'] = literal_eval(
                 single_credentials['proxies'])
         if 'verify' in single_credentials.keys():
-            single_credentials['verify'] = bool(single_credentials['verify'])
+            single_credentials['verify'] = bool(  # type: ignore[assignment]
+                single_credentials['verify'])
         new_credentials = Credentials(**single_credentials)
         credentials_dict[new_credentials.unique_id()] = new_credentials
 
