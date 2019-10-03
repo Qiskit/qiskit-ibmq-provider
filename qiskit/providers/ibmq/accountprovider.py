@@ -61,7 +61,7 @@ class AccountProvider(BaseProvider):
 
         # Initialize the internal list of backends.
         self._backends = self._discover_remote_backends()
-        self.backends = IBMQBackendService(self)
+        self.backends = IBMQBackendService(self)  # type: ignore[assignment]
 
     def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
         # pylint: disable=method-hidden
