@@ -14,27 +14,50 @@
 
 """Custom fields for validation."""
 
+import enum
+from typing import Dict, Union, Any
 from marshmallow.exceptions import ValidationError
 
-from qiskit.validation import ModelTypeValidator
+from qiskit.validation import ModelTypeValidator, BaseModel
+from ..apiconstants import ApiJobKind, ApiJobStatus
 
 
 class EnumType(ModelTypeValidator):
     """Field for enums."""
 
-    def __init__(self, enum_cls, *args, **kwargs):
+    def __init__(
+            self,
+            enum_cls: enum.EnumMeta,
+            *args: Any,
+            **kwargs: Any
+    ) -> None:
         self.valid_types = (str, enum_cls)
-        self.valid_strs = [elem.value for elem in enum_cls]
+        self.valid_strs = [elem.value for elem in enum_cls]  # type: ignore[var-annotated]
         self.enum_cls = enum_cls
         super().__init__(*args, **kwargs)
 
-    def _serialize(self, value, attr, obj):
+    def _serialize(
+            self,
+            value: Union[ApiJobKind, ApiJobStatus],
+            attr: str,
+            obj: BaseModel
+    ) -> str:
         return value.value
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(
+            self,
+            value: Union[ApiJobKind, ApiJobStatus],
+            attr: str,
+            data: Dict[str, Any]
+    ) -> enum.EnumMeta:
         return self.enum_cls(value)
 
-    def check_type(self, value, attr, data):
+    def check_type(
+            self,
+            value: Union[str, ApiJobKind, ApiJobStatus],
+            attr: str,
+            data: Dict[str, Any]
+    ) -> None:
         # Quick check of the type
         super().check_type(value, attr, data)
 
