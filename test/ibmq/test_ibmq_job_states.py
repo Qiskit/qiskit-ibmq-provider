@@ -18,13 +18,16 @@
 
 import time
 from contextlib import suppress
+from unittest import mock
 
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
-from qiskit.test.mock import new_fake_qobj, FakeRueschlikon
+from qiskit.test.mock import new_fake_qobj
 from qiskit.providers import JobError, JobTimeoutError
-from qiskit.providers.ibmq.api.exceptions import ApiError
-from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+from qiskit.providers.ibmq.api.exceptions import (ApiError, UserTimeoutExceededError,
+                                                  ApiIBMQProtocolError)
+from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
 from ..jobtestcase import JobTestCase
 
@@ -94,6 +97,14 @@ VALID_QOBJ_RESPONSE = {
             }
         ]
     }
+}
+
+
+VALID_JOB_RESPONSE = {
+    'id': 'TEST_ID',
+    'kind': 'q-object',
+    'status': 'CREATING',
+    'creationDate': '2019-01-01T13:15:58.425972'
 }
 
 
@@ -185,16 +196,8 @@ class TestIBMQJobStates(JobTestCase):
         self.assertEqual(job.status(), JobStatus.RUNNING)
 
     def test_status_flow_for_unable_to_run_valid_qobj(self):
-        """Contrary to other tests, this one is expected to fail even for a
-        non-job-related issue. If the API fails while sending a job, we don't
-        get an id so we can not query for the job status."""
-        job = self.run_with_api(UnavailableRunAPI())
-
-        with self.assertRaises(JobError):
-            self.wait_for_initialization(job)
-
-        with self.assertRaises(JobError):
-            job.status()
+        with self.assertRaises(IBMQBackendError):
+            self.run_with_api(UnavailableRunAPI())
 
     def test_api_throws_temporarily_but_job_is_finished(self):
         job = self.run_with_api(ThrowingNonJobRelatedErrorAPI(errors_before_success=2))
@@ -211,11 +214,6 @@ class TestIBMQJobStates(JobTestCase):
 
         # Now the API gets fixed and doesn't throw anymore.
         self.assertEqual(job.status(), JobStatus.DONE)
-
-    def test_status_flow_for_unable_to_run_invalid_qobj(self):
-        job = self.run_with_api(RejectingJobAPI())
-        self.wait_for_initialization(job)
-        self.assertEqual(job.status(), JobStatus.ERROR)
 
     def test_error_while_running_job(self):
         job = self.run_with_api(ErrorWhileRunningAPI())
@@ -241,7 +239,7 @@ class TestIBMQJobStates(JobTestCase):
     def test_errored_result(self):
         job = self.run_with_api(ThrowingGetJobAPI())
         self.wait_for_initialization(job)
-        with self.assertRaises(ApiError):
+        with self.assertRaises(JobError):
             job.result()
 
     def test_completed_result(self):
@@ -293,8 +291,6 @@ class TestIBMQJobStates(JobTestCase):
             job.result(timeout=0.2)
 
     def test_only_final_states_cause_detailed_request(self):
-        from unittest import mock
-
         # The state ERROR_CREATING_JOB is only handled when running the job,
         # and not while checking the status, so it is not tested.
         all_state_apis = {'COMPLETED': NonQueuedAPI,
@@ -320,15 +316,14 @@ class TestIBMQJobStates(JobTestCase):
 
     def run_with_api(self, api):
         """Creates a new ``IBMQJob`` running with the provided API object."""
-        backend = FakeRueschlikon()
+        backend = IBMQBackend(mock.Mock(), mock.Mock(), mock.Mock(), api=api)
         self._current_api = api
-        self._current_qjob = IBMQJob(backend, None, api, qobj=new_fake_qobj())
-        self._current_qjob.submit()
+        self._current_qjob = backend.run(qobj=new_fake_qobj())
         return self._current_qjob
 
 
 def _auto_progress_api(api, interval=0.2):
-    """Progress a `BaseFakeAPI` instacn every `interval` seconds until reaching
+    """Progress a `BaseFakeAPI` instance every `interval` seconds until reaching
     the final state.
     """
     with suppress(BaseFakeAPI.NoMoreStatesError):
@@ -365,18 +360,38 @@ class BaseFakeAPI:
     def job_status(self, job_id):
         summary_fields = ['status', 'error', 'infoQueue']
         complete_response = self.job_get(job_id)
+        try:
+            ApiJobStatus(complete_response['status'])
+        except ValueError:
+            raise ApiIBMQProtocolError
         return {key: value for key, value in complete_response.items()
                 if key in summary_fields}
 
     def job_submit(self, *_args, **_kwargs):
         time.sleep(0.2)
-        return {'id': 'TEST_ID'}
+        return VALID_JOB_RESPONSE
 
     def job_cancel(self, job_id, *_args, **_kwargs):
         if not job_id:
             return {'status': 'Error', 'error': 'Job ID not specified'}
         return {} if self._can_cancel else {
             'error': 'testing fake API can not cancel'}
+
+    def job_final_status(self, job_id, *_args, **_kwargs):
+        start_time = time.time()
+        status_response = self.job_status(job_id)
+        while ApiJobStatus(status_response['status']) not in API_JOB_FINAL_STATES:
+            elapsed_time = time.time() - start_time
+            timeout = _kwargs.get('timeout', None)
+            if timeout is not None and elapsed_time >= timeout:
+                raise UserTimeoutExceededError(
+                    'Timeout while waiting for job {}'.format(job_id))
+            time.sleep(5)
+            status_response = self.job_status(job_id)
+        return status_response
+
+    def job_result(self, job_id, *_args, **_kwargs):
+        return self.job_get(job_id)['qObjectResult']
 
     def progress(self):
         if self._state == len(self._job_status) - 1:

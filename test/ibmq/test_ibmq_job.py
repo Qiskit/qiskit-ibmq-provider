@@ -29,9 +29,12 @@ from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
+from qiskit.validation.exceptions import ModelValidationError
+from qiskit.validation.jsonschema.exceptions import SchemaValidationError
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider, requires_qe_access
+from ..decorators import (requires_provider, requires_qe_access,
+                          run_on_staging)
 
 
 class TestIBMQJob(JobTestCase):
@@ -98,7 +101,6 @@ class TestIBMQJob(JobTestCase):
         # guaranteed to have them.
         _ = job.properties()
 
-    @slow_test
     @requires_provider
     def test_run_async_simulator(self, provider):
         """Test running in a simulator asynchronously."""
@@ -151,12 +153,10 @@ class TestIBMQJob(JobTestCase):
         job_ids = [job.job_id() for job in job_array]
         self.assertEqual(sorted(job_ids), sorted(list(set(job_ids))))
 
-    @slow_test
-    @requires_provider
+    @run_on_staging
     def test_run_async_device(self, provider):
         """Test running in a real device asynchronously."""
-        backends = provider.backends(simulator=False)
-        backend = least_busy(backends)
+        backend = least_busy(provider.backends(simulator=False))
 
         self.log.info('submitting to backend %s', backend.name())
         num_qubits = 5
@@ -202,13 +202,10 @@ class TestIBMQJob(JobTestCase):
         job_ids = [job.job_id() for job in job_array]
         self.assertEqual(sorted(job_ids), sorted(list(set(job_ids))))
 
-    @slow_test
-    @requires_provider
+    @run_on_staging
     def test_cancel(self, provider):
         """Test job cancelation."""
-        backend_name = ('ibmq_boeblingen'
-                        if self.using_ibmq_credentials else 'ibmqx2')
-        backend = provider.get_backend(backend_name)
+        backend = least_busy(provider.backends(simulator=False))
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
@@ -394,8 +391,7 @@ class TestIBMQJob(JobTestCase):
         message = job_sim.error_message()
         self.assertTrue(message)
 
-    @slow_test
-    @requires_provider
+    @run_on_staging
     def test_running_job_properties(self, provider):
         """Test fetching properties of a running job."""
         backend = least_busy(provider.backends(simulator=False))
@@ -473,6 +469,20 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(len(retrieved_jobs), 2)
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)
+
+    def test_bad_job_schema(self):
+        """Test creating a job with bad job schema."""
+        bad_job_info = {'id': 'TEST_ID'}
+        with self.assertRaises(ModelValidationError):
+            IBMQJob.from_dict(bad_job_info)
+
+    @requires_provider
+    def test_invalid_qobj(self, provider):
+        """Test submitting an invalid qobj."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        delattr(qobj, 'qobj_id')
+        self.assertRaises(SchemaValidationError, backend.run, qobj)
 
 
 def _bell_circuit():
