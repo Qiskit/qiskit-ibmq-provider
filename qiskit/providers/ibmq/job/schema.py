@@ -15,12 +15,11 @@
 """Schemas for job."""
 
 from marshmallow import pre_load
-from marshmallow.fields import Bool
-from marshmallow.validate import Range
+from marshmallow.validate import Range, OneOf
 
 from qiskit.providers.ibmq.utils import to_python_identifier
 from qiskit.validation import BaseSchema
-from qiskit.validation.fields import Dict, String, Nested, Integer
+from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime
 from qiskit.qobj.qobj import QobjSchema
 from qiskit.result.models import ResultSchema
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
@@ -55,7 +54,7 @@ class JobResponseSchema(BaseSchema):
     # pylint: disable=invalid-name
 
     # Required properties.
-    creation_date = String(required=True)
+    creation_date = DateTime(required=True)
     kind = EnumType(required=True, enum_cls=ApiJobKind)
     _job_id = String(required=True)
     _status = EnumType(required=True, enum_cls=ApiJobStatus)
@@ -69,7 +68,7 @@ class JobResponseSchema(BaseSchema):
 
     # Optional properties
     _backend_info = Nested(JobResponseBackendSchema)
-    allow_object_storage = Bool()
+    allow_object_storage = Boolean()
     error = String()
 
     @pre_load
