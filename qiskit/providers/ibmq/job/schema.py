@@ -14,9 +14,11 @@
 
 """Schemas for job."""
 
+from marshmallow import pre_load
 from marshmallow.fields import Bool
 from marshmallow.validate import Range
 
+from qiskit.providers.ibmq.utils import to_python_identifier
 from qiskit.validation import BaseSchema
 from qiskit.validation.fields import Dict, String, Nested, Integer
 from qiskit.qobj.qobj import QobjSchema
@@ -24,6 +26,17 @@ from qiskit.result.models import ResultSchema
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
 
 from ..utils.validators import EnumType
+
+
+# Mapping between 'API job field': 'IBMQJob attribute', for solving name
+# clashes.
+FIELDS_MAP = {
+    'id': 'job_id',
+    'status': '_status',
+    'backend': 'backend_info',
+    'qObject': 'qobj',
+    'qObjectResult': '_result'
+}
 
 
 # Helper schemas.
@@ -42,20 +55,20 @@ class JobResponseSchema(BaseSchema):
     # pylint: disable=invalid-name
 
     # Required properties.
-    creationDate = String(required=True)
+    creation_date = String(required=True)
     id = String(required=True)
     kind = EnumType(required=True, enum_cls=ApiJobKind)
     status = EnumType(required=True, enum_cls=ApiJobStatus)
 
     # Optional properties
-    allowObjectStorage = Bool(required=False)
+    allow_object_storage = Bool(required=False)
     backend = Nested(JobResponseBackendSchema, required=False)
     error = String(required=False)
     name = String(required=False)
-    qObjectResult = Nested(ResultSchema, required=False)
-    qObject = Nested(QobjSchema, required=False)
+    _result = Nested(ResultSchema, required=False)
+    _qobj = Nested(QobjSchema, required=False)
     shots = Integer(required=False, validate=Range(min=0))
-    timePerStep = Dict(required=False, keys=String, values=String)
+    time_per_step = Dict(required=False, keys=String, values=String)
 
     @pre_load
     def preprocess_field_names(self, data):
