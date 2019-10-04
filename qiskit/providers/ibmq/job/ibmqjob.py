@@ -129,6 +129,7 @@ class IBMQJob(BaseModel, BaseJob):
         self.time_per_step = kwargs.pop('timePerStep', None)
         self.name = kwargs.pop('name', None)
         self._api_backend = kwargs.pop('backend', None)
+        self._job_error_msg = kwargs.pop('error', None)
 
         # Get Qobj from either the API result (qObject) or user input (qobj)
         qobj_dict = kwargs.pop('qObject', None)
@@ -141,7 +142,6 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Properties used for caching.
         self._cancelled = False
-        self._job_error_msg = None
         self._result = None
         self._queue_position = None
 
@@ -306,12 +306,11 @@ class IBMQJob(BaseModel, BaseJob):
             result_response = self._get_result_response()
             if 'error' in result_response and not result_response['results']:
                 # If no individual error given.
-                self._job_error_msg = 'Job failed: {}'.format(
-                    result_response['error']['message'])
+                self._job_error_msg = result_response['error']['message']
             else:
                 self._job_error_msg = build_error_report(result_response['results'])
 
-        return self._job_error_msg
+        return "Error running job. " + self._job_error_msg
 
     def queue_position(self) -> Optional[int]:
         """Return the position in the server queue.
