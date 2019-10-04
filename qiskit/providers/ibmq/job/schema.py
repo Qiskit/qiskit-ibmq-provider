@@ -24,7 +24,7 @@ from qiskit.qobj.qobj import QobjSchema
 from qiskit.result.models import ResultSchema
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
 
-from ..utils.validators import EnumType
+from ..utils.fields import Enum
 
 
 # Mapping between 'API job field': 'IBMQJob attribute', for solving name
@@ -55,9 +55,9 @@ class JobResponseSchema(BaseSchema):
 
     # Required properties.
     creation_date = DateTime(required=True)
-    kind = EnumType(required=True, enum_cls=ApiJobKind)
+    kind = Enum(required=True, enum_cls=ApiJobKind)
     _job_id = String(required=True)
-    _status = EnumType(required=True, enum_cls=ApiJobStatus)
+    _status = Enum(required=True, enum_cls=ApiJobStatus)
 
     # Optional properties with a default value.
     name = String(missing=None)
