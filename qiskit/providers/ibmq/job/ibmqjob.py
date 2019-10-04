@@ -307,7 +307,8 @@ class IBMQJob(BaseModel, BaseJob):
             result_response = self._get_result_response()
             if 'error' in result_response and not result_response['results']:
                 # If no individual error given.
-                self._job_error_report = 'Job failed: {}'.format(result_response['error']['message'])
+                self._job_error_report = 'Job failed: {}'.format(
+                    result_response['error']['message'])
             else:
                 self._job_error_report = build_error_report(result_response['results'])
 
