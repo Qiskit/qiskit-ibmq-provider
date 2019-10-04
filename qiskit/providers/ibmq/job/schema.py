@@ -19,8 +19,6 @@ from marshmallow.validate import Range
 
 from qiskit.validation import BaseSchema
 from qiskit.validation.fields import Dict, String, Nested, Integer
-from qiskit.qobj.qobj import QobjSchema
-from qiskit.result.models import ResultSchema
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
 
 from ..utils.validators import EnumType
@@ -52,7 +50,7 @@ class JobResponseSchema(BaseSchema):
     backend = Nested(JobResponseBackendSchema, required=False)
     error = String(required=False)
     name = String(required=False)
-    qObjectResult = Nested(ResultSchema, required=False)
-    qObject = Nested(QobjSchema, required=False)
+    qObjectResult = Dict(required=False)
+    qObject = Dict(required=False)
     shots = Integer(required=False, validate=Range(min=0))
     timePerStep = Dict(required=False, keys=String, values=String)
