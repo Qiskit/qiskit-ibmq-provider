@@ -34,7 +34,7 @@ FIELDS_MAP = {
     'id': '_job_id',
     'status': '_status',
     'backend': '_backend_info',
-    'qObject': 'qobj',
+    'qObject': '_qobj',
     'qObjectResult': '_result'
 }
 
