@@ -51,7 +51,22 @@ class JobResponseBackendSchema(BaseSchema):
 # Endpoint schemas.
 
 class JobResponseSchema(BaseSchema):
-    """Schema for GET Jobs, GET Jobs/{id}, and POST Jobs responses."""
+    """Schema for IBMQJob.
+
+    Schema for an `IBMQJob`. The following conventions are in use in order to
+    provide enough flexibility in regards to attributes:
+
+    * the "Required properties" reflect attributes that will always be present
+      in the model.
+    * the "Optional properties with a default value" reflect attributes that
+      are always present in the model, but might contain uninitialized values
+      depending on the state of the job.
+    * some properties are prepended by underscore due to name clashes and extra
+      constraints in the IBMQJob class (for example, existing IBMQJob methods
+      that have the same name as a response field).
+
+    The schema is used for GET Jobs, GET Jobs/{id}, and POST Jobs responses.
+    """
     # pylint: disable=invalid-name
 
     # Required properties.
