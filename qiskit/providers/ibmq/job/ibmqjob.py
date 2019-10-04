@@ -34,7 +34,6 @@ from ..api.exceptions import ApiError, UserTimeoutExceededError
 from .schema import JobResponseSchema
 from .utils import (build_error_report, is_job_queued,
                     api_status_to_job_status, api_to_job_error)
-from ..utils.utils import to_python_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -108,11 +107,12 @@ class IBMQJob(BaseModel, BaseJob):
         Args:
             backend_obj (BaseBackend): the backend instance used to run this job.
             api (AccountClient): object for connecting to the API.
-            id (str or None): job ID of this job.
-            creationDate (str): job creation date.
+            _job_id (str or None): job ID of this job.
+            creation_date (str): job creation date.
             kind (ApiJobKind): job kind.
-            status (ApiJobStatus): job status.
-            kwargs (dict): additional job attributes.
+            _status (ApiJobStatus): job status.
+            kwargs (dict): additional job attributes, that will be added as
+                instance members.
         """
         # pylint: disable=redefined-builtin
         BaseModel.__init__(self, _job_id=_job_id, creation_date=creation_date,
@@ -141,6 +141,7 @@ class IBMQJob(BaseModel, BaseJob):
         Raises:
             JobError: if there was some unexpected failure in the server.
         """
+        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if not self._qobj:
             # Populate self._qobj_dict by retrieving the results.
             # TODO Can qobj be retrieved if the job was cancelled?
@@ -201,6 +202,7 @@ class IBMQJob(BaseModel, BaseJob):
                 there was some unexpected failure in the server.
         """
         # pylint: disable=arguments-differ
+        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
 
         if not self._wait_for_completion(timeout=timeout, wait=wait,
                                          required_status=(JobStatus.DONE,)):
