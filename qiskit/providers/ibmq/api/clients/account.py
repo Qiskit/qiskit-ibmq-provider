@@ -17,22 +17,19 @@
 import asyncio
 import logging
 import time
-import pprint
 
 from typing import List, Dict, Any, Optional
 # Disabled unused-import because datetime is used only for type hints.
 from datetime import datetime  # pylint: disable=unused-import
-from marshmallow.exceptions import ValidationError
 
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
 
 from ..exceptions import (RequestsApiError, WebsocketError,
-                          WebsocketTimeoutError, ApiIBMQProtocolError, UserTimeoutExceededError)
+                          WebsocketTimeoutError, UserTimeoutExceededError)
 from ..rest import Api
 from ..session import RetrySession
 from .base import BaseClient
 from .websocket import WebsocketClient
-from .schema import JobStatusResponseSchema
 
 logger = logging.getLogger(__name__)
 
@@ -331,14 +328,7 @@ class AccountClient(BaseClient):
         Raises:
             ApiIBMQProtocolError: if an unexpected result is received from the server.
         """
-        api_response = self.client_api.job(job_id).status()
-        try:
-            # Validate the response.
-            JobStatusResponseSchema().validate(api_response)
-        except ValidationError as err:
-            raise ApiIBMQProtocolError('Unrecognized answer from server: \n{}'.format(
-                pprint.pformat(api_response))) from err
-        return api_response
+        return self.client_api.job(job_id).status()
 
     def job_final_status(
             self,
@@ -384,13 +374,6 @@ class AccountClient(BaseClient):
         if not status_response:
             # Use traditional http requests if websocket not available or failed.
             status_response = self._job_final_status_polling(job_id, timeout, wait)
-
-        try:
-            # Validate the response.
-            JobStatusResponseSchema().validate(status_response)
-        except ValidationError as err:
-            raise ApiIBMQProtocolError('Unrecognized answer from server: \n{}'.format(
-                pprint.pformat(status_response))) from err
 
         return status_response
 
