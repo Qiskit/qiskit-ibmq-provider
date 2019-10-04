@@ -141,8 +141,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Properties used for caching.
         self._cancelled = False
-        self._job_error_report = None
-        self._job_error_message = None
+        self._job_error_msg = None
         self._result = None
         self._queue_position = None
 
@@ -303,16 +302,16 @@ class IBMQJob(BaseModel, BaseJob):
         if not self._wait_for_completion(required_status=(JobStatus.ERROR,)):
             return None
 
-        if not self._job_error_report:
+        if not self._job_error_msg:
             result_response = self._get_result_response()
             if 'error' in result_response and not result_response['results']:
                 # If no individual error given.
-                self._job_error_report = 'Job failed: {}'.format(
+                self._job_error_msg = 'Job failed: {}'.format(
                     result_response['error']['message'])
             else:
-                self._job_error_report = build_error_report(result_response['results'])
+                self._job_error_msg = build_error_report(result_response['results'])
 
-        return self._job_error_report
+        return self._job_error_msg
 
     def queue_position(self) -> Optional[int]:
         """Return the position in the server queue.
