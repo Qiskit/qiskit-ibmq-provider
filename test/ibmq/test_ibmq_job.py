@@ -200,10 +200,12 @@ class TestIBMQJob(JobTestCase):
         job_ids = [job.job_id() for job in job_array]
         self.assertEqual(sorted(job_ids), sorted(list(set(job_ids))))
 
-    @run_on_staging
+    @requires_provider
     def test_cancel(self, provider):
-        """Test job cancelation."""
-        backend = least_busy(provider.backends(simulator=False))
+        """Test job cancellation."""
+        # Find the most busy backend
+        backend = max([b for b in provider.backends() if b.status().operational],
+                      key=lambda b: b.status().pending_jobs)
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
