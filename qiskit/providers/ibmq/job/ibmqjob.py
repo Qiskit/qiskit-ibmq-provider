@@ -224,6 +224,7 @@ class IBMQJob(BaseModel, BaseJob):
             raise JobError('Unable to retrieve job result. Job status '
                            'is {}'.format(str(self._status)))
 
+        # TODO Can look for and reuse qObjectResult
         if not self._result:
             with api_to_job_error():
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
