@@ -18,7 +18,8 @@ import asyncio
 import json
 import logging
 import time
-from typing import Dict, Generator, Optional, Any
+from abc import ABC, abstractmethod
+from typing import Dict, Union, Generator, Optional, Any
 from concurrent import futures
 from ssl import SSLError
 import warnings
@@ -44,34 +45,54 @@ logger = logging.getLogger(__name__)
 nest_asyncio.apply()
 
 
-class WebsocketMessage:
+class WebsocketMessage(ABC):
     """Container for a message sent or received via websockets.
 
     Attributes:
         type_ (str): message type.
-        data (dict): message data.
     """
-    def __init__(
-            self,
-            type_: str,
-            data: Optional[Dict[str, str]] = None
-    ) -> None:
+    def __init__(self, type_: str) -> None:
         self.type_ = type_
-        self.data = data
+
+    @abstractmethod
+    def get_data(self) -> Union[str, Dict[str, str]]:
+        """Getter for "abstract" attribute subclasses define, `data`."""
+        pass
 
     def as_json(self) -> str:
-        """Return a json representation of the message."""
-        parsed_dict = {'type': self.type_}
-        if self.data:
-            if 'access_token' in self.data:
-                # Authentication Message: Set `data` to access token (expected by API).
-                parsed_dict['data'] = self.data['access_token']
-            else:
-                parsed_dict['data'] = self.data  # type: ignore[assignment]
-        return json.dumps(parsed_dict)
+        """Return a json representation of the message.
+
+        Attributes:
+            data (str): data type.
+        """
+        return json.dumps({'type': self.type_, 'data': self.get_data()})
+
+
+class WebsocketAuthenticationMessage(WebsocketMessage):
+    """Container for an authentication message sent via websockets.
+
+    Attributes:
+        data (str): data type.
+    """
+    def __init__(self, type_: str, data: str) -> None:
+        super().__init__(type_)
+        self.data = data
+
+    def get_data(self) -> str:
+        return self.data
+
+
+class WebsocketResponseMethod(WebsocketMessage):
+    """Container for a message received via websockets."""
+    def __init__(self, type_: str, data: Dict[str, str]) -> None:
+        super().__init__(type_)
+        self.data = data
+
+    def get_data(self) -> Dict[str, str]:
+        return self.data
 
     @classmethod
-    def from_bytes(cls, json_string: bytes) -> 'WebsocketMessage':
+    def from_bytes(cls, json_string: bytes) -> 'WebsocketResponseMethod':
         """Instantiate a message from a bytes response."""
         try:
             parsed_dict = json.loads(json_string.decode('utf8'))
@@ -135,7 +156,7 @@ class WebsocketClient(BaseClient):
                 # Verify that the server acknowledged our authentication.
                 auth_response_raw = yield from websocket.recv()
 
-            auth_response = WebsocketMessage.from_bytes(auth_response_raw)
+            auth_response = WebsocketResponseMethod.from_bytes(auth_response_raw)
 
             if auth_response.type_ != 'authenticated':
                 raise WebsocketIBMQProtocolError(auth_response.as_json())
@@ -219,7 +240,7 @@ class WebsocketClient(BaseClient):
                         logger.debug('Received message from websocket: %s',
                                      response_raw)
 
-                        response = WebsocketMessage.from_bytes(response_raw)
+                        response = WebsocketResponseMethod.from_bytes(response_raw)
                         last_status = response.data
 
                         # Successfully received and parsed a message, reset retry counter.
@@ -245,7 +266,7 @@ class WebsocketClient(BaseClient):
                         if ex.code == 4001:
                             message = 'Internal server error'
                         elif ex.code == 4002:
-                            return last_status
+                            return last_status  # type: ignore[return-value]
                         elif ex.code == 4003:
                             attempt_retry = False  # No point in retrying.
                             message = 'Job id not found'
@@ -302,7 +323,7 @@ class WebsocketClient(BaseClient):
         backoff_time = backoff_factor * (2 ** (current_retry_attempt - 1))
         return min(self.BACKOFF_MAX, backoff_time)
 
-    def _authentication_message(self) -> 'WebsocketMessage':
+    def _authentication_message(self) -> 'WebsocketAuthenticationMessage':
         """Return the message used for authenticating against the server."""
-        return WebsocketMessage(type_='authentication',
-                                data={'access_token': self.access_token})
+        return WebsocketAuthenticationMessage(type_='authentication',
+                                              data=self.access_token)
