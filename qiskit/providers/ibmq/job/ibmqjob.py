@@ -21,6 +21,8 @@ import logging
 from typing import Dict, Optional, Tuple, Any
 import warnings
 
+from marshmallow import ValidationError
+
 from qiskit.providers import BaseJob, JobError, JobTimeoutError, BaseBackend
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
@@ -352,6 +354,22 @@ class IBMQJob(BaseModel, BaseJob):
         """Obtain the latest job information from the API."""
         with api_to_job_error():
             api_response = self._api.job_get(self.job_id())
+
+        saved_model_cls = JobResponseSchema.model_cls
+        try:
+            # Load response into a dictionary
+            JobResponseSchema.model_cls = dict
+            data, _ = self.schema.load(api_response)
+            BaseModel.__init__(self, **data)
+
+            # Model attributes.
+            self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
+            self._update_status_position(data.pop('_status'),
+                                         data.pop('infoQueue', None))
+        except ValidationError as ex:
+            raise JobError("Unexpected return value received from the server.") from ex
+        finally:
+            JobResponseSchema.model_cls = saved_model_cls
 
     def _wait_for_completion(
             self,
