@@ -34,7 +34,6 @@ from ..api.exceptions import ApiError, UserTimeoutExceededError
 from .schema import JobResponseSchema
 from .utils import (build_error_report, is_job_queued,
                     api_status_to_job_status, api_to_job_error)
-from ..utils.utils import to_python_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -96,54 +95,40 @@ class IBMQJob(BaseModel, BaseJob):
     """
 
     def __init__(self,
-                 backend_obj: BaseBackend,
+                 _backend: BaseBackend,
                  api: AccountClient,
-                 id: str,
-                 creationDate: str,
+                 _job_id: str,
+                 _creation_date: str,
                  kind: ApiJobKind,
-                 status: ApiJobStatus,
+                 _status: ApiJobStatus,
                  **kwargs: Any) -> None:
         """IBMQJob init function.
 
         Args:
-            backend_obj (BaseBackend): the backend instance used to run this job.
+            _backend (BaseBackend): the backend instance used to run this job.
             api (AccountClient): object for connecting to the API.
-            id (str or None): job ID of this job.
-            creationDate (str): job creation date.
+            _job_id (str or None): job ID of this job.
+            _creation_date (str): job creation date.
             kind (ApiJobKind): job kind.
-            status (ApiJobStatus): job status.
-            kwargs (dict): additional job attributes.
+            _status (ApiJobStatus): job status.
+            kwargs (dict): additional job attributes, that will be added as
+                instance members.
         """
         # pylint: disable=redefined-builtin
+        BaseModel.__init__(self, _backend=_backend, _job_id=_job_id,
+                           _creation_date=_creation_date, kind=kind,
+                           _status=_status, **kwargs)
+        BaseJob.__init__(self, self.backend(), self.job_id())
 
         # Model attributes.
         self._api = api
-        self._creation_date = creationDate
-        self._job_kind = kind
-        self._use_object_storage = (self._job_kind == ApiJobKind.QOBJECT_STORAGE)
-        self._update_status_position(status, kwargs.pop('infoQueue', None))
-
-        # Optional attributes. These are specifically defined to allow
-        # auto-completion in an IDE.
-        self.shots = kwargs.pop('shots', None)
-        self.time_per_step = kwargs.pop('timePerStep', None)
-        self.name = kwargs.pop('name', None)
-        self._api_backend = kwargs.pop('backend', None)
-
-        # Get Qobj from either the API result (qObject) or user input (qobj)
-        qobj_dict = kwargs.pop('qObject', None)
-        self._qobj = Qobj.from_dict(qobj_dict) if qobj_dict else kwargs.pop('qobj', None)
-
-        # Additional attributes, converted to Python identifiers
-        new_kwargs = {to_python_identifier(key): value for key, value in kwargs.items()}
-        BaseModel.__init__(self, **new_kwargs)
-        BaseJob.__init__(self, backend_obj, id)
+        self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
+        self._queue_position = None
+        self._update_status_position(_status, kwargs.pop('infoQueue', None))
 
         # Properties used for caching.
         self._cancelled = False
         self._api_error_msg = None
-        self._result = None
-        self._queue_position = None
 
     def qobj(self) -> Qobj:
         """Return the Qobj for this job.
@@ -157,6 +142,7 @@ class IBMQJob(BaseModel, BaseJob):
         Raises:
             JobError: if there was some unexpected failure in the server.
         """
+        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if not self._qobj:
             # Populate self._qobj_dict by retrieving the results.
             # TODO Can qobj be retrieved if the job was cancelled?
@@ -217,6 +203,7 @@ class IBMQJob(BaseModel, BaseJob):
                 there was some unexpected failure in the server.
         """
         # pylint: disable=arguments-differ
+        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
 
         if not self._wait_for_completion(timeout=timeout, wait=wait,
                                          required_status=(JobStatus.DONE,)):

@@ -29,8 +29,6 @@ from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
-from qiskit.validation.exceptions import ModelValidationError
-from qiskit.validation.jsonschema.exceptions import SchemaValidationError
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_qe_access,
@@ -358,8 +356,8 @@ class TestIBMQJob(JobTestCase):
                                           limit=5, db_filter=my_filter)
         self.log.info('found %s matching jobs', len(job_list))
         for i, job in enumerate(job_list):
-            self.log.info('match #%d: %s', i, job.creation_date)
-            self.assertTrue(job.creation_date < '2017-01-01T00:00:00.00')
+            self.log.info('match #%d: %s', i, job.creation_date())
+            self.assertTrue(job.creation_date() < '2017-01-01T00:00:00.00')
 
     @requires_provider
     def test_double_submit_fails(self, provider):
@@ -471,20 +469,6 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(len(retrieved_jobs), 2)
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)
-
-    def test_bad_job_schema(self):
-        """Test creating a job with bad job schema."""
-        bad_job_info = {'id': 'TEST_ID'}
-        with self.assertRaises(ModelValidationError):
-            IBMQJob.from_dict(bad_job_info)
-
-    @requires_provider
-    def test_invalid_qobj(self, provider):
-        """Test submitting an invalid qobj."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        delattr(qobj, 'qobj_id')
-        self.assertRaises(SchemaValidationError, backend.run, qobj)
 
 
 def _bell_circuit():
