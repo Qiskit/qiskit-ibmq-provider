@@ -361,6 +361,11 @@ class IBMQJob(BaseModel, BaseJob):
 
         warnings.warn("Please use IBMQBackend.run() to submit a job.")
 
+    def refresh(self) -> None:
+        """Obtain the latest job information from the API."""
+        with api_to_job_error():
+            api_response = self._api.job_get(self.job_id())
+
     def _wait_for_completion(
             self,
             timeout: Optional[float] = None,
