@@ -125,10 +125,10 @@ class IBMQJob(BaseModel, BaseJob):
         self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
         self._queue_position = None
         self._update_status_position(_status, kwargs.pop('infoQueue', None))
+        self._job_error_msg = self._error.message if self._error else None
 
         # Properties used for caching.
         self._cancelled = False
-        self._api_error_msg = None
 
     def qobj(self) -> Qobj:
         """Return the Qobj for this job.
@@ -212,8 +212,9 @@ class IBMQJob(BaseModel, BaseJob):
             raise JobError('Unable to retrieve job result. ' + message)
 
         if not self._result:
-            result_response = self._get_result_response()
-            self._result = Result.from_dict(result_response)
+            with api_to_job_error():
+                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
+                self._result = Result.from_dict(result_response)
 
         return self._result
 
@@ -290,7 +291,8 @@ class IBMQJob(BaseModel, BaseJob):
             return None
 
         if not self._job_error_msg:
-            result_response = self._get_result_response()
+            with api_to_job_error():
+                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
             if result_response['results']:
                 # If individual errors given
                 self._job_error_msg = build_error_report(result_response['results'])
@@ -379,14 +381,3 @@ class IBMQJob(BaseModel, BaseJob):
         self._update_status_position(ApiJobStatus(status_response['status']),
                                      status_response.get('infoQueue', None))
         return self._status in required_status
-
-    def _get_result_response(self) -> Dict:
-        """Return the API result response.
-
-        Returns:
-            dict: Result response from the API.
-        """
-        if hasattr(self, 'qObjectResult'):
-            return self.qObjectResult
-        with api_to_job_error():
-            return self._api.job_result(self.job_id(), self._use_object_storage)
