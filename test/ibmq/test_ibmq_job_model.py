@@ -27,7 +27,7 @@ from ..decorators import requires_provider
 VALID_JOB_RESPONSE = {
     # Attributes needed by the constructor.
     'api': None,
-    'backend_obj': None,
+    '_backend': None,
 
     # Attributes required by the schema.
     'id': 'TEST_ID',
@@ -63,7 +63,7 @@ class TestIBMQJobModel(JobTestCase):
 
         # Check for a required attribute with correct name.
         self.assertNotIn('creationDate', job)
-        self.assertIn('creation_date', job)
+        self.assertIn('_creation_date', job)
 
     def test_auto_undefined_fields(self):
         """Test undefined response fields appear in the model."""

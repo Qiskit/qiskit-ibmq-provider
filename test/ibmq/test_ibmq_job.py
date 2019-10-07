@@ -356,8 +356,8 @@ class TestIBMQJob(JobTestCase):
                                           limit=5, db_filter=my_filter)
         self.log.info('found %s matching jobs', len(job_list))
         for i, job in enumerate(job_list):
-            self.log.info('match #%d: %s', i, job.creation_date)
-            self.assertTrue(job.creation_date < '2017-01-01T00:00:00.00')
+            self.log.info('match #%d: %s', i, job.creation_date())
+            self.assertTrue(job.creation_date() < '2017-01-01T00:00:00.00')
 
     @requires_provider
     def test_double_submit_fails(self, provider):

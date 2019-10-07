@@ -126,7 +126,7 @@ class IBMQBackend(BaseBackend):
 
         # Submission success.
         submit_info.update({
-            'backend_obj': self,
+            '_backend': self,
             'api': self._api,
             'qObject': qobj_dict
         })

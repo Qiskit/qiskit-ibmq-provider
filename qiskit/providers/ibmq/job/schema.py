@@ -34,6 +34,7 @@ FIELDS_MAP = {
     'id': '_job_id',
     'status': '_status',
     'backend': '_backend_info',
+    'creationDate': '_creation_date',
     'qObject': '_qobj',
     'qObjectResult': '_result'
 }
@@ -70,7 +71,7 @@ class JobResponseSchema(BaseSchema):
     # pylint: disable=invalid-name
 
     # Required properties.
-    creation_date = DateTime(required=True)
+    _creation_date = DateTime(required=True)
     kind = Enum(required=True, enum_cls=ApiJobKind)
     _job_id = String(required=True)
     _status = Enum(required=True, enum_cls=ApiJobStatus)

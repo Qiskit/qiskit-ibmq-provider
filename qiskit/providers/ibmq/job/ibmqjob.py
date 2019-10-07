@@ -95,29 +95,30 @@ class IBMQJob(BaseModel, BaseJob):
     """
 
     def __init__(self,
-                 backend_obj: BaseBackend,
+                 _backend: BaseBackend,
                  api: AccountClient,
                  _job_id: str,
-                 creation_date: str,
+                 _creation_date: str,
                  kind: ApiJobKind,
                  _status: ApiJobStatus,
                  **kwargs: Any) -> None:
         """IBMQJob init function.
 
         Args:
-            backend_obj (BaseBackend): the backend instance used to run this job.
+            _backend (BaseBackend): the backend instance used to run this job.
             api (AccountClient): object for connecting to the API.
             _job_id (str or None): job ID of this job.
-            creation_date (str): job creation date.
+            _creation_date (str): job creation date.
             kind (ApiJobKind): job kind.
             _status (ApiJobStatus): job status.
             kwargs (dict): additional job attributes, that will be added as
                 instance members.
         """
         # pylint: disable=redefined-builtin
-        BaseModel.__init__(self, _job_id=_job_id, creation_date=creation_date,
-                           kind=kind, _status=_status, **kwargs)
-        BaseJob.__init__(self, backend_obj, self.job_id())
+        BaseModel.__init__(self, _backend=_backend, _job_id=_job_id,
+                           _creation_date=_creation_date, kind=kind,
+                           _status=_status, **kwargs)
+        BaseJob.__init__(self, self.backend(), self.job_id())
 
         # Model attributes.
         self._api = api
