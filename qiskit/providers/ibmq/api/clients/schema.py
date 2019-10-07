@@ -17,7 +17,7 @@
 from qiskit.validation import BaseSchema
 from qiskit.validation.fields import String, Nested, Integer
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
-from qiskit.providers.ibmq.utils.validators import EnumType
+from qiskit.providers.ibmq.utils.fields import Enum
 
 
 # Helper schemas.
@@ -34,6 +34,6 @@ class InfoQueueResponseSchema(BaseSchema):
 
 class JobStatusResponseSchema(BaseSchema):
     """Schema for JobStatusResponse."""
-    status = EnumType(required=True, enum_cls=ApiJobStatus)
+    status = Enum(required=True, enum_cls=ApiJobStatus)
     # Optional properties
     infoQueue = Nested(InfoQueueResponseSchema, required=False)

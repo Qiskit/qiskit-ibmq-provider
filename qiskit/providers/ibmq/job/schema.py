@@ -14,14 +14,30 @@
 
 """Schemas for job."""
 
-from marshmallow.fields import Bool
+from marshmallow import pre_load
 from marshmallow.validate import Range
 
 from qiskit.validation import BaseSchema
-from qiskit.validation.fields import Dict, String, Nested, Integer
+from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime
+from qiskit.qobj.qobj import QobjSchema
+from qiskit.result.models import ResultSchema
+
+from qiskit.providers.ibmq.utils import to_python_identifier
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
 
-from ..utils.validators import EnumType
+from ..utils.fields import Enum
+
+
+# Mapping between 'API job field': 'IBMQJob attribute', for solving name
+# clashes.
+FIELDS_MAP = {
+    'id': '_job_id',
+    'status': '_status',
+    'backend': '_backend_info',
+    'creationDate': '_creation_date',
+    'qObject': '_qobj',
+    'qObjectResult': '_result'
+}
 
 
 # Helper schemas.
@@ -36,21 +52,59 @@ class JobResponseBackendSchema(BaseSchema):
 # Endpoint schemas.
 
 class JobResponseSchema(BaseSchema):
-    """Schema for GET Jobs, GET Jobs/{id}, and POST Jobs responses."""
+    """Schema for IBMQJob.
+
+    Schema for an `IBMQJob`. The following conventions are in use in order to
+    provide enough flexibility in regards to attributes:
+
+    * the "Required properties" reflect attributes that will always be present
+      in the model.
+    * the "Optional properties with a default value" reflect attributes that
+      are always present in the model, but might contain uninitialized values
+      depending on the state of the job.
+    * some properties are prepended by underscore due to name clashes and extra
+      constraints in the IBMQJob class (for example, existing IBMQJob methods
+      that have the same name as a response field).
+
+    The schema is used for GET Jobs, GET Jobs/{id}, and POST Jobs responses.
+    """
     # pylint: disable=invalid-name
 
     # Required properties.
-    creationDate = String(required=True)
-    id = String(required=True)
-    kind = EnumType(required=True, enum_cls=ApiJobKind)
-    status = EnumType(required=True, enum_cls=ApiJobStatus)
+    _creation_date = DateTime(required=True)
+    kind = Enum(required=True, enum_cls=ApiJobKind)
+    _job_id = String(required=True)
+    _status = Enum(required=True, enum_cls=ApiJobStatus)
+
+    # Optional properties with a default value.
+    name = String(missing=None)
+    shots = Integer(validate=Range(min=0), missing=None)
+    time_per_step = Dict(keys=String, values=String, missing=None)
+    _result = Nested(ResultSchema, missing=None)
+    _qobj = Nested(QobjSchema, missing=None)
 
     # Optional properties
-    allowObjectStorage = Bool(required=False)
-    backend = Nested(JobResponseBackendSchema, required=False)
-    error = String(required=False)
-    name = String(required=False)
-    qObjectResult = Dict(required=False)
-    qObject = Dict(required=False)
-    shots = Integer(required=False, validate=Range(min=0))
-    timePerStep = Dict(required=False, keys=String, values=String)
+    _backend_info = Nested(JobResponseBackendSchema)
+    allow_object_storage = Boolean()
+    error = String()
+
+    @pre_load
+    def preprocess_field_names(self, data):
+        """Pre-process the job response fields.
+
+        Rename selected fields of the job response due to name clashes, and
+        convert from camel-case the rest of the fields.
+
+        TODO: when updating to terra 0.10, check if changes related to
+        marshmallow 3 allow to use directly `data_key`, as in 0.9 terra
+        duplicates the unknown keys.
+        """
+        rename_map = {}
+        for field_name in data:
+            if field_name in FIELDS_MAP:
+                rename_map[field_name] = FIELDS_MAP[field_name]
+            else:
+                rename_map[field_name] = to_python_identifier(field_name)
+
+        for old_name, new_name in rename_map.items():
+            data[new_name] = data.pop(old_name)
