@@ -384,7 +384,6 @@ class TestIBMQJob(JobTestCase):
             job.result()
 
         message = job.error_message()
-        print(f"message is {message}")
         self.assertIn('Experiment 1: ERROR', message)
 
     @requires_provider

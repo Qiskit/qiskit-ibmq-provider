@@ -125,10 +125,10 @@ class IBMQJob(BaseModel, BaseJob):
         self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
         self._queue_position = None
         self._update_status_position(_status, kwargs.pop('infoQueue', None))
-        self._job_error_msg = self._error.message if self._error else None
 
         # Properties used for caching.
         self._cancelled = False
+        self._job_error_msg = self._error.message if self._error else None
 
     def qobj(self) -> Qobj:
         """Return the Qobj for this job.
@@ -290,6 +290,9 @@ class IBMQJob(BaseModel, BaseJob):
         if not self._wait_for_completion(required_status=(JobStatus.ERROR,)):
             return None
 
+        if self._error:
+            self._job_error_msg = self._error.message
+
         if not self._job_error_msg:
             with api_to_job_error():
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
@@ -302,7 +305,7 @@ class IBMQJob(BaseModel, BaseJob):
                 # No error message given
                 self._job_error_msg = "Unknown error."
 
-        return "Error running job. " + self._job_error_msg
+        return self._job_error_msg
 
     def queue_position(self) -> Optional[int]:
         """Return the position in the server queue.
