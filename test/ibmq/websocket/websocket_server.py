@@ -17,7 +17,7 @@
 import asyncio
 import json
 
-from qiskit.providers.ibmq.api.clients.websocket import WebsocketMessage
+from qiskit.providers.ibmq.api.clients.websocket import WebsocketResponseMethod
 
 
 TOKEN_JOB_COMPLETED = 'token_job_completed'
@@ -72,7 +72,7 @@ def websocket_handler(websocket, path):
 @asyncio.coroutine
 def handle_token_job_completed(websocket):
     """Return a final job status, and close with 4002."""
-    msg_out = WebsocketMessage(type_='job-status',
+    msg_out = WebsocketResponseMethod(type_='job-status',
                                data={'status': 'COMPLETED'})
 
     yield from websocket.send(msg_out.as_json().encode('utf8'))
@@ -82,12 +82,12 @@ def handle_token_job_completed(websocket):
 @asyncio.coroutine
 def handle_token_job_transition(websocket):
     """Send several job status, and close with 4002."""
-    msg_out = WebsocketMessage(type_='job-status',
+    msg_out = WebsocketResponseMethod(type_='job-status',
                                data={'status': 'RUNNING'})
     yield from websocket.send(msg_out.as_json().encode('utf8'))
 
     yield from asyncio.sleep(1)
-    msg_out = WebsocketMessage(type_='job-status',
+    msg_out = WebsocketResponseMethod(type_='job-status',
                                data={'status': 'COMPLETED'})
     yield from websocket.send(msg_out.as_json().encode('utf8'))
 

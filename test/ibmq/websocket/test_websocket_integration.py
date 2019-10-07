@@ -22,7 +22,8 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers import JobTimeoutError
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.api.clients.websocket import WebsocketClient, WebsocketMessage
+from qiskit.providers.ibmq.api.clients.websocket import (
+    WebsocketClient, WebsocketAuthenticationMessage)
 from qiskit.providers.ibmq.api.clients import AccountClient
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
@@ -114,7 +115,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         self.assertIs(job._status, JobStatus.DONE)
 
     @mock.patch.object(WebsocketClient, '_authentication_message',
-                       return_value=WebsocketMessage(type_='authentication', data='phantom_token'))
+                       return_value=WebsocketAuthenticationMessage(type_='authentication', data='phantom_token'))
     def test_websockets_retry_bad_auth(self, _):
         """Test http retry after websocket error due to a failed authentication."""
         job = self.sim_backend.run(self.qobj)
