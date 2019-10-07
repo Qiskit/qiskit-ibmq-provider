@@ -304,11 +304,14 @@ class IBMQJob(BaseModel, BaseJob):
 
         if not self._job_error_msg:
             result_response = self._get_result_response()
-            if 'error' in result_response and not result_response['results']:
-                # If no individual error given.
+            if result_response['results']:
+                # If individual errors given
+                self._job_error_msg = build_error_report(result_response['results'])
+            elif 'error' in result_response:
                 self._job_error_msg = result_response['error']['message']
             else:
-                self._job_error_msg = build_error_report(result_response['results'])
+                # No error message given
+                self._job_error_msg = "Unknown error."
 
         return "Error running job. " + self._job_error_msg
 
