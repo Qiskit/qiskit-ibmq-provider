@@ -21,7 +21,7 @@ from typing import Dict, List, Optional, Any
 from marshmallow.exceptions import ValidationError
 
 from .base import RestAdapterBase
-from .schemas.job import StatusResponseSchema
+from .schemas.validation import StatusResponseSchema
 from ..session import RetrySession
 from ..exceptions import ApiIBMQProtocolError
 
