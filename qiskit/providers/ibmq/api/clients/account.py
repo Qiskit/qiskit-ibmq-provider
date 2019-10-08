@@ -488,7 +488,7 @@ class AccountClient(BaseClient):
         Returns:
             dict: job information.
         """
-        return self.client_api.job(job_id).get([], [])
+        return self.client_api.job(job_id).get()
 
     def circuit_job_status(self, job_id: str) -> Dict:
         """Return the status of a Circuits job.
