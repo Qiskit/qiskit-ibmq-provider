@@ -48,5 +48,5 @@ def read_credentials_from_environ() -> Dict[HubGroupProject, Credentials]:
         if os.getenv(envar_name):
             credentials_dict[credential_key] = os.getenv(envar_name)
 
-    credentials = Credentials(**credentials_dict)
+    credentials = Credentials(**credentials_dict)  # type: ignore[arg-type]
     return OrderedDict({credentials.unique_id(): credentials})

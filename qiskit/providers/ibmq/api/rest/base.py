@@ -20,7 +20,7 @@ from ..session import RetrySession
 class RestAdapterBase:
     """Base class for REST adaptors."""
 
-    URL_MAP = {}
+    URL_MAP = {}  # type: ignore[var-annotated]
     """Mapping between the internal name of an endpoint and the actual URL"""
 
     def __init__(self, session: RetrySession, prefix_url: str = '') -> None:

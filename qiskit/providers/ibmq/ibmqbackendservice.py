@@ -18,14 +18,15 @@ import warnings
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
 
-from qiskit.providers import JobStatus
+from qiskit.providers import JobStatus, QiskitBackendNotFoundError  # type: ignore[attr-defined]
 from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
+from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .api.exceptions import ApiError
 from .apiconstants import ApiJobStatus
 from .exceptions import IBMQBackendError, IBMQBackendValueError
-from .ibmqbackend import IBMQBackend
+from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
 from .utils import to_python_identifier
 
@@ -33,7 +34,7 @@ from .utils import to_python_identifier
 class IBMQBackendService(SimpleNamespace):
     """Backend namespace for an IBM Quantum Experience account provider."""
 
-    def __init__(self, provider: 'AccountProvider') -> None:
+    def __init__(self, provider: 'accountprovider.AccountProvider') -> None:
         """Creates a new IBMQBackendService instance.
 
         Args:
@@ -170,7 +171,7 @@ class IBMQBackendService(SimpleNamespace):
             else:
                 raise IBMQBackendValueError('unrecognized value for "status" keyword '
                                             'in job filter')
-            api_filter.update(this_filter)
+            api_filter.update(this_filter)  # type: ignore[assignment]
 
         if job_name:
             api_filter['name'] = job_name
@@ -181,7 +182,7 @@ class IBMQBackendService(SimpleNamespace):
 
         # Retrieve the requested number of jobs, using pagination. The API
         # might limit the number of jobs per request.
-        job_responses = []
+        job_responses = []  # type: ignore[var-annotated]
         current_page_limit = limit
 
         while True:
@@ -256,10 +257,18 @@ class IBMQBackendService(SimpleNamespace):
             raise IBMQBackendError('Failed to get job "{}": {}'
                                    .format(job_id, str(ex)))
 
-        # TODO: in a similar way to IBMQJob creation during `.jobs()`,
-        # temporarily leaving the first argument as `None`.
+        # Recreate the backend used for this job.
+        backend_name = job_info.get('backend', {}).get('name', 'unknown')
+        try:
+            backend = self._provider.get_backend(backend_name)
+        except QiskitBackendNotFoundError:
+            backend = IBMQRetiredBackend.from_name(backend_name,
+                                                   self._provider,
+                                                   self._provider.credentials,
+                                                   self._provider._api)
+
         job_info.update({
-            '_backend': None,
+            '_backend': backend,
             'api': self._provider._api
         })
         try:

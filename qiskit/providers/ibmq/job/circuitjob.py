@@ -14,7 +14,9 @@
 
 """Job specific for Circuits."""
 
-from qiskit.providers import JobError
+from typing import Dict, Any
+
+from qiskit.providers import JobError  # type: ignore[attr-defined]
 from qiskit.providers.jobstatus import JOB_FINAL_STATES
 
 from .ibmqjob import IBMQJob
@@ -36,7 +38,7 @@ class CircuitJob(IBMQJob):
     for adjusting to the Circuits particularities.
     """
 
-    def status(self):
+    def status(self) -> str:
         if self._status in JOB_FINAL_STATES:
             return self._status
 
@@ -51,7 +53,7 @@ class CircuitJob(IBMQJob):
 
         return self._status
 
-    def _get_job(self):
+    def _get_job(self) -> Dict[str, Any]:
         if self._cancelled:
             raise JobError(
                 'Job result impossible to retrieve. The job was cancelled.')

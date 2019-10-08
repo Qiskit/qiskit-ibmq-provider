@@ -18,7 +18,7 @@ import logging
 from typing import Dict, List, Optional, Any
 from collections import OrderedDict
 
-from qiskit.providers import BaseProvider
+from qiskit.providers import BaseProvider  # type: ignore[attr-defined]
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 from qiskit.validation.exceptions import ModelValidationError
@@ -62,7 +62,7 @@ class AccountProvider(BaseProvider):
 
         # Initialize the internal list of backends.
         self._backends = self._discover_remote_backends()
-        self.backends = IBMQBackendService(self)
+        self.backends = IBMQBackendService(self)  # type: ignore[assignment]
 
     def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
         # pylint: disable=method-hidden
@@ -81,7 +81,7 @@ class AccountProvider(BaseProvider):
             dict[str:IBMQBackend]: a dict of the remote backend instances,
                 keyed by backend name.
         """
-        ret = OrderedDict()
+        ret = OrderedDict()  # type: ignore[var-annotated]
         configs_list = self._api.list_backends(timeout=timeout)
         for raw_config in configs_list:
             # Make sure the raw_config is of proper type
@@ -111,7 +111,10 @@ class AccountProvider(BaseProvider):
 
         return ret
 
-    def __eq__(self, other: 'AccountProvider') -> bool:
+    def __eq__(  # type: ignore[overide]
+            self,
+            other: 'AccountProvider'
+    ) -> bool:
         return self.credentials == other.credentials
 
     def __repr__(self) -> str:

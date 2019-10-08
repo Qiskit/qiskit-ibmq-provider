@@ -56,7 +56,7 @@ def read_credentials_from_qiskitrc(
         raise CredentialsError(str(ex))
 
     # Build the credentials dictionary.
-    credentials_dict = OrderedDict()
+    credentials_dict = OrderedDict()  # type: ignore[var-annotated]
     for name in config_parser.sections():
         single_credentials = dict(config_parser.items(name))
         # Individually convert keys to their right types.
@@ -66,8 +66,9 @@ def read_credentials_from_qiskitrc(
             single_credentials['proxies'] = literal_eval(
                 single_credentials['proxies'])
         if 'verify' in single_credentials.keys():
-            single_credentials['verify'] = bool(single_credentials['verify'])
-        new_credentials = Credentials(**single_credentials)
+            single_credentials['verify'] = bool(  # type: ignore[assignment]
+                single_credentials['verify'])
+        new_credentials = Credentials(**single_credentials)  # type: ignore[arg-type]
         credentials_dict[new_credentials.unique_id()] = new_credentials
 
     return credentials_dict
