@@ -268,6 +268,9 @@ class IBMQJob(BaseModel, BaseJob):
             if queued:
                 self._status = JobStatus.QUEUED
 
+        if self._status is not JobStatus.QUEUED:
+            self._queue_position = None
+
     def error_message(self) -> Optional[str]:
         """Provide details about the reason of failure.
 
@@ -309,7 +312,8 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the position in the server queue.
 
         Returns:
-            int: Position in the queue or ``None`` if position is unknown.
+            int: Position in the queue or ``None`` if position is unknown or
+                not applicable.
         """
         # Get latest position
         self.status()
