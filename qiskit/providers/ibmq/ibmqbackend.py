@@ -18,7 +18,7 @@ import logging
 import warnings
 
 from typing import Dict, List, Union, Optional, Any
-from datetime import datetime  # pylint: disable=unused-import
+from datetime import datetime  as python_datetime
 from marshmallow import ValidationError
 
 from qiskit.qobj import Qobj, validate_qobj_against_schema
@@ -141,7 +141,7 @@ class IBMQBackend(BaseBackend):
     def properties(
             self,
             refresh: bool = False,
-            datetime: Optional[datetime] = None  # pylint: disable=redefined-outer-name
+            datetime: Optional[python_datetime] = None
     ) -> Optional[BackendProperties]:
         """Return the online backend properties with optional filtering.
 
@@ -306,7 +306,7 @@ class IBMQSimulator(IBMQBackend):
     def properties(
             self,
             refresh: bool = False,
-            datetime: Optional[datetime] = None  # pylint: disable=redefined-outer-name
+            datetime: Optional[python_datetime] = None
     ) -> None:
         """Return the online backend properties.
 
@@ -368,7 +368,7 @@ class IBMQRetiredBackend(IBMQBackend):
     def properties(
             self,
             refresh: bool = False,
-            datetime: Optional[datetime] = None  # pylint: disable=redefined-outer-name
+            datetime: Optional[python_datetime] = None
     ) -> None:
         """Return the online backend properties."""
         return None
