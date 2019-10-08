@@ -82,5 +82,5 @@ def formatwarning(message, category, filename, lineno, line):
     return "%s:%s: %s: %s\n\n" % (filename, lineno, category.__name__, message)
 
 
-# Set custom warning message formatter, to not print
+# Set custom warning message formatter for `warnings.warn()`.
 warnings.formatwarning = formatwarning
