@@ -148,7 +148,8 @@ class IBMQFactory:
         if self._credentials:
             # For convention, emit a warning instead of raising.
             warnings.warn('Credentials are already in use. The existing '
-                          'account in the session will be replaced.')
+                          'account in the session will be replaced.',
+                          stacklevel=2)
             self.disable_account()
 
         self._initialize_providers(credentials)
@@ -157,7 +158,7 @@ class IBMQFactory:
         providers = self.providers()
         if not providers:
             warnings.warn('No Hub/Group/Projects could be found for this '
-                          'account.')
+                          'account.', stacklevel=2)
             return None
 
         return providers[0]

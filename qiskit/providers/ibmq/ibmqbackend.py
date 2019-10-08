@@ -269,7 +269,8 @@ class IBMQBackend(BaseBackend):
         """
         warnings.warn('backend.jobs() is deprecated and will be removed after '
                       '0.5. Please use provider.backends.jobs(backend_name='
-                      '"{}") instead.'.format(self.name()), DeprecationWarning)
+                      '"{}") instead.'.format(self.name()), DeprecationWarning,
+                      stacklevel=2)
 
         return self._provider.backends.jobs(
             limit, skip, self.name(), status, job_name, db_filter)
@@ -288,7 +289,7 @@ class IBMQBackend(BaseBackend):
         """
         warnings.warn('backend.retrieve_job() is deprecated and will be removed'
                       'after 0.5. Please use provider.backends.retrieve_job()'
-                      'instead.', DeprecationWarning)
+                      'instead.', DeprecationWarning, stacklevel=2)
         return self._provider.backends.retrieve_job(job_id)
 
     def __repr__(self) -> str:
