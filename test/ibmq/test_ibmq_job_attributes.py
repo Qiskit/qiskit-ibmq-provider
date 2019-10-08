@@ -15,24 +15,14 @@
 """IBMQJob Test."""
 
 import time
-import warnings
-from concurrent import futures
-
-import numpy
-from scipy.stats import chi2_contingency
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers import JobError, JobStatus
+from qiskit.providers import JobError
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.exceptions import IBMQBackendError
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
-from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
-from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
-from ..decorators import (requires_provider, requires_qe_access,
-                          run_on_staging)
+from ..decorators import requires_provider, run_on_staging
 
 
 class TestIBMQJobAttributes(JobTestCase):
