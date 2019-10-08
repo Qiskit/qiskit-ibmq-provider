@@ -18,13 +18,13 @@ import logging
 import warnings
 
 from typing import Dict, List, Union, Optional, Any
-from datetime import datetime  # pylint: disable=unused-import
+from datetime import datetime as python_datetime
 from marshmallow import ValidationError
 
 from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.providers import BaseBackend, JobStatus  # type: ignore[attr-defined]
 from qiskit.providers.models import (BackendStatus, BackendProperties,
-                                     PulseDefaults, BackendConfiguration)
+                                     PulseDefaults, BackendConfiguration, GateConfig)
 from qiskit.validation.exceptions import ModelValidationError
 from qiskit.tools.events.pubsub import Publisher
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
@@ -142,7 +142,7 @@ class IBMQBackend(BaseBackend):
     def properties(
             self,
             refresh: bool = False,
-            datetime: Optional[datetime] = None  # pylint: disable=redefined-outer-name
+            datetime: Optional[python_datetime] = None
     ) -> Optional[BackendProperties]:
         """Return the online backend properties with optional filtering.
 
@@ -307,7 +307,7 @@ class IBMQSimulator(IBMQBackend):
     def properties(
             self,
             refresh: bool = False,
-            datetime: Optional[datetime] = None  # pylint: disable=redefined-outer-name
+            datetime: Optional[python_datetime] = None
     ) -> None:
         """Return the online backend properties.
 
@@ -337,3 +337,76 @@ class IBMQSimulator(IBMQBackend):
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
         return super(IBMQSimulator, self).run(qobj, job_name)
+
+
+class IBMQRetiredBackend(IBMQBackend):
+    """Backend class interfacing with an IBMQ device that is no longer available."""
+
+    def __init__(
+            self,
+            configuration: BackendConfiguration,
+            provider: 'AccountProvider',
+            credentials: Credentials,
+            api: AccountClient
+    ) -> None:
+        """Initialize remote backend for IBM Quantum Experience.
+
+        Args:
+            configuration (BackendConfiguration): configuration of backend.
+            provider (AccountProvider): provider.
+            credentials (Credentials): credentials.
+            api (AccountClient):
+                api for communicating with the Quantum Experience.
+        """
+        super().__init__(configuration, provider, credentials, api)
+        self._status = BackendStatus(
+            backend_name=self.name(),
+            backend_version=self.configuration().backend_version,
+            operational=False,
+            pending_jobs=0,
+            status_msg='This backend is no longer available.')
+
+    def properties(
+            self,
+            refresh: bool = False,
+            datetime: Optional[python_datetime] = None
+    ) -> None:
+        """Return the online backend properties."""
+        return None
+
+    def defaults(self, refresh: bool = False) -> None:
+        """Return the pulse defaults for the backend."""
+        return None
+
+    def status(self) -> BackendStatus:
+        """Return the online backend status."""
+        return self._status
+
+    def run(self, qobj: Qobj, job_name: Optional[str] = None) -> None:
+        """Run a Qobj."""
+        raise IBMQBackendError('This backend is no longer available.')
+
+    @classmethod
+    def from_name(
+            cls,
+            backend_name: str,
+            provider: 'AccountProvider',
+            credentials: Credentials,
+            api: AccountClient
+    ) -> 'IBMQRetiredBackend':
+        """Return a retired backend from its name."""
+        configuration = BackendConfiguration(
+            backend_name=backend_name,
+            backend_version='0.0.0',
+            n_qubits=1,
+            basis_gates=[],
+            simulator=False,
+            local=False,
+            conditional=False,
+            open_pulse=False,
+            memory=False,
+            max_shots=1,
+            gates=[GateConfig(name='TODO', parameters=[], qasm_def='TODO')],
+            coupling_map=[[0, 1]],
+        )
+        return cls(configuration, provider, credentials, api)
