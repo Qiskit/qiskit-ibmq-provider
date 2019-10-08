@@ -24,7 +24,7 @@ from marshmallow import ValidationError
 from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.providers import BaseBackend, JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
-                                     PulseDefaults, BackendConfiguration)
+                                     PulseDefaults, BackendConfiguration, GateConfig)
 from qiskit.validation.exceptions import ModelValidationError
 from qiskit.tools.events.pubsub import Publisher
 
@@ -336,3 +336,71 @@ class IBMQSimulator(IBMQBackend):
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
         return super(IBMQSimulator, self).run(qobj, job_name)
+
+
+class IBMQRetiredBackend(IBMQBackend):
+    """Backend class interfacing with an IBMQ device that is no longer available."""
+
+    def __init__(
+            self,
+            configuration: BackendConfiguration,
+            provider: 'AccountProvider',
+            credentials: Credentials,
+            api: AccountClient
+    ) -> None:
+        """Initialize remote backend for IBM Quantum Experience.
+
+        Args:
+            configuration (BackendConfiguration): configuration of backend.
+            provider (AccountProvider): provider.
+            credentials (Credentials): credentials.
+            api (AccountClient):
+                api for communicating with the Quantum Experience.
+        """
+        super().__init__(configuration, provider, credentials, api)
+        self._status = BackendStatus(
+            backend_name=self.name(),
+            backend_version=self.configuration().backend_version,
+            operational=False,
+            pending_jobs=0,
+            status_msg='retired')
+
+    @staticmethod
+    def properties(self, **kwargs: Any) -> None:
+        """Return the online backend properties."""
+        return None
+
+    def defaults(self, **kwargs: Any) -> None:
+        """Return the pulse defaults for the backend."""
+        return None
+
+    def status(self) -> BackendStatus:
+        """Return the online backend status."""
+        return self._status
+
+    def run(self, **kwargs: Any) -> None:
+        """Run a Qobj."""
+        raise IBMQBackendError('This backend is no longer available.')
+
+    @classmethod
+    def from_name(cls, backend_name: str,
+            provider: 'AccountProvider',
+            credentials: Credentials,
+            api: AccountClient
+    ) -> 'IBMQRetiredBackend':
+        """Return a retired backend from its name."""
+        configuration = BackendConfiguration(
+            backend_name=backend_name,
+            backend_version='0.0.0',
+            n_qubits=1,
+            basis_gates=[],
+            simulator=False,
+            local=False,
+            conditional=False,
+            open_pulse=False,
+            memory=False,
+            max_shots=1,
+            gates=[GateConfig(name='TODO', parameters=[], qasm_def='TODO')],
+            coupling_map=[[0,1]],
+        )
+        return cls(configuration, provider, credentials, api)
