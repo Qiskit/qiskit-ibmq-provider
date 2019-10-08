@@ -123,6 +123,38 @@ class TestIBMQJobAttributes(JobTestCase):
         for job in retrieved_jobs:
             self.assertEqual(job.name(), job_name)
 
+    @run_on_staging
+    def test_error_message_device(self, provider):
+        """Test retrieving job error messages from a device backend."""
+        backend = least_busy(provider.backends(simulator=False))
+
+        qc_new = transpile(self._qc, backend)
+        qobj = assemble([qc_new, qc_new], backend=backend)
+        qobj.experiments[1].instructions[1].name = 'bad_instruction'
+
+        job = backend.run(qobj)
+        with self.assertRaises(JobError):
+            job.result()
+
+        message = job.error_message()
+        self.assertTrue(message)
+
+    @requires_provider
+    def test_error_message_simulator(self, provider):
+        """Test retrieving job error messages from a simulator backend."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+
+        qc_new = transpile(self._qc, backend)
+        qobj = assemble([qc_new, qc_new], backend=backend)
+        qobj.experiments[1].instructions[1].name = 'bad_instruction'
+
+        job = backend.run(qobj)
+        with self.assertRaises(JobError):
+            job.result()
+
+        message = job.error_message()
+        self.assertIn('Experiment 1: ERROR', message)
+
 
 def _bell_circuit():
     qr = QuantumRegister(2, 'q')

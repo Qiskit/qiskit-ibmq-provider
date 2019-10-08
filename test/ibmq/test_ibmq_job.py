@@ -352,22 +352,6 @@ class TestIBMQJob(JobTestCase):
             job.submit()
 
     @requires_provider
-    def test_error_message_simulator(self, provider):
-        """Test retrieving job error messages from a simulator backend."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new, qc_new], backend=backend)
-        qobj.experiments[1].instructions[1].name = 'bad_instruction'
-
-        job = backend.run(qobj)
-        with self.assertRaises(JobError):
-            job.result()
-
-        message = job.error_message()
-        self.assertIn('Experiment 1: ERROR', message)
-
-    @requires_provider
     def test_retrieve_failed_job_simulator(self, provider):
         """Test retrieving job error messages from a simulator backend."""
         backend = provider.get_backend('ibmq_qasm_simulator')
@@ -386,22 +370,6 @@ class TestIBMQJob(JobTestCase):
         self.assertIn('Experiment 1: ERROR', message)
 
     @run_on_staging
-    def test_error_message_device(self, provider):
-        """Test retrieving job error messages from a device backend."""
-        backend = least_busy(provider.backends(simulator=False))
-
-        qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new, qc_new], backend=backend)
-        qobj.experiments[1].instructions[1].name = 'bad_instruction'
-
-        job = backend.run(qobj)
-        with self.assertRaises(JobError):
-            job.result()
-
-        message = job.error_message()
-        self.assertTrue(message)
-
-    @run_on_staging
     def test_retrieve_failed_job_device(self, provider):
         """Test retrieving a failed job from a device backend."""
         backend = least_busy(provider.backends(simulator=False))
@@ -416,15 +384,6 @@ class TestIBMQJob(JobTestCase):
 
         new_job = provider.backends.retrieve_job(job.job_id())
         self.assertTrue(new_job.error_message())
-
-    @run_on_staging
-    def test_running_job_properties(self, provider):
-        """Test fetching properties of a running job."""
-        backend = least_busy(provider.backends(simulator=False))
-
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
-        _ = job.properties()
 
     @slow_test
     @requires_qe_access
