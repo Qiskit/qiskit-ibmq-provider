@@ -81,9 +81,9 @@ class IBMQJob(BaseModel, BaseJob):
     failures happened at the server level.
 
     Job information retrieved from the API server is attached to the ``IBMQJob``
-    as attributes. Given Qiskit and the API server can be updated
-    independently, some of these attributes can be deprecated or experimental.
-    The ones known to be supported are converted to methods. For example, you
+    instance as attributes. Given that Qiskit and the API server can be updated
+    independently, some of these attributes might be deprecated or experimental.
+    Supported attributes can be retrieved via methods. For example, you
     can use ``IBMQJob.creation_date()`` to retrieve the job creation date,
     which is a supported attribute.
 
