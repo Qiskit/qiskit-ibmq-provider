@@ -345,7 +345,7 @@ class IBMQRetiredBackend(IBMQBackend):
     def __init__(
             self,
             configuration: BackendConfiguration,
-            provider: 'AccountProvider',
+            provider: 'accountprovider.AccountProvider',
             credentials: Credentials,
             api: AccountClient
     ) -> None:
@@ -390,7 +390,7 @@ class IBMQRetiredBackend(IBMQBackend):
     def from_name(
             cls,
             backend_name: str,
-            provider: 'AccountProvider',
+            provider: 'accountprovider.AccountProvider',
             credentials: Credentials,
             api: AccountClient
     ) -> 'IBMQRetiredBackend':
