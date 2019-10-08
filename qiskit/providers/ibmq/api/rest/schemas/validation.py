@@ -12,18 +12,19 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Schemas used by API clients."""
-
+"""Schemas for validation."""
+# TODO The schemas defined here should be merged with others under rest/schemas
+# when they are ready
+from marshmallow.validate import OneOf
+from qiskit.providers.ibmq.apiconstants import ApiJobStatus
 from qiskit.validation import BaseSchema
 from qiskit.validation.fields import String, Nested, Integer
-from qiskit.providers.ibmq.apiconstants import ApiJobStatus
-from qiskit.providers.ibmq.utils.fields import Enum
 
 
 # Helper schemas.
 
 class InfoQueueResponseSchema(BaseSchema):
-    """Nested schema for JobStatusResponseSchema"""
+    """Nested schema for StatusResponseSchema"""
 
     # Optional properties
     position = Integer(required=False, missing=0)
@@ -32,8 +33,11 @@ class InfoQueueResponseSchema(BaseSchema):
 
 # Endpoint schemas.
 
-class JobStatusResponseSchema(BaseSchema):
-    """Schema for JobStatusResponse."""
-    status = Enum(required=True, enum_cls=ApiJobStatus)
+class StatusResponseSchema(BaseSchema):
+    """Schema for StatusResponse"""
+
     # Optional properties
     infoQueue = Nested(InfoQueueResponseSchema, required=False)
+
+    # Required properties
+    status = String(required=True, validate=OneOf([status.value for status in ApiJobStatus]))

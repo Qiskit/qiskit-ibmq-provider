@@ -36,17 +36,26 @@ FIELDS_MAP = {
     'backend': '_backend_info',
     'creationDate': '_creation_date',
     'qObject': '_qobj',
-    'qObjectResult': '_result'
+    'qObjectResult': '_result',
+    'error': '_error'
 }
 
 
 # Helper schemas.
 
 class JobResponseBackendSchema(BaseSchema):
-    """Nested schema for JobResponseSchema"""
+    """Nested schema for the backend field in JobResponseSchema."""
 
     # Required properties
     name = String(required=True)
+
+
+class JobResponseErrorSchema(BaseSchema):
+    """Nested schema for the error field in JobResponseSchema."""
+
+    # Required properties
+    code = Integer(required=True)
+    message = String(required=True)
 
 
 # Endpoint schemas.
@@ -82,6 +91,7 @@ class JobResponseSchema(BaseSchema):
     time_per_step = Dict(keys=String, values=String, missing=None)
     _result = Nested(ResultSchema, missing=None)
     _qobj = Nested(QobjSchema, missing=None)
+    _error = Nested(JobResponseErrorSchema, missing=None)
 
     # Optional properties
     _backend_info = Nested(JobResponseBackendSchema)
