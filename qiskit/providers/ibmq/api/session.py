@@ -85,9 +85,9 @@ class RetrySession(Session):
         """Set the session access token."""
         self._access_token = value
         if value:
-            self.params.update({'access_token': value})
+            self.params.update({'access_token': value})  # type: ignore[attr-defined]
         else:
-            self.params.pop('access_token', None)
+            self.params.pop('access_token', None)  # type: ignore[attr-defined]
 
     def _initialize_retry(self, retries: int, backoff_factor: float) -> None:
         """Set the Session retry policy.
@@ -132,7 +132,13 @@ class RetrySession(Session):
         self.proxies = proxies or {}
         self.verify = verify
 
-    def request(self, method: str, url: str, bare: bool = False, **kwargs: Any) -> Response:
+    def request(  # type: ignore[override]
+            self,
+            method: str,
+            url: str,
+            bare: bool = False,
+            **kwargs: Any
+    ) -> Response:
         """Constructs a Request, prepending the base url.
 
         Args:

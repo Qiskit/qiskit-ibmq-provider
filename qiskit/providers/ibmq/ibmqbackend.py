@@ -22,11 +22,12 @@ from datetime import datetime as python_datetime
 from marshmallow import ValidationError
 
 from qiskit.qobj import Qobj, validate_qobj_against_schema
-from qiskit.providers import BaseBackend, JobStatus
+from qiskit.providers import BaseBackend, JobStatus  # type: ignore[attr-defined]
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration, GateConfig)
 from qiskit.validation.exceptions import ModelValidationError
 from qiskit.tools.events.pubsub import Publisher
+from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
@@ -44,7 +45,7 @@ class IBMQBackend(BaseBackend):
     def __init__(
             self,
             configuration: BackendConfiguration,
-            provider: 'AccountProvider',
+            provider: 'accountprovider.AccountProvider',
             credentials: Credentials,
             api: AccountClient
     ) -> None:
@@ -318,9 +319,9 @@ class IBMQSimulator(IBMQBackend):
     def run(
             self,
             qobj: Qobj,
+            job_name: Optional[str] = None,
             backend_options: Optional[Dict] = None,
             noise_model: Any = None,
-            job_name: Optional[str] = None
     ) -> IBMQJob:
         """Run qobj asynchronously.
 
@@ -344,7 +345,7 @@ class IBMQRetiredBackend(IBMQBackend):
     def __init__(
             self,
             configuration: BackendConfiguration,
-            provider: 'AccountProvider',
+            provider: 'accountprovider.AccountProvider',
             credentials: Credentials,
             api: AccountClient
     ) -> None:
@@ -389,7 +390,7 @@ class IBMQRetiredBackend(IBMQBackend):
     def from_name(
             cls,
             backend_name: str,
-            provider: 'AccountProvider',
+            provider: 'accountprovider.AccountProvider',
             credentials: Credentials,
             api: AccountClient
     ) -> 'IBMQRetiredBackend':

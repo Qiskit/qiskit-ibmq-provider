@@ -23,7 +23,8 @@ import warnings
 
 from marshmallow import ValidationError
 
-from qiskit.providers import BaseJob, JobError, JobTimeoutError, BaseBackend
+from qiskit.providers import (BaseJob, JobError,  # type: ignore[attr-defined]
+                              JobTimeoutError, BaseBackend)
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj
@@ -33,7 +34,7 @@ from qiskit.validation import BaseModel, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
-from .schema import JobResponseSchema
+from .schema import JobResponseSchema  # type: ignore[attr-defined]
 from .utils import (build_error_report, is_job_queued,
                     api_status_to_job_status, api_to_job_error)
 
@@ -145,7 +146,7 @@ class IBMQJob(BaseModel, BaseJob):
             JobError: if there was some unexpected failure in the server.
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
-        if not self._qobj:
+        if not self._qobj:  # type: ignore[has-type]
             # Populate self._qobj_dict by retrieving the results.
             # TODO Can qobj be retrieved if the job was cancelled?
             self._wait_for_completion()
@@ -213,7 +214,7 @@ class IBMQJob(BaseModel, BaseJob):
                 else 'Job has failed. Use job.error_message() to get more details.'
             raise JobError('Unable to retrieve job result. ' + message)
 
-        if not self._result:
+        if not self._result:  # type: ignore[has-type]
             with api_to_job_error():
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
                 self._result = Result.from_dict(result_response)
@@ -268,7 +269,7 @@ class IBMQJob(BaseModel, BaseJob):
         """
         self._status = api_status_to_job_status(status)
         if status is ApiJobStatus.RUNNING:
-            queued, self._queue_position = is_job_queued(info_queue)
+            queued, self._queue_position = is_job_queued(info_queue)  # type: ignore[assignment]
             if queued:
                 self._status = JobStatus.QUEUED
 
