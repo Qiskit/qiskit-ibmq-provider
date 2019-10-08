@@ -14,6 +14,7 @@
 
 """Backends provided by IBM Quantum Experience."""
 
+import warnings
 from typing import List
 
 from qiskit.exceptions import QiskitError
@@ -49,3 +50,37 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
                    key=lambda b: b.status().pending_jobs)
     except (ValueError, TypeError):
         raise QiskitError("Can only find least_busy backend from a non-empty list.")
+
+
+def formatwarning(message, category, filename, lineno, line):
+    """Function to format a warning the standard way.
+
+    By default, the message `warnings.warn()` displays includes the
+    *exact* line that issues a warning (i.e. the warnings.warn() call
+    itself). A downfall to this is when the message passed as argument to
+    `warnings.warn()` extends past one line, because it cuts off the
+    message and only includes the part that is on the *exact* line as
+    the `warnings.warn()` call.
+
+        Example:
+            When the message is passed in the following format:
+
+                warnings.warn('This is a message that
+                              'that extends two lines')
+
+            the part included in the final warning to the user is:
+
+                warnings.warn('This is a message that
+
+            and "that extends two lines" is cut off, since it is not
+            on the *exact* same line that issued the warning.
+
+    This function displays the same message `warnings.formatwarning`
+    displays, minus the line that issues the warning, which is not
+    necessary since the exact line number of the warning is printed as well.
+    """
+    return "%s:%s: %s: %s\n\n" % (filename, lineno, category.__name__, message)
+
+
+# Set custom warning message formatter, to not print
+warnings.formatwarning = formatwarning
