@@ -298,9 +298,7 @@ class AccountClient(BaseClient):
 
     def job_get(
             self,
-            job_id: str,
-            excluded_fields: Optional[List[str]] = None,
-            included_fields: Optional[List[str]] = None
+            job_id: str
     ) -> Dict[str, Any]:
         """Return information about a job.
 
@@ -314,8 +312,7 @@ class AccountClient(BaseClient):
         Returns:
             dict: job information.
         """
-        return self.client_api.job(job_id).get(excluded_fields,
-                                               included_fields)
+        return self.client_api.job(job_id).get()
 
     def job_status(self, job_id: str) -> Dict[str, Any]:
         """Return the status of a job.
