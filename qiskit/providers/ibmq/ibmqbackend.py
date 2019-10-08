@@ -363,14 +363,17 @@ class IBMQRetiredBackend(IBMQBackend):
             backend_version=self.configuration().backend_version,
             operational=False,
             pending_jobs=0,
-            status_msg='retired')
+            status_msg='This backend is no longer available.')
 
-    @staticmethod
-    def properties(self, **kwargs: Any) -> None:
+    def properties(
+            self,
+            refresh: bool = False,
+            datetime: Optional[datetime] = None  # pylint: disable=redefined-outer-name
+    ) -> None:
         """Return the online backend properties."""
         return None
 
-    def defaults(self, **kwargs: Any) -> None:
+    def defaults(self, refresh: bool = False) -> None:
         """Return the pulse defaults for the backend."""
         return None
 
@@ -378,12 +381,14 @@ class IBMQRetiredBackend(IBMQBackend):
         """Return the online backend status."""
         return self._status
 
-    def run(self, **kwargs: Any) -> None:
+    def run(self, qobj: Qobj, job_name: Optional[str] = None) -> None:
         """Run a Qobj."""
         raise IBMQBackendError('This backend is no longer available.')
 
     @classmethod
-    def from_name(cls, backend_name: str,
+    def from_name(
+            cls,
+            backend_name: str,
             provider: 'AccountProvider',
             credentials: Credentials,
             api: AccountClient
@@ -401,6 +406,6 @@ class IBMQRetiredBackend(IBMQBackend):
             memory=False,
             max_shots=1,
             gates=[GateConfig(name='TODO', parameters=[], qasm_def='TODO')],
-            coupling_map=[[0,1]],
+            coupling_map=[[0, 1]],
         )
         return cls(configuration, provider, credentials, api)
