@@ -49,7 +49,7 @@ def discover_credentials(
 
             {credentials_unique_id: Credentials}
     """
-    credentials = OrderedDict()
+    credentials = OrderedDict()  # type: ignore[var-annotated]
 
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.
@@ -63,7 +63,7 @@ def discover_credentials(
     # Attempt to read the credentials from the different sources.
     for display_name, (reader_function, kwargs) in readers.items():
         try:
-            credentials = reader_function(**kwargs)
+            credentials = reader_function(**kwargs)  # type: ignore[arg-type]
             logger.info('Using credentials from %s', display_name)
             if credentials:
                 break

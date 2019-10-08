@@ -14,7 +14,11 @@
 
 """Custom fields for validation."""
 
-from qiskit.validation import ModelTypeValidator
+import enum
+from typing import Dict, Union, Optional, Any
+
+from qiskit.validation import ModelTypeValidator, BaseModel
+from ..apiconstants import ApiJobKind, ApiJobStatus
 
 
 class Enum(ModelTypeValidator):
@@ -25,20 +29,30 @@ class Enum(ModelTypeValidator):
         'format': '"{input}" cannot be formatted as a {enum_cls}.',
     }
 
-    def __init__(self, enum_cls, *args, **kwargs):
+    def __init__(self, enum_cls: enum.EnumMeta, *args: Any, **kwargs: Any) -> None:
         self.valid_types = (enum_cls,)
-        self.valid_strs = [elem.value for elem in enum_cls]
+        self.valid_strs = [elem.value for elem in enum_cls]  # type: ignore[var-annotated]
         self.enum_cls = enum_cls
 
         super().__init__(*args, **kwargs)
 
-    def _serialize(self, value, attr, obj):
+    def _serialize(  # type: ignore[return]
+            self,
+            value: Union[ApiJobKind, ApiJobStatus],
+            attr: str,
+            obj: BaseModel
+    ) -> str:
         try:
             return value.value
         except AttributeError:
             self.fail('format', input=value, enum_cls=self.enum_cls)
 
-    def _deserialize(self, value, attr, data):
+    def _deserialize(  # type: ignore[return]
+            self,
+            value: Union[ApiJobKind, ApiJobStatus],
+            attr: str,
+            data: Dict[str, Any]
+    ) -> enum.EnumMeta:
         try:
             return self.enum_cls(value)
         except ValueError:
