@@ -12,6 +12,8 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+# type: ignore  # Not adding type annotations to schemas, ignore errors.
+
 """Schemas for job."""
 
 from marshmallow import pre_load
