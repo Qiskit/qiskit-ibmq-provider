@@ -245,11 +245,6 @@ class IBMQBackendService(SimpleNamespace):
         try:
             job_info = self._provider._api.job_get(job_id)
 
-            # Check for generic errors.
-            if 'error' in job_info:
-                raise IBMQBackendError('Failed to get job "{}": {}'
-                                       .format(job_id, job_info['error']))
-
             # Check for pre-qobj jobs.
             if 'kind' not in job_info:
                 warnings.warn('The result of job {} is in a no longer supported format. '
