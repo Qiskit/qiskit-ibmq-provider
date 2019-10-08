@@ -15,11 +15,15 @@
 """Job REST adapter for the IBM Q Experience API."""
 
 import json
+import pprint
 
 from typing import Dict, List, Optional, Any
+from marshmallow.exceptions import ValidationError
 
 from .base import RestAdapterBase
+from .schemas.validation import StatusResponseSchema
 from ..session import RetrySession
+from ..exceptions import ApiIBMQProtocolError
 
 
 class Job(RestAdapterBase):
@@ -105,9 +109,23 @@ class Job(RestAdapterBase):
         return self.session.get(url).json()
 
     def status(self) -> Dict[str, Any]:
-        """Return the status of a job."""
+        """Return the status of a job.
+
+        Returns:
+            (dict): status of a job
+
+        Raises:
+            ApiIBMQProtocolError: if an unexpected result is received from the server.
+        """
         url = self.get_url('status')
-        return self.session.get(url).json()
+        api_response = self.session.get(url).json()
+        try:
+            # Validate the response.
+            StatusResponseSchema().validate(api_response)
+        except ValidationError as err:
+            raise ApiIBMQProtocolError('Unrecognized answer from server: \n{}'.format(
+                pprint.pformat(api_response))) from err
+        return api_response
 
     def upload_url(self) -> Dict[str, Any]:
         """Return an object storage URL for uploading the Qobj."""

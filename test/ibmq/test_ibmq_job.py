@@ -29,8 +29,6 @@ from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
-from qiskit.validation.exceptions import ModelValidationError
-from qiskit.validation.jsonschema.exceptions import SchemaValidationError
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_qe_access,
@@ -358,8 +356,8 @@ class TestIBMQJob(JobTestCase):
                                           limit=5, db_filter=my_filter)
         self.log.info('found %s matching jobs', len(job_list))
         for i, job in enumerate(job_list):
-            self.log.info('match #%d: %s', i, job.creation_date)
-            self.assertTrue(job.creation_date < '2017-01-01T00:00:00.00')
+            self.log.info('match #%d: %s', i, job.creation_date())
+            self.assertTrue(job.creation_date() < '2017-01-01T00:00:00.00')
 
     @requires_provider
     def test_double_submit_fails(self, provider):
@@ -373,25 +371,70 @@ class TestIBMQJob(JobTestCase):
             job.submit()
 
     @requires_provider
-    def test_error_message_qasm(self, provider):
-        """Test retrieving job error messages including QASM status(es)."""
+    def test_error_message_simulator(self, provider):
+        """Test retrieving job error messages from a simulator backend."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
-        qr = QuantumRegister(5)  # 5 is sufficient for this test
-        cr = ClassicalRegister(2)
-        qc = QuantumCircuit(qr, cr)
-        qc.cx(qr[0], qr[1])
-        qc_new = transpile(qc, backend)
+        qc_new = transpile(self._qc, backend)
+        qobj = assemble([qc_new, qc_new], backend=backend)
+        qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
-        qobj = assemble(qc_new, shots=1000)
-        qobj.experiments[0].instructions[0].name = 'test_name'
-
-        job_sim = backend.run(qobj)
+        job = backend.run(qobj)
         with self.assertRaises(JobError):
-            job_sim.result()
+            job.result()
 
-        message = job_sim.error_message()
+        message = job.error_message()
+        self.assertIn('Experiment 1: ERROR', message)
+
+    @requires_provider
+    def test_retrieve_failed_job_simulator(self, provider):
+        """Test retrieving job error messages from a simulator backend."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+
+        qc_new = transpile(self._qc, backend)
+        qobj = assemble([qc_new, qc_new], backend=backend)
+        qobj.experiments[1].instructions[1].name = 'bad_instruction'
+
+        job = backend.run(qobj)
+        with self.assertRaises(JobError):
+            job.result()
+
+        time.sleep(3)
+        new_job = provider.backends.retrieve_job(job.job_id())
+        message = new_job.error_message()
+        self.assertIn('Experiment 1: ERROR', message)
+
+    @run_on_staging
+    def test_error_message_device(self, provider):
+        """Test retrieving job error messages from a device backend."""
+        backend = least_busy(provider.backends(simulator=False))
+
+        qc_new = transpile(self._qc, backend)
+        qobj = assemble([qc_new, qc_new], backend=backend)
+        qobj.experiments[1].instructions[1].name = 'bad_instruction'
+
+        job = backend.run(qobj)
+        with self.assertRaises(JobError):
+            job.result()
+
+        message = job.error_message()
         self.assertTrue(message)
+
+    @run_on_staging
+    def test_retrieve_failed_job_device(self, provider):
+        """Test retrieving a failed job from a device backend."""
+        backend = least_busy(provider.backends(simulator=False))
+
+        qc_new = transpile(self._qc, backend)
+        qobj = assemble([qc_new, qc_new], backend=backend)
+        qobj.experiments[1].instructions[1].name = 'bad_instruction'
+
+        job = backend.run(qobj)
+        with self.assertRaises(JobError):
+            job.result()
+
+        new_job = provider.backends.retrieve_job(job.job_id())
+        self.assertTrue(new_job.error_message())
 
     @run_on_staging
     def test_running_job_properties(self, provider):
@@ -471,20 +514,6 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(len(retrieved_jobs), 2)
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)
-
-    def test_bad_job_schema(self):
-        """Test creating a job with bad job schema."""
-        bad_job_info = {'id': 'TEST_ID'}
-        with self.assertRaises(ModelValidationError):
-            IBMQJob.from_dict(bad_job_info)
-
-    @requires_provider
-    def test_invalid_qobj(self, provider):
-        """Test submitting an invalid qobj."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        delattr(qobj, 'qobj_id')
-        self.assertRaises(SchemaValidationError, backend.run, qobj)
 
 
 def _bell_circuit():
