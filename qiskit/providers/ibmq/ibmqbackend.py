@@ -18,7 +18,7 @@ import logging
 import warnings
 
 from typing import Dict, List, Union, Optional, Any
-from datetime import datetime  as python_datetime
+from datetime import datetime as python_datetime
 from marshmallow import ValidationError
 
 from qiskit.qobj import Qobj, validate_qobj_against_schema
