@@ -36,7 +36,9 @@ FIELDS_MAP = {
     'backend': '_backend_info',
     'creationDate': '_creation_date',
     'qObject': '_qobj',
-    'qObjectResult': '_result'
+    'qObjectResult': '_result',
+    'name': '_name',
+    'timePerStep': '_time_per_step'
 }
 
 
@@ -77,9 +79,9 @@ class JobResponseSchema(BaseSchema):
     _status = Enum(required=True, enum_cls=ApiJobStatus)
 
     # Optional properties with a default value.
-    name = String(missing=None)
+    _name = String(missing=None)
     shots = Integer(validate=Range(min=0), missing=None)
-    time_per_step = Dict(keys=String, values=String, missing=None)
+    _time_per_step = Dict(keys=String, values=String, missing=None)
     _result = Nested(ResultSchema, missing=None)
     _qobj = Nested(QobjSchema, missing=None)
 

@@ -215,25 +215,6 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(job.status() is JobStatus.CANCELLED)
 
     @requires_provider
-    def test_job_id(self, provider):
-        """Test getting a job id."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
-        self.log.info('job_id: %s', job.job_id())
-        self.assertTrue(job.job_id() is not None)
-
-    @requires_provider
-    def test_get_backend_name(self, provider):
-        """Test getting a backend name."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
-        self.assertTrue(job.backend().name() == backend.name())
-
-    @requires_provider
     def test_get_jobs_from_backend(self, provider):
         """Test retrieving jobs from a backend."""
         backend = least_busy(provider.backends())
@@ -370,36 +351,6 @@ class TestIBMQJob(JobTestCase):
         with self.assertRaises(JobError):
             job.submit()
 
-    @requires_provider
-    def test_error_message_qasm(self, provider):
-        """Test retrieving job error messages including QASM status(es)."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qr = QuantumRegister(5)  # 5 is sufficient for this test
-        cr = ClassicalRegister(2)
-        qc = QuantumCircuit(qr, cr)
-        qc.cx(qr[0], qr[1])
-        qc_new = transpile(qc, backend)
-
-        qobj = assemble(qc_new, shots=1000)
-        qobj.experiments[0].instructions[0].name = 'test_name'
-
-        job_sim = backend.run(qobj)
-        with self.assertRaises(JobError):
-            job_sim.result()
-
-        message = job_sim.error_message()
-        self.assertTrue(message)
-
-    @run_on_staging
-    def test_running_job_properties(self, provider):
-        """Test fetching properties of a running job."""
-        backend = least_busy(provider.backends(simulator=False))
-
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
-        _ = job.properties()
-
     @slow_test
     @requires_qe_access
     def test_pulse_job(self, qe_token, qe_url):
@@ -430,45 +381,6 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(schedules, backend, meas_level=1, shots=256)
         job = backend.run(qobj)
         _ = job.result()
-
-    @requires_qe_access
-    def test_custom_job_name(self, qe_token, qe_url):
-        """Test assigning a custom job name."""
-        factory = IBMQFactory()
-        provider = factory.enable_account(qe_token, qe_url)
-
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
-        # Use a unique job name
-        job_name = str(time.time()).replace('.', '')
-        job_id = backend.run(qobj, job_name=job_name).job_id()
-
-        job_list = provider.backends.jobs(backend_name=backend.name(),
-                                          limit=1, job_name=job_name)
-        self.assertEqual(len(job_list), 1)
-        self.assertEqual(job_id, job_list[0].job_id())
-
-    @requires_qe_access
-    def test_duplicate_job_name(self, qe_token, qe_url):
-        """Test multiple jobs with the same custom job name."""
-        factory = IBMQFactory()
-        provider = factory.enable_account(qe_token, qe_url)
-
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
-        # Use a unique job name
-        job_name = str(time.time()).replace('.', '')
-        job_ids = set()
-        for _ in range(2):
-            job_ids.add(backend.run(qobj, job_name=job_name).job_id())
-
-        retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
-                                                job_name=job_name)
-        self.assertEqual(len(retrieved_jobs), 2)
-        retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
-        self.assertEqual(job_ids, retrieved_job_ids)
 
 
 def _bell_circuit():

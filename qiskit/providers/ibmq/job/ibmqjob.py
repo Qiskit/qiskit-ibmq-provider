@@ -144,8 +144,6 @@ class IBMQJob(BaseModel, BaseJob):
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if not self._qobj:
-            # Populate self._qobj_dict by retrieving the results.
-            # TODO Can qobj be retrieved if the job was cancelled?
             self._wait_for_completion()
             with api_to_job_error():
                 qobj = self._api.job_download_qobj(
@@ -330,6 +328,27 @@ class IBMQJob(BaseModel, BaseJob):
             str: the job ID.
         """
         return self._job_id
+
+    def name(self) -> Optional[str]:
+        """Return the name assigned to this job.
+
+        Returns:
+            str: the job name.
+        """
+        return self._name
+
+    def time_per_step(self) -> Optional[Dict]:
+        """Return the date and time information on each step of the job processing.
+
+        Returns:
+            dict: a dictionary containing the date and time information on each
+                step of the job processing. The keys of the dictionary are the
+                names of the steps, and the values are the date and time
+                information. ``None`` is returned if the information is not
+                yet available.
+        """
+        # TODO refresh job data
+        return self._time_per_step
 
     def submit(self) -> None:
         """Submit job to IBM-Q.

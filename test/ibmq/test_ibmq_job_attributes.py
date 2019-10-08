@@ -1,0 +1,134 @@
+# -*- coding: utf-8 -*-
+
+# This code is part of Qiskit.
+#
+# (C) Copyright IBM 2019.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+"""IBMQJob Test."""
+
+import time
+import warnings
+from concurrent import futures
+
+import numpy
+from scipy.stats import chi2_contingency
+
+from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
+from qiskit.providers import JobError, JobStatus
+from qiskit.providers.ibmq import least_busy
+from qiskit.providers.ibmq.exceptions import IBMQBackendError
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
+from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+from qiskit.test import slow_test
+from qiskit.compiler import assemble, transpile
+
+from ..jobtestcase import JobTestCase
+from ..decorators import (requires_provider, requires_qe_access,
+                          run_on_staging)
+
+
+class TestIBMQJobAttributes(JobTestCase):
+    """Test ibmqjob module."""
+
+    def setUp(self):
+        super().setUp()
+        self._qc = _bell_circuit()
+
+    @requires_provider
+    def test_job_id(self, provider):
+        """Test getting a job id."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+        self.log.info('job_id: %s', job.job_id())
+        self.assertTrue(job.job_id() is not None)
+
+    @requires_provider
+    def test_get_backend_name(self, provider):
+        """Test getting a backend name."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+        self.assertTrue(job.backend().name() == backend.name())
+
+    @requires_provider
+    def test_error_message_qasm(self, provider):
+        """Test retrieving job error messages including QASM status(es)."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+
+        qr = QuantumRegister(5)  # 5 is sufficient for this test
+        cr = ClassicalRegister(2)
+        qc = QuantumCircuit(qr, cr)
+        qc.cx(qr[0], qr[1])
+        qc_new = transpile(qc, backend)
+
+        qobj = assemble(qc_new, shots=1000)
+        qobj.experiments[0].instructions[0].name = 'test_name'
+
+        job_sim = backend.run(qobj)
+        with self.assertRaises(JobError):
+            job_sim.result()
+
+        message = job_sim.error_message()
+        self.assertTrue(message)
+
+    @run_on_staging
+    def test_running_job_properties(self, provider):
+        """Test fetching properties of a running job."""
+        backend = least_busy(provider.backends(simulator=False))
+
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+        _ = job.properties()
+
+    @requires_provider
+    def test_custom_job_name(self, provider):
+        """Test assigning a custom job name."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        # Use a unique job name
+        job_name = str(time.time()).replace('.', '')
+        job_id = backend.run(qobj, job_name=job_name).job_id()
+        job = provider.backends.retrieve_job(job_id)
+        self.assertEqual(job.name(), job_name)
+
+    @requires_provider
+    def test_duplicate_job_name(self, provider):
+        """Test multiple jobs with the same custom job name."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        # Use a unique job name
+        job_name = str(time.time()).replace('.', '')
+        job_ids = set()
+        for _ in range(2):
+            job_ids.add(backend.run(qobj, job_name=job_name).job_id())
+
+        retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
+                                                job_name=job_name)
+        self.assertEqual(len(retrieved_jobs), 2)
+        retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
+        self.assertEqual(job_ids, retrieved_job_ids)
+        for job in retrieved_jobs:
+            self.assertEqual(job.name(), job_name)
+
+
+def _bell_circuit():
+    qr = QuantumRegister(2, 'q')
+    cr = ClassicalRegister(2, 'c')
+    qc = QuantumCircuit(qr, cr)
+    qc.h(qr[0])
+    qc.cx(qr[0], qr[1])
+    qc.measure(qr, cr)
+    return qc
