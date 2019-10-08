@@ -76,10 +76,11 @@ def formatwarning(message, category, filename, lineno, line):
             on the *exact* same line that issued the warning.
 
     This function displays the same message `warnings.formatwarning`
-    displays, minus the line that issues the warning, which is not
-    necessary since the exact line number of the warning is printed as well.
+    displays, minus the `line` that issues the warning, which is not
+    necessary since the exact line number and location of the warning
+    is printed as well.
     """
-    return "%s:%s: %s: %s\n\n" % (filename, lineno, category.__name__, message)
+    return "%s:%s: %s: %s %s\n" % (filename, lineno, category.__name__, message, line or '')
 
 
 # Set custom warning message formatter for `warnings.warn()`.
