@@ -215,7 +215,7 @@ class IBMQBackendService(SimpleNamespace):
             # `job_responses` comes from `jobs_statuses`, the backend name
             # might not be present. Revise during IBMQJob refactoring.
             job_info.update({
-                'backend_obj': None,
+                '_backend': None,
                 'api': self._provider._api,
                 'name': job_name
             })
@@ -245,11 +245,6 @@ class IBMQBackendService(SimpleNamespace):
         try:
             job_info = self._provider._api.job_get(job_id)
 
-            # Check for generic errors.
-            if 'error' in job_info:
-                raise IBMQBackendError('Failed to get job "{}": {}'
-                                       .format(job_id, job_info['error']))
-
             # Check for pre-qobj jobs.
             if 'kind' not in job_info:
                 warnings.warn('The result of job {} is in a no longer supported format. '
@@ -264,7 +259,7 @@ class IBMQBackendService(SimpleNamespace):
         # TODO: in a similar way to IBMQJob creation during `.jobs()`,
         # temporarily leaving the first argument as `None`.
         job_info.update({
-            'backend_obj': None,
+            '_backend': None,
             'api': self._provider._api
         })
         try:

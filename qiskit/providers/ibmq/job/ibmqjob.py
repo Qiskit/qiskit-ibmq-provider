@@ -34,7 +34,6 @@ from ..api.exceptions import ApiError, UserTimeoutExceededError
 from .schema import JobResponseSchema
 from .utils import (build_error_report, is_job_queued,
                     api_status_to_job_status, api_to_job_error)
-from ..utils.utils import to_python_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -96,54 +95,40 @@ class IBMQJob(BaseModel, BaseJob):
     """
 
     def __init__(self,
-                 backend_obj: BaseBackend,
+                 _backend: BaseBackend,
                  api: AccountClient,
-                 id: str,
-                 creationDate: str,
+                 _job_id: str,
+                 _creation_date: str,
                  kind: ApiJobKind,
-                 status: ApiJobStatus,
+                 _status: ApiJobStatus,
                  **kwargs: Any) -> None:
         """IBMQJob init function.
 
         Args:
-            backend_obj (BaseBackend): the backend instance used to run this job.
+            _backend (BaseBackend): the backend instance used to run this job.
             api (AccountClient): object for connecting to the API.
-            id (str or None): job ID of this job.
-            creationDate (str): job creation date.
+            _job_id (str or None): job ID of this job.
+            _creation_date (str): job creation date.
             kind (ApiJobKind): job kind.
-            status (ApiJobStatus): job status.
-            kwargs (dict): additional job attributes.
+            _status (ApiJobStatus): job status.
+            kwargs (dict): additional job attributes, that will be added as
+                instance members.
         """
         # pylint: disable=redefined-builtin
+        BaseModel.__init__(self, _backend=_backend, _job_id=_job_id,
+                           _creation_date=_creation_date, kind=kind,
+                           _status=_status, **kwargs)
+        BaseJob.__init__(self, self.backend(), self.job_id())
 
         # Model attributes.
         self._api = api
-        self._creation_date = creationDate
-        self._job_kind = kind
-        self._use_object_storage = (self._job_kind == ApiJobKind.QOBJECT_STORAGE)
-        self._update_status_position(status, kwargs.pop('infoQueue', None))
-
-        # Optional attributes. These are specifically defined to allow
-        # auto-completion in an IDE.
-        self.shots = kwargs.pop('shots', None)
-        self.time_per_step = kwargs.pop('timePerStep', None)
-        self.name = kwargs.pop('name', None)
-        self._api_backend = kwargs.pop('backend', None)
-
-        # Get Qobj from either the API result (qObject) or user input (qobj)
-        qobj_dict = kwargs.pop('qObject', None)
-        self._qobj = Qobj.from_dict(qobj_dict) if qobj_dict else kwargs.pop('qobj', None)
-
-        # Additional attributes, converted to Python identifiers
-        new_kwargs = {to_python_identifier(key): value for key, value in kwargs.items()}
-        BaseModel.__init__(self, **new_kwargs)
-        BaseJob.__init__(self, backend_obj, id)
+        self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
+        self._queue_position = None
+        self._update_status_position(_status, kwargs.pop('infoQueue', None))
 
         # Properties used for caching.
         self._cancelled = False
-        self._api_error_msg = None
-        self._result = None
-        self._queue_position = None
+        self._job_error_msg = self._error.message if self._error else None
 
     def qobj(self) -> Qobj:
         """Return the Qobj for this job.
@@ -157,6 +142,7 @@ class IBMQJob(BaseModel, BaseJob):
         Raises:
             JobError: if there was some unexpected failure in the server.
         """
+        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if not self._qobj:
             # Populate self._qobj_dict by retrieving the results.
             # TODO Can qobj be retrieved if the job was cancelled?
@@ -213,17 +199,18 @@ class IBMQJob(BaseModel, BaseJob):
             qiskit.Result: Result object
 
         Raises:
-            JobError: if the job has not been submitted or has failed, or if
-                there was some unexpected failure in the server.
+            JobError: if the job has failed or cancelled, or if there was some
+                unexpected failure in the server.
         """
         # pylint: disable=arguments-differ
+        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
 
         if not self._wait_for_completion(timeout=timeout, wait=wait,
                                          required_status=(JobStatus.DONE,)):
-            raise JobError('Unable to retrieve job result. Job status '
-                           'is {}'.format(str(self._status)))
+            message = 'Job was cancelled.' if self._status is JobStatus.CANCELLED \
+                else 'Job has failed. Use job.error_message() to get more details.'
+            raise JobError('Unable to retrieve job result. ' + message)
 
-        # TODO Can look for and reuse qObjectResult
         if not self._result:
             with api_to_job_error():
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
@@ -300,23 +287,25 @@ class IBMQJob(BaseModel, BaseJob):
         Returns:
             str: An error report if the job failed or ``None`` otherwise.
         """
-        if self.job_id() is None or \
-                not self._wait_for_completion(required_status=(JobStatus.ERROR,)):
+        if not self._wait_for_completion(required_status=(JobStatus.ERROR,)):
             return None
 
-        if not self._api_error_msg:
-            job_response = self._api.job_get(self.job_id())
-            if 'qObjectResult' in job_response:
-                results = job_response['qObjectResult']['results']
-                self._api_error_msg = build_error_report(results)
-            elif 'qasms' in job_response:
-                qasm_statuses = [qasm['status'] for qasm in job_response['qasms']]
-                self._api_error_msg = 'Job resulted in the following QASM status(es): ' \
-                                      '{}.'.format(', '.join(qasm_statuses))
-            else:
-                self._api_error_msg = job_response.get('status', 'An unknown error occurred.')
+        if self._error:
+            self._job_error_msg = self._error.message
 
-        return self._api_error_msg
+        if not self._job_error_msg:
+            with api_to_job_error():
+                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
+            if result_response['results']:
+                # If individual errors given
+                self._job_error_msg = build_error_report(result_response['results'])
+            elif 'error' in result_response:
+                self._job_error_msg = result_response['error']['message']
+            else:
+                # No error message given
+                self._job_error_msg = "Unknown error."
+
+        return self._job_error_msg
 
     def queue_position(self) -> Optional[int]:
         """Return the position in the server queue.
