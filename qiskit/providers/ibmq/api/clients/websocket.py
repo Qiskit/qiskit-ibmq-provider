@@ -305,7 +305,7 @@ class WebsocketClient(BaseClient):
         raise WebsocketError('Failed to establish a websocket '
                              'connection after {} retries.'.format(retries))
 
-    def _backoff_time(self, backoff_factor, current_retry_attempt):
+    def _backoff_time(self, backoff_factor: float, current_retry_attempt: int) -> float:
         """Calculate the backoff time to sleep for.
 
         Exponential backoff time formula:

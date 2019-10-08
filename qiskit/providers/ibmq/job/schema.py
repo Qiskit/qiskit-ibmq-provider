@@ -101,7 +101,7 @@ class JobResponseSchema(BaseSchema):
     error = String()
 
     @pre_load
-    def preprocess_field_names(self, data):
+    def preprocess_field_names(self, data):  # type: ignore
         """Pre-process the job response fields.
 
         Rename selected fields of the job response due to name clashes, and
