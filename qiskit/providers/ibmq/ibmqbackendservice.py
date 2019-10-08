@@ -18,14 +18,14 @@ import warnings
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
 
-from qiskit.providers import JobStatus
+from qiskit.providers import JobStatus, QiskitBackendNotFoundError
 from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api.exceptions import ApiError
 from .apiconstants import ApiJobStatus
 from .exceptions import IBMQBackendError, IBMQBackendValueError
-from .ibmqbackend import IBMQBackend
+from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
 from .utils import to_python_identifier
 
@@ -245,11 +245,6 @@ class IBMQBackendService(SimpleNamespace):
         try:
             job_info = self._provider._api.job_get(job_id)
 
-            # Check for generic errors.
-            if 'error' in job_info:
-                raise IBMQBackendError('Failed to get job "{}": {}'
-                                       .format(job_id, job_info['error']))
-
             # Check for pre-qobj jobs.
             if 'kind' not in job_info:
                 warnings.warn('The result of job {} is in a no longer supported format. '
@@ -261,10 +256,18 @@ class IBMQBackendService(SimpleNamespace):
             raise IBMQBackendError('Failed to get job "{}": {}'
                                    .format(job_id, str(ex)))
 
-        # TODO: in a similar way to IBMQJob creation during `.jobs()`,
-        # temporarily leaving the first argument as `None`.
+        # Recreate the backend used for this job.
+        backend_name = job_info.get('backend', {}).get('name', 'unknown')
+        try:
+            backend = self._provider.get_backend(backend_name)
+        except QiskitBackendNotFoundError:
+            backend = IBMQRetiredBackend.from_name(backend_name,
+                                                   self._provider,
+                                                   self._provider.credentials,
+                                                   self._provider._api)
+
         job_info.update({
-            '_backend': None,
+            '_backend': backend,
             'api': self._provider._api
         })
         try:
