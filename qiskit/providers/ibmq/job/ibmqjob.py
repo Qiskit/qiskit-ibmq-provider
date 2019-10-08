@@ -80,6 +80,13 @@ class IBMQJob(BaseModel, BaseJob):
     Many of the ``IBMQJob`` methods can raise ``JobError`` if unexpected
     failures happened at the server level.
 
+    Job information retrieved from the API server is attached to the ``IBMQJob``
+    as attributes. Given Qiskit and the API server can be updated
+    independently, some of these attributes can be deprecated or experimental.
+    The ones known to be supported are converted to methods. For example, you
+    can use ``IBMQJob.creation_date()`` to retrieve the job creation date,
+    which is a supported attribute.
+
     Note:
         When querying the server for getting the job information, two kinds
         of errors are possible. The most severe is the one preventing Qiskit
