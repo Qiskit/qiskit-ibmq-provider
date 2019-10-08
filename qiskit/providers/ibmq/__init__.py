@@ -68,7 +68,7 @@ def formatwarning(message, category, filename, lineno, line):
                 warnings.warn('This is a message that
                               'that extends two lines')
 
-            the part included in the final warning to the user is:
+            the only part included in the final warning to the user is:
 
                 warnings.warn('This is a message that
 
@@ -78,7 +78,7 @@ def formatwarning(message, category, filename, lineno, line):
     This function displays the same message `warnings.formatwarning`
     displays, minus the `line` that issues the warning, which is not
     necessary since the exact line number and location of the warning
-    is printed as well.
+    are printed as well.
     """
     return "%s:%s: %s: %s %s\n" % (filename, lineno, category.__name__, message, line or '')
 
