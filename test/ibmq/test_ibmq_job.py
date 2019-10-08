@@ -364,7 +364,6 @@ class TestIBMQJob(JobTestCase):
         with self.assertRaises(JobError):
             job.result()
 
-        time.sleep(3)
         new_job = provider.backends.retrieve_job(job.job_id())
         message = new_job.error_message()
         self.assertIn('Experiment 1: ERROR', message)

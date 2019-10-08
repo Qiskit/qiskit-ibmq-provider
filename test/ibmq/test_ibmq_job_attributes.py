@@ -51,27 +51,6 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj)
         self.assertTrue(job.backend().name() == backend.name())
 
-    @requires_provider
-    def test_error_message_qasm(self, provider):
-        """Test retrieving job error messages including QASM status(es)."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qr = QuantumRegister(5)  # 5 is sufficient for this test
-        cr = ClassicalRegister(2)
-        qc = QuantumCircuit(qr, cr)
-        qc.cx(qr[0], qr[1])
-        qc_new = transpile(qc, backend)
-
-        qobj = assemble(qc_new, shots=1000)
-        qobj.experiments[0].instructions[0].name = 'test_name'
-
-        job_sim = backend.run(qobj)
-        with self.assertRaises(JobError):
-            job_sim.result()
-
-        message = job_sim.error_message()
-        self.assertTrue(message)
-
     @run_on_staging
     def test_running_job_properties(self, provider):
         """Test fetching properties of a running job."""
