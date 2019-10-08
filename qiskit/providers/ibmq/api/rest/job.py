@@ -14,10 +14,9 @@
 
 """Job REST adapter for the IBM Q Experience API."""
 
-import json
 import pprint
 
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 from marshmallow.exceptions import ValidationError
 
 from .base import RestAdapterBase
@@ -53,12 +52,6 @@ class Job(RestAdapterBase):
 
     def get(self) -> Dict[str, Any]:
         """Return a job.
-
-        Args:
-            excluded_fields (list[str]): names of the fields to explicitly
-                exclude from the result.
-            included_fields (list[str]): names of the fields to explicitly
-                include in the result.
 
         Returns:
             dict: json response.

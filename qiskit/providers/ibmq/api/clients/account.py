@@ -304,10 +304,6 @@ class AccountClient(BaseClient):
 
         Args:
             job_id (str): the id of the job.
-            excluded_fields (list[str]): names of the fields to explicitly
-                exclude from the result.
-            included_fields (list[str]): names of the fields, if present, to explicitly
-                include in the result. All the other fields will not be included in the result.
 
         Returns:
             dict: job information.
