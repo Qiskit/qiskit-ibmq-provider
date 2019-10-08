@@ -50,4 +50,3 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
                    key=lambda b: b.status().pending_jobs)
     except (ValueError, TypeError):
         raise QiskitError("Can only find least_busy backend from a non-empty list.")
-
