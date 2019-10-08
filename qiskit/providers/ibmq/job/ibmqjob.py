@@ -128,7 +128,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Properties used for caching.
         self._cancelled = False
-        self._api_error_msg = None
+        self._job_error_msg = self._error.message if self._error else None
 
     def qobj(self) -> Qobj:
         """Return the Qobj for this job.
@@ -197,18 +197,18 @@ class IBMQJob(BaseModel, BaseJob):
             qiskit.Result: Result object
 
         Raises:
-            JobError: if the job has not been submitted or has failed, or if
-                there was some unexpected failure in the server.
+            JobError: if the job has failed or cancelled, or if there was some
+                unexpected failure in the server.
         """
         # pylint: disable=arguments-differ
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
 
         if not self._wait_for_completion(timeout=timeout, wait=wait,
                                          required_status=(JobStatus.DONE,)):
-            raise JobError('Unable to retrieve job result. Job status '
-                           'is {}'.format(str(self._status)))
+            message = 'Job was cancelled.' if self._status is JobStatus.CANCELLED \
+                else 'Job has failed. Use job.error_message() to get more details.'
+            raise JobError('Unable to retrieve job result. ' + message)
 
-        # TODO Can look for and reuse qObjectResult
         if not self._result:
             with api_to_job_error():
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
@@ -285,23 +285,25 @@ class IBMQJob(BaseModel, BaseJob):
         Returns:
             str: An error report if the job failed or ``None`` otherwise.
         """
-        if self.job_id() is None or \
-                not self._wait_for_completion(required_status=(JobStatus.ERROR,)):
+        if not self._wait_for_completion(required_status=(JobStatus.ERROR,)):
             return None
 
-        if not self._api_error_msg:
-            job_response = self._api.job_get(self.job_id())
-            if 'qObjectResult' in job_response:
-                results = job_response['qObjectResult']['results']
-                self._api_error_msg = build_error_report(results)
-            elif 'qasms' in job_response:
-                qasm_statuses = [qasm['status'] for qasm in job_response['qasms']]
-                self._api_error_msg = 'Job resulted in the following QASM status(es): ' \
-                                      '{}.'.format(', '.join(qasm_statuses))
-            else:
-                self._api_error_msg = job_response.get('status', 'An unknown error occurred.')
+        if self._error:
+            self._job_error_msg = self._error.message
 
-        return self._api_error_msg
+        if not self._job_error_msg:
+            with api_to_job_error():
+                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
+            if result_response['results']:
+                # If individual errors given
+                self._job_error_msg = build_error_report(result_response['results'])
+            elif 'error' in result_response:
+                self._job_error_msg = result_response['error']['message']
+            else:
+                # No error message given
+                self._job_error_msg = "Unknown error."
+
+        return self._job_error_msg
 
     def queue_position(self) -> Optional[int]:
         """Return the position in the server queue.
