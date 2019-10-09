@@ -17,7 +17,7 @@
 import time
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers import JobError, JobStatus
+from qiskit.providers import JobError
 from qiskit.providers.ibmq import least_busy
 from qiskit.compiler import assemble, transpile
 
