@@ -15,7 +15,6 @@
 """Utilities for reading and writing credentials from and to config files."""
 
 import logging
-import warnings
 import os
 from ast import literal_eval
 from collections import OrderedDict
