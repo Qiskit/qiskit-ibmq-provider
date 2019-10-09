@@ -14,10 +14,9 @@
 
 """Job REST adapter for the IBM Q Experience API."""
 
-import json
 import pprint
 
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 from marshmallow.exceptions import ValidationError
 
 from .base import RestAdapterBase
@@ -51,27 +50,15 @@ class Job(RestAdapterBase):
         self.job_id = job_id
         super().__init__(session, '/Jobs/{}'.format(job_id))
 
-    def get(
-            self,
-            excluded_fields: Optional[List[str]],
-            included_fields: Optional[List[str]]
-    ) -> Dict[str, Any]:
+    def get(self) -> Dict[str, Any]:
         """Return a job.
-
-        Args:
-            excluded_fields (list[str]): names of the fields to explicitly
-                exclude from the result.
-            included_fields (list[str]): names of the fields to explicitly
-                include in the result.
 
         Returns:
             dict: json response.
         """
         url = self.get_url('self')
-        query = build_url_filter(excluded_fields, included_fields)
 
-        response = self.session.get(
-            url, params={'filter': json.dumps(query) if query else None}).json()
+        response = self.session.get(url).json()
 
         if 'calibration' in response:
             response['properties'] = response.pop('calibration')
@@ -156,43 +143,3 @@ class Job(RestAdapterBase):
             dict: json response.
         """
         return self.session.get(url, bare=True).json()
-
-
-def build_url_filter(
-        excluded_fields: Optional[List[str]],
-        included_fields: Optional[List[str]]
-) -> Dict[str, Dict[str, bool]]:
-    """Return a URL filter based on included and excluded fields.
-
-    If a field appears in both excluded_fields and included_fields, it
-    is ultimately included.
-
-    Args:
-        excluded_fields (list[str]): names of the fields to explicitly
-            exclude from the result.
-        included_fields (list[str]): names of the fields to explicitly
-            include in the result.
-
-    Returns:
-        dict: the query, as a dict in the format for the API.
-    """
-    excluded_fields = excluded_fields or []
-    included_fields = included_fields or []
-    field_flags = {}
-    ret = {}  # type: ignore[var-annotated]
-
-    # Build a map of fields to bool.
-    for field_ in excluded_fields:
-        field_flags[field_] = False
-    for field_ in included_fields:
-        # Set the included fields. If a field_ here was also in
-        # excluded_fields, it is overwritten here.
-        field_flags[field_] = True
-
-    if 'properties' in field_flags:
-        field_flags['calibration'] = field_flags.pop('properties')
-
-    if field_flags:
-        ret = {'fields': field_flags}
-
-    return ret
