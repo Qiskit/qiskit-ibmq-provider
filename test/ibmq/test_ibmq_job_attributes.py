@@ -17,7 +17,7 @@
 import time
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers import JobError
+from qiskit.providers import JobError, JobStatus
 from qiskit.providers.ibmq import least_busy
 from qiskit.compiler import assemble, transpile
 
@@ -123,6 +123,31 @@ class TestIBMQJobAttributes(JobTestCase):
 
         message = job.error_message()
         self.assertIn('Experiment 1: ERROR', message)
+
+    @requires_provider
+    def test_refresh(self, provider):
+        """Test refreshing job data."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+        job._wait_for_completion()
+
+        rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
+        self.assertFalse(rjob._time_per_step)
+        rjob.refresh()
+        self.assertEqual(rjob._time_per_step, job._time_per_step)
+
+    @requires_provider
+    def test_time_per_step(self, provider):
+        """Test retrieving time per step."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+        job.result()
+        self.assertTrue(job.time_per_step())
+
+        rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
+        self.assertTrue(rjob.time_per_step())
 
 
 def _bell_circuit():

@@ -258,10 +258,13 @@ class IBMQJob(BaseModel, BaseJob):
             return self._status
 
         with api_to_job_error():
-            # TODO: See result values
             api_response = self._api.job_status(self.job_id())
             self._update_status_position(ApiJobStatus(api_response['status']),
                                          api_response.get('infoQueue', None))
+
+        # Get all job attributes if the job is done.
+        if self._status in JOB_FINAL_STATES:
+            self.refresh()
 
         return self._status
 
@@ -363,7 +366,8 @@ class IBMQJob(BaseModel, BaseJob):
                 information. ``None`` is returned if the information is not
                 yet available.
         """
-        # TODO refresh job data
+        if not self._time_per_step or self._status not in JOB_FINAL_STATES:
+            self.refresh()
         return self._time_per_step
 
     def submit(self) -> None:
@@ -437,4 +441,8 @@ class IBMQJob(BaseModel, BaseJob):
                     'Timeout while waiting for job {}'.format(self._job_id))
         self._update_status_position(ApiJobStatus(status_response['status']),
                                      status_response.get('infoQueue', None))
+        # Get all job attributes if the job is done.
+        if self._status in JOB_FINAL_STATES:
+            self.refresh()
+
         return self._status in required_status
