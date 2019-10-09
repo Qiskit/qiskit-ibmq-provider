@@ -352,7 +352,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the name assigned to this job.
 
         Returns:
-            str: the job name.
+            str: the job name or ``None`` if no name was assigned to the job.
         """
         return self._name
 
@@ -374,7 +374,8 @@ class IBMQJob(BaseModel, BaseJob):
         """Submit job to IBM-Q.
 
         Note:
-            This function waits for a job ID to become available.
+            This function is deprecated, please use ``IBMQBackend.run()`` to
+                submit a job.
 
         Events:
             ibmq.job.start: The job has started.
@@ -385,7 +386,8 @@ class IBMQJob(BaseModel, BaseJob):
         if self.job_id() is not None:
             raise JobError("We have already submitted the job!")
 
-        warnings.warn("Please use IBMQBackend.run() to submit a job.")
+        warnings.warn("job.submit() is deprecated. Please use "
+                      "IBMQBackend.run() to submit a job.", DeprecationWarning)
 
     def refresh(self) -> None:
         """Obtain the latest job information from the API."""
