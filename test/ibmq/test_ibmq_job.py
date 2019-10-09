@@ -515,6 +515,21 @@ class TestIBMQJob(JobTestCase):
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)
 
+    @requires_provider
+    def test_refresh(self, provider):
+        """Test refreshing job data."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+
+        time_per_step = getattr(job, 'time_per_step', {})
+        job.result()
+        job.refresh()
+        time_per_step_new = job.time_per_step
+        self.assertGreater(len(time_per_step_new), len(time_per_step),
+                           "Initial time_per_step is {}, updated time_per_step is {}".format(
+                               time_per_step, time_per_step_new))
+
 
 def _bell_circuit():
     qr = QuantumRegister(2, 'q')
