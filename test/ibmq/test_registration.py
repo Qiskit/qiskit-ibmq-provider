@@ -75,9 +75,9 @@ class TestCredentials(IBMQTestCase):
             config_rc_logger = logging.getLogger(store_credentials.__module__)
 
             # Attempt overwriting.
-            with self.assertLogs(logger=config_rc_logger, level='WARNING') as cm:
+            with self.assertLogs(logger=config_rc_logger, level='WARNING') as log_records:
                 store_credentials(credentials)
-                self.assertIn('already present', cm.output[0])
+                self.assertIn('already present', log_records.output[0])
 
             with no_file('Qconfig.py'), no_envs(CREDENTIAL_ENV_VARS), mock_ibmq_provider():
                 # Attempt overwriting.
