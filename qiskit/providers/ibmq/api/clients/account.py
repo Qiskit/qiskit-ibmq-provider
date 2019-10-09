@@ -298,24 +298,17 @@ class AccountClient(BaseClient):
 
     def job_get(
             self,
-            job_id: str,
-            excluded_fields: Optional[List[str]] = None,
-            included_fields: Optional[List[str]] = None
+            job_id: str
     ) -> Dict[str, Any]:
         """Return information about a job.
 
         Args:
             job_id (str): the id of the job.
-            excluded_fields (list[str]): names of the fields to explicitly
-                exclude from the result.
-            included_fields (list[str]): names of the fields, if present, to explicitly
-                include in the result. All the other fields will not be included in the result.
 
         Returns:
             dict: job information.
         """
-        return self.client_api.job(job_id).get(excluded_fields,
-                                               included_fields)
+        return self.client_api.job(job_id).get()
 
     def job_status(self, job_id: str) -> Dict[str, Any]:
         """Return the status of a job.
@@ -491,7 +484,7 @@ class AccountClient(BaseClient):
         Returns:
             dict: job information.
         """
-        return self.client_api.job(job_id).get([], [])
+        return self.client_api.job(job_id).get()
 
     def circuit_job_status(self, job_id: str) -> Dict:
         """Return the status of a Circuits job.
