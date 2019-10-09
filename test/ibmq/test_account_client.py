@@ -15,7 +15,6 @@
 """Tests for the AccountClient for IBM Q Experience."""
 
 import re
-from unittest import skip
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
@@ -275,54 +274,6 @@ class TestAccountClientJobs(IBMQTestCase):
         """Test job_get."""
         response = self.client.job_get(self.job_id)
         self.assertIn('status', response)
-
-    @skip('TODO: reenable after api changes')
-    def test_job_get_includes(self):
-        """Check the include fields parameter for job_get."""
-        # Get the job, including some fields.
-        self.assertIn('backend', self.job)
-        self.assertIn('shots', self.job)
-        job_included = self.client.job_get(self.job_id,
-                                           included_fields=['backend', 'shots'])
-
-        # Ensure the response has only the included fields
-        self.assertEqual({'backend', 'shots'}, set(job_included.keys()))
-
-    @skip('TODO: reenable after api changes')
-    def test_job_get_excludes(self):
-        """Check the exclude fields parameter for job_get."""
-        # Get the job, excluding a field.
-        self.assertIn('shots', self.job)
-        self.assertIn('backend', self.job)
-        job_excluded = self.client.job_get(self.job_id, excluded_fields=['backend'])
-
-        # Ensure the response only excludes the specified field
-        self.assertNotIn('backend', job_excluded)
-        self.assertIn('shots', self.job)
-
-    @skip('TODO: reenable after api changes')
-    def test_job_get_includes_nonexistent(self):
-        """Check job_get including nonexistent fields."""
-        # Get the job, including an nonexistent field.
-        self.assertNotIn('dummy_include', self.job)
-        job_included = self.client.job_get(self.job_id,
-                                           included_fields=['dummy_include'])
-
-        # Ensure the response is empty, since no existing fields are included
-        self.assertFalse(job_included)
-
-    @skip('TODO: reenable after api changes')
-    def test_job_get_excludes_nonexistent(self):
-        """Check job_get excluding nonexistent fields."""
-        # Get the job, excluding an non-existent field.
-        self.assertNotIn('dummy_exclude', self.job)
-        self.assertIn('shots', self.job)
-        job_excluded = self.client.job_get(self.job_id,
-                                           excluded_fields=['dummy_exclude'])
-
-        # Ensure the response only excludes the specified field. We can't do a direct
-        # comparison against the original job because some fields might have changed.
-        self.assertIn('shots', job_excluded)
 
     def test_job_status(self):
         """Test getting job status."""
