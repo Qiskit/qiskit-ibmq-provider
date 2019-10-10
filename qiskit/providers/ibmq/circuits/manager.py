@@ -42,11 +42,11 @@ class CircuitsManager:
         """Execute a Circuit.
 
         Args:
-            name (str): name of the Circuit.
+            name: name of the Circuit.
             **kwargs: parameters passed to the Circuit.
 
         Returns:
-            Result: the result of executing the circuit.
+            the result of executing the circuit.
 
         Raises:
             CircuitAvailabilityError: if Circuits are not available.
@@ -116,12 +116,12 @@ class CircuitsManager:
         such that the circuit family may be hard to classically simulate.
 
         Args:
-            number_of_qubits (int): number of qubits to use, in the 2-20 range.
-            adjacency_matrix (list[list]): square matrix of elements whose
+            number_of_qubits: number of qubits to use, in the 2-20 range.
+            adjacency_matrix: square matrix of elements whose
                 values are 0 or 1. The matrix size is `number_of_qubits` by
                 `number_of_qubits` and is expected to be symmetric and have
                 zeros on the diagonal.
-            angles (list[float]): list of phase angles, each in the interval
+            angles: list of phase angles, each in the interval
                 `[0, 2*pi)` radians. There should be 3 * number_of_qubits
                 elements in the array. The first three elements are the
                 theta, phi, and lambda angles, respectively, of a u3 gate
@@ -130,7 +130,7 @@ class CircuitsManager:
                 acting on subsequent qubits.
 
         Returns:
-            Result: the result of executing the circuit.
+            the result of executing the circuit.
 
         Raises:
             CircuitError: if the parameters are not valid.
@@ -156,14 +156,14 @@ class CircuitsManager:
         specified number of qubits and phase angles.
 
         Args:
-            number_of_qubits (int): number of qubits to use, in the 2-20 range.
-            angles (list): array of three phase angles (x/y/z) each from
+            number_of_qubits: number of qubits to use, in the 2-20 range.
+            angles: array of three phase angles (x/y/z) each from
                 0 to 2*Pi, one set for each qubit of each layer of the lattice.
                 There should be 3 * number_of_qubits * desired lattice depth
                 entries in the array.
 
         Returns:
-            Result: the result of executing the circuit.
+            the result of executing the circuit.
 
         Raises:
             CircuitError: if the parameters are not valid.
@@ -187,11 +187,11 @@ class CircuitsManager:
         the device.
 
         Args:
-            number_of_qubits (int) : optional argument for number of qubits to
+            number_of_qubits: optional argument for number of qubits to
                 use. If not specified will use all qubits on device.
 
         Returns:
-            Result: the result of executing the circuit.
+            the result of executing the circuit.
         """
         kwargs = {}
         if number_of_qubits is not None:
