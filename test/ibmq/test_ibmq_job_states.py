@@ -53,6 +53,9 @@ MOCKED_ERROR_RESULT = {
 
 VALID_QOBJ_RESPONSE = {
     'status': 'COMPLETED',
+    'kind': 'q-object',
+    'creationDate': '2019-01-01T12:57:15.052Z',
+    'id': '0123456789',
     'qObjectResult': {
         'backend_name': 'ibmqx2',
         'backend_version': '1.1.1',
@@ -319,6 +322,7 @@ class TestIBMQJobStates(JobTestCase):
         backend = IBMQBackend(mock.Mock(), mock.Mock(), mock.Mock(), api=api)
         self._current_api = api
         self._current_qjob = backend.run(qobj=new_fake_qobj())
+        self._current_qjob.refresh = mock.Mock()
         return self._current_qjob
 
 

@@ -83,6 +83,13 @@ class IBMQJob(BaseModel, BaseJob):
     Many of the ``IBMQJob`` methods can raise ``JobError`` if unexpected
     failures happened at the server level.
 
+    Job information retrieved from the API server is attached to the ``IBMQJob``
+    instance as attributes. Given that Qiskit and the API server can be updated
+    independently, some of these attributes might be deprecated or experimental.
+    Supported attributes can be retrieved via methods. For example, you
+    can use ``IBMQJob.creation_date()`` to retrieve the job creation date,
+    which is a supported attribute.
+
     Note:
         When querying the server for getting the job information, two kinds
         of errors are possible. The most severe is the one preventing Qiskit
@@ -147,8 +154,6 @@ class IBMQJob(BaseModel, BaseJob):
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if not self._qobj:  # type: ignore[has-type]
-            # Populate self._qobj_dict by retrieving the results.
-            # TODO Can qobj be retrieved if the job was cancelled?
             self._wait_for_completion()
             with api_to_job_error():
                 qobj = self._api.job_download_qobj(
@@ -249,10 +254,13 @@ class IBMQJob(BaseModel, BaseJob):
             return self._status
 
         with api_to_job_error():
-            # TODO: See result values
             api_response = self._api.job_status(self.job_id())
             self._update_status_position(ApiJobStatus(api_response['status']),
                                          api_response.get('infoQueue', None))
+
+        # Get all job attributes if the job is done.
+        if self._status in JOB_FINAL_STATES:
+            self.refresh()
 
         return self._status
 
@@ -268,6 +276,9 @@ class IBMQJob(BaseModel, BaseJob):
             queued, self._queue_position = is_job_queued(info_queue)  # type: ignore[assignment]
             if queued:
                 self._status = JobStatus.QUEUED
+
+        if self._status is not JobStatus.QUEUED:
+            self._queue_position = None
 
     def error_message(self) -> Optional[str]:
         """Provide details about the reason of failure.
@@ -310,7 +321,8 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the position in the server queue.
 
         Returns:
-            int: Position in the queue or ``None`` if position is unknown.
+            int: Position in the queue or ``None`` if position is unknown or
+                not applicable.
         """
         # Get latest position
         self.status()
@@ -332,11 +344,34 @@ class IBMQJob(BaseModel, BaseJob):
         """
         return self._job_id
 
+    def name(self) -> Optional[str]:
+        """Return the name assigned to this job.
+
+        Returns:
+            str: the job name or ``None`` if no name was assigned to the job.
+        """
+        return self._name
+
+    def time_per_step(self) -> Optional[Dict]:
+        """Return the date and time information on each step of the job processing.
+
+        Returns:
+            dict: a dictionary containing the date and time information on each
+                step of the job processing. The keys of the dictionary are the
+                names of the steps, and the values are the date and time
+                information. ``None`` is returned if the information is not
+                yet available.
+        """
+        if not self._time_per_step or self._status not in JOB_FINAL_STATES:
+            self.refresh()
+        return self._time_per_step
+
     def submit(self) -> None:
         """Submit job to IBM-Q.
 
         Note:
-            This function waits for a job ID to become available.
+            This function is deprecated, please use ``IBMQBackend.run()`` to
+                submit a job.
 
         Events:
             ibmq.job.start: The job has started.
@@ -347,7 +382,8 @@ class IBMQJob(BaseModel, BaseJob):
         if self.job_id() is not None:
             raise JobError("We have already submitted the job!")
 
-        warnings.warn("Please use IBMQBackend.run() to submit a job.")
+        warnings.warn("job.submit() is deprecated. Please use "
+                      "IBMQBackend.run() to submit a job.", DeprecationWarning)
 
     def refresh(self) -> None:
         """Obtain the latest job information from the API."""
@@ -403,4 +439,8 @@ class IBMQJob(BaseModel, BaseJob):
                     'Timeout while waiting for job {}'.format(self._job_id))
         self._update_status_position(ApiJobStatus(status_response['status']),
                                      status_response.get('infoQueue', None))
+        # Get all job attributes if the job is done.
+        if self._status in JOB_FINAL_STATES:
+            self.refresh()
+
         return self._status in required_status
