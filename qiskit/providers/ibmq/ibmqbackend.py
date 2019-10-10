@@ -238,7 +238,10 @@ class IBMQBackend(BaseBackend):
             status (None or qiskit.providers.JobStatus or str): only get jobs
                 with this status, where status is e.g. `JobStatus.RUNNING` or
                 `'RUNNING'`
-            job_name (str): only get jobs with this job name.
+            job_name (str): filter by job name. The `job_name` is matched
+                partially and `regular expressions
+                <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
+                `_ can be used.
             db_filter (dict): `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
