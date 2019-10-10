@@ -161,13 +161,17 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the backend properties for this job.
 
         Returns:
-            BackendProperties: the backend properties used for this job.
+            BackendProperties: the backend properties used for this job, or None if
+                properties are not available.
 
         Raises:
             JobError: if there was some unexpected failure in the server.
         """
         with api_to_job_error():
             properties = self._api.job_properties(job_id=self.job_id())
+
+        if not properties:
+            return None
 
         return BackendProperties.from_dict(properties)
 
