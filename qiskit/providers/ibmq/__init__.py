@@ -14,7 +14,6 @@
 
 """Backends provided by IBM Quantum Experience."""
 
-import warnings
 from typing import List
 
 from qiskit.exceptions import QiskitError
