@@ -14,6 +14,7 @@
 
 """Test the registration and credentials features of the IBMQ module."""
 
+import logging
 import os
 import warnings
 from io import StringIO
@@ -69,10 +70,14 @@ class TestCredentials(IBMQTestCase):
             store_credentials(credentials)
             # Cause all warnings to always be triggered.
             warnings.simplefilter("always")
+
+            # Get the logger for `store_credentials`.
+            config_rc_logger = logging.getLogger(store_credentials.__module__)
+
             # Attempt overwriting.
-            with warnings.catch_warnings(record=True) as w:
+            with self.assertLogs(logger=config_rc_logger, level='WARNING') as log_records:
                 store_credentials(credentials)
-                self.assertIn('already present', str(w[0]))
+                self.assertIn('already present', log_records.output[0])
 
             with no_file('Qconfig.py'), no_envs(CREDENTIAL_ENV_VARS), mock_ibmq_provider():
                 # Attempt overwriting.

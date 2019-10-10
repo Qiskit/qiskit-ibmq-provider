@@ -14,7 +14,7 @@
 
 """Utilities for reading and writing credentials from and to config files."""
 
-import warnings
+import logging
 import os
 from ast import literal_eval
 from collections import OrderedDict
@@ -23,6 +23,8 @@ from typing import Dict, Optional, Any
 
 from .credentials import Credentials, HubGroupProject
 from .exceptions import CredentialsError
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
                                      '.qiskit', 'qiskitrc')
@@ -138,8 +140,8 @@ def store_credentials(
     # Check if duplicated credentials are already stored. By convention,
     # we assume (hub, group, project) is always unique.
     if credentials.unique_id() in stored_credentials and not overwrite:
-        warnings.warn('Credentials already present. '
-                      'Set overwrite=True to overwrite.')
+        logger.warning('Credentials already present. '
+                       'Set overwrite=True to overwrite.')
         return
 
     # Append and write the credentials to file.
