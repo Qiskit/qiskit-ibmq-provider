@@ -215,25 +215,6 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(job.status() is JobStatus.CANCELLED)
 
     @requires_provider
-    def test_job_id(self, provider):
-        """Test getting a job id."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
-        self.log.info('job_id: %s', job.job_id())
-        self.assertTrue(job.job_id() is not None)
-
-    @requires_provider
-    def test_get_backend_name(self, provider):
-        """Test getting a backend name."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
-        self.assertTrue(job.backend().name() == backend.name())
-
-    @requires_provider
     def test_get_jobs_from_backend(self, provider):
         """Test retrieving jobs from a backend."""
         backend = least_busy(provider.backends())
@@ -371,22 +352,6 @@ class TestIBMQJob(JobTestCase):
             job.submit()
 
     @requires_provider
-    def test_error_message_simulator(self, provider):
-        """Test retrieving job error messages from a simulator backend."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new, qc_new], backend=backend)
-        qobj.experiments[1].instructions[1].name = 'bad_instruction'
-
-        job = backend.run(qobj)
-        with self.assertRaises(JobError):
-            job.result()
-
-        message = job.error_message()
-        self.assertIn('Experiment 1: ERROR', message)
-
-    @requires_provider
     def test_retrieve_failed_job_simulator(self, provider):
         """Test retrieving job error messages from a simulator backend."""
         backend = provider.get_backend('ibmq_qasm_simulator')
@@ -399,26 +364,9 @@ class TestIBMQJob(JobTestCase):
         with self.assertRaises(JobError):
             job.result()
 
-        time.sleep(3)
         new_job = provider.backends.retrieve_job(job.job_id())
         message = new_job.error_message()
         self.assertIn('Experiment 1: ERROR', message)
-
-    @run_on_staging
-    def test_error_message_device(self, provider):
-        """Test retrieving job error messages from a device backend."""
-        backend = least_busy(provider.backends(simulator=False))
-
-        qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new, qc_new], backend=backend)
-        qobj.experiments[1].instructions[1].name = 'bad_instruction'
-
-        job = backend.run(qobj)
-        with self.assertRaises(JobError):
-            job.result()
-
-        message = job.error_message()
-        self.assertTrue(message)
 
     @run_on_staging
     def test_retrieve_failed_job_device(self, provider):
@@ -435,15 +383,6 @@ class TestIBMQJob(JobTestCase):
 
         new_job = provider.backends.retrieve_job(job.job_id())
         self.assertTrue(new_job.error_message())
-
-    @run_on_staging
-    def test_running_job_properties(self, provider):
-        """Test fetching properties of a running job."""
-        backend = least_busy(provider.backends(simulator=False))
-
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
-        _ = job.properties()
 
     @slow_test
     @requires_qe_access
@@ -475,60 +414,6 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(schedules, backend, meas_level=1, shots=256)
         job = backend.run(qobj)
         _ = job.result()
-
-    @requires_qe_access
-    def test_custom_job_name(self, qe_token, qe_url):
-        """Test assigning a custom job name."""
-        factory = IBMQFactory()
-        provider = factory.enable_account(qe_token, qe_url)
-
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
-        # Use a unique job name
-        job_name = str(time.time()).replace('.', '')
-        job_id = backend.run(qobj, job_name=job_name).job_id()
-
-        job_list = provider.backends.jobs(backend_name=backend.name(),
-                                          limit=1, job_name=job_name)
-        self.assertEqual(len(job_list), 1)
-        self.assertEqual(job_id, job_list[0].job_id())
-
-    @requires_qe_access
-    def test_duplicate_job_name(self, qe_token, qe_url):
-        """Test multiple jobs with the same custom job name."""
-        factory = IBMQFactory()
-        provider = factory.enable_account(qe_token, qe_url)
-
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
-        # Use a unique job name
-        job_name = str(time.time()).replace('.', '')
-        job_ids = set()
-        for _ in range(2):
-            job_ids.add(backend.run(qobj, job_name=job_name).job_id())
-
-        retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
-                                                job_name=job_name)
-        self.assertEqual(len(retrieved_jobs), 2)
-        retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
-        self.assertEqual(job_ids, retrieved_job_ids)
-
-    @requires_provider
-    def test_refresh(self, provider):
-        """Test refreshing job data."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
-
-        time_per_step = getattr(job, 'time_per_step', {})
-        job.result()
-        job.refresh()
-        time_per_step_new = job.time_per_step
-        self.assertGreater(len(time_per_step_new), len(time_per_step),
-                           "Initial time_per_step is {}, updated time_per_step is {}".format(
-                               time_per_step, time_per_step_new))
 
 
 def _bell_circuit():
