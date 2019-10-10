@@ -317,15 +317,20 @@ class IBMQJob(BaseModel, BaseJob):
 
         return self._job_error_msg
 
-    def queue_position(self) -> Optional[int]:
+    def queue_position(self, refresh: bool = False) -> Optional[int]:
         """Return the position in the server queue.
+
+        Args:
+            refresh (bool): if True, query the API and return the latest value.
+                Otherwise return the cached value.
 
         Returns:
             int: Position in the queue or ``None`` if position is unknown or
                 not applicable.
         """
-        # Get latest position
-        self.status()
+        if refresh:
+            # Get latest position
+            self.status()
         return self._queue_position
 
     def creation_date(self) -> str:
