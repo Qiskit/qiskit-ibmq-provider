@@ -40,11 +40,11 @@ def discover_credentials(
         3. in the `qiskitrc` configuration file
 
     Args:
-        qiskitrc_filename (str): location for the `qiskitrc` configuration
+        qiskitrc_filename: location for the `qiskitrc` configuration
             file. If `None`, defaults to `{HOME}/.qiskitrc/qiskitrc`.
 
     Returns:
-        dict: dictionary with the contents of the configuration file, with
+        dictionary with the contents of the configuration file, with
             the form::
 
             {credentials_unique_id: Credentials}
