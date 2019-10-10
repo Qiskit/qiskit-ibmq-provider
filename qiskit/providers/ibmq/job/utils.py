@@ -43,7 +43,7 @@ def current_utc_time() -> str:
     """Gets the current time in UTC format.
 
     Returns:
-        str: current time in UTC format.
+        current time in UTC format.
     """
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
@@ -52,10 +52,10 @@ def is_job_queued(info_queue: Optional[Dict] = None) -> Tuple[bool, int]:
     """Checks whether a job has been queued or not.
 
     Args:
-        info_queue (dict): queue information from the API response.
+        info_queue: queue information from the API response.
 
     Returns:
-        Pair[boolean, int]: a pair indicating if the job is queued and in which
+        a pair indicating if the job is queued and in which
             position.
     """
     is_queued, position = False, 0
@@ -72,10 +72,10 @@ def build_error_report(results: List[Dict[str, Any]]) -> str:
     """Build an user-friendly error report for a failed job.
 
     Args:
-        results (dict): result section of the job response.
+        results: result section of the job response.
 
     Returns:
-        str: the error report.
+        the error report.
     """
     error_list = []
     for index, result in enumerate(results):
@@ -90,10 +90,10 @@ def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
     """Return the corresponding job status for the input API job status.
 
     Args:
-        api_status (ApiJobStatus): API job status
+        api_status: API job status
 
     Returns:
-        JobStatus: job status
+        job status
     """
     return API_TO_JOB_STATUS[api_status]
 
