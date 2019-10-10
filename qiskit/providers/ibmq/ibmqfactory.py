@@ -16,7 +16,6 @@
 """Factory and credentials manager for IBM Q Experience."""
 
 import logging
-import warnings
 from typing import Dict, List, Union, Optional, Any
 from collections import OrderedDict
 
@@ -96,8 +95,8 @@ class IBMQFactory:
         # Prevent edge case where no hubs are available.
         providers = self.providers()
         if not providers:
-            warnings.warn('No Hub/Group/Projects could be found for this '
-                          'account.')
+            logger.warning('No Hub/Group/Projects could be found for this '
+                           'account.')
             return None
 
         return providers[0]
@@ -147,8 +146,8 @@ class IBMQFactory:
         # Initialize the providers.
         if self._credentials:
             # For convention, emit a warning instead of raising.
-            warnings.warn('Credentials are already in use. The existing '
-                          'account in the session will be replaced.')
+            logger.warning('Credentials are already in use. The existing '
+                           'account in the session will be replaced.')
             self.disable_account()
 
         self._initialize_providers(credentials)
@@ -156,8 +155,8 @@ class IBMQFactory:
         # Prevent edge case where no hubs are available.
         providers = self.providers()
         if not providers:
-            warnings.warn('No Hub/Group/Projects could be found for this '
-                          'account.')
+            logger.warning('No Hub/Group/Projects could be found for this '
+                           'account.')
             return None
 
         return providers[0]

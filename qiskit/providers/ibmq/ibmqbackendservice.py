@@ -14,6 +14,7 @@
 
 """Backend namespace for an IBM Quantum Experience account provider."""
 
+import logging
 import warnings
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
@@ -29,6 +30,8 @@ from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
 from .utils import to_python_identifier
+
+logger = logging.getLogger(__name__)
 
 
 class IBMQBackendService(SimpleNamespace):
@@ -223,8 +226,7 @@ class IBMQBackendService(SimpleNamespace):
             try:
                 job = IBMQJob.from_dict(job_info)
             except ModelValidationError:
-                warnings.warn('Discarding job "{}" because it contains invalid data.'
-                              .format(job_id))
+                logger.warning('Discarding job "%s" because it contains invalid data.', job_id)
                 continue
 
             job_list.append(job)
