@@ -61,8 +61,8 @@ class TestIBMQJobAttributes(JobTestCase):
         _ = job.properties()
 
     @requires_provider
-    def test_custom_job_name(self, provider):
-        """Test assigning a custom job name."""
+    def test_job_name(self, provider):
+        """Test using job names."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 
@@ -71,6 +71,21 @@ class TestIBMQJobAttributes(JobTestCase):
         job_id = backend.run(qobj, job_name=job_name).job_id()
         job = provider.backends.retrieve_job(job_id)
         self.assertEqual(job.name(), job_name)
+
+        # Check using partial matching.
+        job_name_partial = job_name[8:]
+        retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
+                                                job_name=job_name_partial)
+        self.assertGreaterEqual(len(retrieved_jobs), 1)
+        retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
+        self.assertIn(job_id, retrieved_job_ids)
+
+        # Check using regular expressions.
+        job_name_regex = '^{}$'.format(job_name)
+        retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
+                                                job_name=job_name_regex)
+        self.assertEqual(len(retrieved_jobs), 1)
+        self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
     @requires_provider
     def test_duplicate_job_name(self, provider):
