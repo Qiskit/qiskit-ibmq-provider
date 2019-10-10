@@ -151,7 +151,7 @@ class IBMQBackendService(SimpleNamespace):
             IBMQBackendValueError: status keyword value unrecognized
         """
         # Build the filter for the query.
-        api_filter = {}
+        api_filter = {}  # type: Dict[str, Any]
 
         if backend_name:
             api_filter['backend.name'] = backend_name
@@ -174,7 +174,7 @@ class IBMQBackendService(SimpleNamespace):
             else:
                 raise IBMQBackendValueError('unrecognized value for "status" keyword '
                                             'in job filter')
-            api_filter.update(this_filter)  # type: ignore[assignment]
+            api_filter.update(this_filter)
 
         if job_name:
             api_filter['name'] = {"regexp": job_name}
@@ -185,7 +185,7 @@ class IBMQBackendService(SimpleNamespace):
 
         # Retrieve the requested number of jobs, using pagination. The API
         # might limit the number of jobs per request.
-        job_responses = []  # type: ignore[var-annotated]
+        job_responses = []  # type: List[Dict[str, Any]]
         current_page_limit = limit
 
         while True:
