@@ -29,9 +29,9 @@ class AuthClient(BaseClient):
         """AuthClient constructor.
 
         Args:
-            api_token (str): IBM Q Experience API token.
-            auth_url (str): URL for the authentication service.
-            **request_kwargs (dict): arguments for the `requests` Session.
+            api_token: IBM Q Experience API token.
+            auth_url: URL for the authentication service.
+            **request_kwargs: arguments for the `requests` Session.
         """
         self.api_token = api_token
         self.auth_url = auth_url
@@ -44,10 +44,10 @@ class AuthClient(BaseClient):
         """Initialize the clients used for communicating with the API and ws.
 
         Args:
-            **request_kwargs (dict): arguments for the `requests` Session.
+            **request_kwargs: arguments for the `requests` Session.
 
         Returns:
-            Api: client for the api server.
+            client for the api server.
         """
         # Request an access token.
         access_token = self._request_access_token()
@@ -65,7 +65,7 @@ class AuthClient(BaseClient):
         """Request a new access token from the API authentication server.
 
         Returns:
-            str: access token.
+            access token.
 
         Raises:
             AuthenticationLicenseError: if the user hasn't accepted the license agreement.
@@ -93,10 +93,10 @@ class AuthClient(BaseClient):
         """Retrieve the API URLs from the authentication server.
 
         Returns:
-            dict: a dict with the base URLs for the services. Currently
+            a dict with the base URLs for the services. Currently
                 supported keys:
-                * ``http``: the API URL for http communication.
-                * ``ws``: the API URL for websocket communication.
+                    * ``http``: the API URL for http communication.
+                    * ``ws``: the API URL for websocket communication.
         """
         response = self.client_auth.user_info()
         return response['urls']
@@ -108,7 +108,7 @@ class AuthClient(BaseClient):
         the API (by having `isDefault` in all hub, group, project fields).
 
         Returns:
-            list[dict]: a list of dicts with the hubs, which contains the keys
+            a list of dicts with the hubs, which contains the keys
                 `hub`, `group`, `project`.
         """
         response = self.client_api.hubs()
@@ -136,7 +136,7 @@ class AuthClient(BaseClient):
         """Return the version of the API.
 
         Returns:
-            dict: versions of the API components.
+            versions of the API components.
         """
         return self.client_api.version()
 
@@ -144,7 +144,7 @@ class AuthClient(BaseClient):
         """Return the current access token.
 
         Returns:
-            str: the access token in use.
+            the access token in use.
         """
         return self.client_auth.session.access_token
 
@@ -152,7 +152,7 @@ class AuthClient(BaseClient):
         """Return the current service URLs.
 
         Returns:
-            dict: a dict with the base URLs for the services, in the same
+            a dict with the base URLs for the services, in the same
                 format as `.user_urls()`.
         """
         return self._service_urls

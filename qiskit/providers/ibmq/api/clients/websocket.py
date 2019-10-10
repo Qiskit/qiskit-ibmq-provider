@@ -48,8 +48,8 @@ nest_asyncio.apply()
 class WebsocketMessage(ABC):
     """Container for a message sent or received via websockets.
 
-    Attributes:
-        type_ (str): message type.
+    Args:
+        type_: message type.
     """
     def __init__(self, type_: str) -> None:
         self.type_ = type_
@@ -60,19 +60,16 @@ class WebsocketMessage(ABC):
         pass
 
     def as_json(self) -> str:
-        """Return a json representation of the message.
-
-        Attributes:
-            data (str): data type.
-        """
+        """Return a json representation of the message."""
         return json.dumps({'type': self.type_, 'data': self.get_data()})
 
 
 class WebsocketAuthenticationMessage(WebsocketMessage):
     """Container for an authentication message sent via websockets.
 
-    Attributes:
-        data (str): data type.
+    Args:
+        type_: message type.
+        data: data type.
     """
     def __init__(self, type_: str, data: str) -> None:
         super().__init__(type_)
@@ -83,7 +80,12 @@ class WebsocketAuthenticationMessage(WebsocketMessage):
 
 
 class WebsocketResponseMethod(WebsocketMessage):
-    """Container for a message received via websockets."""
+    """Container for a message received via websockets.
+
+    Args:
+        type_: message type.
+        data: data type.
+    """
     def __init__(self, type_: str, data: Dict[str, str]) -> None:
         super().__init__(type_)
         self.data = data
@@ -105,9 +107,9 @@ class WebsocketResponseMethod(WebsocketMessage):
 class WebsocketClient(BaseClient):
     """Client for websocket communication with the IBM Q Experience API.
 
-    Attributes:
-        websocket_url (str): URL for websocket communication with IBM Q.
-        access_token (str): access token for IBM Q.
+    Args:
+        websocket_url: URL for websocket communication with IBM Q.
+        access_token: access token for IBM Q.
     """
     BACKOFF_MAX = 8  # Maximum time to wait between retries.
 
@@ -120,7 +122,7 @@ class WebsocketClient(BaseClient):
         """Authenticate against the websocket server, returning the connection.
 
         Returns:
-            WebSocketClientProtocol: an open websocket connection.
+            an open websocket connection.
 
         Raises:
             WebsocketError: if the connection to the websocket server could
@@ -196,14 +198,14 @@ class WebsocketClient(BaseClient):
                 number of retries is met.
 
         Args:
-            job_id (str): id of the job.
-            timeout (float): timeout, in seconds.
-            retries (int): max number of retries.
-            backoff_factor (float): backoff factor used to calculate the
+            job_id: id of the job.
+            timeout: timeout, in seconds.
+            retries: max number of retries.
+            backoff_factor: backoff factor used to calculate the
                 time to wait between retries.
 
         Returns:
-            dict: the API response for the status of a job, as a dict that
+            the API response for the status of a job, as a dict that
                 contains at least the keys ``status`` and ``id``.
 
         Raises:
@@ -312,13 +314,11 @@ class WebsocketClient(BaseClient):
                 {backoff_factor} * (2 ** (current_retry_attempt - 1))
 
         Args:
-            backoff_factor (float): backoff factor, in seconds.
-            current_retry_attempt (int): current number of retry
-                attempts.
+            backoff_factor: backoff factor, in seconds.
+            current_retry_attempt: current number of retry attempts.
 
         Returns:
-            float: The number of seconds to sleep for, before a
-                retry attempt is made.
+            The number of seconds to sleep for, before a retry attempt is made.
         """
         backoff_time = backoff_factor * (2 ** (current_retry_attempt - 1))
         return min(self.BACKOFF_MAX, backoff_time)

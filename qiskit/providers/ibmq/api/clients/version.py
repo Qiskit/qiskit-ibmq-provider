@@ -29,8 +29,8 @@ class VersionClient(BaseClient):
         """VersionClient constructor.
 
         Args:
-            url (str): URL for the service.
-            **request_kwargs (dict): arguments for the `requests` Session.
+            url: URL for the service.
+            **request_kwargs: arguments for the `requests` Session.
         """
         self.client_version_finder = VersionFinder(
             RetrySession(url, **request_kwargs))
@@ -39,7 +39,7 @@ class VersionClient(BaseClient):
         """Return the version info.
 
         Returns:
-            dict: a dict with information about the API version,
+            a dict with information about the API version,
             with the following keys:
                 * `new_api` (bool): whether the new API is being used
             And the following optional keys:
