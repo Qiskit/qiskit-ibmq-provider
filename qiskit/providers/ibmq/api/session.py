@@ -15,7 +15,7 @@
 """Session customized for IBM Q Experience access."""
 
 import os
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, Tuple, Union
 from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
@@ -49,7 +49,8 @@ class RetrySession(Session):
             backoff_factor: float = 0.5,
             verify: bool = True,
             proxies: Optional[Dict[str, str]] = None,
-            auth: Optional[AuthBase] = None
+            auth: Optional[AuthBase] = None,
+            timeout: Tuple[float, Union[float, None]] = (5.0, None)
     ) -> None:
         """RetrySession constructor.
 
@@ -61,6 +62,8 @@ class RetrySession(Session):
             verify (bool): enable SSL verification.
             proxies (dict): proxy URLs mapped by protocol.
             auth (AuthBase): authentication handler.
+            timeout (Tuple[float, Union[float, None]]): timeout for the
+                requests, in the form (connection_timeout, total_timeout).
         """
         super().__init__()
 
@@ -70,6 +73,7 @@ class RetrySession(Session):
 
         self._initialize_retry(retries, backoff_factor)
         self._initialize_session_parameters(verify, proxies or {}, auth)
+        self._timeout = timeout
 
     def __del__(self) -> None:
         """RetrySession destructor. Closes the session."""
@@ -163,6 +167,10 @@ class RetrySession(Session):
             kwargs.update({'params': params})
         else:
             final_url = self.base_url + url
+
+        # Add a timeout to the connection for non-proxy connections.
+        if not self.proxies:
+            kwargs.update({'timeout': self._timeout})
 
         try:
             response = super().request(method, final_url, **kwargs)
