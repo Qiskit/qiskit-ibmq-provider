@@ -205,6 +205,8 @@ class IBMQJob(BaseModel, BaseJob):
         Raises:
             JobError: if the job has failed or cancelled, or if there was some
                 unexpected failure in the server.
+            JobTimeoutError: if the job does not return results before a
+                specified timeout.
         """
         # pylint: disable=arguments-differ
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
