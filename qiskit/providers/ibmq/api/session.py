@@ -100,7 +100,7 @@ class RetrySession(Session):
             retries_total: int,
             retries_connect: int,
             backoff_factor: float
-    )-> None:
+    ) -> None:
         """Set the Session retry policy.
 
         Args:
