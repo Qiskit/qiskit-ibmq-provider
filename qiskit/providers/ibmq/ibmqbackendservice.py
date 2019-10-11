@@ -251,7 +251,7 @@ class IBMQBackendService(SimpleNamespace):
             if 'kind' not in job_info:
                 warnings.warn('The result of job {} is in a no longer supported format. '
                               'Please send the job using Qiskit 0.8+.'.format(job_id),
-                              DeprecationWarning)
+                              DeprecationWarning, stacklevel=2)
                 raise IBMQBackendError('Failed to get job "{}": {}'
                                        .format(job_id, 'job in pre-qobj format'))
         except ApiError as ex:
