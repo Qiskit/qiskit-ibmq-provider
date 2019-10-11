@@ -388,7 +388,7 @@ class IBMQJob(BaseModel, BaseJob):
             raise JobError("We have already submitted the job!")
 
         warnings.warn("job.submit() is deprecated. Please use "
-                      "IBMQBackend.run() to submit a job.", DeprecationWarning)
+                      "IBMQBackend.run() to submit a job.", DeprecationWarning, stacklevel=2)
 
     def refresh(self) -> None:
         """Obtain the latest job information from the API."""
