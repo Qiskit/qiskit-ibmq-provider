@@ -20,6 +20,7 @@ from qiskit.exceptions import QiskitError
 from .ibmqfactory import IBMQFactory
 from .ibmqbackend import IBMQBackend, BaseBackend
 from .job import IBMQJob
+from .jobmanager import JobManager
 
 from .version import __version__
 

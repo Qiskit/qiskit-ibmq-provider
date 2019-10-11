@@ -21,6 +21,8 @@ The format is based on [Keep a Changelog].
 - Added support for autocompleting backend names. A user can now use 
   `AccountProvider.backends.<tab>` to see a list of backend
   names (\#303).
+- A new `JobManager` class that takes a list of circuits or pulse schedules as 
+  input, splits them into one or more jobs, and submits the jobs (\#389).
 
 ### Changed
 
