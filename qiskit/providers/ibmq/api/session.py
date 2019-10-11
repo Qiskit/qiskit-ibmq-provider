@@ -45,7 +45,8 @@ class RetrySession(Session):
             self,
             base_url: str,
             access_token: Optional[str] = None,
-            retries: int = 5,
+            retries_total: int = 5,
+            retries_connect: int = 3,
             backoff_factor: float = 0.5,
             verify: bool = True,
             proxies: Optional[Dict[str, str]] = None,
@@ -57,7 +58,8 @@ class RetrySession(Session):
         Args:
             base_url (str): base URL for the session's requests.
             access_token (str): access token.
-            retries (int): number of retries for the requests.
+            retries_total (int): number of total retries for the requests.
+            retries_connect (int): number of connect retries for the requests.
             backoff_factor (float): backoff factor between retry attempts.
             verify (bool): enable SSL verification.
             proxies (dict): proxy URLs mapped by protocol.
@@ -71,7 +73,7 @@ class RetrySession(Session):
         self._access_token = access_token
         self.access_token = access_token
 
-        self._initialize_retry(retries, backoff_factor)
+        self._initialize_retry(retries_total, retries_connect, backoff_factor)
         self._initialize_session_parameters(verify, proxies or {}, auth)
         self._timeout = timeout
 
@@ -93,15 +95,22 @@ class RetrySession(Session):
         else:
             self.params.pop('access_token', None)  # type: ignore[attr-defined]
 
-    def _initialize_retry(self, retries: int, backoff_factor: float) -> None:
+    def _initialize_retry(
+            self,
+            retries_total: int,
+            retries_connect: int,
+            backoff_factor: float
+    )-> None:
         """Set the Session retry policy.
 
         Args:
-            retries (int): number of retries for the requests.
+            retries_total (int): number of total retries for the requests.
+            retries_connect (int): number of connect retries for the requests.
             backoff_factor (float): backoff factor between retry attempts.
         """
         retry = Retry(
-            total=retries,
+            total=retries_total,
+            connect=retries_connect,
             backoff_factor=backoff_factor,
             status_forcelist=STATUS_FORCELIST,
         )
