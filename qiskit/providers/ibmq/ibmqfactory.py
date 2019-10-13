@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 QX_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 UPDATE_ACCOUNT_TEXT = (
     "Please update your accounts and programs by following the instructions here:",
-    "https://github.com/Qiskit/qiskit-ibmq-provider#updating-to-the-new-ibm-q-experience""")
+    "https://github.com/Qiskit/qiskit-ibmq-provider#updating-to-the-new-ibm-q-experience")
 
 
 class IBMQFactory:
