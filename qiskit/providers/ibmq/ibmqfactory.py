@@ -186,6 +186,9 @@ class IBMQFactory:
             raise IBMQApiUrlError('Invalid IBM Q Experience credentials '
                                   'found. ' + UPDATE_ACCOUNT_TEXT)
 
+        if not token or not isinstance(token, str):
+            raise IBMQApiUrlError('Invalid token found: "%s" %s' % (token, type(token)))
+
         credentials = Credentials(token, url, **kwargs)
 
         store_credentials(credentials, overwrite=overwrite)
