@@ -59,14 +59,14 @@ class IBMQFactory:
             as the IBM Q Experience v1) credentials is fully deprecated.
 
         Args:
-            token (str): IBM Q Experience API token.
-            url (str): URL for the IBM Q Experience authentication server.
-            **kwargs (dict): additional settings for the connection:
+            token: IBM Q Experience API token.
+            url: URL for the IBM Q Experience authentication server.
+            **kwargs: additional settings for the connection:
                 * proxies (dict): proxy configuration.
                 * verify (bool): verify the server's TLS certificate.
 
         Returns:
-            AccountProvider: the provider for the default open access project.
+            the provider for the default open access project.
 
         Raises:
             IBMQAccountError: if an IBM Q Experience account is already in
@@ -117,7 +117,7 @@ class IBMQFactory:
         """Authenticate against IBM Q Experience from stored credentials.
 
         Returns:
-            AccountProvider: the provider for the default open access project.
+            the provider for the default open access project.
 
         Raises:
             IBMQAccountError: if no IBM Q Experience credentials can be found.
@@ -171,10 +171,10 @@ class IBMQFactory:
         """Save the account to disk for future use.
 
         Args:
-            token (str): IBM Q Experience API token.
-            url (str): URL for the IBM Q Experience authentication server.
-            overwrite (bool): overwrite existing credentials.
-            **kwargs (dict):
+            token: IBM Q Experience API token.
+            url: URL for the IBM Q Experience authentication server.
+            overwrite: overwrite existing credentials.
+            **kwargs:
                 * proxies (dict): Proxy configuration for the API.
                 * verify (bool): If False, ignores SSL certificates errors
 
@@ -218,7 +218,7 @@ class IBMQFactory:
         """List the account stored on disk.
 
         Returns:
-            dict: dictionary with information about the account stored on disk.
+            dictionary with information about the account stored on disk.
 
         Raises:
             IBMQAccountError: if no valid IBM Q Experience credentials found.
@@ -242,7 +242,7 @@ class IBMQFactory:
         """List the IBM Q Experience account currently in the session.
 
         Returns:
-            dict: information about the account currently in the session.
+            information about the account currently in the session.
         """
         if not self._credentials:
             # Return None instead of raising, maintaining the same behavior
@@ -259,11 +259,10 @@ class IBMQFactory:
         """Interactive helper from migrating stored credentials to IBM Q Experience v2.
 
         Args:
-            force (bool): if `True`, disable interactive prompts and perform
-                the changes.
+            force: if `True`, disable interactive prompts and perform the changes.
 
         Returns:
-            Credentials: if the updating is possible, credentials for the API
+            if the updating is possible, credentials for the API
             version 2; and `None` otherwise.
         """
         return update_credentials(force)
@@ -279,13 +278,12 @@ class IBMQFactory:
         """Return a list of providers with optional filtering.
 
         Args:
-            hub (str): name of the hub.
-            group (str): name of the group.
-            project (str): name of the project.
+            hub: name of the hub.
+            group: name of the group.
+            project: name of the project.
 
         Returns:
-            list[AccountProvider]: list of providers that match the specified
-                criteria.
+            list of providers that match the specified criteria.
         """
         filters = []
 
@@ -310,7 +308,7 @@ class IBMQFactory:
         """Return a provider for a single hub/group/project combination.
 
         Returns:
-            AccountProvider: provider that match the specified criteria.
+            provider that match the specified criteria.
 
         Raises:
             IBMQProviderError: if no provider matches the specified criteria,
@@ -333,7 +331,7 @@ class IBMQFactory:
         """Check the version of the API in a set of credentials.
 
         Returns:
-            dict: dictionary with version information.
+            dictionary with version information.
         """
         version_finder = VersionClient(credentials.base_url,
                                        **credentials.connection_parameters())
@@ -343,7 +341,7 @@ class IBMQFactory:
         """Authenticate against IBM Q Experience and populate the providers.
 
         Args:
-            credentials (Credentials): credentials for IBM Q Experience.
+            credentials: credentials for IBM Q Experience.
 
         Raises:
             IBMQApiUrlError: if the credentials do not belong to a IBM Q
