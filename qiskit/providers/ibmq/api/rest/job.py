@@ -44,8 +44,8 @@ class Job(RestAdapterBase):
         """Job constructor.
 
         Args:
-            session (Session): session to be used in the adaptor.
-            job_id (str): id of the job.
+            session: session to be used in the adaptor.
+            job_id: id of the job.
         """
         self.job_id = job_id
         super().__init__(session, '/Jobs/{}'.format(job_id))
@@ -54,7 +54,7 @@ class Job(RestAdapterBase):
         """Return a job.
 
         Returns:
-            dict: json response.
+            json response.
         """
         url = self.get_url('self')
 
@@ -99,7 +99,7 @@ class Job(RestAdapterBase):
         """Return the status of a job.
 
         Returns:
-            (dict): status of a job
+            status of a job
 
         Raises:
             ApiIBMQProtocolError: if an unexpected result is received from the server.
@@ -123,12 +123,11 @@ class Job(RestAdapterBase):
         """Upload a Qobj via object storage.
 
         Args:
-            url (str): object storage URL.
-            qobj_dict (dict): the qobj to be uploaded, in dict form.
+            url: object storage URL.
+            qobj_dict: the qobj to be uploaded, in dict form.
 
         Returns:
-            str: text response, that will be empty if the request was
-                successful.
+            text response, that will be empty if the request was successful.
         """
         response = self.session.put(url, json=qobj_dict, bare=True)
         return response.text
@@ -137,9 +136,9 @@ class Job(RestAdapterBase):
         """Get via object_storage.
 
         Args:
-            url (str): object storage URL.
+            url: object storage URL.
 
         Returns:
-            dict: json response.
+            json response.
         """
         return self.session.get(url, bare=True).json()

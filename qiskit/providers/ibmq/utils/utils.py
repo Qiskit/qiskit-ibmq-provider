@@ -22,10 +22,10 @@ def to_python_identifier(name: str) -> str:
     """Convert a name to a valid Python identifier.
 
     Args:
-        name (str): Name to be converted.
+        name: Name to be converted.
 
     Returns:
-        str: Name that is a valid Python identifier.
+        Name that is a valid Python identifier.
     """
     # Python identifiers can only contain alphanumeric characters
     # and underscores and cannot start with a digit.

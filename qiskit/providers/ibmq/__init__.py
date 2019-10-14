@@ -35,10 +35,10 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
     local backends that do not have this are not considered.
 
     Args:
-        backends (list[BaseBackend]): backends to choose from
+        backends: backends to choose from
 
     Returns:
-        BaseBackend: the the least busy backend
+        the the least busy backend
 
     Raises:
         QiskitError: if passing a list of backend names that is
