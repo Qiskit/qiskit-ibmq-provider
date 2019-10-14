@@ -30,9 +30,9 @@ from .exceptions import IBMQAccountError, IBMQApiUrlError, IBMQProviderError
 logger = logging.getLogger(__name__)
 
 QX_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
-UPDATE_ACCOUNT_TEXT = (
-    "Please update your accounts and programs by following the instructions here:",
-    "https://github.com/Qiskit/qiskit-ibmq-provider#updating-to-the-new-ibm-q-experience")
+UPDATE_ACCOUNT_TEXT = "Please update your accounts and programs by following the " \
+                      "instructions here: https://github.com/Qiskit/qiskit-ibmq-provider#" \
+                      "updating-to-the-new-ibm-q-experience "
 
 
 class IBMQFactory:
@@ -128,8 +128,8 @@ class IBMQFactory:
                 'No IBM Q Experience credentials found on disk.')
 
         if len(credentials_list) > 1:
-            raise IBMQAccountError('Multiple IBM Q Experience credentials found.',
-                                   *UPDATE_ACCOUNT_TEXT)
+            raise IBMQAccountError('Multiple IBM Q Experience credentials found. ' +
+                                   UPDATE_ACCOUNT_TEXT)
 
         credentials = credentials_list[0]
         # Explicitly check via an API call, to allow environment auth URLs
@@ -138,8 +138,8 @@ class IBMQFactory:
 
         # Check the URL is a valid authentication URL.
         if not version_info['new_api'] or 'api-auth' not in version_info:
-            raise IBMQAccountError('Invalid IBM Q Experience credentials found.',
-                                   *UPDATE_ACCOUNT_TEXT)
+            raise IBMQAccountError('Invalid IBM Q Experience credentials found. ' +
+                                   UPDATE_ACCOUNT_TEXT)
 
         # Initialize the providers.
         if self._credentials:
@@ -181,8 +181,8 @@ class IBMQFactory:
                 authentication URL.
         """
         if url != QX_AUTH_URL:
-            raise IBMQApiUrlError('Invalid IBM Q Experience credentials found.',
-                                  *UPDATE_ACCOUNT_TEXT)
+            raise IBMQApiUrlError(
+                'Invalid IBM Q Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = Credentials(token, url, **kwargs)
 
@@ -200,13 +200,13 @@ class IBMQFactory:
             raise IBMQAccountError('No credentials found.')
 
         if len(stored_credentials) != 1:
-            raise IBMQAccountError('Multiple credentials found.', *UPDATE_ACCOUNT_TEXT)
+            raise IBMQAccountError('Multiple credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = list(stored_credentials.values())[0]
 
         if credentials.url != QX_AUTH_URL:
-            raise IBMQAccountError('Invalid IBM Q Experience credentials found.',
-                                   *UPDATE_ACCOUNT_TEXT)
+            raise IBMQAccountError(
+                'Invalid IBM Q Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         remove_credentials(credentials)
 
@@ -226,8 +226,8 @@ class IBMQFactory:
 
         if (len(stored_credentials) > 1 or
                 list(stored_credentials.values())[0].url != QX_AUTH_URL):
-            raise IBMQAccountError('Invalid IBM Q Experience credentials found.',
-                                   *UPDATE_ACCOUNT_TEXT)
+            raise IBMQAccountError(
+                'Invalid IBM Q Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = list(stored_credentials.values())[0]
         return {
