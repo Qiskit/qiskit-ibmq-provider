@@ -19,12 +19,19 @@ import time
 from typing import List, Optional, Union
 from datetime import datetime
 from collections import Counter
+from concurrent import futures
 
-from qiskit.pulse import ScheduleComponent
+from qiskit.circuit import QuantumCircuit
+from qiskit.pulse import ScheduleComponent, Schedule
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers import JobError, JobTimeoutError
+from qiskit.providers.exceptions import JobError, JobTimeoutError
 from qiskit.result import Result
+from qiskit.qobj import Qobj
+
+from .ibmqbackend import IBMQBackend
+from .utils.decorators import requires_submit
+from .job import IBMQJob
 
 logger = logging.getLogger(__name__)
 
@@ -32,19 +39,23 @@ logger = logging.getLogger(__name__)
 class JobManager:
     """Job manager for IBM Q Experience."""
 
+    _executor = futures.ThreadPoolExecutor()
+
     def __init__(self) -> None:
         """Creates a new JobManager instance."""
-        self._jobs = []
+        self._jobs = []  # type: List[IBMQJob]
+        self._future = None
+        self._future_captured_exception = None
 
     def run(
             self,
-            experiments: Union[List['QuantumCircuit'], List['Schedule']],
-            backend: 'IBMQBackend',
+            experiments: Union[List[QuantumCircuit], List[Schedule]],
+            backend: IBMQBackend,
             name_prefix: Optional[str] = None,
             shots: int = 1024,
             skip_transpile: bool = False,
             max_experiments_per_job: Optional[int] = None
-    ) -> List['IBMQJob']:
+    ) -> int:
         """Execute a list of circuits or pulse schedules on a backend.
 
         The circuits or schedules will be split into multiple jobs. Circuits
@@ -68,7 +79,7 @@ class JobManager:
                 backend, the default is used.
 
         Returns:
-            A list of jobs submitted to the backend.
+            Number of jobs to be run.
 
         Raises:
             JobError: If a job cannot be submitted.
@@ -77,19 +88,59 @@ class JobManager:
                 not backend.configuration().open_pulse):
             raise JobError("The backend does not support pulse schedules.")
 
+        if self._future is not None:
+            raise JobError("Jobs were already submitted.")
+
         if not skip_transpile:
             experiments = transpile(circuits=experiments, backend=backend)
         experiment_list = self._split_experiments(experiments, backend=backend,
                                                   max_experiments_per_job=max_experiments_per_job)
 
-        name_prefix = name_prefix or datetime.utcnow().isoformat()
-        for i, experiment in enumerate(experiment_list):
-            qobj = assemble(experiment, backend=backend, shots=shots)
-            job = backend.run(qobj=qobj, job_name="{}_{}".format(name_prefix, i))
-            self._jobs.append(job)
+        qobjs = []
+        for experiment in experiment_list:
+            qobjs.append(assemble(experiment, backend=backend, shots=shots))
 
+        self._future = self._executor.submit(self._submit_async, qobjs=qobjs,
+                                             backend=backend, name_prefix=name_prefix)
+        return len(qobjs)
+
+    def _submit_async(
+            self,
+            qobjs: List[Qobj],
+            backend: IBMQBackend,
+            name_prefix: Optional[str] = None
+    ) -> None:
+        """Submit jobs to IBM Q asynchronously.
+
+        Args:
+            qobjs: A list of qobj's to run.
+            backend: Backend to execute the experiments on.
+            name_prefix: Prefix of the job name.
+        """
+        name_prefix = name_prefix or datetime.utcnow().isoformat()
+        try:
+            for i, qobj in enumerate(qobjs):
+                job = backend.run(qobj=qobj, job_name="{}_{}".format(name_prefix, i))
+                self._jobs.append(job)
+        except Exception as err:  # pylint: disable=broad-except
+            self._future_captured_exception = err  # type: ignore[assignment]
+            # Cancel all previous submitted jobs
+            try:
+                for job in self._jobs:
+                    job.cancel()
+            except Exception:  # pylint: disable=broad-except
+                pass
+
+    @requires_submit
+    def jobs(self) -> List[IBMQJob]:
+        """Return a list of submitted jobs.
+
+        Returns:
+            A list of IBMQJob instances that represents the submitted jobs.
+        """
         return self._jobs
 
+    @requires_submit
     def status(self) -> List[Union[JobStatus, None]]:
         """Return the status of each job.
 
@@ -108,6 +159,7 @@ class JobManager:
 
         return statuses
 
+    @requires_submit
     def report(self, detailed: bool = True) -> str:
         """Return a report on current job statuses.
 
@@ -135,6 +187,7 @@ class JobManager:
             for i, status in enumerate(statuses):
                 report.append("  - Job {} -".format(i))
                 report.append("    job ID: {}".format(self._jobs[i].job_id()))
+                report.append("    name: {}".format(self._jobs[i].name()))
                 report.append("    status: {}".format(status.value))
                 if status is JobStatus.QUEUED:
                     report.append("    queue position: {}".format(
@@ -142,7 +195,8 @@ class JobManager:
 
         return '\n'.join(report)
 
-    def result(self, timeout: Optional[float] = None) -> List[Union['Result', None]]:
+    @requires_submit
+    def result(self, timeout: Optional[float] = None) -> List[Union[Result, None]]:
         """Return the results of the jobs.
 
         This call will block until results for all successful jobs become
@@ -199,7 +253,8 @@ class JobManager:
 
         return results
 
-    def qobj(self) -> List['Qobj']:
+    @requires_submit
+    def qobj(self) -> List[Qobj]:
         """Return the Qobj for the jobs.
 
         Returns:
@@ -209,10 +264,10 @@ class JobManager:
 
     def _split_experiments(
             self,
-            experiments: Union[List['QuantumCircuit'], List['Schedule']],
-            backend: 'IBMQBackend',
+            experiments: Union[List[QuantumCircuit], List[Schedule]],
+            backend: IBMQBackend,
             max_experiments_per_job: Optional[int] = None
-    ) -> List[Union[List['QuantumCircuit'], List['Schedule']]]:
+    ) -> List[Union[List[QuantumCircuit], List[Schedule]]]:
         """Split a list of experiments into sublists.
 
         Args:

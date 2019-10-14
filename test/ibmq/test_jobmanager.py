@@ -44,11 +44,11 @@ class TestJobManager(IBMQTestCase):
         circs = []
         for _ in range(max_circs+2):
             circs.append(self._qc)
-        jobs = self._jm.run(circs, backend=backend)
+        job_count = self._jm.run(circs, backend=backend)
         results = self._jm.result()
         statuses = self._jm.status()
 
-        self.assertEqual(len(jobs), 2)
+        self.assertEqual(job_count, 2)
         self.assertEqual(len(results), 2)
         self.assertEqual(len(statuses), 2)
         self.assertTrue(all(s is JobStatus.DONE for s in statuses))
@@ -62,11 +62,11 @@ class TestJobManager(IBMQTestCase):
         circs = []
         for _ in range(max_circs+2):
             circs.append(self._qc)
-        jobs = self._jm.run(circs, backend=backend)
+        job_count = self._jm.run(circs, backend=backend)
         results = self._jm.result()
         statuses = self._jm.status()
 
-        self.assertEqual(len(jobs), 2)
+        self.assertEqual(job_count, 2)
         self.assertEqual(len(results), 2)
         self.assertEqual(len(statuses), 2)
         self.assertTrue(all(s is JobStatus.DONE for s in statuses))
@@ -78,13 +78,13 @@ class TestJobManager(IBMQTestCase):
         max_circs = backend.configuration().max_experiments
 
         circs = []
-        for _ in range(max_circs/2):
+        for _ in range(int(max_circs/2)):
             circs.append(self._qc)
-        jobs = self._jm.run(circs, backend=backend)
+        job_count = self._jm.run(circs, backend=backend)
         results = self._jm.result()
         statuses = self._jm.status()
 
-        self.assertEqual(len(jobs), 1)
+        self.assertEqual(job_count, 1)
         self.assertEqual(len(results), 1)
         self.assertEqual(len(statuses), 1)
 
@@ -96,11 +96,11 @@ class TestJobManager(IBMQTestCase):
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        jobs = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        job_count = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
         results = self._jm.result()
         statuses = self._jm.status()
 
-        self.assertEqual(len(jobs), 2)
+        self.assertEqual(job_count, 2)
         self.assertEqual(len(results), 2)
         self.assertEqual(len(statuses), 2)
 
@@ -112,7 +112,8 @@ class TestJobManager(IBMQTestCase):
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        jobs = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        jobs = self._jm.jobs()
         report = self._jm.report()
         self.log.info(report)
         for job in jobs:
@@ -127,7 +128,8 @@ class TestJobManager(IBMQTestCase):
         circs = []
         for _ in range(max_circs+2):
             circs.append(self._qc)
-        jobs = self._jm.run(circs, backend=backend)
+        self._jm.run(circs, backend=backend)
+        jobs = self._jm.jobs()
         cjob = jobs[0]
         cancelled = False
         for _ in range(2):
@@ -156,7 +158,8 @@ class TestJobManager(IBMQTestCase):
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        jobs = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        jobs = self._jm.jobs()
         jobs[1]._job_id = 'BAD_ID'
         statuses = self._jm.status()
         self.assertIsNone(statuses[1])
@@ -169,7 +172,8 @@ class TestJobManager(IBMQTestCase):
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        jobs = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        jobs = self._jm.jobs()
         self._jm.result()
         for i, qobj in enumerate(self._jm.qobj()):
             rjob = provider.backends.retrieve_job(jobs[i].job_id())
