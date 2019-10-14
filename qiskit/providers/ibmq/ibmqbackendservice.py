@@ -41,7 +41,7 @@ class IBMQBackendService(SimpleNamespace):
         """Creates a new IBMQBackendService instance.
 
         Args:
-            provider (AccountProvider): IBM Q Experience account provider
+            provider: IBM Q Experience account provider
         """
         super().__init__()
 
@@ -69,17 +69,17 @@ class IBMQBackendService(SimpleNamespace):
         """Return all backends accessible via this provider, subject to optional filtering.
 
         Args:
-            name (str): backend name to filter by
-            filters (callable): more complex filters, such as lambda functions
+            name: backend name to filter by
+            filters: more complex filters, such as lambda functions
                 e.g. AccountProvider.backends(
                     filters=lambda b: b.configuration['n_qubits'] > 5)
-            timeout (float or None): number of seconds to wait for backend discovery.
+            timeout: number of seconds to wait for backend discovery.
             kwargs: simple filters specifying a true/false criteria in the
                 backend configuration or backend status or provider credentials
                 e.g. AccountProvider.backends(n_qubits=5, operational=True)
 
         Returns:
-            list[IBMQBackend]: list of backends available that match the filter
+            list of backends available that match the filter
         """
         backends = self._provider._backends.values()
 
@@ -114,17 +114,16 @@ class IBMQBackendService(SimpleNamespace):
         in the returned list.
 
         Args:
-            limit (int): number of jobs to retrieve.
-            skip (int): starting index for the job retrieval.
-            backend_name (str): name of the backend.
-            status (None or qiskit.providers.JobStatus or str): only get jobs
-                with this status, where status is e.g. `JobStatus.RUNNING` or
-                `'RUNNING'`
-            job_name (str): filter by job name. The `job_name` is matched
-                partially and `regular expressions
+            limit: number of jobs to retrieve.
+            skip: starting index for the job retrieval.
+            backend_name: name of the backend.
+            status: only get jobs with this status, where status is e.g.
+                `JobStatus.RUNNING` or `'RUNNING'`
+            job_name: filter by job name. The `job_name` is matched partially
+                and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
                 `_ can be used.
-            db_filter (dict): `loopback-based filter
+            db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
                 examples of its usage are:
@@ -148,7 +147,7 @@ class IBMQBackendService(SimpleNamespace):
                    job_list = backend.jobs(limit=5, db_filter=date_filter)
 
         Returns:
-            list(IBMQJob): list of IBMQJob instances
+            list of IBMQJob instances
 
         Raises:
             IBMQBackendValueError: status keyword value unrecognized
@@ -237,10 +236,10 @@ class IBMQBackendService(SimpleNamespace):
         """Return a single job from the API.
 
         Args:
-            job_id (str): the job id of the job to retrieve
+            job_id: the job id of the job to retrieve
 
         Returns:
-            IBMQJob: class instance
+            class instance
 
         Raises:
             IBMQBackendError: if retrieval failed
@@ -252,7 +251,7 @@ class IBMQBackendService(SimpleNamespace):
             if 'kind' not in job_info:
                 warnings.warn('The result of job {} is in a no longer supported format. '
                               'Please send the job using Qiskit 0.8+.'.format(job_id),
-                              DeprecationWarning)
+                              DeprecationWarning, stacklevel=2)
                 raise IBMQBackendError('Failed to get job "{}": {}'
                                        .format(job_id, 'job in pre-qobj format'))
         except ApiError as ex:

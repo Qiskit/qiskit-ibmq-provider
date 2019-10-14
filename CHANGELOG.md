@@ -44,7 +44,9 @@ The format is based on [Keep a Changelog].
 - `IBMQJob` constructor signature has changed (\#329).
 - `IBMQJob.submit()` can no longer be called directly, and jobs are expected
   to be submitted via `IBMQBackend.run()` (\#329).
-- `IBMQJob.error_message()` now gives more information on why a job failed (\#375). 
+- `IBMQJob.error_message()` now gives more information on why a job failed (\#375).
+- `IBMQJob.queue_position()` now accepts an optional `refresh` parameter that 
+  indicates whether it should query the API for the latest queue position (\#387). 
 
 ### Removed
 
