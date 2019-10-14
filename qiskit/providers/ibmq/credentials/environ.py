@@ -34,7 +34,7 @@ def read_credentials_from_environ() -> Dict[HubGroupProject, Credentials]:
     """Read the environment variables and return its credentials.
 
     Returns:
-        dict: dictionary with the credentials, in the form::
+        dictionary with the credentials, in the form::
 
             {credentials_unique_id: Credentials}
     """

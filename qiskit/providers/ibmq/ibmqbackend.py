@@ -52,11 +52,10 @@ class IBMQBackend(BaseBackend):
         """Initialize remote backend for IBM Quantum Experience.
 
         Args:
-            configuration (BackendConfiguration): configuration of backend.
-            provider (AccountProvider): provider.
-            credentials (Credentials): credentials.
-            api (AccountClient):
-                api for communicating with the Quantum Experience.
+            configuration: configuration of backend.
+            provider: provider.
+            credentials: credentials.
+            api: api for communicating with the Quantum Experience.
         """
         super().__init__(provider=provider, configuration=configuration)
 
@@ -74,13 +73,13 @@ class IBMQBackend(BaseBackend):
         """Run a Qobj asynchronously.
 
         Args:
-            qobj (Qobj): description of job.
-            job_name (str): custom name to be assigned to the job. This job
+            qobj: description of job.
+            job_name: custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
 
         Returns:
-            IBMQJob: an instance derived from BaseJob
+            an instance derived from BaseJob
 
         Raises:
             SchemaValidationError: If the job validation fails.
@@ -95,13 +94,13 @@ class IBMQBackend(BaseBackend):
     def _submit_job(self, qobj: Qobj, job_name: Optional[str] = None) -> IBMQJob:
         """Submit qobj job to IBM-Q.
         Args:
-            qobj (Qobj): description of job.
-            job_name (str): custom name to be assigned to the job. This job
+            qobj: description of job.
+            job_name: custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
 
         Returns:
-            IBMQJob: an instance derived from BaseJob
+            an instance derived from BaseJob
 
         Events:
             ibmq.job.start: The job has started.
@@ -147,15 +146,15 @@ class IBMQBackend(BaseBackend):
         """Return the online backend properties with optional filtering.
 
         Args:
-            refresh (bool): if True, the return is via a QX API call.
+            refresh: if True, the return is via a QX API call.
                 Otherwise, a cached version is returned.
-            datetime (datetime.datetime): by specifying a datetime,
+            datetime: by specifying a datetime,
                 this function returns an instance of the BackendProperties whose
                 timestamp is closest to, but older than, the specified datetime.
 
         Returns:
-            BackendProperties: The properties of the backend. If the backend has
-                no properties to display, it returns ``None``.
+            The properties of the backend. If the backend has no properties to
+            display, it returns ``None``.
         """
         # pylint: disable=arguments-differ
         if datetime:
@@ -175,7 +174,7 @@ class IBMQBackend(BaseBackend):
         """Return the online backend status.
 
         Returns:
-            BackendStatus: The status of the backend.
+            The status of the backend.
 
         Raises:
             LookupError: If status for the backend can't be found.
@@ -193,12 +192,12 @@ class IBMQBackend(BaseBackend):
         """Return the pulse defaults for the backend.
 
         Args:
-            refresh (bool): if True, the return is via a QX API call.
+            refresh: if True, the return is via a QX API call.
                 Otherwise, a cached version is returned.
 
         Returns:
-            PulseDefaults: the pulse defaults for the backend. If the backend
-                does not support defaults, it returns ``None``.
+            the pulse defaults for the backend. If the backend does not support
+            defaults, it returns ``None``.
         """
         if not self.configuration().open_pulse:
             return None
@@ -233,13 +232,16 @@ class IBMQBackend(BaseBackend):
         in the returned list.
 
         Args:
-            limit (int): number of jobs to retrieve.
-            skip (int): starting index for the job retrieval.
-            status (None or qiskit.providers.JobStatus or str): only get jobs
+            limit: number of jobs to retrieve.
+            skip: starting index for the job retrieval.
+            status: only get jobs
                 with this status, where status is e.g. `JobStatus.RUNNING` or
                 `'RUNNING'`
-            job_name (str): only get jobs with this job name.
-            db_filter (dict): `loopback-based filter
+            job_name: filter by job name. The `job_name` is matched partially
+                and `regular expressions
+                <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
+                `_ can be used.
+            db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
                 examples of its usage are:
@@ -263,7 +265,7 @@ class IBMQBackend(BaseBackend):
                    job_list = backend.jobs(limit=5, db_filter=date_filter)
 
         Returns:
-            list(IBMQJob): list of IBMQJob instances
+            list of IBMQJob instances
 
         Raises:
             IBMQBackendValueError: status keyword value unrecognized
@@ -280,10 +282,10 @@ class IBMQBackend(BaseBackend):
         """Return a job submitted to this backend.
 
         Args:
-            job_id (str): the job id of the job to retrieve
+            job_id: the job id of the job to retrieve
 
         Returns:
-            IBMQJob: class instance
+            class instance
 
         Raises:
             IBMQBackendError: if retrieval failed
@@ -327,13 +329,13 @@ class IBMQSimulator(IBMQBackend):
         """Run qobj asynchronously.
 
         Args:
-            qobj (Qobj): description of job
-            backend_options (dict): backend options
-            noise_model (NoiseModel): noise model
-            job_name (str): custom name to be assigned to the job
+            qobj: description of job
+            backend_options: backend options
+            noise_model: noise model
+            job_name: custom name to be assigned to the job
 
         Returns:
-            IBMQJob: an instance derived from BaseJob
+            an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
@@ -353,11 +355,10 @@ class IBMQRetiredBackend(IBMQBackend):
         """Initialize remote backend for IBM Quantum Experience.
 
         Args:
-            configuration (BackendConfiguration): configuration of backend.
-            provider (AccountProvider): provider.
-            credentials (Credentials): credentials.
-            api (AccountClient):
-                api for communicating with the Quantum Experience.
+            configuration: configuration of backend.
+            provider: provider.
+            credentials: credentials.
+            api: api for communicating with the Quantum Experience.
         """
         super().__init__(configuration, provider, credentials, api)
         self._status = BackendStatus(

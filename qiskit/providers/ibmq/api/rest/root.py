@@ -39,10 +39,10 @@ class Api(RestAdapterBase):
         """Return a adapter for a specific backend.
 
         Args:
-            backend_name (str): name of the backend.
+            backend_name: name of the backend.
 
         Returns:
-            Backend: the backend adapter.
+            the backend adapter.
         """
         return Backend(self.session, backend_name)
 
@@ -50,10 +50,10 @@ class Api(RestAdapterBase):
         """Return a adapter for a specific job.
 
         Args:
-            job_id (str): id of the job.
+            job_id: id of the job.
 
         Returns:
-            Job: the backend adapter.
+            the backend adapter.
         """
         return Job(self.session, job_id)
 
@@ -61,10 +61,10 @@ class Api(RestAdapterBase):
         """Return the list of backends.
 
         Args:
-            timeout (float or None): number of seconds to wait for the request.
+            timeout: number of seconds to wait for the request.
 
         Returns:
-            list[dict]: json response.
+            json response.
         """
         url = self.get_url('backends')
         return self.session.get(url, timeout=timeout).json()
@@ -83,12 +83,12 @@ class Api(RestAdapterBase):
         """Return a list of jobs statuses.
 
         Args:
-            limit (int): maximum number of items to return.
-            skip (int): offset for the items to return.
-            extra_filter (dict): additional filtering passed to the query.
+            limit: maximum number of items to return.
+            skip: offset for the items to return.
+            extra_filter: additional filtering passed to the query.
 
         Returns:
-            list[dict]: json response.
+            json response.
         """
         url = self.get_url('jobs_status')
 
@@ -112,12 +112,12 @@ class Api(RestAdapterBase):
         """Submit a job for executing.
 
         Args:
-            backend_name (str): the name of the backend.
-            qobj_dict (dict): the Qobj to be executed, as a dictionary.
-            job_name (str): custom name to be assigned to the job.
+            backend_name: the name of the backend.
+            qobj_dict: the Qobj to be executed, as a dictionary.
+            job_name: custom name to be assigned to the job.
 
         Returns:
-            dict: json response.
+            json response.
         """
         url = self.get_url('jobs')
 
@@ -141,12 +141,12 @@ class Api(RestAdapterBase):
         """Submit a job for executing, using object storage.
 
         Args:
-            backend_name (str): the name of the backend.
-            shots (int): number of shots.
-            job_name (str): custom name to be assigned to the job.
+            backend_name: the name of the backend.
+            shots: number of shots.
+            job_name: custom name to be assigned to the job.
 
         Returns:
-            dict: json response.
+            json response.
         """
         url = self.get_url('jobs')
 
@@ -166,11 +166,11 @@ class Api(RestAdapterBase):
         """Execute a Circuit.
 
         Args:
-            name (str): name of the Circuit.
-            **kwargs (dict): arguments for the Circuit.
+            name: name of the Circuit.
+            **kwargs: arguments for the Circuit.
 
         Returns:
-            dict: json response.
+            json response.
         """
         url = self.get_url('circuit')
 
