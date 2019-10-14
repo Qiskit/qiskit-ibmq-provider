@@ -30,7 +30,7 @@ def read_credentials_from_qconfig() -> Dict[HubGroupProject, Credentials]:
     """Read a `QConfig.py` file and return its credentials.
 
     Returns:
-        dict: dictionary with the credentials, in the form::
+        dictionary with the credentials, in the form::
 
             {credentials_unique_id: Credentials}
 

@@ -54,13 +54,13 @@ class RetrySession(Session):
         """RetrySession constructor.
 
         Args:
-            base_url (str): base URL for the session's requests.
-            access_token (str): access token.
-            retries (int): number of retries for the requests.
-            backoff_factor (float): backoff factor between retry attempts.
-            verify (bool): enable SSL verification.
-            proxies (dict): proxy URLs mapped by protocol.
-            auth (AuthBase): authentication handler.
+            base_url: base URL for the session's requests.
+            access_token: access token.
+            retries: number of retries for the requests.
+            backoff_factor: backoff factor between retry attempts.
+            verify: enable SSL verification.
+            proxies: proxy URLs mapped by protocol.
+            auth: authentication handler.
         """
         super().__init__()
 
@@ -93,8 +93,8 @@ class RetrySession(Session):
         """Set the Session retry policy.
 
         Args:
-            retries (int): number of retries for the requests.
-            backoff_factor (float): backoff factor between retry attempts.
+            retries: number of retries for the requests.
+            backoff_factor: backoff factor between retry attempts.
         """
         retry = Retry(
             total=retries,
@@ -115,9 +115,9 @@ class RetrySession(Session):
         """Set the Session parameters and attributes.
 
         Args:
-            verify (bool): enable SSL verification.
-            proxies (dict): proxy URLs mapped by protocol.
-            auth (AuthBase): authentication handler.
+            verify: enable SSL verification.
+            proxies: proxy URLs mapped by protocol.
+            auth: authentication handler.
         """
         client_app_header = CLIENT_APPLICATION
 
@@ -142,14 +142,14 @@ class RetrySession(Session):
         """Constructs a Request, prepending the base url.
 
         Args:
-            method (string): method for the new `Request` object.
-            url (string): URL for the new `Request` object.
-            bare (bool): if `True`, do not send IBM Q specific information
+            method: method for the new `Request` object.
+            url: URL for the new `Request` object.
+            bare: if `True`, do not send IBM Q specific information
                 (access token) in the request or modify the `url`.
-            kwargs (dict): additional arguments for the request.
+            kwargs: additional arguments for the request.
 
         Returns:
-            Response: Response object.
+            Response object.
 
         Raises:
             RequestsApiError: if the request failed.
