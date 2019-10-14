@@ -118,8 +118,11 @@ class IBMQBackendService(SimpleNamespace):
             skip: starting index for the job retrieval.
             backend_name: name of the backend.
             status: only get jobs with this status, where status is e.g.
-            `JobStatus.RUNNING` or `'RUNNING'`
-            job_name: only get jobs with this job name.
+                `JobStatus.RUNNING` or `'RUNNING'`
+            job_name: filter by job name. The `job_name` is matched partially
+                and `regular expressions
+                <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
+                `_ can be used.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -150,7 +153,7 @@ class IBMQBackendService(SimpleNamespace):
             IBMQBackendValueError: status keyword value unrecognized
         """
         # Build the filter for the query.
-        api_filter = {}
+        api_filter = {}  # type: Dict[str, Any]
 
         if backend_name:
             api_filter['backend.name'] = backend_name
@@ -173,10 +176,10 @@ class IBMQBackendService(SimpleNamespace):
             else:
                 raise IBMQBackendValueError('unrecognized value for "status" keyword '
                                             'in job filter')
-            api_filter.update(this_filter)  # type: ignore[assignment]
+            api_filter.update(this_filter)
 
         if job_name:
-            api_filter['name'] = job_name
+            api_filter['name'] = {"regexp": job_name}
 
         if db_filter:
             # status takes precedence over db_filter for same keys
@@ -184,7 +187,7 @@ class IBMQBackendService(SimpleNamespace):
 
         # Retrieve the requested number of jobs, using pagination. The API
         # might limit the number of jobs per request.
-        job_responses = []  # type: ignore[var-annotated]
+        job_responses = []  # type: List[Dict[str, Any]]
         current_page_limit = limit
 
         while True:
@@ -212,15 +215,12 @@ class IBMQBackendService(SimpleNamespace):
                 continue
 
             job_id = job_info.get('id', "")
-            # TODO Extract job name from job_info instead of passing it in
-            # once it becomes available from the API.
             # TODO: first argument for IBMQJob should be a Backend, but as
             # `job_responses` comes from `jobs_statuses`, the backend name
             # might not be present. Revise during IBMQJob refactoring.
             job_info.update({
                 '_backend': None,
                 'api': self._provider._api,
-                'name': job_name
             })
             try:
                 job = IBMQJob.from_dict(job_info)

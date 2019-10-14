@@ -153,8 +153,8 @@ class IBMQBackend(BaseBackend):
                 timestamp is closest to, but older than, the specified datetime.
 
         Returns:
-            The properties of the backend. If the backend has
-                no properties to display, it returns ``None``.
+            The properties of the backend. If the backend has no properties to
+            display, it returns ``None``.
         """
         # pylint: disable=arguments-differ
         if datetime:
@@ -196,8 +196,8 @@ class IBMQBackend(BaseBackend):
                 Otherwise, a cached version is returned.
 
         Returns:
-            the pulse defaults for the backend. If the backend
-                does not support defaults, it returns ``None``.
+            the pulse defaults for the backend. If the backend does not support
+            defaults, it returns ``None``.
         """
         if not self.configuration().open_pulse:
             return None
@@ -237,7 +237,10 @@ class IBMQBackend(BaseBackend):
             status: only get jobs
                 with this status, where status is e.g. `JobStatus.RUNNING` or
                 `'RUNNING'`
-            job_name: only get jobs with this job name.
+            job_name: filter by job name. The `job_name` is matched partially
+                and `regular expressions
+                <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
+                `_ can be used.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
