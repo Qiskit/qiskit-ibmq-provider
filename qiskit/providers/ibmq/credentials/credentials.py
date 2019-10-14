@@ -54,14 +54,14 @@ class Credentials:
         """Return new set of credentials.
 
         Args:
-            token (str): Quantum Experience or IBMQ API token.
-            url (str): URL for Quantum Experience or IBMQ.
-            websockets_url (str): URL for websocket server.
-            hub (str): the hub used for IBMQ.
-            group (str): the group used for IBMQ.
-            project (str): the project used for IBMQ.
-            proxies (dict): proxy configuration for the API.
-            verify (bool): if False, ignores SSL certificates errors
+            token: Quantum Experience or IBMQ API token.
+            url: URL for Quantum Experience or IBMQ.
+            websockets_url: URL for websocket server.
+            hub: the hub used for IBMQ.
+            group: the group used for IBMQ.
+            project: the project used for IBMQ.
+            proxies: proxy configuration for the API.
+            verify: if False, ignores SSL certificates errors
 
         Note:
             `hub`, `group` and `project` are stored as attributes for
@@ -91,7 +91,7 @@ class Credentials:
         By convention, we assume (hub, group, project) is always unique.
 
         Returns:
-            HubGroupProject: the (hub, group, project) tuple.
+            the (hub, group, project) tuple.
         """
         return HubGroupProject(self.hub, self.group, self.project)
 
@@ -99,7 +99,7 @@ class Credentials:
         """Return a dict of kwargs in the format expected by `requests`.
 
         Returns:
-            dict: a dict with connection-related arguments in the format
+            a dict with connection-related arguments in the format
                 expected by `requests`. The following keys can be present:
                 `proxies`, `verify`, `auth`.
         """
@@ -129,19 +129,19 @@ def _unify_ibmq_url(
     """Return a new-style set of credential values (url and hub parameters).
 
     Args:
-        url (str): URL for Quantum Experience or IBM Q.
-        hub (str): the hub used for IBM Q.
-        group (str): the group used for IBM Q.
-        project (str): the project used for IBM Q.
+        url: URL for Quantum Experience or IBM Q.
+        hub: the hub used for IBM Q.
+        group: the group used for IBM Q.
+        project: the project used for IBM Q.
 
     Returns:
         tuple[url, base_url, hub, group, token]:
-            * url (str): new-style Quantum Experience or IBM Q URL (the hub,
+            * url: new-style Quantum Experience or IBM Q URL (the hub,
                 group and project included in the URL).
-            * base_url (str): base URL for the API, without hub/group/project.
-            * hub (str): the hub used for IBM Q.
-            * group (str): the group used for IBM Q.
-            * project (str): the project used for IBM Q.
+            * base_url: base URL for the API, without hub/group/project.
+            * hub: the hub used for IBM Q.
+            * group: the group used for IBM Q.
+            * project: the project used for IBM Q.
     """
     # Check if the URL is "new style", and retrieve embedded parameters from it.
     regex_match = re.match(REGEX_IBMQ_HUBS, url, re.IGNORECASE)

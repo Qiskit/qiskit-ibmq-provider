@@ -56,16 +56,16 @@ class RetrySession(Session):
         """RetrySession constructor.
 
         Args:
-            base_url (str): base URL for the session's requests.
-            access_token (str): access token.
-            retries_total (int): number of total retries for the requests.
-            retries_connect (int): number of connect retries for the requests.
-            backoff_factor (float): backoff factor between retry attempts.
-            verify (bool): enable SSL verification.
-            proxies (dict): proxy URLs mapped by protocol.
-            auth (AuthBase): authentication handler.
-            timeout (Tuple[float, Union[float, None]]): timeout for the
-                requests, in the form (connection_timeout, total_timeout).
+            base_url: base URL for the session's requests.
+            access_token: access token.
+            retries_total: number of total retries for the requests.
+            retries_connect: number of connect retries for the requests.
+            backoff_factor: backoff factor between retry attempts.
+            verify: enable SSL verification.
+            proxies: proxy URLs mapped by protocol.
+            auth: authentication handler.
+            timeout: timeout for the requests, in the form (connection_timeout,
+                total_timeout).
         """
         super().__init__()
 
@@ -104,9 +104,9 @@ class RetrySession(Session):
         """Set the Session retry policy.
 
         Args:
-            retries_total (int): number of total retries for the requests.
-            retries_connect (int): number of connect retries for the requests.
-            backoff_factor (float): backoff factor between retry attempts.
+            retries_total: number of total retries for the requests.
+            retries_connect: number of connect retries for the requests.
+            backoff_factor: backoff factor between retry attempts.
         """
         retry = Retry(
             total=retries_total,
@@ -128,9 +128,9 @@ class RetrySession(Session):
         """Set the Session parameters and attributes.
 
         Args:
-            verify (bool): enable SSL verification.
-            proxies (dict): proxy URLs mapped by protocol.
-            auth (AuthBase): authentication handler.
+            verify: enable SSL verification.
+            proxies: proxy URLs mapped by protocol.
+            auth: authentication handler.
         """
         client_app_header = CLIENT_APPLICATION
 
@@ -155,14 +155,14 @@ class RetrySession(Session):
         """Constructs a Request, prepending the base url.
 
         Args:
-            method (string): method for the new `Request` object.
-            url (string): URL for the new `Request` object.
-            bare (bool): if `True`, do not send IBM Q specific information
+            method: method for the new `Request` object.
+            url: URL for the new `Request` object.
+            bare: if `True`, do not send IBM Q specific information
                 (access token) in the request or modify the `url`.
-            kwargs (dict): additional arguments for the request.
+            kwargs: additional arguments for the request.
 
         Returns:
-            Response: Response object.
+            Response object.
 
         Raises:
             RequestsApiError: if the request failed.

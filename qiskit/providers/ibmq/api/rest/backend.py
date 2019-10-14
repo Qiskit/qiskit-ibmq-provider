@@ -34,8 +34,8 @@ class Backend(RestAdapterBase):
         """Backend constructor.
 
         Args:
-            session (Session): session to be used in the adaptor.
-            backend_name (str): name of the backend.
+            session: session to be used in the adaptor.
+            backend_name: name of the backend.
         """
         self.backend_name = backend_name
         super().__init__(session, '/devices/{}'.format(backend_name))
@@ -44,11 +44,10 @@ class Backend(RestAdapterBase):
         """Return backend properties.
 
         Args:
-            datetime (datetime.datetime): datetime used for
-                additional filtering passed to the query.
+            datetime: datetime used for additional filtering passed to the query.
 
         Returns:
-            dict: json response of backend properties.
+            json response of backend properties.
         """
         # pylint: disable=redefined-outer-name
         url = self.get_url('properties')

@@ -27,7 +27,6 @@ from ..decorators import requires_qe_access
 from ..contextmanagers import (custom_qiskitrc, no_file, no_envs,
                                CREDENTIAL_ENV_VARS)
 
-
 API_URL = 'https://api.quantum-computing.ibm.com/api'
 AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 API1_URL = 'https://quantumexperience.ng.bluemix.net/api'
@@ -178,6 +177,24 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
         self.assertIsNotNone(active_account)
         self.assertEqual(active_account['token'], qe_token)
         self.assertEqual(active_account['url'], qe_url)
+
+    def test_save_none_token(self):
+        """Test saving an account with token=None. See #391"""
+        with self.assertRaises(IBMQApiUrlError) as context_manager:
+            self.factory.save_account(None)
+        self.assertIn('Invalid token found', str(context_manager.exception))
+
+    def test_save_empty_token(self):
+        """Test saving an account with token=''. See #391"""
+        with self.assertRaises(IBMQApiUrlError) as context_manager:
+            self.factory.save_account('')
+        self.assertIn('Invalid token found', str(context_manager.exception))
+
+    def test_save_zero_token(self):
+        """Test saving an account with token=0. See #391"""
+        with self.assertRaises(IBMQApiUrlError) as context_manager:
+            self.factory.save_account(0)
+        self.assertIn('Invalid token found', str(context_manager.exception))
 
 
 class TestIBMQFactoryProvider(IBMQTestCase):

@@ -36,11 +36,11 @@ def read_credentials_from_qiskitrc(
     """Read a configuration file and return a dict with its sections.
 
     Args:
-        filename (str): full path to the qiskitrc file. If `None`, the default
+        filename: full path to the qiskitrc file. If `None`, the default
             location is used (`HOME/.qiskit/qiskitrc`).
 
     Returns:
-        dict: dictionary with the contents of the configuration file, with
+        dictionary with the contents of the configuration file, with
             the form::
 
             {credential_unique_id: Credentials}
@@ -83,11 +83,11 @@ def write_qiskit_rc(
     """Write credentials to the configuration file.
 
     Args:
-        credentials (dict): dictionary with the credentials, with the form::
+        credentials: dictionary with the credentials, with the form::
 
             {credentials_unique_id: Credentials}
 
-        filename (str): full path to the qiskitrc file. If `None`, the default
+        filename: full path to the qiskitrc file. If `None`, the default
             location is used (`HOME/.qiskit/qiskitrc`).
     """
     def _credentials_object_to_dict(obj: Credentials) -> Dict[str, Any]:
@@ -128,9 +128,9 @@ def store_credentials(
     """Store the credentials for a single account in the configuration file.
 
     Args:
-        credentials (Credentials): credentials instance.
-        overwrite (bool): overwrite existing credentials.
-        filename (str): full path to the qiskitrc file. If `None`, the default
+        credentials: credentials instance.
+        overwrite: overwrite existing credentials.
+        filename: full path to the qiskitrc file. If `None`, the default
             location is used (`HOME/.qiskit/qiskitrc`).
     """
     # Read the current providers stored in the configuration file.
@@ -156,8 +156,8 @@ def remove_credentials(
     """Remove credentials from qiskitrc.
 
     Args:
-        credentials (Credentials): credentials.
-        filename (str): full path to the qiskitrc file. If `None`, the default
+        credentials: credentials.
+        filename: full path to the qiskitrc file. If `None`, the default
             location is used (`HOME/.qiskit/qiskitrc`).
 
     Raises:

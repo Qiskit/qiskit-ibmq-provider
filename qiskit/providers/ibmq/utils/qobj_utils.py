@@ -24,10 +24,10 @@ def _serialize_noise_model(config: Dict[str, Any]) -> Dict[str, Any]:
        a transformation so it can be serialized.
 
        Args:
-           config (dict): The dictionary to traverse
+           config: The dictionary to traverse
 
        Returns:
-           dict: The transformed dictionary
+           The transformed dictionary
     """
     for k, v in config.items():
         if isinstance(config[k], dict):
@@ -52,12 +52,12 @@ def update_qobj_config(
     """Update a Qobj configuration from options and noise model.
 
     Args:
-        qobj (Qobj): description of job
-        backend_options (dict): backend options
-        noise_model (NoiseModel): noise model
+        qobj: description of job
+        backend_options: backend options
+        noise_model: noise model
 
     Returns:
-        Qobj: qobj.
+        qobj.
     """
     config = qobj.config.to_dict()
 

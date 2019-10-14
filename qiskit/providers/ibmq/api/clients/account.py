@@ -51,11 +51,11 @@ class AccountClient(BaseClient):
         """AccountClient constructor.
 
         Args:
-            access_token (str): IBM Q Experience access token.
-            project_url (str): IBM Q Experience URL for a specific h/g/p.
-            websockets_url (str): URL for the websockets server.
-            use_websockets (bool): whether to use webscokets
-            **request_kwargs (dict): arguments for the `requests` Session.
+            access_token: IBM Q Experience access token.
+            project_url: IBM Q Experience URL for a specific h/g/p.
+            websockets_url: URL for the websockets server.
+            use_websockets: whether to use webscokets
+            **request_kwargs: arguments for the `requests` Session.
         """
         self.client_api = Api(RetrySession(project_url, access_token,
                                            **request_kwargs))
@@ -68,10 +68,10 @@ class AccountClient(BaseClient):
         """Return the list of backends.
 
         Args:
-            timeout (float or None): number of seconds to wait for the request.
+            timeout: number of seconds to wait for the request.
 
         Returns:
-            list[dict]: a list of backends.
+            a list of backends.
         """
         return self.client_api.backends(timeout=timeout)
 
@@ -79,10 +79,10 @@ class AccountClient(BaseClient):
         """Return the status of a backend.
 
         Args:
-            backend_name (str): the name of the backend.
+            backend_name: the name of the backend.
 
         Returns:
-            dict: backend status.
+            backend status.
         """
         return self.client_api.backend(backend_name).status()
 
@@ -94,12 +94,11 @@ class AccountClient(BaseClient):
         """Return the properties of a backend.
 
         Args:
-            backend_name (str): the name of the backend.
-            datetime (datetime.datetime): datetime for
-                additional filtering of backend properties.
+            backend_name: the name of the backend.
+            datetime: datetime for additional filtering of backend properties.
 
         Returns:
-            dict: backend properties.
+            backend properties.
         """
         # pylint: disable=redefined-outer-name
         return self.client_api.backend(backend_name).properties(datetime=datetime)
@@ -108,10 +107,10 @@ class AccountClient(BaseClient):
         """Return the pulse defaults of a backend.
 
         Args:
-            backend_name (str): the name of the backend.
+            backend_name: the name of the backend.
 
         Returns:
-            dict: backend pulse defaults.
+            backend pulse defaults.
         """
         return self.client_api.backend(backend_name).pulse_defaults()
 
@@ -126,12 +125,12 @@ class AccountClient(BaseClient):
         """Return a list of statuses of jobs, with filtering and pagination.
 
         Args:
-            limit (int): maximum number of items to return.
-            skip (int): offset for the items to return.
-            extra_filter (dict): additional filtering passed to the query.
+            limit: maximum number of items to return.
+            skip: offset for the items to return.
+            extra_filter: additional filtering passed to the query.
 
         Returns:
-            list[dict]: a list of job statuses.
+            a list of job statuses.
         """
         return self.client_api.jobs(limit=limit, skip=skip,
                                     extra_filter=extra_filter)
@@ -146,13 +145,13 @@ class AccountClient(BaseClient):
         """Submit a Qobj to a device.
 
         Args:
-            backend_name (str): the name of the backend.
-            qobj_dict (dict): the Qobj to be executed, as a dictionary.
-            use_object_storage (bool): `True` if object storage should be used.
-            job_name (str): custom name to be assigned to the job.
+            backend_name: the name of the backend.
+            qobj_dict: the Qobj to be executed, as a dictionary.
+            use_object_storage: `True` if object storage should be used.
+            job_name: custom name to be assigned to the job.
 
         Returns:
-            dict: job status.
+            job status.
         """
         submit_info = None
         if use_object_storage:
@@ -183,12 +182,12 @@ class AccountClient(BaseClient):
         """Submit a Qobj to a device using HTTP POST.
 
         Args:
-            backend_name (str): the name of the backend.
-            qobj_dict (dict): the Qobj to be executed, as a dictionary.
-            job_name (str): custom name to be assigned to the job.
+            backend_name: the name of the backend.
+            qobj_dict: the Qobj to be executed, as a dictionary.
+            job_name: custom name to be assigned to the job.
 
         Returns:
-            dict: job status.
+            job status.
         """
         return self.client_api.job_submit(backend_name, qobj_dict, job_name)
 
@@ -201,12 +200,12 @@ class AccountClient(BaseClient):
         """Submit a Qobj to a device using object storage.
 
         Args:
-            backend_name (str): the name of the backend.
-            qobj_dict (dict): the Qobj to be executed, as a dictionary.
-            job_name (str): custom name to be assigned to the job.
+            backend_name: the name of the backend.
+            qobj_dict: the Qobj to be executed, as a dictionary.
+            job_name: custom name to be assigned to the job.
 
         Returns:
-            dict: job status.
+            job status.
         """
         # Get the job via object storage.
         job_info = self.client_api.submit_job_object_storage(backend_name, job_name=job_name)
@@ -228,11 +227,11 @@ class AccountClient(BaseClient):
         """Retrieve and return a Qobj.
 
         Args:
-            job_id (str): the id of the job.
-            use_object_storage (bool): `True` if object storage should be used.
+            job_id: the id of the job.
+            use_object_storage: `True` if object storage should be used.
 
         Returns:
-            dict: Qobj, in dict form.
+            Qobj, in dict form.
         """
         if use_object_storage:
             return self._job_download_qobj_object_storage(job_id)
@@ -243,10 +242,10 @@ class AccountClient(BaseClient):
         """Retrieve and return a Qobj using object storage.
 
         Args:
-            job_id (str): the id of the job.
+            job_id: the id of the job.
 
         Returns:
-            dict: Qobj, in dict form.
+            Qobj, in dict form.
         """
         job_api = self.client_api.job(job_id)
 
@@ -260,11 +259,11 @@ class AccountClient(BaseClient):
         """Retrieve and return a job result.
 
         Args:
-            job_id (str): the id of the job.
-            use_object_storage (bool): `True` if object storage should be used.
+            job_id: the id of the job.
+            use_object_storage: `True` if object storage should be used.
 
         Returns:
-            dict: job information.
+            job information.
         """
         if use_object_storage:
             return self._job_result_object_storage(job_id)
@@ -275,10 +274,10 @@ class AccountClient(BaseClient):
         """Retrieve and return a result using object storage.
 
         Args:
-            job_id (str): the id of the job.
+            job_id: the id of the job.
 
         Returns:
-            dict: job information.
+            job information.
         """
         job_api = self.client_api.job(job_id)
 
@@ -303,10 +302,10 @@ class AccountClient(BaseClient):
         """Return information about a job.
 
         Args:
-            job_id (str): the id of the job.
+            job_id: the id of the job.
 
         Returns:
-            dict: job information.
+            job information.
         """
         return self.client_api.job(job_id).get()
 
@@ -314,10 +313,11 @@ class AccountClient(BaseClient):
         """Return the status of a job.
 
         Args:
-            job_id (str): the id of the job.
+            job_id: the id of the job.
 
         Returns:
-            dict: job status.
+            job status.
+
         Raises:
             ApiIBMQProtocolError: if an unexpected result is received from the server.
         """
@@ -332,13 +332,12 @@ class AccountClient(BaseClient):
         """Wait until the job progress to a final state.
 
         Args:
-            job_id (str): the id of the job
-            timeout (float or None): seconds to wait for job. If None, wait
-                indefinitely.
-            wait (float): seconds between queries.
+            job_id: the id of the job
+            timeout: seconds to wait for job. If None, wait indefinitely.
+            wait: seconds between queries.
 
         Returns:
-            dict: job status.
+            job status.
 
         Raises:
             UserTimeoutExceededError: if the job does not return results
@@ -378,12 +377,11 @@ class AccountClient(BaseClient):
         """Return the final status of a job via websocket.
 
         Args:
-            job_id (str): the id of the job.
-            timeout (float or None): seconds to wait for job. If None, wait
-                indefinitely.
+            job_id: the id of the job.
+            timeout: seconds to wait for job. If None, wait indefinitely.
 
         Returns:
-            dict: job status.
+            job status.
 
         Raises:
             RuntimeError: if an unexpected error occurred while getting the event loop.
@@ -413,13 +411,12 @@ class AccountClient(BaseClient):
         """Return the final status of a job via polling.
 
         Args:
-            job_id (str): the id of the job.
-            timeout (float or None): seconds to wait for job. If None, wait
-                indefinitely.
-            wait (float): seconds between queries.
+            job_id: the id of the job.
+            timeout: seconds to wait for job. If None, wait indefinitely.
+            wait: seconds between queries.
 
         Returns:
-            dict: job status.
+            job status.
 
         Raises:
             UserTimeoutExceededError: if the user specified timeout has been exceeded.
@@ -443,10 +440,10 @@ class AccountClient(BaseClient):
         """Return the backend properties of a job.
 
         Args:
-            job_id (str): the id of the job.
+            job_id: the id of the job.
 
         Returns:
-            dict: backend properties.
+            backend properties.
         """
         return self.client_api.job(job_id).properties()
 
@@ -454,10 +451,10 @@ class AccountClient(BaseClient):
         """Submit a request for cancelling a job.
 
         Args:
-            job_id (str): the id of the job.
+            job_id: the id of the job.
 
         Returns:
-            dict: job cancellation response.
+            job cancellation response.
         """
         return self.client_api.job(job_id).cancel()
 
@@ -467,11 +464,11 @@ class AccountClient(BaseClient):
         """Execute a Circuit.
 
         Args:
-            name (str): name of the Circuit.
-            **kwargs (dict): arguments for the Circuit.
+            name: name of the Circuit.
+            **kwargs: arguments for the Circuit.
 
         Returns:
-            dict: json response.
+            json response.
         """
         return self.client_api.circuit(name, **kwargs)
 
@@ -479,10 +476,10 @@ class AccountClient(BaseClient):
         """Return information about a Circuit job.
 
         Args:
-            job_id (str): the id of the job.
+            job_id: the id of the job.
 
         Returns:
-            dict: job information.
+            job information.
         """
         return self.client_api.job(job_id).get()
 
@@ -490,9 +487,9 @@ class AccountClient(BaseClient):
         """Return the status of a Circuits job.
 
         Args:
-            job_id (str): the id of the job.
+            job_id: the id of the job.
 
         Returns:
-            dict: job status.
+            job status.
         """
         return self.job_status(job_id)
