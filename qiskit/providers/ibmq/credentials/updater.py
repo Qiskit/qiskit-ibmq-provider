@@ -46,11 +46,11 @@ def update_credentials(force: bool = False) -> Optional[Credentials]:
     the configuration from the instructions at the IBM Q Experience site.
 
     Args:
-        force (bool): if `True`, disable interactive prompts and perform the
+        force: if `True`, disable interactive prompts and perform the
             changes.
 
     Returns:
-        Credentials: if the updating is possible, credentials for IBM Q
+        if the updating is possible, credentials for IBM Q
             Experience version 2; and `None` otherwise.
     """
     # Get the list of stored credentials.

@@ -31,7 +31,7 @@ class VersionFinder(RestAdapterBase):
         """Return the version info.
 
         Returns:
-            dict: a dict with information about the API version,
+            a dict with information about the API version,
             with the following keys:
                 * `new_api` (bool): whether the new API is being used
             And the following optional keys:

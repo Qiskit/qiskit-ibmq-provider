@@ -115,13 +115,13 @@ class IBMQJob(BaseModel, BaseJob):
         """IBMQJob init function.
 
         Args:
-            _backend (BaseBackend): the backend instance used to run this job.
-            api (AccountClient): object for connecting to the API.
-            _job_id (str or None): job ID of this job.
-            _creation_date (str): job creation date.
-            kind (ApiJobKind): job kind.
-            _status (ApiJobStatus): job status.
-            kwargs (dict): additional job attributes, that will be added as
+            _backend: the backend instance used to run this job.
+            api: object for connecting to the API.
+            _job_id: job ID of this job.
+            _creation_date: job creation date.
+            kind: job kind.
+            _status: job status.
+            kwargs: additional job attributes, that will be added as
                 instance members.
         """
         # pylint: disable=redefined-builtin
@@ -147,7 +147,7 @@ class IBMQJob(BaseModel, BaseJob):
         Job has been created in a previous Qiskit session.
 
         Returns:
-            Qobj: the Qobj for this job.
+            the Qobj for this job.
 
         Raises:
             JobError: if there was some unexpected failure in the server.
@@ -166,7 +166,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the backend properties for this job.
 
         Returns:
-            BackendProperties: the backend properties used for this job, or None if
+            the backend properties used for this job, or None if
                 properties are not available.
 
         Raises:
@@ -196,11 +196,11 @@ class IBMQJob(BaseModel, BaseJob):
             job having been consumed.
 
         Args:
-           timeout (float): number of seconds to wait for job
-           wait (float): time between queries to IBM Q server
+           timeout: number of seconds to wait for job
+           wait: time between queries to IBM Q server
 
         Returns:
-            qiskit.Result: Result object
+            Result object
 
         Raises:
             JobError: if the job has failed or cancelled, or if there was some
@@ -226,7 +226,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Attempt to cancel a job.
 
         Returns:
-            bool: True if job can be cancelled, else False. Note this operation
+            True if job can be cancelled, else False. Note this operation
             might not be possible depending on the environment.
 
         Raises:
@@ -245,7 +245,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Query the API to update the status.
 
         Returns:
-            qiskit.providers.JobStatus: The status of the job, once updated.
+            The status of the job, once updated.
 
         Raises:
             JobError: if there was some unexpected failure in the server.
@@ -268,8 +268,8 @@ class IBMQJob(BaseModel, BaseJob):
         """Update the job status and potentially queue position from an API response.
 
         Args:
-            status (ApiJobStatus): job status from the API response.
-            info_queue (dict): job queue information from the API response.
+            status: job status from the API response.
+            info_queue: job queue information from the API response.
         """
         self._status = api_status_to_job_status(status)
         if status is ApiJobStatus.RUNNING:
@@ -295,7 +295,7 @@ class IBMQJob(BaseModel, BaseJob):
             instance or session might fail due to the job having been consumed.
 
         Returns:
-            str: An error report if the job failed or ``None`` otherwise.
+            An error report if the job failed or ``None`` otherwise.
         """
         if not self._wait_for_completion(required_status=(JobStatus.ERROR,)):
             return None
@@ -325,8 +325,7 @@ class IBMQJob(BaseModel, BaseJob):
                 Otherwise return the cached value.
 
         Returns:
-            int: Position in the queue or ``None`` if position is unknown or
-                not applicable.
+            Position in the queue or ``None`` if position is unknown or not applicable.
         """
         if refresh:
             # Get latest position
@@ -337,7 +336,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return creation date.
 
         Returns:
-            str: Job creation date.
+            Job creation date.
         """
         return self._creation_date
 
@@ -345,7 +344,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the job ID assigned by the API.
 
         Returns:
-            str: the job ID.
+            the job ID.
         """
         return self._job_id
 
@@ -353,7 +352,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the name assigned to this job.
 
         Returns:
-            str: the job name or ``None`` if no name was assigned to the job.
+            the job name or ``None`` if no name was assigned to the job.
         """
         return self._name
 
@@ -361,7 +360,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the date and time information on each step of the job processing.
 
         Returns:
-            dict: a dictionary containing the date and time information on each
+            a dictionary containing the date and time information on each
                 step of the job processing. The keys of the dictionary are the
                 names of the steps, and the values are the date and time
                 information. ``None`` is returned if the information is not
@@ -379,7 +378,7 @@ class IBMQJob(BaseModel, BaseJob):
                 submit a job.
 
         Events:
-            ibmq.job.start: The job has started.
+            The job has started.
 
         Raises:
             JobError: If an error occurred during job submit.
@@ -420,13 +419,12 @@ class IBMQJob(BaseModel, BaseJob):
         """Wait until the job progress to a final state such as DONE or ERROR.
 
         Args:
-            timeout (float or None): seconds to wait for job. If None, wait
-                indefinitely.
-            wait (float): seconds between queries.
-            required_status (tuple[JobStatus]): the final job status required.
+            timeout: seconds to wait for job. If None, wait indefinitely.
+            wait: seconds between queries.
+            required_status: the final job status required.
 
         Returns:
-            bool: True if the final job status matches one of the required states.
+            True if the final job status matches one of the required states.
 
         Raises:
             JobTimeoutError: if the job does not return results before a

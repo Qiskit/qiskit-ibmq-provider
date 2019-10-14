@@ -27,8 +27,8 @@ class RestAdapterBase:
         """RestAdapterBase constructor.
 
         Args:
-            session (Session): session to be used in the adaptor.
-            prefix_url (str): string to be prefixed to all urls.
+            session: session to be used in the adaptor.
+            prefix_url: string to be prefixed to all urls.
         """
         self.session = session
         self.prefix_url = prefix_url
@@ -37,10 +37,9 @@ class RestAdapterBase:
         """Return the resolved URL for the specified identifier.
 
         Args:
-            identifier (str): internal identifier of the endpoint.
+            identifier: internal identifier of the endpoint.
 
         Returns:
-            str: the resolved URL of the endpoint (relative to the session
-                base url).
+            the resolved URL of the endpoint (relative to the session base url).
         """
         return '{}{}'.format(self.prefix_url, self.URL_MAP[identifier])

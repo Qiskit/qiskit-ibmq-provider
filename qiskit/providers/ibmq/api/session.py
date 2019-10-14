@@ -15,7 +15,7 @@
 """Session customized for IBM Q Experience access."""
 
 import os
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, Tuple, Union
 from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
@@ -45,22 +45,27 @@ class RetrySession(Session):
             self,
             base_url: str,
             access_token: Optional[str] = None,
-            retries: int = 5,
+            retries_total: int = 5,
+            retries_connect: int = 3,
             backoff_factor: float = 0.5,
             verify: bool = True,
             proxies: Optional[Dict[str, str]] = None,
-            auth: Optional[AuthBase] = None
+            auth: Optional[AuthBase] = None,
+            timeout: Tuple[float, Union[float, None]] = (5.0, None)
     ) -> None:
         """RetrySession constructor.
 
         Args:
-            base_url (str): base URL for the session's requests.
-            access_token (str): access token.
-            retries (int): number of retries for the requests.
-            backoff_factor (float): backoff factor between retry attempts.
-            verify (bool): enable SSL verification.
-            proxies (dict): proxy URLs mapped by protocol.
-            auth (AuthBase): authentication handler.
+            base_url: base URL for the session's requests.
+            access_token: access token.
+            retries_total: number of total retries for the requests.
+            retries_connect: number of connect retries for the requests.
+            backoff_factor: backoff factor between retry attempts.
+            verify: enable SSL verification.
+            proxies: proxy URLs mapped by protocol.
+            auth: authentication handler.
+            timeout: timeout for the requests, in the form (connection_timeout,
+                total_timeout).
         """
         super().__init__()
 
@@ -68,8 +73,9 @@ class RetrySession(Session):
         self._access_token = access_token
         self.access_token = access_token
 
-        self._initialize_retry(retries, backoff_factor)
+        self._initialize_retry(retries_total, retries_connect, backoff_factor)
         self._initialize_session_parameters(verify, proxies or {}, auth)
+        self._timeout = timeout
 
     def __del__(self) -> None:
         """RetrySession destructor. Closes the session."""
@@ -89,15 +95,22 @@ class RetrySession(Session):
         else:
             self.params.pop('access_token', None)  # type: ignore[attr-defined]
 
-    def _initialize_retry(self, retries: int, backoff_factor: float) -> None:
+    def _initialize_retry(
+            self,
+            retries_total: int,
+            retries_connect: int,
+            backoff_factor: float
+    ) -> None:
         """Set the Session retry policy.
 
         Args:
-            retries (int): number of retries for the requests.
-            backoff_factor (float): backoff factor between retry attempts.
+            retries_total: number of total retries for the requests.
+            retries_connect: number of connect retries for the requests.
+            backoff_factor: backoff factor between retry attempts.
         """
         retry = Retry(
-            total=retries,
+            total=retries_total,
+            connect=retries_connect,
             backoff_factor=backoff_factor,
             status_forcelist=STATUS_FORCELIST,
         )
@@ -115,9 +128,9 @@ class RetrySession(Session):
         """Set the Session parameters and attributes.
 
         Args:
-            verify (bool): enable SSL verification.
-            proxies (dict): proxy URLs mapped by protocol.
-            auth (AuthBase): authentication handler.
+            verify: enable SSL verification.
+            proxies: proxy URLs mapped by protocol.
+            auth: authentication handler.
         """
         client_app_header = CLIENT_APPLICATION
 
@@ -142,14 +155,14 @@ class RetrySession(Session):
         """Constructs a Request, prepending the base url.
 
         Args:
-            method (string): method for the new `Request` object.
-            url (string): URL for the new `Request` object.
-            bare (bool): if `True`, do not send IBM Q specific information
+            method: method for the new `Request` object.
+            url: URL for the new `Request` object.
+            bare: if `True`, do not send IBM Q specific information
                 (access token) in the request or modify the `url`.
-            kwargs (dict): additional arguments for the request.
+            kwargs: additional arguments for the request.
 
         Returns:
-            Response: Response object.
+            Response object.
 
         Raises:
             RequestsApiError: if the request failed.
@@ -163,6 +176,10 @@ class RetrySession(Session):
             kwargs.update({'params': params})
         else:
             final_url = self.base_url + url
+
+        # Add a timeout to the connection for non-proxy connections.
+        if not self.proxies:
+            kwargs.update({'timeout': self._timeout})
 
         try:
             response = super().request(method, final_url, **kwargs)
