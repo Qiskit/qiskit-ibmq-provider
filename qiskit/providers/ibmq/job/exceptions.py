@@ -25,3 +25,8 @@ class IBMQJobApiError(JobError):
 class IBMQJobFailureError(JobError):
     """Error that occurs because the job failed."""
     pass
+
+
+class IBMQJobInvalidStateError(JobError):
+    """Error that occurs when a job is in an invalid state."""
+    pass

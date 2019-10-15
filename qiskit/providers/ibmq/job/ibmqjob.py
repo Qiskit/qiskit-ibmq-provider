@@ -35,7 +35,8 @@ from qiskit.validation import BaseModel, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
-from ..job.exceptions import IBMQJobApiError, IBMQJobFailureError
+from ..job.exceptions import (IBMQJobApiError, IBMQJobFailureError,
+                              IBMQJobInvalidStateError)
 from .schema import JobResponseSchema
 from .utils import (build_error_report, is_job_queued,
                     api_status_to_job_status, api_to_job_error)
@@ -205,7 +206,7 @@ class IBMQJob(BaseModel, BaseJob):
             Result object
 
         Raises:
-            IBMQJobApiError: if the job was cancelled or there was some unexpected failure
+            IBMQJobInvalidStateError: if the job was cancelled or there was some unexpected failure
                 in the server.
             IBMQJobFailureError: If the job failed.
         """
@@ -215,7 +216,7 @@ class IBMQJob(BaseModel, BaseJob):
         if not self._wait_for_completion(timeout=timeout, wait=wait,
                                          required_status=(JobStatus.DONE,)):
             if self._status is JobStatus.CANCELLED:
-                raise IBMQJobApiError('Unable to retrieve job result. Job was cancelled.')
+                raise IBMQJobInvalidStateError('Unable to retrieve job result. Job was cancelled.')
             raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
                                       'Use job.error_message() to get more details.')
 
@@ -385,10 +386,10 @@ class IBMQJob(BaseModel, BaseJob):
             The job has started.
 
         Raises:
-            IBMQJobApiError: If an error occurred during job submit.
+            IBMQJobInvalidStateError: If an error occurred during job submit.
         """
         if self.job_id() is not None:
-            raise IBMQJobApiError("We have already submitted the job!")
+            raise IBMQJobInvalidStateError("We have already submitted the job!")
 
         warnings.warn("job.submit() is deprecated. Please use "
                       "IBMQBackend.run() to submit a job.", DeprecationWarning, stacklevel=2)
