@@ -75,12 +75,12 @@ class AuthClient(BaseClient):
             response = self.client_auth.login(self.api_token)
             return response['id']
         except RequestsApiError as ex:
-            response_obj = ex.original_exception.response
-            if response_obj is not None and response_obj.status_code == 401:
+            error_response = ex.__cause__.response
+            if error_response is not None and error_response.status_code == 401:
                 try:
-                    error_code = response_obj.json()['error']['name']
+                    error_code = error_response.json()['error']['name']
                     if error_code == 'ACCEPT_LICENSE_REQUIRED':
-                        message = response_obj.json()['error']['message']
+                        message = error_response.json()['error']['message']
                         raise AuthenticationLicenseError(message)
                 except (ValueError, KeyError):
                     # the response did not contain the expected json.

@@ -94,10 +94,10 @@ class TestAccountClient(IBMQTestCase):
         try:
             job = api._job_submit_object_storage(backend_name, qobj.to_dict())
         except RequestsApiError as ex:
-            response = ex.original_exception.response
-            if response.status_code == 400:
+            error_response = ex.__cause__.response
+            if error_response.status_code == 400:
                 try:
-                    api_code = response.json()['error']['code']
+                    api_code = error_response.json()['error']['code']
 
                     # If we reach that point, it means the backend does not
                     # support qobject storage.
@@ -168,7 +168,7 @@ class TestAccountClient(IBMQTestCase):
             api.job_status('foo')
 
         raised_exception = exception_context.exception
-        original_error = raised_exception.original_exception.response.json()['error']
+        original_error = raised_exception.__cause__.response.json()['error']
         self.assertIn(original_error['message'], raised_exception.message,
                       "Original error message not in raised exception")
         self.assertIn(original_error['code'], raised_exception.message,

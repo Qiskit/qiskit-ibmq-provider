@@ -27,13 +27,7 @@ class ApiError(IBMQError):
 
 class RequestsApiError(ApiError):
     """Exception re-raising a RequestException."""
-    def __init__(
-            self,
-            original_exception: RequestException,
-            *args: Any
-    ) -> None:
-        self.original_exception = original_exception
-        super().__init__(*args)
+    pass
 
 
 class WebsocketError(ApiError):
