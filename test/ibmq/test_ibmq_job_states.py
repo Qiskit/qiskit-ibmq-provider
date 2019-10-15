@@ -22,8 +22,8 @@ from unittest import mock
 
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
 from qiskit.test.mock import new_fake_qobj
-from qiskit.providers import JobError, JobTimeoutError
-from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
+from qiskit.providers import JobTimeoutError
+from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError, IBMQJobInvalidStateError
 from qiskit.providers.ibmq.api.exceptions import (ApiError, UserTimeoutExceededError,
                                                   ApiIBMQProtocolError)
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
@@ -121,7 +121,7 @@ class TestIBMQJobStates(JobTestCase):
 
     def test_unrecognized_status(self):
         job = self.run_with_api(UnknownStatusAPI())
-        with self.assertRaises(JobError):
+        with self.assertRaises(IBMQJobApiError):
             self.wait_for_initialization(job)
 
     def test_validating_job(self):
@@ -207,13 +207,13 @@ class TestIBMQJobStates(JobTestCase):
         job = self.run_with_api(ThrowingNonJobRelatedErrorAPI(errors_before_success=2))
 
         # First time we query the server...
-        with self.assertRaises(JobError):
+        with self.assertRaises(IBMQJobApiError):
             # The error happens inside wait_for_initialization, the first time
             # it calls to status() after INITIALIZING.
             self.wait_for_initialization(job)
 
         # Also an explicit second time...
-        with self.assertRaises(JobError):
+        with self.assertRaises(IBMQJobApiError):
             job.status()
 
         # Now the API gets fixed and doesn't throw anymore.
@@ -236,14 +236,14 @@ class TestIBMQJobStates(JobTestCase):
         self.wait_for_initialization(job)
         job.cancel()
         self._current_api.progress()
-        with self.assertRaises(IBMQJobApiError):
+        with self.assertRaises(IBMQJobInvalidStateError):
             _ = job.result()
             self.assertEqual(job.status(), JobStatus.CANCELLED)
 
     def test_errored_result(self):
         job = self.run_with_api(ThrowingGetJobAPI())
         self.wait_for_initialization(job)
-        with self.assertRaises(JobError):
+        with self.assertRaises(IBMQJobApiError):
             job.result()
 
     def test_completed_result(self):
@@ -272,7 +272,7 @@ class TestIBMQJobStates(JobTestCase):
         with ThreadPoolExecutor() as executor:
             executor.submit(_auto_progress_api, self._current_api)
 
-        with self.assertRaises(IBMQJobApiError):
+        with self.assertRaises(IBMQJobInvalidStateError):
             job.result()
 
         self.assertEqual(job.status(), JobStatus.CANCELLED)
@@ -284,7 +284,7 @@ class TestIBMQJobStates(JobTestCase):
         with ThreadPoolExecutor() as executor:
             executor.submit(_auto_progress_api, self._current_api)
 
-        with self.assertRaises(JobError):
+        with self.assertRaises(IBMQJobApiError):
             job.result()
 
     def test_never_complete_result_with_timeout(self):
