@@ -23,7 +23,7 @@ from unittest import mock
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
 from qiskit.test.mock import new_fake_qobj
 from qiskit.providers import JobError, JobTimeoutError
-from qiskit.providers.ibmq.job.exceptions import JobApiError
+from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
 from qiskit.providers.ibmq.api.exceptions import (ApiError, UserTimeoutExceededError,
                                                   ApiIBMQProtocolError)
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
@@ -236,7 +236,7 @@ class TestIBMQJobStates(JobTestCase):
         self.wait_for_initialization(job)
         job.cancel()
         self._current_api.progress()
-        with self.assertRaises(JobApiError):
+        with self.assertRaises(IBMQJobApiError):
             _ = job.result()
             self.assertEqual(job.status(), JobStatus.CANCELLED)
 
@@ -272,7 +272,7 @@ class TestIBMQJobStates(JobTestCase):
         with ThreadPoolExecutor() as executor:
             executor.submit(_auto_progress_api, self._current_api)
 
-        with self.assertRaises(JobApiError):
+        with self.assertRaises(IBMQJobApiError):
             job.result()
 
         self.assertEqual(job.status(), JobStatus.CANCELLED)

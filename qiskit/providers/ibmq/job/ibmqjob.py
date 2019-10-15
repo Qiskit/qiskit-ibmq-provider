@@ -35,7 +35,7 @@ from qiskit.validation import BaseModel, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
-from ..job.exceptions import JobApiError, JobFailureError
+from ..job.exceptions import IBMQJobApiError, IBMQJobFailureError
 from .schema import JobResponseSchema
 from .utils import (build_error_report, is_job_queued,
                     api_status_to_job_status, api_to_job_error)
@@ -205,9 +205,9 @@ class IBMQJob(BaseModel, BaseJob):
             Result object
 
         Raises:
-            JobApiError: if the job was cancelled or there was some unexpected failure
+            IBMQJobApiError: if the job was cancelled or there was some unexpected failure
                 in the server.
-            JobFailureError: If the job failed.
+            IBMQJobFailureError: If the job failed.
         """
         # pylint: disable=arguments-differ
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
@@ -215,9 +215,9 @@ class IBMQJob(BaseModel, BaseJob):
         if not self._wait_for_completion(timeout=timeout, wait=wait,
                                          required_status=(JobStatus.DONE,)):
             if self._status is JobStatus.CANCELLED:
-                raise JobApiError('Unable to retrieve job result. Job was cancelled.')
-            raise JobFailureError('Unable to retrieve job result. Job has failed. '
-                                  'Use job.error_message() to get more details.')
+                raise IBMQJobApiError('Unable to retrieve job result. Job was cancelled.')
+            raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
+                                      'Use job.error_message() to get more details.')
 
         if not self._result:  # type: ignore[has-type]
             with api_to_job_error():
@@ -234,7 +234,7 @@ class IBMQJob(BaseModel, BaseJob):
             might not be possible depending on the environment.
 
         Raises:
-            JobApiError: if the job has not been submitted or if there was
+            IBMQJobApiError: if the job has not been submitted or if there was
                 some unexpected failure in the server.
         """
         try:
@@ -243,7 +243,7 @@ class IBMQJob(BaseModel, BaseJob):
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
-            raise JobApiError('Error cancelling job: %s' % error)
+            raise IBMQJobApiError('Error cancelling job: %s' % error)
 
     def status(self) -> JobStatus:
         """Query the API to update the status.
@@ -385,10 +385,10 @@ class IBMQJob(BaseModel, BaseJob):
             The job has started.
 
         Raises:
-            JobApiError: If an error occurred during job submit.
+            IBMQJobApiError: If an error occurred during job submit.
         """
         if self.job_id() is not None:
-            raise JobApiError("We have already submitted the job!")
+            raise IBMQJobApiError("We have already submitted the job!")
 
         warnings.warn("job.submit() is deprecated. Please use "
                       "IBMQBackend.run() to submit a job.", DeprecationWarning, stacklevel=2)
@@ -410,7 +410,7 @@ class IBMQJob(BaseModel, BaseJob):
             self._update_status_position(data.pop('_status'),
                                          data.pop('infoQueue', None))
         except ValidationError as ex:
-            raise JobApiError("Unexpected return value received from the server.") from ex
+            raise IBMQJobApiError("Unexpected return value received from the server.") from ex
         finally:
             JobResponseSchema.model_cls = saved_model_cls
 

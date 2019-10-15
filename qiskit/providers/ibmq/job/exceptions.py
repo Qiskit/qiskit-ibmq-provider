@@ -17,11 +17,11 @@
 from qiskit.providers.exceptions import JobError
 
 
-class JobApiError(JobError):
+class IBMQJobApiError(JobError):
     """Error that occurs unexpectedly when querying the API."""
     pass
 
 
-class JobFailureError(JobError):
+class IBMQJobFailureError(JobError):
     """Error that occurs because the job failed."""
     pass
