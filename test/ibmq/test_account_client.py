@@ -94,7 +94,7 @@ class TestAccountClient(IBMQTestCase):
         try:
             job = api._job_submit_object_storage(backend_name, qobj.to_dict())
         except RequestsApiError as ex:
-            error_response = ex.__cause__.response
+            error_response = ex.__cause__.response    # pylint: disable=no-member
             if error_response.status_code == 400:
                 try:
                     api_code = error_response.json()['error']['code']

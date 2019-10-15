@@ -14,9 +14,6 @@
 
 """Exceptions related to the IBM Q Experience API."""
 
-from typing import Any
-from requests.exceptions import RequestException
-
 from ..exceptions import IBMQError
 
 

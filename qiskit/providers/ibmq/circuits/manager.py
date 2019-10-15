@@ -58,7 +58,7 @@ class CircuitsManager:
             response = self.client.circuit_run(name=name, **kwargs)
         except RequestsApiError as ex:
             # Revise the original requests exception to intercept.
-            error_response = ex.__cause__.response
+            error_response = ex.__cause__.response  # pylint: disable=no-member
 
             # Check for errors related to the submission.
             try:

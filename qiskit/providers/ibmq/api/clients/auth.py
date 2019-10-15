@@ -75,7 +75,7 @@ class AuthClient(BaseClient):
             response = self.client_auth.login(self.api_token)
             return response['id']
         except RequestsApiError as ex:
-            error_response = ex.__cause__.response
+            error_response = ex.__cause__.response    # pylint: disable=no-member
             if error_response is not None and error_response.status_code == 401:
                 try:
                     error_code = error_response.json()['error']['name']
