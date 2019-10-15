@@ -53,7 +53,8 @@ def requires_submit(func: Callable) -> Callable:
 
         job_mgr._future.result()
         if job_mgr._future_captured_exception:
-            raise JobError("Failed to submit jobs.") from job_mgr._future_captured_exception
+            raise JobError("Failed to submit jobs. " + job_mgr._future_error_msg) \
+                from job_mgr._future_captured_exception
 
         return func(job_mgr, *args, **kwargs)
 

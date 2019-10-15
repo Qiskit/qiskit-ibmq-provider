@@ -37,15 +37,24 @@ logger = logging.getLogger(__name__)
 
 
 class JobManager:
-    """Job manager for IBM Q Experience."""
+    """Job manager for IBM Q Experience.
 
+    Attributes:
+        _executor: executor to handle asynchronous jobs
+    """
     _executor = futures.ThreadPoolExecutor()
 
     def __init__(self) -> None:
         """Creates a new JobManager instance."""
         self._jobs = []  # type: List[IBMQJob]
+
         self._future = None
         self._future_captured_exception = None
+        self._future_error_msg = None
+
+        # Used for caching
+        self._result = None  # type: Optional[List[Union[Result, None]]]
+        self._error_msg = None  # type: Optional[str]
 
     def run(
             self,
@@ -118,13 +127,23 @@ class JobManager:
             name_prefix: Prefix of the job name.
         """
         name_prefix = name_prefix or datetime.utcnow().isoformat()
+        start_index = 0
+        end_index = 0
         try:
             for i, qobj in enumerate(qobjs):
                 job = backend.run(qobj=qobj, job_name="{}_{}".format(name_prefix, i))
+                end_index = start_index + len(qobj.experiments) - 1
+                setattr(job, 'start_index', start_index)
+                setattr(job, 'end_index', end_index)
+                start_index = end_index + 1
                 self._jobs.append(job)
         except Exception as err:  # pylint: disable=broad-except
             self._future_captured_exception = err  # type: ignore[assignment]
-            # Cancel all previous submitted jobs
+            err_msg = "Unable to submit job {} for experiments {}-{}.".format(
+                i, start_index, end_index)
+            self._future_error_msg = err_msg  # type: ignore[assignment]
+
+            # Cancel all previously submitted jobs
             try:
                 for job in self._jobs:
                     job.cancel()
@@ -168,7 +187,7 @@ class JobManager:
                 if a summary report is to be returned.
 
         Returns:
-            str: a report on job statuses.
+            A report on job statuses.
         """
         statuses = self.status()
         counts = Counter(statuses)
@@ -185,13 +204,19 @@ class JobManager:
         if detailed:
             report.append("\nDetail report:")
             for i, status in enumerate(statuses):
+                job = self._jobs[i]
                 report.append("  - Job {} -".format(i))
-                report.append("    job ID: {}".format(self._jobs[i].job_id()))
-                report.append("    name: {}".format(self._jobs[i].name()))
+                report.append("    job ID: {}".format(job.job_id()))
+                report.append("    name: {}".format(job.name()))
                 report.append("    status: {}".format(status.value))
+                report.append("    experiments: {}-{}".format(job.start_index, job.end_index))
                 if status is JobStatus.QUEUED:
-                    report.append("    queue position: {}".format(
-                        self._jobs[i].queue_position()))
+                    report.append("    queue position: {}".format(job.queue_position()))
+                elif status is JobStatus.ERROR:
+                    report.append("    error_messsage:")
+                    msg_list = job.error_message().split('\n')
+                    for msg in msg_list:
+                        report.append(msg.rjust(len(msg)+6))
 
         return '\n'.join(report)
 
@@ -199,19 +224,8 @@ class JobManager:
     def result(self, timeout: Optional[float] = None) -> List[Union[Result, None]]:
         """Return the results of the jobs.
 
-        This call will block until results for all successful jobs become
-        available or the timeout is reached.
-
-        Note:
-            Some IBMQ job results can be read only once. A second attempt to
-            query the API for the same job will fail, as the job is "consumed".
-
-            The first call to this method in a ``JobManager`` instance will
-            query the API and consume the results of successful jobs.
-            Subsequent calls to the instance's method will also return the
-            results, since they are cached. However, attempting to retrieve the
-            results again in another instance or session might fail due to the
-            jobs having been consumed.
+        This call will block until all job results become available or
+            the timeout is reached.
 
         Args:
            timeout: Number of seconds to wait for job results.
@@ -224,6 +238,9 @@ class JobManager:
             JobTimeoutError: if unable to retrieve all job results before the
                 specified timeout.
         """
+        if self._result:
+            return self._result
+
         results = []
         start_time = time.time()
         original_timeout = timeout
@@ -231,27 +248,52 @@ class JobManager:
         for i, job in enumerate(self._jobs):
             result = None
             try:
+                # TODO Revise this when partial result is supported
                 result = job.result(timeout=timeout)
             except JobError as err:
-                if job.status() is JobStatus.ERROR:
-                    try:
-                        result_response = job._api.job_result(
-                            job.job_id(), job._use_object_storage)
-                        result = Result.from_dict(result_response)
-                        continue
-                    except Exception:   # pylint: disable=broad-except
-                        pass
-                logger.warning("Unable to retrieve result for job %d (job ID=%s): %s",
-                               i, job.job_id(), str(err))
+                logger.warning("Unable to retrieve results for experiments "
+                               "%d-%d (job %d, ID=%s): %s", job.start_index,
+                               job.end_index, i, job.job_id(), str(err))
 
             results.append(result)
             if timeout:
                 timeout = original_timeout - (time.time() - start_time)
                 if timeout <= 0:
-                    raise JobTimeoutError("Timeout waiting for the results for "
-                                          "job {}.".format(i))
+                    raise JobTimeoutError(
+                        "Timeout waiting for results for experiments "
+                        "{}-{} (job {}, ID={}).".format(
+                            job.start_index, job.end_index, i, job.job_id()))
 
-        return results
+        self._result = results  # type: ignore[assignment]
+        return self._result
+
+    @requires_submit
+    def error_message(self) -> Optional[str]:
+        """Provide details about job failures.
+
+        Returns:
+            An error report if one or more jobs failed or ``None`` otherwise.
+        """
+        if self._error_msg:
+            return self._error_msg
+
+        report = []
+        for i, job in enumerate(self._jobs):
+            if job.status() is not JobStatus.ERROR:
+                continue
+            report.append("Job {} (job ID={}) for experiments {}-{}:".format(
+                i, job.job_id(), job.start_index, job.end_index))
+            try:
+                msg_list = job.error_message().split('\n')
+            except JobError:
+                msg_list = ["Unknown error."]
+
+            for msg in msg_list:
+                report.append(msg.rjust(len(msg)+2))
+
+        if not report:
+            return None
+        return '\n'.join(report)
 
     @requires_submit
     def qobj(self) -> List[Qobj]:

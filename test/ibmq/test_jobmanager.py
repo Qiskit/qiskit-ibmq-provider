@@ -13,12 +13,14 @@
 # that they have been altered from the originals.
 
 """Tests for the JobManager."""
+import copy
 
 from qiskit import QuantumCircuit
 from qiskit.providers.ibmq.jobmanager import JobManager
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers import JobError
+from qiskit.compiler import transpile
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, run_on_staging
@@ -105,6 +107,23 @@ class TestJobManager(IBMQTestCase):
         self.assertEqual(len(statuses), 2)
 
     @requires_provider
+    def test_result(self, provider):
+        """Test getting results for multiple jobs."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+
+        circs = []
+        for _ in range(2):
+            circs.append(self._qc)
+        self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        results = self._jm.result()
+        jobs = self._jm.jobs()
+
+        self.assertEqual(len(results), 2)
+        for i, result in enumerate(results):
+            self.assertIsNotNone(result)
+            self.assertDictEqual(result.get_counts(0), jobs[i].result().get_counts(0))
+
+    @requires_provider
     def test_job_report(self, provider):
         """Test job report."""
         backend = provider.get_backend('ibmq_qasm_simulator')
@@ -115,7 +134,7 @@ class TestJobManager(IBMQTestCase):
         self._jm.run(circs, backend=backend, max_experiments_per_job=1)
         jobs = self._jm.jobs()
         report = self._jm.report()
-        self.log.info(report)
+        print(report)
         for job in jobs:
             self.assertIn(job.job_id(), report)
 
@@ -178,3 +197,20 @@ class TestJobManager(IBMQTestCase):
         for i, qobj in enumerate(self._jm.qobj()):
             rjob = provider.backends.retrieve_job(jobs[i].job_id())
             self.assertDictEqual(qobj.__dict__, rjob.qobj().__dict__)
+
+    @run_on_staging
+    def test_error_message(self, provider):
+        """Test error message report."""
+        backend = least_busy(provider.backends(simulator=False))
+
+        bad_qc = copy.deepcopy(self._qc)
+        circs = [transpile(self._qc, backend=backend), bad_qc]
+        self._jm.run(circs, backend=backend, max_experiments_per_job=1, skip_transpile=True)
+
+        results = self._jm.result()
+        self.assertIsNone(results[1])
+
+        error_report = self._jm.error_message()
+        self.assertIsNotNone(error_report)
+        print("JobManager.error_message(): \n{}".format(error_report))
+        print("\nJobManager.report(): \n{}".format(self._jm.report()))
