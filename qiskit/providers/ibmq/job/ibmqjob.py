@@ -64,7 +64,7 @@ class IBMQJob(BaseModel, BaseJob):
             if job_status is JobStatus.RUNNING:
                 print('The job is still running')
 
-        except JobError as ex:
+        except IBMQJobApiError as ex:
             print("Something wrong happened!: {}".format(ex))
 
     A call to ``status()`` can raise if something happens at the server level
@@ -83,7 +83,7 @@ class IBMQJob(BaseModel, BaseJob):
         except JobError as ex:
             print("Something wrong happened!: {}".format(ex))
 
-    Many of the ``IBMQJob`` methods can raise ``JobError`` if unexpected
+    Many of the ``IBMQJob`` methods can raise ``IBMQJobApiError`` if unexpected
     failures happened at the server level.
 
     Job information retrieved from the API server is attached to the ``IBMQJob``
@@ -153,7 +153,7 @@ class IBMQJob(BaseModel, BaseJob):
             the Qobj for this job.
 
         Raises:
-            JobError: if there was some unexpected failure in the server.
+            IBMQJobApiError: if there was some unexpected failure in the server.
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if not self._qobj:  # type: ignore[has-type]
@@ -173,7 +173,7 @@ class IBMQJob(BaseModel, BaseJob):
                 properties are not available.
 
         Raises:
-            JobError: if there was some unexpected failure in the server.
+            IBMQJobApiError: if there was some unexpected failure in the server.
         """
         with api_to_job_error():
             properties = self._api.job_properties(job_id=self.job_id())
@@ -206,9 +206,9 @@ class IBMQJob(BaseModel, BaseJob):
             Result object
 
         Raises:
-            IBMQJobInvalidStateError: if the job was cancelled or there was some unexpected failure
-                in the server.
+            IBMQJobInvalidStateError: if the job was cancelled.
             IBMQJobFailureError: If the job failed.
+            IBMQJobApiError: If there was some unexpected failure in the server.
         """
         # pylint: disable=arguments-differ
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
@@ -253,7 +253,7 @@ class IBMQJob(BaseModel, BaseJob):
             The status of the job, once updated.
 
         Raises:
-            JobError: if there was some unexpected failure in the server.
+            IBMQJobApiError: if there was some unexpected failure in the server.
         """
         if self._status in JOB_FINAL_STATES:
             return self._status

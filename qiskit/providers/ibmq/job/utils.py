@@ -100,7 +100,7 @@ def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
 
 @contextmanager
 def api_to_job_error() -> Generator[None, None, None]:
-    """Convert an ApiError to a JobError."""
+    """Convert an ApiError to an IBMQJobApiError."""
     try:
         yield
     except ApiError as api_err:
