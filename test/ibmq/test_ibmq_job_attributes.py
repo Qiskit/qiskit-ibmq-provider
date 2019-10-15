@@ -17,8 +17,8 @@
 import time
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers import JobError
 from qiskit.providers.ibmq import least_busy
+from qiskit.providers.ibmq.job.exceptions import JobFailureError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
@@ -117,7 +117,7 @@ class TestIBMQJobAttributes(JobTestCase):
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
         job = backend.run(qobj)
-        with self.assertRaises(JobError):
+        with self.assertRaises(JobFailureError):
             job.result()
 
         message = job.error_message()
@@ -133,7 +133,7 @@ class TestIBMQJobAttributes(JobTestCase):
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
         job = backend.run(qobj)
-        with self.assertRaises(JobError):
+        with self.assertRaises(JobFailureError):
             job.result()
 
         message = job.error_message()

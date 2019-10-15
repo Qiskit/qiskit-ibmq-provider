@@ -23,8 +23,9 @@ import warnings
 
 from marshmallow import ValidationError
 
-from qiskit.providers import (BaseJob, JobError,  # type: ignore[attr-defined]
-                              JobTimeoutError, BaseBackend)
+from qiskit.providers.basejob import BaseJob
+from qiskit.providers.basebackend import BaseBackend
+from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj
@@ -34,7 +35,8 @@ from qiskit.validation import BaseModel, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
-from .schema import JobResponseSchema  # type: ignore[attr-defined]
+from ..job.exceptions import JobApiError, JobFailureError
+from .schema import JobResponseSchema
 from .utils import (build_error_report, is_job_queued,
                     api_status_to_job_status, api_to_job_error)
 
@@ -203,17 +205,19 @@ class IBMQJob(BaseModel, BaseJob):
             Result object
 
         Raises:
-            JobError: if the job has failed or cancelled, or if there was some
-                unexpected failure in the server.
+            JobApiError: if the job was cancelled or there was some unexpected failure
+                in the server.
+            JobFailureError: If the job failed.
         """
         # pylint: disable=arguments-differ
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
 
         if not self._wait_for_completion(timeout=timeout, wait=wait,
                                          required_status=(JobStatus.DONE,)):
-            message = 'Job was cancelled.' if self._status is JobStatus.CANCELLED \
-                else 'Job has failed. Use job.error_message() to get more details.'
-            raise JobError('Unable to retrieve job result. ' + message)
+            if self._status is JobStatus.CANCELLED:
+                raise JobApiError('Unable to retrieve job result. Job was cancelled.')
+            raise JobFailureError('Unable to retrieve job result. Job has failed. '
+                                  'Use job.error_message() to get more details.')
 
         if not self._result:  # type: ignore[has-type]
             with api_to_job_error():
@@ -230,7 +234,7 @@ class IBMQJob(BaseModel, BaseJob):
             might not be possible depending on the environment.
 
         Raises:
-            JobError: if the job has not been submitted or if there was
+            JobApiError: if the job has not been submitted or if there was
                 some unexpected failure in the server.
         """
         try:
@@ -239,7 +243,7 @@ class IBMQJob(BaseModel, BaseJob):
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
-            raise JobError('Error cancelling job: %s' % error)
+            raise JobApiError('Error cancelling job: %s' % error)
 
     def status(self) -> JobStatus:
         """Query the API to update the status.
@@ -381,10 +385,10 @@ class IBMQJob(BaseModel, BaseJob):
             The job has started.
 
         Raises:
-            JobError: If an error occurred during job submit.
+            JobApiError: If an error occurred during job submit.
         """
         if self.job_id() is not None:
-            raise JobError("We have already submitted the job!")
+            raise JobApiError("We have already submitted the job!")
 
         warnings.warn("job.submit() is deprecated. Please use "
                       "IBMQBackend.run() to submit a job.", DeprecationWarning, stacklevel=2)
@@ -406,7 +410,7 @@ class IBMQJob(BaseModel, BaseJob):
             self._update_status_position(data.pop('_status'),
                                          data.pop('infoQueue', None))
         except ValidationError as ex:
-            raise JobError("Unexpected return value received from the server.") from ex
+            raise JobApiError("Unexpected return value received from the server.") from ex
         finally:
             JobResponseSchema.model_cls = saved_model_cls
 
