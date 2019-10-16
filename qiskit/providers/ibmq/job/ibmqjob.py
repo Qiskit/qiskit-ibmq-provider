@@ -385,6 +385,7 @@ class IBMQJob(BaseModel, BaseJob):
             The job has started.
 
         Raises:
+            IBMQJobApiError: if there was some unexpected failure in the server.
             IBMQJobInvalidStateError: If the job has already been submitted.
         """
         if self.job_id() is not None:
