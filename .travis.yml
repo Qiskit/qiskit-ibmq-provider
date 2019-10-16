@@ -36,9 +36,6 @@ stage_generic: &stage_generic
     - pip install cython
     - pip install -U -r requirements.txt
     - pip install -U -r requirements-dev.txt
-    # TODO: remove when new terra release is published.
-    - git clone https://github.com/Qiskit/qiskit-terra.git
-    - pip install -e qiskit-terra
   script:
     # Run the tests.
     - make test
