@@ -403,7 +403,7 @@ class IBMQJob(BaseModel, BaseJob):
         try:
             # Load response into a dictionary
             JobResponseSchema.model_cls = dict
-            data, _ = self.schema.load(api_response)
+            data = self.schema.load(api_response)
             BaseModel.__init__(self, **data)
 
             # Model attributes.
