@@ -101,7 +101,7 @@ class JobResponseSchema(BaseSchema):
     error = String()
 
     @pre_load
-    def preprocess_field_names(self, data):  # type: ignore
+    def preprocess_field_names(self, data, **_):  # type: ignore
         """Pre-process the job response fields.
 
         Rename selected fields of the job response due to name clashes, and
@@ -120,3 +120,5 @@ class JobResponseSchema(BaseSchema):
 
         for old_name, new_name in rename_map.items():
             data[new_name] = data.pop(old_name)
+
+        return data

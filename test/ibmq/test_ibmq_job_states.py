@@ -21,7 +21,7 @@ from contextlib import suppress
 from unittest import mock
 
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
-from qiskit.test.mock import new_fake_qobj
+from qiskit.test.mock import FakeQobj
 from qiskit.providers import JobError, JobTimeoutError
 from qiskit.providers.ibmq.api.exceptions import (ApiError, UserTimeoutExceededError,
                                                   ApiIBMQProtocolError)
@@ -321,7 +321,7 @@ class TestIBMQJobStates(JobTestCase):
         """Creates a new ``IBMQJob`` running with the provided API object."""
         backend = IBMQBackend(mock.Mock(), mock.Mock(), mock.Mock(), api=api)
         self._current_api = api
-        self._current_qjob = backend.run(qobj=new_fake_qobj())
+        self._current_qjob = backend.run(qobj=FakeQobj())
         self._current_qjob.refresh = mock.Mock()
         return self._current_qjob
 
