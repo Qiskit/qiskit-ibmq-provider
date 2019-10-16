@@ -30,10 +30,10 @@ class Auth(RestAdapterBase):
         """Login with token.
 
         Args:
-            api_token (str): API token.
+            api_token: API token.
 
         Returns:
-            dict: json response.
+            json response.
         """
         url = self.get_url('login')
         return self.session.post(url, json={'apiToken': api_token}).json()

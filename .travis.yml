@@ -175,7 +175,3 @@ jobs:
       script:
         - python3 setup.py sdist bdist_wheel
         - twine upload dist/qiskit*
-
-matrix:
-  allow_failures:
-  - name: mypy type checking

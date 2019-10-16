@@ -27,9 +27,10 @@ The format is based on [Keep a Changelog].
 - The `IBMQBackend.run()` function now accepts an optional `job_name` parameter.
   If specified, the `job_name` is assigned to the job. This `job_name` can 
   subsequently be used as a filter in the `IBMQBackend.jobs()` function, which
-  now accepts an optional `job_name` parameter. `job_name` does not need to be 
+  now accepts an optional `job_name` parameter (allowing partial matching and
+  use of regular expressions). `job_name` does not need to be
   unique among jobs. These new parameters are ignored if IBM Q Experience 
-  v1 account is used (\#300).
+  v1 account is used (\#300, \#384).
 - The signature of `IBMQBackend.jobs()` is changed. `db_filter`, which was the 
   4th parameter, is now the 5th parameter (\#300).
 - The `backend.properties()` function now accepts an optional `datetime` 
@@ -43,7 +44,9 @@ The format is based on [Keep a Changelog].
 - `IBMQJob` constructor signature has changed (\#329).
 - `IBMQJob.submit()` can no longer be called directly, and jobs are expected
   to be submitted via `IBMQBackend.run()` (\#329).
-- `IBMQJob.error_message()` now gives more information on why a job failed (\#375). 
+- `IBMQJob.error_message()` now gives more information on why a job failed (\#375).
+- `IBMQJob.queue_position()` now accepts an optional `refresh` parameter that 
+  indicates whether it should query the API for the latest queue position (\#387). 
 
 ### Removed
 

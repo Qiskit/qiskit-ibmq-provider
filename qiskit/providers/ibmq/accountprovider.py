@@ -45,8 +45,8 @@ class AccountProvider(BaseProvider):
         not be available if an error occurs during backend discovery.
 
         Args:
-            credentials (Credentials): IBM Q Experience credentials.
-            access_token (str): access token for IBM Q Experience.
+            credentials: IBM Q Experience credentials.
+            access_token: access token for IBM Q Experience.
         """
         super().__init__()
 
@@ -75,11 +75,10 @@ class AccountProvider(BaseProvider):
         """Return the remote backends available.
 
         Args:
-            timeout (float or None): number of seconds to wait for the discovery.
+            timeout: number of seconds to wait for the discovery.
 
         Returns:
-            dict[str:IBMQBackend]: a dict of the remote backend instances,
-                keyed by backend name.
+            a dict of the remote backend instances, keyed by backend name.
         """
         ret = OrderedDict()  # type: ignore[var-annotated]
         configs_list = self._api.list_backends(timeout=timeout)
