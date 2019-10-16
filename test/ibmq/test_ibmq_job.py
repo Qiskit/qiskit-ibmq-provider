@@ -27,7 +27,7 @@ from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
-from qiskit.providers.ibmq.job.exceptions import (IBMQJobApiError, IBMQJobFailureError,
+from qiskit.providers.ibmq.job.exceptions import (IBMQJobFailureError,
                                                   IBMQJobInvalidStateError)
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
@@ -380,7 +380,7 @@ class TestIBMQJob(JobTestCase):
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
         job = backend.run(qobj)
-        with self.assertRaises(IBMQJobApiError):
+        with self.assertRaises(IBMQJobFailureError):
             job.result()
 
         new_job = provider.backends.retrieve_job(job.job_id())

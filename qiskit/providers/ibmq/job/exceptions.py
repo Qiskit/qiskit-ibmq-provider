@@ -28,5 +28,5 @@ class IBMQJobFailureError(JobError):
 
 
 class IBMQJobInvalidStateError(JobError):
-    """Error that occurs when a job is in an invalid state."""
+    """Error that occurs because a job is not in a state for the operation."""
     pass

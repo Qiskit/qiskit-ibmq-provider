@@ -235,8 +235,7 @@ class IBMQJob(BaseModel, BaseJob):
             might not be possible depending on the environment.
 
         Raises:
-            IBMQJobApiError: if the job has not been submitted or if there was
-                some unexpected failure in the server.
+            IBMQJobApiError: if there was some unexpected failure in the server.
         """
         try:
             response = self._api.job_cancel(self.job_id())
@@ -386,7 +385,7 @@ class IBMQJob(BaseModel, BaseJob):
             The job has started.
 
         Raises:
-            IBMQJobInvalidStateError: If an error occurred during job submit.
+            IBMQJobInvalidStateError: If the job has already been submitted.
         """
         if self.job_id() is not None:
             raise IBMQJobInvalidStateError("We have already submitted the job!")
