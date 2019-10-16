@@ -93,7 +93,7 @@ class JobManager:
                 the experiment type, or if this method was previously called
                 to run experiments.
         """
-        if (all(isinstance(exp, ScheduleComponent) for exp in experiments) and
+        if (any(isinstance(exp, ScheduleComponent) for exp in experiments) and
                 not backend.configuration().open_pulse):
             raise IBMQJobManagerInvalidStateError("The backend does not support pulse schedules.")
 
@@ -193,10 +193,11 @@ class JobManager:
             report.append("\nDetail report:")
             for i, status in enumerate(statuses):
                 job = self._jobs[i]
+                status_txt = status.value if status else "Unknown"
                 report.append("  - Job {} -".format(i))
                 report.append("    job ID: {}".format(job.job_id()))
                 report.append("    name: {}".format(job.name()))
-                report.append("    status: {}".format(status.value))
+                report.append("    status: {}".format(status_txt))
                 report.append("    experiments: {}-{}".format(job.start_index, job.end_index))
                 if status is JobStatus.QUEUED:
                     report.append("    queue position: {}".format(job.queue_position()))

@@ -137,7 +137,6 @@ class TestJobManager(IBMQTestCase):
         self._jm.run(circs, backend=backend, max_experiments_per_job=1)
         jobs = self._jm.jobs()
         report = self._jm.report()
-        print(report)
         for job in jobs:
             self.assertIn(job.job_id(), report)
 
@@ -210,13 +209,13 @@ class TestJobManager(IBMQTestCase):
         circs = [transpile(self._qc, backend=backend), bad_qc]
         self._jm.run(circs, backend=backend, max_experiments_per_job=1, skip_transpile=True)
 
+        jobs = self._jm.jobs()
         results = self._jm.result()
         self.assertIsNone(results[1])
 
         error_report = self._jm.error_message()
         self.assertIsNotNone(error_report)
-        print("JobManager.error_message(): \n{}".format(error_report))
-        print("\nJobManager.report(): \n{}".format(self._jm.report()))
+        self.assertIn(jobs[1].job_id(), error_report)
 
     @requires_provider
     def test_async_submit_exception(self, provider):
