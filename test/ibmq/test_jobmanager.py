@@ -14,12 +14,15 @@
 
 """Tests for the JobManager."""
 import copy
+from unittest import mock
 
 from qiskit import QuantumCircuit
 from qiskit.providers.ibmq.jobmanager import JobManager
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers import JobError
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.exceptions import IBMQBackendError, IBMQJobManagerSubmitError
 from qiskit.compiler import transpile
 
 from ..ibmqtestcase import IBMQTestCase
@@ -214,3 +217,16 @@ class TestJobManager(IBMQTestCase):
         self.assertIsNotNone(error_report)
         print("JobManager.error_message(): \n{}".format(error_report))
         print("\nJobManager.report(): \n{}".format(self._jm.report()))
+
+    @requires_provider
+    def test_async_submit_exception(self, provider):
+        """Test asynchronous job submit failed."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+
+        circs = []
+        for _ in range(2):
+            circs.append(self._qc)
+        with mock.patch.object(IBMQBackend, 'run', side_effect=IBMQBackendError("Kaboom!")):
+            self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        with self.assertRaises((IBMQBackendError, IBMQJobManagerSubmitError)):
+            self._jm.result()

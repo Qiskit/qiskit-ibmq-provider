@@ -17,9 +17,9 @@
 import logging
 import time
 from typing import List, Optional, Union
-from datetime import datetime
 from collections import Counter
 from concurrent import futures
+import threading
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import ScheduleComponent, Schedule
@@ -30,10 +30,9 @@ from qiskit.result import Result
 from qiskit.qobj import Qobj
 
 from .ibmqbackend import IBMQBackend
-from .utils.decorators import requires_submit
+from .utils.jobmanager_utils import requires_submit, submit_async
 from .job import IBMQJob
-from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
-                         IBMQJobManagerSubmitError)
+from .exceptions import IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +44,11 @@ class JobManager:
         """Creates a new JobManager instance."""
         self._jobs = []  # type: List[IBMQJob]
 
-        self._future = None
+        # Used for async job submit
         self._executor = futures.ThreadPoolExecutor(1)
-        self._future_captured_exception = None  # type: Optional[Exception]
+        self._submit_exception = None  # type: Optional[Exception]
+        self._submit_done_event = threading.Event()
+        self._submit_called = False
 
         # Used for caching
         self._result = None  # type: Optional[List[Union[Result, None]]]
@@ -96,7 +97,7 @@ class JobManager:
                 not backend.configuration().open_pulse):
             raise IBMQJobManagerInvalidStateError("The backend does not support pulse schedules.")
 
-        if self._future is not None:
+        if self._submit_called:
             raise IBMQJobManagerInvalidStateError("Jobs were already submitted.")
 
         if not skip_transpile:
@@ -108,47 +109,34 @@ class JobManager:
         for experiment in experiment_list:
             qobjs.append(assemble(experiment, backend=backend, shots=shots))
 
-        self._future = self._executor.submit(self._submit_async, qobjs=qobjs,
-                                             backend=backend, name_prefix=name_prefix)
+        future = self._executor.submit(submit_async, qobjs=qobjs, backend=backend,
+                                       name_prefix=name_prefix)
+        future.add_done_callback(self._submit_callback)
+        self._submit_called = True
+
         return len(qobjs)
 
-    def _submit_async(
-            self,
-            qobjs: List[Qobj],
-            backend: IBMQBackend,
-            name_prefix: Optional[str] = None
-    ) -> None:
-        """Submit jobs to IBM Q asynchronously.
+    def _submit_callback(self, future: futures.Future) -> None:
+        """Callback for when job submit is done.
 
         Args:
-            qobjs: A list of qobj's to run.
-            backend: Backend to execute the experiments on.
-            name_prefix: Prefix of the job name.
+            future: Future object encapsulates the asynchronous execution of
+                job submit.
         """
-        name_prefix = name_prefix or datetime.utcnow().isoformat()
-        start_index = 0
-        end_index = 0
-        try:
-            for i, qobj in enumerate(qobjs):
-                job = backend.run(qobj=qobj, job_name="{}_{}".format(name_prefix, i))
-                end_index = start_index + len(qobj.experiments) - 1
-                setattr(job, 'start_index', start_index)
-                setattr(job, 'end_index', end_index)
-                start_index = end_index + 1
-                self._jobs.append(job)
-        except Exception as err:  # pylint: disable=broad-except
-            exception = IBMQJobManagerSubmitError(
-                "Unable to submit job {} for experiments {}-{}.".format(
-                    i, start_index, end_index))
-            exception.__cause__ = err
-            self._future_captured_exception = exception
+        results = future.result()
+        for result in results:
+            if isinstance(result, IBMQJob):
+                self._jobs.append(result)
+            else:
+                self._submit_exception = result
 
-            # Cancel all previously submitted jobs
-            try:
-                for job in self._jobs:
-                    job.cancel()
-            except Exception:  # pylint: disable=broad-except
-                pass
+        # Cleanup if submit failed
+        if self._submit_exception:
+            for job in self._jobs:
+                job.cancel()
+            self._jobs = []
+
+        self._submit_done_event.set()
 
     @requires_submit
     def jobs(self) -> List[IBMQJob]:
