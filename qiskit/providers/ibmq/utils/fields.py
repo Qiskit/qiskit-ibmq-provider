@@ -15,10 +15,9 @@
 """Custom fields for validation."""
 
 import enum
-from typing import Dict, Union, Optional, Any
+from typing import Dict, Any
 
 from qiskit.validation import ModelTypeValidator, BaseModel
-from ..apiconstants import ApiJobKind, ApiJobStatus
 
 
 class Enum(ModelTypeValidator):
@@ -38,20 +37,23 @@ class Enum(ModelTypeValidator):
 
     def _serialize(  # type: ignore[return]
             self,
-            value: Union[ApiJobKind, ApiJobStatus],
+            value: Any,
             attr: str,
-            obj: BaseModel
+            obj: BaseModel,
+            **_: Any
     ) -> str:
         try:
             return value.value
         except AttributeError:
-            self.fail('format', input=value, enum_cls=self.enum_cls)
+            # TODO: change to self.make_error_serialize after #3228
+            self.make_error('format', input=value, enum_cls=self.enum_cls)
 
     def _deserialize(  # type: ignore[return]
             self,
-            value: Union[ApiJobKind, ApiJobStatus],
+            value: Any,
             attr: str,
-            data: Dict[str, Any]
+            data: Dict[str, Any],
+            **_: Any
     ) -> enum.EnumMeta:
         try:
             return self.enum_cls(value)
