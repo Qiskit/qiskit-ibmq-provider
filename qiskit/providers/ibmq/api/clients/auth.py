@@ -14,6 +14,7 @@
 
 """Client for accessing authentication features of IBM Q Experience."""
 from typing import Dict, List, Optional, Any
+from requests.exceptions import RequestException
 
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
 from ..rest import Api, Auth
@@ -75,16 +76,21 @@ class AuthClient(BaseClient):
             response = self.client_auth.login(self.api_token)
             return response['id']
         except RequestsApiError as ex:
-            error_response = ex.__cause__.response    # pylint: disable=no-member
-            if error_response is not None and error_response.status_code == 401:
-                try:
-                    error_code = error_response.json()['error']['name']
-                    if error_code == 'ACCEPT_LICENSE_REQUIRED':
-                        message = error_response.json()['error']['message']
-                        raise AuthenticationLicenseError(message)
-                except (ValueError, KeyError):
-                    # the response did not contain the expected json.
-                    pass
+            # Get the original exception that raised.
+            original_exception = ex.__cause__
+
+            if isinstance(original_exception, RequestException):
+                # Get the response from the original request exception.
+                error_response = original_exception.response    # pylint: disable=no-member
+                if error_response is not None and error_response.status_code == 401:
+                    try:
+                        error_code = error_response.json()['error']['name']
+                        if error_code == 'ACCEPT_LICENSE_REQUIRED':
+                            message = error_response.json()['error']['message']
+                            raise AuthenticationLicenseError(message)
+                    except (ValueError, KeyError):
+                        # the response did not contain the expected json.
+                        pass
             raise
 
     # User account-related public functions.
