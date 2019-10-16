@@ -17,7 +17,7 @@
 from typing import Callable, Any
 from functools import wraps
 
-from qiskit.providers.exceptions import JobError
+from ..exceptions import IBMQJobManagerInvalidStateError
 
 
 def requires_submit(func: Callable) -> Callable:
@@ -46,15 +46,15 @@ def requires_submit(func: Callable) -> Callable:
             return value of the decorated function.
 
         Raises:
-            JobError: if an error occurred while submitting jobs.
+            IBMQJobManagerInvalidStateError: If no jobs were submitted.
+            IBMQJobManagerSubmitError: If an error occurred when submitting jobs.
         """
         if job_mgr._future is None:
-            raise JobError("Jobs need to be submitted first!")
+            raise IBMQJobManagerInvalidStateError("Jobs need to be submitted first!")
 
         job_mgr._future.result()
         if job_mgr._future_captured_exception:
-            raise JobError("Failed to submit jobs. " + job_mgr._future_error_msg) \
-                from job_mgr._future_captured_exception
+            raise job_mgr._future_captured_exception
 
         return func(job_mgr, *args, **kwargs)
 

@@ -25,32 +25,29 @@ from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import ScheduleComponent, Schedule
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.exceptions import JobError, JobTimeoutError
+from qiskit.providers.exceptions import JobError
 from qiskit.result import Result
 from qiskit.qobj import Qobj
 
 from .ibmqbackend import IBMQBackend
 from .utils.decorators import requires_submit
 from .job import IBMQJob
+from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
+                         IBMQJobManagerSubmitError)
 
 logger = logging.getLogger(__name__)
 
 
 class JobManager:
-    """Job manager for IBM Q Experience.
-
-    Attributes:
-        _executor: executor to handle asynchronous jobs
-    """
-    _executor = futures.ThreadPoolExecutor()
+    """Job manager for IBM Q Experience."""
 
     def __init__(self) -> None:
         """Creates a new JobManager instance."""
         self._jobs = []  # type: List[IBMQJob]
 
         self._future = None
-        self._future_captured_exception = None
-        self._future_error_msg = None
+        self._executor = futures.ThreadPoolExecutor(1)
+        self._future_captured_exception = None  # type: Optional[Exception]
 
         # Used for caching
         self._result = None  # type: Optional[List[Union[Result, None]]]
@@ -91,14 +88,16 @@ class JobManager:
             Number of jobs to be run.
 
         Raises:
-            JobError: If a job cannot be submitted.
+            IBMQJobManagerInvalidStateError: If the backend does not support
+                the experiment type, or if this method was previously called
+                to run experiments.
         """
         if (all(isinstance(exp, ScheduleComponent) for exp in experiments) and
                 not backend.configuration().open_pulse):
-            raise JobError("The backend does not support pulse schedules.")
+            raise IBMQJobManagerInvalidStateError("The backend does not support pulse schedules.")
 
         if self._future is not None:
-            raise JobError("Jobs were already submitted.")
+            raise IBMQJobManagerInvalidStateError("Jobs were already submitted.")
 
         if not skip_transpile:
             experiments = transpile(circuits=experiments, backend=backend)
@@ -138,10 +137,11 @@ class JobManager:
                 start_index = end_index + 1
                 self._jobs.append(job)
         except Exception as err:  # pylint: disable=broad-except
-            self._future_captured_exception = err  # type: ignore[assignment]
-            err_msg = "Unable to submit job {} for experiments {}-{}.".format(
-                i, start_index, end_index)
-            self._future_error_msg = err_msg  # type: ignore[assignment]
+            exception = IBMQJobManagerSubmitError(
+                "Unable to submit job {} for experiments {}-{}.".format(
+                    i, start_index, end_index))
+            exception.__cause__ = err
+            self._future_captured_exception = exception
 
             # Cancel all previously submitted jobs
             try:
@@ -235,7 +235,7 @@ class JobManager:
                 cannot be retrieved.
 
         Raises:
-            JobTimeoutError: if unable to retrieve all job results before the
+            IBMQJobManagerTimeoutError: if unable to retrieve all job results before the
                 specified timeout.
         """
         if self._result:
@@ -259,12 +259,12 @@ class JobManager:
             if timeout:
                 timeout = original_timeout - (time.time() - start_time)
                 if timeout <= 0:
-                    raise JobTimeoutError(
+                    raise IBMQJobManagerTimeoutError(
                         "Timeout waiting for results for experiments "
                         "{}-{} (job {}, ID={}).".format(
                             job.start_index, job.end_index, i, job.job_id()))
 
-        self._result = results  # type: ignore[assignment]
+        self._result = results
         return self._result
 
     @requires_submit
