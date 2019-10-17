@@ -20,7 +20,7 @@ from typing import Dict, Any
 from marshmallow.exceptions import ValidationError
 
 from .base import RestAdapterBase
-from qiskit.providers.ibmq.api.rest.validation import StatusResponseSchema
+from .validation import StatusResponseSchema
 from ..session import RetrySession
 from ..exceptions import ApiIBMQProtocolError
 
