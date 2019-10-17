@@ -16,6 +16,8 @@
 
 import re
 
+from requests.exceptions import RequestException
+
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.api.clients import AccountClient, AuthClient
@@ -94,18 +96,22 @@ class TestAccountClient(IBMQTestCase):
         try:
             job = api._job_submit_object_storage(backend_name, qobj.to_dict())
         except RequestsApiError as ex:
-            response = ex.original_exception.response
-            if response.status_code == 400:
-                try:
-                    api_code = response.json()['error']['code']
+            # Get the original connection that was raised.
+            original_exception = ex.__cause__
 
-                    # If we reach that point, it means the backend does not
-                    # support qobject storage.
-                    self.assertEqual(api_code,
-                                     'Q_OBJECT_STORAGE_IS_NOT_ALLOWED')
-                    return
-                except (ValueError, KeyError):
-                    pass
+            if isinstance(original_exception, RequestException):
+                # Get the response from the original request exception.
+                error_response = original_exception.response    # pylint: disable=no-member
+                if error_response is not None and error_response.status_code == 400:
+                    try:
+                        api_code = error_response.json()['error']['code']
+
+                        # If we reach that point, it means the backend does not
+                        # support qobject storage.
+                        self.assertEqual(api_code, 'Q_OBJECT_STORAGE_IS_NOT_ALLOWED')
+                        return
+                    except (ValueError, KeyError):
+                        pass
             raise
 
         job_id = job['id']
@@ -168,7 +174,7 @@ class TestAccountClient(IBMQTestCase):
             api.job_status('foo')
 
         raised_exception = exception_context.exception
-        original_error = raised_exception.original_exception.response.json()['error']
+        original_error = raised_exception.__cause__.response.json()['error']
         self.assertIn(original_error['message'], raised_exception.message,
                       "Original error message not in raised exception")
         self.assertIn(original_error['code'], raised_exception.message,

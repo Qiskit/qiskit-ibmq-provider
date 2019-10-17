@@ -114,8 +114,7 @@ class TestProxies(IBMQTestCase):
         with self.assertRaises(RequestsApiError) as context_manager:
             _ = AuthClient(qe_token, qe_url, proxies=INVALID_PORT_PROXIES)
 
-        self.assertIsInstance(context_manager.exception.original_exception,
-                              ProxyError)
+        self.assertIsInstance(context_manager.exception.__cause__, ProxyError)
 
     # pylint: disable=unused-argument
     @requires_qe_access
@@ -125,8 +124,7 @@ class TestProxies(IBMQTestCase):
             version_finder = VersionClient(qe_url, proxies=INVALID_PORT_PROXIES)
             version_finder.version()
 
-        self.assertIsInstance(context_manager.exception.original_exception,
-                              ProxyError)
+        self.assertIsInstance(context_manager.exception.__cause__, ProxyError)
 
     @requires_qe_access
     def test_invalid_proxy_address_authclient(self, qe_token, qe_url):
@@ -134,8 +132,7 @@ class TestProxies(IBMQTestCase):
         with self.assertRaises(RequestsApiError) as context_manager:
             _ = AuthClient(qe_token, qe_url, proxies=INVALID_ADDRESS_PROXIES)
 
-        self.assertIsInstance(context_manager.exception.original_exception,
-                              ProxyError)
+        self.assertIsInstance(context_manager.exception.__cause__, ProxyError)
 
     @requires_qe_access
     def test_invalid_proxy_address_versionclient(self, qe_token, qe_url):
@@ -146,8 +143,7 @@ class TestProxies(IBMQTestCase):
                                            proxies=INVALID_ADDRESS_PROXIES)
             version_finder.version()
 
-        self.assertIsInstance(context_manager.exception.original_exception,
-                              ProxyError)
+        self.assertIsInstance(context_manager.exception.__cause__, ProxyError)
 
 
 def pproxy_desired_access_log_line(url):

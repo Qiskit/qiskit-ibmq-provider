@@ -43,3 +43,23 @@ class IBMQBackendError(IBMQError):
 class IBMQBackendValueError(IBMQError, ValueError):
     """Value errors thrown within IBMQBackend."""
     pass
+
+
+class IBMQJobManagerError(IBMQError):
+    """Base class for errors raise by job manager."""
+    pass
+
+
+class IBMQJobManagerSubmitError(IBMQJobManagerError):
+    """Errors raised when the job manager is unable to submit one or more jobs."""
+    pass
+
+
+class IBMQJobManagerInvalidStateError(IBMQJobManagerError):
+    """Errors raised when an operation is invoked in an invalid state."""
+    pass
+
+
+class IBMQJobManagerTimeoutError(IBMQJobManagerError):
+    """Errors raised when a job manager operation times out."""
+    pass
