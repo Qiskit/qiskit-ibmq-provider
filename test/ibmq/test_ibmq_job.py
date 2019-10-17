@@ -372,7 +372,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_provider
     def test_retrieve_failed_job_simulator_partial(self, provider):
-        """Test retrieving job error messages from a simulator backend."""
+        """Test retrieving partial results from a simulator backend."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         qc_new = transpile(self._qc, backend)
