@@ -52,6 +52,10 @@ The format is based on [Keep a Changelog].
 - The Exception hierarchy has been refined with more specialized classes, and
   exception chaining is used. You can get more information about failures by
   reviewing the complete traceback. (\#395, \#396)
+- The `IBMQJob.result()` function now accepts an optional `partial` parameter. If 
+  specified, `IBMQJob.result()` will return partial results for jobs with 
+  experiments that failed. This parameter takes effect only if the backend 
+  running the job is a simulator (\#399).
 
 ### Removed
 
