@@ -23,9 +23,8 @@ import warnings
 
 from marshmallow import ValidationError
 
-from qiskit.providers.basejob import BaseJob
-from qiskit.providers.basebackend import BaseBackend
-from qiskit.providers.exceptions import JobTimeoutError
+from qiskit.providers import (BaseJob,  # type: ignore[attr-defined]
+                              JobTimeoutError, BaseBackend)
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj
