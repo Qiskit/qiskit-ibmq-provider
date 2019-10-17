@@ -182,7 +182,12 @@ class IBMQJob(BaseModel, BaseJob):
 
         return BackendProperties.from_dict(properties)
 
-    def result(self, timeout: Optional[float] = None, wait: float = 5) -> Result:
+    def result(
+            self,
+            timeout: Optional[float] = None,
+            wait: float = 5,
+            partial: Optional[bool] = False
+    ) -> Result:
         """Return the result of the job.
 
         Note:
@@ -200,6 +205,7 @@ class IBMQJob(BaseModel, BaseJob):
         Args:
            timeout: number of seconds to wait for job
            wait: time between queries to IBM Q server
+           partial: if true returns partial results for the job.
 
         Returns:
             Result object
