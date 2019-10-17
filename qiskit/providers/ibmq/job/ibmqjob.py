@@ -222,6 +222,17 @@ class IBMQJob(BaseModel, BaseJob):
                                          required_status=(JobStatus.DONE,)):
             if self._status is JobStatus.CANCELLED:
                 raise IBMQJobInvalidStateError('Unable to retrieve job result. Job was cancelled.')
+
+            # Check if there are partial results to return, simulator only.
+            if self._status is JobStatus.ERROR \
+                    and self._backend.configuration().simulator and partial:
+                # Retrieve the partial result.
+                with api_to_job_error():
+                    result_response = self._api.job_result(self.job_id(), self._use_object_storage)
+                    self._result = Result.from_dict(result_response)
+                    return self._result
+
+            # Handle the rest of the exceptions as unexpected.
             raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
                                       'Use job.error_message() to get more details.')
 
