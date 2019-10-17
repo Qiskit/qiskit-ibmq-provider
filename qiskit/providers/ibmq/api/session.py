@@ -200,6 +200,6 @@ class RetrySession(Session):
             if self.access_token:
                 message = message.replace(self.access_token, '...')
 
-            raise RequestsApiError(ex, message) from None
+            raise RequestsApiError(message) from ex
 
         return response

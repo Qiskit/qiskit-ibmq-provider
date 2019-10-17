@@ -22,11 +22,13 @@ import numpy
 from scipy.stats import chi2_contingency
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers import JobError, JobStatus
+from qiskit.providers import JobStatus
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+from qiskit.providers.ibmq.job.exceptions import (IBMQJobFailureError,
+                                                  IBMQJobInvalidStateError)
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
 
@@ -348,7 +350,7 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         # backend.run() will automatically call job.submit()
         job = backend.run(qobj)
-        with self.assertRaises(JobError):
+        with self.assertRaises(IBMQJobInvalidStateError):
             job.submit()
 
     @requires_provider
@@ -361,7 +363,7 @@ class TestIBMQJob(JobTestCase):
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
         job = backend.run(qobj)
-        with self.assertRaises(JobError):
+        with self.assertRaises(IBMQJobFailureError):
             job.result()
 
         new_job = provider.backends.retrieve_job(job.job_id())
@@ -378,7 +380,7 @@ class TestIBMQJob(JobTestCase):
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
         job = backend.run(qobj)
-        with self.assertRaises(JobError):
+        with self.assertRaises(IBMQJobFailureError):
             job.result()
 
         new_job = provider.backends.retrieve_job(job.job_id())
