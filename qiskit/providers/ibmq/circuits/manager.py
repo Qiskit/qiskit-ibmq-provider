@@ -15,6 +15,7 @@
 """Manager for interacting with Circuits."""
 
 from typing import List, Any
+from requests.exceptions import RequestException
 
 from qiskit.providers import JobStatus  # type: ignore[attr-defined]
 from qiskit.result import Result
@@ -57,27 +58,32 @@ class CircuitsManager:
         try:
             response = self.client.circuit_run(name=name, **kwargs)
         except RequestsApiError as ex:
-            # Revise the original requests exception to intercept.
-            error_response = ex.original_exception.response
+            # Get the original exception that raised.
+            original_exception = ex.__cause__
 
-            # Check for errors related to the submission.
-            try:
-                body = error_response.json()
-            except ValueError:
-                body = {}
+            if isinstance(original_exception, RequestException):
+                # Get the response from the original request exception.
+                error_response = original_exception.response  # pylint: disable=no-member
 
-            # Generic authorization or unavailable endpoint error.
-            if error_response.status_code in (401, 404):
-                raise CircuitAvailabilityError() from None
+                if error_response is not None:
+                    # Check for errors related to the submission.
+                    try:
+                        body = error_response.json()
+                    except ValueError:
+                        body = {}
 
-            if error_response.status_code == 400:
-                # Hub permission error.
-                if body.get('error', {}).get('code') == 'HUB_NOT_FOUND':
-                    raise CircuitAvailabilityError() from None
+                    # Generic authorization or unavailable endpoint error.
+                    if error_response.status_code in (401, 404):
+                        raise CircuitAvailabilityError() from None
 
-                # Generic error.
-                if body.get('error', {}).get('code') == 'GENERIC_ERROR':
-                    raise CircuitAvailabilityError() from None
+                    if error_response.status_code == 400:
+                        # Hub permission error.
+                        if body.get('error', {}).get('code') == 'HUB_NOT_FOUND':
+                            raise CircuitAvailabilityError() from None
+
+                        # Generic error.
+                        if body.get('error', {}).get('code') == 'GENERIC_ERROR':
+                            raise CircuitAvailabilityError() from None
 
             # Handle the rest of the exceptions as unexpected.
             raise CircuitSubmitError(str(ex))
