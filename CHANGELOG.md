@@ -47,8 +47,9 @@ The format is based on [Keep a Changelog].
 - `IBMQJob.error_message()` now gives more information on why a job failed (\#375).
 - `IBMQJob.queue_position()` now accepts an optional `refresh` parameter that 
   indicates whether it should query the API for the latest queue position (\#387). 
-- The initializer for the `RequestsApiError` exception is removed. Exception 
-  chaining is now used to examine the complete traceback for more details. (\#395).
+- The Exception hierarchy has been refined with more specialized classes, and
+  exception chaining is used. You can get more information about failures by
+  reviewing the complete traceback. (\#395, \#396)
 
 ### Removed
 
