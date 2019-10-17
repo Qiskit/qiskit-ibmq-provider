@@ -19,7 +19,7 @@ from typing import Dict, List, Tuple, Generator, Optional, Any
 from contextlib import contextmanager
 
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers import JobError  # type: ignore[attr-defined]
+from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
 
 from ..apiconstants import ApiJobStatus
 from ..api.exceptions import ApiError
@@ -100,8 +100,8 @@ def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
 
 @contextmanager
 def api_to_job_error() -> Generator[None, None, None]:
-    """Convert an ApiError to a JobError."""
+    """Convert an ApiError to an IBMQJobApiError."""
     try:
         yield
     except ApiError as api_err:
-        raise JobError(str(api_err))
+        raise IBMQJobApiError(str(api_err))

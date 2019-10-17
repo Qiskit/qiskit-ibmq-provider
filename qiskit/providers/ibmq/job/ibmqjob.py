@@ -23,8 +23,9 @@ import warnings
 
 from marshmallow import ValidationError
 
-from qiskit.providers import (BaseJob, JobError,  # type: ignore[attr-defined]
-                              JobTimeoutError, BaseBackend)
+from qiskit.providers.basejob import BaseJob
+from qiskit.providers.basebackend import BaseBackend
+from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj
@@ -34,7 +35,9 @@ from qiskit.validation import BaseModel, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
-from .schema import JobResponseSchema  # type: ignore[attr-defined]
+from ..job.exceptions import (IBMQJobApiError, IBMQJobFailureError,
+                              IBMQJobInvalidStateError)
+from .schema import JobResponseSchema
 from .utils import (build_error_report, is_job_queued,
                     api_status_to_job_status, api_to_job_error)
 
@@ -61,7 +64,7 @@ class IBMQJob(BaseModel, BaseJob):
             if job_status is JobStatus.RUNNING:
                 print('The job is still running')
 
-        except JobError as ex:
+        except IBMQJobApiError as ex:
             print("Something wrong happened!: {}".format(ex))
 
     A call to ``status()`` can raise if something happens at the server level
@@ -80,7 +83,7 @@ class IBMQJob(BaseModel, BaseJob):
         except JobError as ex:
             print("Something wrong happened!: {}".format(ex))
 
-    Many of the ``IBMQJob`` methods can raise ``JobError`` if unexpected
+    Many of the ``IBMQJob`` methods can raise ``IBMQJobApiError`` if unexpected
     failures happened at the server level.
 
     Job information retrieved from the API server is attached to the ``IBMQJob``
@@ -150,7 +153,7 @@ class IBMQJob(BaseModel, BaseJob):
             the Qobj for this job.
 
         Raises:
-            JobError: if there was some unexpected failure in the server.
+            IBMQJobApiError: if there was some unexpected failure in the server.
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if not self._qobj:  # type: ignore[has-type]
@@ -170,7 +173,7 @@ class IBMQJob(BaseModel, BaseJob):
                 properties are not available.
 
         Raises:
-            JobError: if there was some unexpected failure in the server.
+            IBMQJobApiError: if there was some unexpected failure in the server.
         """
         with api_to_job_error():
             properties = self._api.job_properties(job_id=self.job_id())
@@ -203,17 +206,19 @@ class IBMQJob(BaseModel, BaseJob):
             Result object
 
         Raises:
-            JobError: if the job has failed or cancelled, or if there was some
-                unexpected failure in the server.
+            IBMQJobInvalidStateError: if the job was cancelled.
+            IBMQJobFailureError: If the job failed.
+            IBMQJobApiError: If there was some unexpected failure in the server.
         """
         # pylint: disable=arguments-differ
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
 
         if not self._wait_for_completion(timeout=timeout, wait=wait,
                                          required_status=(JobStatus.DONE,)):
-            message = 'Job was cancelled.' if self._status is JobStatus.CANCELLED \
-                else 'Job has failed. Use job.error_message() to get more details.'
-            raise JobError('Unable to retrieve job result. ' + message)
+            if self._status is JobStatus.CANCELLED:
+                raise IBMQJobInvalidStateError('Unable to retrieve job result. Job was cancelled.')
+            raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
+                                      'Use job.error_message() to get more details.')
 
         if not self._result:  # type: ignore[has-type]
             with api_to_job_error():
@@ -230,8 +235,7 @@ class IBMQJob(BaseModel, BaseJob):
             might not be possible depending on the environment.
 
         Raises:
-            JobError: if the job has not been submitted or if there was
-                some unexpected failure in the server.
+            IBMQJobApiError: if there was some unexpected failure in the server.
         """
         try:
             response = self._api.job_cancel(self.job_id())
@@ -239,7 +243,7 @@ class IBMQJob(BaseModel, BaseJob):
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
-            raise JobError('Error cancelling job: %s' % error)
+            raise IBMQJobApiError('Error cancelling job: %s' % error)
 
     def status(self) -> JobStatus:
         """Query the API to update the status.
@@ -248,7 +252,7 @@ class IBMQJob(BaseModel, BaseJob):
             The status of the job, once updated.
 
         Raises:
-            JobError: if there was some unexpected failure in the server.
+            IBMQJobApiError: if there was some unexpected failure in the server.
         """
         if self._status in JOB_FINAL_STATES:
             return self._status
@@ -381,10 +385,11 @@ class IBMQJob(BaseModel, BaseJob):
             The job has started.
 
         Raises:
-            JobError: If an error occurred during job submit.
+            IBMQJobApiError: if there was some unexpected failure in the server.
+            IBMQJobInvalidStateError: If the job has already been submitted.
         """
         if self.job_id() is not None:
-            raise JobError("We have already submitted the job!")
+            raise IBMQJobInvalidStateError("We have already submitted the job!")
 
         warnings.warn("job.submit() is deprecated. Please use "
                       "IBMQBackend.run() to submit a job.", DeprecationWarning, stacklevel=2)
@@ -406,7 +411,7 @@ class IBMQJob(BaseModel, BaseJob):
             self._update_status_position(data.pop('_status'),
                                          data.pop('infoQueue', None))
         except ValidationError as ex:
-            raise JobError("Unexpected return value received from the server.") from ex
+            raise IBMQJobApiError("Unexpected return value received from the server.") from ex
         finally:
             JobResponseSchema.model_cls = saved_model_cls
 
