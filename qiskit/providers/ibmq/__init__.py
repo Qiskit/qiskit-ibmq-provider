@@ -20,7 +20,7 @@ from qiskit.exceptions import QiskitError
 from .ibmqfactory import IBMQFactory
 from .ibmqbackend import IBMQBackend, BaseBackend
 from .job import IBMQJob
-from .jobmanager import JobManager
+from .managed import IBMQJobManager
 
 from .version import __version__
 
@@ -47,6 +47,6 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
     """
     try:
         return min([b for b in backends if b.status().operational],
-                   key=lambda b: b.status().pending_jobs)
+                   key=lambda b: b.statuses().pending_jobs)
     except (ValueError, TypeError):
         raise QiskitError("Can only find least_busy backend from a non-empty list.")
