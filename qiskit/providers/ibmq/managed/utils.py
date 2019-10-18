@@ -20,7 +20,6 @@ from collections import Counter
 
 from qiskit.providers.jobstatus import JobStatus
 
-from .managedjobset import ManagedJobSet
 from .managedjob import ManagedJob
 
 
@@ -35,7 +34,7 @@ def requires_submit(func: Callable) -> Callable:
     """
     @wraps(func)
     def _wrapper(
-            job_set: ManagedJobSet,
+            job_set: 'ManagedJobSet',   # type: ignore[name-defined]
             *args: Any,
             **kwargs: Any
     ) -> Any:
@@ -55,22 +54,34 @@ def requires_submit(func: Callable) -> Callable:
     return _wrapper
 
 
-def format_status_counts(statuses: List[Union[JobStatus, None]]) -> List:
-    counts = Counter(statuses)
+def format_status_counts(statuses: List[Union[JobStatus, None]]) -> List[str]:
+    """Format summary report on job statuses.
+
+    Args:
+        statuses: Statuses of the jobs.
+
+    Returns:
+        Formatted job status report.
+    """
+    counts = Counter(statuses)  # type: Counter
     report = [
         "       Total jobs: {}".format(len(statuses)),
         "  Successful jobs: {}".format(counts[JobStatus.DONE]),
         "      Failed jobs: {}".format(counts[JobStatus.ERROR]),
         "   Cancelled jobs: {}".format(counts[JobStatus.CANCELLED]),
-        "     Running jobs: {}".format(counts[JobStatus.RUNNING])
+        "     Running jobs: {}".format(counts[JobStatus.RUNNING]),
+        "     Pending jobs: {}".format(counts[JobStatus.INITIALIZING] +
+                                       counts[JobStatus.VALIDATING] +
+                                       counts[JobStatus.QUEUED])
     ]
+
     return report
 
 
 def format_job_details(
         statuses: List[Union[JobStatus, None]],
         managed_jobs: List[ManagedJob]
-):
+) -> List[str]:
     """Format detailed report for jobs.
 
     Args:
@@ -102,4 +113,4 @@ def format_job_details(
             for msg in msg_list:
                 report.append(msg.rjust(len(msg)+6))
 
-    return '\n'.join(report)
+    return report

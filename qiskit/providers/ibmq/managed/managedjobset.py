@@ -74,7 +74,7 @@ class ManagedJobSet:
         exp_index = 0
         for i, experiment in enumerate(experiment_list):
             qobj = assemble(experiment, backend=backend, shots=shots)
-            job_name = "{}_{}".format(self._name, i)
+            job_name = "{}_{}_".format(self._name, i)
             future = executor.submit(
                 self._async_submit, qobj=qobj, job_name=job_name, backend=backend)
             self._managed_jobs.append(
@@ -99,7 +99,7 @@ class ManagedJobSet:
         """
         return backend.run(qobj=qobj, job_name=job_name)
 
-    def submit_results(self):
+    def submit_results(self) -> None:
         """Collect job submit responses.
 
         Raises:
@@ -108,7 +108,7 @@ class ManagedJobSet:
         if not self._managed_jobs:
             raise IBMQJobManagerInvalidStateError("Jobs need to be submitted first!")
 
-        if all(exps.future is None for exps in self._managed_jobs):
+        if all(mjob.future is None for mjob in self._managed_jobs):
             # Submit results already collected
             return
 
@@ -127,12 +127,12 @@ class ManagedJobSet:
         for i, mjob in enumerate(self._managed_jobs):
             if mjob.job is not None:
                 try:
-                    statuses.append(mjob.job.statuses())
+                    statuses.append(mjob.job.status())
                     continue
                 except JobError as err:
                     warnings.warn(
                         "Unable to retrieve status for job {}, job ID={}, "
-                        "for experiments {}-{}}: {}".format(
+                        "for experiments {}-{}: {}".format(
                             i, mjob.job.job_id(), mjob.start_index, mjob.end_index, err))
             statuses.append(None)
 
@@ -184,6 +184,7 @@ class ManagedJobSet:
         start_time = time.time()
         original_timeout = timeout
 
+        # TODO We can potentially make this multithreaded
         for i, mjob in enumerate(self._managed_jobs):
             result = None
             if mjob.job is not None:
@@ -193,7 +194,7 @@ class ManagedJobSet:
                 except JobError as err:
                     warnings.warn(
                         "Unable to retrieve results for job {}, job ID={}, "
-                        "for experiments {}-{}}: {}".format(
+                        "for experiments {}-{}: {}".format(
                             i, mjob.job.job_id(), mjob.start_index, mjob.end_index, err))
 
             results.append(result)
@@ -221,7 +222,7 @@ class ManagedJobSet:
         for i, mjob in enumerate(self._managed_jobs):
             if mjob.job is None:
                 continue
-            if mjob.job.statuses() is not JobStatus.ERROR:
+            if mjob.job.status() is not JobStatus.ERROR:
                 continue
             report.append("Job {}, job ID={}, for experiments {}-{}:".format(
                 i, mjob.job.job_id(), mjob.start_index, mjob.end_index))
@@ -245,7 +246,7 @@ class ManagedJobSet:
                 try:
                     job.cancel()
                 except JobError as err:
-                    logger.warning("Unable to cancel job {}: {}".format(job.job_id(), err))
+                    logger.warning("Unable to cancel job %s: %s", job.job_id(), str(err))
 
     @requires_submit
     def jobs(self) -> List[Union[IBMQJob, None]]:
@@ -286,8 +287,13 @@ class ManagedJobSet:
 class RetrievedManagedJobSet(ManagedJobSet):
     """Managed job set from a previous manager instance."""
 
-    def __init__(self, jobs, name: Optional[str] = None):
-        """Creates a new RetrievedManagedJobSet instance."""
+    def __init__(self, jobs: List[IBMQJob], name: str) -> None:
+        """Creates a new RetrievedManagedJobSet instance.
+
+        Args:
+            jobs: Jobs to be added to this set.
+            name: Name of the set.
+        """
         super().__init__(name)
 
         for job in jobs:
@@ -298,11 +304,10 @@ class RetrievedManagedJobSet(ManagedJobSet):
             experiment_list: Union[List[List[QuantumCircuit]], List[List[Schedule]]],
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
-            name_prefix: Optional[str] = None,
             shots: int = 1024
     ) -> None:
         raise IBMQJobManagerInvalidStateError("Jobs were already submitted.")
 
-    def submit_results(self):
+    def submit_results(self) -> None:
         """Collect job submit responses."""
         return

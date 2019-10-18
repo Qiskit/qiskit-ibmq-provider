@@ -43,12 +43,12 @@ class ManagedJob:
             job: Job being managed.
         """
         self.experiments = experiments
-        self.start_index = start_index or 'N/A'
-        self.end_index = start_index + len(experiments) - 1 if start_index else 'N/A'
+        self.start_index = start_index if start_index is not None else 'N/A'
+        self.end_index = start_index + len(experiments) - 1 if start_index is not None else 'N/A'
         self.future = future
         self.job = job
 
-    def submit_result(self):
+    def submit_result(self) -> None:
         """Collect job submit result."""
         try:
             self.job = self.future.result()

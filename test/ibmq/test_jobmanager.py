@@ -15,6 +15,7 @@
 """Tests for the IBMQJobManager."""
 import copy
 from unittest import mock
+import time
 
 from qiskit import QuantumCircuit
 from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
@@ -203,7 +204,8 @@ class TestJobManager(IBMQTestCase):
 
         bad_qc = copy.deepcopy(self._qc)
         circs = [transpile(self._qc, backend=backend), bad_qc]
-        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1, skip_transpile=True)
+        job_set = self._jm.run(circs, backend=backend,
+                               max_experiments_per_job=1, skip_transpile=True)
 
         jobs = job_set.jobs()
         results = job_set.results()
@@ -221,6 +223,54 @@ class TestJobManager(IBMQTestCase):
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        with mock.patch.object(IBMQBackend, 'run', side_effect=IBMQBackendError("Kaboom!")):
+        with mock.patch.object(IBMQBackend, 'run',
+                               side_effect=[IBMQBackendError("Kaboom!"), mock.DEFAULT]):
             job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-        self.assertTrue(all(job is None for job in job_set.jobs()))
+        self.assertIsNone(job_set.jobs()[0])
+        self.assertIsNotNone(job_set.jobs()[1])
+
+        # Make sure results() and statuses() don't fail
+        job_set.results()
+        job_set.statuses()
+
+    @requires_provider
+    def test_multiple_job_sets(self, provider):
+        """Test submitting multiple sets of jobs."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+
+        qc2 = QuantumCircuit(1, 1)
+        qc2.h(0)
+        qc2.measure([0], [0])
+
+        job_set1 = self._jm.run([self._qc, self._qc], backend=backend, max_experiments_per_job=1)
+        job_set2 = self._jm.run([qc2], backend=backend, max_experiments_per_job=1)
+
+        id1 = {job.job_id() for job in job_set1.jobs()}
+        id2 = {job.job_id() for job in job_set2.jobs()}
+        self.assertTrue(id1.isdisjoint(id2))
+
+    @requires_provider
+    def test_retrieve_job_sets(self, provider):
+        """Test retrieving a set of jobs."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        name = str(time.time()).replace('.', '')
+
+        self._jm.run([self._qc], backend=backend, max_experiments_per_job=1)
+        job_set = self._jm.run([self._qc, self._qc], backend=backend,
+                               name=name, max_experiments_per_job=1)
+        rjob_set = self._jm.job_set(name=name)
+        self.assertEqual(job_set, rjob_set)
+
+    @requires_provider
+    def test_retrieve_previous_job_sets(self, provider):
+        """Test retrieving a previously created job set."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        name = str(time.time()).replace('.', '')
+
+        job_set = self._jm.run([self._qc, self._qc], backend=backend,
+                               name=name, max_experiments_per_job=1)
+        job_set.statuses()  # Wait for job submits.
+        rset = IBMQJobManager.previous_job_set(name=name, provider=provider)
+
+        self.assertEqual({job.job_id() for job in job_set.jobs()},
+                         {job.job_id() for job in rset.jobs()})

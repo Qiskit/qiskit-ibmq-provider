@@ -57,12 +57,16 @@ class IBMQJobManager:
         default transpiler settings. Specify ``skip_transpiler=True`` if you
         want to skip this step.
 
+        A name can be assigned to this job set. Each job in this set will have
+        a job name consists of the set name followed by an underscore (_)
+        followed by the job index and another underscore. For example, a job
+        for set ``foo`` can have a job name of ``foo_1_``.  The name can then
+        be used to retrieve the jobs later.
+
         Args:
             experiments : Circuit(s) or pulse schedule(s) to execute.
             backend: Backend to execute the experiments on.
-            name: Name for this set of jobs. Each job in this set will have the
-                job name of this name followed by an underscore (_) followed by
-                the job index.
+            name: Name for this set of jobs.
             shots: Number of repetitions of each experiment, for sampling. Default: 1024.
             skip_transpile: True if transpilation is to be skipped, otherwise False.
             max_experiments_per_job: Maximum number of experiments to run in each job.
@@ -84,8 +88,10 @@ class IBMQJobManager:
 
         if not skip_transpile:
             experiments = transpile(circuits=experiments, backend=backend)
+        if not isinstance(experiments, list):
+            experiments = [experiments]  # type: ignore
         experiment_list = self._split_experiments(
-            experiments, backend=backend, max_experiments_per_job=max_experiments_per_job)
+            list(experiments), backend=backend, max_experiments_per_job=max_experiments_per_job)
 
         job_set = ManagedJobSet(name=name)
         job_set.run(experiment_list, backend=backend, executor=self._executor, shots=shots)
@@ -162,13 +168,19 @@ class IBMQJobManager:
         return None
 
     @classmethod
-    def managed_set(
+    def previous_job_set(
             cls,
             name: str,
             provider: AccountProvider,
             limit: int = 10
     ) -> ManagedJobSet:
-        """Returns the managed job set with the specified name.
+        """Returns the managed job set from a previous manager instance with
+            the specified name.
+
+        Note:
+            Job sets are retrieved based on the job names, so all jobs with
+            the same name pattern will be retrieved regardless if the jobs
+            originally belong to the set.
 
         Args:
              name: Name of the managed job set.
@@ -178,6 +190,7 @@ class IBMQJobManager:
         Returns:
             A set of jobs managed by a different instance of job manager.
         """
-        job_name_regex = '^{}_[0-9]+$'.format(name)
-        jobs = provider.backends.jobs(limit=limit, job_name=job_name_regex)
-        return RetrievedManagedJobSet(jobs)
+        job_name_regex = '^{}_[0-9]+_$'.format(name)
+        jobs = provider.backends.jobs(  # type: ignore[attr-defined]
+            limit=limit, job_name=job_name_regex)
+        return RetrievedManagedJobSet(jobs, name)
