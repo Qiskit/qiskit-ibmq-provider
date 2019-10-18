@@ -30,8 +30,8 @@ from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, run_on_staging
 
 
-class TestJobManager(IBMQTestCase):
-    """Tests for IBMQFactory `enable_account()`."""
+class TestIBMQJobManager(IBMQTestCase):
+    """Tests for IBMQJobManager."""
 
     def setUp(self):
         self._qc = QuantumCircuit(2, 2)
@@ -274,3 +274,4 @@ class TestJobManager(IBMQTestCase):
 
         self.assertEqual({job.job_id() for job in job_set.jobs()},
                          {job.job_id() for job in rset.jobs()})
+        self.assertIsNotNone(rset.results())
