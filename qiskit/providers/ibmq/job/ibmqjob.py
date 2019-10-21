@@ -188,7 +188,7 @@ class IBMQJob(BaseModel, BaseJob):
             timeout: Optional[float] = None,
             wait: float = 5,
             partial: Optional[bool] = False
-    ) -> Result:
+    ) -> Optional[Result]:
         """Return the result of the job.
 
         Note:
@@ -203,13 +203,27 @@ class IBMQJob(BaseModel, BaseJob):
             results again in another instance or session might fail due to the
             job having been consumed.
 
+            In the case a job fails, but partial results exist, the result
+            method may return a `Result` object. If this is the case, precaution
+            should be taken when accessing individual experiments, as doing so
+            would cause an exception.
+
+            For example:
+                If there is a job with two experiments (where one fails), getting
+                the counts of the unsuccessful experiment would raise an exception
+                since there are no counts to return for it,
+                i.e.
+                    > result = job.result()
+                    > counts = result.get_counts(failed_experiment) # Fails
+
         Args:
            timeout: number of seconds to wait for job
            wait: time between queries to IBM Q server
            partial: if true attempts to return partial results for the job.
 
         Returns:
-            Result object
+            Result object if there are valid results to return (including partial
+            results), else `None`.
 
         Raises:
             IBMQJobInvalidStateError: if the job was cancelled.
@@ -474,6 +488,9 @@ class IBMQJob(BaseModel, BaseJob):
 
         Returns:
             The partial results for a job, or ``None`` if schema validation fails.
+
+        Raises:
+            IBMQJobApiError: if there was some unexpected failure in the server.
         """
         if not self._result and not self._result_response:  # type: ignore[misc]
             # No results, nor partial results, have been attained for this job yet.
