@@ -15,7 +15,7 @@
 """A set of jobs being managed by the IBMQJobManager."""
 
 from datetime import datetime
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Any
 from concurrent.futures import ThreadPoolExecutor
 import warnings
 import time
@@ -55,7 +55,7 @@ class ManagedJobSet:
             experiment_list: Union[List[List[QuantumCircuit]], List[List[Schedule]]],
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
-            shots: int = 1024
+            **assemble_config: Any
     ) -> None:
         """Execute a list of circuits or pulse schedules on a backend.
 
@@ -63,7 +63,9 @@ class ManagedJobSet:
             experiment_list : Circuit(s) or pulse schedule(s) to execute.
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
-            shots: Number of repetitions of each experiment, for sampling. Default: 1024.
+            assemble_config: Additional arguments used to configure the Qobj
+                assembly. Refer to the ``qiskit.compiler.assemble`` documentation
+                for details on these arguments.
 
         Raises:
             IBMQJobManagerInvalidStateError: If the jobs were already submitted.
@@ -73,7 +75,7 @@ class ManagedJobSet:
 
         exp_index = 0
         for i, experiment in enumerate(experiment_list):
-            qobj = assemble(experiment, backend=backend, shots=shots)
+            qobj = assemble(experiment, backend=backend, **assemble_config)
             job_name = "{}_{}_".format(self._name, i)
             future = executor.submit(
                 self._async_submit, qobj=qobj, job_name=job_name, backend=backend)
@@ -150,7 +152,8 @@ class ManagedJobSet:
             A report on job statuses.
         """
         statuses = self.statuses()
-        report = ["Summary report:"]
+        report = ["Job set {}:".format(self.name()),
+                  "Summary report:"]
         report.extend(format_status_counts(statuses))
 
         if detailed:
@@ -224,8 +227,8 @@ class ManagedJobSet:
                 continue
             if mjob.job.status() is not JobStatus.ERROR:
                 continue
-            report.append("Job {}, job ID={}, for experiments {}-{}:".format(
-                i, mjob.job.job_id(), mjob.start_index, mjob.end_index))
+            report.append("Experiments {}-{}, job index={}, job ID={}:".format(
+                mjob.start_index, mjob.end_index, i, mjob.job.job_id()))
             try:
                 msg_list = mjob.job.error_message().split('\n')
             except JobError:
@@ -256,7 +259,7 @@ class ManagedJobSet:
             A list of IBMQJob instances that represents the submitted jobs. The
                 entry is ``None`` if the job submit failed.
         """
-        return [exps.job for exps in self._managed_jobs]
+        return [mjob.job for mjob in self._managed_jobs]
 
     @requires_submit
     def qobjs(self) -> List[Qobj]:
@@ -282,32 +285,3 @@ class ManagedJobSet:
             A list of managed jobs.
         """
         return self._managed_jobs
-
-
-class RetrievedManagedJobSet(ManagedJobSet):
-    """Managed job set from a previous manager instance."""
-
-    def __init__(self, jobs: List[IBMQJob], name: str) -> None:
-        """Creates a new RetrievedManagedJobSet instance.
-
-        Args:
-            jobs: Jobs to be added to this set.
-            name: Name of the set.
-        """
-        super().__init__(name)
-
-        for job in jobs:
-            self._managed_jobs.append(ManagedJob([], None, None, job))
-
-    def run(
-            self,
-            experiment_list: Union[List[List[QuantumCircuit]], List[List[Schedule]]],
-            backend: IBMQBackend,
-            executor: ThreadPoolExecutor,
-            shots: int = 1024
-    ) -> None:
-        raise IBMQJobManagerInvalidStateError("Jobs were already submitted.")
-
-    def submit_results(self) -> None:
-        """Collect job submit responses."""
-        return

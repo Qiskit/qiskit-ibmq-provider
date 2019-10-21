@@ -15,18 +15,16 @@
 """Job manager used to manage jobs for IBM Q Experience."""
 
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Any
 from concurrent import futures
 
 from qiskit.circuit import QuantumCircuit
-from qiskit.pulse import ScheduleComponent, Schedule
-from qiskit.compiler import transpile
+from qiskit.pulse import Schedule
 
 from .exceptions import IBMQJobManagerInvalidStateError
 from .utils import format_job_details, format_status_counts
-from .managedjobset import ManagedJobSet, RetrievedManagedJobSet
+from .managedjobset import ManagedJobSet
 from ..ibmqbackend import IBMQBackend
-from ..accountprovider import AccountProvider
 
 logger = logging.getLogger(__name__)
 
@@ -44,36 +42,33 @@ class IBMQJobManager:
             experiments: Union[List[QuantumCircuit], List[Schedule]],
             backend: IBMQBackend,
             name: Optional[str] = None,
-            shots: int = 1024,
-            skip_transpile: bool = False,
-            max_experiments_per_job: Optional[int] = None
+            max_experiments_per_job: Optional[int] = None,
+            **assemble_config: Any
     ) -> ManagedJobSet:
         """Execute a set of circuits or pulse schedules on a backend.
 
         The circuits or schedules will be split into multiple jobs. Circuits
         or schedules in a job will be executed together in each shot.
 
-        The circuits will first be transpiled before submitted, using the
-        default transpiler settings. Specify ``skip_transpiler=True`` if you
-        want to skip this step.
-
         A name can be assigned to this job set. Each job in this set will have
         a job name consists of the set name followed by an underscore (_)
         followed by the job index and another underscore. For example, a job
         for set ``foo`` can have a job name of ``foo_1_``.  The name can then
-        be used to retrieve the jobs later.
+        be used to retrieve the jobs later. If no name is given, the job
+        submission datetime will be used.
 
         Args:
-            experiments : Circuit(s) or pulse schedule(s) to execute.
+            experiments: Circuit(s) or pulse schedule(s) to execute.
             backend: Backend to execute the experiments on.
-            name: Name for this set of jobs.
-            shots: Number of repetitions of each experiment, for sampling. Default: 1024.
-            skip_transpile: True if transpilation is to be skipped, otherwise False.
+            name: Name for this set of jobs. Default: current datetime.
             max_experiments_per_job: Maximum number of experiments to run in each job.
                 If not specified, the default is to use the maximum allowed by
                 the backend.
                 If the specified value is greater the maximum allowed by the
                 backend, the default is used.
+            assemble_config: Additional arguments used to configure the Qobj
+                assembly. Refer to the ``qiskit.compiler.assemble`` documentation
+                for details on these arguments.
 
         Returns:
             Managed job set.
@@ -82,19 +77,15 @@ class IBMQJobManager:
             IBMQJobManagerInvalidStateError: If the backend does not support
                 the experiment type.
         """
-        if (any(isinstance(exp, ScheduleComponent) for exp in experiments) and
+        if (any(isinstance(exp, Schedule) for exp in experiments) and
                 not backend.configuration().open_pulse):
             raise IBMQJobManagerInvalidStateError("The backend does not support pulse schedules.")
 
-        if not skip_transpile:
-            experiments = transpile(circuits=experiments, backend=backend)
-        if not isinstance(experiments, list):
-            experiments = [experiments]  # type: ignore
         experiment_list = self._split_experiments(
-            list(experiments), backend=backend, max_experiments_per_job=max_experiments_per_job)
+            experiments, backend=backend, max_experiments_per_job=max_experiments_per_job)
 
         job_set = ManagedJobSet(name=name)
-        job_set.run(experiment_list, backend=backend, executor=self._executor, shots=shots)
+        job_set.run(experiment_list, backend=backend, executor=self._executor, **assemble_config)
         self._job_sets.append(job_set)
 
         return job_set
@@ -136,8 +127,8 @@ class IBMQJobManager:
         Returns:
             A report on job statuses.
         """
-        job_set_statues = [job_set.statuses() for job_set in self._job_sets]
-        flat_status_list = [stat for stat_list in job_set_statues for stat in stat_list]
+        job_set_statuses = [job_set.statuses() for job_set in self._job_sets]
+        flat_status_list = [stat for stat_list in job_set_statuses for stat in stat_list]
 
         report = ["Summary report:"]
         report.extend(format_status_counts(flat_status_list))
@@ -147,50 +138,20 @@ class IBMQJobManager:
             for i, job_set in enumerate(self._job_sets):
                 report.append(("  Job set {}:".format(job_set.name())))
                 report.extend(format_job_details(
-                    job_set_statues[i], job_set.managed_jobs()))
+                    job_set_statuses[i], job_set.managed_jobs()))
 
         return '\n'.join(report)
 
-    def job_set(self, name: str) -> Optional[ManagedJobSet]:
-        """Returns the managed job set with the specified name.
-
-        If multiple sets with the same name is found, the first set is returned.
+    def job_sets(self, name: Optional[str] = None) -> List[ManagedJobSet]:
+        """Returns a list of managed job sets matching the specified filtering.
 
         Args:
-             name: Name of the managed job set.
+             name: Name of the managed job sets.
 
         Returns:
-            A set of managed jobs or ``None`` if no named set found.
+            A list of managed job sets.
         """
-        for job_set in self._job_sets:
-            if job_set.name() == name:
-                return job_set
-        return None
+        if name:
+            return [job_set for job_set in self._job_sets if job_set.name() == name]
 
-    @classmethod
-    def previous_job_set(
-            cls,
-            name: str,
-            provider: AccountProvider,
-            limit: int = 10
-    ) -> ManagedJobSet:
-        """Returns the managed job set from a previous manager instance with
-            the specified name.
-
-        Note:
-            Job sets are retrieved based on the job names, so all jobs with
-            the same name pattern will be retrieved regardless if the jobs
-            originally belong to the set.
-
-        Args:
-             name: Name of the managed job set.
-             provider: Provider for the IBM Q Experience account.
-             limit: number of jobs to retrieve.
-
-        Returns:
-            A set of jobs managed by a different instance of job manager.
-        """
-        job_name_regex = '^{}_[0-9]+_$'.format(name)
-        jobs = provider.backends.jobs(  # type: ignore[attr-defined]
-            limit=limit, job_name=job_name_regex)
-        return RetrievedManagedJobSet(jobs, name)
+        return self._job_sets

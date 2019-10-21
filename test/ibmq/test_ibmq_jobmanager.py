@@ -66,7 +66,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
         circs = []
         for _ in range(max_circs+2):
-            circs.append(self._qc)
+            circs.append(transpile(self._qc, backend=backend))
         job_set = self._jm.run(circs, backend=backend)
         results = job_set.results()
         statuses = job_set.statuses()
@@ -204,8 +204,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
         bad_qc = copy.deepcopy(self._qc)
         circs = [transpile(self._qc, backend=backend), bad_qc]
-        job_set = self._jm.run(circs, backend=backend,
-                               max_experiments_per_job=1, skip_transpile=True)
+        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
 
         jobs = job_set.jobs()
         results = job_set.results()
@@ -258,20 +257,5 @@ class TestIBMQJobManager(IBMQTestCase):
         self._jm.run([self._qc], backend=backend, max_experiments_per_job=1)
         job_set = self._jm.run([self._qc, self._qc], backend=backend,
                                name=name, max_experiments_per_job=1)
-        rjob_set = self._jm.job_set(name=name)
+        rjob_set = self._jm.job_sets(name=name)[0]
         self.assertEqual(job_set, rjob_set)
-
-    @requires_provider
-    def test_retrieve_previous_job_sets(self, provider):
-        """Test retrieving a previously created job set."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        name = str(time.time()).replace('.', '')
-
-        job_set = self._jm.run([self._qc, self._qc], backend=backend,
-                               name=name, max_experiments_per_job=1)
-        job_set.statuses()  # Wait for job submits.
-        rset = IBMQJobManager.previous_job_set(name=name, provider=provider)
-
-        self.assertEqual({job.job_id() for job in job_set.jobs()},
-                         {job.job_id() for job in rset.jobs()})
-        self.assertIsNotNone(rset.results())

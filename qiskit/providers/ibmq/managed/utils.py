@@ -93,13 +93,14 @@ def format_job_details(
     """
     report = []
     for i, mjob in enumerate(managed_jobs):
-        report.append("  - Job {} -".format(i))
-        report.append("    experiments: {}-{}".format(mjob.start_index, mjob.end_index))
-        job = mjob.job
-        if job is None:
-            report.append("    status: job submit failed.")
+        report.append("  experiments: {}-{}".format(mjob.start_index, mjob.end_index))
+        report.append("    job index: {}".format(i))
+        if mjob.submit_error is not None:
+            report.append("    status: job submit failed: {}".format(
+                str(mjob.submit_error)))
             continue
 
+        job = mjob.job
         report.append("    job ID: {}".format(job.job_id()))
         report.append("    name: {}".format(job.name()))
         status_txt = statuses[i].value if statuses[i] else "Unknown"

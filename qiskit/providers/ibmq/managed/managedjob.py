@@ -47,6 +47,7 @@ class ManagedJob:
         self.end_index = start_index + len(experiments) - 1 if start_index is not None else 'N/A'
         self.future = future
         self.job = job
+        self.submit_error = None  # type: Optional[Exception]
 
     def submit_result(self) -> None:
         """Collect job submit result."""
@@ -55,5 +56,6 @@ class ManagedJob:
         except Exception as err:  # pylint: disable=broad-except
             warnings.warn("Unable to submit job for experiments {}-{}: {}".format(
                 self.start_index, self.end_index, err))
+            self.submit_error = err
 
         self.future = None
