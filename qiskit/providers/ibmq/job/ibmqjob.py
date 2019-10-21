@@ -207,7 +207,7 @@ class IBMQJob(BaseModel, BaseJob):
         Args:
            timeout: number of seconds to wait for job
            wait: time between queries to IBM Q server
-           partial: if true returns partial results for the job.
+           partial: if true attempts to return partial results for the job.
 
         Returns:
             Result object
@@ -341,10 +341,10 @@ class IBMQJob(BaseModel, BaseJob):
             self._job_error_msg = self._error.message
 
         if not self._job_error_msg:
-            # Attempt to read partial results. Cache result in case it succeeds.
+            # Attempt to retrieve partial results.
             self._result = self._retrieve_partial_result()
 
-            # Partial result may have been set with above call.
+            # Partial result may have been set with call above.
             result_response = self._partial_result
             if result_response and result_response['results']:
                 # If individual errors given

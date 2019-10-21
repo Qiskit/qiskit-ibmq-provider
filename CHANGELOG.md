@@ -54,8 +54,8 @@ The format is based on [Keep a Changelog].
   reviewing the complete traceback. (\#395, \#396)
 - The `IBMQJob.result()` function now accepts an optional `partial` parameter. If 
   specified, `IBMQJob.result()` will return partial results for jobs with 
-  experiments that failed. This parameter takes effect only if the backend 
-  running the job is a simulator (\#399).
+  experiments that failed. When specified, and there are no partial results to 
+  return, the function returns `None`.(\#399).
 
 ### Removed
 
