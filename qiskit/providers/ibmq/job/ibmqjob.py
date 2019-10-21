@@ -139,7 +139,9 @@ class IBMQJob(BaseModel, BaseJob):
         self._update_status_position(_status, kwargs.pop('infoQueue', None))
 
         # Properties used for caching.
+        self._result = None
         self._cancelled = False
+        self._partial_result = None
         self._job_error_msg = self._error.message if self._error else None
 
     def qobj(self) -> Qobj:
@@ -223,14 +225,9 @@ class IBMQJob(BaseModel, BaseJob):
             if self._status is JobStatus.CANCELLED:
                 raise IBMQJobInvalidStateError('Unable to retrieve job result. Job was cancelled.')
 
-            # Check if there are partial results to return, simulator only.
-            if self._status is JobStatus.ERROR \
-                    and self._backend.configuration().simulator and partial:
-                # Retrieve the partial result.
-                with api_to_job_error():
-                    result_response = self._api.job_result(self.job_id(), self._use_object_storage)
-                    self._result = Result.from_dict(result_response)
-                    return self._result
+            if self._status is JobStatus.ERROR and partial:
+                self._result = self._retrieve_partial_result()
+                return self._result
 
             # Handle the rest of the exceptions as unexpected.
             raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
@@ -241,6 +238,26 @@ class IBMQJob(BaseModel, BaseJob):
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
                 self._result = Result.from_dict(result_response)
 
+        return self._result
+
+    def _retrieve_partial_result(self) -> Optional[Result]:
+        """Attempt to retrieve partial results for a job.
+
+        Returns:
+            The partial results for a job, or ``None`` if schema validation fails.
+        """
+        if not self._result and not self._partial_result:
+            # No results, nor partial results, have been attained for this job yet.
+            with api_to_job_error():
+                # Set partial results, in case validation fails they are cached.
+                self._partial_result = self._api.job_result(self.job_id(), self._use_object_storage)
+
+            try:
+                return Result.from_dict(self._partial_result)
+            except ValidationError:
+                pass
+
+        # Returned cached result.
         return self._result
 
     def cancel(self) -> bool:
@@ -324,9 +341,12 @@ class IBMQJob(BaseModel, BaseJob):
             self._job_error_msg = self._error.message
 
         if not self._job_error_msg:
-            with api_to_job_error():
-                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
-            if result_response['results']:
+            # Attempt to read partial results. Cache result in case it succeeds.
+            self._result = self._retrieve_partial_result()
+
+            # Partial result may have been set with above call.
+            result_response = self._partial_result
+            if result_response and result_response['results']:
                 # If individual errors given
                 self._job_error_msg = build_error_report(result_response['results'])
             elif 'error' in result_response:
