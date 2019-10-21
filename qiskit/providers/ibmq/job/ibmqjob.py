@@ -29,7 +29,7 @@ from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj
 from qiskit.result import Result
-from qiskit.validation import BaseModel, bind_schema
+from qiskit.validation import BaseModel, ModelValidationError, bind_schema
 
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
@@ -139,9 +139,8 @@ class IBMQJob(BaseModel, BaseJob):
         self._update_status_position(_status, kwargs.pop('infoQueue', None))
 
         # Properties used for caching.
-        self._result = None
         self._cancelled = False
-        self._partial_result = None  # type: Dict[str, Any]
+        self._result_response = None  # type: Dict[str, Any]
         self._job_error_msg = self._error.message if self._error else None
 
     def qobj(self) -> Qobj:
@@ -240,26 +239,6 @@ class IBMQJob(BaseModel, BaseJob):
 
         return self._result
 
-    def _retrieve_partial_result(self) -> Optional[Result]:
-        """Attempt to retrieve partial results for a job.
-
-        Returns:
-            The partial results for a job, or ``None`` if schema validation fails.
-        """
-        if not self._result and not self._partial_result:  # type: ignore[misc]
-            # No results, nor partial results, have been attained for this job yet.
-            with api_to_job_error():
-                # Set partial results, in case validation fails they are cached.
-                self._partial_result = self._api.job_result(self.job_id(), self._use_object_storage)
-
-            try:
-                return Result.from_dict(self._partial_result)
-            except ValidationError:
-                pass
-
-        # Returned cached result.
-        return self._result
-
     def cancel(self) -> bool:
         """Attempt to cancel a job.
 
@@ -334,6 +313,7 @@ class IBMQJob(BaseModel, BaseJob):
         Returns:
             An error report if the job failed or ``None`` otherwise.
         """
+        # pylint: disable=attribute-defined-outside-init
         if not self._wait_for_completion(required_status=(JobStatus.ERROR,)):
             return None
 
@@ -344,8 +324,8 @@ class IBMQJob(BaseModel, BaseJob):
             # Attempt to retrieve partial results.
             self._result = self._retrieve_partial_result()
 
-            # Partial result may have been set with call above.
-            result_response = self._partial_result
+            # Since an error occurred, _result must be `None`. Check the response for errors.
+            result_response = self._result_response
             if result_response and result_response['results']:
                 # If individual errors given
                 self._job_error_msg = build_error_report(result_response['results'])
@@ -488,3 +468,24 @@ class IBMQJob(BaseModel, BaseJob):
             self.refresh()
 
         return self._status in required_status
+
+    def _retrieve_partial_result(self) -> Optional[Result]:
+        """Attempt to retrieve partial results for a job.
+
+        Returns:
+            The partial results for a job, or ``None`` if schema validation fails.
+        """
+        if not self._result and not self._result_response:  # type: ignore[misc]
+            # No results, nor partial results, have been attained for this job yet.
+            with api_to_job_error():
+                # Set partial results, in case validation fails they are cached.
+                self._result_response = self._api.job_result(self.job_id(),
+                                                             self._use_object_storage)
+
+            try:
+                return Result.from_dict(self._result_response)
+            except ModelValidationError:
+                pass
+
+        # Returned cached result.
+        return self._result
