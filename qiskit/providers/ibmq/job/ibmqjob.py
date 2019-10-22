@@ -206,7 +206,7 @@ class IBMQJob(BaseModel, BaseJob):
 
             When `partials=True`, the result method may return a `Result` object
             containing partial results. If partial results are returned, precaution
-            should be taken when accessing individual experiments, as doing so would
+            should be taken when accessing individual experiments, as doing so might
             cause an exception. Verifying whether some experiments of a job failed can
             be done by checking the boolean attribute `Result.success`.
 
@@ -246,14 +246,7 @@ class IBMQJob(BaseModel, BaseJob):
                 raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
                                           'Use job.error_message() to get more details.')
 
-            return self._retrieve_result()
-
-        if not self._result:  # type: ignore[has-type]
-            with api_to_job_error():
-                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
-                self._result = Result.from_dict(result_response)
-
-        return self._result
+        return self._retrieve_result()
 
     def cancel(self) -> bool:
         """Attempt to cancel a job.
@@ -496,7 +489,7 @@ class IBMQJob(BaseModel, BaseJob):
                 self._result_response = self._api.job_result(self.job_id(),
                                                              self._use_object_storage)
             try:
-                return Result.from_dict(self._result_response)
+                self._result = Result.from_dict(self._result_response)
             except ModelValidationError:
                 pass
 
