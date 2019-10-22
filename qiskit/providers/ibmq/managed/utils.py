@@ -21,6 +21,7 @@ from collections import Counter
 from qiskit.providers.jobstatus import JobStatus
 
 from .managedjob import ManagedJob
+from .exceptions import IBMQJobManagerInvalidStateError
 
 
 def requires_submit(func: Callable) -> Callable:
@@ -31,6 +32,9 @@ def requires_submit(func: Callable) -> Callable:
 
     Returns:
         callable: the decorated function.
+
+    Raises:
+        IBMQJobManagerInvalidStateError: If jobs have not been submitted.
     """
     @wraps(func)
     def _wrapper(
@@ -47,8 +51,13 @@ def requires_submit(func: Callable) -> Callable:
 
         Returns:
             return value of the decorated function.
+
+        Raises:
+            IBMQJobManagerInvalidStateError: If jobs have not been submitted.
         """
-        job_set.submit_results()
+        if job_set._submit_collector is None:
+            raise IBMQJobManagerInvalidStateError("Jobs need to be submitted first!")
+        job_set._submit_collector.result()
         return func(job_set, *args, **kwargs)
 
     return _wrapper

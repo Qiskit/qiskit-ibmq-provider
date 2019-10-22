@@ -65,16 +65,19 @@ class ManagedJob:
         Returns:
             Current job status, or ``None`` if an error occurred.
         """
-        if not self.future.done():
+        if self.submit_error is not None:
+            return None
+
+        if not self.future.done() or self.job is None:
             # Job not yet submitted
             return JobStatus.INITIALIZING
-        if self.job is not None:
-            try:
-                return self.job.status()
-            except JobError as err:
-                warnings.warn(
-                    "Unable to retrieve job status for experiments {}-{}, job ID={}: {} ".format(
-                        self.start_index, self.end_index, self.job.job_id(), err))
+
+        try:
+            return self.job.status()
+        except JobError as err:
+            warnings.warn(
+                "Unable to retrieve job status for experiments {}-{}, job ID={}: {} ".format(
+                    self.start_index, self.end_index, self.job.job_id(), err))
 
         return None
 

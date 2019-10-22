@@ -44,11 +44,11 @@ class ManagedJobSet:
         """Creates a new ManagedJobSet instance."""
         self._managed_jobs = []  # type: List[ManagedJob]
         self._name = name or datetime.utcnow().isoformat()
+        self._submit_collector = None
 
         # Used for caching
         self._results = []  # type: Optional[List[Union[Result, None]]]
         self._error_msg = None  # type: Optional[str]
-        self._submit_collected = False
 
     def run(
             self,
@@ -83,6 +83,8 @@ class ManagedJobSet:
                 ManagedJob(experiment, start_index=exp_index, future=future))
             exp_index += len(experiment)
 
+        self._submit_collector = executor.submit(self.submit_results)
+
     def _async_submit(
             self,
             qobj: Qobj,
@@ -102,18 +104,9 @@ class ManagedJobSet:
         return backend.run(qobj=qobj, job_name=job_name)
 
     def submit_results(self) -> None:
-        """Collect job submit responses.
-
-        Raises:
-            IBMQJobManagerInvalidStateError: If jobs have not been submitted.
-        """
-        if not self._managed_jobs:
-            raise IBMQJobManagerInvalidStateError("Jobs need to be submitted first!")
-
-        if not self._submit_collected:
-            for mjob in self._managed_jobs:
-                mjob.submit_result()
-            self._submit_collected = True
+        """Collect job submit responses."""
+        for mjob in self._managed_jobs:
+            mjob.submit_result()
 
     def statuses(self) -> List[Union[JobStatus, None]]:
         """Return the status of each job.
