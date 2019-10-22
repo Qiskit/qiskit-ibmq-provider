@@ -19,6 +19,7 @@ from typing import List, Optional, Union, Any
 from concurrent.futures import ThreadPoolExecutor
 import time
 import logging
+from threading import Thread
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
@@ -44,7 +45,7 @@ class ManagedJobSet:
         """Creates a new ManagedJobSet instance."""
         self._managed_jobs = []  # type: List[ManagedJob]
         self._name = name or datetime.utcnow().isoformat()
-        self._submit_collector = None
+        self._submit_collector = None  # type: Optional[Thread]
 
         # Used for caching
         self._results = []  # type: Optional[List[Union[Result, None]]]
@@ -83,7 +84,9 @@ class ManagedJobSet:
                 ManagedJob(experiment, start_index=exp_index, future=future))
             exp_index += len(experiment)
 
-        self._submit_collector = executor.submit(self.submit_results)
+        # Give the collector its own thread so it's not stuck behind the submits.
+        self._submit_collector = Thread(target=self.submit_results, daemon=True)
+        self._submit_collector.start()
 
     def _async_submit(
             self,

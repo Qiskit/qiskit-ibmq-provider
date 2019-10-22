@@ -68,7 +68,7 @@ class ManagedJob:
         if self.submit_error is not None:
             return None
 
-        if not self.future.done() or self.job is None:
+        if self.job is None:
             # Job not yet submitted
             return JobStatus.INITIALIZING
 

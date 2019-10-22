@@ -57,7 +57,7 @@ def requires_submit(func: Callable) -> Callable:
         """
         if job_set._submit_collector is None:
             raise IBMQJobManagerInvalidStateError("Jobs need to be submitted first!")
-        job_set._submit_collector.result()
+        job_set._submit_collector.join()
         return func(job_set, *args, **kwargs)
 
     return _wrapper
