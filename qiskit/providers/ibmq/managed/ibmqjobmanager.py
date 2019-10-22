@@ -68,11 +68,12 @@ class IBMQJobManager:
                 backend, the default is used.
             run_config: Configuration of the runtime environment. Some
                 examples of these configuration parameters include:
-                ``shots``, ``memory``, ``seed_simulator``, ``qubit_lo_freq``,
-                ``meas_lo_freq``, ``qubit_lo_range``, ``meas_lo_range``,
-                ``schedule_los``, ``meas_level``, ``meas_return``,
-                ``meas_map``, ``memory_slot_size``, ``rep_time``, and
-                ``parameter_binds``.
+                ``qobj_id``, ``qobj_header``, ``shots``, ``memory``,
+                ``seed_simulator``, ``qubit_lo_freq``, ``meas_lo_freq``,
+                ``qubit_lo_range``, ``meas_lo_range``, ``schedule_los``,
+                ``meas_level``, ``meas_return``, ``meas_map``,
+                ``memory_slot_size``, ``rep_time``, and ``parameter_binds``.
+
                 Refer to the documentation on ``qiskit.compiler.assemble()``
                 for details on these arguments.
 
