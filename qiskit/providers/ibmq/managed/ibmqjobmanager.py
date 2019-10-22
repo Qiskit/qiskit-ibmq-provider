@@ -43,7 +43,7 @@ class IBMQJobManager:
             backend: IBMQBackend,
             name: Optional[str] = None,
             max_experiments_per_job: Optional[int] = None,
-            **assemble_config: Any
+            **run_config: Any
     ) -> ManagedJobSet:
         """Execute a set of circuits or pulse schedules on a backend.
 
@@ -66,8 +66,14 @@ class IBMQJobManager:
                 the backend.
                 If the specified value is greater the maximum allowed by the
                 backend, the default is used.
-            assemble_config: Additional arguments used to configure the Qobj
-                assembly. Refer to the ``qiskit.compiler.assemble`` documentation
+            run_config: Configuration of the runtime environment. Some
+                examples of these configuration parameters include:
+                ``shots``, ``memory``, ``seed_simulator``, ``qubit_lo_freq``,
+                ``meas_lo_freq``, ``qubit_lo_range``, ``meas_lo_range``,
+                ``schedule_los``, ``meas_level``, ``meas_return``,
+                ``meas_map``, ``memory_slot_size``, ``rep_time``, and
+                ``parameter_binds``.
+                Refer to the documentation on ``qiskit.compiler.assemble()``
                 for details on these arguments.
 
         Returns:
@@ -85,7 +91,7 @@ class IBMQJobManager:
             experiments, backend=backend, max_experiments_per_job=max_experiments_per_job)
 
         job_set = ManagedJobSet(name=name)
-        job_set.run(experiment_list, backend=backend, executor=self._executor, **assemble_config)
+        job_set.run(experiment_list, backend=backend, executor=self._executor, **run_config)
         self._job_sets.append(job_set)
 
         return job_set
