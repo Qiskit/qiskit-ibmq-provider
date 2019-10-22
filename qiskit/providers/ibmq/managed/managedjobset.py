@@ -17,7 +17,6 @@
 from datetime import datetime
 from typing import List, Optional, Union, Any
 from concurrent.futures import ThreadPoolExecutor
-import warnings
 import time
 import logging
 
@@ -27,7 +26,7 @@ from qiskit.compiler import assemble
 from qiskit.qobj import Qobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.exceptions import JobError
+from qiskit.providers.exceptions import JobError, JobTimeoutError
 
 from .managedjob import ManagedJob
 from .utils import requires_submit, format_status_counts, format_job_details
@@ -49,6 +48,7 @@ class ManagedJobSet:
         # Used for caching
         self._results = []  # type: Optional[List[Union[Result, None]]]
         self._error_msg = None  # type: Optional[str]
+        self._submit_collected = False
 
     def run(
             self,
@@ -110,14 +110,11 @@ class ManagedJobSet:
         if not self._managed_jobs:
             raise IBMQJobManagerInvalidStateError("Jobs need to be submitted first!")
 
-        if all(mjob.future is None for mjob in self._managed_jobs):
-            # Submit results already collected
-            return
+        if not self._submit_collected:
+            for mjob in self._managed_jobs:
+                mjob.submit_result()
+            self._submit_collected = True
 
-        for managed in self._managed_jobs:
-            managed.submit_result()
-
-    @requires_submit
     def statuses(self) -> List[Union[JobStatus, None]]:
         """Return the status of each job.
 
@@ -125,22 +122,8 @@ class ManagedJobSet:
             A list of job statuses. The entry is ``None`` if the job status
                 cannot be retrieved due to server error.
         """
-        statuses = []
-        for i, mjob in enumerate(self._managed_jobs):
-            if mjob.job is not None:
-                try:
-                    statuses.append(mjob.job.status())
-                    continue
-                except JobError as err:
-                    warnings.warn(
-                        "Unable to retrieve status for job {}, job ID={}, "
-                        "for experiments {}-{}: {}".format(
-                            i, mjob.job.job_id(), mjob.start_index, mjob.end_index, err))
-            statuses.append(None)
+        return [mjob.status() for mjob in self._managed_jobs]
 
-        return statuses
-
-    @requires_submit
     def report(self, detailed: bool = True) -> str:
         """Return a report on current job statuses.
 
@@ -183,24 +166,19 @@ class ManagedJobSet:
         if self._results:
             return self._results
 
-        results = []
+        self._results = []
         start_time = time.time()
         original_timeout = timeout
 
         # TODO We can potentially make this multithreaded
-        for i, mjob in enumerate(self._managed_jobs):
-            result = None
-            if mjob.job is not None:
-                try:
-                    # TODO Revise this when partial result is supported
-                    result = mjob.job.result(timeout=timeout)
-                except JobError as err:
-                    warnings.warn(
-                        "Unable to retrieve results for job {}, job ID={}, "
-                        "for experiments {}-{}: {}".format(
-                            i, mjob.job.job_id(), mjob.start_index, mjob.end_index, err))
+        for mjob in self._managed_jobs:
+            try:
+                self._results.append(mjob.result(timeout=timeout))
+            except JobTimeoutError:
+                raise IBMQJobManagerTimeoutError(
+                    "Timeout waiting for results for experiments {}-{}.".format(
+                        mjob.start_index, self._managed_jobs[-1].end_index))
 
-            results.append(result)
             if timeout:
                 timeout = original_timeout - (time.time() - start_time)
                 if timeout <= 0:
@@ -208,7 +186,6 @@ class ManagedJobSet:
                         "Timeout waiting for results for experiments {}-{}.".format(
                             mjob.start_index, self._managed_jobs[-1].end_index))
 
-        self._results = results
         return self._results
 
     @requires_submit
@@ -221,7 +198,7 @@ class ManagedJobSet:
         if self._error_msg:
             return self._error_msg
 
-        report = []
+        report = []  # type: List[str]
         for i, mjob in enumerate(self._managed_jobs):
             if mjob.job is None:
                 continue

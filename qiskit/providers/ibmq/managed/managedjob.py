@@ -20,6 +20,9 @@ from concurrent.futures import Future
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
+from qiskit.result import Result
+from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers.exceptions import JobError, JobTimeoutError
 
 from ..job.ibmqjob import IBMQJob
 
@@ -30,9 +33,8 @@ class ManagedJob:
     def __init__(
             self,
             experiments: Union[List[QuantumCircuit], List[Schedule]],
-            start_index: Optional[int] = None,
-            future: Optional[Future] = None,
-            job: Optional[IBMQJob] = None
+            start_index: int,
+            future: Future
     ):
         """Creates a new ManagedJob instance.
 
@@ -40,13 +42,12 @@ class ManagedJob:
             experiments: Experiments for the job.
             start_index: Starting index of the experiment set.
             future: Job submit future.
-            job: Job being managed.
         """
         self.experiments = experiments
-        self.start_index = start_index if start_index is not None else 'N/A'
-        self.end_index = start_index + len(experiments) - 1 if start_index is not None else 'N/A'
+        self.start_index = start_index
+        self.end_index = start_index + len(experiments) - 1
         self.future = future
-        self.job = job
+        self.job = None  # type: Optional[IBMQJob]
         self.submit_error = None  # type: Optional[Exception]
 
     def submit_result(self) -> None:
@@ -58,4 +59,48 @@ class ManagedJob:
                 self.start_index, self.end_index, err))
             self.submit_error = err
 
-        self.future = None
+    def status(self) -> Optional[JobStatus]:
+        """Query the API for job status.
+
+        Returns:
+            Current job status, or ``None`` if an error occurred.
+        """
+        if not self.future.done():
+            # Job not yet submitted
+            return JobStatus.INITIALIZING
+        if self.job is not None:
+            try:
+                return self.job.status()
+            except JobError as err:
+                warnings.warn(
+                    "Unable to retrieve job status for experiments {}-{}, job ID={}: {} ".format(
+                        self.start_index, self.end_index, self.job.job_id(), err))
+
+        return None
+
+    def result(self, timeout: Optional[float] = None) -> Result:
+        """Return the result of the job.
+
+        Args:
+           timeout: number of seconds to wait for job
+
+        Returns:
+            Result object
+
+        Raises:
+            JobTimeoutError: if the job does not return results before a
+                specified timeout.
+        """
+        result = None
+        if self.job is not None:
+            try:
+                # TODO Revise this when partial result is supported
+                result = self.job.result(timeout=timeout)
+            except JobTimeoutError:
+                raise
+            except JobError as err:
+                warnings.warn(
+                    "Unable to retrieve job result for experiments {}-{}, job ID={}: {} ".format(
+                        self.start_index, self.end_index, self.job.job_id(), err))
+
+        return result
