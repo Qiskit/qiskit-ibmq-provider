@@ -484,6 +484,7 @@ class IBMQJob(BaseModel, BaseJob):
         Raises:
             IBMQJobApiError: if there was some unexpected failure in the server.
         """
+        # pylint: disable=attribute-defined-outside-init
         if not self._result_response:
             with api_to_job_error():
                 self._result_response = self._api.job_result(self.job_id(),
