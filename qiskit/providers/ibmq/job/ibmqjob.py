@@ -203,18 +203,22 @@ class IBMQJob(BaseModel, BaseJob):
             results again in another instance or session might fail due to the
             job having been consumed.
 
-            In the case a job fails, but partial results exist, the result
-            method may return a `Result` object. If this is the case, precaution
-            should be taken when accessing individual experiments, as doing so
-            would cause an exception.
+
+            When `partials=True`, the result method may return a `Result` object
+            containing partial results. If partial results are returned, precaution
+            should be taken when accessing individual experiments, as doing so would
+            cause an exception. Verifying whether some experiments of a job failed can
+            be done by checking the boolean attribute `Result.success`.
 
             For example:
                 If there is a job with two experiments (where one fails), getting
                 the counts of the unsuccessful experiment would raise an exception
-                since there are no counts to return for it,
+                since there are no counts to return for it:
                 i.e.
-                    > result = job.result()
-                    > counts = result.get_counts(failed_experiment) # Fails
+                    try:
+                        counts = result.get_counts("failed_experiment")
+                    except QiskitError:
+                        print("Experiment failed!")
 
         Args:
            timeout: number of seconds to wait for job
@@ -238,13 +242,11 @@ class IBMQJob(BaseModel, BaseJob):
             if self._status is JobStatus.CANCELLED:
                 raise IBMQJobInvalidStateError('Unable to retrieve job result. Job was cancelled.')
 
-            if self._status is JobStatus.ERROR and partial:
-                self._result = self._retrieve_partial_result()
-                return self._result
+            if self._status is JobStatus.ERROR and not partial:
+                raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
+                                          'Use job.error_message() to get more details.')
 
-            # Handle the rest of the exceptions as unexpected.
-            raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
-                                      'Use job.error_message() to get more details.')
+            return self._retrieve_result()
 
         if not self._result:  # type: ignore[has-type]
             with api_to_job_error():
@@ -335,16 +337,13 @@ class IBMQJob(BaseModel, BaseJob):
             self._job_error_msg = self._error.message
 
         if not self._job_error_msg:
-            # Attempt to retrieve partial results.
-            self._result = self._retrieve_partial_result()
+            self._retrieve_result()
 
-            # Since an error occurred, _result must be `None`. Check the response for errors.
-            result_response = self._result_response
-            if result_response and result_response['results']:
+            if self._result_response and self._result_response['results']:
                 # If individual errors given
-                self._job_error_msg = build_error_report(result_response['results'])
-            elif 'error' in result_response:
-                self._job_error_msg = result_response['error']['message']
+                self._job_error_msg = build_error_report(self._result_response['results'])
+            elif 'error' in self._result_response:
+                self._job_error_msg = self._result_response['error']['message']
             else:
                 # No error message given
                 self._job_error_msg = "Unknown error."
@@ -483,26 +482,22 @@ class IBMQJob(BaseModel, BaseJob):
 
         return self._status in required_status
 
-    def _retrieve_partial_result(self) -> Optional[Result]:
-        """Attempt to retrieve partial results for a job.
+    def _retrieve_result(self) -> Optional[Result]:
+        """Retrieve the job result response.
 
         Returns:
-            The partial results for a job, or ``None`` if schema validation fails.
+            The job result, or ``None`` if schema validation fails.
 
         Raises:
             IBMQJobApiError: if there was some unexpected failure in the server.
         """
-        if not self._result and not self._result_response:  # type: ignore[misc]
-            # No results, nor partial results, have been attained for this job yet.
+        if not self._result_response:
             with api_to_job_error():
-                # Set partial results, in case validation fails they are cached.
                 self._result_response = self._api.job_result(self.job_id(),
                                                              self._use_object_storage)
-
             try:
                 return Result.from_dict(self._result_response)
             except ModelValidationError:
                 pass
 
-        # Returned cached result.
         return self._result
