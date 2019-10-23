@@ -202,8 +202,7 @@ class IBMQJob(BaseModel, BaseJob):
             results again in another instance or session might fail due to the
             job having been consumed.
 
-
-            When `partials=True`, the result method may return a `Result` object
+            When `partial=True`, the result method returns a `Result` object
             containing partial results. If partial results are returned, precaution
             should be taken when accessing individual experiments, as doing so might
             cause an exception. Verifying whether some experiments of a job failed can
@@ -225,8 +224,7 @@ class IBMQJob(BaseModel, BaseJob):
            partial: if true attempts to return partial results for the job.
 
         Returns:
-            Result object if there are valid results to return (including partial
-            results), else `None`.
+            Result object.
 
         Raises:
             IBMQJobInvalidStateError: if the job was cancelled.
@@ -329,7 +327,10 @@ class IBMQJob(BaseModel, BaseJob):
             self._job_error_msg = self._error.message
 
         if not self._job_error_msg:
-            self._retrieve_result()
+            try:
+                self._retrieve_result()
+            except IBMQJobFailureError:
+                pass
 
         return self._job_error_msg
 
