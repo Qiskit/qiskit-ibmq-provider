@@ -15,10 +15,13 @@
 """IBMQJob Test."""
 
 import time
+from unittest import mock
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
+from qiskit.providers import JobStatus
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
+from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
@@ -163,6 +166,37 @@ class TestIBMQJobAttributes(JobTestCase):
 
         rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
         self.assertTrue(rjob.time_per_step())
+
+    @requires_provider
+    def test_new_job_attributes(self, provider):
+        """Test job with new attributes."""
+        def _mocked__api_job_submit(*args, **kwargs):
+            submit_info = original_submit(*args, **kwargs)
+            submit_info.update({'batman': 'bruce'})
+            return submit_info
+
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        original_submit = backend._api.job_submit
+        with mock.patch.object(AccountClient, 'job_submit',
+                               side_effect=_mocked__api_job_submit):
+            job = backend.run(qobj)
+
+        self.assertEqual(job.batman, 'bruce')
+
+    @requires_provider
+    def test_queue_position(self, provider):
+        """Test retrieving queue position."""
+        # Find the most busy backend
+        backend = max([b for b in provider.backends() if b.status().operational],
+                      key=lambda b: b.status().pending_jobs)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+        status = job.status()
+        if status is JobStatus.QUEUED:
+            self.assertIsNotNone(job.queue_position())
+        else:
+            self.assertIsNone(job.queue_position())
 
 
 def _bell_circuit():
