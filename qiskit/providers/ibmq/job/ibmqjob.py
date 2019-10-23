@@ -140,7 +140,6 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Properties used for caching.
         self._cancelled = False
-        self._result_response = None  # type: Dict[str, Any]
         self._job_error_msg = self._error.message if self._error else None
 
     def qobj(self) -> Qobj:
@@ -332,15 +331,6 @@ class IBMQJob(BaseModel, BaseJob):
         if not self._job_error_msg:
             self._retrieve_result()
 
-            if self._result_response and self._result_response['results']:
-                # If individual errors given
-                self._job_error_msg = build_error_report(self._result_response['results'])
-            elif 'error' in self._result_response:
-                self._job_error_msg = self._result_response['error']['message']
-            else:
-                # No error message given
-                self._job_error_msg = "Unknown error."
-
         return self._job_error_msg
 
     def queue_position(self, refresh: bool = False) -> Optional[int]:
@@ -479,19 +469,36 @@ class IBMQJob(BaseModel, BaseJob):
         """Retrieve the job result response.
 
         Returns:
-            The job result, or ``None`` if schema validation fails.
+            The job result.
 
         Raises:
             IBMQJobApiError: if there was some unexpected failure in the server.
+            IBMQJobFailureError: If the job failed.
         """
-        # pylint: disable=attribute-defined-outside-init
-        if not self._result_response:
+        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
+        if not self._result:  # type: ignore[has-type]
             with api_to_job_error():
-                self._result_response = self._api.job_result(self.job_id(),
-                                                             self._use_object_storage)
+                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
             try:
-                self._result = Result.from_dict(self._result_response)
+                self._result = Result.from_dict(result_response)
             except ModelValidationError:
-                pass
+                self._retrieve_error_message(result_response)
+                raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
+                                          'Use job.error_message() to get more details.')
 
         return self._result
+
+    def _retrieve_error_message(self, result_response: Dict[str, Any]) -> None:
+        """Retrieves the error message from the result response.
+
+        Args:
+            result_response: Dictionary of the result response.
+        """
+        if result_response and result_response['results']:
+            # If individual errors given
+            self._job_error_msg = build_error_report(result_response['results'])
+        elif 'error' in result_response:
+            self._job_error_msg = result_response['error']['message']
+        else:
+            # No error message given
+            self._job_error_msg = "Unknown error."

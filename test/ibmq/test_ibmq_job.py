@@ -17,6 +17,7 @@
 import time
 import warnings
 from concurrent import futures
+from unittest import skip
 
 import numpy
 from scipy.stats import chi2_contingency
@@ -31,6 +32,7 @@ from qiskit.providers.ibmq.job.exceptions import (IBMQJobFailureError,
                                                   IBMQJobInvalidStateError)
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
+from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_qe_access,
@@ -386,6 +388,7 @@ class TestIBMQJob(JobTestCase):
         new_job = provider.backends.retrieve_job(job.job_id())
         self.assertTrue(new_job.error_message())
 
+    @skip
     @requires_provider
     def test_retrieve_failed_job_simulator_partial(self, provider):
         """Test retrieving partial results from a simulator backend."""
@@ -398,10 +401,11 @@ class TestIBMQJob(JobTestCase):
         job = backend.run(qobj)
         result = job.result(partial=True)
 
-        circuit_results = result['results']
-        self.assertTrue(circuit_results[0]['success'])
-        self.assertFalse(circuit_results[1]['success'])
+        self.assertIsInstance(result, Result)
+        self.assertTrue(result.results[0].success)
+        self.assertFalse(result.results[1].success)
 
+    @skip
     @run_on_staging
     def test_retrieve_failed_job_device_partial(self, provider):
         """Test retrieving partial results from a staging backend."""
@@ -414,9 +418,9 @@ class TestIBMQJob(JobTestCase):
         job = backend.run(qobj)
         result = job.result(partial=True)
 
-        circuit_results = result['results']
-        # Todo: Update assertion when staging supports partial results.
-        self.assertEqual(len(circuit_results), 0)
+        self.assertIsInstance(result, Result)
+        self.assertTrue(result.results[0].success)
+        self.assertFalse(result.results[1].success)
 
     @slow_test
     @requires_qe_access
