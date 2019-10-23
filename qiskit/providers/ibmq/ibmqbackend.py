@@ -290,9 +290,18 @@ class IBMQBackend(BaseBackend):
         Raises:
             IBMQBackendError: if retrieval failed
         """
-        warnings.warn('backend.retrieve_job() is deprecated and will be removed'
-                      'after 0.5. Please use provider.backends.retrieve_job()'
-                      'instead.', DeprecationWarning, stacklevel=2)
+        job = self._provider.backends.retrieve_job(job_id)
+        job_backend = job.backend()
+
+        if self.name() != job_backend.name():
+            warnings.warn('Job "{}" belongs to another backend than the one queried. '
+                          'The query was made on backend "{}", '
+                          'but the job actually belongs to backend "{}".'
+                          .format(job_id, self.name(), job_backend.name()))
+            raise IBMQBackendError('Failed to get job "{}": '
+                                   'job does not belong to backend "{}".'
+                                   .format(job_id, self.name()))
+
         return self._provider.backends.retrieve_job(job_id)
 
     def __repr__(self) -> str:
