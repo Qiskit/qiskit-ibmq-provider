@@ -88,7 +88,7 @@ class ManagedJob:
            timeout: number of seconds to wait for job
 
         Returns:
-            Result object
+            Result object or ``None`` if result could not be retrieved.
 
         Raises:
             JobTimeoutError: if the job does not return results before a

@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2018, 2019.
+# (C) Copyright IBM 2019.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -19,7 +19,7 @@ import time
 
 from qiskit import QuantumCircuit
 from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
-from qiskit.providers.ibmq.managed.exceptions import (IBMQJobManagerInvalidStateError,
+from qiskit.providers.ibmq.managed.exceptions import (IBMQJobManagerJobNotFound,
                                                       IBMQManagedResultDataNotAvailable)
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq import least_busy
@@ -255,7 +255,7 @@ class TestResultManager(IBMQTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         job_set = self._jm.run([self._qc], backend=backend)
         result_manager = job_set.results()
-        with self.assertRaises(IBMQJobManagerInvalidStateError):
+        with self.assertRaises(IBMQJobManagerJobNotFound):
             result_manager.get_counts(1)
 
     @requires_provider
@@ -269,7 +269,7 @@ class TestResultManager(IBMQTestCase):
             circs.append(self._qc)
         job_set = self._jm.run(circs, backend=backend)
         jobs = job_set.jobs()
-        cjob = jobs[0]
+        cjob = jobs[1]
         cancelled = False
         for _ in range(2):
             # Try twice in case job is not in a cancellable state

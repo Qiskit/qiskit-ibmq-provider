@@ -15,7 +15,7 @@
 """A set of jobs being managed by the IBMQJobManager."""
 
 from datetime import datetime
-from typing import List, Optional, Union, Any
+from typing import List, Optional, Union, Any, Tuple
 from concurrent.futures import ThreadPoolExecutor
 import time
 import logging
@@ -25,13 +25,14 @@ from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 from qiskit.compiler import assemble
 from qiskit.qobj import Qobj
-from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobError, JobTimeoutError
 
 from .managedjob import ManagedJob
+from .managedresults import ManagedResults
 from .utils import requires_submit, format_status_counts, format_job_details
-from .exceptions import IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError
+from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
+                         IBMQJobManagerJobNotFound)
 from ..job import IBMQJob
 from ..ibmqbackend import IBMQBackend
 
@@ -46,9 +47,10 @@ class ManagedJobSet:
         self._managed_jobs = []  # type: List[ManagedJob]
         self._name = name or datetime.utcnow().isoformat()
         self._submit_collector = None  # type: Optional[Thread]
+        self._backend = None  # type: Optional[IBMQBackend]
 
         # Used for caching
-        self._results = []  # type: Optional[List[Union[Result, None]]]
+        self._managed_results = None  # type: Optional[ManagedResults]
         self._error_msg = None  # type: Optional[str]
 
     def run(
@@ -87,6 +89,7 @@ class ManagedJobSet:
         # Give the collector its own thread so it's not stuck behind the submits.
         self._submit_collector = Thread(target=self.submit_results, daemon=True)
         self._submit_collector.start()
+        self._backend = backend
 
     def _async_submit(
             self,
@@ -142,7 +145,7 @@ class ManagedJobSet:
         return '\n'.join(report)
 
     @requires_submit
-    def results(self, timeout: Optional[float] = None) -> List[Union[Result, None]]:
+    def results(self, timeout: Optional[float] = None) -> ManagedResults:
         """Return the results of the jobs.
 
         This call will block until all job results become available or
@@ -152,24 +155,26 @@ class ManagedJobSet:
            timeout: Number of seconds to wait for job results.
 
         Returns:
-            A list of job results. The entry is ``None`` if the job result
-                cannot be retrieved.
+            A ``ManagedResults`` instance that can be used to retrieve results
+                for individual experiments.
 
         Raises:
             IBMQJobManagerTimeoutError: if unable to retrieve all job results before the
                 specified timeout.
         """
-        if self._results:
-            return self._results
+        if self._managed_results is not None:
+            return self._managed_results
 
-        self._results = []
         start_time = time.time()
         original_timeout = timeout
+        success = True
 
         # TODO We can potentially make this multithreaded
         for mjob in self._managed_jobs:
             try:
-                self._results.append(mjob.result(timeout=timeout))
+                result = mjob.result(timeout=timeout)
+                if result is None or not result.success:
+                    success = False
             except JobTimeoutError:
                 raise IBMQJobManagerTimeoutError(
                     "Timeout waiting for results for experiments {}-{}.".format(
@@ -182,7 +187,9 @@ class ManagedJobSet:
                         "Timeout waiting for results for experiments {}-{}.".format(
                             mjob.start_index, self._managed_jobs[-1].end_index))
 
-        return self._results
+        self._managed_results = ManagedResults(self, self._backend.name(), success)
+
+        return self._managed_results
 
     @requires_submit
     def error_messages(self) -> Optional[str]:
@@ -233,6 +240,49 @@ class ManagedJobSet:
                 entry is ``None`` if the job submit failed.
         """
         return [mjob.job for mjob in self._managed_jobs]
+
+    @requires_submit
+    def job(
+            self,
+            experiment: Union[str, QuantumCircuit, Schedule, int]
+    ) -> Tuple[Optional[IBMQJob], int]:
+        """Returns the job used to submit the experiment and the experiment index.
+
+        For example, if ``IBMQJobManager`` is used to submit 1000 experiments,
+            and ``IBMQJobManager`` divides them into 2 jobs: job 1
+            has experiments 0-499, and job 2 has experiments 500-999. In this
+            case ``job_set.job(501)`` will return (job2, 1).
+
+        Args:
+            experiment: the index of the experiment. Several types are
+                accepted for convenience::
+                * str: the name of the experiment.
+                * QuantumCircuit: the name of the circuit instance will be used.
+                * Schedule: the name of the schedule instance will be used.
+                * int: the position of the experiment.
+
+        Returns:
+            A tuple of the job used to submit the experiment, or ``None`` if
+                the job submit failed, and the experiment index.
+
+        Raises:
+            IBMQJobManagerJobNotFound: If the job for the experiment could not
+                be found.
+        """
+        if isinstance(experiment, int):
+            for mjob in self._managed_jobs:
+                if mjob.end_index >= experiment >= mjob.start_index:
+                    return mjob.job, experiment - mjob.start_index
+        else:
+            if isinstance(experiment, (QuantumCircuit, Schedule)):
+                experiment = experiment.name
+            for mjob in self._managed_jobs:
+                for i, exp in enumerate(mjob.experiments):
+                    if exp.name == experiment:
+                        return mjob.job, i
+
+        raise IBMQJobManagerJobNotFound("Unable to find the job for experiment {}".format(
+            experiment))
 
     @requires_submit
     def qobjs(self) -> List[Qobj]:
