@@ -483,13 +483,15 @@ class IBMQJob(BaseModel, BaseJob):
             try:
                 self._result = Result.from_dict(result_response)
             except ModelValidationError:
-                self._retrieve_error_message(result_response)
                 raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
                                           'Use job.error_message() to get more details.')
+            finally:
+                # In case partial results are returned or job failure, an error message is cached.
+                self._check_for_error_message(result_response)
 
         return self._result
 
-    def _retrieve_error_message(self, result_response: Dict[str, Any]) -> None:
+    def _check_for_error_message(self, result_response: Dict[str, Any]) -> None:
         """Retrieves the error message from the result response.
 
         Args:
