@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2018, 2019.
+# (C) Copyright IBM 2019.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -28,6 +28,7 @@ from qiskit.compiler import transpile
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, run_on_staging
+from ..fake_account_client import BaseFakeAccountClient
 
 
 class TestIBMQJobManager(IBMQTestCase):
@@ -46,27 +47,11 @@ class TestIBMQJobManager(IBMQTestCase):
         """Test having circuits split into multiple jobs."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         max_circs = backend.configuration().max_experiments
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(max_circs+2):
             circs.append(self._qc)
-        job_set = self._jm.run(circs, backend=backend)
-        results = job_set.results()
-        statuses = job_set.statuses()
-
-        self.assertEqual(len(results), 2)
-        self.assertEqual(len(statuses), 2)
-        self.assertTrue(all(s is JobStatus.DONE for s in statuses))
-
-    @run_on_staging
-    def test_split_circuits_device(self, provider):
-        """Test having circuits split into multiple jobs for a device."""
-        backend = least_busy(provider.backends(simulator=False))
-        max_circs = backend.configuration().max_experiments
-
-        circs = []
-        for _ in range(max_circs+2):
-            circs.append(transpile(self._qc, backend=backend))
         job_set = self._jm.run(circs, backend=backend)
         results = job_set.results()
         statuses = job_set.statuses()
@@ -80,6 +65,7 @@ class TestIBMQJobManager(IBMQTestCase):
         """Test running all circuits in a single job."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         max_circs = backend.configuration().max_experiments
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(int(max_circs/2)):
@@ -95,6 +81,7 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_custom_split_circuits(self, provider):
         """Test having circuits split with custom slices."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(2):
@@ -110,6 +97,7 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_result(self, provider):
         """Test getting results for multiple jobs."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(2):
@@ -127,6 +115,7 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_job_report(self, provider):
         """Test job report."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(2):
@@ -218,6 +207,7 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_async_submit_exception(self, provider):
         """Test asynchronous job submit failed."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(2):
@@ -236,6 +226,7 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_multiple_job_sets(self, provider):
         """Test submitting multiple sets of jobs."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
 
         qc2 = QuantumCircuit(1, 1)
         qc2.h(0)
@@ -252,6 +243,7 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_retrieve_job_sets(self, provider):
         """Test retrieving a set of jobs."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
         name = str(time.time()).replace('.', '')
 
         self._jm.run([self._qc], backend=backend, max_experiments_per_job=1)
