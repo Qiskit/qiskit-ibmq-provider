@@ -81,7 +81,7 @@ class ManagedJob:
 
         return None
 
-    def result(self, timeout: Optional[float] = None) -> Result:
+    def result(self, timeout: Optional[float] = None) -> Optional[Result]:
         """Return the result of the job.
 
         Args:
