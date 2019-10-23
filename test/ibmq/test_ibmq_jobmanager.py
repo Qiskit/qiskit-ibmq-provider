@@ -49,8 +49,8 @@ class TestIBMQJobManager(IBMQTestCase):
         for _ in range(max_circs+2):
             circs.append(self._qc)
         job_set = self._jm.run(circs, backend=backend)
-        statuses = job_set.statuses()
         job_set.results()
+        statuses = job_set.statuses()
 
         self.assertEqual(len(statuses), 2)
         self.assertTrue(all(s is JobStatus.DONE for s in statuses))
@@ -66,8 +66,8 @@ class TestIBMQJobManager(IBMQTestCase):
         for _ in range(max_circs+2):
             circs.append(transpile(self._qc, backend=backend))
         job_set = self._jm.run(circs, backend=backend)
-        statuses = job_set.statuses()
         job_set.results()
+        statuses = job_set.statuses()
 
         self.assertEqual(len(statuses), 2)
         self.assertTrue(all(s is JobStatus.DONE for s in statuses))
