@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2018, 2019.
+# (C) Copyright IBM 2019.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -12,25 +12,27 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Tests for the JobManager."""
+"""Tests for the IBMQJobManager."""
 import copy
 from unittest import mock
+import time
 
 from qiskit import QuantumCircuit
-from qiskit.providers.ibmq.jobmanager import JobManager
+from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers import JobError
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
-from qiskit.providers.ibmq.exceptions import IBMQBackendError, IBMQJobManagerSubmitError
+from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.compiler import transpile
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, run_on_staging
+from ..fake_account_client import BaseFakeAccountClient
 
 
-class TestJobManager(IBMQTestCase):
-    """Tests for IBMQFactory `enable_account()`."""
+class TestIBMQJobManager(IBMQTestCase):
+    """Tests for IBMQJobManager."""
 
     def setUp(self):
         self._qc = QuantumCircuit(2, 2)
@@ -38,40 +40,22 @@ class TestJobManager(IBMQTestCase):
         self._qc.cx(0, 1)
         self._qc.measure([0, 1], [0, 1])
 
-        self._jm = JobManager()
+        self._jm = IBMQJobManager()
 
     @requires_provider
     def test_split_circuits(self, provider):
         """Test having circuits split into multiple jobs."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         max_circs = backend.configuration().max_experiments
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(max_circs+2):
             circs.append(self._qc)
-        job_count = self._jm.run(circs, backend=backend)
-        results = self._jm.result()
-        statuses = self._jm.status()
+        job_set = self._jm.run(circs, backend=backend)
+        results = job_set.results()
+        statuses = job_set.statuses()
 
-        self.assertEqual(job_count, 2)
-        self.assertEqual(len(results), 2)
-        self.assertEqual(len(statuses), 2)
-        self.assertTrue(all(s is JobStatus.DONE for s in statuses))
-
-    @run_on_staging
-    def test_split_circuits_device(self, provider):
-        """Test having circuits split into multiple jobs for a device."""
-        backend = least_busy(provider.backends(simulator=False))
-        max_circs = backend.configuration().max_experiments
-
-        circs = []
-        for _ in range(max_circs+2):
-            circs.append(self._qc)
-        job_count = self._jm.run(circs, backend=backend)
-        results = self._jm.result()
-        statuses = self._jm.status()
-
-        self.assertEqual(job_count, 2)
         self.assertEqual(len(results), 2)
         self.assertEqual(len(statuses), 2)
         self.assertTrue(all(s is JobStatus.DONE for s in statuses))
@@ -81,15 +65,15 @@ class TestJobManager(IBMQTestCase):
         """Test running all circuits in a single job."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         max_circs = backend.configuration().max_experiments
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(int(max_circs/2)):
             circs.append(self._qc)
-        job_count = self._jm.run(circs, backend=backend)
-        results = self._jm.result()
-        statuses = self._jm.status()
+        job_set = self._jm.run(circs, backend=backend)
+        results = job_set.results()
+        statuses = job_set.statuses()
 
-        self.assertEqual(job_count, 1)
         self.assertEqual(len(results), 1)
         self.assertEqual(len(statuses), 1)
 
@@ -97,15 +81,15 @@ class TestJobManager(IBMQTestCase):
     def test_custom_split_circuits(self, provider):
         """Test having circuits split with custom slices."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        job_count = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-        results = self._jm.result()
-        statuses = self._jm.status()
+        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        results = job_set.results()
+        statuses = job_set.statuses()
 
-        self.assertEqual(job_count, 2)
         self.assertEqual(len(results), 2)
         self.assertEqual(len(statuses), 2)
 
@@ -113,13 +97,14 @@ class TestJobManager(IBMQTestCase):
     def test_result(self, provider):
         """Test getting results for multiple jobs."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-        results = self._jm.result()
-        jobs = self._jm.jobs()
+        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        results = job_set.results()
+        jobs = job_set.jobs()
 
         self.assertEqual(len(results), 2)
         for i, result in enumerate(results):
@@ -130,12 +115,13 @@ class TestJobManager(IBMQTestCase):
     def test_job_report(self, provider):
         """Test job report."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-        jobs = self._jm.jobs()
+        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        jobs = job_set.jobs()
         report = self._jm.report()
         for job in jobs:
             self.assertIn(job.job_id(), report)
@@ -149,8 +135,8 @@ class TestJobManager(IBMQTestCase):
         circs = []
         for _ in range(max_circs+2):
             circs.append(self._qc)
-        self._jm.run(circs, backend=backend)
-        jobs = self._jm.jobs()
+        job_set = self._jm.run(circs, backend=backend)
+        jobs = job_set.jobs()
         cjob = jobs[0]
         cancelled = False
         for _ in range(2):
@@ -162,8 +148,8 @@ class TestJobManager(IBMQTestCase):
             except JobError:
                 pass
 
-        results = self._jm.result()
-        statuses = self._jm.status()
+        results = job_set.results()
+        statuses = job_set.statuses()
         if cancelled:
             self.assertTrue(statuses[0] is JobStatus.CANCELLED)
             self.assertIsNone(
@@ -179,10 +165,10 @@ class TestJobManager(IBMQTestCase):
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-        jobs = self._jm.jobs()
+        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        jobs = job_set.jobs()
         jobs[1]._job_id = 'BAD_ID'
-        statuses = self._jm.status()
+        statuses = job_set.statuses()
         self.assertIsNone(statuses[1])
 
     @requires_provider
@@ -193,10 +179,10 @@ class TestJobManager(IBMQTestCase):
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-        jobs = self._jm.jobs()
-        self._jm.result()
-        for i, qobj in enumerate(self._jm.qobj()):
+        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        jobs = job_set.jobs()
+        job_set.results()
+        for i, qobj in enumerate(job_set.qobjs()):
             rjob = provider.backends.retrieve_job(jobs[i].job_id())
             self.assertDictEqual(qobj.__dict__, rjob.qobj().__dict__)
 
@@ -207,13 +193,13 @@ class TestJobManager(IBMQTestCase):
 
         bad_qc = copy.deepcopy(self._qc)
         circs = [transpile(self._qc, backend=backend), bad_qc]
-        self._jm.run(circs, backend=backend, max_experiments_per_job=1, skip_transpile=True)
+        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
 
-        jobs = self._jm.jobs()
-        results = self._jm.result()
+        jobs = job_set.jobs()
+        results = job_set.results()
         self.assertIsNone(results[1])
 
-        error_report = self._jm.error_message()
+        error_report = job_set.error_messages()
         self.assertIsNotNone(error_report)
         self.assertIn(jobs[1].job_id(), error_report)
 
@@ -221,11 +207,47 @@ class TestJobManager(IBMQTestCase):
     def test_async_submit_exception(self, provider):
         """Test asynchronous job submit failed."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        with mock.patch.object(IBMQBackend, 'run', side_effect=IBMQBackendError("Kaboom!")):
-            self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-        with self.assertRaises((IBMQBackendError, IBMQJobManagerSubmitError)):
-            self._jm.result()
+        with mock.patch.object(IBMQBackend, 'run',
+                               side_effect=[IBMQBackendError("Kaboom!"), mock.DEFAULT]):
+            job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        self.assertIsNone(job_set.jobs()[0])
+        self.assertIsNotNone(job_set.jobs()[1])
+
+        # Make sure results() and statuses() don't fail
+        job_set.results()
+        job_set.statuses()
+
+    @requires_provider
+    def test_multiple_job_sets(self, provider):
+        """Test submitting multiple sets of jobs."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
+
+        qc2 = QuantumCircuit(1, 1)
+        qc2.h(0)
+        qc2.measure([0], [0])
+
+        job_set1 = self._jm.run([self._qc, self._qc], backend=backend, max_experiments_per_job=1)
+        job_set2 = self._jm.run([qc2], backend=backend, max_experiments_per_job=1)
+
+        id1 = {job.job_id() for job in job_set1.jobs()}
+        id2 = {job.job_id() for job in job_set2.jobs()}
+        self.assertTrue(id1.isdisjoint(id2))
+
+    @requires_provider
+    def test_retrieve_job_sets(self, provider):
+        """Test retrieving a set of jobs."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
+        name = str(time.time()).replace('.', '')
+
+        self._jm.run([self._qc], backend=backend, max_experiments_per_job=1)
+        job_set = self._jm.run([self._qc, self._qc], backend=backend,
+                               name=name, max_experiments_per_job=1)
+        rjob_set = self._jm.job_sets(name=name)[0]
+        self.assertEqual(job_set, rjob_set)
