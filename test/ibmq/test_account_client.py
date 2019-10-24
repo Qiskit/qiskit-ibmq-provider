@@ -14,6 +14,7 @@
 
 """Tests for the AccountClient for IBM Q Experience."""
 
+from unittest import mock
 import re
 
 from requests.exceptions import RequestException
@@ -126,6 +127,24 @@ class TestAccountClient(IBMQTestCase):
 
         self.assertEqual(qobj_downloaded, qobj.to_dict())
         self.assertEqual(result['status'], 'COMPLETED')
+
+    def test_job_submit_object_storage_fallback(self):
+        """Test job_submit fallback when object storage fails."""
+        # Create a Qobj.
+        backend_name = 'ibmq_qasm_simulator'
+        backend = self.provider.get_backend(backend_name)
+        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
+        qobj = assemble(circuit, backend, shots=1)
+
+        # Run via the AccountClient, making object storage fail.
+        api = backend._api
+        with mock.patch.object(api, '_job_submit_object_storage',
+                               side_effect=Exception()), \
+                mock.patch.object(api, '_job_submit_post') as mocked_post:
+            _ = api.job_submit(backend_name, qobj.to_dict(), use_object_storage=True)
+
+        # Assert the POST has been called.
+        self.assertEqual(mocked_post.called, True)
 
     def test_list_jobs_statuses(self):
         """Check get status jobs by user authenticated."""

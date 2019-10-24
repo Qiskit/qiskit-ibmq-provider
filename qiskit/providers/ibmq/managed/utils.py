@@ -17,11 +17,11 @@
 from typing import Callable, Any, List, Union
 from functools import wraps
 from collections import Counter
+from concurrent.futures import wait
 
 from qiskit.providers.jobstatus import JobStatus
 
 from .managedjob import ManagedJob
-from .exceptions import IBMQJobManagerInvalidStateError
 
 
 def requires_submit(func: Callable) -> Callable:
@@ -51,13 +51,9 @@ def requires_submit(func: Callable) -> Callable:
 
         Returns:
             return value of the decorated function.
-
-        Raises:
-            IBMQJobManagerInvalidStateError: If jobs have not been submitted.
         """
-        if job_set._submit_collector is None:
-            raise IBMQJobManagerInvalidStateError("Jobs need to be submitted first!")
-        job_set._submit_collector.join()
+        futures = [managed_job.future for managed_job in job_set._managed_jobs]
+        wait(futures)
         return func(job_set, *args, **kwargs)
 
     return _wrapper
