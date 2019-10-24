@@ -388,28 +388,11 @@ class TestIBMQJob(JobTestCase):
         new_job = provider.backends.retrieve_job(job.job_id())
         self.assertTrue(new_job.error_message())
 
-    @skip
+    @skip('Remove skip once simulator returns schema complaint partial results.')
     @requires_provider
     def test_retrieve_failed_job_simulator_partial(self, provider):
         """Test retrieving partial results from a simulator backend."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new, qc_new], backend=backend)
-        qobj.experiments[1].instructions[1].name = 'bad_instruction'
-
-        job = backend.run(qobj)
-        result = job.result(partial=True)
-
-        self.assertIsInstance(result, Result)
-        self.assertTrue(result.results[0].success)
-        self.assertFalse(result.results[1].success)
-
-    @skip
-    @run_on_staging
-    def test_retrieve_failed_job_device_partial(self, provider):
-        """Test retrieving partial results from a staging backend."""
-        backend = least_busy(provider.backends(simulator=False))
 
         qc_new = transpile(self._qc, backend)
         qobj = assemble([qc_new, qc_new], backend=backend)
