@@ -187,7 +187,7 @@ class IBMQJob(BaseModel, BaseJob):
             timeout: Optional[float] = None,
             wait: float = 5,
             partial: Optional[bool] = False
-    ) -> Optional[Result]:
+    ) -> Result:
         """Return the result of the job.
 
         Note:
@@ -466,7 +466,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         return self._status in required_status
 
-    def _retrieve_result(self) -> Optional[Result]:
+    def _retrieve_result(self) -> Result:
         """Retrieve the job result response.
 
         Returns:
