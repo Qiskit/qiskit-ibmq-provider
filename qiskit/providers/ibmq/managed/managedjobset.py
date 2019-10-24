@@ -117,14 +117,47 @@ class ManagedJobSet:
         return '\n'.join(report)
 
     @requires_submit
-    def results(self, timeout: Optional[float] = None) -> ManagedResults:
+    def results(
+            self,
+            timeout: Optional[float] = None,
+            partial: bool = False
+    ) -> ManagedResults:
         """Return the results of the jobs.
 
         This call will block until all job results become available or
             the timeout is reached.
 
+        Note:
+            Some IBMQ job results can be read only once. A second attempt to
+            query the API for the job will fail, as the job is "consumed".
+
+            The first call to this method in a ``ManagedJobSet`` instance will query
+            the API and consume any available job results. Subsequent calls to
+            that instance's method will also return the results, since they are
+            cached. However, attempting to retrieve the results again in
+            another instance or session might fail due to the job results
+            having been consumed.
+
+            When `partial=True`, this method will attempt to retrieve partial
+            results of failed jobs if possible. In this case, precaution should
+            be taken when accessing individual experiments, as doing so might
+            cause an exception. The ``success`` attribute of a
+            ``ManagedResults`` instance can be used to verify whether it contains
+            partial results.
+
+            For example:
+                If one of the experiments failed, trying to get the counts of
+                the unsuccessful experiment would raise an exception since
+                there are no counts to return for it:
+                i.e.
+                    try:
+                        counts = managed_results.get_counts("failed_experiment")
+                    except QiskitError:
+                        print("Experiment failed!")
+
         Args:
            timeout: Number of seconds to wait for job results.
+           partial: If true, attempt to retrieve partial job results.
 
         Returns:
             A ``ManagedResults`` instance that can be used to retrieve results
@@ -144,7 +177,7 @@ class ManagedJobSet:
         # TODO We can potentially make this multithreaded
         for mjob in self._managed_jobs:
             try:
-                result = mjob.result(timeout=timeout)
+                result = mjob.result(timeout=timeout, partial=partial)
                 if result is None or not result.success:
                     success = False
             except JobTimeoutError:

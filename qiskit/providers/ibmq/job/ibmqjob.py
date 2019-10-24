@@ -186,7 +186,7 @@ class IBMQJob(BaseModel, BaseJob):
             self,
             timeout: Optional[float] = None,
             wait: float = 5,
-            partial: Optional[bool] = False
+            partial: bool = False
     ) -> Result:
         """Return the result of the job.
 
