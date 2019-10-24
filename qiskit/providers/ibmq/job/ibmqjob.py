@@ -29,7 +29,7 @@ from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj
 from qiskit.result import Result
-from qiskit.validation import BaseModel, bind_schema
+from qiskit.validation import BaseModel, ModelValidationError, bind_schema
 
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
@@ -182,7 +182,12 @@ class IBMQJob(BaseModel, BaseJob):
 
         return BackendProperties.from_dict(properties)
 
-    def result(self, timeout: Optional[float] = None, wait: float = 5) -> Result:
+    def result(
+            self,
+            timeout: Optional[float] = None,
+            wait: float = 5,
+            partial: Optional[bool] = False
+    ) -> Result:
         """Return the result of the job.
 
         Note:
@@ -197,12 +202,29 @@ class IBMQJob(BaseModel, BaseJob):
             results again in another instance or session might fail due to the
             job having been consumed.
 
+            When `partial=True`, the result method returns a `Result` object
+            containing partial results. If partial results are returned, precaution
+            should be taken when accessing individual experiments, as doing so might
+            cause an exception. Verifying whether some experiments of a job failed can
+            be done by checking the boolean attribute `Result.success`.
+
+            For example:
+                If there is a job with two experiments (where one fails), getting
+                the counts of the unsuccessful experiment would raise an exception
+                since there are no counts to return for it:
+                i.e.
+                    try:
+                        counts = result.get_counts("failed_experiment")
+                    except QiskitError:
+                        print("Experiment failed!")
+
         Args:
            timeout: number of seconds to wait for job
            wait: time between queries to IBM Q server
+           partial: if true attempts to return partial results for the job.
 
         Returns:
-            Result object
+            Result object.
 
         Raises:
             IBMQJobInvalidStateError: if the job was cancelled.
@@ -216,15 +238,12 @@ class IBMQJob(BaseModel, BaseJob):
                                          required_status=(JobStatus.DONE,)):
             if self._status is JobStatus.CANCELLED:
                 raise IBMQJobInvalidStateError('Unable to retrieve job result. Job was cancelled.')
-            raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
-                                      'Use job.error_message() to get more details.')
 
-        if not self._result:  # type: ignore[has-type]
-            with api_to_job_error():
-                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
-                self._result = Result.from_dict(result_response)
+            if self._status is JobStatus.ERROR and not partial:
+                raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
+                                          'Use job.error_message() to get more details.')
 
-        return self._result
+        return self._retrieve_result()
 
     def cancel(self) -> bool:
         """Attempt to cancel a job.
@@ -300,6 +319,7 @@ class IBMQJob(BaseModel, BaseJob):
         Returns:
             An error report if the job failed or ``None`` otherwise.
         """
+        # pylint: disable=attribute-defined-outside-init
         if not self._wait_for_completion(required_status=(JobStatus.ERROR,)):
             return None
 
@@ -307,16 +327,10 @@ class IBMQJob(BaseModel, BaseJob):
             self._job_error_msg = self._error.message
 
         if not self._job_error_msg:
-            with api_to_job_error():
-                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
-            if result_response['results']:
-                # If individual errors given
-                self._job_error_msg = build_error_report(result_response['results'])
-            elif 'error' in result_response:
-                self._job_error_msg = result_response['error']['message']
-            else:
-                # No error message given
-                self._job_error_msg = "Unknown error."
+            try:
+                self._retrieve_result()
+            except IBMQJobFailureError:
+                pass
 
         return self._job_error_msg
 
@@ -451,3 +465,43 @@ class IBMQJob(BaseModel, BaseJob):
             self.refresh()
 
         return self._status in required_status
+
+    def _retrieve_result(self) -> Result:
+        """Retrieve the job result response.
+
+        Returns:
+            The job result.
+
+        Raises:
+            IBMQJobApiError: if there was some unexpected failure in the server.
+            IBMQJobFailureError: If the job failed.
+        """
+        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
+        if not self._result:  # type: ignore[has-type]
+            with api_to_job_error():
+                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
+            try:
+                self._result = Result.from_dict(result_response)
+            except ModelValidationError:
+                raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
+                                          'Use job.error_message() to get more details.')
+            finally:
+                # In case partial results are returned or job failure, an error message is cached.
+                self._check_for_error_message(result_response)
+
+        return self._result
+
+    def _check_for_error_message(self, result_response: Dict[str, Any]) -> None:
+        """Retrieves the error message from the result response.
+
+        Args:
+            result_response: Dictionary of the result response.
+        """
+        if result_response and result_response['results']:
+            # If individual errors given
+            self._job_error_msg = build_error_report(result_response['results'])
+        elif 'error' in result_response:
+            self._job_error_msg = result_response['error']['message']
+        else:
+            # No error message given
+            self._job_error_msg = "Unknown error."
