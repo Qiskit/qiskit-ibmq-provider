@@ -249,6 +249,7 @@ class TestIBMQJob(JobTestCase):
         self.log.info('time to get job statuses: %0.3f s',
                       time.time() - start_time)
 
+    @requires_provider
     def test_retrieve_job_backend(self, provider):
         """Test retrieving a single job from a backend."""
         backend = provider.get_backend('ibmq_qasm_simulator')
@@ -317,6 +318,7 @@ class TestIBMQJob(JobTestCase):
         """Test retrieving an invalid job from backend service."""
         self.assertRaises(IBMQBackendError, provider.backends.retrieve_job, 'BAD_JOB_ID')
 
+    @requires_provider
     def test_get_jobs_filter_job_status_backend(self, provider):
         """Test retrieving jobs from a backend filtered by status."""
         backends = provider.backends(simulator=False)
@@ -348,6 +350,7 @@ class TestIBMQJob(JobTestCase):
         for job in job_list:
             self.assertTrue(job.status() is JobStatus.DONE)
 
+    @requires_provider
     def test_get_jobs_filter_counts_backend(self, provider):
         """Test retrieving jobs from a backend filtered by counts."""
         # TODO: consider generalizing backend name
@@ -399,6 +402,7 @@ class TestIBMQJob(JobTestCase):
             self.assertTrue(any(cresult.data.counts.to_dict()['0x0'] < 500
                                 for cresult in result.results))
 
+    @requires_provider
     def test_get_jobs_filter_date_backend(self, provider):
         """Test retrieving jobs from a backend filtered by date."""
         backends = provider.backends(simulator=False)
