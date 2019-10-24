@@ -17,6 +17,7 @@
 import time
 import warnings
 from concurrent import futures
+from unittest import skip
 
 import numpy
 from scipy.stats import chi2_contingency
@@ -31,6 +32,7 @@ from qiskit.providers.ibmq.job.exceptions import (IBMQJobFailureError,
                                                   IBMQJobInvalidStateError)
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
+from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_qe_access,
@@ -385,6 +387,23 @@ class TestIBMQJob(JobTestCase):
 
         new_job = provider.backends.retrieve_job(job.job_id())
         self.assertTrue(new_job.error_message())
+
+    @skip('Remove skip once simulator returns schema complaint partial results.')
+    @requires_provider
+    def test_retrieve_failed_job_simulator_partial(self, provider):
+        """Test retrieving partial results from a simulator backend."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+
+        qc_new = transpile(self._qc, backend)
+        qobj = assemble([qc_new, qc_new], backend=backend)
+        qobj.experiments[1].instructions[1].name = 'bad_instruction'
+
+        job = backend.run(qobj)
+        result = job.result(partial=True)
+
+        self.assertIsInstance(result, Result)
+        self.assertTrue(result.results[0].success)
+        self.assertFalse(result.results[1].success)
 
     @slow_test
     @requires_qe_access
