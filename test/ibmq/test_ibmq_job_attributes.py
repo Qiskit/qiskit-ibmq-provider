@@ -143,6 +143,18 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertIn('Experiment 1: ERROR', message)
 
     @requires_provider
+    def test_error_message_validation(self, provider):
+        """Test retrieving job error message for a validation error."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend), shots=10000)
+        job = backend.run(qobj)
+        with self.assertRaises(IBMQJobFailureError):
+            job.result()
+
+        message = job.error_message()
+        print(message)
+
+    @requires_provider
     def test_refresh(self, provider):
         """Test refreshing job data."""
         backend = provider.get_backend('ibmq_qasm_simulator')
