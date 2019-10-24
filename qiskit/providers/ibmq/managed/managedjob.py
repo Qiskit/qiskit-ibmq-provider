@@ -16,7 +16,7 @@
 
 import warnings
 from typing import List, Optional, Union
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.providers.ibmq import IBMQBackend
@@ -68,7 +68,7 @@ class ManagedJob:
             qobj: Qobj,
             job_name: str,
             backend: IBMQBackend,
-    ) -> IBMQJob:
+    ) -> None:
         """Run a Qobj asynchronously and populate instance attributes.
 
         Args:

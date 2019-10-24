@@ -19,7 +19,6 @@ from typing import List, Optional, Union, Any
 from concurrent.futures import ThreadPoolExecutor
 import time
 import logging
-from threading import Thread
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule

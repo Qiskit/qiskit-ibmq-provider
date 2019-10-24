@@ -22,7 +22,6 @@ from concurrent.futures import wait
 from qiskit.providers.jobstatus import JobStatus
 
 from .managedjob import ManagedJob
-from .exceptions import IBMQJobManagerInvalidStateError
 
 
 def requires_submit(func: Callable) -> Callable:
