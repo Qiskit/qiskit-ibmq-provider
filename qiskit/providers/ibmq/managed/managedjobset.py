@@ -45,7 +45,6 @@ class ManagedJobSet:
         """Creates a new ManagedJobSet instance."""
         self._managed_jobs = []  # type: List[ManagedJob]
         self._name = name or datetime.utcnow().isoformat()
-        self._submit_collector = None  # type: Optional[Thread]
 
         # Used for caching
         self._results = []  # type: Optional[List[Union[Result, None]]]
@@ -75,41 +74,15 @@ class ManagedJobSet:
             raise IBMQJobManagerInvalidStateError("Jobs were already submitted.")
 
         exp_index = 0
-        for i, experiment in enumerate(experiment_list):
-            qobj = assemble(experiment, backend=backend, **assemble_config)
+        for i, experiments in enumerate(experiment_list):
+            qobj = assemble(experiments, backend=backend, **assemble_config)
             job_name = "{}_{}_".format(self._name, i)
-            future = executor.submit(
-                self._async_submit, qobj=qobj, job_name=job_name, backend=backend)
             self._managed_jobs.append(
-                ManagedJob(experiment, start_index=exp_index, future=future))
-            exp_index += len(experiment)
-
-        # Give the collector its own thread so it's not stuck behind the submits.
-        self._submit_collector = Thread(target=self.submit_results, daemon=True)
-        self._submit_collector.start()
-
-    def _async_submit(
-            self,
-            qobj: Qobj,
-            job_name: str,
-            backend: IBMQBackend,
-    ) -> IBMQJob:
-        """Run a Qobj asynchronously.
-
-        Args:
-            qobj: Qobj to run.
-            job_name: Name of the job.
-            backend: Backend to execute the experiments on.
-
-        Returns:
-            IBMQJob instance for the job.
-        """
-        return backend.run(qobj=qobj, job_name=job_name)
-
-    def submit_results(self) -> None:
-        """Collect job submit responses."""
-        for mjob in self._managed_jobs:
-            mjob.submit_result()
+                ManagedJob(experiments, start_index=exp_index,
+                           qobj=qobj, job_name=job_name, backend=backend,
+                           executor=executor)
+            )
+            exp_index += len(experiments)
 
     def statuses(self) -> List[Union[JobStatus, None]]:
         """Return the status of each job.
