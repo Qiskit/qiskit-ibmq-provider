@@ -69,6 +69,7 @@ setup(
               'qiskit.providers.ibmq.circuits',
               'qiskit.providers.ibmq.credentials',
               'qiskit.providers.ibmq.job',
+              'qiskit.providers.ibmq.managed',
               'qiskit.providers.ibmq.utils'],
     install_requires=requirements,
     include_package_data=True,
