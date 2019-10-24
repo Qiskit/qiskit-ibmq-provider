@@ -152,7 +152,7 @@ class TestIBMQJobAttributes(JobTestCase):
             job.result()
 
         message = job.error_message()
-        print(message)
+        self.assertNotIn("Unknown", message)
 
     @requires_provider
     def test_refresh(self, provider):
