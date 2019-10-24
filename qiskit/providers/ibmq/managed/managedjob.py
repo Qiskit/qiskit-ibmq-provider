@@ -16,10 +16,12 @@
 
 import warnings
 from typing import List, Optional, Union
-from concurrent.futures import Future
+from concurrent.futures import Future, ThreadPoolExecutor
 
 from qiskit.circuit import QuantumCircuit
+from qiskit.providers.ibmq import IBMQBackend
 from qiskit.pulse import Schedule
+from qiskit.qobj import Qobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobError, JobTimeoutError
@@ -34,26 +36,51 @@ class ManagedJob:
             self,
             experiments: Union[List[QuantumCircuit], List[Schedule]],
             start_index: int,
-            future: Future
+            qobj: Qobj,
+            job_name: str,
+            backend: IBMQBackend,
+            executor: ThreadPoolExecutor
     ):
         """Creates a new ManagedJob instance.
 
         Args:
             experiments: Experiments for the job.
             start_index: Starting index of the experiment set.
-            future: Job submit future.
+            qobj: Qobj to run.
+            job_name: Name of the job.
+            backend: Backend to execute the experiments on.
+            executor: The thread pool to use.
         """
         self.experiments = experiments
         self.start_index = start_index
         self.end_index = start_index + len(experiments) - 1
-        self.future = future
+
+        # Properties that are populated by the future.
         self.job = None  # type: Optional[IBMQJob]
         self.submit_error = None  # type: Optional[Exception]
 
-    def submit_result(self) -> None:
-        """Collect job submit result."""
+        # Submit the job in its own future.
+        self.future = executor.submit(
+            self._async_submit, qobj=qobj, job_name=job_name, backend=backend)
+
+    def _async_submit(
+            self,
+            qobj: Qobj,
+            job_name: str,
+            backend: IBMQBackend,
+    ) -> IBMQJob:
+        """Run a Qobj asynchronously and populate instance attributes.
+
+        Args:
+            qobj: Qobj to run.
+            job_name: Name of the job.
+            backend: Backend to execute the experiments on.
+
+        Returns:
+            IBMQJob instance for the job.
+        """
         try:
-            self.job = self.future.result()
+            self.job = backend.run(qobj=qobj, job_name=job_name)
         except Exception as err:  # pylint: disable=broad-except
             warnings.warn("Unable to submit job for experiments {}-{}: {}".format(
                 self.start_index, self.end_index, err))
