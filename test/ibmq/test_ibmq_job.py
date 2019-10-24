@@ -291,6 +291,7 @@ class TestIBMQJob(JobTestCase):
                               real_backend.retrieve_job, job_sim.job_id())
         self.assertIn('belongs to', str(context_manager.warning))
 
+    @requires_provider
     def test_retrieve_job_error_backend(self, provider):
         """Test retrieving an invalid job from a backend."""
         backends = provider.backends(simulator=False)
