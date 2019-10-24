@@ -221,33 +221,18 @@ class TestIBMQJob(JobTestCase):
         """Test retrieving jobs from a backend."""
         backend = least_busy(provider.backends())
 
-        start_time = time.time()
         job_list = backend.jobs(limit=5, skip=0)
-        self.log.info('found %s jobs on backend %s',
-                      len(job_list), backend.name())
-
         for job in job_list:
-            self.log.info('status: %s', job.status())
             self.assertTrue(isinstance(job.job_id(), str))
-        self.log.info('time to get job statuses: %0.3f s',
-                      time.time() - start_time)
 
     @requires_provider
     def test_get_jobs_from_backend_service(self, provider):
         """Test retrieving jobs from backend service."""
         backend = least_busy(provider.backends())
 
-        start_time = time.time()
-        job_list = provider.backends.jobs(backend_name=backend.name(),
-                                          limit=5, skip=0)
-        self.log.info('time to get jobs: %0.3f s', time.time() - start_time)
-        self.log.info('found %s jobs on backend %s',
-                      len(job_list), backend.name())
+        job_list = provider.backends.jobs(backend_name=backend.name(), limit=5, skip=0)
         for job in job_list:
-            self.log.info('status: %s', job.status())
             self.assertTrue(isinstance(job.job_id(), str))
-        self.log.info('time to get job statuses: %0.3f s',
-                      time.time() - start_time)
 
     @requires_provider
     def test_retrieve_job_backend(self, provider):
@@ -256,9 +241,9 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
 
-        rjob = backend.retrieve_job(job.job_id())
-        self.assertEqual(job.job_id(), rjob.job_id())
-        self.assertEqual(job.result().get_counts(), rjob.result().get_counts())
+        retrieved_job = backend.retrieve_job(job.job_id())
+        self.assertEqual(job.job_id(), retrieved_job.job_id())
+        self.assertEqual(job.result().get_counts(), retrieved_job.result().get_counts())
         self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
 
     @requires_provider
@@ -269,9 +254,9 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
 
-        rjob = provider.backends.retrieve_job(job.job_id())
-        self.assertEqual(job.job_id(), rjob.job_id())
-        self.assertEqual(job.result().get_counts(), rjob.result().get_counts())
+        retrieved_job = provider.backends.retrieve_job(job.job_id())
+        self.assertEqual(job.job_id(), retrieved_job.job_id())
+        self.assertEqual(job.result().get_counts(), retrieved_job.result().get_counts())
         self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
 
     @slow_test
@@ -323,13 +308,8 @@ class TestIBMQJob(JobTestCase):
         """Test retrieving jobs from a backend filtered by status."""
         backends = provider.backends(simulator=False)
         backend = least_busy(backends)
-        with warnings.catch_warnings():
-            # Disable warnings from pre-qobj jobs.
-            warnings.filterwarnings('ignore',
-                                    category=DeprecationWarning,
-                                    module='qiskit.providers.ibmq.ibmqbackend')
-            job_list = backend.jobs(limit=5, skip=0, status=JobStatus.DONE)
 
+        job_list = backend.jobs(limit=5, skip=0, status=JobStatus.DONE)
         for job in job_list:
             self.assertTrue(job.status() is JobStatus.DONE)
 
@@ -339,14 +319,8 @@ class TestIBMQJob(JobTestCase):
         backends = provider.backends(simulator=False)
         backend = least_busy(backends)
 
-        with warnings.catch_warnings():
-            # Disable warnings from pre-qobj jobs.
-            warnings.filterwarnings('ignore',
-                                    category=DeprecationWarning,
-                                    module='qiskit.providers.ibmq.ibmqbackend')
-            job_list = provider.backends.jobs(backend_name=backend.name(),
-                                              limit=5, skip=0, status=JobStatus.DONE)
-
+        job_list = provider.backends.jobs(backend_name=backend.name(),
+                                          limit=5, skip=0, status=JobStatus.DONE)
         for job in job_list:
             self.assertTrue(job.status() is JobStatus.DONE)
 
