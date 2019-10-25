@@ -73,6 +73,8 @@ class BaseFakeAccountClient:
     def job_submit(self, *_args, **_kwargs):
         """Submit a Qobj to a device."""
         new_job_id = str(time.time()).replace('.', '')
+        while new_job_id in self._jobs:
+            new_job_id += "_"
         response = copy.deepcopy(VALID_JOB_RESPONSE)
         response['id'] = new_job_id
         self._jobs[new_job_id] = response
@@ -85,7 +87,7 @@ class BaseFakeAccountClient:
     def job_result(self, job_id, *_args, **_kwargs):
         """Return a random job result."""
         if job_id in self._result_retrieved:
-            raise ValueError("Result already retrieved!")
+            raise ValueError("Result already retrieved for job {}!".format(job_id))
         self._result_retrieved.append(job_id)
         result = copy.deepcopy(VALID_RESULT_RESPONSE)
         result['results'][0]['data']['counts'] = {
