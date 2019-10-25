@@ -57,7 +57,6 @@ class ManagedJob:
         self.experiments = experiments
         self.start_index = start_index
         self.end_index = start_index + len(experiments) - 1
-        self._qobj = qobj
 
         # Properties that are populated by the future.
         self.job = None  # type: Optional[IBMQJob]
@@ -152,7 +151,7 @@ class ManagedJob:
         except JobError:
             return "Unknown error."
 
-    def cancel(self):
+    def cancel(self) -> None:
         """Attempt to cancel a job."""
         cancelled = False
         cancel_error = "Unknown error"
@@ -165,10 +164,19 @@ class ManagedJob:
             logger.warning("Unable to cancel job %s for experiments %d-%d: %s",
                            self.job.job_id(), self.start_index, self.end_index, cancel_error)
 
-    def qobj(self) -> Qobj:
+    def qobj(self) -> Optional[Qobj]:
         """Return the Qobj for this job.
 
         Returns:
-            The Qobj for this job.
+            The Qobj for this job or ``None`` if the Qobj could not be retrieved.
         """
-        return self._qobj
+        if self.job is None:
+            return None
+        try:
+            return self.job.qobj()
+        except JobError as err:
+            warnings.warn(
+                "Unable to retrieve qobj for experiments {}-{}, job ID={}: {} ".format(
+                    self.start_index, self.end_index, self.job.job_id(), err))
+
+        return None

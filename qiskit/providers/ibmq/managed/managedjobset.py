@@ -26,7 +26,7 @@ from qiskit.compiler import assemble
 from qiskit.qobj import Qobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.exceptions import JobError, JobTimeoutError
+from qiskit.providers.exceptions import JobTimeoutError
 
 from .managedjob import ManagedJob
 from .utils import requires_submit, format_status_counts, format_job_details
@@ -203,8 +203,8 @@ class ManagedJobSet:
         """Return the Qobj for the jobs.
 
         Returns:
-            A list of Qobj for the jobs. The entry is ``None`` if the job
-                submit failed.
+            A list of Qobj for the jobs. The entry is ``None`` if the Qobj
+                could not be retrieved.
         """
         return [mjob.qobj() for mjob in self._managed_jobs]
 
