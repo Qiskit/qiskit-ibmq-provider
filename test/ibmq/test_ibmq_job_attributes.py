@@ -20,7 +20,7 @@ from unittest import mock
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers import JobStatus
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
+from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.compiler import assemble, transpile
 
@@ -244,7 +244,7 @@ class TestIBMQJobAttributes(JobTestCase):
     @requires_provider
     def test_queue_position(self, provider):
         """Test retrieving queue position."""
-        # Find the most busy backend
+        # Find the most busy backend.
         backend = max([b for b in provider.backends() if b.status().operational],
                       key=lambda b: b.status().pending_jobs)
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -254,6 +254,12 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertIsNotNone(job.queue_position())
         else:
             self.assertIsNone(job.queue_position())
+
+        # Cancel job so it doesn't consume more resources.
+        try:
+            job.cancel()
+        except JobError:
+            pass
 
 
 def _bell_circuit():
