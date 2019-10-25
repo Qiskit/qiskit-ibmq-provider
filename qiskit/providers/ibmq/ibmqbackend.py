@@ -28,6 +28,7 @@ from qiskit.providers.models import (BackendStatus, BackendProperties,
 from qiskit.validation.exceptions import ModelValidationError
 from qiskit.tools.events.pubsub import Publisher
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
+from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
@@ -69,7 +70,12 @@ class IBMQBackend(BaseBackend):
         self._properties = None
         self._defaults = None
 
-    def run(self, qobj: Qobj, job_name: Optional[str] = None) -> IBMQJob:
+    def run(
+            self,
+            qobj: Qobj,
+            job_name: Optional[str] = None,
+            job_share_level: Optional[str] = None
+    ) -> IBMQJob:
         """Run a Qobj asynchronously.
 
         Args:
@@ -77,6 +83,16 @@ class IBMQBackend(BaseBackend):
             job_name: custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
+            job_share_level: allows sharing a job at the hub/group/project level.
+                The possible job share levels are: "global", "none", "hub", "group",
+                and "project".
+
+                # TODO: Add more info. Update the docstring as well.
+                For example:
+                    - possible exceptions.
+                    - what happens when a incorrect input is passed.
+                    - what happens when the hub does not allow sharing at a specific level.
+                    - what the levels mean.
 
         Returns:
             an instance derived from BaseJob
@@ -87,17 +103,33 @@ class IBMQBackend(BaseBackend):
                 the job.
         """
         # pylint: disable=arguments-differ
+        job_share_level_ = None
+        if job_share_level:
+            try:
+                job_share_level_ = ApiJobShareLevel(job_share_level)
+            except ValueError:
+                valid_job_share_levels = [level.value for level in ApiJobShareLevel]
+                raise IBMQBackendError("'{}' is not a valid job share level. "
+                                       "Valid job share levels are: {}"
+                                       .format(job_share_level, valid_job_share_levels))
 
         validate_qobj_against_schema(qobj)
-        return self._submit_job(qobj, job_name)
+        return self._submit_job(qobj, job_name, job_share_level_)
 
-    def _submit_job(self, qobj: Qobj, job_name: Optional[str] = None) -> IBMQJob:
+    def _submit_job(
+            self,
+            qobj: Qobj,
+            job_name: Optional[str] = None,
+            job_share_level: Optional[ApiJobShareLevel] = None
+    ) -> IBMQJob:
         """Submit qobj job to IBM-Q.
         Args:
             qobj: description of job.
             job_name: custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
+            job_share_level: allows sharing a job at the hub/group/project level.
+            # TODO: Update the docstring.
 
         Returns:
             an instance derived from BaseJob
@@ -115,7 +147,8 @@ class IBMQBackend(BaseBackend):
                 backend_name=self.name(),
                 qobj_dict=qobj_dict,
                 use_object_storage=getattr(self.configuration(), 'allow_object_storage', False),
-                job_name=job_name)
+                job_name=job_name,
+                job_share_level=job_share_level)
         except ApiError as ex:
             raise IBMQBackendError('Error submitting job: {}'.format(str(ex)))
 
@@ -323,6 +356,7 @@ class IBMQSimulator(IBMQBackend):
             self,
             qobj: Qobj,
             job_name: Optional[str] = None,
+            job_share_level: Optional[str] = None,
             backend_options: Optional[Dict] = None,
             noise_model: Any = None,
     ) -> IBMQJob:
@@ -333,13 +367,14 @@ class IBMQSimulator(IBMQBackend):
             backend_options: backend options
             noise_model: noise model
             job_name: custom name to be assigned to the job
+            job_share_level: level the job should be shared at.
 
         Returns:
             an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
-        return super(IBMQSimulator, self).run(qobj, job_name)
+        return super(IBMQSimulator, self).run(qobj, job_name, job_share_level)
 
 
 class IBMQRetiredBackend(IBMQBackend):
@@ -384,7 +419,12 @@ class IBMQRetiredBackend(IBMQBackend):
         """Return the online backend status."""
         return self._status
 
-    def run(self, qobj: Qobj, job_name: Optional[str] = None) -> None:
+    def run(
+            self,
+            qobj: Qobj,
+            job_name: Optional[str] = None,
+            job_share_level: Optional[str] = None
+    ) -> None:
         """Run a Qobj."""
         raise IBMQBackendError('This backend is no longer available.')
 

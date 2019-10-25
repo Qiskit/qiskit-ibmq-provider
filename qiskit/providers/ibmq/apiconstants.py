@@ -54,3 +54,15 @@ class ApiJobKind(enum.Enum):
     QOBJECT = 'q-object'
     QOBJECT_STORAGE = 'q-object-external-storage'
     CIRCUIT = 'q-circuit'
+
+
+class ApiJobShareLevel(enum.Enum):
+    """Possible values used by the API for job share levels.
+
+    # TODO: Add a bit more detail?
+    """
+    GLOBAL = 'global'
+    NONE = 'none'
+    HUB = 'hub'
+    GROUP = 'group'
+    PROJECT = 'project'

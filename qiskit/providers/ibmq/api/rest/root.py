@@ -18,6 +18,8 @@ import json
 
 from typing import Dict, List, Optional, Any
 
+from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
+
 from .base import RestAdapterBase
 from .backend import Backend
 from .job import Job
@@ -107,7 +109,8 @@ class Api(RestAdapterBase):
             self,
             backend_name: str,
             qobj_dict: Dict[str, Any],
-            job_name: Optional[str] = None
+            job_name: Optional[str] = None,
+            job_share_level: Optional[ApiJobShareLevel] = None
     ) -> Dict[str, Any]:
         """Submit a job for executing.
 
@@ -115,6 +118,7 @@ class Api(RestAdapterBase):
             backend_name: the name of the backend.
             qobj_dict: the Qobj to be executed, as a dictionary.
             job_name: custom name to be assigned to the job.
+            job_share_level: level the job should be shared at.
 
         Returns:
             json response.
@@ -130,13 +134,17 @@ class Api(RestAdapterBase):
         if job_name:
             payload['name'] = job_name
 
+        if job_share_level:
+            payload['shareable'] = job_share_level.value
+
         return self.session.post(url, json=payload).json()
 
     def submit_job_object_storage(
             self,
             backend_name: str,
             shots: int = 1,
-            job_name: Optional[str] = None
+            job_name: Optional[str] = None,
+            job_share_level: Optional[ApiJobShareLevel] = None
     ) -> Dict[str, Any]:
         """Submit a job for executing, using object storage.
 
@@ -144,6 +152,7 @@ class Api(RestAdapterBase):
             backend_name: the name of the backend.
             shots: number of shots.
             job_name: custom name to be assigned to the job.
+            job_share_level: level the job should be shared at.
 
         Returns:
             json response.
@@ -159,6 +168,9 @@ class Api(RestAdapterBase):
 
         if job_name:
             payload['name'] = job_name
+
+        if job_share_level:
+            payload['shareable'] = job_share_level.value
 
         return self.session.post(url, json=payload).json()
 
