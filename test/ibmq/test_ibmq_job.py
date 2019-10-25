@@ -193,7 +193,7 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(num_jobs - num_error - num_done > 0)
 
         # Wait for all the results.
-        result_array = [job.result() for job in job_array]
+        result_array = [job.result(timeout=180) for job in job_array]
 
         # Ensure all jobs have finished.
         self.assertTrue(
@@ -383,7 +383,7 @@ class TestIBMQJob(JobTestCase):
 
         job = backend.run(qobj)
         with self.assertRaises(IBMQJobFailureError):
-            job.result()
+            job.result(timeout=180)
 
         new_job = provider.backends.retrieve_job(job.job_id())
         self.assertTrue(new_job.error_message())
