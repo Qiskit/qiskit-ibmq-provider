@@ -22,14 +22,13 @@ from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
 from qiskit.providers.ibmq.managed.exceptions import (IBMQJobManagerJobNotFound,
                                                       IBMQManagedResultDataNotAvailable)
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.ibmq import least_busy
 from qiskit.providers import JobError
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
-from qiskit.compiler import transpile
+from qiskit.compiler import transpile, assemble
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_provider, run_on_staging
+from ..decorators import requires_provider
 from ..fake_account_client import BaseFakeAccountClient
 
 
@@ -127,21 +126,27 @@ class TestIBMQJobManager(IBMQTestCase):
             rjob = provider.backends.retrieve_job(jobs[i].job_id())
             self.assertDictEqual(qobj.__dict__, rjob.qobj().__dict__)
 
-    @run_on_staging
+    @requires_provider
     def test_error_message(self, provider):
         """Test error message report."""
-        backend = least_busy(provider.backends(simulator=False))
+        backend = provider.get_backend('ibmq_qasm_simulator')
 
-        bad_qc = copy.deepcopy(self._qc)
-        circs = [transpile(self._qc, backend=backend), bad_qc]
-        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        # Create a bad job.
+        qc_new = transpile(self._qc, backend)
+        qobj = assemble([qc_new, qc_new], backend=backend)
+        qobj.experiments[1].instructions[1].name = 'bad_instruction'
+        job = backend.run(qobj)
 
-        jobs = job_set.jobs()
-        job_set.results(timeout=180)
+        circs = []
+        for _ in range(4):
+            circs.append(self._qc)
+        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=2)
+        job_set.results()
+        job_set.managed_jobs()[1].job = job
 
         error_report = job_set.error_messages()
         self.assertIsNotNone(error_report)
-        self.assertIn(jobs[1].job_id(), error_report)
+        self.assertIn(job.job_id(), error_report)
 
     @requires_provider
     def test_async_submit_exception(self, provider):

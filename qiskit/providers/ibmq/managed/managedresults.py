@@ -185,7 +185,6 @@ class ManagedResults:
                 "Job for experiment {} was not successfully submitted.".format(experiment))
 
         try:
-            # TODO Update when partial result is supported
             result = job.result()
             return result, exp_index
         except JobError as err:
