@@ -100,7 +100,7 @@ class IBMQBackend(BaseBackend):
         Raises:
             SchemaValidationError: If the job validation fails.
             IBMQBackendError: If an unexpected error occurred while submitting
-                the job.
+                the job or the job share level is not valid.
         """
         # pylint: disable=arguments-differ
         job_share_level_ = None
