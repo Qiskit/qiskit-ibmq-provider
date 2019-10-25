@@ -112,7 +112,7 @@ class IBMQJob(BaseModel, BaseJob):
                  _job_id: str,
                  _creation_date: str,
                  kind: ApiJobKind,
-                 _status: ApiJobStatus,
+                 _api_status: ApiJobStatus,
                  **kwargs: Any) -> None:
         """IBMQJob init function.
 
@@ -122,21 +122,21 @@ class IBMQJob(BaseModel, BaseJob):
             _job_id: job ID of this job.
             _creation_date: job creation date.
             kind: job kind.
-            _status: job status.
+            _api_status: API job status.
             kwargs: additional job attributes, that will be added as
                 instance members.
         """
         # pylint: disable=redefined-builtin
         BaseModel.__init__(self, _backend=_backend, _job_id=_job_id,
                            _creation_date=_creation_date, kind=kind,
-                           _status=_status, **kwargs)
+                           _api_status=_api_status, **kwargs)
         BaseJob.__init__(self, self.backend(), self.job_id())
 
         # Model attributes.
         self._api = api
         self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
         self._queue_position = None
-        self._update_status_position(_status, kwargs.pop('infoQueue', None))
+        self._update_status_position(_api_status, kwargs.pop('infoQueue', None))
 
         # Properties used for caching.
         self._cancelled = False
@@ -323,14 +323,24 @@ class IBMQJob(BaseModel, BaseJob):
         if not self._wait_for_completion(required_status=(JobStatus.ERROR,)):
             return None
 
-        if self._error:
-            self._job_error_msg = self._error.message
-
         if not self._job_error_msg:
+            # First try getting error messages from the result.
             try:
                 self._retrieve_result()
             except IBMQJobFailureError:
                 pass
+
+        if not self._job_error_msg:
+            # Then try refreshing the job
+            if not self._error:
+                self.refresh()
+            if self._error:
+                self._job_error_msg = self._error.message
+            elif self._api_status:
+                # TODO this can be removed once API provides detailed error
+                self._job_error_msg = self._api_status.value
+            else:
+                self._job_error_msg = "Unknown error."
 
         return self._job_error_msg
 
@@ -421,7 +431,7 @@ class IBMQJob(BaseModel, BaseJob):
 
             # Model attributes.
             self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
-            self._update_status_position(data.pop('_status'),
+            self._update_status_position(data.pop('_api_status'),
                                          data.pop('infoQueue', None))
         except ValidationError as ex:
             raise IBMQJobApiError("Unexpected return value received from the server.") from ex
@@ -473,21 +483,29 @@ class IBMQJob(BaseModel, BaseJob):
             The job result.
 
         Raises:
-            IBMQJobApiError: if there was some unexpected failure in the server.
-            IBMQJobFailureError: If the job failed.
+            IBMQJobApiError: If there was some unexpected failure in the server.
+            IBMQJobFailureError: If the job failed and partial result could not
+                be retrieved.
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
+        result_response = None
         if not self._result:  # type: ignore[has-type]
-            with api_to_job_error():
-                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
             try:
+                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
                 self._result = Result.from_dict(result_response)
-            except ModelValidationError:
-                raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
-                                          'Use job.error_message() to get more details.')
+            except (ModelValidationError, ApiError) as err:
+                if self._status is JobStatus.ERROR:
+                    raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
+                                              'Use job.error_message() to get more details.')
+                raise IBMQJobApiError(str(err))
             finally:
                 # In case partial results are returned or job failure, an error message is cached.
-                self._check_for_error_message(result_response)
+                if result_response:
+                    self._check_for_error_message(result_response)
+
+        if self._status is JobStatus.ERROR and not self._result.results:
+            raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
+                                      'Use job.error_message() to get more details.')
 
         return self._result
 
@@ -502,6 +520,3 @@ class IBMQJob(BaseModel, BaseJob):
             self._job_error_msg = build_error_report(result_response['results'])
         elif 'error' in result_response:
             self._job_error_msg = result_response['error']['message']
-        else:
-            # No error message given
-            self._job_error_msg = "Unknown error."

@@ -137,7 +137,7 @@ class TestIBMQJobManager(IBMQTestCase):
         job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
 
         jobs = job_set.jobs()
-        job_set.results()
+        job_set.results(timeout=180)
 
         error_report = job_set.error_messages()
         self.assertIsNotNone(error_report)
