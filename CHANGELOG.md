@@ -23,8 +23,8 @@ The format is based on [Keep a Changelog].
   names (\#303).
 - A new `IBMQJobManager` class that takes a list of circuits or pulse schedules as 
   input, splits them into one or more jobs, and submits the jobs (\#389).
-- The previous functionality of `Backend.jobs()` and `Backend.retrieve_job()`
-  has been reintroduced, rather than being deprecated (\#354, #408). 
+- Added `provider.backends().jobs()` and `provider.backends().retrieve_job()`
+  (\#354).
 
 ### Changed
 
