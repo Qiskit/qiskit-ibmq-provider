@@ -32,7 +32,7 @@ from ..utils.fields import Enum
 # clashes.
 FIELDS_MAP = {
     'id': '_job_id',
-    'status': '_status',
+    'status': '_api_status',
     'backend': '_backend_info',
     'creationDate': '_creation_date',
     'qObject': '_qobj',
@@ -85,7 +85,7 @@ class JobResponseSchema(BaseSchema):
     _creation_date = DateTime(required=True)
     kind = Enum(required=True, enum_cls=ApiJobKind)
     _job_id = String(required=True)
-    _status = Enum(required=True, enum_cls=ApiJobStatus)
+    _api_status = Enum(required=True, enum_cls=ApiJobStatus)
 
     # Optional properties with a default value.
     _name = String(missing=None)
