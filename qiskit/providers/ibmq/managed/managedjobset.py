@@ -26,7 +26,7 @@ from qiskit.compiler import assemble
 from qiskit.qobj import Qobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.exceptions import JobError, JobTimeoutError
+from qiskit.providers.exceptions import JobTimeoutError
 
 from .managedjob import ManagedJob
 from .utils import requires_submit, format_status_counts, format_job_details
@@ -160,6 +160,8 @@ class ManagedJobSet:
     def error_messages(self) -> Optional[str]:
         """Provide details about job failures.
 
+        This call will block until all job results become available.
+
         Returns:
             An error report if one or more jobs failed or ``None`` otherwise.
         """
@@ -168,18 +170,12 @@ class ManagedJobSet:
 
         report = []  # type: List[str]
         for i, mjob in enumerate(self._managed_jobs):
-            if mjob.job is None:
-                continue
-            if mjob.job.status() is not JobStatus.ERROR:
+            msg_list = mjob.error_message()
+            if not msg_list:
                 continue
             report.append("Experiments {}-{}, job index={}, job ID={}:".format(
                 mjob.start_index, mjob.end_index, i, mjob.job.job_id()))
-            try:
-                msg_list = mjob.job.error_message().split('\n')
-            except JobError:
-                msg_list = ["Unknown error."]
-
-            for msg in msg_list:
+            for msg in msg_list.split('\n'):
                 report.append(msg.rjust(len(msg)+2))
 
         if not report:
@@ -189,12 +185,8 @@ class ManagedJobSet:
     @requires_submit
     def cancel(self) -> None:
         """Cancel all managed jobs."""
-        for job in self.jobs():
-            if job is not None:
-                try:
-                    job.cancel()
-                except JobError as err:
-                    logger.warning("Unable to cancel job %s: %s", job.job_id(), str(err))
+        for mjob in self._managed_jobs:
+            mjob.cancel()
 
     @requires_submit
     def jobs(self) -> List[Union[IBMQJob, None]]:
@@ -211,9 +203,10 @@ class ManagedJobSet:
         """Return the Qobj for the jobs.
 
         Returns:
-            A list of Qobj for the jobs.
+            A list of Qobj for the jobs. The entry is ``None`` if the Qobj
+                could not be retrieved.
         """
-        return [mjob.job.qobj() for mjob in self._managed_jobs]
+        return [mjob.qobj() for mjob in self._managed_jobs]
 
     def name(self) -> str:
         """Return the name of this set of jobs.

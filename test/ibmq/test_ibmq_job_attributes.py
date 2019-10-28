@@ -168,7 +168,7 @@ class TestIBMQJobAttributes(JobTestCase):
 
         job = backend.run(qobj)
         with self.assertRaises(IBMQJobFailureError):
-            job.result(timeout=180, partial=True)
+            job.result(timeout=300, partial=True)
 
         message = job.error_message()
         self.assertTrue(message)
