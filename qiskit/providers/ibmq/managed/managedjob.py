@@ -15,6 +15,7 @@
 """Experiments managed by the job manager."""
 
 import warnings
+import logging
 from typing import List, Optional, Union
 from concurrent.futures import ThreadPoolExecutor
 
@@ -27,6 +28,8 @@ from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobError, JobTimeoutError
 
 from ..job.ibmqjob import IBMQJob
+
+logger = logging.getLogger(__name__)
 
 
 class ManagedJob:
@@ -134,3 +137,46 @@ class ManagedJob:
                         self.start_index, self.end_index, self.job.job_id(), err))
 
         return result
+
+    def error_message(self) -> Optional[str]:
+        """Provide details about the reason of failure.
+
+        Returns:
+            An error report if the job failed or ``None`` otherwise.
+        """
+        if self.job is None:
+            return None
+        try:
+            return self.job.error_message()
+        except JobError:
+            return "Unknown error."
+
+    def cancel(self) -> None:
+        """Attempt to cancel a job."""
+        cancelled = False
+        cancel_error = "Unknown error"
+        try:
+            cancelled = self.job.cancel()
+        except JobError as err:
+            cancel_error = str(err)
+
+        if not cancelled:
+            logger.warning("Unable to cancel job %s for experiments %d-%d: %s",
+                           self.job.job_id(), self.start_index, self.end_index, cancel_error)
+
+    def qobj(self) -> Optional[Qobj]:
+        """Return the Qobj for this job.
+
+        Returns:
+            The Qobj for this job or ``None`` if the Qobj could not be retrieved.
+        """
+        if self.job is None:
+            return None
+        try:
+            return self.job.qobj()
+        except JobError as err:
+            warnings.warn(
+                "Unable to retrieve qobj for experiments {}-{}, job ID={}: {} ".format(
+                    self.start_index, self.end_index, self.job.job_id(), err))
+
+        return None
