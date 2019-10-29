@@ -83,9 +83,10 @@ class TestIBMQJob(JobTestCase):
         self.assertGreater(contingency2[1], 0.01)
 
     @slow_test
-    @requires_device
-    def test_run_device(self, backend):
+    @requires_provider
+    def test_run_device(self, provider):
         """Test running in a real device."""
+        backend = least_busy(provider.backends(simulator=False))
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         shots = qobj.config.shots
         job = backend.run(qobj)
