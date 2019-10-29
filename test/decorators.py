@@ -19,6 +19,7 @@ from functools import wraps
 from unittest import SkipTest
 
 from qiskit.test.testing_options import get_test_options
+from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
@@ -87,14 +88,60 @@ def requires_provider(func):
     return _wrapper
 
 
+def requires_device(func):
+    """Decorator that retrieves the appropriate backend to use for testing.
+
+    This decorator delegates into the `requires_provider` decorator, but instead of the
+    provider it appends a `backend` argument to the decorated function.
+
+    It involves:
+        * If the `QE_STG_LOCAL` environment variable is set, the test is to be
+            run locally against staging, so a staging `backend` is appended.
+        * If the `QE_STG_LOCAL` environment variable is not set, the test is to
+            be run against production, so a production backend is appended.
+
+    Args:
+        func (callable): test function to be decorated.
+
+    Returns:
+        callable: the decorated function.
+    """
+    @wraps(func)
+    @requires_provider
+    def _wrapper(*args, **kwargs):
+        provider = kwargs.pop('provider')
+
+        _backend = None
+        if os.getenv('QE_STG_LOCAL'):
+            stg_token = os.getenv('QE_STG_TOKEN')
+            stg_url = os.getenv('QE_STG_URL')
+            stg_hub = os.getenv('QE_STG_HUB')
+            stg_device = os.getenv('QE_STG_DEVICE')
+
+            ibmq_factory = IBMQFactory()
+            ibmq_factory.enable_account(stg_token, stg_url)
+            staging_provider = ibmq_factory.get_provider(hub=stg_hub)
+            _backend = staging_provider.get_backend(stg_device)
+        else:
+            _backend = least_busy(provider.backends(simulator=False))
+
+        kwargs.update({'backend': _backend})
+
+        return func(*args, **kwargs)
+
+    return _wrapper
+
+
 def run_on_staging(func):
     """Decorator that signals that the test runs on the staging system.
 
     It involves:
-        * reads the `QE_STG_TOKEN`, `QE_STG_URL`, and `QE_STG_HUB` environment
-            variables.
-        * if all variables are set, then their values are used as the
-            credentials; otherwise the test is skipped.
+        * reads the `QE_STG_TOKEN`, `QE_STG_URL`, `QE_STG_HUB` and `QE_STG_LOCAL`
+            environment variables.
+        * if the first three variables are set, then their values are used as the
+            credentials, unless the `QE_STG_LOCAL` environment variable is set.
+            The `QE_STG_LOCAL` environment variable signals that tests are to
+            be run locally on staging, so tests with this decorator should be skipped.
         * if the test is not skipped, enables the staging account and
             appends it as the `provider` argument to the test function.
 
@@ -109,7 +156,9 @@ def run_on_staging(func):
         stg_token = os.getenv('QE_STG_TOKEN')
         stg_url = os.getenv('QE_STG_URL')
         stg_hub = os.getenv('QE_STG_HUB')
-        if not (stg_token and stg_url and stg_hub):
+        stg_is_local = os.getenv('QE_STG_LOCAL')
+
+        if not (stg_token and stg_url and stg_hub) or stg_is_local:
             raise SkipTest('Skipping staging tests')
 
         credentials = Credentials(stg_token, stg_url)
