@@ -140,8 +140,8 @@ def run_on_staging(func):
             environment variables.
         * if the first three variables are set, then their values are used as the
             credentials, unless the `QE_STG_LOCAL` environment variable is set.
-            The `QE_STG_LOCAL` environment variable signals that tests are to
-            be run locally on staging, so tests with this decorator should be skipped.
+            The `QE_STG_LOCAL` environment variable signals that the tests are to be
+            run locally on staging, so tests with this decorator should be skipped.
         * if the test is not skipped, enables the staging account and
             appends it as the `provider` argument to the test function.
 
