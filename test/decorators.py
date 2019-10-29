@@ -95,9 +95,9 @@ def requires_device(func):
     provider it appends a `backend` argument to the decorated function.
 
     It involves:
-        * If the `QE_STG_LOCAL` environment variable is set, the test is to be
-            run locally against staging, so a staging `backend` is appended.
-        * If the `QE_STG_LOCAL` environment variable is not set, the test is to
+        * If the `QE_STG_DEVICE` environment variable is set, the test is to be
+            run locally against staging with the backend specified by `QE_STG_DEVICE`.
+        * If the `QE_STG_DEVICE` environment variable is not set, the test is to
             be run against production, so a production backend is appended.
 
     Args:
@@ -112,7 +112,7 @@ def requires_device(func):
         provider = kwargs.pop('provider')
 
         _backend = None
-        if os.getenv('QE_STG_LOCAL'):
+        if os.getenv('QE_STG_DEVICE'):
             stg_token = os.getenv('QE_STG_TOKEN')
             stg_url = os.getenv('QE_STG_URL')
             stg_hub = os.getenv('QE_STG_HUB')
@@ -136,12 +136,13 @@ def run_on_staging(func):
     """Decorator that signals that the test runs on the staging system.
 
     It involves:
-        * reads the `QE_STG_TOKEN`, `QE_STG_URL`, `QE_STG_HUB` and `QE_STG_LOCAL`
+        * reads the `QE_STG_TOKEN`, `QE_STG_URL`, `QE_STG_HUB` and `QE_STG_DEVICE`
             environment variables.
         * if the first three variables are set, then their values are used as the
-            credentials, unless the `QE_STG_LOCAL` environment variable is set.
-            The `QE_STG_LOCAL` environment variable signals that the tests are to be
-            run locally on staging, so tests with this decorator should be skipped.
+            credentials, unless the `QE_STG_DEVICE` environment variable is set.
+            The `QE_STG_DEVICE` environment variable signals that the tests are to be
+            run locally on staging, on a specific device, so tests with this decorator
+            should be skipped.
         * if the test is not skipped, enables the staging account and
             appends it as the `provider` argument to the test function.
 
@@ -156,9 +157,9 @@ def run_on_staging(func):
         stg_token = os.getenv('QE_STG_TOKEN')
         stg_url = os.getenv('QE_STG_URL')
         stg_hub = os.getenv('QE_STG_HUB')
-        stg_is_local = os.getenv('QE_STG_LOCAL')
+        stg_device = os.getenv('QE_STG_DEVICE')
 
-        if not (stg_token and stg_url and stg_hub) or stg_is_local:
+        if not (stg_token and stg_url and stg_hub) or stg_device:
             raise SkipTest('Skipping staging tests')
 
         credentials = Credentials(stg_token, stg_url)
