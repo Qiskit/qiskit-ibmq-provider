@@ -36,7 +36,7 @@ from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_qe_access,
-                          run_on_staging)
+                          run_on_staging, requires_device)
 
 
 class TestIBMQJob(JobTestCase):
@@ -83,11 +83,9 @@ class TestIBMQJob(JobTestCase):
         self.assertGreater(contingency2[1], 0.01)
 
     @slow_test
-    @requires_provider
-    def test_run_device(self, provider):
+    @requires_device
+    def test_run_device(self, backend):
         """Test running in a real device."""
-        backend = least_busy(provider.backends(simulator=False))
-
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         shots = qobj.config.shots
         job = backend.run(qobj)
@@ -218,11 +216,9 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(can_cancel)
         self.assertTrue(job.status() is JobStatus.CANCELLED)
 
-    @requires_provider
-    def test_get_jobs_from_backend(self, provider):
+    @requires_device
+    def test_get_jobs_from_backend(self, backend):
         """Test retrieving jobs from a backend."""
-        backend = least_busy(provider.backends())
-
         job_list = backend.jobs(limit=5, skip=0)
         for job in job_list:
             self.assertTrue(isinstance(job.job_id(), str))
@@ -293,12 +289,9 @@ class TestIBMQJob(JobTestCase):
                               real_backend.retrieve_job, job_sim.job_id())
         self.assertIn('belongs to', str(context_manager.warning))
 
-    @requires_provider
-    def test_retrieve_job_error_backend(self, provider):
+    @requires_device
+    def test_retrieve_job_error_backend(self, backend):
         """Test retrieving an invalid job from a backend."""
-        backends = provider.backends(simulator=False)
-        backend = least_busy(backends)
-
         self.assertRaises(IBMQBackendError, backend.retrieve_job, 'BAD_JOB_ID')
 
     @requires_provider
@@ -306,12 +299,9 @@ class TestIBMQJob(JobTestCase):
         """Test retrieving an invalid job from backend service."""
         self.assertRaises(IBMQBackendError, provider.backends.retrieve_job, 'BAD_JOB_ID')
 
-    @requires_provider
-    def test_get_jobs_filter_job_status_backend(self, provider):
+    @requires_device
+    def test_get_jobs_filter_job_status_backend(self, backend):
         """Test retrieving jobs from a backend filtered by status."""
-        backends = provider.backends(simulator=False)
-        backend = least_busy(backends)
-
         job_list = backend.jobs(limit=5, skip=0, status=JobStatus.DONE)
         for job in job_list:
             self.assertTrue(job.status() is JobStatus.DONE)
@@ -379,12 +369,9 @@ class TestIBMQJob(JobTestCase):
             self.assertTrue(any(cresult.data.counts.to_dict()['0x0'] < 500
                                 for cresult in result.results))
 
-    @requires_provider
-    def test_get_jobs_filter_date_backend(self, provider):
+    @requires_device
+    def test_get_jobs_filter_date_backend(self, backend):
         """Test retrieving jobs from a backend filtered by date."""
-        backends = provider.backends(simulator=False)
-        backend = least_busy(backends)
-
         my_filter = {'creationDate': {'lt': '2017-01-01T00:00:00.00'}}
         job_list = backend.jobs(limit=5, db_filter=my_filter)
 
