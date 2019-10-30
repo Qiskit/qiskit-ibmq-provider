@@ -22,7 +22,7 @@ The format is based on [Keep a Changelog].
   `AccountProvider.backends.<tab>` to see a list of backend
   names (\#303).
 - A new `IBMQJobManager` class that takes a list of circuits or pulse schedules as 
-  input, splits them into one or more jobs, and submits the jobs (\#389).
+  input, splits them into one or more jobs, and submits the jobs (\#389, \#400, \#407).
 - Added `provider.backends().jobs()` and `provider.backends().retrieve_job()`
   (\#354).
 

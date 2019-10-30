@@ -30,3 +30,13 @@ class IBMQJobManagerInvalidStateError(IBMQJobManagerError):
 class IBMQJobManagerTimeoutError(IBMQJobManagerError):
     """Errors raised when a job manager operation times out."""
     pass
+
+
+class IBMQJobManagerJobNotFound(IBMQJobManagerError):
+    """Errors raised when a job cannot be found."""
+    pass
+
+
+class IBMQManagedResultDataNotAvailable(IBMQJobManagerError):
+    """Errors raised when result data is not available."""
+    pass

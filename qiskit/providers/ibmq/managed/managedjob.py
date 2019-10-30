@@ -111,14 +111,19 @@ class ManagedJob:
 
         return None
 
-    def result(self, timeout: Optional[float] = None) -> Result:
+    def result(
+            self,
+            timeout: Optional[float] = None,
+            partial: bool = False
+    ) -> Optional[Result]:
         """Return the result of the job.
 
         Args:
            timeout: number of seconds to wait for job
+           partial: If true, attempt to retrieve partial job results.
 
         Returns:
-            Result object
+            Result object or ``None`` if result could not be retrieved.
 
         Raises:
             JobTimeoutError: if the job does not return results before a
@@ -127,8 +132,7 @@ class ManagedJob:
         result = None
         if self.job is not None:
             try:
-                # TODO Revise this when partial result is supported
-                result = self.job.result(timeout=timeout)
+                result = self.job.result(timeout=timeout, partial=partial)
             except JobTimeoutError:
                 raise
             except JobError as err:
