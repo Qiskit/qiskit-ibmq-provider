@@ -83,10 +83,9 @@ class TestIBMQJob(JobTestCase):
         self.assertGreater(contingency2[1], 0.01)
 
     @slow_test
-    @requires_provider
-    def test_run_device(self, provider):
+    @requires_device
+    def test_run_device(self, backend):
         """Test running in a real device."""
-        backend = least_busy(provider.backends(simulator=False))
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         shots = qobj.config.shots
         job = backend.run(qobj)
@@ -224,11 +223,10 @@ class TestIBMQJob(JobTestCase):
         for job in job_list:
             self.assertTrue(isinstance(job.job_id(), str))
 
+    @requires_device
     @requires_provider
-    def test_get_jobs_from_backend_service(self, provider):
+    def test_get_jobs_from_backend_service(self, backend, provider):
         """Test retrieving jobs from backend service."""
-        backend = least_busy(provider.backends())
-
         job_list = provider.backends.jobs(backend_name=backend.name(), limit=5, skip=0)
         for job in job_list:
             self.assertTrue(isinstance(job.job_id(), str))
@@ -259,12 +257,12 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
 
     @slow_test
+    @requires_device
     @requires_provider
-    def test_retrieve_job_uses_appropriate_backend(self, provider):
+    def test_retrieve_job_uses_appropriate_backend(self, backend, provider):
         """Test that retrieved jobs come from their appropriate backend."""
         simulator_backend = provider.get_backend('ibmq_qasm_simulator')
-        backends = provider.backends(simulator=False)
-        real_backend = least_busy(backends)
+        real_backend = backend
 
         qobj_sim = assemble(
             transpile(self._qc, backend=simulator_backend), backend=simulator_backend)
@@ -307,12 +305,10 @@ class TestIBMQJob(JobTestCase):
         for job in job_list:
             self.assertTrue(job.status() is JobStatus.DONE)
 
+    @requires_device
     @requires_provider
-    def test_get_jobs_filter_job_status_backend_service(self, provider):
+    def test_get_jobs_filter_job_status_backend_service(self, backend, provider):
         """Test retrieving jobs from backend service filtered by status."""
-        backends = provider.backends(simulator=False)
-        backend = least_busy(backends)
-
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, skip=0, status=JobStatus.DONE)
         for job in job_list:
@@ -381,12 +377,10 @@ class TestIBMQJob(JobTestCase):
             self.log.info('match #%d: %s', i, job.creation_date)
             self.assertTrue(job.creation_date < '2017-01-01T00:00:00.00')
 
+    @requires_device
     @requires_provider
-    def test_get_jobs_filter_date_backend_service(self, provider):
+    def test_get_jobs_filter_date_backend_service(self, backend, provider):
         """Test retrieving jobs from backend service filtered by date."""
-        backends = provider.backends(simulator=False)
-        backend = least_busy(backends)
-
         my_filter = {'creationDate': {'lt': '2017-01-01T00:00:00.00'}}
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, db_filter=my_filter)
@@ -471,21 +465,22 @@ class TestIBMQJob(JobTestCase):
                 backend = least_busy(backends)
                 break
 
-        self.assertIsNotNone(backend)
-        config = backend.configuration()
-        defaults = backend.defaults()
-        cmd_def = defaults.build_cmd_def()
+        if backend:
+            self.assertIsNotNone(backend)
+            config = backend.configuration()
+            defaults = backend.defaults()
+            cmd_def = defaults.build_cmd_def()
 
-        # Run 2 experiments - 1 with x pulse and 1 without
-        x = cmd_def.get('x', 0)
-        measure = cmd_def.get('measure', range(config.n_qubits)) << x.duration
-        ground_sched = measure
-        excited_sched = x | measure
-        schedules = [ground_sched, excited_sched]
+            # Run 2 experiments - 1 with x pulse and 1 without
+            x = cmd_def.get('x', 0)
+            measure = cmd_def.get('measure', range(config.n_qubits)) << x.duration
+            ground_sched = measure
+            excited_sched = x | measure
+            schedules = [ground_sched, excited_sched]
 
-        qobj = assemble(schedules, backend, meas_level=1, shots=256)
-        job = backend.run(qobj)
-        _ = job.result()
+            qobj = assemble(schedules, backend, meas_level=1, shots=256)
+            job = backend.run(qobj)
+            _ = job.result()
 
 
 def _bell_circuit():
