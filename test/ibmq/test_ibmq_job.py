@@ -465,22 +465,21 @@ class TestIBMQJob(JobTestCase):
                 backend = least_busy(backends)
                 break
 
-        if backend:
-            self.assertIsNotNone(backend)
-            config = backend.configuration()
-            defaults = backend.defaults()
-            cmd_def = defaults.build_cmd_def()
+        self.assertIsNotNone(backend)
+        config = backend.configuration()
+        defaults = backend.defaults()
+        cmd_def = defaults.build_cmd_def()
 
-            # Run 2 experiments - 1 with x pulse and 1 without
-            x = cmd_def.get('x', 0)
-            measure = cmd_def.get('measure', range(config.n_qubits)) << x.duration
-            ground_sched = measure
-            excited_sched = x | measure
-            schedules = [ground_sched, excited_sched]
+        # Run 2 experiments - 1 with x pulse and 1 without
+        x = cmd_def.get('x', 0)
+        measure = cmd_def.get('measure', range(config.n_qubits)) << x.duration
+        ground_sched = measure
+        excited_sched = x | measure
+        schedules = [ground_sched, excited_sched]
 
-            qobj = assemble(schedules, backend, meas_level=1, shots=256)
-            job = backend.run(qobj)
-            _ = job.result()
+        qobj = assemble(schedules, backend, meas_level=1, shots=256)
+        job = backend.run(qobj)
+        _ = job.result()
 
 
 def _bell_circuit():
