@@ -272,7 +272,7 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertIn('not a valid job share', context_manager.exception.message)
 
     @requires_provider
-    def test_share_job_in_shareable_project(self, provider):
+    def test_share_job_in_project(self, provider):
         """Test successfully sharing a job within a shareable project."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
