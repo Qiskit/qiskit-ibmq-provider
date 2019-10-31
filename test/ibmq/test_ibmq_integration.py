@@ -15,13 +15,12 @@
 """IBMQ provider integration tests (compile and run)."""
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers.ibmq import least_busy
 from qiskit.result import Result
 from qiskit.execute import execute
 from qiskit.compiler import assemble, transpile
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_provider
+from ..decorators import requires_provider, requires_device
 
 
 class TestIBMQIntegration(IBMQTestCase):
@@ -48,11 +47,9 @@ class TestIBMQIntegration(IBMQTestCase):
         self.assertEqual(remote_result.status, 'COMPLETED')
         self.assertEqual(remote_result.results[0].status, 'DONE')
 
-    @requires_provider
-    def test_compile_remote(self, provider):
+    @requires_device
+    def test_compile_remote(self, backend):
         """Test Compiler remote."""
-        backend = least_busy(provider.backends())
-
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
         qc = QuantumCircuit(qubit_reg, clbit_reg, name="bell")
@@ -63,11 +60,9 @@ class TestIBMQIntegration(IBMQTestCase):
         circuits = transpile(qc, backend=backend)
         self.assertIsInstance(circuits, QuantumCircuit)
 
-    @requires_provider
-    def test_compile_two_remote(self, provider):
+    @requires_device
+    def test_compile_two_remote(self, backend):
         """Test Compiler remote on two circuits."""
-        backend = least_busy(provider.backends())
-
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
         qc = QuantumCircuit(qubit_reg, clbit_reg, name="bell")
