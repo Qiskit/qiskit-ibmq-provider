@@ -20,6 +20,7 @@ from qiskit.providers import JobError  # type: ignore[attr-defined]
 from qiskit.providers.jobstatus import JOB_FINAL_STATES
 
 from .ibmqjob import IBMQJob
+from .exceptions import IBMQJobInvalidStateError
 from ..apiconstants import ApiJobStatus
 
 
@@ -55,7 +56,7 @@ class CircuitJob(IBMQJob):
 
     def _get_job(self) -> Dict[str, Any]:
         if self._cancelled:
-            raise JobError(
+            raise IBMQJobInvalidStateError(
                 'Job result impossible to retrieve. The job was cancelled.')
 
         return self._api.circuit_job_get(self._job_id)

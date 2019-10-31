@@ -32,7 +32,7 @@ from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-impo
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
 from .credentials import Credentials
-from .exceptions import IBMQBackendError
+from .exceptions import IBMQBackendError, IBMQBackendApiError, IBMQBackendApiProtocolError
 from .job import IBMQJob
 from .utils import update_qobj_config
 
@@ -83,8 +83,10 @@ class IBMQBackend(BaseBackend):
 
         Raises:
             SchemaValidationError: If the job validation fails.
-            IBMQBackendError: If an unexpected error occurred while submitting
+            IBMQBackendApiError: If an unexpected error occurred while submitting
                 the job.
+            IBMQBackendApiProtocolError: If an unexpected value received when
+                the server.
         """
         # pylint: disable=arguments-differ
 
@@ -106,8 +108,10 @@ class IBMQBackend(BaseBackend):
             ibmq.job.start: The job has started.
 
         Raises:
-            IBMQBackendError: If an unexpected error occurred while submitting
+            IBMQBackendApiError: If an unexpected error occurred while submitting
                 the job.
+            IBMQBackendApiProtocolError: If an unexpected value received when
+                the server.
         """
         try:
             qobj_dict = qobj.to_dict()
@@ -117,12 +121,13 @@ class IBMQBackend(BaseBackend):
                 use_object_storage=getattr(self.configuration(), 'allow_object_storage', False),
                 job_name=job_name)
         except ApiError as ex:
-            raise IBMQBackendError('Error submitting job: {}'.format(str(ex)))
+            raise IBMQBackendApiError('Error submitting job: {}'.format(str(ex)))
 
         # Error in the job after submission:
         # Transition to the `ERROR` final state.
         if 'error' in submit_info:
-            raise IBMQBackendError('Error submitting job: {}'.format(str(submit_info['error'])))
+            raise IBMQBackendApiError(
+                'Error submitting job: {}'.format(str(submit_info['error'])))
 
         # Submission success.
         submit_info.update({
@@ -133,8 +138,8 @@ class IBMQBackend(BaseBackend):
         try:
             job = IBMQJob.from_dict(submit_info)
         except ModelValidationError as err:
-            raise IBMQBackendError('Unexpected return value from the server when '
-                                   'submitting job: {}'.format(str(err)))
+            raise IBMQBackendApiProtocolError('Unexpected return value from the server '
+                                              'when submitting job: {}'.format(str(err)))
         Publisher().publish("ibmq.job.start", job)
         return job
 

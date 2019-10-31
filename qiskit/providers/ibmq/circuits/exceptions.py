@@ -14,7 +14,9 @@
 
 """Exceptions related to Circuits."""
 
-from ..exceptions import IBMQError
+from typing import Any
+
+from ..exceptions import IBMQError, IBMQErrorCodes
 
 
 CIRCUIT_NOT_ALLOWED = 'Circuit support is not available yet in this account'
@@ -24,7 +26,10 @@ CIRCUIT_RESULT_ERROR = 'Circuit result could not be returned: {}'
 
 class CircuitError(IBMQError):
     """Generic Circuit exception."""
-    pass
+
+    def __init__(self, *message: Any) -> None:
+        """Set the error message and code."""
+        super().__init__(*message, error_code=IBMQ_CIRCUIT_ERROR_CODES[type(self)])
 
 
 class CircuitAvailabilityError(CircuitError):
@@ -46,3 +51,11 @@ class CircuitResultError(CircuitError):
 
     def __init__(self, message: str):
         super().__init__(CIRCUIT_RESULT_ERROR.format(message))
+
+
+IBMQ_CIRCUIT_ERROR_CODES = {
+    CircuitError: IBMQErrorCodes.GENERIC_CIRCUITS_ERROR,
+    CircuitAvailabilityError: IBMQErrorCodes.CIRCUITS_NOT_AVAILABLE,
+    CircuitSubmitError: IBMQErrorCodes.GENERIC_CIRCUITS_ERROR,
+    CircuitResultError: IBMQErrorCodes.GENERIC_CIRCUITS_ERROR
+}

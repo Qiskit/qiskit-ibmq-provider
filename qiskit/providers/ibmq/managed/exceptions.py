@@ -14,12 +14,18 @@
 
 """Exception for the job manager modules."""
 
+from typing import Any, Optional
+
 from ..exceptions import IBMQError
+from ..errorcodes import IBMQErrorCodes
 
 
 class IBMQJobManagerError(IBMQError):
     """Base class for errors raise by job manager."""
-    pass
+
+    def __init__(self, *message: Any) -> None:
+        """Set the error message and code."""
+        super().__init__(*message, error_code=IBMQ_MANAGED_ERROR_CODES[type(self)])
 
 
 class IBMQJobManagerInvalidStateError(IBMQJobManagerError):
@@ -40,3 +46,12 @@ class IBMQJobManagerJobNotFound(IBMQJobManagerError):
 class IBMQManagedResultDataNotAvailable(IBMQJobManagerError):
     """Errors raised when result data is not available."""
     pass
+
+
+IBMQ_MANAGED_ERROR_CODES = {
+    IBMQJobManagerError: IBMQErrorCodes.GENERIC_JOB_ERROR,
+    IBMQJobManagerInvalidStateError: IBMQErrorCodes.INVALID_STATE,
+    IBMQJobManagerTimeoutError: IBMQErrorCodes.REQUEST_TIMEOUT,
+    IBMQJobManagerJobNotFound: IBMQErrorCodes.INVALID_STATE,
+    IBMQManagedResultDataNotAvailable: IBMQErrorCodes.INVALID_STATE
+}
