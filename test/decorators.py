@@ -19,6 +19,7 @@ from functools import wraps
 from unittest import SkipTest
 
 from qiskit.test.testing_options import get_test_options
+from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
@@ -87,6 +88,43 @@ def requires_provider(func):
     return _wrapper
 
 
+def requires_device(func):
+    """Decorator that retrieves the appropriate backend to use for testing.
+
+    This decorator delegates into the `requires_provider` decorator, but instead of the
+    provider it appends a `backend` argument to the decorated function.
+
+    It involves:
+        * If the `QE_DEVICE` environment variable is set, the test is to be
+            run against the backend specified by `QE_DEVICE`.
+        * If the `QE_DEVICE` environment variable is not set, the test is to
+            be run against least busy device.
+
+    Args:
+        func (callable): test function to be decorated.
+
+    Returns:
+        callable: the decorated function.
+    """
+    @wraps(func)
+    @requires_provider
+    def _wrapper(*args, **kwargs):
+        provider = kwargs.pop('provider')
+
+        _backend = None
+        if os.getenv('QE_DEVICE'):
+            backend_name = os.getenv('QE_DEVICE')
+            _backend = provider.get_backend(backend_name)
+        else:
+            _backend = least_busy(provider.backends(simulator=False))
+
+        kwargs.update({'backend': _backend})
+
+        return func(*args, **kwargs)
+
+    return _wrapper
+
+
 def run_on_staging(func):
     """Decorator that signals that the test runs on the staging system.
 
@@ -109,6 +147,7 @@ def run_on_staging(func):
         stg_token = os.getenv('QE_STG_TOKEN')
         stg_url = os.getenv('QE_STG_URL')
         stg_hub = os.getenv('QE_STG_HUB')
+
         if not (stg_token and stg_url and stg_hub):
             raise SkipTest('Skipping staging tests')
 
