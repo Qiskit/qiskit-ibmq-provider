@@ -90,9 +90,8 @@ def requires_provider(func):
 def requires_device(func):
     """Decorator that retrieves the appropriate backend to use for testing.
 
-    This decorator delegates into the `requires_provider` decorator, which
-    adds a `provider` argument to the decorated function. It also adds
-    a `backend` argument to the decorated function.
+    This decorator delegates into the `requires_provider` decorator, but instead of the
+    provider it appends a `backend` argument to the decorated function.
 
     It involves:
         * If the `QE_DEVICE` environment variable is set, the test is to be
