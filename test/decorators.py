@@ -129,13 +129,15 @@ def run_on_device(func):
 
     It involves:
         * skips the test if online tests are to be skipped.
-        * if the `USE_STG_CREDENTIALS` environment variable is set, then enable
+        * if the `USE_STAGING_CREDENTIALS` environment variable is set, then enable
             the staging account using credentials specified by the
-            `QE_STG_TOKEN` and `QE_STG_URL` environment variables.
+            `QE_STAGING_TOKEN` and `QE_STAGING_URL` environment variables.
+            Backend name specified by `QE_STAGING_DEVICE`, if set, will
+            also be used.
         * else skips the test if slow tests are to be skipped.
         * else enable the account using credentials returned by `_get_credentials()`
-        * if the `QE_DEVICE` environment variable is set, use that as the backend;
-            otherwise use the least busy backend
+            and use the backend specified by `QE_DEVICE`, if set.
+        * if backend value is not already set, use the least busy backend.
         * appends arguments `provider` and `backend` to the decorated function.
 
     Args:
@@ -150,22 +152,21 @@ def run_on_device(func):
         if get_test_options()['skip_online']:
             raise SkipTest('Skipping online tests')
 
-        if os.getenv('USE_STG_CREDENTIALS', ''):
-            credentials = Credentials(os.getenv('QE_STG_TOKEN'), os.getenv('QE_STG_URL'))
+        if os.getenv('USE_STAGING_CREDENTIALS', ''):
+            credentials = Credentials(os.getenv('QE_STAGING_TOKEN'), os.getenv('QE_STAGING_URL'))
+            backend_name = os.getenv('QE_STAGING_DEVICE', None)
         else:
             if not get_test_options()['run_slow']:
                 raise SkipTest('Skipping slow tests')
             credentials = _get_credentials()
+            backend_name = os.getenv('QE_DEVICE', None)
 
         obj.using_ibmq_credentials = credentials.is_ibmq()
         ibmq_factory = IBMQFactory()
         provider = ibmq_factory.enable_account(credentials.token, credentials.url)
         kwargs.update({'provider': provider})
-
-        if os.getenv('QE_DEVICE'):
-            _backend = provider.get_backend(os.getenv('QE_DEVICE'))
-        else:
-            _backend = least_busy(provider.backends(simulator=False))
+        _backend = provider.get_backend(backend_name) if backend_name else \
+            least_busy(provider.backends(simulator=False))
         kwargs.update({'backend': _backend})
 
         return func(obj, *args, **kwargs)
