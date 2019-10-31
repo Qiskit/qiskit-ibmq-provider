@@ -304,6 +304,7 @@ class TestIBMQJob(JobTestCase):
     @requires_provider
     def test_retrieve_job_error_backend_service(self, provider):
         """Test retrieving an invalid job from backend service."""
+        provider.backends.retrieve_job('BAD_JOB_ID')
         self.assertRaises(IBMQBackendError, provider.backends.retrieve_job, 'BAD_JOB_ID')
 
     @requires_provider

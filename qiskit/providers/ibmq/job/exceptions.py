@@ -27,8 +27,8 @@ class IBMQJobError(JobError, IBMQError):
 
     def __init__(self, *message: Any) -> None:
         """Set the error message and code."""
-        JobError.__init__(*message)
-        IBMQError.__init__(*message, error_code=IBMQ_JOB_ERROR_CODES[type(self)])
+        JobError.__init__(self, *message)
+        IBMQError.__init__(self, *message, error_code=IBMQ_JOB_ERROR_CODES[type(self)])
 
 
 class IBMQJobApiError(IBMQJobError):

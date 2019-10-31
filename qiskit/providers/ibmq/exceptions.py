@@ -37,7 +37,7 @@ class IBMQError(QiskitError):
 
     def __str__(self) -> str:
         """Format the error string with the error code."""
-        return '{}. Error code: {}'.format(self.message, self.error_code)
+        return '{}. Error code: {}'.format(self.message, self.error_code.value)
 
 
 class IBMQAccountError(IBMQError):
