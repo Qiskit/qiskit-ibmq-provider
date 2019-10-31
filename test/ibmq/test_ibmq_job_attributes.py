@@ -19,13 +19,12 @@ from unittest import mock
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers import JobStatus
-from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider, run_on_staging
+from ..decorators import requires_provider, run_on_device
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -54,11 +53,9 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj)
         self.assertTrue(job.backend().name() == backend.name())
 
-    @run_on_staging
-    def test_running_job_properties(self, provider):
+    @run_on_device
+    def test_running_job_properties(self, provider, backend):  # pylint: disable=unused-argument
         """Test fetching properties of a running job."""
-        backend = least_busy(provider.backends(simulator=False))
-
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
         _ = job.properties()
@@ -155,11 +152,9 @@ class TestIBMQJobAttributes(JobTestCase):
         for job in retrieved_jobs:
             self.assertEqual(job.name(), job_name)
 
-    @run_on_staging
-    def test_error_message_device(self, provider):
+    @run_on_device
+    def test_error_message_device(self, provider, backend):  # pylint: disable=unused-argument
         """Test retrieving job error messages from a device backend."""
-        backend = least_busy(provider.backends(simulator=False))
-
         qc_new = transpile(self._qc, backend)
         qobj = assemble([qc_new, qc_new], backend=backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
