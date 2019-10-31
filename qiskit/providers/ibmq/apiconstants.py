@@ -59,7 +59,7 @@ class ApiJobKind(enum.Enum):
 class ApiJobShareLevel(enum.Enum):
     """Possible values used by the API for job share levels."""
     GLOBAL = 'global'
-    NONE = 'none'
     HUB = 'hub'
     GROUP = 'group'
     PROJECT = 'project'
+    NONE = 'none'
