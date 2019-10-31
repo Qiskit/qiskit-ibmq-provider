@@ -83,16 +83,24 @@ class IBMQBackend(BaseBackend):
             job_name: custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
-            job_share_level: allows sharing a job at the hub/group/project level.
-                The possible job share levels are: "global", "none", "hub", "group",
-                and "project".
+            job_share_level: allows sharing a job at the hub/group/project and
+                global level. The possible job share levels are: "global", "hub",
+                "group", "project", and "none".
+                    * global: the job is public to any user.
+                    * hub: the job is shared between the users in the same hub.
+                    * group: the job is shared between the users in the same group.
+                    * project: the job is shared between the users in the same project.
+                    * none: the job is not shared at any level.
+                If the job share level is not specified, then the job is not shared at any level.
 
-                # TODO: Add more info. Update the docstring as well.
-                For example:
-                    - possible exceptions.
-                    - what happens when a incorrect input is passed.
-                    - what happens when the hub does not allow sharing at a specific level.
-                    - what the levels mean.
+                Note:
+                    Sharing the job depends on the configuration set by the hub administrator.
+
+                    For example:
+                        If attempting to share the job at the hub level, but the hub
+                        administrator only allows sharing jobs at the project level,
+                        then the job's share level will be set to the "project" level
+                        (i.e. the more restrictive share level).
 
         Returns:
             an instance derived from BaseJob
@@ -128,8 +136,8 @@ class IBMQBackend(BaseBackend):
             job_name: custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
-            job_share_level: allows sharing a job at the hub/group/project level.
-            # TODO: Update the docstring.
+            job_share_level: allows sharing a job at the hub/group/project and
+                global level (see `IBMQBackend.run()` for more details).
 
         Returns:
             an instance derived from BaseJob

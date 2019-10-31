@@ -20,8 +20,7 @@ from unittest import mock
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers import JobStatus
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.job.exceptions import (IBMQJobFailureError, JobError,
-                                                  IBMQJobApiError)
+from qiskit.providers.ibmq.job.exceptions import (IBMQJobFailureError, JobError)
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.compiler import assemble, transpile
@@ -264,6 +263,15 @@ class TestIBMQJobAttributes(JobTestCase):
             pass
 
     @requires_provider
+    def test_invalid_job_share_level(self, provider):
+        """Test setting a non existent share level for a job."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        with self.assertRaises(IBMQBackendError) as context_manager:
+            backend.run(qobj, job_share_level='invalid_job_share_level')
+        self.assertIn('not a valid job share', context_manager.exception.message)
+
+    @requires_provider
     def test_share_job_in_shareable_project(self, provider):
         """Test successfully sharing a job within a shareable project."""
         backend = provider.get_backend('ibmq_qasm_simulator')
@@ -271,45 +279,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj, job_share_level='project')
 
         retrieved_job = backend.retrieve_job(job.job_id())
-        self.assertEqual(job.job_id(), retrieved_job.job_id())
-        self.assertEqual(job.result().get_counts(), retrieved_job.result().get_counts())
-        self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
-        # TODO: Assert job was successfully shared.
-
-    @requires_provider
-    def test_invalid_job_share_level(self, provider):
-        """Test setting a non existent share level for a job."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        with self.assertRaises(IBMQBackendError) as cm:
-            backend.run(qobj, job_share_level='invalid_job_share_level')
-        self.assertIn('not a valid job share', cm.exception.message)
-
-    @requires_provider
-    def test_share_job_in_non_shareable_project(self, provider):
-        """Test sharing a job withing a non shareable project."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj, job_share_level='project')
-        # TODO: Assert job was not successfully shared.
-
-    @requires_provider
-    def test_retrieve_unshared_job_in_shareable_project(self, provider):
-        """Test retrieving a job that was not shared within a shareable project."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        with self.assertRaises(IBMQJobApiError):
-            job = provider.backends.retrieve_job('unshared_job_id')
-        # TODO: Assert error retrieving the job that was not shared.
-
-    @requires_provider
-    def test_retrieve_shared_job_in_non_shareable_project(self, provider):
-        """Test retrieving a job that was shared within a non shareable project."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        with self.assertRaises(IBMQJobApiError):
-            job = provider.backends.retrieve_job('shared_job_id_no_access')
-        # TODO: Assert error retrieving a shared job without having valid access to it.
+        self.assertEqual(getattr(retrieved_job, 'share_level'), 'project')
 
 
 def _bell_circuit():

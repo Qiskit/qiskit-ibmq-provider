@@ -135,7 +135,7 @@ class Api(RestAdapterBase):
             payload['name'] = job_name
 
         if job_share_level:
-            payload['shareable'] = job_share_level.value
+            payload['shareLevel'] = job_share_level.value
 
         return self.session.post(url, json=payload).json()
 
@@ -170,7 +170,7 @@ class Api(RestAdapterBase):
             payload['name'] = job_name
 
         if job_share_level:
-            payload['shareable'] = job_share_level.value
+            payload['shareLevel'] = job_share_level.value
 
         return self.session.post(url, json=payload).json()
 
