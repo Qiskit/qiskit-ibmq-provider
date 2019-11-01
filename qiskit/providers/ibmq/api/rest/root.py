@@ -18,8 +18,6 @@ import json
 
 from typing import Dict, List, Optional, Any
 
-from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
-
 from .base import RestAdapterBase
 from .backend import Backend
 from .job import Job
