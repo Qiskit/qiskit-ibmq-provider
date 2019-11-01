@@ -110,7 +110,7 @@ class Api(RestAdapterBase):
             backend_name: str,
             qobj_dict: Dict[str, Any],
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None
+            job_share_level: Optional[str] = None
     ) -> Dict[str, Any]:
         """Submit a job for executing.
 
@@ -135,7 +135,7 @@ class Api(RestAdapterBase):
             payload['name'] = job_name
 
         if job_share_level:
-            payload['shareLevel'] = job_share_level.value
+            payload['shareLevel'] = job_share_level
 
         return self.session.post(url, json=payload).json()
 
@@ -144,7 +144,7 @@ class Api(RestAdapterBase):
             backend_name: str,
             shots: int = 1,
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None
+            job_share_level: Optional[str] = None
     ) -> Dict[str, Any]:
         """Submit a job for executing, using object storage.
 
@@ -170,7 +170,7 @@ class Api(RestAdapterBase):
             payload['name'] = job_name
 
         if job_share_level:
-            payload['shareLevel'] = job_share_level.value
+            payload['shareLevel'] = job_share_level
 
         return self.session.post(url, json=payload).json()
 

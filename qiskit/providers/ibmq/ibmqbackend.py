@@ -93,15 +93,6 @@ class IBMQBackend(BaseBackend):
                     * none: the job is not shared at any level.
                 If the job share level is not specified, then the job is not shared at any level.
 
-                Note:
-                    Sharing the job depends on the configuration set by the hub administrator.
-
-                    For example:
-                        If attempting to share the job at the hub level, but the hub
-                        administrator only allows sharing jobs at the project level,
-                        then the job's share level will be set to the "project" level
-                        (i.e. the more restrictive share level).
-
         Returns:
             an instance derived from BaseJob
 

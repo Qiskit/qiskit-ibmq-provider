@@ -20,7 +20,7 @@ from unittest import mock
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers import JobStatus
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.job.exceptions import (IBMQJobFailureError, JobError)
+from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.compiler import assemble, transpile
