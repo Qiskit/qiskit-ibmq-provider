@@ -23,7 +23,6 @@ from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
-from qiskit.providers.ibmq.exceptions import IBMQAccountError
 
 
 def requires_qe_access(func):
@@ -125,16 +124,21 @@ def requires_device(func):
     return _wrapper
 
 
-def run_on_staging(func):
-    """Decorator that signals that the test runs on the staging system.
+def run_on_device(func):
+    """Decorator that signals that the test should run on a real or semi-real device.
 
     It involves:
-        * reads the `QE_STG_TOKEN`, `QE_STG_URL`, and `QE_STG_HUB` environment
-            variables.
-        * if all variables are set, then their values are used as the
-            credentials; otherwise the test is skipped.
-        * if the test is not skipped, enables the staging account and
-            appends it as the `provider` argument to the test function.
+        * skips the test if online tests are to be skipped.
+        * if the `USE_STAGING_CREDENTIALS` environment variable is set, then enable
+            the staging account using credentials specified by the
+            `QE_STAGING_TOKEN` and `QE_STAGING_URL` environment variables.
+            Backend name specified by `QE_STAGING_DEVICE`, if set, will
+            also be used.
+        * else skips the test if slow tests are to be skipped.
+        * else enable the account using credentials returned by `_get_credentials()`
+            and use the backend specified by `QE_DEVICE`, if set.
+        * if backend value is not already set, use the least busy backend.
+        * appends arguments `provider` and `backend` to the decorated function.
 
     Args:
         func (callable): test function to be decorated.
@@ -144,26 +148,26 @@ def run_on_staging(func):
     """
     @wraps(func)
     def _wrapper(obj, *args, **kwargs):
-        stg_token = os.getenv('QE_STG_TOKEN')
-        stg_url = os.getenv('QE_STG_URL')
-        stg_hub = os.getenv('QE_STG_HUB')
 
-        if not (stg_token and stg_url and stg_hub):
-            raise SkipTest('Skipping staging tests')
+        if get_test_options()['skip_online']:
+            raise SkipTest('Skipping online tests')
 
-        credentials = Credentials(stg_token, stg_url)
+        if os.getenv('USE_STAGING_CREDENTIALS', ''):
+            credentials = Credentials(os.getenv('QE_STAGING_TOKEN'), os.getenv('QE_STAGING_URL'))
+            backend_name = os.getenv('QE_STAGING_DEVICE', None)
+        else:
+            if not get_test_options()['run_slow']:
+                raise SkipTest('Skipping slow tests')
+            credentials = _get_credentials()
+            backend_name = os.getenv('QE_DEVICE', None)
+
         obj.using_ibmq_credentials = credentials.is_ibmq()
         ibmq_factory = IBMQFactory()
-
-        try:
-            # Disable account in case one is already in use
-            ibmq_factory.disable_account()
-        except IBMQAccountError:
-            pass
-
-        ibmq_factory.enable_account(credentials.token, credentials.url)
-        provider = ibmq_factory.get_provider(hub=stg_hub)
+        provider = ibmq_factory.enable_account(credentials.token, credentials.url)
         kwargs.update({'provider': provider})
+        _backend = provider.get_backend(backend_name) if backend_name else \
+            least_busy(provider.backends(simulator=False))
+        kwargs.update({'backend': _backend})
 
         return func(obj, *args, **kwargs)
 
