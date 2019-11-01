@@ -27,7 +27,7 @@ from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_qe_access
+from ..decorators import requires_qe_access, requires_device
 from ..contextmanagers import custom_envs, no_envs
 
 
@@ -152,21 +152,19 @@ class TestAccountClient(IBMQTestCase):
         jobs = api.list_jobs_statuses(limit=2)
         self.assertEqual(len(jobs), 2)
 
-    def test_backend_status(self):
+    @requires_device
+    def test_backend_status(self, backend):
         """Check the status of a real chip."""
-        backend_name = ('ibmq_boeblingen'
-                        if self.using_ibmq_credentials else 'ibmqx2')
         api = self._get_client()
-        is_available = api.backend_status(backend_name)
+        is_available = api.backend_status(backend.name())
         self.assertIsNotNone(is_available['operational'])
 
-    def test_backend_properties(self):
+    @requires_device
+    def test_backend_properties(self, backend):
         """Check the properties of calibration of a real chip."""
-        backend_name = ('ibmq_boeblingen'
-                        if self.using_ibmq_credentials else 'ibmqx2')
         api = self._get_client()
 
-        properties = api.backend_properties(backend_name)
+        properties = api.backend_properties(backend.name())
         self.assertIsNotNone(properties)
 
     def test_backend_pulse_defaults(self):
