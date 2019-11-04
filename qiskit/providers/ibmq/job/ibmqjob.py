@@ -521,6 +521,6 @@ class IBMQJob(BaseModel, BaseJob):
         elif 'error' in result_response:
             self._job_error_msg = result_response['error']['message']
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         """Serialize the job into a Python dict."""
         return self.__dict__
