@@ -33,7 +33,7 @@ from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
 from .credentials import Credentials
-from .exceptions import IBMQBackendError
+from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .job import IBMQJob
 from .utils import update_qobj_config
 
@@ -99,7 +99,8 @@ class IBMQBackend(BaseBackend):
         Raises:
             SchemaValidationError: If the job validation fails.
             IBMQBackendError: If an unexpected error occurred while submitting
-                the job or the job share level is not valid.
+                the job.
+            IBMQBackendValueError: If the specified job share level is not valid.
         """
         # pylint: disable=arguments-differ
         api_job_share_level = None
@@ -107,7 +108,7 @@ class IBMQBackend(BaseBackend):
             try:
                 api_job_share_level = ApiJobShareLevel(job_share_level)
             except ValueError:
-                raise IBMQBackendError(
+                raise IBMQBackendValueError(
                     '"{}" is not a valid job share level. '
                     'Valid job share levels are: {}'
                     .format(job_share_level, ', '.join(level.value for level in ApiJobShareLevel)))
