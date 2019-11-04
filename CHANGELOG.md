@@ -60,7 +60,7 @@ The format is based on [Keep a Changelog].
   return, the function raises an `IBMQJobFailure` exception.(\#399).
 - The `IBMQBackend.run()` function now accepts an optional `job_share_level` 
   parameter. If specified, the job could be shared with other users at the 
-  global, hub, group, project, or none level.
+  global, hub, group, project, or none level (\#414).
 
 ### Removed
 
