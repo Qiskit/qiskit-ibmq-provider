@@ -196,7 +196,10 @@ class AccountClient(BaseClient):
             job status.
         """
         return self.client_api.job_submit(
-            backend_name, qobj_dict, job_name, job_share_level=job_share_level.value)
+            backend_name,
+            qobj_dict,
+            job_name,
+            job_share_level=getattr(job_share_level, 'value', None))
 
     def _job_submit_object_storage(
             self,
@@ -220,7 +223,7 @@ class AccountClient(BaseClient):
         job_info = self.client_api.submit_job_object_storage(
             backend_name,
             job_name=job_name,
-            job_share_level=job_share_level.value)
+            job_share_level=getattr(job_share_level, 'value', None))
 
         # Get the upload URL.
         job_id = job_info['id']
