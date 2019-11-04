@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2017, 2019.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -37,7 +37,7 @@ from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_qe_access,
-                          run_on_staging, requires_device)
+                          run_on_device, requires_device)
 
 
 class TestIBMQJob(JobTestCase):
@@ -154,11 +154,9 @@ class TestIBMQJob(JobTestCase):
         job_ids = [job.job_id() for job in job_array]
         self.assertEqual(sorted(job_ids), sorted(list(set(job_ids))))
 
-    @run_on_staging
-    def test_run_async_device(self, provider):
+    @run_on_device
+    def test_run_async_device(self, provider, backend):  # pylint: disable=unused-argument
         """Test running in a real device asynchronously."""
-        backend = least_busy(provider.backends(simulator=False))
-
         self.log.info('submitting to backend %s', backend.name())
         num_qubits = 5
         qr = QuantumRegister(num_qubits, 'qr')
@@ -418,11 +416,9 @@ class TestIBMQJob(JobTestCase):
         message = new_job.error_message()
         self.assertIn('Experiment 1: ERROR', message)
 
-    @run_on_staging
-    def test_retrieve_failed_job_device(self, provider):
+    @run_on_device
+    def test_retrieve_failed_job_device(self, provider, backend):
         """Test retrieving a failed job from a device backend."""
-        backend = least_busy(provider.backends(simulator=False))
-
         qc_new = transpile(self._qc, backend)
         qobj = assemble([qc_new, qc_new], backend=backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
