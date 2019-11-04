@@ -58,6 +58,9 @@ The format is based on [Keep a Changelog].
   specified, `IBMQJob.result()` will return partial results for jobs with 
   experiments that failed. When specified, and there are no partial results to 
   return, the function raises an `IBMQJobFailure` exception.(\#399).
+- The `IBMQBackend.run()` function now accepts an optional `job_share_level` 
+  parameter. If specified, the job could be shared with other users at the 
+  global, hub, group, project, or none level.
 
 ### Removed
 
