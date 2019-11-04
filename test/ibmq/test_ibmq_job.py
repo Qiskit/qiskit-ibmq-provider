@@ -25,6 +25,7 @@ from scipy.stats import chi2_contingency
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers import JobStatus
 from qiskit.providers.ibmq import least_busy
+from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
@@ -476,6 +477,22 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(schedules, backend, meas_level=1, shots=256)
         job = backend.run(qobj)
         _ = job.result()
+
+    @requires_provider
+    def test_retrieve_from_retired_backend(self, provider):
+        """Test retrieving a job from a retired backend."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+
+        del provider._backends['ibmq_qasm_simulator']
+        new_job = provider.backends.retrieve_job(job.job_id())
+        self.assertTrue(isinstance(new_job.backend(), IBMQRetiredBackend))
+        self.assertNotEqual(new_job.backend().name(), 'unknown')
+
+        new_job2 = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
+        self.assertTrue(isinstance(new_job2.backend(), IBMQRetiredBackend))
+        self.assertNotEqual(new_job2.backend().name(), 'unknown')
 
 
 def _bell_circuit():
