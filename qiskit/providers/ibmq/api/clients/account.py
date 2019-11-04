@@ -195,11 +195,14 @@ class AccountClient(BaseClient):
         Returns:
             job status.
         """
+        # Check for the job share level.
+        _job_share_level = job_share_level.value if job_share_level else None
+
         return self.client_api.job_submit(
             backend_name,
             qobj_dict,
             job_name,
-            job_share_level=getattr(job_share_level, 'value', None))
+            job_share_level=_job_share_level)
 
     def _job_submit_object_storage(
             self,
@@ -219,11 +222,14 @@ class AccountClient(BaseClient):
         Returns:
             job status.
         """
+        # Check for the job share level.
+        _job_share_level = job_share_level.value if job_share_level else None
+
         # Get the job via object storage.
         job_info = self.client_api.submit_job_object_storage(
             backend_name,
             job_name=job_name,
-            job_share_level=getattr(job_share_level, 'value', None))
+            job_share_level=_job_share_level)
 
         # Get the upload URL.
         job_id = job_info['id']
