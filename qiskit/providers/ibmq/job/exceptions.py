@@ -61,6 +61,6 @@ IBMQ_JOB_ERROR_CODES = {
     IBMQJobApiError: IBMQErrorCodes.GENERIC_API_ERROR,
     IBMQApiProtocolError: IBMQErrorCodes.API_PROTOCOL_ERROR,
     IBMQJobFailureError: IBMQErrorCodes.JOB_FINISHED_IN_ERROR,
-    IBMQJobInvalidStateError: IBMQErrorCodes.JOB_IN_INVALID_STATE,
+    IBMQJobInvalidStateError: IBMQErrorCodes.INVALID_STATE,
     IBMQJobTimeoutError: IBMQErrorCodes.REQUEST_TIMEOUT
 }

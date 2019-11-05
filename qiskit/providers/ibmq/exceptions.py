@@ -15,6 +15,7 @@
 """Exception for the IBMQ module."""
 
 from typing import Any, Optional
+import re
 
 from qiskit.exceptions import QiskitError
 
@@ -37,7 +38,9 @@ class IBMQError(QiskitError):
 
     def __str__(self) -> str:
         """Format the error string with the error code."""
-        return '{}. Error code: {}'.format(self.message, self.error_code.value)
+        # Strip previous error code.
+        plain_message = re.sub(r' \[[0-9]{4}\]\.$', '', self.message)
+        return '{} [{}].'.format(plain_message, self.error_code.value)
 
 
 class IBMQAccountError(IBMQError):
@@ -106,7 +109,7 @@ IBMQ_ERROR_CODES = {
     IBMQAccountCredentialsInvalidFormat: IBMQErrorCodes.INVALID_CREDENTIALS_FORMAT,
     IBMQAccountCredentialsInvalidToken: IBMQErrorCodes.INVALID_TOKEN,
     IBMQAccountCredentialsInvalidUrl: IBMQErrorCodes.INVALID_URL,
-    IBMQAccountMultipleCredentialsFound: IBMQErrorCodes.MULTIPLE_CREDENTIALS_FOUND,
+    IBMQAccountMultipleCredentialsFound: IBMQErrorCodes.INVALID_CREDENTIALS_FORMAT,
     IBMQBackendError: IBMQErrorCodes.GENERIC_BACKEND_ERROR,
     IBMQBackendPreQobjError: IBMQErrorCodes.JOB_IN_PRE_QOBJ_FORMAT,
     IBMQBackendApiError: IBMQErrorCodes.GENERIC_API_ERROR,
