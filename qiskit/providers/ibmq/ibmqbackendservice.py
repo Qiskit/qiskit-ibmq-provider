@@ -216,11 +216,18 @@ class IBMQBackendService(SimpleNamespace):
                 continue
 
             job_id = job_info.get('id', "")
-            # TODO: first argument for IBMQJob should be a Backend, but as
-            # `job_responses` comes from `jobs_statuses`, the backend name
-            # might not be present. Revise during IBMQJob refactoring.
+            # Recreate the backend used for this job.
+            backend_name = job_info.get('backend', {}).get('name', 'unknown')
+            try:
+                backend = self._provider.get_backend(backend_name)
+            except QiskitBackendNotFoundError:
+                backend = IBMQRetiredBackend.from_name(backend_name,
+                                                       self._provider,
+                                                       self._provider.credentials,
+                                                       self._provider._api)
+
             job_info.update({
-                '_backend': None,
+                '_backend': backend,
                 'api': self._provider._api,
             })
             try:

@@ -21,7 +21,6 @@ from queue import Queue
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers import JobTimeoutError
-from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.api.clients.websocket import (
     WebsocketClient, WebsocketAuthenticationMessage)
 from qiskit.providers.ibmq.api.clients import AccountClient
@@ -29,7 +28,7 @@ from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
 
 from ...ibmqtestcase import IBMQTestCase
-from ...decorators import requires_qe_access, run_on_staging
+from ...decorators import requires_qe_access, run_on_device
 
 
 class TestWebsocketIntegration(IBMQTestCase):
@@ -67,11 +66,9 @@ class TestWebsocketIntegration(IBMQTestCase):
 
         self.assertEqual(result.status, 'COMPLETED')
 
-    @run_on_staging
-    def test_websockets_device(self, provider):
+    @run_on_device
+    def test_websockets_device(self, provider, backend):  # pylint: disable=unused-argument
         """Test checking status of a job via websockets for a device."""
-        backend = least_busy(provider.backends(simulator=False))
-
         qc = transpile(self.qc1, backend=backend)
         qobj = assemble(qc, backend=backend)
 
