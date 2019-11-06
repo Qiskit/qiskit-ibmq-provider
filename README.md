@@ -26,9 +26,11 @@ To install from source, follow the instructions in the
 
 Once the package is installed, you can access the provider from Qiskit.
 
-> **Note**: Since September 2019 (and with version `0.4` of this
-> `qiskit-ibmq-provider` package / version `0.13` of the `qiskit` package)
-> legacy Quantum Experience or QConsole (v1) accounts are not supported.
+> **Note**: Since November 2019 (and with version `0.4` of this
+> `qiskit-ibmq-provider` package / version `0.14` of the `qiskit` package)
+> legacy Quantum Experience or QConsole (v1) accounts are no longer supported.
+> If you have been using a v1 account, please check the 
+> [update instructions](#updating-to-the-new-IBM-Q-Experience)
 
 ### Configure your IBMQ credentials
 
@@ -55,7 +57,7 @@ in your program simply via:
 from qiskit import IBMQ
 
 provider = IBMQ.load_account()
-provider.get_backend('ibmq_qasm_simulator')
+backend = provider.get_backend('ibmq_qasm_simulator')
 ```
 
 Alternatively, if you do not want to save your credentials to disk and only
@@ -65,7 +67,7 @@ intend to use them during the current session, you can use:
 from qiskit import IBMQ
 
 provider = IBMQ.enable_account('MY_API_TOKEN')
-provider.get_backend('ibmq_qasm_simulator')
+backend = provider.get_backend('ibmq_qasm_simulator')
 ```
 
 By default, all IBM Q accounts have access to the same, open project
@@ -79,7 +81,7 @@ provider_2 = IBMQ.get_provider(hub='MY_HUB', group='MY_GROUP', project='MY_PROJE
 
 ## Updating to the new IBM Q Experience
 
-Since September 2019 (and with version `0.4` of this `qiskit-ibmq-provider`
+Since November 2019 (and with version `0.4` of this `qiskit-ibmq-provider`
 package), the IBMQProvider only supports the new [IBM Q Experience], dropping
 support for the legacy Quantum Experience and Qconsole accounts. The new IBM Q
 Experience is also referred as `v2`, whereas the legacy one and Qconsole as `v1`.
@@ -88,7 +90,7 @@ This section includes instructions for updating your accounts and programs.
 Please note that:
   * the IBM Q Experience `v1` credentials and the programs written for pre-0.3
     versions will still be working during the `0.3.x` series. From 0.4 onwards,
-    only `v2` credentials are supported, and it is recommended to updgrade
+    only `v2` credentials are supported, and it is recommended to upgrade
     in order to take advantage of the new features.
   * updating your credentials to the IBM Q Experience `v2` implies that you
     will need to update your programs. The sections below contain instructions
@@ -132,9 +134,8 @@ in the [IBM Q Experience account page].
 
 ### Updating your programs
 
-With the introduction of support for the new IBM Q Experience support, a more
-structured approach for accessing backends has been introduced. Previously,
-access to all backends was centralized through:
+The new IBM Q Experience support also introduces a more structured approach for accessing backends. 
+Previously, access to all backends was centralized through:
 
 ```python
 IBMQ.backends()
