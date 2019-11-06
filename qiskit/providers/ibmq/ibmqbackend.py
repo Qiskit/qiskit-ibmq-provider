@@ -128,8 +128,7 @@ class IBMQBackend(BaseBackend):
             job_name: custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
-            job_share_level: allows sharing a job at the hub/group/project and
-                global level (see `IBMQBackend.run()` for more details).
+            job_share_level: level the job should be shared at.
 
         Returns:
             an instance derived from BaseJob
@@ -371,7 +370,8 @@ class IBMQSimulator(IBMQBackend):
             backend_options: backend options
             noise_model: noise model
             job_name: custom name to be assigned to the job
-            job_share_level: level the job should be shared at.
+            job_share_level: allows sharing a job at the hub/group/project and
+                global level (see `IBMQBackend.run()` for more details).
 
         Returns:
             an instance derived from BaseJob
