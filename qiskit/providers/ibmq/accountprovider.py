@@ -24,7 +24,6 @@ from qiskit.providers.models import (QasmBackendConfiguration,
 from qiskit.validation.exceptions import ModelValidationError
 
 from .api.clients import AccountClient
-from .circuits import CircuitsManager
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
 from .ibmqbackendservice import IBMQBackendService
@@ -58,7 +57,6 @@ class AccountProvider(BaseProvider):
                                   credentials.websockets_url,
                                   use_websockets=(not credentials.proxies),
                                   **credentials.connection_parameters())
-        self.circuits = CircuitsManager(self._api)
 
         # Initialize the internal list of backends.
         self._backends = self._discover_remote_backends()
