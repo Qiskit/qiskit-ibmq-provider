@@ -29,8 +29,8 @@ Once the package is installed, you can access the provider from Qiskit.
 > **Note**: Since November 2019 (and with version `0.4` of this
 > `qiskit-ibmq-provider` package / version `0.14` of the `qiskit` package)
 > legacy Quantum Experience or QConsole (v1) accounts are no longer supported.
-> If you have been using a v1 account, please check the 
-> [update instructions](#updating-to-the-new-IBM-Q-Experience)
+> If you are still using a v1 account, please follow the steps described in 
+> [update instructions](#updating-to-the-new-IBM-Q-Experience) to update your account.
 
 ### Configure your IBMQ credentials
 
