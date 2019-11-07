@@ -63,6 +63,8 @@ The format is based on [Keep a Changelog].
 
 - Support for the legacy Quantum Experience and QConsole is fully deprecated.
   Only credentials from the new Quantum Experience can be used. (\#344)
+- The circuits functionality has been temporarily removed from the provider. It
+  will be reintroduced in future versions. (\#429)
 
 ### Deprecated
 
