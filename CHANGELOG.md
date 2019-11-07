@@ -25,8 +25,8 @@ The format is based on [Keep a Changelog].
   - it contains the available backends as attributes. A user can now use
     `provider.backends.<tab>` to see a list of backend names, and make
      use of the attributes as regular `IBMQBackend` instances. (\#303)
-  - the methods `provider.backends().jobs()` and
-    `provider.backends().retrieve_job()` can be used for retrieving
+  - the methods `provider.backends.jobs()` and
+    `provider.backends.retrieve_job()` can be used for retrieving
     provider-wide jobs. (\#354)
 
 ### Changed
