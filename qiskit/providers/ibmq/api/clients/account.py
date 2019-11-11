@@ -478,39 +478,3 @@ class AccountClient(BaseClient):
             job cancellation response.
         """
         return self.client_api.job(job_id).cancel()
-
-    # Circuits-related public functions.
-
-    def circuit_run(self, name: str, **kwargs: Any) -> Dict:
-        """Execute a Circuit.
-
-        Args:
-            name: name of the Circuit.
-            **kwargs: arguments for the Circuit.
-
-        Returns:
-            json response.
-        """
-        return self.client_api.circuit(name, **kwargs)
-
-    def circuit_job_get(self, job_id: str) -> Dict:
-        """Return information about a Circuit job.
-
-        Args:
-            job_id: the id of the job.
-
-        Returns:
-            job information.
-        """
-        return self.client_api.job(job_id).get()
-
-    def circuit_job_status(self, job_id: str) -> Dict:
-        """Return the status of a Circuits job.
-
-        Args:
-            job_id: the id of the job.
-
-        Returns:
-            job status.
-        """
-        return self.job_status(job_id)
