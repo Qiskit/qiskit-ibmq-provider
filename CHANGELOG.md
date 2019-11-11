@@ -34,12 +34,15 @@ The format is based on [Keep a Changelog].
 - `IBMQBackend.run()` now accepts an optional `job_name` parameter. If
   specified, the `job_name` is assigned to the job, which can also be used
   as a filter in `IBMQBackend.jobs()`. (\#300, \#384)
-- The signature of `IBMQBackend.jobs()` is changed. `db_filter`, which was the 
+- `IBMQBackend.run()` now accepts an optional `job_share_level`
+  parameter. If specified, the job could be shared with other users at the
+  global, hub, group, project, or none level. (\#414)
+- The signature of `IBMQBackend.jobs()` is changed. `db_filter`, which was the
   4th parameter, is now the 5th parameter. (\#300)
-- The `backend.properties()` function now accepts an optional `datetime` 
-  parameter. If specified, the function returns the backend properties closest 
+- The `backend.properties()` function now accepts an optional `datetime`
+  parameter. If specified, the function returns the backend properties closest
   to, but older than, the specified datetime filter. (\#277)
-- The `WebsocketClient.get_job_status()` method now accepts two optional 
+- The `WebsocketClient.get_job_status()` method now accepts two optional
   parameters: `retries` and `backoff_factor`. (\#341)
 - The `IBMQJob` class has been refactored:
   - The `IBMQJob` attributes are now automatically populated based on the

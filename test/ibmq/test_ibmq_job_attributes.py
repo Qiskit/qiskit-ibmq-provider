@@ -21,6 +21,7 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers import JobStatus
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
+from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
@@ -255,6 +256,25 @@ class TestIBMQJobAttributes(JobTestCase):
             job.cancel()
         except JobError:
             pass
+
+    @requires_provider
+    def test_invalid_job_share_level(self, provider):
+        """Test setting a non existent share level for a job."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        with self.assertRaises(IBMQBackendError) as context_manager:
+            backend.run(qobj, job_share_level='invalid_job_share_level')
+        self.assertIn('not a valid job share', context_manager.exception.message)
+
+    @requires_provider
+    def test_share_job_in_project(self, provider):
+        """Test successfully sharing a job within a shareable project."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj, job_share_level='project')
+
+        retrieved_job = backend.retrieve_job(job.job_id())
+        self.assertEqual(getattr(retrieved_job, 'share_level'), 'project')
 
 
 def _bell_circuit():
