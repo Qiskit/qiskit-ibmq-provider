@@ -20,6 +20,7 @@ This module is used for creating a job objects for the IBM Q Experience.
 import logging
 from typing import Dict, Optional, Tuple, Any
 import warnings
+from datetime import datetime
 
 from marshmallow import ValidationError
 
@@ -103,14 +104,13 @@ class IBMQJob(BaseModel, BaseJob):
         finished with errors. In that case, ``status()`` will simply return
         ``JobStatus.ERROR`` and you can call ``error_message()`` to get more
         info.
-
     """
 
     def __init__(self,
                  _backend: BaseBackend,
                  api: AccountClient,
                  _job_id: str,
-                 _creation_date: str,
+                 _creation_date: datetime,
                  kind: ApiJobKind,
                  _api_status: ApiJobStatus,
                  **kwargs: Any) -> None:
@@ -365,7 +365,7 @@ class IBMQJob(BaseModel, BaseJob):
         Returns:
             Job creation date.
         """
-        return self._creation_date
+        return str(self._creation_date)
 
     def job_id(self) -> str:
         """Return the job ID assigned by the API.

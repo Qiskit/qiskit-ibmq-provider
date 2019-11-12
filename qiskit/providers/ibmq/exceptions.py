@@ -40,6 +40,6 @@ class IBMQBackendError(IBMQError):
     pass
 
 
-class IBMQBackendValueError(IBMQError, ValueError):
+class IBMQBackendValueError(IBMQBackendError, ValueError):
     """Value errors thrown within IBMQBackend."""
     pass
