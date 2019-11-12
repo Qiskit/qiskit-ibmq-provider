@@ -14,5 +14,5 @@
 
 """Utilities related to the IBMQ Provider."""
 
-from .deprecation import deprecated
 from .qobj_utils import update_qobj_config
+from .utils import to_python_identifier

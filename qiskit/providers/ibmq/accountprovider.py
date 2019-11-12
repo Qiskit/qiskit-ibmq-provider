@@ -15,17 +15,19 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
+from typing import Dict, List, Optional, Any
 from collections import OrderedDict
 
-from qiskit.providers import BaseProvider
+from qiskit.providers import BaseProvider  # type: ignore[attr-defined]
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
-from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 
-from .api_v2.clients import AccountClient
-from .circuits import CircuitsManager
+from .api.clients import AccountClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
+from .credentials import Credentials
+from .ibmqbackendservice import IBMQBackendService
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +35,17 @@ logger = logging.getLogger(__name__)
 class AccountProvider(BaseProvider):
     """Provider for a single IBM Quantum Experience account."""
 
-    def __init__(self, credentials, access_token):
+    def __init__(self, credentials: Credentials, access_token: str) -> None:
         """Return a new AccountProvider.
 
+        The ``provider_backends`` attribute can be used to autocomplete
+        backend names, by pressing ``tab`` after
+        ``AccountProvider.provider_backends.``. Note that this feature may
+        not be available if an error occurs during backend discovery.
+
         Args:
-            credentials (Credentials): IBM Q Experience credentials.
-            access_token (str): access token for IBM Q Experience.
+            credentials: IBM Q Experience credentials.
+            access_token: access token for IBM Q Experience.
         """
         super().__init__()
 
@@ -48,53 +55,31 @@ class AccountProvider(BaseProvider):
         self._api = AccountClient(access_token,
                                   credentials.url,
                                   credentials.websockets_url,
+                                  use_websockets=(not credentials.proxies),
                                   **credentials.connection_parameters())
-        self.circuits = CircuitsManager(self._api)
 
-        # Initialize the internal list of backends, lazy-loading it on first
-        # access.
-        self._backends = None
+        # Initialize the internal list of backends.
+        self._backends = self._discover_remote_backends()
+        self.backends = IBMQBackendService(self)  # type: ignore[assignment]
 
-    def backends(self, name=None, filters=None, **kwargs):
-        """Return all backends accessible via this provider, subject to optional filtering.
+    def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
+        # pylint: disable=method-hidden
+        # This method is only for faking the subclassing of `BaseProvider`, as
+        # `.backends()` is an abstract method. Upon initialization, it is
+        # replaced by a `IBMQBackendService` instance.
+        pass
 
-        Args:
-            name (str): backend name to filter by
-            filters (callable): more complex filters, such as lambda functions
-                e.g. AccountProvider.backends(
-                    filters=lambda b: b.configuration['n_qubits'] > 5)
-            kwargs: simple filters specifying a true/false criteria in the
-                backend configuration or backend status or provider credentials
-                e.g. AccountProvider.backends(n_qubits=5, operational=True)
-
-        Returns:
-            list[IBMQBackend]: list of backends available that match the filter
-        """
-        # pylint: disable=arguments-differ
-        if self._backends is None:
-            self._backends = self._discover_remote_backends()
-
-        backends = self._backends.values()
-
-        # Special handling of the `name` parameter, to support alias
-        # resolution.
-        if name:
-            aliases = self._aliased_backend_names()
-            aliases.update(self._deprecated_backend_names())
-            name = aliases.get(name, name)
-            kwargs['backend_name'] = name
-
-        return filter_backends(backends, filters=filters, **kwargs)
-
-    def _discover_remote_backends(self):
+    def _discover_remote_backends(self, timeout: Optional[float] = None) -> Dict[str, IBMQBackend]:
         """Return the remote backends available.
 
+        Args:
+            timeout: number of seconds to wait for the discovery.
+
         Returns:
-            dict[str:IBMQBackend]: a dict of the remote backend instances,
-                keyed by backend name.
+            a dict of the remote backend instances, keyed by backend name.
         """
-        ret = OrderedDict()
-        configs_list = self._api.available_backends()
+        ret = OrderedDict()  # type: ignore[var-annotated]
+        configs_list = self._api.list_backends(timeout=timeout)
         for raw_config in configs_list:
             # Make sure the raw_config is of proper type
             if not isinstance(raw_config, dict):
@@ -123,29 +108,13 @@ class AccountProvider(BaseProvider):
 
         return ret
 
-    @staticmethod
-    def _deprecated_backend_names():
-        """Returns deprecated backend names."""
-        return {
-            'ibmqx_qasm_simulator': 'ibmq_qasm_simulator',
-            'ibmqx_hpc_qasm_simulator': 'ibmq_qasm_simulator',
-            'real': 'ibmqx1'
-            }
-
-    @staticmethod
-    def _aliased_backend_names():
-        """Returns aliased backend names."""
-        return {
-            'ibmq_5_yorktown': 'ibmqx2',
-            'ibmq_5_tenerife': 'ibmqx4',
-            'ibmq_16_rueschlikon': 'ibmqx5',
-            'ibmq_20_austin': 'QS1_1'
-            }
-
-    def __eq__(self, other):
+    def __eq__(  # type: ignore[overide]
+            self,
+            other: 'AccountProvider'
+    ) -> bool:
         return self.credentials == other.credentials
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         credentials_info = "hub='{}', group='{}', project='{}'".format(
             self.credentials.hub, self.credentials.group, self.credentials.project)
 

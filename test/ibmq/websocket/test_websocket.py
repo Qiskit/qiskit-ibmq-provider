@@ -20,16 +20,18 @@ import warnings
 
 import websockets
 
-from qiskit.providers.ibmq.api_v2.exceptions import (
+from qiskit.providers.ibmq.api.exceptions import (
     WebsocketError, WebsocketTimeoutError, WebsocketIBMQProtocolError)
-from qiskit.providers.ibmq.api_v2.clients.websocket import WebsocketClient
+from qiskit.providers.ibmq.api.clients.websocket import WebsocketClient
 
 from ...ibmqtestcase import IBMQTestCase
 
 
 from .websocket_server import (
     TOKEN_JOB_COMPLETED, TOKEN_JOB_TRANSITION, TOKEN_WRONG_FORMAT,
-    TOKEN_TIMEOUT, websocket_handler)
+    TOKEN_TIMEOUT, TOKEN_WEBSOCKET_RETRY_SUCCESS,
+    TOKEN_WEBSOCKET_RETRY_FAILURE, TOKEN_WEBSOCKET_JOB_NOT_FOUND,
+    websocket_handler)
 
 TEST_IP_ADDRESS = '127.0.0.1'
 INVALID_PORT = 9876
@@ -109,5 +111,31 @@ class TestWebsocketClientMock(IBMQTestCase):
         client = WebsocketClient('ws://{}:{}'.format(
             TEST_IP_ADDRESS, VALID_PORT), TOKEN_WRONG_FORMAT)
         with self.assertRaises(WebsocketIBMQProtocolError):
+            _ = asyncio.get_event_loop().run_until_complete(
+                client.get_job_status('job_id'))
+
+    def test_websocket_retry_success(self):
+        """Test retrieving a job status during a retry attempt."""
+        client = WebsocketClient('ws://{}:{}'.format(
+            TEST_IP_ADDRESS, VALID_PORT), TOKEN_WEBSOCKET_RETRY_SUCCESS)
+        response = asyncio.get_event_loop().run_until_complete(
+            client.get_job_status('job_id'))
+        self.assertIsInstance(response, dict)
+        self.assertIn('status', response)
+        self.assertEqual(response['status'], 'COMPLETED')
+
+    def test_websocket_retry_failure(self):
+        """Test exceeding the retry limit for retrieving a job status."""
+        client = WebsocketClient('ws://{}:{}'.format(
+            TEST_IP_ADDRESS, VALID_PORT), TOKEN_WEBSOCKET_RETRY_FAILURE)
+        with self.assertRaises(WebsocketError):
+            _ = asyncio.get_event_loop().run_until_complete(
+                client.get_job_status('job_id'))
+
+    def test_websocket_job_not_found(self):
+        """Test retrieving a job status for an non existent id."""
+        client = WebsocketClient('ws://{}:{}'.format(
+            TEST_IP_ADDRESS, VALID_PORT), TOKEN_WEBSOCKET_JOB_NOT_FOUND)
+        with self.assertRaises(WebsocketError):
             _ = asyncio.get_event_loop().run_until_complete(
                 client.get_job_status('job_id'))

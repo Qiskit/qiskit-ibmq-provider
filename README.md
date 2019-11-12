@@ -2,8 +2,7 @@
 
 [![License](https://img.shields.io/github/license/Qiskit/qiskit-ibmq-provider.svg?style=popout-square)](https://opensource.org/licenses/Apache-2.0)[![Build Status](https://img.shields.io/travis/com/Qiskit/qiskit-ibmq-provider/master.svg?style=popout-square)](https://travis-ci.com/Qiskit/qiskit-ibmq-provider)[![](https://img.shields.io/github/release/Qiskit/qiskit-ibmq-provider.svg?style=popout-square)](https://github.com/Qiskit/qiskit-ibmq-provider/releases)[![](https://img.shields.io/pypi/dm/qiskit-ibmq-provider.svg?style=popout-square)](https://pypi.org/project/qiskit-ibmq-provider/)
 
-Qiskit is an open-source framework for working with noisy intermediate-scale
-quantum computers (NISQ) at the level of pulses, circuits, and algorithms.
+**Qiskit** is an open-source framework for working with noisy quantum computers at the level of pulses, circuits, and algorithms.
 
 This module contains a provider that allows accessing the **[IBM Q]** quantum
 devices and simulators.
@@ -27,11 +26,11 @@ To install from source, follow the instructions in the
 
 Once the package is installed, you can access the provider from Qiskit.
 
-> **Note**: Since July 2019 (and with version `0.3` of this
-> `qiskit-ibmq-provider` package / version `0.11` of the `qiskit` package),
-> using the new IBM Q Experience (v2) is the default behavior. If you have
-> been using an account for the legacy Quantum Experience or QConsole (v1),
-> please check the [update instructions](#updating-to-the-new-IBM-Q-Experience).
+> **Note**: Since November 2019 (and with version `0.4` of this
+> `qiskit-ibmq-provider` package / version `0.14` of the `qiskit` package)
+> legacy Quantum Experience or QConsole (v1) accounts are no longer supported.
+> If you are still using a v1 account, please follow the steps described in 
+> [update instructions](#updating-to-the-new-IBM-Q-Experience) to update your account.
 
 ### Configure your IBMQ credentials
 
@@ -58,7 +57,7 @@ in your program simply via:
 from qiskit import IBMQ
 
 provider = IBMQ.load_account()
-provider.get_backend('ibmq_qasm_simulator')
+backend = provider.get_backend('ibmq_qasm_simulator')
 ```
 
 Alternatively, if you do not want to save your credentials to disk and only
@@ -68,7 +67,7 @@ intend to use them during the current session, you can use:
 from qiskit import IBMQ
 
 provider = IBMQ.enable_account('MY_API_TOKEN')
-provider.get_backend('ibmq_qasm_simulator')
+backend = provider.get_backend('ibmq_qasm_simulator')
 ```
 
 By default, all IBM Q accounts have access to the same, open project
@@ -82,17 +81,17 @@ provider_2 = IBMQ.get_provider(hub='MY_HUB', group='MY_GROUP', project='MY_PROJE
 
 ## Updating to the new IBM Q Experience
 
-Since July 2019 (and with version `0.3` of this `qiskit-ibmq-provider` package),
-the IBMQProvider defaults to using the new [IBM Q Experience], which supersedes
-the legacy Quantum Experience and Qconsole. The new IBM Q Experience is also
-referred as `v2`, whereas the legacy one and Qconsole as `v1`.
+Since November 2019 (and with version `0.4` of this `qiskit-ibmq-provider`
+package), the IBMQProvider only supports the new [IBM Q Experience], dropping
+support for the legacy Quantum Experience and Qconsole accounts. The new IBM Q
+Experience is also referred as `v2`, whereas the legacy one and Qconsole as `v1`.
 
 This section includes instructions for updating your accounts and programs.
 Please note that:
   * the IBM Q Experience `v1` credentials and the programs written for pre-0.3
-    versions will still be working during the `0.3.x` series. It is not
-    mandatory to update your accounts and programs, but recommended in order
-    to take advantage of the new features.
+    versions will still be working during the `0.3.x` series. From 0.4 onwards,
+    only `v2` credentials are supported, and it is recommended to upgrade
+    in order to take advantage of the new features.
   * updating your credentials to the IBM Q Experience `v2` implies that you
     will need to update your programs. The sections below contain instructions
     on how to perform the transition.
@@ -135,9 +134,8 @@ in the [IBM Q Experience account page].
 
 ### Updating your programs
 
-With the introduction of support for the new IBM Q Experience support, a more
-structured approach for accessing backends has been introduced. Previously,
-access to all backends was centralized through:
+The new IBM Q Experience support also introduces a more structured approach for accessing backends. 
+Previously, access to all backends was centralized through:
 
 ```python
 IBMQ.backends()

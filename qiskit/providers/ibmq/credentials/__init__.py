@@ -15,9 +15,10 @@
 """Utilities for working with credentials for the IBMQ package."""
 
 from collections import OrderedDict
+from typing import Dict, Optional
 import logging
 
-from .credentials import Credentials
+from .credentials import Credentials, HubGroupProject
 from .exceptions import CredentialsError
 from .configrc import read_credentials_from_qiskitrc, store_credentials
 from .environ import read_credentials_from_environ
@@ -26,7 +27,9 @@ from .qconfig import read_credentials_from_qconfig
 logger = logging.getLogger(__name__)
 
 
-def discover_credentials(qiskitrc_filename=None):
+def discover_credentials(
+        qiskitrc_filename: Optional[str] = None
+) -> Dict[HubGroupProject, Credentials]:
     """Automatically discover credentials for IBM Q.
 
     This method looks for credentials in the following locations, in order,
@@ -37,16 +40,16 @@ def discover_credentials(qiskitrc_filename=None):
         3. in the `qiskitrc` configuration file
 
     Args:
-        qiskitrc_filename (str): location for the `qiskitrc` configuration
+        qiskitrc_filename: location for the `qiskitrc` configuration
             file. If `None`, defaults to `{HOME}/.qiskitrc/qiskitrc`.
 
     Returns:
-        dict: dictionary with the contents of the configuration file, with
+        dictionary with the contents of the configuration file, with
             the form::
 
             {credentials_unique_id: Credentials}
     """
-    credentials = OrderedDict()
+    credentials = OrderedDict()  # type: ignore[var-annotated]
 
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.
@@ -60,7 +63,7 @@ def discover_credentials(qiskitrc_filename=None):
     # Attempt to read the credentials from the different sources.
     for display_name, (reader_function, kwargs) in readers.items():
         try:
-            credentials = reader_function(**kwargs)
+            credentials = reader_function(**kwargs)  # type: ignore[arg-type]
             logger.info('Using credentials from %s', display_name)
             if credentials:
                 break

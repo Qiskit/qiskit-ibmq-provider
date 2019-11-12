@@ -81,7 +81,6 @@ stage_osx: &stage_osx
 stages:
   - lint and pure python test
   - test
-  - old api
   - slow tests
 
 # Define the job matrix explicitly, as matrix expansion causes issues when
@@ -95,6 +94,13 @@ jobs:
       <<: *stage_linux
       if: type != cron
       script: make style && make lint
+
+    # Type checking using mypy
+    - stage: lint and pure python test
+      name: mypy type checking
+      <<: *stage_linux
+      if: type != cron
+      script: make mypy
 
     # Run the tests against without compilation (GNU/Linux, Python 3.5)
     - stage: lint and pure python test
@@ -146,24 +152,6 @@ jobs:
         - MPLBACKEND=ps
         - PYTHON_VERSION=3.7.2
 
-    # "old api" stage
-    ###########################################################################
-    # GNU/Linux, Python 3.6, against Qconsole v1
-    - stage: old api
-      name: Python 3.6 API v1 QConsole
-      <<: *stage_linux
-      if: branch = master and repo = Qiskit/qiskit-ibmq-provider and type = push
-      python: 3.6
-      env: USE_ALTERNATE_ENV_CREDENTIALS=True
-
-    # GNU/Linux, Python 3.6, against QE v1
-    - stage: old api
-      name: Python 3.6 API v1 QE
-      <<: *stage_linux
-      if: branch = master and repo = Qiskit/qiskit-ibmq-provider and type = push
-      python: 3.6
-      env: QE_URL="https://quantumexperience.ng.bluemix.net/api"
-
     # "slow tests" stage
     ###########################################################################
     # GNU/Linux, Python 3.5
@@ -176,6 +164,7 @@ jobs:
         # effectively increases timeout to 2h.
         - travis_wait 120 make test
     - if: tag IS present
+      language: python
       python: "3.6"
       env:
         - TWINE_USERNAME=qiskit

@@ -1,5 +1,11 @@
+mypy==0.720
 pycodestyle
 pylint>=2.3,<2.4
 pylintfileheader>=0.0.2
 vcrpy
-pproxy==1.2.2
+pproxy==1.2.2; python_version <= '3.5'
+pproxy==2.1.8; python_version > '3.5'
+Sphinx>=1.8.3
+sphinx-rtd-theme>=0.4.0
+sphinx-tabs>=1.1.11 
+sphinx-automodapi

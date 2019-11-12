@@ -11,13 +11,16 @@
 # that they have been altered from the originals.
 
 
-.PHONY: lint style test
+.PHONY: lint style test mypy
 
 lint:
 	pylint -rn qiskit/providers/ibmq test
 
+mypy:
+	mypy --module qiskit.providers.ibmq
+
 style:
-	pycodestyle --max-line-length=100 qiskit test
+	pycodestyle qiskit test
 
 test:
 	python -m unittest -v

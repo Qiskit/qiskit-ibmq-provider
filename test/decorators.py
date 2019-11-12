@@ -19,66 +19,10 @@ from functools import wraps
 from unittest import SkipTest
 
 from qiskit.test.testing_options import get_test_options
+from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
-
-
-def requires_new_api_auth(func):
-    """Decorator that signals that the test requires new API auth credentials.
-
-    Note: this decorator is meant to be used *after* ``requires_qe_access``, as
-    it depends on the ``qe_url`` parameter.
-
-    Args:
-        func (callable): test function to be decorated.
-
-    Returns:
-        callable: the decorated function.
-
-    Raises:
-        SkipTest: if no new API auth credentials were found.
-    """
-    @wraps(func)
-    def _wrapper(*args, **kwargs):
-        qe_url = kwargs.get('qe_url')
-        # TODO: provide a way to check it in a more robust way.
-        if not ('quantum-computing.ibm.com/api' in qe_url and
-                'auth' in qe_url):
-            raise SkipTest(
-                'Skipping test that requires new API auth credentials')
-
-        return func(*args, **kwargs)
-
-    return _wrapper
-
-
-def requires_classic_api(func):
-    """Decorator that signals that the test requires classic API credentials.
-
-    Note: this decorator is meant to be used *after* ``requires_qe_access``, as
-    it depends on the ``qe_url`` parameter.
-
-    Args:
-        func (callable): test function to be decorated.
-
-    Returns:
-        callable: the decorated function.
-
-    Raises:
-        SkipTest: if no classic API credentials were found.
-    """
-    @wraps(func)
-    def _wrapper(*args, **kwargs):
-        qe_url = kwargs.get('qe_url')
-        # TODO: provide a way to check it in a more robust way.
-        if 'quantum-computing.ibm.com/api' in qe_url:
-            raise SkipTest(
-                'Skipping test that requires classic API auth credentials')
-
-        return func(*args, **kwargs)
-
-    return _wrapper
 
 
 def requires_qe_access(func):
@@ -120,8 +64,8 @@ def requires_provider(func):
     """Decorator that signals the test uses the online API, via a provider.
 
     This decorator delegates into the `requires_qe_access` decorator, but
-    instead of the credentials it appends a `provider` argument to the
-    decorated function.
+    instead of the credentials it appends a `provider` argument to the decorated
+    function.
 
     Args:
         func (callable): test function to be decorated.
@@ -139,6 +83,93 @@ def requires_provider(func):
         kwargs.update({'provider': provider})
 
         return func(*args, **kwargs)
+
+    return _wrapper
+
+
+def requires_device(func):
+    """Decorator that retrieves the appropriate backend to use for testing.
+
+    This decorator delegates into the `requires_provider` decorator, but instead of the
+    provider it appends a `backend` argument to the decorated function.
+
+    It involves:
+        * If the `QE_DEVICE` environment variable is set, the test is to be
+            run against the backend specified by `QE_DEVICE`.
+        * If the `QE_DEVICE` environment variable is not set, the test is to
+            be run against least busy device.
+
+    Args:
+        func (callable): test function to be decorated.
+
+    Returns:
+        callable: the decorated function.
+    """
+    @wraps(func)
+    @requires_provider
+    def _wrapper(*args, **kwargs):
+        provider = kwargs.pop('provider')
+
+        _backend = None
+        if os.getenv('QE_DEVICE'):
+            backend_name = os.getenv('QE_DEVICE')
+            _backend = provider.get_backend(backend_name)
+        else:
+            _backend = least_busy(provider.backends(simulator=False))
+
+        kwargs.update({'backend': _backend})
+
+        return func(*args, **kwargs)
+
+    return _wrapper
+
+
+def run_on_device(func):
+    """Decorator that signals that the test should run on a real or semi-real device.
+
+    It involves:
+        * skips the test if online tests are to be skipped.
+        * if the `USE_STAGING_CREDENTIALS` environment variable is set, then enable
+            the staging account using credentials specified by the
+            `QE_STAGING_TOKEN` and `QE_STAGING_URL` environment variables.
+            Backend name specified by `QE_STAGING_DEVICE`, if set, will
+            also be used.
+        * else skips the test if slow tests are to be skipped.
+        * else enable the account using credentials returned by `_get_credentials()`
+            and use the backend specified by `QE_DEVICE`, if set.
+        * if backend value is not already set, use the least busy backend.
+        * appends arguments `provider` and `backend` to the decorated function.
+
+    Args:
+        func (callable): test function to be decorated.
+
+    Returns:
+        callable: the decorated function.
+    """
+    @wraps(func)
+    def _wrapper(obj, *args, **kwargs):
+
+        if get_test_options()['skip_online']:
+            raise SkipTest('Skipping online tests')
+
+        if os.getenv('USE_STAGING_CREDENTIALS', ''):
+            credentials = Credentials(os.getenv('QE_STAGING_TOKEN'), os.getenv('QE_STAGING_URL'))
+            backend_name = os.getenv('QE_STAGING_DEVICE', None)
+        else:
+            if not get_test_options()['run_slow']:
+                raise SkipTest('Skipping slow tests')
+            credentials = _get_credentials()
+            backend_name = os.getenv('QE_DEVICE', None)
+
+        obj.using_ibmq_credentials = credentials.is_ibmq()
+        ibmq_factory = IBMQFactory()
+        provider = ibmq_factory.enable_account(credentials.token, credentials.url)
+        kwargs.update({'provider': provider})
+        _backend = provider.get_backend(backend_name) if backend_name else \
+            least_busy(provider.backends(simulator=False))
+        kwargs.update({'backend': _backend})
+
+        return func(obj, *args, **kwargs)
 
     return _wrapper
 

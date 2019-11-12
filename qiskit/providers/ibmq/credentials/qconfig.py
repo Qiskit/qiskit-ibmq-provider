@@ -16,20 +16,21 @@
 
 import os
 from collections import OrderedDict
+from typing import Dict
 from importlib.util import module_from_spec, spec_from_file_location
 
-from .credentials import Credentials
+from .credentials import Credentials, HubGroupProject
 from .exceptions import CredentialsError
 
 DEFAULT_QCONFIG_FILE = 'Qconfig.py'
 QE_URL = 'https://quantumexperience.ng.bluemix.net/api'
 
 
-def read_credentials_from_qconfig():
+def read_credentials_from_qconfig() -> Dict[HubGroupProject, Credentials]:
     """Read a `QConfig.py` file and return its credentials.
 
     Returns:
-        dict: dictionary with the credentials, in the form::
+        dictionary with the credentials, in the form::
 
             {credentials_unique_id: Credentials}
 
@@ -53,13 +54,13 @@ def read_credentials_from_qconfig():
     try:
         spec = spec_from_file_location('Qconfig', DEFAULT_QCONFIG_FILE)
         q_config = module_from_spec(spec)
-        spec.loader.exec_module(q_config)
+        spec.loader.exec_module(q_config)  # type: ignore[attr-defined]
 
         if hasattr(q_config, 'config'):
-            credentials = q_config.config.copy()
+            credentials = q_config.config.copy()  # type: ignore[attr-defined]
         else:
             credentials = {}
-        credentials['token'] = q_config.APItoken
+        credentials['token'] = q_config.APItoken    # type: ignore[attr-defined]
         credentials['url'] = credentials.get('url', QE_URL)
     except Exception as ex:  # pylint: disable=broad-except
         raise CredentialsError('Error loading Qconfig.py: %s' % str(ex))

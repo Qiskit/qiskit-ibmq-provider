@@ -14,6 +14,63 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [0.4.0] - 2019-11-12
+
+### Added
+
+- A new `IBMQJobManager` class that takes a list of circuits or pulse schedules
+  as input, splits them into one or more jobs, and submits the jobs.
+  (\#389, \#400, \#407)
+- New features to `provider.backends`:
+  - it contains the available backends as attributes. A user can now use
+    `provider.backends.<tab>` to see a list of backend names, and make
+     use of the attributes as regular `IBMQBackend` instances. (\#303)
+  - the methods `provider.backends.jobs()` and
+    `provider.backends.retrieve_job()` can be used for retrieving
+    provider-wide jobs. (\#354)
+
+### Changed
+
+- `IBMQBackend.run()` now accepts an optional `job_name` parameter. If
+  specified, the `job_name` is assigned to the job, which can also be used
+  as a filter in `IBMQBackend.jobs()`. (\#300, \#384)
+- `IBMQBackend.run()` now accepts an optional `job_share_level`
+  parameter. If specified, the job could be shared with other users at the
+  global, hub, group, project, or none level. (\#414)
+- The signature of `IBMQBackend.jobs()` is changed. `db_filter`, which was the
+  4th parameter, is now the 5th parameter. (\#300)
+- The `backend.properties()` function now accepts an optional `datetime`
+  parameter. If specified, the function returns the backend properties closest
+  to, but older than, the specified datetime filter. (\#277)
+- The `WebsocketClient.get_job_status()` method now accepts two optional
+  parameters: `retries` and `backoff_factor`. (\#341)
+- The `IBMQJob` class has been refactored:
+  - The `IBMQJob` attributes are now automatically populated based on the
+    information contained in the remote API. As a result, the `IBMQJob`
+    constructor signature has changed. (\#329)
+  - `IBMQJob.submit()` can no longer be called directly, and jobs are expected
+    to be submitted via `IBMQBackend.run()`. (\#329)
+  - `IBMQJob.error_message()` now gives more information on why a job failed.
+     (\#375)
+  - `IBMQJob.queue_position()` now accepts an optional `refresh` parameter that
+    indicates whether it should query the API for the latest queue position.
+    (\#387)
+  - The `IBMQJob.result()` function now accepts an optional `partial` parameter.
+    If specified, `IBMQJob.result()` will return partial results for jobs with
+    experiments that failed. (\#399)
+- The Exception hierarchy has been refined with more specialized classes, and
+  exception chaining is used in some cases - please inspect the complete
+  traceback for more informative failures. (\#395, \#396)
+- Some `warnings` have been toned down to `logger.warning` messages. (\#379)
+
+### Removed
+
+- Support for the legacy Quantum Experience and QConsole is fully deprecated.
+  Only credentials from the new Quantum Experience can be used. (\#344)
+- The circuits functionality has been temporarily removed from the provider. It
+  will be reintroduced in future versions. (\#429)
+
+
 ## [0.3.3] - 2019-09-30
 
 ### Fixed
@@ -157,7 +214,8 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.3...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.0...HEAD
+[0.4.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.3...0.4.0
 [0.3.3]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.0...0.3.1

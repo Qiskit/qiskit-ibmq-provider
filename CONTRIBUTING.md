@@ -238,10 +238,13 @@ The order of precedence in the options is right to left. For example,
 ### Style guide
 
 Please submit clean code and please make effort to follow existing
-conventions in order to keep it as readable as possible. We use
-[Pylint](https://www.pylint.org) and [PEP
-8](https://www.python.org/dev/peps/pep-0008) style guide: to ensure your
-changes respect the style guidelines, run the next commands:
+conventions in order to keep it as readable as possible. We use:
+* [Pylint](https://www.pylint.org) linter
+* [PEP 8](https://www.python.org/dev/peps/pep-0008) style
+* [mypy](http://mypy-lang.org/) type hinting
+
+To ensure your changes respect the style guidelines, you can run the following
+commands:
 
 All platforms:
 
@@ -249,6 +252,7 @@ All platforms:
 $> cd out
 out$> make lint
 out$> make style
+out$> make mypy
 ```
 
 Development cycle
