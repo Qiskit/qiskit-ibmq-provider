@@ -17,6 +17,7 @@
 import time
 import warnings
 from concurrent import futures
+from datetime import datetime
 from unittest import skip
 
 import numpy
@@ -368,25 +369,30 @@ class TestIBMQJob(JobTestCase):
     @requires_device
     def test_get_jobs_filter_date_backend(self, backend):
         """Test retrieving jobs from a backend filtered by date."""
-        my_filter = {'creationDate': {'lt': '2017-01-01T00:00:00.00'}}
+        date_today = datetime.now().isoformat()
+        my_filter = {'creationDate': {'lt': date_today}}
         job_list = backend.jobs(limit=5, db_filter=my_filter)
 
+        self.assertTrue(job_list)
         self.log.info('found %s matching jobs', len(job_list))
         for i, job in enumerate(job_list):
-            self.log.info('match #%d: %s', i, job.creation_date)
-            self.assertTrue(job.creation_date < '2017-01-01T00:00:00.00')
+            self.log.info('match #%d: %s', i, job.creation_date())
+            self.assertTrue(job.creation_date() < date_today)
 
     @requires_device
     @requires_provider
     def test_get_jobs_filter_date_backend_service(self, backend, provider):
         """Test retrieving jobs from backend service filtered by date."""
-        my_filter = {'creationDate': {'lt': '2017-01-01T00:00:00.00'}}
+        date_today = datetime.now().isoformat()
+        my_filter = {'creationDate': {'lt': date_today}}
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, db_filter=my_filter)
+
+        self.assertTrue(job_list)
         self.log.info('found %s matching jobs', len(job_list))
         for i, job in enumerate(job_list):
             self.log.info('match #%d: %s', i, job.creation_date())
-            self.assertTrue(job.creation_date() < '2017-01-01T00:00:00.00')
+            self.assertTrue(job.creation_date() < date_today)
 
     @requires_provider
     def test_double_submit_fails(self, provider):
