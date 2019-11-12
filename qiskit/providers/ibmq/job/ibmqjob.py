@@ -438,6 +438,12 @@ class IBMQJob(BaseModel, BaseJob):
         finally:
             JobResponseSchema.model_cls = saved_model_cls
 
+    def to_dict(self) -> None:
+        """Serialize the model into a Python dict of simple types."""
+        warnings.warn("IBMQJob.to_dict() is not supported and may not work properly.",
+                      stacklevel=2)
+        return BaseModel.to_dict(self)
+
     def _wait_for_completion(
             self,
             timeout: Optional[float] = None,
