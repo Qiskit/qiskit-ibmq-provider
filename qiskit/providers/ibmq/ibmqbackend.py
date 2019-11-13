@@ -310,7 +310,7 @@ class IBMQBackend(BaseBackend):
         """
         return self._provider.backends.jobs(
             limit, skip, self.name(), status,
-            job_name, datetime_start, datetime_end, db_filter)
+            job_name, start_datetime, end_datetime, db_filter)
 
     def retrieve_job(self, job_id: str) -> IBMQJob:
         """Return a job submitted to this backend.

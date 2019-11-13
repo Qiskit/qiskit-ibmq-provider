@@ -321,7 +321,7 @@ class TestIBMQJob(JobTestCase):
         past_date = datetime.now() - timedelta(days=10)
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
-                                          limit=5, skip=0, datetime_start=past_date)
+                                          limit=5, skip=0, start_datetime=past_date)
         for job in job_list:
             self.assertTrue(job.creation_date() > str(past_date))
 
@@ -332,7 +332,7 @@ class TestIBMQJob(JobTestCase):
         date_today = datetime.now()
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
-                                          limit=5, skip=0, datetime_end=date_today)
+                                          limit=5, skip=0, end_datetime=date_today)
         for job in job_list:
             self.assertTrue(job.creation_date() < str(date_today))
 
@@ -344,7 +344,7 @@ class TestIBMQJob(JobTestCase):
         past_date = date_today - timedelta(days=10)
 
         job_list = provider.backends.jobs(backend_name=backend.name(), limit=5, skip=0,
-                                          datetime_start=past_date, datetime_end=date_today)
+                                          start_datetime=past_date, end_datetime=date_today)
         for job in job_list:
             self.assertTrue(str(past_date) < job.creation_date() < str(date_today))
 
