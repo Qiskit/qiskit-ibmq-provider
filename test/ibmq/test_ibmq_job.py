@@ -315,19 +315,9 @@ class TestIBMQJob(JobTestCase):
             self.assertTrue(job.status() is JobStatus.DONE)
 
     @requires_device
-    def test_get_jobs_filter_job_datetime_start_backend(self, backend):
-        """Test retrieving jobs from a backend filtered by starting datetime."""
-        past_date = datetime.now() - timedelta(days=10)
-
-        job_list = backend.jobs(limit=5, skip=0, datetime_start=past_date)
-        for job in job_list:
-            self.assertTrue(job.creation_date() > str(past_date))
-
-    @requires_device
     @requires_provider
-    def test_get_jobs_filter_job_datetime_start_backend_service(self, backend, provider):
+    def test_get_jobs_filter_job_datetime_start(self, backend, provider):
         """Test retrieving jobs from backend service filtered by starting datetime."""
-        # pylint: disable=invalid-name
         past_date = datetime.now() - timedelta(days=10)
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
@@ -336,19 +326,9 @@ class TestIBMQJob(JobTestCase):
             self.assertTrue(job.creation_date() > str(past_date))
 
     @requires_device
-    def test_get_jobs_filter_job_datetime_end_backend(self, backend):
-        """Test retrieving jobs from a backend filtered by ending datetime."""
-        date_today = datetime.now()
-
-        job_list = backend.jobs(limit=5, skip=0, datetime_end=date_today)
-        for job in job_list:
-            self.assertTrue(job.creation_date() < str(date_today))
-
-    @requires_device
     @requires_provider
-    def test_get_jobs_filter_job_datetime_end_backend_service(self, backend, provider):
+    def test_get_jobs_filter_job_datetime_end(self, backend, provider):
         """Test retrieving jobs from backend service filtered by ending datetime."""
-        # pylint: disable=invalid-name
         date_today = datetime.now()
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
@@ -357,23 +337,11 @@ class TestIBMQJob(JobTestCase):
             self.assertTrue(job.creation_date() < str(date_today))
 
     @requires_device
-    def test_get_jobs_filter_job_datetime_between_backend(self, backend):
-        """Test retrieving jobs from a backend filtered between two dates."""
-        past_date = datetime.now() - timedelta(days=10)
-        date_today = datetime.now()
-
-        job_list = backend.jobs(limit=5, skip=0,
-                                datetime_start=past_date, datetime_end=date_today)
-        for job in job_list:
-            self.assertTrue(str(past_date) < job.creation_date() < str(date_today))
-
-    @requires_device
     @requires_provider
-    def test_get_jobs_filter_job_datetime_between_backend_service(self, backend, provider):
+    def test_get_jobs_filter_job_datetime_between(self, backend, provider):
         """Test retrieving jobs from backend service filtered between two dates."""
-        # pylint: disable=invalid-name
-        past_date = datetime.now() - timedelta(days=10)
         date_today = datetime.now()
+        past_date = date_today - timedelta(days=10)
 
         job_list = provider.backends.jobs(backend_name=backend.name(), limit=5, skip=0,
                                           datetime_start=past_date, datetime_end=date_today)
