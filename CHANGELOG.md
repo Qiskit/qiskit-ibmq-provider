@@ -14,6 +14,12 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [UNRELEASED]
+
+### Fixed
+- Fixed `job.creation_date()` return string format to be the same as that of 
+  release 0.3. (\#447)
+
 ## [0.4.0] - 2019-11-12
 
 ### Added
