@@ -15,7 +15,6 @@
 """Backend namespace for an IBM Quantum Experience account provider."""
 
 import logging
-import warnings
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
 
@@ -211,10 +210,6 @@ class IBMQBackendService(SimpleNamespace):
 
         job_list = []
         for job_info in job_responses:
-            if 'kind' not in job_info:
-                # Discard pre-qobj jobs.
-                continue
-
             job_id = job_info.get('id', "")
             # Recreate the backend used for this job.
             backend_name = job_info.get('backend', {}).get('name', 'unknown')
@@ -257,14 +252,6 @@ class IBMQBackendService(SimpleNamespace):
         """
         try:
             job_info = self._provider._api.job_get(job_id)
-
-            # Check for pre-qobj jobs.
-            if 'kind' not in job_info:
-                warnings.warn('The result of job {} is in a no longer supported format. '
-                              'Please send the job using Qiskit 0.8+.'.format(job_id),
-                              DeprecationWarning, stacklevel=2)
-                raise IBMQBackendPreQobjError('Failed to get job "{}": {}'.format(
-                    job_id, 'job in pre-qobj format'))
         except ApiError as ex:
             raise IBMQBackendApiError('Failed to get job "{}": {}'.format(job_id, str(ex)))
 
@@ -286,7 +273,7 @@ class IBMQBackendService(SimpleNamespace):
             job = IBMQJob.from_dict(job_info)
         except ModelValidationError as ex:
             raise IBMQBackendApiProtocolError(
-                'Failed to get job "{}": {}'.format(job_id, str(ex)))
+                'Failed to get job "{}". Invalid job data received: {}'.format(job_id, str(ex)))
 
         return job
 

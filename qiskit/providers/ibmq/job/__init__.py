@@ -14,5 +14,4 @@
 
 """Module representing Jobs communicating with IBM Q."""
 
-from .circuitjob import CircuitJob
 from .ibmqjob import IBMQJob

@@ -98,7 +98,7 @@ class IBMQBackendApiProtocolError(IBMQBackendError):
     pass
 
 
-class IBMQBackendValueError(IBMQError, ValueError):
+class IBMQBackendValueError(IBMQBackendError, ValueError):
     """Value errors thrown within IBMQBackend."""
     pass
 
