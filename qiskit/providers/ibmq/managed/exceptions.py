@@ -14,44 +14,30 @@
 
 """Exception for the job manager modules."""
 
-from typing import Any, Optional
-
 from ..exceptions import IBMQError
 from ..errorcodes import IBMQErrorCodes
 
 
 class IBMQJobManagerError(IBMQError):
     """Base class for errors raise by job manager."""
-
-    def __init__(self, *message: Any) -> None:
-        """Set the error message and code."""
-        super().__init__(*message, error_code=IBMQ_MANAGED_ERROR_CODES[type(self)])
+    error_code = IBMQErrorCodes.GENERIC_JOB_ERROR
 
 
 class IBMQJobManagerInvalidStateError(IBMQJobManagerError):
     """Errors raised when an operation is invoked in an invalid state."""
-    pass
+    error_code = IBMQErrorCodes.INVALID_STATE
 
 
 class IBMQJobManagerTimeoutError(IBMQJobManagerError):
     """Errors raised when a job manager operation times out."""
-    pass
+    error_code = IBMQErrorCodes.REQUEST_TIMEOUT
 
 
 class IBMQJobManagerJobNotFound(IBMQJobManagerError):
     """Errors raised when a job cannot be found."""
-    pass
+    error_code = IBMQErrorCodes.INVALID_STATE
 
 
 class IBMQManagedResultDataNotAvailable(IBMQJobManagerError):
     """Errors raised when result data is not available."""
-    pass
-
-
-IBMQ_MANAGED_ERROR_CODES = {
-    IBMQJobManagerError: IBMQErrorCodes.GENERIC_JOB_ERROR,
-    IBMQJobManagerInvalidStateError: IBMQErrorCodes.INVALID_STATE,
-    IBMQJobManagerTimeoutError: IBMQErrorCodes.REQUEST_TIMEOUT,
-    IBMQJobManagerJobNotFound: IBMQErrorCodes.INVALID_STATE,
-    IBMQManagedResultDataNotAvailable: IBMQErrorCodes.INVALID_STATE
-}
+    error_code = IBMQErrorCodes.INVALID_STATE

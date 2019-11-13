@@ -27,6 +27,7 @@ class IBMQErrorCodes(enum.Enum):
     INVALID_CREDENTIALS_FORMAT = '0104'
     INVALID_URL = '0105'
     INVALID_TOKEN = '0106'
+    PROVIDER_MATCH_ERROR = '0107'
 
     # 02xx: network errors
     GENERIC_NETWORK_ERROR = '0201'
@@ -34,16 +35,11 @@ class IBMQErrorCodes(enum.Enum):
 
     # 03xx: job service errors
     GENERIC_JOB_ERROR = '0301'
-    JOB_IN_PRE_QOBJ_FORMAT = '0302'
     JOB_FINISHED_IN_ERROR = '0303'
 
     # 04xx: backend service errors
     GENERIC_BACKEND_ERROR = '0401'
     BACKEND_NOT_AVAILABLE = '0402'
-
-    # 05xx: circuit service errors
-    GENERIC_CIRCUITS_ERROR = '0501'
-    CIRCUITS_NOT_AVAILABLE = '0502'
 
     # 06xx: api error
     GENERIC_API_ERROR = '0601'

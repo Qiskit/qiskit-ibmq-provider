@@ -25,8 +25,7 @@ from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-impo
 
 from .api.exceptions import ApiError
 from .apiconstants import ApiJobStatus
-from .exceptions import (IBMQBackendValueError, IBMQBackendPreQobjError,
-                         IBMQBackendApiError, IBMQBackendApiProtocolError)
+from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackendApiProtocolError)
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
 from .utils import to_python_identifier
@@ -245,7 +244,6 @@ class IBMQBackendService(SimpleNamespace):
             class instance
 
         Raises:
-            IBMQBackendPreQobjError: if job is in a format that is no longer supported.
             IBMQBackendApiError: if there was some unexpected failure in the server.
             IBMQBackendApiProtocolError: if unexpected return value received
                 from the server.

@@ -14,31 +14,19 @@
 
 """Exception for the Credentials module."""
 
-from typing import Any
-
 from ..exceptions import IBMQError, IBMQErrorCodes
 
 
 class CredentialsError(IBMQError):
     """Base class for errors raised during credential management."""
-
-    def __init__(self, *message: Any) -> None:
-        """Set the error message and code."""
-        super().__init__(*message, error_code=IBMQ_CREDENTIALS_ERROR_CODES[type(self)])
+    error_code = IBMQErrorCodes.GENERIC_CREDENTIALS_ERROR
 
 
 class InvalidCredentialsFormatError(CredentialsError):
     """Error raised when the credentials are in an invalid format."""
-    pass
+    error_code = IBMQErrorCodes.INVALID_CREDENTIALS_FORMAT
 
 
 class CredentialsNotFoundError(CredentialsError):
     """Error raised when the credentials are not found."""
-    pass
-
-
-IBMQ_CREDENTIALS_ERROR_CODES = {
-    CredentialsError: IBMQErrorCodes.GENERIC_CREDENTIALS_ERROR,
-    InvalidCredentialsFormatError: IBMQErrorCodes.INVALID_CREDENTIALS_FORMAT,
-    CredentialsNotFoundError: IBMQErrorCodes.CREDENTIALS_NOT_FOUND
-}
+    error_code = IBMQErrorCodes.CREDENTIALS_NOT_FOUND

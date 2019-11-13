@@ -21,60 +21,44 @@ from ..exceptions import IBMQError, IBMQErrorCodes
 
 class ApiError(IBMQError):
     """Generic IBM Q API error."""
-
-    def __init__(self, *message: Any) -> None:
-        """Set the error message and code."""
-        super().__init__(*message, error_code=IBMQ_API_ERROR_CODES[type(self)])
+    error_code = IBMQErrorCodes.GENERIC_API_ERROR
 
 
 class RequestsApiError(ApiError):
     """Exception re-raising a RequestException."""
-    pass
+    error_code = IBMQErrorCodes.GENERIC_API_ERROR
 
 
 class WebsocketError(ApiError):
     """Exceptions related to websockets."""
-    pass
+    error_code = IBMQErrorCodes.GENERIC_NETWORK_ERROR
 
 
 class AuthenticationLicenseError(ApiError):
     """Exception due to user not accepting latest license agreement via web."""
-    pass
+    error_code = IBMQErrorCodes.LICENSE_ERROR
 
 
 class ApiIBMQProtocolError(ApiError):
     """Exception related to IBM Q API protocol error."""
-    pass
+    error_code = IBMQErrorCodes.API_PROTOCOL_ERROR
 
 
 class UserTimeoutExceededError(ApiError):
     """Exceptions related to exceeding user defined timeout."""
-    pass
+    error_code = IBMQErrorCodes.REQUEST_TIMEOUT
 
 
 class WebsocketIBMQProtocolError(WebsocketError):
     """Exceptions related to IBM Q protocol error."""
-    pass
+    error_code = IBMQErrorCodes.API_PROTOCOL_ERROR
 
 
 class WebsocketAuthenticationError(WebsocketError):
     """Exception caused during websocket authentication."""
-    pass
+    error_code = IBMQErrorCodes.API_AUTHENTICATION_ERROR
 
 
 class WebsocketTimeoutError(WebsocketError):
     """Timeout during websocket communication."""
-    pass
-
-
-IBMQ_API_ERROR_CODES = {
-    ApiError: IBMQErrorCodes.GENERIC_API_ERROR,
-    RequestsApiError: IBMQErrorCodes.GENERIC_API_ERROR,
-    WebsocketError: IBMQErrorCodes.GENERIC_NETWORK_ERROR,
-    WebsocketIBMQProtocolError: IBMQErrorCodes.API_PROTOCOL_ERROR,
-    WebsocketAuthenticationError: IBMQErrorCodes.API_AUTHENTICATION_ERROR,
-    WebsocketTimeoutError: IBMQErrorCodes.REQUEST_TIMEOUT,
-    AuthenticationLicenseError: IBMQErrorCodes.LICENSE_ERROR,
-    ApiIBMQProtocolError: IBMQErrorCodes.API_PROTOCOL_ERROR,
-    UserTimeoutExceededError: IBMQErrorCodes.REQUEST_TIMEOUT
-}
+    error_code = IBMQErrorCodes.REQUEST_TIMEOUT
