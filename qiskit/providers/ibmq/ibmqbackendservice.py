@@ -187,25 +187,15 @@ class IBMQBackendService(SimpleNamespace):
         if job_name:
             api_filter['name'] = {"regexp": job_name}
 
-        # Create the date query according to parameters specified.
-        date_filter = {}  # type: ignore[var-annotated]
-        if datetime_start and datetime_end:
-            date_filter = {
-                'and': [
-                    {'creationDate': {'gt': datetime_start.isoformat()}},
-                    {'creationDate': {'lt': datetime_end.isoformat()}}
-                ]
-            }
-        elif datetime_start:
-            date_filter = {'creationDate': {'gt': datetime_start.isoformat()}}
-        elif datetime_end:
-            date_filter = {'creationDate': {'lt': datetime_end.isoformat()}}
+        # Create the date query according to the parameters specified.
+        if datetime_start or datetime_end:
+            date_filter = {'creationDate': {}}  # type: ignore[var-annotated]
+            if datetime_start:
+                date_filter['creationDate'].update({'gt': datetime_start.isoformat()})
+            if datetime_end:
+                date_filter['creationDate'].update({'lt': datetime_end.isoformat()})
 
-        # Update the date filter if it was specified.
-        if date_filter:
             api_filter.update(date_filter)
-
-        api_filter.update(date_filter)
 
         if db_filter:
             # status takes precedence over db_filter for same keys
