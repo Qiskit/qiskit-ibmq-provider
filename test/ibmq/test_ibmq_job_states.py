@@ -368,7 +368,7 @@ class BaseFakeAPI:
         try:
             ApiJobStatus(complete_response['status'])
         except ValueError:
-            raise ApiIBMQProtocolError
+            raise ApiIBMQProtocolError('ApiError')
         return {key: value for key, value in complete_response.items()
                 if key in summary_fields}
 
