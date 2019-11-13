@@ -480,7 +480,7 @@ class UnavailableRunAPI(BaseFakeAPI):
 
     def job_submit(self, *_args, **_kwargs):
         time.sleep(0.2)
-        raise ApiError()
+        raise ApiError('API error')
 
 
 class ThrowingAPI(BaseFakeAPI):
@@ -491,7 +491,7 @@ class ThrowingAPI(BaseFakeAPI):
     ]
 
     def job_get(self, job_id):
-        raise ApiError()
+        raise ApiError('API error')
 
 
 class ThrowingNonJobRelatedErrorAPI(BaseFakeAPI):
@@ -510,7 +510,7 @@ class ThrowingNonJobRelatedErrorAPI(BaseFakeAPI):
     def job_get(self, job_id):
         if self._number_of_exceptions_to_throw != 0:
             self._number_of_exceptions_to_throw -= 1
-            raise ApiError()
+            raise ApiError('API error')
 
         return super().job_get(job_id)
 
