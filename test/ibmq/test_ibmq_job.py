@@ -316,8 +316,8 @@ class TestIBMQJob(JobTestCase):
 
     @requires_device
     @requires_provider
-    def test_get_jobs_filter_job_datetime_start(self, backend, provider):
-        """Test retrieving jobs filtered by a start datetime."""
+    def test_get_jobs_filter_job_start_datetime(self, backend, provider):
+        """Test retrieving jobs created after a specified datetime."""
         past_date = datetime.now() - timedelta(days=10)
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
@@ -327,8 +327,8 @@ class TestIBMQJob(JobTestCase):
 
     @requires_device
     @requires_provider
-    def test_get_jobs_filter_job_datetime_end(self, backend, provider):
-        """Test retrieving jobs filtered by an end datetime."""
+    def test_get_jobs_filter_job_end_datetime(self, backend, provider):
+        """Test retrieving jobs created before a specified datetime."""
         date_today = datetime.now()
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
@@ -338,8 +338,8 @@ class TestIBMQJob(JobTestCase):
 
     @requires_device
     @requires_provider
-    def test_get_jobs_filter_job_datetime_between(self, backend, provider):
-        """Test retrieving jobs filtered between two datetimes."""
+    def test_get_jobs_filter_job_between_datetimes(self, backend, provider):
+        """Test retrieving jobs created between two specified datetimes."""
         date_today = datetime.now()
         past_date = date_today - timedelta(days=10)
 

@@ -100,8 +100,8 @@ class IBMQBackendService(SimpleNamespace):
             backend_name: Optional[str] = None,
             status: Optional[Union[JobStatus, str]] = None,
             job_name: Optional[str] = None,
-            datetime_start: Optional[datetime] = None,
-            datetime_end: Optional[datetime] = None,
+            start_datetime: Optional[datetime] = None,
+            end_datetime: Optional[datetime] = None,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return a list of jobs from the API.
@@ -125,10 +125,10 @@ class IBMQBackendService(SimpleNamespace):
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
                 `_ can be used.
-            datetime_start: filter by start date. The `datetime_start` is used to
-                find jobs greater than or equal to the specified datetime.
-            datetime_end: filter by end date. The `datetime_end` is used to
-                find jobs less than or equal to the specified datetime.
+            start_datetime: filter by start date. The `start_datetime` is used to
+                find jobs greater than the specified datetime.
+            end_datetime: filter by end date. The `end_datetime` is used to
+                find jobs less than the specified datetime.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
