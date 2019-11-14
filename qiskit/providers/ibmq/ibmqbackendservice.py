@@ -17,6 +17,7 @@
 import logging
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
+from datetime import datetime
 
 from qiskit.providers import JobStatus, QiskitBackendNotFoundError  # type: ignore[attr-defined]
 from qiskit.providers.providerutils import filter_backends
@@ -99,6 +100,8 @@ class IBMQBackendService(SimpleNamespace):
             backend_name: Optional[str] = None,
             status: Optional[Union[JobStatus, str]] = None,
             job_name: Optional[str] = None,
+            start_datetime: Optional[datetime] = None,
+            end_datetime: Optional[datetime] = None,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return a list of jobs from the API.
@@ -122,6 +125,10 @@ class IBMQBackendService(SimpleNamespace):
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
                 `_ can be used.
+            start_datetime: filter by start date. This is used to find jobs
+                whose creation dates are after (greater than) this date/time.
+            end_datetime: filter by end date. This is used to find jobs
+                whose creation dates are before (less than) this date/time.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -179,6 +186,16 @@ class IBMQBackendService(SimpleNamespace):
 
         if job_name:
             api_filter['name'] = {"regexp": job_name}
+
+        # Create the date query according to the parameters specified.
+        if start_datetime or end_datetime:
+            date_filter = {'creationDate': {}}  # type: ignore[var-annotated]
+            if start_datetime:
+                date_filter['creationDate'].update({'gt': start_datetime.isoformat()})
+            if end_datetime:
+                date_filter['creationDate'].update({'lt': end_datetime.isoformat()})
+
+            api_filter.update(date_filter)
 
         if db_filter:
             # status takes precedence over db_filter for same keys

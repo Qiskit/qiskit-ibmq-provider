@@ -17,7 +17,7 @@
 import time
 import warnings
 from concurrent import futures
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest import skip
 
 import numpy
@@ -313,6 +313,40 @@ class TestIBMQJob(JobTestCase):
                                           limit=5, skip=0, status=JobStatus.DONE)
         for job in job_list:
             self.assertTrue(job.status() is JobStatus.DONE)
+
+    @requires_device
+    @requires_provider
+    def test_get_jobs_filter_job_start_datetime(self, backend, provider):
+        """Test retrieving jobs created after a specified datetime."""
+        past_date = datetime.now() - timedelta(days=10)
+
+        job_list = provider.backends.jobs(backend_name=backend.name(),
+                                          limit=5, skip=0, start_datetime=past_date)
+        for job in job_list:
+            self.assertTrue(job.creation_date() > str(past_date))
+
+    @requires_device
+    @requires_provider
+    def test_get_jobs_filter_job_end_datetime(self, backend, provider):
+        """Test retrieving jobs created before a specified datetime."""
+        date_today = datetime.now()
+
+        job_list = provider.backends.jobs(backend_name=backend.name(),
+                                          limit=5, skip=0, end_datetime=date_today)
+        for job in job_list:
+            self.assertTrue(job.creation_date() < str(date_today))
+
+    @requires_device
+    @requires_provider
+    def test_get_jobs_filter_job_between_datetimes(self, backend, provider):
+        """Test retrieving jobs created between two specified datetimes."""
+        date_today = datetime.now()
+        past_date = date_today - timedelta(days=10)
+
+        job_list = provider.backends.jobs(backend_name=backend.name(), limit=5, skip=0,
+                                          start_datetime=past_date, end_datetime=date_today)
+        for job in job_list:
+            self.assertTrue(str(past_date) < job.creation_date() < str(date_today))
 
     @requires_provider
     def test_get_jobs_filter_counts_backend(self, provider):
