@@ -365,7 +365,7 @@ class IBMQJob(BaseModel, BaseJob):
         Returns:
             Job creation date.
         """
-        return str(self._creation_date)
+        return self._creation_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
     def job_id(self) -> str:
         """Return the job ID assigned by the API.
