@@ -28,7 +28,7 @@ The format is based on [Keep a Changelog].
   specified, it is used to find jobs whose creation date is after 
   (greater than) or before (less than) the given the date/time, 
   respectively. If both are specified, they are used to find  jobs 
-  whose creation date is between the two dates. (/#443)
+  whose creation date is between the two dates. (\#443)
 
 ## [0.4.0] - 2019-11-12
 
