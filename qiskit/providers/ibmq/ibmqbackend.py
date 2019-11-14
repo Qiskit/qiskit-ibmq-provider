@@ -249,6 +249,8 @@ class IBMQBackend(BaseBackend):
             skip: int = 0,
             status: Optional[Union[JobStatus, str]] = None,
             job_name: Optional[str] = None,
+            start_datetime: Optional[python_datetime] = None,
+            end_datetime: Optional[python_datetime] = None,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return the jobs submitted to this backend.
@@ -273,6 +275,10 @@ class IBMQBackend(BaseBackend):
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
                 `_ can be used.
+            start_datetime: filter by start date. This is used to find jobs
+                whose creation dates are after (greater than) this date/time.
+            end_datetime: filter by end date. This is used to find jobs
+                whose creation dates are before (less than) this date/time.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -303,7 +309,8 @@ class IBMQBackend(BaseBackend):
             IBMQBackendValueError: status keyword value unrecognized
         """
         return self._provider.backends.jobs(
-            limit, skip, self.name(), status, job_name, db_filter)
+            limit, skip, self.name(), status,
+            job_name, start_datetime, end_datetime, db_filter)
 
     def retrieve_job(self, job_id: str) -> IBMQJob:
         """Return a job submitted to this backend.
