@@ -275,10 +275,10 @@ class IBMQBackend(BaseBackend):
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
                 `_ can be used.
-            start_datetime: filter by start date. The `start_datetime` is used to
-                find jobs greater than the specified datetime.
-            end_datetime: filter by end date. The `end_datetime` is used to
-                find jobs less than the specified datetime.
+            start_datetime: filter by start date. This is used to find jobs
+                whose creation dates are after (greater than) this date/time.
+            end_datetime: filter by end date. This is used to find jobs
+                whose creation dates are before (less than) this date/time.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
