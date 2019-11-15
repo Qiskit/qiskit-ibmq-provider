@@ -187,15 +187,10 @@ class IBMQBackendService(SimpleNamespace):
         if job_name:
             api_filter['name'] = {"regexp": job_name}
 
-        # Create the date query according to the parameters specified.
-        if start_datetime or end_datetime:
-            date_filter = {'creationDate': {}}  # type: ignore[var-annotated]
-            if start_datetime:
-                date_filter['creationDate'].update({'gt': start_datetime.isoformat()})
-            if end_datetime:
-                date_filter['creationDate'].update({'lt': end_datetime.isoformat()})
-
-            api_filter.update(date_filter)
+        if start_datetime:
+            api_filter.update({'creationDate': {'gt': start_datetime.isoformat()}})
+        if end_datetime:
+            api_filter.update({'creationDate': {'lt': end_datetime.isoformat()}})
 
         if db_filter:
             # status takes precedence over db_filter for same keys
