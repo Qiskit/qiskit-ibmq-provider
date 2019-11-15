@@ -536,6 +536,9 @@ class IBMQJob(BaseModel, BaseJob):
 
         Returns:
             A formatted error message.
+
+        Raises:
+            IBMQJobApiError: If there was some unexpected failure in the server.
         """
         try:
             return "{}. Error code {}.".format(error['message'], error['code'])

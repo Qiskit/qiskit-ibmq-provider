@@ -30,8 +30,7 @@ from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
-from qiskit.providers.ibmq.job.exceptions import (IBMQJobFailureError,
-                                                  IBMQJobInvalidStateError)
+from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
 from qiskit.result import Result
