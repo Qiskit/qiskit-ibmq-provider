@@ -140,7 +140,8 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Properties used for caching.
         self._cancelled = False
-        self._job_error_msg = self._error.message if self._error else None
+        self._job_error_msg = self._format_message_from_error(self._error) if \
+            self._error else None
 
     def qobj(self) -> Qobj:
         """Return the Qobj for this job.
@@ -335,7 +336,7 @@ class IBMQJob(BaseModel, BaseJob):
             if not self._error:
                 self.refresh()
             if self._error:
-                self._job_error_msg = self._error.message
+                self._job_error_msg = self._format_message_from_error(self._error)
             elif self._api_status:
                 # TODO this can be removed once API provides detailed error
                 self._job_error_msg = self._api_status.value
@@ -525,4 +526,19 @@ class IBMQJob(BaseModel, BaseJob):
             # If individual errors given
             self._job_error_msg = build_error_report(result_response['results'])
         elif 'error' in result_response:
-            self._job_error_msg = result_response['error']['message']
+            self._job_error_msg = self._format_message_from_error(result_response['error'])
+
+    def _format_message_from_error(self, error: Dict) -> str:
+        """Format message from the error field.
+
+        Args:
+            The error field.
+
+        Returns:
+            A formatted error message.
+        """
+        try:
+            return "{}. Error code {}.".format(error['message'], error['code'])
+        except KeyError:
+            raise IBMQJobApiError('Failed to get job error message. Invalid error data received: {}'
+                                  .format(error))

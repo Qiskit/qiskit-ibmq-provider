@@ -439,37 +439,6 @@ class TestIBMQJob(JobTestCase):
         with self.assertRaises(IBMQJobInvalidStateError):
             job.submit()
 
-    @requires_provider
-    def test_retrieve_failed_job_simulator(self, provider):
-        """Test retrieving job error messages from a simulator backend."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new, qc_new], backend=backend)
-        qobj.experiments[1].instructions[1].name = 'bad_instruction'
-
-        job = backend.run(qobj)
-        with self.assertRaises(IBMQJobFailureError):
-            job.result()
-
-        new_job = provider.backends.retrieve_job(job.job_id())
-        message = new_job.error_message()
-        self.assertIn('Experiment 1: ERROR', message)
-
-    @run_on_device
-    def test_retrieve_failed_job_device(self, provider, backend):
-        """Test retrieving a failed job from a device backend."""
-        qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new, qc_new], backend=backend)
-        qobj.experiments[1].instructions[1].name = 'bad_instruction'
-
-        job = backend.run(qobj)
-        with self.assertRaises(IBMQJobFailureError):
-            job.result(timeout=180)
-
-        new_job = provider.backends.retrieve_job(job.job_id())
-        self.assertTrue(new_job.error_message())
-
     @skip('Remove skip once simulator returns schema complaint partial results.')
     @requires_provider
     def test_retrieve_failed_job_simulator_partial(self, provider):
