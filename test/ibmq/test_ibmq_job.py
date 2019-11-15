@@ -326,7 +326,7 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(job_list)
         for i, job in enumerate(job_list):
             self.assertTrue(job.creation_date() > past_month_str,
-                            '{}) job.creation_date: {}, date_today: {}'
+                            '{}) job.creation_date: {}, past_month: {}'
                             .format(i, job.creation_date(), past_month_str))
 
     @requires_provider
@@ -341,7 +341,7 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(job_list)
         for i, job in enumerate(job_list):
             self.assertTrue(job.creation_date() < past_month_str,
-                            '{}) job.creation_date: {}, date_today: {}'
+                            '{}) job.creation_date: {}, past_month: {}'
                             .format(i, job.creation_date(), past_month_str))
 
     @requires_provider
@@ -360,7 +360,7 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(job_list)
         for i, job in enumerate(job_list):
             self.assertTrue((past_two_month_str < job.creation_date() < past_month_str),
-                            '{}) past_date: {}, job.creation_date: {}, date_today: {}'
+                            '{}) past_two_month: {}, job.creation_date: {}, past_month: {}'
                             .format(i, past_two_month_str, job.creation_date(), past_month_str))
 
     @requires_provider
@@ -429,7 +429,9 @@ class TestIBMQJob(JobTestCase):
         self.log.info('found %s matching jobs', len(job_list))
         for i, job in enumerate(job_list):
             self.log.info('match #%d: %s', i, job.creation_date())
-            self.assertTrue(job.creation_date() < date_today_str)
+            self.assertTrue(job.creation_date() < date_today_str,
+                            '{}) job.creation_date: {}, date_today: {}'
+                            .format(i, job.creation_date(), date_today_str))
 
     @requires_provider
     def test_get_jobs_filter_date_backend_service(self, provider):
@@ -446,7 +448,9 @@ class TestIBMQJob(JobTestCase):
         self.log.info('found %s matching jobs', len(job_list))
         for i, job in enumerate(job_list):
             self.log.info('match #%d: %s', i, job.creation_date())
-            self.assertTrue(job.creation_date() < date_today_str)
+            self.assertTrue(job.creation_date() < date_today_str,
+                            '{}) job.creation_date: {}, date_today: {}'
+                            .format(i, job.creation_date(), date_today_str))
 
     @requires_provider
     def test_double_submit_fails(self, provider):
