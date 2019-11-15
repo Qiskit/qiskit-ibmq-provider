@@ -193,6 +193,7 @@ class IBMQBackendService(SimpleNamespace):
         if end_datetime:
             arg_filters.append({'creationDate': {'lt': end_datetime.isoformat()}})
 
+        # Group filters passed as arguments for `and` db filter.
         if arg_filters:
             api_filter['and'] = arg_filters
 

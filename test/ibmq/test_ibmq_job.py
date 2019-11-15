@@ -420,6 +420,7 @@ class TestIBMQJob(JobTestCase):
         """Test retrieving jobs from a backend filtered by date."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
+        date_today_str = date_today.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
         my_filter = {'creationDate': {'lt': date_today.isoformat()}}
         job_list = backend.jobs(limit=5, db_filter=my_filter)
@@ -427,9 +428,8 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(job_list)
         self.log.info('found %s matching jobs', len(job_list))
         for i, job in enumerate(job_list):
-            today_date_str = date_today.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
             self.log.info('match #%d: %s', i, job.creation_date())
-            self.assertTrue(job.creation_date() < today_date_str)
+            self.assertTrue(job.creation_date() < date_today_str)
 
     @requires_provider
     def test_get_jobs_filter_date_backend_service(self, provider):
