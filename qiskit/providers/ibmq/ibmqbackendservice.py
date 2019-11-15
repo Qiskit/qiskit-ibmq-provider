@@ -160,7 +160,7 @@ class IBMQBackendService(SimpleNamespace):
         """
         # Build the filter for the query.
         api_filter = {}  # type: Dict[str, Any]
-        arg_filters = []
+        arg_filters = []  # type: List[Dict[str, Any]]
 
         if backend_name:
             arg_filters.append({'backend.name': backend_name})
