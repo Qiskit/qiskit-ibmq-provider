@@ -160,9 +160,10 @@ class IBMQBackendService(SimpleNamespace):
         """
         # Build the filter for the query.
         api_filter = {}  # type: Dict[str, Any]
+        arg_filters = []
 
         if backend_name:
-            api_filter['backend.name'] = backend_name
+            arg_filters.append({'backend.name': backend_name})
 
         if status:
             if isinstance(status, str):
@@ -182,15 +183,18 @@ class IBMQBackendService(SimpleNamespace):
             else:
                 raise IBMQBackendValueError('unrecognized value for "status" keyword '
                                             'in job filter')
-            api_filter.update(this_filter)
+            arg_filters.append(this_filter)
 
         if job_name:
-            api_filter['name'] = {"regexp": job_name}
+            arg_filters.append({'name': {"regexp": job_name}})
 
         if start_datetime:
-            api_filter.update({'creationDate': {'gt': start_datetime.isoformat()}})
+            arg_filters.append({'creationDate': {'gt': start_datetime.isoformat()}})
         if end_datetime:
-            api_filter.update({'creationDate': {'lt': end_datetime.isoformat()}})
+            arg_filters.append({'creationDate': {'lt': end_datetime.isoformat()}})
+
+        if arg_filters:
+            api_filter['and'] = arg_filters
 
         if db_filter:
             # status takes precedence over db_filter for same keys
