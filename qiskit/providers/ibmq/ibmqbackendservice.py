@@ -160,10 +160,10 @@ class IBMQBackendService(SimpleNamespace):
         """
         # Build the filter for the query.
         api_filter = {}  # type: Dict[str, Any]
-        arg_filters = []  # type: List[Dict[str, Any]]
+        filters = []  # type: List[Dict[str, Any]]
 
         if backend_name:
-            arg_filters.append({'backend.name': backend_name})
+            filters.append({'backend.name': backend_name})
 
         if status:
             if isinstance(status, str):
@@ -183,23 +183,29 @@ class IBMQBackendService(SimpleNamespace):
             else:
                 raise IBMQBackendValueError('unrecognized value for "status" keyword '
                                             'in job filter')
-            arg_filters.append(this_filter)
+            filters.append(this_filter)
 
         if job_name:
-            arg_filters.append({'name': {"regexp": job_name}})
+            filters.append({'name': {"regexp": job_name}})
 
         if start_datetime:
-            arg_filters.append({'creationDate': {'gt': start_datetime.isoformat()}})
+            filters.append({'creationDate': {'gt': start_datetime.isoformat()}})
         if end_datetime:
-            arg_filters.append({'creationDate': {'lt': end_datetime.isoformat()}})
-
-        # Group filters passed as arguments for `and` db filter.
-        if arg_filters:
-            api_filter['and'] = arg_filters
+            filters.append({'creationDate': {'lt': end_datetime.isoformat()}})
 
         if db_filter:
-            # status takes precedence over db_filter for same keys
-            api_filter = {**db_filter, **api_filter}
+            # Argument filters take precedence, remove duplicate `db_filter` keys.
+            for filter_ in filters:
+                for key in filter_:
+                    if key in db_filter:
+                        db_filter.pop(key, None)
+
+            # Add remaining `db_filter` items.
+            for key in db_filter:
+                filters.append({key: db_filter[key]})
+
+        # DB query expects `and` statement for search.
+        api_filter['and'] = filters
 
         # Retrieve the requested number of jobs, using pagination. The API
         # might limit the number of jobs per request.
