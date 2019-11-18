@@ -182,7 +182,9 @@ class IBMQBackendService(SimpleNamespace):
             api_filter['name'] = {"regexp": job_name}
 
         if start_datetime and end_datetime:
-            api_filter['creationDate'] = {'between': [start_datetime.isoformat(), end_datetime.isoformat()]}
+            api_filter['creationDate'] = {
+                'between': [start_datetime.isoformat(), end_datetime.isoformat()]
+            }
         elif start_datetime:
             api_filter['creationDate'] = {'gte': start_datetime.isoformat()}
         elif end_datetime:

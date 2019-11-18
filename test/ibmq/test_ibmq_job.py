@@ -367,9 +367,10 @@ class TestIBMQJob(JobTestCase):
                             .format(i, past_two_month_str, job.creation_date(), past_month_str))
 
     @requires_provider
-    def test_get_jobs_filter_job_between_datetimes_not_overriden(self, provider):
+    def test_get_jobs_filter_job_between_datetimes_not_overridden(self, provider):
         """Test retrieving jobs created between two specified datetimes
         and ensure `db_filter` does not override datetime arguments."""
+        # pylint: disable=invalid-name
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
 
@@ -378,18 +379,20 @@ class TestIBMQJob(JobTestCase):
         past_three_month = date_today - timedelta(60)
         past_three_month_str = past_three_month.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
-        # Datetime used for `db_filter`, should not override `start_datetime` and `end_datetime` arguments.
+        # Used for `db_filter`, should not override `start_datetime` and `end_datetime` arguments.
         past_ten_days = date_today - timedelta(10)
 
         job_list = provider.backends.jobs(backend_name=backend.name(), limit=5, skip=0,
-                                          start_datetime=past_three_month, end_datetime=past_two_month,
+                                          start_datetime=past_three_month,
+                                          end_datetime=past_two_month,
                                           db_filter={'creationDate': {'gt': past_ten_days}})
         self.assertTrue(job_list)
         for i, job in enumerate(job_list):
             self.assertTrue((past_three_month_str <= job.creation_date() <= past_two_month_str),
                             '{}) job creation date {} is not '
                             'between past three month {} and past two month {}'
-                            .format(i, past_three_month_str, job.creation_date(), past_two_month_str))
+                            .format(i, past_three_month_str,
+                                    job.creation_date(), past_two_month_str))
 
     @requires_provider
     def test_get_jobs_filter_counts_backend(self, provider):
