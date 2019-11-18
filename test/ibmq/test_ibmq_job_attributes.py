@@ -16,6 +16,7 @@
 
 import time
 from unittest import mock
+import re
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers import JobStatus
@@ -166,6 +167,11 @@ class TestIBMQJobAttributes(JobTestCase):
 
         message = job.error_message()
         self.assertTrue(message)
+        self.assertIsNotNone(re.search(r'Error code [0-9]{4}\.$', message), message)
+
+        r_message = provider.backends.retrieve_job(job.job_id()).error_message()
+        self.assertTrue(r_message)
+        self.assertIsNotNone(re.search(r'Error code [0-9]{4}\.$', r_message), r_message)
 
     @requires_provider
     def test_error_message_simulator(self, provider):
@@ -182,6 +188,9 @@ class TestIBMQJobAttributes(JobTestCase):
 
         message = job.error_message()
         self.assertIn('Experiment 1: ERROR', message)
+
+        r_message = provider.backends.retrieve_job(job.job_id()).error_message()
+        self.assertIn('Experiment 1: ERROR', r_message)
 
     @requires_provider
     def test_error_message_validation(self, provider):
