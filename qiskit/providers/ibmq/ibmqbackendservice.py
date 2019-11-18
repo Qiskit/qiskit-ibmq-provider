@@ -126,9 +126,9 @@ class IBMQBackendService(SimpleNamespace):
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
                 `_ can be used.
             start_datetime: filter by start date. This is used to find jobs
-                whose creation dates are after (greater than) this date/time.
+                whose creation dates are after (greater than or equal to) this date/time.
             end_datetime: filter by end date. This is used to find jobs
-                whose creation dates are before (less than) this date/time.
+                whose creation dates are before (less than or equal to) this date/time.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -146,12 +146,6 @@ class IBMQBackendService(SimpleNamespace):
                                  'qasms.result.data.counts.11': {'gt': 400}}
                   job_list = backend.jobs(limit=5, db_filter=cnts_filter)
 
-                Filter last five jobs from 30 days ago::
-
-                   past_date = datetime.datetime.now() - datetime.timedelta(days=30)
-                   date_filter = {'creationDate': {'lt': past_date.isoformat()}}
-                   job_list = backend.jobs(limit=5, db_filter=date_filter)
-
         Returns:
             list of IBMQJob instances
 
@@ -160,10 +154,9 @@ class IBMQBackendService(SimpleNamespace):
         """
         # Build the filter for the query.
         api_filter = {}  # type: Dict[str, Any]
-        filters = []  # type: List[Dict[str, Any]]
 
         if backend_name:
-            filters.append({'backend.name': backend_name})
+            api_filter['backend.name'] = backend_name
 
         if status:
             if isinstance(status, str):
@@ -183,29 +176,21 @@ class IBMQBackendService(SimpleNamespace):
             else:
                 raise IBMQBackendValueError('unrecognized value for "status" keyword '
                                             'in job filter')
-            filters.append(this_filter)
+            api_filter.update(this_filter)
 
         if job_name:
-            filters.append({'name': {"regexp": job_name}})
+            api_filter['name'] = {"regexp": job_name}
 
-        if start_datetime:
-            filters.append({'creationDate': {'gt': start_datetime.isoformat()}})
-        if end_datetime:
-            filters.append({'creationDate': {'lt': end_datetime.isoformat()}})
+        if start_datetime and end_datetime:
+            api_filter['creationDate'] = {'between': [start_datetime.isoformat(), end_datetime.isoformat()]}
+        elif start_datetime:
+            api_filter['creationDate'] = {'gte': start_datetime.isoformat()}
+        elif end_datetime:
+            api_filter['creationDate'] = {'lte': end_datetime.isoformat()}
 
         if db_filter:
-            # Argument filters take precedence, remove duplicate `db_filter` keys.
-            for filter_ in filters:
-                for key in filter_:
-                    if key in db_filter:
-                        db_filter.pop(key, None)
-
-            # Add remaining `db_filter` items.
-            for key in db_filter:
-                filters.append({key: db_filter[key]})
-
-        # DB query expects `and` statement for search.
-        api_filter['and'] = filters
+            # Argument filters takes precedence over db_filter for same keys
+            api_filter = {**db_filter, **api_filter}
 
         # Retrieve the requested number of jobs, using pagination. The API
         # might limit the number of jobs per request.

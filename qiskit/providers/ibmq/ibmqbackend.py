@@ -276,9 +276,9 @@ class IBMQBackend(BaseBackend):
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
                 `_ can be used.
             start_datetime: filter by start date. This is used to find jobs
-                whose creation dates are after (greater than) this date/time.
+                whose creation dates are after (greater than or equal to) this date/time.
             end_datetime: filter by end date. This is used to find jobs
-                whose creation dates are before (less than) this date/time.
+                whose creation dates are before (less than or equal to) this date/time.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -295,12 +295,6 @@ class IBMQBackend(BaseBackend):
                                  'qasms.result.data.counts.00': {'gt': 400},
                                  'qasms.result.data.counts.11': {'gt': 400}}
                   job_list = backend.jobs(limit=5, db_filter=cnts_filter)
-
-                Filter last five jobs from 30 days ago::
-
-                   past_date = datetime.datetime.now() - datetime.timedelta(days=30)
-                   date_filter = {'creationDate': {'lt': past_date.isoformat()}}
-                   job_list = backend.jobs(limit=5, db_filter=date_filter)
 
         Returns:
             list of IBMQJob instances

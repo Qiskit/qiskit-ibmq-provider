@@ -325,7 +325,7 @@ class TestIBMQJob(JobTestCase):
                                           limit=5, skip=0, start_datetime=past_month)
         self.assertTrue(job_list)
         for i, job in enumerate(job_list):
-            self.assertTrue(job.creation_date() > past_month_str,
+            self.assertTrue(job.creation_date() >= past_month_str,
                             '{}) job.creation_date: {}, past_month: {}'
                             .format(i, job.creation_date(), past_month_str))
 
@@ -340,7 +340,7 @@ class TestIBMQJob(JobTestCase):
                                           limit=5, skip=0, end_datetime=past_month)
         self.assertTrue(job_list)
         for i, job in enumerate(job_list):
-            self.assertTrue(job.creation_date() < past_month_str,
+            self.assertTrue(job.creation_date() <= past_month_str,
                             '{}) job.creation_date: {}, past_month: {}'
                             .format(i, job.creation_date(), past_month_str))
 
@@ -359,7 +359,7 @@ class TestIBMQJob(JobTestCase):
                                           start_datetime=past_two_month, end_datetime=past_month)
         self.assertTrue(job_list)
         for i, job in enumerate(job_list):
-            self.assertTrue((past_two_month_str < job.creation_date() < past_month_str),
+            self.assertTrue((past_two_month_str <= job.creation_date() <= past_month_str),
                             '{}) past_two_month: {}, job.creation_date: {}, past_month: {}'
                             .format(i, past_two_month_str, job.creation_date(), past_month_str))
 
