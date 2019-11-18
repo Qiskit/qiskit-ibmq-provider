@@ -26,9 +26,10 @@ The format is based on [Keep a Changelog].
 - `IBMBackend.jobs()` and `IBMQBackendService.jobs()` now accept the 
   optional parameters `start_datetime` and `end_datetime`. If one is 
   specified, it is used to find jobs whose creation date is after 
-  (greater than) or before (less than) the given the date/time, 
-  respectively. If both are specified, they are used to find  jobs 
-  whose creation date is between the two dates. (\#443)
+  (greater than or equal to) or before (less than or equal to) 
+  the given the date/time, respectively. If both are specified, 
+  they are used to find  jobs whose creation date is between 
+  the two dates. (\#443)
 
 ## [0.4.0] - 2019-11-12
 
