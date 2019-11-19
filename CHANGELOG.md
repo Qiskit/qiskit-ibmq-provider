@@ -14,6 +14,16 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [0.4.2] - 2019-11-18
+
+### Fixed
+
+- Fixed `IBMQBackendService.jobs()` to correctly return jobs when
+  both `start_datetime` and `end_datetime` are specified. Now, when the 
+  two parameters are specified, the function will return the jobs after 
+  (greater than or equal to) and before (less than or equal to) the 
+  two given datetimes. (\#452)
+
 ## [0.4.1] - 2019-11-14
 
 ### Fixed
@@ -27,7 +37,7 @@ The format is based on [Keep a Changelog].
   optional parameters `start_datetime` and `end_datetime`. If one is 
   specified, it is used to find jobs whose creation date is after 
   (greater than) or before (less than) the given the date/time, 
-  respectively. If both are specified, they are used to find  jobs 
+  respectively. If both are specified, they are used to find jobs 
   whose creation date is between the two dates. (\#443)
 
 ## [0.4.0] - 2019-11-12
@@ -230,7 +240,8 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.1...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.2...HEAD
+[0.4.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.3...0.4.0
 [0.3.3]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.2...0.3.3
