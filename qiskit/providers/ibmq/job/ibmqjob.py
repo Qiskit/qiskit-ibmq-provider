@@ -541,7 +541,7 @@ class IBMQJob(BaseModel, BaseJob):
             IBMQJobApiError: If there was some unexpected failure in the server.
         """
         try:
-            return "{}. Error code {}.".format(error['message'], error['code'])
+            return "{}. Error code: {}.".format(error['message'], error['code'])
         except KeyError:
             raise IBMQJobApiError('Failed to get job error message. Invalid error data received: {}'
                                   .format(error))
