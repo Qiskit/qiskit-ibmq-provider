@@ -376,7 +376,7 @@ class TestIBMQJob(JobTestCase):
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, skip=0, db_filter=my_filter)
 
-        for _i, job in enumerate(job_list):
+        for job in job_list:
             result = job.result()
             self.assertTrue(any(cresult.data.counts.to_dict()['0x0'] < 500
                                 for cresult in result.results))
