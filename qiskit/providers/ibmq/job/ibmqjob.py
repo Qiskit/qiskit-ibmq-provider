@@ -37,9 +37,9 @@ from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..job.exceptions import (IBMQJobApiError, IBMQJobFailureError,
                               IBMQJobInvalidStateError)
+from ..api.rest.validation import InfoQueueResponse
 from .schema import JobResponseSchema
-from .utils import (build_error_report, is_job_queued,
-                    api_status_to_job_status, api_to_job_error)
+from .utils import build_error_report, api_status_to_job_status, api_to_job_error
 
 logger = logging.getLogger(__name__)
 
@@ -136,6 +136,7 @@ class IBMQJob(BaseModel, BaseJob):
         self._api = api
         self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
         self._queue_position = None
+        self._estimated_run_time = None
         self._update_status_position(_api_status, kwargs.pop('infoQueue', None))
 
         # Properties used for caching.
@@ -288,20 +289,26 @@ class IBMQJob(BaseModel, BaseJob):
         return self._status
 
     def _update_status_position(self, status: ApiJobStatus, info_queue: Optional[Dict]) -> None:
-        """Update the job status and potentially queue position from an API response.
+        """Update the job status and potentially queue information from an API response.
 
         Args:
             status: job status from the API response.
             info_queue: job queue information from the API response.
         """
         self._status = api_status_to_job_status(status)
-        if status is ApiJobStatus.RUNNING:
-            queued, self._queue_position = is_job_queued(info_queue)  # type: ignore[assignment]
-            if queued:
-                self._status = JobStatus.QUEUED
+        if status is ApiJobStatus.RUNNING and info_queue:
+            try:
+                info_queue = InfoQueueResponse.from_dict(info_queue)
+                if info_queue.status == ApiJobStatus.PENDING_IN_QUEUE.value:
+                    self._status = JobStatus.QUEUED
+                    self._queue_position = info_queue.position
+                    self._estimated_run_time = info_queue.estimated_time
+            except ModelValidationError as ex:
+                raise IBMQJobApiError("Unexpected return value received from the server.") from ex
 
         if self._status is not JobStatus.QUEUED:
             self._queue_position = None
+            self._estimated_run_time = None
 
     def error_message(self) -> Optional[str]:
         """Provide details about the reason of failure.
@@ -346,7 +353,10 @@ class IBMQJob(BaseModel, BaseJob):
         return self._job_error_msg
 
     def queue_position(self, refresh: bool = False) -> Optional[int]:
-        """Return the position in the server queue.
+        """Return the position in the server queue for the provider.
+
+        Note: The position returned is within the scope of the account provider
+            and may differ from the global queue position for the device.
 
         Args:
             refresh (bool): if True, query the API and return the latest value.
@@ -359,6 +369,22 @@ class IBMQJob(BaseModel, BaseJob):
             # Get latest position
             self.status()
         return self._queue_position
+
+    def estimated_run_time(self, refresh: bool = False) -> Optional[datetime]:
+        """Return the estimated time the job will run.
+
+        Args:
+            refresh (bool): if True, query the API and return the latest value.
+                Otherwise return the cached value.
+
+        Returns:
+            Estimated time (in UTC) the job will run, or ``None`` if the estimate
+                is unknown or not applicable.
+        """
+        if refresh:
+            # Get latest information
+            self.status()
+        return self._estimated_run_time
 
     def creation_date(self) -> str:
         """Return creation date.

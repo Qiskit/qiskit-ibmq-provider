@@ -247,18 +247,28 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(job.batman, 'bruce')
 
     @requires_provider
-    def test_queue_position(self, provider):
-        """Test retrieving queue position."""
+    def test_queue_info(self, provider):
+        """Test retrieving queue information."""
         # Find the most busy backend.
-        backend = max([b for b in provider.backends() if b.status().operational],
+        backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
                       key=lambda b: b.status().pending_jobs)
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
         status = job.status()
+        for _ in range(10):
+            if job.status() is JobStatus.QUEUED:
+                break
         if status is JobStatus.QUEUED:
-            self.assertIsNotNone(job.queue_position())
+            self.assertIsNotNone(
+                job.queue_position(),
+                "Job {} is queued but has no queue position.".format(job.job_id()))
+            self.assertIsNotNone(
+                job.estimated_run_time(),
+                "Job {} is queued but has no estimated time.".format(job.job_id()))
         else:
             self.assertIsNone(job.queue_position())
+            self.assertIsNone(job.estimated_run_time())
+            self.log.warn("Unable to retrieve queue information")
 
         # Cancel job so it doesn't consume more resources.
         try:

@@ -22,10 +22,8 @@ from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, Dat
 from qiskit.qobj.qobj import QobjSchema
 from qiskit.result.models import ResultSchema
 
-from qiskit.providers.ibmq.utils import to_python_identifier
+from qiskit.providers.ibmq.utils.fields import Enum, map_field_names
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
-
-from ..utils.fields import Enum
 
 
 # Mapping between 'API job field': 'IBMQJob attribute', for solving name
@@ -111,14 +109,4 @@ class JobResponseSchema(BaseSchema):
         marshmallow 3 allow to use directly `data_key`, as in 0.9 terra
         duplicates the unknown keys.
         """
-        rename_map = {}
-        for field_name in data:
-            if field_name in FIELDS_MAP:
-                rename_map[field_name] = FIELDS_MAP[field_name]
-            else:
-                rename_map[field_name] = to_python_identifier(field_name)
-
-        for old_name, new_name in rename_map.items():
-            data[new_name] = data.pop(old_name)
-
-        return data
+        return map_field_names(FIELDS_MAP, data)

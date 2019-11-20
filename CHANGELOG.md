@@ -14,6 +14,13 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [UNRELEASED]
+
+### Added
+
+- `IBMQJob` now has a new `estimated_run_time()` method that returns
+  the estimated time the job will run. (TBD)
+  
 ## [0.4.2] - 2019-11-18
 
 ### Fixed

@@ -15,10 +15,14 @@
 """Schemas for validation."""
 # TODO The schemas defined here should be merged with others under rest/schemas
 # when they are ready
+from marshmallow import pre_load
 from marshmallow.validate import OneOf
+
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
-from qiskit.validation import BaseSchema
-from qiskit.validation.fields import String, Nested, Integer
+from qiskit.validation import BaseSchema, BaseModel, bind_schema
+from qiskit.validation.fields import String, Nested, Integer, DateTime
+
+from qiskit.providers.ibmq.utils.fields import map_field_names
 
 
 # Helper schemas.
@@ -28,7 +32,16 @@ class InfoQueueResponseSchema(BaseSchema):
 
     # Optional properties
     position = Integer(required=False, missing=0)
-    status = String(required=False)
+    status = String(required=False, missing=None)
+    estimated_time = DateTime(required=False, missing=None)
+
+    @pre_load
+    def preprocess_field_names(self, data, **_):  # type: ignore
+        """Pre-process the info queue response fields."""
+        FIELDS_MAP = {
+            'estimatedTime': 'estimated_time'
+        }
+        return map_field_names(FIELDS_MAP, data)
 
 
 # Endpoint schemas.
@@ -41,3 +54,13 @@ class StatusResponseSchema(BaseSchema):
 
     # Required properties
     status = String(required=True, validate=OneOf([status.value for status in ApiJobStatus]))
+
+
+# Models
+
+@bind_schema(InfoQueueResponseSchema)
+class InfoQueueResponse(BaseModel):
+    """Model for InfoQueueResponse."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
