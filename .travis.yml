@@ -170,5 +170,5 @@ jobs:
         - TWINE_USERNAME=qiskit
       install: pip install -U twine
       script:
-        - python3 setup.py sdist
+        - python3 setup.py sdist bdist_wheel
         - twine upload dist/qiskit*
