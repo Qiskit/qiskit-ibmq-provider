@@ -35,7 +35,8 @@ from .api.exceptions import ApiError
 from .credentials import Credentials
 from .exceptions import IBMQBackendError, IBMQBackendValueError
 from .job import IBMQJob
-from .utils import update_qobj_config
+from .utils import update_qobj_config, require_signature_compatibility
+from .ibmqbackendservice import IBMQBackendService
 
 logger = logging.getLogger(__name__)
 
@@ -243,6 +244,7 @@ class IBMQBackend(BaseBackend):
 
         return self._defaults
 
+    @require_signature_compatibility(IBMQBackendService.jobs)
     def jobs(
             self,
             limit: int = 10,
