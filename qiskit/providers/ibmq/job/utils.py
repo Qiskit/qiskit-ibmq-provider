@@ -15,7 +15,7 @@
 """Utilities for working with IBM Q Jobs."""
 
 from datetime import datetime, timezone
-from typing import Dict, List, Tuple, Generator, Optional, Any
+from typing import Dict, List, Generator, Any
 from contextlib import contextmanager
 
 from qiskit.providers.jobstatus import JobStatus

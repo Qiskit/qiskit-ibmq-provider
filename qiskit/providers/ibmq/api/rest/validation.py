@@ -38,7 +38,7 @@ class InfoQueueResponseSchema(BaseSchema):
     @pre_load
     def preprocess_field_names(self, data, **_):  # type: ignore
         """Pre-process the info queue response fields."""
-        FIELDS_MAP = {
+        FIELDS_MAP = {  # pylint: disable=invalid-name
             'estimatedTime': 'estimated_time'
         }
         return map_field_names(FIELDS_MAP, data)
@@ -62,5 +62,4 @@ class StatusResponseSchema(BaseSchema):
 class InfoQueueResponse(BaseModel):
     """Model for InfoQueueResponse."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    pass

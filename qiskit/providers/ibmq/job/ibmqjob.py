@@ -288,17 +288,24 @@ class IBMQJob(BaseModel, BaseJob):
 
         return self._status
 
-    def _update_status_position(self, status: ApiJobStatus, info_queue: Optional[Dict]) -> None:
+    def _update_status_position(
+            self,
+            status: ApiJobStatus,
+            api_info_queue: Optional[Dict]
+    ) -> None:
         """Update the job status and potentially queue information from an API response.
 
         Args:
             status: job status from the API response.
-            info_queue: job queue information from the API response.
+            api_info_queue: job queue information from the API response.
+
+        Raises:
+            IBMQJobApiError: if there was some unexpected failure in the server.
         """
         self._status = api_status_to_job_status(status)
-        if status is ApiJobStatus.RUNNING and info_queue:
+        if status is ApiJobStatus.RUNNING and api_info_queue:
             try:
-                info_queue = InfoQueueResponse.from_dict(info_queue)
+                info_queue = InfoQueueResponse.from_dict(api_info_queue)
                 if info_queue.status == ApiJobStatus.PENDING_IN_QUEUE.value:
                     self._status = JobStatus.QUEUED
                     self._queue_position = info_queue.position

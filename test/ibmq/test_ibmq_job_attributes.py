@@ -254,9 +254,9 @@ class TestIBMQJobAttributes(JobTestCase):
                       key=lambda b: b.status().pending_jobs)
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
-        status = job.status()
         for _ in range(10):
-            if job.status() is JobStatus.QUEUED:
+            status = job.status()
+            if status is JobStatus.QUEUED:
                 break
         if status is JobStatus.QUEUED:
             self.assertIsNotNone(
@@ -268,7 +268,7 @@ class TestIBMQJobAttributes(JobTestCase):
         else:
             self.assertIsNone(job.queue_position())
             self.assertIsNone(job.estimated_run_time())
-            self.log.warn("Unable to retrieve queue information")
+            self.log.warning("Unable to retrieve queue information")
 
         # Cancel job so it doesn't consume more resources.
         try:
