@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog].
 ### Fixed
 
 - Fixed an issue where `IBMQJob.error_message()` may raise an exception
-  if the job fails before execution. (TBD)
+  if the job fails before execution. (\#458)
 
 ## [0.4.2] - 2019-11-18
 
