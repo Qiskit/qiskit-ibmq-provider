@@ -16,6 +16,9 @@
 
 import re
 import keyword
+from functools import wraps
+from typing import Callable, Any
+from inspect import getfullargspec, signature
 
 
 def to_python_identifier(name: str) -> str:
@@ -40,3 +43,41 @@ def to_python_identifier(name: str) -> str:
         name += '_'
 
     return name
+
+
+def require_signature_compatibility(func_to_compare: Callable) -> Callable:
+    """Decorator that ensures the decorated function's signature is compatible with
+    the signature of the function passed as argument.
+
+    Note:
+        The decorated function's signature is compatible with the signature of the
+        function passed as argument if and only if all the parameters of the decorated
+        function are within the parameter list of the function passed as argument.
+
+    Args:
+        func_to_compare: function to compare compatibility against.
+
+    Returns:
+    """
+
+    def inner_function(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*_args: Any, **_kwargs: Any) -> Any:
+            func_args = getattr(getfullargspec(func), 'args', [])
+            func_to_compare_args = getattr(getfullargspec(func_to_compare), 'args', [])
+
+            # Ensure all the decorated function's parameters are compatible with
+            # the parameters of the function passed as argument.
+            if not all(arg in func_to_compare_args for arg in func_args):
+                func_name = getattr(func, '__qualname__', str(func))
+                func_to_compare_name = getattr(func_to_compare, '__qualname__', str(func_to_compare))
+                differing_args = set(func_args) - set(func_to_compare_args)
+
+                raise Exception("`{}` does not match the parameters of `{}`. "
+                                "`{}` has the extra parameter(s): {}"
+                                .format(func_name, func_to_compare_name, func_name, differing_args))
+
+            return func(*_args, **_kwargs)
+        return wrapper
+
+    return inner_function

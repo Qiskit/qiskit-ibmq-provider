@@ -16,3 +16,4 @@
 
 from .qobj_utils import update_qobj_config
 from .utils import to_python_identifier
+from .utils import require_signature_compatibility
