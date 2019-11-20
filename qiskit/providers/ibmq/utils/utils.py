@@ -60,7 +60,7 @@ def require_signature_compatibility(func_to_compare: Callable) -> Callable:
     Returns:
     """
 
-    def inner_function(func: Callable) -> Callable:
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*_args: Any, **_kwargs: Any) -> Any:
             func_args = getattr(getfullargspec(func), 'args', [])
@@ -80,4 +80,4 @@ def require_signature_compatibility(func_to_compare: Callable) -> Callable:
             return func(*_args, **_kwargs)
         return wrapper
 
-    return inner_function
+    return decorator
