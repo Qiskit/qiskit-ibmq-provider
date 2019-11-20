@@ -22,6 +22,7 @@ from qiskit.pulse import Schedule
 
 from .exceptions import IBMQManagedResultDataNotAvailable
 from ..job.exceptions import JobError
+from ..utils import require_signature_compatibility
 
 
 class ManagedResults:
@@ -50,6 +51,7 @@ class ManagedResults:
         self.backend_name = backend_name
         self.success = success
 
+    @require_signature_compatibility(Result.data)
     def data(self, experiment: Union[str, QuantumCircuit, Schedule, int]) -> Dict:
         """Get the raw data for an experiment.
 
@@ -72,6 +74,7 @@ class ManagedResults:
         result, exp_index = self._get_result(experiment)
         return result.data(exp_index)
 
+    @require_signature_compatibility(Result.get_memory)
     def get_memory(
             self,
             experiment: Union[str, QuantumCircuit, Schedule, int]
@@ -94,6 +97,7 @@ class ManagedResults:
         result, exp_index = self._get_result(experiment)
         return result.get_memory(exp_index)
 
+    @require_signature_compatibility(Result.get_counts)
     def get_counts(
             self,
             experiment: Union[str, QuantumCircuit, Schedule, int]
@@ -114,6 +118,7 @@ class ManagedResults:
         result, exp_index = self._get_result(experiment)
         return result.get_counts(exp_index)
 
+    @require_signature_compatibility(Result.get_statevector)
     def get_statevector(
             self,
             experiment: Union[str, QuantumCircuit, Schedule, int],
@@ -137,6 +142,7 @@ class ManagedResults:
         result, exp_index = self._get_result(experiment)
         return result.get_statevector(experiment=exp_index, decimals=decimals)
 
+    @require_signature_compatibility(Result.get_unitary)
     def get_unitary(
             self,
             experiment: Union[str, QuantumCircuit, Schedule, int],
