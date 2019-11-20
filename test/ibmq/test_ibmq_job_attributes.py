@@ -204,6 +204,7 @@ class TestIBMQJobAttributes(JobTestCase):
         message = job.error_message()
         self.assertNotIn("Unknown", message)
 
+        # TODO Verify error code is in the message after API update
         r_message = provider.backends.retrieve_job(job.job_id()).error_message()
         self.assertEqual(message, r_message)
 
