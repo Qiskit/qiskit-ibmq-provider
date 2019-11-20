@@ -88,7 +88,7 @@ class TestIBMQJobAttributes(JobTestCase):
 
     @requires_provider
     def test_job_name_simulator(self, provider):
-        """Test using job names on backend service."""
+        """Test using job names on a simulator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 
@@ -134,7 +134,7 @@ class TestIBMQJobAttributes(JobTestCase):
 
     @requires_provider
     def test_duplicate_job_name_simulator(self, provider):
-        """Test multiple jobs with the same custom job name using backend service."""
+        """Test multiple jobs with the same custom job name using a simulator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 

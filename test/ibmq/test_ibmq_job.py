@@ -269,7 +269,7 @@ class TestIBMQJob(JobTestCase):
 
     @requires_provider
     def test_retrieve_job_error(self, provider):
-        """Test retrieving an invalid job from backend service."""
+        """Test retrieving an invalid job."""
         self.assertRaises(IBMQBackendError, provider.backends.retrieve_job, 'BAD_JOB_ID')
 
     @requires_provider
@@ -363,8 +363,8 @@ class TestIBMQJob(JobTestCase):
                                     job.creation_date(), past_two_month_str))
 
     @requires_provider
-    def test_get_jobs_filter_counts(self, provider):
-        """Test retrieving jobs from backend service filtered by counts."""
+    def test_retrieve_jobs_filter_counts(self, provider):
+        """Test retrieving jobs filtered by counts."""
         # TODO: consider generalizing backend name
         # TODO: this tests depends on the previous executions of the user
         backend = provider.get_backend('ibmq_qasm_simulator')
@@ -382,8 +382,8 @@ class TestIBMQJob(JobTestCase):
                                 for cresult in result.results))
 
     @requires_provider
-    def test_get_jobs_filter_date(self, provider):
-        """Test retrieving jobs from backend service filtered by date."""
+    def test_retrieve_jobs_filter_date(self, provider):
+        """Test retrieving jobs filtered by date."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
         date_today_str = date_today.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
