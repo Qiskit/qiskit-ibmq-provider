@@ -14,6 +14,13 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [0.4.3] - 2019-11-21
+
+### Fixed
+
+- Fixed an issue where `IBMQJob.error_message()` may raise an exception
+  if the job fails before execution. (TBD)
+
 ## [0.4.2] - 2019-11-18
 
 ### Fixed
@@ -240,7 +247,8 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.2...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...HEAD
+[0.4.3]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.2...0.4.3
 [0.4.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.3.3...0.4.0
