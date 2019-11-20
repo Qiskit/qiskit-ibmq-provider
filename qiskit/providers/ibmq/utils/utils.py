@@ -18,7 +18,7 @@ import re
 import keyword
 from functools import wraps
 from typing import Callable, Any
-from inspect import getfullargspec, signature
+from inspect import getfullargspec
 
 
 def to_python_identifier(name: str) -> str:
@@ -70,9 +70,9 @@ def require_signature_compatibility(func_to_compare: Callable) -> Callable:
             # the parameters of the function passed as argument.
             if not all(arg in func_to_compare_args for arg in func_args):
                 func_name = getattr(func, '__qualname__', str(func))
-                func_to_compare_name = getattr(func_to_compare, '__qualname__', str(func_to_compare))
+                func_to_compare_name = getattr(func_to_compare,
+                                               '__qualname__', str(func_to_compare))
                 differing_args = set(func_args) - set(func_to_compare_args)
-
                 raise Exception("`{}` does not match the parameters of `{}`. "
                                 "`{}` has the extra parameter(s): {}"
                                 .format(func_name, func_to_compare_name, func_name, differing_args))
