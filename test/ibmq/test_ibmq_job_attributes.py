@@ -26,7 +26,7 @@ from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider, run_on_device
+from ..decorators import requires_provider, run_on_device, requires_device
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -62,10 +62,9 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj)
         _ = job.properties()
 
-    @requires_provider
-    def test_job_name_backend(self, provider):
+    @requires_device
+    def test_job_name_device(self, backend):
         """Test using job names on a backend."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 
         # Use a unique job name
@@ -88,7 +87,7 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
     @requires_provider
-    def test_job_name_backend_service(self, provider):
+    def test_job_name_simulator(self, provider):
         """Test using job names on backend service."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -114,10 +113,9 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(len(retrieved_jobs), 1)
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
-    @requires_provider
-    def test_duplicate_job_name_backend(self, provider):
+    @requires_device
+    def test_duplicate_job_name_device(self, backend):
         """Test multiple jobs with the same custom job name using a backend."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 
         # Use a unique job name
@@ -135,7 +133,7 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertEqual(job.name(), job_name)
 
     @requires_provider
-    def test_duplicate_job_name_backend_service(self, provider):
+    def test_duplicate_job_name_simulator(self, provider):
         """Test multiple jobs with the same custom job name using backend service."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -148,6 +146,7 @@ class TestIBMQJobAttributes(JobTestCase):
 
         retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
                                                 job_name=job_name)
+
         self.assertEqual(len(retrieved_jobs), 2)
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)

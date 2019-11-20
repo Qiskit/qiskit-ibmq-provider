@@ -15,7 +15,6 @@
 """IBMQJob Test."""
 
 import time
-import warnings
 from concurrent import futures
 from datetime import datetime, timedelta
 from unittest import skip
@@ -215,36 +214,17 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(can_cancel)
         self.assertTrue(job.status() is JobStatus.CANCELLED)
 
-    @requires_device
-    def test_get_jobs_from_backend(self, backend):
-        """Test retrieving jobs from a backend."""
-        job_list = backend.jobs(limit=5, skip=0)
-        for job in job_list:
-            self.assertTrue(isinstance(job.job_id(), str))
-
-    @requires_device
     @requires_provider
-    def test_get_jobs_from_backend_service(self, backend, provider):
-        """Test retrieving jobs from backend service."""
+    def test_retrieve_jobs(self, provider):
+        """Test retrieving jobs."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
         job_list = provider.backends.jobs(backend_name=backend.name(), limit=5, skip=0)
         for job in job_list:
             self.assertTrue(isinstance(job.job_id(), str))
 
     @requires_provider
-    def test_retrieve_job_backend(self, provider):
-        """Test retrieving a single job from a backend."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
-
-        retrieved_job = backend.retrieve_job(job.job_id())
-        self.assertEqual(job.job_id(), retrieved_job.job_id())
-        self.assertEqual(job.result().get_counts(), retrieved_job.result().get_counts())
-        self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
-
-    @requires_provider
-    def test_retrieve_job_backend_service(self, provider):
-        """Test retrieving a single job from backend service."""
+    def test_retrieve_job(self, provider):
+        """Test retrieving a single job."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -287,34 +267,24 @@ class TestIBMQJob(JobTestCase):
                               real_backend.retrieve_job, job_sim.job_id())
         self.assertIn('belongs to', str(context_manager.warning))
 
-    @requires_device
-    def test_retrieve_job_error_backend(self, backend):
-        """Test retrieving an invalid job from a backend."""
-        self.assertRaises(IBMQBackendError, backend.retrieve_job, 'BAD_JOB_ID')
-
     @requires_provider
-    def test_retrieve_job_error_backend_service(self, provider):
+    def test_retrieve_job_error(self, provider):
         """Test retrieving an invalid job from backend service."""
         self.assertRaises(IBMQBackendError, provider.backends.retrieve_job, 'BAD_JOB_ID')
 
-    @requires_device
-    def test_get_jobs_filter_job_status_backend(self, backend):
-        """Test retrieving jobs from a backend filtered by status."""
-        job_list = backend.jobs(limit=5, skip=0, status=JobStatus.DONE)
-        for job in job_list:
-            self.assertTrue(job.status() is JobStatus.DONE)
-
-    @requires_device
     @requires_provider
-    def test_get_jobs_filter_job_status_backend_service(self, backend, provider):
-        """Test retrieving jobs from backend service filtered by status."""
+    def test_retrieve_jobs_status(self, provider):
+        """Test retrieving jobs filtered by status."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, skip=0, status=JobStatus.DONE)
+
+        self.assertTrue(job_list)
         for job in job_list:
             self.assertTrue(job.status() is JobStatus.DONE)
 
     @requires_provider
-    def test_get_jobs_filter_job_start_datetime(self, provider):
+    def test_retrieve_jobs_start_datetime(self, provider):
         """Test retrieving jobs created after a specified datetime."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         past_month = datetime.now() - timedelta(days=30)
@@ -330,7 +300,7 @@ class TestIBMQJob(JobTestCase):
                             .format(i, job.creation_date(), past_month_str))
 
     @requires_provider
-    def test_get_jobs_filter_job_end_datetime(self, provider):
+    def test_retrieve_jobs_end_datetime(self, provider):
         """Test retrieving jobs created before a specified datetime."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         past_month = datetime.now() - timedelta(days=30)
@@ -346,7 +316,7 @@ class TestIBMQJob(JobTestCase):
                             .format(i, job.creation_date(), past_month_str))
 
     @requires_provider
-    def test_get_jobs_filter_job_between_datetimes(self, provider):
+    def test_retrieve_jobs_between_datetimes(self, provider):
         """Test retrieving jobs created between two specified datetimes."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
@@ -366,10 +336,9 @@ class TestIBMQJob(JobTestCase):
                             .format(i, past_two_month_str, job.creation_date(), past_month_str))
 
     @requires_provider
-    def test_get_jobs_filter_job_between_datetimes_not_overridden(self, provider):
+    def test_retrieve_jobs_between_datetimes_not_overriden(self, provider):
         """Test retrieving jobs created between two specified datetimes
         and ensure `db_filter` does not override datetime arguments."""
-        # pylint: disable=invalid-name
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
 
@@ -394,32 +363,7 @@ class TestIBMQJob(JobTestCase):
                                     job.creation_date(), past_two_month_str))
 
     @requires_provider
-    def test_get_jobs_filter_counts_backend(self, provider):
-        """Test retrieving jobs from a backend filtered by counts."""
-        # TODO: consider generalizing backend name
-        # TODO: this tests depends on the previous executions of the user
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        my_filter = {'backend.name': 'ibmq_qasm_simulator',
-                     'shots': 1024,
-                     'qasms.result.data.counts.00': {'lt': 500}}
-        self.log.info('searching for at most 5 jobs with 1024 shots, a count '
-                      'for "00" of < 500, on the ibmq_qasm_simulator backend')
-
-        with warnings.catch_warnings():
-            # Disable warnings from pre-qobj jobs.
-            warnings.filterwarnings('ignore',
-                                    category=DeprecationWarning,
-                                    module='qiskit.providers.ibmq.ibmqbackend')
-            job_list = backend.jobs(limit=5, skip=0, db_filter=my_filter)
-
-        for i, job in enumerate(job_list):
-            self.log.info('match #%d', i)
-            result = job.result()
-            self.assertTrue(any(cresult.data.counts.to_dict()['0x0'] < 500
-                                for cresult in result.results))
-
-    @requires_provider
-    def test_get_jobs_filter_counts_backend_service(self, provider):
+    def test_get_jobs_filter_counts(self, provider):
         """Test retrieving jobs from backend service filtered by counts."""
         # TODO: consider generalizing backend name
         # TODO: this tests depends on the previous executions of the user
@@ -428,25 +372,17 @@ class TestIBMQJob(JobTestCase):
         my_filter = {'backend.name': 'ibmq_qasm_simulator',
                      'shots': 1024,
                      'qasms.result.data.counts.00': {'lt': 500}}
-        self.log.info('searching for at most 5 jobs with 1024 shots, a count '
-                      'for "00" of < 500, on the ibmq_qasm_simulator backend')
 
-        with warnings.catch_warnings():
-            # Disable warnings from pre-qobj jobs.
-            warnings.filterwarnings('ignore',
-                                    category=DeprecationWarning,
-                                    module='qiskit.providers.ibmq.ibmqbackend')
-            job_list = provider.backends.jobs(backend_name=backend.name(),
-                                              limit=5, skip=0, db_filter=my_filter)
+        job_list = provider.backends.jobs(backend_name=backend.name(),
+                                          limit=5, skip=0, db_filter=my_filter)
 
         for i, job in enumerate(job_list):
-            self.log.info('match #%d', i)
             result = job.result()
             self.assertTrue(any(cresult.data.counts.to_dict()['0x0'] < 500
                                 for cresult in result.results))
 
     @requires_provider
-    def test_get_jobs_filter_date_backend_service(self, provider):
+    def test_get_jobs_filter_date(self, provider):
         """Test retrieving jobs from backend service filtered by date."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
