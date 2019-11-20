@@ -58,6 +58,7 @@ def require_signature_compatibility(func_to_compare: Callable) -> Callable:
         func_to_compare: function to compare compatibility against.
 
     Returns:
+        the decorated function.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -73,6 +74,7 @@ def require_signature_compatibility(func_to_compare: Callable) -> Callable:
                 func_to_compare_name = getattr(func_to_compare,
                                                '__qualname__', str(func_to_compare))
                 differing_args = set(func_args) - set(func_to_compare_args)
+                # pylint: disable=duplicate-string-formatting-argument
                 raise Exception("`{}` does not match the parameters of `{}`. "
                                 "`{}` has the extra parameter(s): {}"
                                 .format(func_name, func_to_compare_name, func_name, differing_args))
