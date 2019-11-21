@@ -23,7 +23,6 @@ from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
-from qiskit.providers.exceptions import QiskitBackendNotFoundError
 
 
 def requires_qe_access(func):
