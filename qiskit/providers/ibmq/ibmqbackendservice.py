@@ -23,11 +23,11 @@ from qiskit.providers import JobStatus, QiskitBackendNotFoundError  # type: igno
 from qiskit.providers.providerutils import filter_backends
 from qiskit.validation.exceptions import ModelValidationError
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
-from qiskit.providers.ibmq import ibmqbackend
 
 from .api.exceptions import ApiError
 from .apiconstants import ApiJobStatus
 from .exceptions import IBMQBackendError, IBMQBackendValueError
+from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
 from .utils import to_python_identifier
 
@@ -62,10 +62,10 @@ class IBMQBackendService(SimpleNamespace):
     def __call__(
             self,
             name: Optional[str] = None,
-            filters: Optional[Callable[[List['ibmqbackend.IBMQBackend']], bool]] = None,
+            filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
             timeout: Optional[float] = None,
             **kwargs: Any
-    ) -> List['ibmqbackend.IBMQBackend']:
+    ) -> List[IBMQBackend]:
         """Return all backends accessible via this provider, subject to optional filtering.
 
         Args:
@@ -225,10 +225,10 @@ class IBMQBackendService(SimpleNamespace):
             try:
                 backend = self._provider.get_backend(backend_name)
             except QiskitBackendNotFoundError:
-                backend = ibmqbackend.IBMQRetiredBackend.from_name(backend_name,
-                                                                   self._provider,
-                                                                   self._provider.credentials,
-                                                                   self._provider._api)
+                backend = IBMQRetiredBackend.from_name(backend_name,
+                                                       self._provider,
+                                                       self._provider.credentials,
+                                                       self._provider._api)
 
             job_info.update({
                 '_backend': backend,
@@ -267,10 +267,10 @@ class IBMQBackendService(SimpleNamespace):
         try:
             backend = self._provider.get_backend(backend_name)
         except QiskitBackendNotFoundError:
-            backend = ibmqbackend.IBMQRetiredBackend.from_name(backend_name,
-                                                               self._provider,
-                                                               self._provider.credentials,
-                                                               self._provider._api)
+            backend = IBMQRetiredBackend.from_name(backend_name,
+                                                   self._provider,
+                                                   self._provider.credentials,
+                                                   self._provider._api)
 
         job_info.update({
             '_backend': backend,
