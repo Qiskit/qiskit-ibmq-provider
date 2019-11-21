@@ -372,13 +372,11 @@ class AccountClient(BaseClient):
             try:
                 status_response = self._job_final_status_websocket(job_id, timeout)
             except WebsocketTimeoutError as ex:
-                logger.warning('Timeout checking job status using websocket, '
-                               'retrying using HTTP')
-                logger.debug(ex)
+                logger.debug('Timeout checking job status using websocket, '
+                             'retrying using HTTP: {}'.format(ex))
             except (RuntimeError, WebsocketError) as ex:
-                logger.warning('Error checking job status using websocket, '
-                               'retrying using HTTP.')
-                logger.debug(ex)
+                logger.debug('Error checking job status using websocket, '
+                             'retrying using HTTP: {}'.format(ex))
 
             # Adjust timeout for HTTP retry.
             if timeout is not None:
