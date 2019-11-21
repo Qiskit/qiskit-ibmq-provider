@@ -163,15 +163,15 @@ class TestIBMQJobAttributes(JobTestCase):
 
         job = backend.run(qobj)
         with self.assertRaises(IBMQJobFailureError):
-            job.result(timeout=300, partial=True)
+            job.result(timeout=300, partial=False)
 
         message = job.error_message()
         self.assertTrue(message)
-        self.assertIsNotNone(re.search(r'Error code [0-9]{4}\.$', message), message)
+        self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', message), message)
 
         r_message = provider.backends.retrieve_job(job.job_id()).error_message()
         self.assertTrue(r_message)
-        self.assertIsNotNone(re.search(r'Error code [0-9]{4}\.$', r_message), r_message)
+        self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', r_message), r_message)
 
     @requires_provider
     def test_error_message_simulator(self, provider):
@@ -203,6 +203,10 @@ class TestIBMQJobAttributes(JobTestCase):
 
         message = job.error_message()
         self.assertNotIn("Unknown", message)
+
+        # TODO Verify error code is in the message after API update
+        r_message = provider.backends.retrieve_job(job.job_id()).error_message()
+        self.assertEqual(message, r_message)
 
     @requires_provider
     def test_refresh(self, provider):
