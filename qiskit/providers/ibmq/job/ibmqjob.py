@@ -140,8 +140,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Properties used for caching.
         self._cancelled = False
-        self._job_error_msg = self._format_message_from_error(
-            self._error.__dict__) if self._error else None
+        self._job_error_msg = None
 
     def qobj(self) -> Qobj:
         """Return the Qobj for this job.
