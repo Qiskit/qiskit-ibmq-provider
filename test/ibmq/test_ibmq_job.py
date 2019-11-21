@@ -37,7 +37,7 @@ from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_qe_access,
-                          run_on_device, requires_device)
+                          slow_test_on_device, requires_device)
 
 
 class TestIBMQJob(JobTestCase):
@@ -83,9 +83,8 @@ class TestIBMQJob(JobTestCase):
         self.assertGreater(contingency1[1], 0.01)
         self.assertGreater(contingency2[1], 0.01)
 
-    @slow_test
-    @requires_device
-    def test_run_device(self, backend):
+    @slow_test_on_device
+    def test_run_device(self, provider, backend):   # pylint: disable=unused-argument
         """Test running in a real device."""
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         shots = qobj.config.shots
@@ -154,7 +153,7 @@ class TestIBMQJob(JobTestCase):
         job_ids = [job.job_id() for job in job_array]
         self.assertEqual(sorted(job_ids), sorted(list(set(job_ids))))
 
-    @run_on_device
+    @slow_test_on_device
     def test_run_async_device(self, provider, backend):  # pylint: disable=unused-argument
         """Test running in a real device asynchronously."""
         self.log.info('submitting to backend %s', backend.name())

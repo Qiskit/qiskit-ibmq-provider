@@ -124,7 +124,7 @@ def requires_device(func):
     return _wrapper
 
 
-def run_on_device(func):
+def slow_test_on_device(func):
     """Decorator that signals that the test should run on a real or semi-real device.
 
     It involves:
