@@ -18,7 +18,7 @@ import time
 import warnings
 from concurrent import futures
 from datetime import datetime, timedelta
-from unittest import skip
+from unittest import skip, SkipTest
 
 import numpy
 from scipy.stats import chi2_contingency
@@ -254,36 +254,40 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(job.result().get_counts(), retrieved_job.result().get_counts())
         self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
 
-    @slow_test
-    @requires_device
-    @requires_provider
+    @slow_test_on_device
     def test_retrieve_job_uses_appropriate_backend(self, backend, provider):
         """Test that retrieved jobs come from their appropriate backend."""
-        simulator_backend = provider.get_backend('ibmq_qasm_simulator')
-        real_backend = backend
+        backend_1 = backend
+        # Get a second backend.
+        backend_2 = None
+        for backend_2 in provider.backends():
+            if backend_2.status().operational and backend_2.name != backend_1.name:
+                break
+        if not backend_2:
+            raise SkipTest('Skipping test that requires multiple backends')
 
-        qobj_sim = assemble(
-            transpile(self._qc, backend=simulator_backend), backend=simulator_backend)
-        job_sim = simulator_backend.run(qobj_sim)
+        qobj_1 = assemble(
+            transpile(self._qc, backend=backend_1), backend=backend_1)
+        job_1 = backend_1.run(qobj_1)
 
-        qobj_real = assemble(
-            transpile(self._qc, backend=real_backend), backend=real_backend)
-        job_real = real_backend.run(qobj_real)
+        qobj_2 = assemble(
+            transpile(self._qc, backend=backend_2), backend=backend_2)
+        job_2 = backend_2.run(qobj_2)
 
         # test a retrieved job's backend is the same as the queried backend
-        self.assertEqual(simulator_backend.retrieve_job(job_sim.job_id()).backend().name(),
-                         simulator_backend.name())
-        self.assertEqual(real_backend.retrieve_job(job_real.job_id()).backend().name(),
-                         real_backend.name())
+        self.assertEqual(backend_1.retrieve_job(job_1.job_id()).backend().name(),
+                         backend_1.name())
+        self.assertEqual(backend_2.retrieve_job(job_2.job_id()).backend().name(),
+                         backend_2.name())
 
         # test retrieve requests for jobs that exist on other backends throw errors
         with self.assertWarns(Warning) as context_manager:
             self.assertRaises(IBMQBackendError,
-                              simulator_backend.retrieve_job, job_real.job_id())
+                              backend_1.retrieve_job, job_2.job_id())
         self.assertIn('belongs to', str(context_manager.warning))
         with self.assertWarns(Warning) as context_manager:
             self.assertRaises(IBMQBackendError,
-                              real_backend.retrieve_job, job_sim.job_id())
+                              backend_2.retrieve_job, job_1.job_id())
         self.assertIn('belongs to', str(context_manager.warning))
 
     @requires_device
