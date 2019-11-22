@@ -291,7 +291,7 @@ class WebsocketClient(BaseClient):
                 # Sleep, and then `continue` with retrying.
                 backoff_time = self._backoff_time(backoff_factor, current_retry_attempt)
                 logger.info('Retrying get_job_status via websocket after %s seconds: '
-                             'Attempt #%s.', backoff_time, current_retry_attempt)
+                            'Attempt #%s.', backoff_time, current_retry_attempt)
                 yield from asyncio.sleep(backoff_time)  # Block asyncio loop for given backoff time.
 
                 continue  # Continues next iteration after `finally` block.
