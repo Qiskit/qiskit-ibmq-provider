@@ -13,6 +13,7 @@
 # that they have been altered from the originals.
 
 """IBMQ provider integration tests (compile and run)."""
+from inspect import getfullargspec
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.result import Result
@@ -143,3 +144,38 @@ class TestIBMQIntegration(IBMQTestCase):
         job = execute([qc, qc_extra], backend, seed_transpiler=self.seed)
         results = job.result()
         self.assertIsInstance(results, Result)
+
+    @requires_provider
+    def test_ensure_backend_jobs_signature(self, provider):
+        """Test `IBMQBackend.jobs` signature is similar to `IBMQBackendService.jobs`
+
+        The signature of `IBMQBackend.jobs` is compatible with the signature of
+        `IBMQBackendService.jobs` if every parameter of `IBMQBackend.jobs`
+        is contained within the parameter list of `IBMQBackendService.jobs`.
+        """
+        backend = provider.get_backend(local=False, simulator=True)
+
+        # Retrieve parameter lists for `backend.jobs` and `provider.backends.jobs`
+        backend_jobs_args = getattr(
+            getfullargspec(backend.jobs), 'args', [])
+        provider_backends_jobs_args = getattr(
+            getfullargspec(provider.backends.jobs), 'args', [])
+
+        # Ensure parameter lists are not empty
+        self.assertTrue(backend_jobs_args)
+        self.assertTrue(provider_backends_jobs_args)
+
+        # Check if every parameter of `backend.jobs` is within parameter list
+        # of `provider.backends.jobs`
+        if not all(arg in provider_backends_jobs_args for arg in backend_jobs_args):
+            backend_jobs_name = getattr(
+                backend.jobs, '__qualname__', str(backend.jobs))
+            provider_backend_jobs_name = getattr(
+                provider.backends.jobs, '__qualname__', str(provider.backends.jobs))
+
+            differing_args = set(backend_jobs_args) - set(provider_backends_jobs_args)
+            # pylint: disable=duplicate-string-formatting-argument
+            raise Exception("`{}` does not match the parameters of `{}`. "
+                            "`{}` has the extra parameter(s): {}"
+                            .format(backend_jobs_name, provider_backend_jobs_name,
+                                    backend_jobs_name, differing_args))
