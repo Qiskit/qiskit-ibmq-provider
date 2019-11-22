@@ -278,7 +278,7 @@ class WebsocketClient(BaseClient):
                                              .format(message, ex.code)) from ex
 
             except WebsocketError as ex:
-                logger.warning('%s', ex)
+                logger.info('A websocket error occurred: %s', ex)
 
                 # Specific `WebsocketError` exceptions that are not worth retrying.
                 if isinstance(ex, (WebsocketTimeoutError, WebsocketIBMQProtocolError)):
@@ -290,8 +290,8 @@ class WebsocketClient(BaseClient):
 
                 # Sleep, and then `continue` with retrying.
                 backoff_time = self._backoff_time(backoff_factor, current_retry_attempt)
-                logger.warning('Retrying get_job_status after %s seconds: '
-                               'Attempt #%s.', backoff_time, current_retry_attempt)
+                logger.info('Retrying get_job_status via websocket after %s seconds: '
+                             'Attempt #%s.', backoff_time, current_retry_attempt)
                 yield from asyncio.sleep(backoff_time)  # Block asyncio loop for given backoff time.
 
                 continue  # Continues next iteration after `finally` block.
