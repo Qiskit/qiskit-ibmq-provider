@@ -24,9 +24,10 @@ from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
+from qiskit.test import slow_test
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider, run_on_device
+from ..decorators import requires_provider, run_on_device, requires_device
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -154,8 +155,10 @@ class TestIBMQJobAttributes(JobTestCase):
         for job in retrieved_jobs:
             self.assertEqual(job.name(), job_name)
 
-    @run_on_device
-    def test_error_message_device(self, provider, backend):  # pylint: disable=unused-argument
+    @slow_test
+    @requires_device
+    @requires_provider
+    def test_error_message_device(self, provider, backend):
         """Test retrieving job error messages from a device backend."""
         qc_new = transpile(self._qc, backend)
         qobj = assemble([qc_new, qc_new], backend=backend)
@@ -163,15 +166,15 @@ class TestIBMQJobAttributes(JobTestCase):
 
         job = backend.run(qobj)
         with self.assertRaises(IBMQJobFailureError):
-            job.result(timeout=300, partial=True)
+            job.result(timeout=300, partial=False)
 
         message = job.error_message()
         self.assertTrue(message)
-        self.assertIsNotNone(re.search(r'Error code [0-9]{4}\.$', message), message)
+        self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', message), message)
 
         r_message = provider.backends.retrieve_job(job.job_id()).error_message()
         self.assertTrue(r_message)
-        self.assertIsNotNone(re.search(r'Error code [0-9]{4}\.$', r_message), r_message)
+        self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', r_message), r_message)
 
     @requires_provider
     def test_error_message_simulator(self, provider):
@@ -203,6 +206,10 @@ class TestIBMQJobAttributes(JobTestCase):
 
         message = job.error_message()
         self.assertNotIn("Unknown", message)
+
+        # TODO Verify error code is in the message after API update
+        r_message = provider.backends.retrieve_job(job.job_id()).error_message()
+        self.assertEqual(message, r_message)
 
     @requires_provider
     def test_refresh(self, provider):
@@ -258,6 +265,7 @@ class TestIBMQJobAttributes(JobTestCase):
             status = job.status()
             if status is JobStatus.QUEUED:
                 break
+            time.sleep(1)
         if status is JobStatus.QUEUED:
             self.assertIsNotNone(
                 job.queue_position(),
