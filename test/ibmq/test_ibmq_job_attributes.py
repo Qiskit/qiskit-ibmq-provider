@@ -26,7 +26,7 @@ from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider, run_on_device, requires_device
+from ..decorators import requires_provider, run_on_device
 
 
 class TestIBMQJobAttributes(JobTestCase):

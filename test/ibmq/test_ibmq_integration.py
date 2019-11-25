@@ -13,7 +13,7 @@
 # that they have been altered from the originals.
 
 """IBMQ provider integration tests (compile and run)."""
-from inspect import getfullargspec, isfunction
+from inspect import getfullargspec
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.result import Result
@@ -22,7 +22,6 @@ from qiskit.compiler import assemble, transpile
 
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
-from qiskit.providers.ibmq.managed.managedresults import ManagedResults
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, requires_device
@@ -149,7 +148,7 @@ class TestIBMQIntegration(IBMQTestCase):
         results = job.result()
         self.assertIsInstance(results, Result)
 
-    def test_ensure_backend_jobs_signature(self):
+    def test_backend_jobs_signature(self):
         """Test `IBMQBackend.jobs` signature is similar to `IBMQBackendService.jobs`
 
         The signature of `IBMQBackend.jobs` is similar to the signature of
@@ -181,45 +180,3 @@ class TestIBMQIntegration(IBMQTestCase):
                             "`{}` has the extra parameter(s): {}"
                             .format(backend_jobs_name, provider_backend_jobs_name,
                                     backend_jobs_name, differing_args))
-
-    def test_ibmq_managed_results_signature(self):
-        """Test `ManagedResults` and `Result` contain the same public methods.
-
-        Note:
-            Aside from ensuring that the two classes contain the same public
-            methods, it is also necessary to check that the corresponding
-            methods have the same signature.
-        """
-        # Get `Result` public methods.
-        result_methods = self._get_class_methods(Result)
-        self.assertTrue(result_methods)
-
-        # Get `ManagedResults` public methods.
-        managed_results_methods = self._get_class_methods(ManagedResults)
-        self.assertTrue(managed_results_methods)
-
-        # Ensure `ManagedResults` has the same public methods as `Result`.
-        differing_args = set(result_methods.keys()) - set(managed_results_methods.keys())
-        self.assertEqual(len(differing_args), 0)
-
-        # Ensure the methods from both classes are compatible.
-        for name, method in managed_results_methods.items():
-            managed_results_args = getattr(getfullargspec(method), 'args', [])
-            result_args = getattr(getfullargspec(result_methods[name]), 'args', [])
-            self.assertTrue(managed_results_args)
-            self.assertTrue(result_args)
-            self.assertEqual(managed_results_args, result_args)
-
-    def _get_class_methods(self, cls):
-        """Get public class methods from its namespace.
-
-        Note:
-            Since the methods are found using the class itself and not
-            and instance, the "methods" are categorized as functions.
-            Methods are only bound when they belong to an actual instance.
-        """
-        cls_methods = {}
-        for name, method in cls.__dict__.items():
-            if isfunction(method) and not name.startswith('_'):
-                cls_methods[name] = method
-        return cls_methods
