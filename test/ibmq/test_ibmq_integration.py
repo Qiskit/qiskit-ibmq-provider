@@ -156,36 +156,33 @@ class TestIBMQIntegration(IBMQTestCase):
         `IBMQBackendService.jobs` if its parameter list is a subset of the
         parameter list of `IBMQBackendService.jobs`.
         """
-        backend_cls = IBMQBackend
-        backend_service_cls = IBMQBackendService
-
         # Retrieve parameter lists for both classes.
         backend_jobs_args = getattr(
-            getfullargspec(backend_cls.jobs), 'args', [])
-        provider_backends_jobs_args = getattr(
-            getfullargspec(backend_service_cls.jobs), 'args', [])
+            getfullargspec(IBMQBackend.jobs), 'args', [])
+        backend_service_jobs_args = getattr(
+            getfullargspec(IBMQBackendService.jobs), 'args', [])
 
         # Ensure parameter lists not empty
         self.assertTrue(backend_jobs_args)
-        self.assertTrue(provider_backends_jobs_args)
+        self.assertTrue(backend_service_jobs_args)
 
-        if not all(arg in provider_backends_jobs_args for arg in backend_jobs_args):
+        if not all(arg in backend_service_jobs_args for arg in backend_jobs_args):
             # `IBMQBackend.jobs` parameter list not a subset of `IBMQBackendService.jobs`.
 
             # Get methods fully qualified name, includes class.
             backend_jobs_name = getattr(
-                backend_cls.jobs, '__qualname__', str(backend_cls.jobs))
+                IBMQBackend.jobs, '__qualname__', str(IBMQBackend.jobs))
             provider_backend_jobs_name = getattr(
-                backend_service_cls.jobs, '__qualname__', str(backend_service_cls.jobs))
+                IBMQBackendService.jobs, '__qualname__', str(IBMQBackendService.jobs))
 
-            differing_args = set(backend_jobs_args) - set(provider_backends_jobs_args)
+            differing_args = set(backend_jobs_args) - set(backend_service_jobs_args)
             # pylint: disable=duplicate-string-formatting-argument
             raise Exception("`{}` does not match the parameters of `{}`. "
                             "`{}` has the extra parameter(s): {}"
                             .format(backend_jobs_name, provider_backend_jobs_name,
                                     backend_jobs_name, differing_args))
 
-    def test_ibmq_managed_job_signature(self):
+    def test_ibmq_managed_results_signature(self):
         """Test `ManagedResults` and `Result` contain the same public methods.
 
         Note:
@@ -193,15 +190,12 @@ class TestIBMQIntegration(IBMQTestCase):
             methods, it is also necessary to check that the corresponding
             methods have the same signature.
         """
-        result_cls = Result
-        managed_results_cls = ManagedResults
-
         # Get `Result` public methods.
-        result_methods = self._get_class_methods(result_cls)
+        result_methods = self._get_class_methods(Result)
         self.assertTrue(result_methods)
 
         # Get `ManagedResults` public methods.
-        managed_results_methods = self._get_class_methods(managed_results_cls)
+        managed_results_methods = self._get_class_methods(ManagedResults)
         self.assertTrue(managed_results_methods)
 
         # Ensure `ManagedResults` has the same public methods as `Result`.
