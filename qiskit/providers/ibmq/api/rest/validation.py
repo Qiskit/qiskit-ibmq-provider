@@ -61,5 +61,4 @@ class StatusResponseSchema(BaseSchema):
 @bind_schema(InfoQueueResponseSchema)
 class InfoQueueResponse(BaseModel):
     """Model for InfoQueueResponse."""
-
     pass

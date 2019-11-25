@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog].
 ### Added
 
 - `IBMQJob` now has a new `estimated_run_time()` method that returns
-  the estimated time the job will run. (TBD)
+  the estimated time the job will run. (\#467)
 
 ## [0.4.3] - 2019-11-21
 
@@ -27,7 +27,7 @@ The format is based on [Keep a Changelog].
 
 - Fixed an issue where `IBMQJob.error_message()` may raise an exception
   if the job fails before execution. (\#458)
-  
+
 ## [0.4.2] - 2019-11-18
 
 ### Fixed
