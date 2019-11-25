@@ -62,32 +62,8 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj)
         _ = job.properties()
 
-    @requires_device
-    def test_job_name_device(self, backend):
-        """Test using job names on a backend."""
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
-        # Use a unique job name
-        job_name = str(time.time()).replace('.', '')
-        job_id = backend.run(qobj, job_name=job_name).job_id()
-        job = backend.retrieve_job(job_id)
-        self.assertEqual(job.name(), job_name)
-
-        # Check using partial matching.
-        job_name_partial = job_name[8:]
-        retrieved_jobs = backend.jobs(job_name=job_name_partial)
-        self.assertGreaterEqual(len(retrieved_jobs), 1)
-        retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
-        self.assertIn(job_id, retrieved_job_ids)
-
-        # Check using regular expressions.
-        job_name_regex = '^{}$'.format(job_name)
-        retrieved_jobs = backend.jobs(job_name=job_name_regex)
-        self.assertEqual(len(retrieved_jobs), 1)
-        self.assertEqual(job_id, retrieved_jobs[0].job_id())
-
     @requires_provider
-    def test_job_name_simulator(self, provider):
+    def test_job_name(self, provider):
         """Test using job names on a simulator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -113,27 +89,8 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(len(retrieved_jobs), 1)
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
-    @requires_device
-    def test_duplicate_job_name_device(self, backend):
-        """Test multiple jobs with the same custom job name using a backend."""
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
-        # Use a unique job name
-        job_name = str(time.time()).replace('.', '')
-        job_ids = set()
-        for _ in range(2):
-            job_ids.add(backend.run(qobj, job_name=job_name).job_id())
-
-        retrieved_jobs = backend.jobs(job_name=job_name)
-
-        self.assertEqual(len(retrieved_jobs), 2)
-        retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
-        self.assertEqual(job_ids, retrieved_job_ids)
-        for job in retrieved_jobs:
-            self.assertEqual(job.name(), job_name)
-
     @requires_provider
-    def test_duplicate_job_name_simulator(self, provider):
+    def test_duplicate_job_name(self, provider):
         """Test multiple jobs with the same custom job name using a simulator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
