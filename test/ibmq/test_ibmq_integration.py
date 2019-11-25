@@ -13,12 +13,16 @@
 # that they have been altered from the originals.
 
 """IBMQ provider integration tests (compile and run)."""
-from inspect import getfullargspec
+from inspect import getfullargspec, isfunction
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.result import Result
 from qiskit.execute import execute
 from qiskit.compiler import assemble, transpile
+
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
+from qiskit.providers.ibmq.managed.managedresults import ManagedResults
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, requires_device
@@ -145,33 +149,34 @@ class TestIBMQIntegration(IBMQTestCase):
         results = job.result()
         self.assertIsInstance(results, Result)
 
-    @requires_provider
-    def test_ensure_backend_jobs_signature(self, provider):
+    def test_ensure_backend_jobs_signature(self):
         """Test `IBMQBackend.jobs` signature is similar to `IBMQBackendService.jobs`
 
-        The signature of `IBMQBackend.jobs` is compatible with the signature of
-        `IBMQBackendService.jobs` if every parameter of `IBMQBackend.jobs`
-        is contained within the parameter list of `IBMQBackendService.jobs`.
+        The signature of `IBMQBackend.jobs` is similar to the signature of
+        `IBMQBackendService.jobs` if its parameter list is a subset of the
+        parameter list of `IBMQBackendService.jobs`.
         """
-        backend = provider.get_backend(local=False, simulator=True)
+        backend_cls = IBMQBackend
+        backend_service_cls = IBMQBackendService
 
-        # Retrieve parameter lists for `backend.jobs` and `provider.backends.jobs`
+        # Retrieve parameter lists for both classes.
         backend_jobs_args = getattr(
-            getfullargspec(backend.jobs), 'args', [])
+            getfullargspec(backend_cls.jobs), 'args', [])
         provider_backends_jobs_args = getattr(
-            getfullargspec(provider.backends.jobs), 'args', [])
+            getfullargspec(backend_service_cls.jobs), 'args', [])
 
-        # Ensure parameter lists are not empty
+        # Ensure parameter lists not empty
         self.assertTrue(backend_jobs_args)
         self.assertTrue(provider_backends_jobs_args)
 
-        # Check if every parameter of `backend.jobs` is within parameter list
-        # of `provider.backends.jobs`
         if not all(arg in provider_backends_jobs_args for arg in backend_jobs_args):
+            # `IBMQBackend.jobs` parameter list not a subset of `IBMQBackendService.jobs`.
+
+            # Get methods fully qualified name, includes class.
             backend_jobs_name = getattr(
-                backend.jobs, '__qualname__', str(backend.jobs))
+                backend_cls.jobs, '__qualname__', str(backend_cls.jobs))
             provider_backend_jobs_name = getattr(
-                provider.backends.jobs, '__qualname__', str(provider.backends.jobs))
+                backend_service_cls.jobs, '__qualname__', str(backend_service_cls.jobs))
 
             differing_args = set(backend_jobs_args) - set(provider_backends_jobs_args)
             # pylint: disable=duplicate-string-formatting-argument
@@ -179,3 +184,48 @@ class TestIBMQIntegration(IBMQTestCase):
                             "`{}` has the extra parameter(s): {}"
                             .format(backend_jobs_name, provider_backend_jobs_name,
                                     backend_jobs_name, differing_args))
+
+    def test_ibmq_managed_job_signature(self):
+        """Test `ManagedResults` and `Result` contain the same public methods.
+
+        Note:
+            Aside from ensuring that the two classes contain the same public
+            methods, it is also necessary to check that the corresponding
+            methods have the same signature.
+        """
+        result_cls = Result
+        managed_results_cls = ManagedResults
+
+        # Get `Result` public methods.
+        result_methods = self._get_class_methods(result_cls)
+        self.assertTrue(result_methods)
+
+        # Get `ManagedResults` public methods.
+        managed_results_methods = self._get_class_methods(managed_results_cls)
+        self.assertTrue(managed_results_methods)
+
+        # Ensure `ManagedResults` has the same public methods as `Result`.
+        differing_args = set(result_methods.keys()) - set(managed_results_methods.keys())
+        self.assertEqual(len(differing_args), 0)
+
+        # Ensure the methods from both classes are compatible.
+        for name, method in managed_results_methods.items():
+            managed_results_args = getattr(getfullargspec(method), 'args', [])
+            result_args = getattr(getfullargspec(result_methods[name]), 'args', [])
+            self.assertTrue(managed_results_args)
+            self.assertTrue(result_args)
+            self.assertEqual(managed_results_args, result_args)
+
+    def _get_class_methods(self, cls):
+        """Get public class methods from its namespace.
+
+        Note:
+            Since the methods are found using the class itself and not
+            and instance, the "methods" are categorized as functions.
+            Methods are only bound when they belong to an actual instance.
+        """
+        cls_methods = {}
+        for name, method in cls.__dict__.items():
+            if isfunction(method) and not name.startswith('_'):
+                cls_methods[name] = method
+        return cls_methods
