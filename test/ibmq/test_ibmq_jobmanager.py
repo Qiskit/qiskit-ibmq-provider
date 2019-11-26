@@ -291,7 +291,7 @@ class TestResultManager(IBMQTestCase):
         """Test `ManagedResults` and `Result` contain the same public methods.
 
         Note:
-            Aside from ensuring that the two classes contain the same public
+            Aside from ensuring the two classes contain the same public
             methods, it is also necessary to check that the corresponding
             methods have the same signature.
         """
@@ -303,17 +303,33 @@ class TestResultManager(IBMQTestCase):
         managed_results_methods = self._get_class_methods(ManagedResults)
         self.assertTrue(managed_results_methods)
 
-        # Ensure `ManagedResults` has the same public methods as `Result`.
-        differing_args = set(result_methods.keys()) - set(managed_results_methods.keys())
-        self.assertEqual(len(differing_args), 0)
+        # Ensure `ManagedResults` does not have any additional public methods.
+        additional_methods = set(managed_results_methods.keys()) - set(result_methods.keys())
+        self.assertTrue((len(additional_methods) == 0),
+                        "ManagedResults does not have the same public "
+                        "methods as Result. ManagedResults has the "
+                        "additional public method(s): {}"
+                        .format(additional_methods))
 
-        # Ensure the methods from both classes are compatible.
+        # Ensure `ManagedResults` is not missing any public methods.
+        missing_methods = set(result_methods.keys()) - set(managed_results_methods.keys())
+        self.assertTrue((len(missing_methods) == 0),
+                        "ManagedResults does not have the same public "
+                        "methods as Result. ManagedResults is missing "
+                        "the public method(s): {}".format(missing_methods))
+
+        # Ensure the signature for the methods from both classes are compatible.
         for name, method in managed_results_methods.items():
-            managed_results_args = getattr(getfullargspec(method), 'args', [])
-            result_args = getattr(getfullargspec(result_methods[name]), 'args', [])
-            self.assertTrue(managed_results_args)
-            self.assertTrue(result_args)
-            self.assertEqual(managed_results_args, result_args)
+            managed_results_params = getattr(getfullargspec(method), 'args', [])
+            result_params = getattr(getfullargspec(result_methods[name]), 'args', [])
+            self.assertTrue(managed_results_params)
+            self.assertTrue(result_params)
+            self.assertTrue(managed_results_params == result_params,
+                            "The signatures for method `{}` differ. "
+                            "`ManagedResults.{}` params = {}. "
+                            "`Result.{}` params = {}"
+                            .format(name, name, managed_results_params,
+                                    name, result_params))
 
     def _get_class_methods(self, cls):
         """Get public class methods from its namespace.
