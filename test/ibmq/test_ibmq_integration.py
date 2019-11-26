@@ -155,28 +155,33 @@ class TestIBMQIntegration(IBMQTestCase):
         `IBMQBackendService.jobs` if its parameter list is a subset of the
         parameter list of `IBMQBackendService.jobs`.
         """
+        # Acceptable params `IBMQBackendService.jobs` has that `IBMQBackend.jobs` does not.
+        acceptable_differing_params = {'backend_name'}
+
         # Retrieve parameter lists for both classes.
-        backend_jobs_args = getattr(
-            getfullargspec(IBMQBackend.jobs), 'args', [])
-        backend_service_jobs_args = getattr(
-            getfullargspec(IBMQBackendService.jobs), 'args', [])
+        backend_jobs_params = set(
+            getattr(getfullargspec(IBMQBackend.jobs), 'args', [])
+        )
+        backend_service_jobs_params = set(
+            getattr(getfullargspec(IBMQBackendService.jobs), 'args', [])
+        )
 
         # Ensure parameter lists not empty
-        self.assertTrue(backend_jobs_args)
-        self.assertTrue(backend_service_jobs_args)
+        self.assertTrue(backend_jobs_params)
+        self.assertTrue(backend_service_jobs_params)
 
-        if not all(arg in backend_service_jobs_args for arg in backend_jobs_args):
-            # `IBMQBackend.jobs` parameter list not a subset of `IBMQBackendService.jobs`.
+        # Ensure `IBMQBackend.jobs` does not have any additional parameters.
+        backend_jobs_differing_params = backend_jobs_params - backend_service_jobs_params
+        self.assertTrue((len(backend_jobs_differing_params) == 0),
+                        "IBMQBackend.jobs does not match the signature of "
+                        "IBMQBackendService.jobs. IBMQBackend.jobs has "
+                        "the additional parameter(s): {}"
+                        .format(backend_jobs_differing_params))
 
-            # Get methods fully qualified name, includes class.
-            backend_jobs_name = getattr(
-                IBMQBackend.jobs, '__qualname__', str(IBMQBackend.jobs))
-            provider_backend_jobs_name = getattr(
-                IBMQBackendService.jobs, '__qualname__', str(IBMQBackendService.jobs))
-
-            differing_args = set(backend_jobs_args) - set(backend_service_jobs_args)
-            # pylint: disable=duplicate-string-formatting-argument
-            raise Exception("`{}` does not match the parameters of `{}`. "
-                            "`{}` has the extra parameter(s): {}"
-                            .format(backend_jobs_name, provider_backend_jobs_name,
-                                    backend_jobs_name, differing_args))
+        # Ensure `IBMQBackend.jobs` is not missing any parameters.
+        backend_service_differing_params = backend_service_jobs_params - backend_jobs_params
+        self.assertEqual(acceptable_differing_params, backend_service_differing_params,
+                         "IBMQBackend.jobs does not match the signature of "
+                         "IBMQBackendService.jobs. IBMQBackend.jobs is "
+                         "missing the parameter(s): {}"
+                         .format(backend_service_differing_params - acceptable_differing_params))
