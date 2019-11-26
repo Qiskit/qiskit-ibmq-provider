@@ -324,6 +324,7 @@ class TestResultManager(IBMQTestCase):
             result_params = getattr(getfullargspec(result_methods[name]), 'args', [])
             self.assertTrue(managed_results_params)
             self.assertTrue(result_params)
+            # pylint: disable=duplicate-string-formatting-argument
             self.assertTrue(managed_results_params == result_params,
                             "The signatures for method `{}` differ. "
                             "`ManagedResults.{}` params = {}. "
