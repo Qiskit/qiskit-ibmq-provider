@@ -489,6 +489,10 @@ class IBMQJob(BaseModel, BaseJob):
     def _retrieve_result(self, refresh: bool = False) -> Result:
         """Retrieve the job result response.
 
+        Args:
+            refresh: if true, query the API for the result again.
+               Otherwise return the cached value.
+
         Returns:
             The job result.
 
