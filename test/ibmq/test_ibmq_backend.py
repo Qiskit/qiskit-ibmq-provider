@@ -46,18 +46,8 @@ class TestIBMQBackend(IBMQTestCase):
         self.assertTrue(backend_jobs_params)
         self.assertTrue(backend_service_jobs_params)
 
-        # Ensure `IBMQBackend.jobs` does not have any additional parameters.
-        additional_params = backend_jobs_params - backend_service_jobs_params
-        self.assertTrue((len(additional_params) == 0),
-                        "IBMQBackend.jobs does not match the signature of "
-                        "IBMQBackendService.jobs. IBMQBackend.jobs has "
-                        "the additional parameter(s): {}"
-                        .format(additional_params))
+        # Remove acceptable params from `IBMQBackendService.jobs`.
+        backend_service_jobs_params.difference_update(acceptable_differing_params)
 
-        # Ensure `IBMQBackend.jobs` is not missing any parameters.
-        missing_params = backend_service_jobs_params - backend_jobs_params
-        self.assertEqual(acceptable_differing_params, missing_params,
-                         "IBMQBackend.jobs does not match the signature of "
-                         "IBMQBackendService.jobs. IBMQBackend.jobs is "
-                         "missing the parameter(s): {}"
-                         .format(missing_params - acceptable_differing_params))
+        # Ensure method signatures are similar, other than the acceptable differences.
+        self.assertEqual(backend_service_jobs_params, backend_jobs_params)
