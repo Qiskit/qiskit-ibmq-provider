@@ -295,42 +295,28 @@ class TestResultManager(IBMQTestCase):
             methods, it is also necessary to check that the corresponding
             methods have the same signature.
         """
-        # Get `Result` public methods.
         result_methods = self._get_class_methods(Result)
         self.assertTrue(result_methods)
 
-        # Get `ManagedResults` public methods.
         managed_results_methods = self._get_class_methods(ManagedResults)
         self.assertTrue(managed_results_methods)
 
-        # Ensure `ManagedResults` does not have any additional public methods.
-        additional_methods = set(managed_results_methods.keys()) - set(result_methods.keys())
-        self.assertTrue((len(additional_methods) == 0),
-                        "ManagedResults does not have the same public "
-                        "methods as Result. ManagedResults has the "
-                        "additional public method(s): {}"
-                        .format(additional_methods))
+        # Ensure both classes share the *exact* same public methods.
+        self.assertEqual(result_methods.keys(), managed_results_methods.keys())
 
-        # Ensure `ManagedResults` is not missing any public methods.
-        missing_methods = set(result_methods.keys()) - set(managed_results_methods.keys())
-        self.assertTrue((len(missing_methods) == 0),
-                        "ManagedResults does not have the same public "
-                        "methods as Result. ManagedResults is missing "
-                        "the public method(s): {}".format(missing_methods))
-
-        # Ensure the signature for the methods from both classes are compatible.
+        # Ensure the signature for the public methods from both classes are compatible.
         for name, method in managed_results_methods.items():
             managed_results_params = getattr(getfullargspec(method), 'args', [])
             result_params = getattr(getfullargspec(result_methods[name]), 'args', [])
             self.assertTrue(managed_results_params)
             self.assertTrue(result_params)
             # pylint: disable=duplicate-string-formatting-argument
-            self.assertTrue(managed_results_params == result_params,
-                            "The signatures for method `{}` differ. "
-                            "`ManagedResults.{}` params = {}. "
-                            "`Result.{}` params = {}"
-                            .format(name, name, managed_results_params,
-                                    name, result_params))
+            self.assertEqual(result_params, managed_results_params,
+                             "The signatures for method `{}` differ. "
+                             "`Result.{}` params = {} "
+                             "`ManagedResults.{}` params = {}."
+                             .format(name, name, managed_results_params,
+                                     name, result_params))
 
     def _get_class_methods(self, cls):
         """Get public class methods from its namespace.
