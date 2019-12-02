@@ -18,7 +18,7 @@ import time
 import warnings
 from concurrent import futures
 from datetime import datetime, timedelta
-from unittest import skip, SkipTest
+from unittest import SkipTest
 
 import numpy
 from scipy.stats import chi2_contingency
@@ -478,7 +478,6 @@ class TestIBMQJob(JobTestCase):
         with self.assertRaises(IBMQJobInvalidStateError):
             job.submit()
 
-    @skip('Remove skip once simulator returns schema complaint partial results.')
     @requires_provider
     def test_retrieve_failed_job_simulator_partial(self, provider):
         """Test retrieving partial results from a simulator backend."""
