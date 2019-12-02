@@ -202,6 +202,24 @@ class RetrySession(Session):
                 # Replace the original message on the `RequestException` as well.
                 ex.args = (message,)
 
+                def _modify_chain_messages(exc: BaseException) -> None:
+                    """Helper function to remove access token from exception messages."""
+                    if exc.__cause__:
+                        _modify_chain_messages(exc.__cause__)
+                    elif exc.__context__:
+                        _modify_chain_messages(exc.__context__)
+
+                    # Loop through args, if string, attempt to replace access token.
+                    modified_args = []
+                    for arg in exc.args:
+                        exc_message = arg
+                        if isinstance(exc_message, str):
+                            exc_message = exc_message.replace(self.access_token, '...')
+                        modified_args.append(exc_message)
+                    exc.args = tuple(modified_args)
+
+                _modify_chain_messages(ex)
+
             raise RequestsApiError(message) from ex
 
         return response
