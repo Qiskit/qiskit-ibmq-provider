@@ -30,7 +30,7 @@ from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
-from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError
+from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, JobError
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
 from qiskit.result import Result
@@ -254,14 +254,15 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(job.result().get_counts(), retrieved_job.result().get_counts())
         self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
 
-    @slow_test_on_device
+    @requires_device
+    @requires_provider
     def test_retrieve_job_uses_appropriate_backend(self, backend, provider):
         """Test that retrieved jobs come from their appropriate backend."""
         backend_1 = backend
         # Get a second backend.
         backend_2 = None
         for backend_2 in provider.backends():
-            if backend_2.status().operational and backend_2.name != backend_1.name:
+            if backend_2.status().operational and backend_2.name() != backend_1.name():
                 break
         if not backend_2:
             raise SkipTest('Skipping test that requires multiple backends')
@@ -289,6 +290,13 @@ class TestIBMQJob(JobTestCase):
             self.assertRaises(IBMQBackendError,
                               backend_2.retrieve_job, job_1.job_id())
         self.assertIn('belongs to', str(context_manager.warning))
+
+        # Cleanup
+        try:
+            job_1.cancel()
+            job_2.cancel()
+        except JobError:
+            pass
 
     @requires_device
     def test_retrieve_job_error_backend(self, backend):
