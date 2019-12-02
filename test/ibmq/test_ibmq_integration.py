@@ -13,15 +13,10 @@
 # that they have been altered from the originals.
 
 """IBMQ provider integration tests (compile and run)."""
-from inspect import getfullargspec
-
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.result import Result
 from qiskit.execute import execute
 from qiskit.compiler import assemble, transpile
-
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
-from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, requires_device
