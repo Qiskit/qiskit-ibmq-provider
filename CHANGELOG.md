@@ -19,8 +19,8 @@ The format is based on [Keep a Changelog].
 ### Added
 
 - `IBMQJob.result()` now accepts an optional `refresh` parameter. If 
-  specified, the function re-queries the api for the results, rather 
-  than returning those cached. (\#469)
+  `refresh=True` is specified, the function re-queries the api for the 
+  results, rather than returning those cached. (\#469)
 
 ## [0.4.3] - 2019-11-21
 
