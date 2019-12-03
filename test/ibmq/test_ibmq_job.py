@@ -208,7 +208,6 @@ class TestIBMQJob(JobTestCase):
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
-        self.wait_for_initialization(job, timeout=5)
         can_cancel = job.cancel()
         self.assertTrue(can_cancel)
         self.assertTrue(job.status() is JobStatus.CANCELLED)
@@ -272,11 +271,11 @@ class TestIBMQJob(JobTestCase):
         self.assertIn('belongs to', str(context_manager.warning))
 
         # Cleanup
-        try:
-            job_1.cancel()
-            job_2.cancel()
-        except JobError:
-            pass
+        for job in [job_1, job_2]:
+            try:
+                job.cancel()
+            except JobError:
+                pass
 
     @requires_provider
     def test_retrieve_job_error(self, provider):
