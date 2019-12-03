@@ -15,7 +15,6 @@
 """IBMQJob Test."""
 
 import time
-import warnings
 import copy
 from concurrent import futures
 from datetime import datetime, timedelta
