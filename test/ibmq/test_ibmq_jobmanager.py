@@ -14,11 +14,15 @@
 
 """Tests for the IBMQJobManager."""
 import copy
-from unittest import mock
 import time
+from unittest import mock
+from inspect import getfullargspec, isfunction
 
 from qiskit import QuantumCircuit
+from qiskit.result import Result
+
 from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
+from qiskit.providers.ibmq.managed.managedresults import ManagedResults
 from qiskit.providers.ibmq.managed.exceptions import (IBMQJobManagerJobNotFound,
                                                       IBMQManagedResultDataNotAvailable)
 from qiskit.providers.jobstatus import JobStatus
@@ -282,6 +286,51 @@ class TestResultManager(IBMQTestCase):
                 result_manager.get_counts(max_circs)
         else:
             self.log.warning("Unable to cancel job %s", cjob.job_id())
+
+    def test_ibmq_managed_results_signature(self):
+        """Test `ManagedResults` and `Result` contain the same public methods.
+
+        Note:
+            Aside from ensuring the two classes contain the same public
+            methods, it is also necessary to check that the corresponding
+            methods have the same signature.
+        """
+        result_methods = self._get_class_methods(Result)
+        self.assertTrue(result_methods)
+
+        managed_results_methods = self._get_class_methods(ManagedResults)
+        self.assertTrue(managed_results_methods)
+
+        # Ensure both classes share the *exact* same public methods.
+        self.assertEqual(result_methods.keys(), managed_results_methods.keys())
+
+        # Ensure the signature for the public methods from both classes are compatible.
+        for name, method in managed_results_methods.items():
+            managed_results_params = getattr(getfullargspec(method), 'args', [])
+            result_params = getattr(getfullargspec(result_methods[name]), 'args', [])
+            self.assertTrue(managed_results_params)
+            self.assertTrue(result_params)
+            # pylint: disable=duplicate-string-formatting-argument
+            self.assertEqual(result_params, managed_results_params,
+                             "The signatures for method `{}` differ. "
+                             "`Result.{}` params = {} "
+                             "`ManagedResults.{}` params = {}."
+                             .format(name, name, managed_results_params,
+                                     name, result_params))
+
+    def _get_class_methods(self, cls):
+        """Get public class methods from its namespace.
+
+        Note:
+            Since the methods are found using the class itself and not
+            and instance, the "methods" are categorized as functions.
+            Methods are only bound when they belong to an actual instance.
+        """
+        cls_methods = {}
+        for name, method in cls.__dict__.items():
+            if isfunction(method) and not name.startswith('_'):
+                cls_methods[name] = method
+        return cls_methods
 
 
 def _bell_circuit():
