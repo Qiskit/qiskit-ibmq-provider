@@ -18,8 +18,9 @@ The format is based on [Keep a Changelog].
 
 ### Added
 
-- `IBMQJob` now has a new `estimated_run_time()` method that returns
-  the estimated time the job will run. (\#467)
+- `IBMQJob` now has a new `queue_info()` method that returns queue 
+  information, such as queue position, estimated start/end time, and 
+  priority levels for the job. (\#467)
 
 ## [0.4.3] - 2019-11-21
 

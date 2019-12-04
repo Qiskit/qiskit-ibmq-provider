@@ -28,18 +28,27 @@ from qiskit.providers.ibmq.utils.fields import map_field_names
 # Helper schemas.
 
 class InfoQueueResponseSchema(BaseSchema):
-    """Nested schema for StatusResponseSchema"""
+    """Queue information schema, nested in StatusResponseSchema"""
 
     # Optional properties
     position = Integer(required=False, missing=0)
-    status = String(required=False, missing=None)
-    estimated_time = DateTime(required=False, missing=None)
+    _status = String(required=False, missing=None)
+    estimated_start_time = DateTime(required=False, missing=None)
+    estimated_complete_time = DateTime(required=False, missing=None)
+    hub_priority = Integer(required=False, missing=None)
+    group_priority = Integer(required=False, missing=None)
+    project_priority = Integer(required=False, missing=None)
 
     @pre_load
     def preprocess_field_names(self, data, **_):  # type: ignore
         """Pre-process the info queue response fields."""
         FIELDS_MAP = {  # pylint: disable=invalid-name
-            'estimatedTime': 'estimated_time'
+            'status': '_status',
+            'estimatedStartTime': 'estimated_start_time',
+            'estimatedCompleteTime': 'estimated_complete_time',
+            'hubPriority': 'hub_priority',
+            'groupPriority': 'group_priority',
+            'projectPriority': 'project_priority'
         }
         return map_field_names(FIELDS_MAP, data)
 
@@ -54,11 +63,3 @@ class StatusResponseSchema(BaseSchema):
 
     # Required properties
     status = String(required=True, validate=OneOf([status.value for status in ApiJobStatus]))
-
-
-# Models
-
-@bind_schema(InfoQueueResponseSchema)
-class InfoQueueResponse(BaseModel):
-    """Model for InfoQueueResponse."""
-    pass

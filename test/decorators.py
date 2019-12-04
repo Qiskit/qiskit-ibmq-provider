@@ -164,6 +164,20 @@ def run_on_device(func):
         obj.using_ibmq_credentials = credentials.is_ibmq()
         ibmq_factory = IBMQFactory()
         provider = ibmq_factory.enable_account(credentials.token, credentials.url)
+
+        _backend = None
+        if backend_name:
+            for provider in ibmq_factory.providers():
+                backends = provider.backends(name=backend_name)
+                if backends:
+                    _backend = backends[0]
+                    break
+        else:
+            _backend = least_busy(provider.backends(simulator=False))
+
+        if not _backend:
+            raise Exception("Unable to find suitable backend.")
+
         kwargs.update({'provider': provider})
         _backend = provider.get_backend(backend_name) if backend_name else \
             least_busy(provider.backends(simulator=False))
