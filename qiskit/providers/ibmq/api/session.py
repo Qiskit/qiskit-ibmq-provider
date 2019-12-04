@@ -198,10 +198,7 @@ class RetrySession(Session):
                     pass
 
             if self.access_token:
-                message = message.replace(self.access_token, '...')
-                # Replace the original message on the `RequestException`.
-                ex.args = (message,)
-                # Replace the original message on the chained exceptions.
+                # Modify the original message on the chained exceptions.
                 self._modify_chained_exception_messages(ex)
 
             raise RequestsApiError(message) from ex
