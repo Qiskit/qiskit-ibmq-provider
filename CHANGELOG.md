@@ -18,9 +18,12 @@ The format is based on [Keep a Changelog].
 
 ### Added
 
+- `IBMQJob.result()` now accepts an optional `refresh` parameter. If 
+  `refresh=True` is specified, the function re-queries the api for the 
+  results, rather than returning those cached. (\#469)
 - `IBMQJob` now has a new `queue_info()` method that returns queue 
   information, such as queue position, estimated start/end time, and 
-  priority levels for the job. (\#467)
+  priority levels for the job. (\#467)  
 
 ## [0.4.3] - 2019-11-21
 

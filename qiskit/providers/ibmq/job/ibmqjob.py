@@ -187,7 +187,8 @@ class IBMQJob(BaseModel, BaseJob):
             self,
             timeout: Optional[float] = None,
             wait: float = 5,
-            partial: bool = False
+            partial: bool = False,
+            refresh: bool = False
     ) -> Result:
         """Return the result of the job.
 
@@ -221,8 +222,10 @@ class IBMQJob(BaseModel, BaseJob):
 
         Args:
            timeout: number of seconds to wait for job.
-           wait: seconds between queries to IBM Q server. Default: 5.
+           wait: time in seconds between queries to IBM Q server. Default: 5.
            partial: if true attempts to return partial results for the job. Default: False.
+           refresh: if true, query the API for the result again.
+               Otherwise return the cached value. Default: False.
 
         Returns:
             Result object.
@@ -244,7 +247,7 @@ class IBMQJob(BaseModel, BaseJob):
                 raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
                                           'Use job.error_message() to get more details.')
 
-        return self._retrieve_result()
+        return self._retrieve_result(refresh=refresh)
 
     def cancel(self) -> bool:
         """Attempt to cancel a job.
@@ -364,7 +367,7 @@ class IBMQJob(BaseModel, BaseJob):
             and may differ from the global queue position for the device.
 
         Args:
-            refresh (bool): if True, query the API and return the latest value.
+            refresh: if True, query the API and return the latest value.
                 Otherwise return the cached value. Default: False.
 
         Returns:
@@ -525,8 +528,12 @@ class IBMQJob(BaseModel, BaseJob):
 
         return self._status in required_status
 
-    def _retrieve_result(self) -> Result:
+    def _retrieve_result(self, refresh: bool = False) -> Result:
         """Retrieve the job result response.
+
+        Args:
+            refresh: if true, query the API for the result again.
+               Otherwise return the cached value. Default: False.
 
         Returns:
             The job result.
@@ -538,7 +545,7 @@ class IBMQJob(BaseModel, BaseJob):
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         result_response = None
-        if not self._result:  # type: ignore[has-type]
+        if not self._result or refresh:  # type: ignore[has-type]
             try:
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
                 self._result = Result.from_dict(result_response)
