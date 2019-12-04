@@ -256,7 +256,7 @@ class WebsocketClient(BaseClient):
                         if timeout and timeout <= 0:
                             raise WebsocketTimeoutError('Timeout reached')
 
-                    except futures.TimeoutError:
+                    except (futures.TimeoutError, asyncio.TimeoutError):
                         # Timeout during our wait.
                         raise WebsocketTimeoutError('Timeout reached') from None
                     except ConnectionClosed as ex:
