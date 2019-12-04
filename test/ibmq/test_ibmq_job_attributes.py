@@ -26,7 +26,7 @@ from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider, run_on_device
+from ..decorators import requires_provider, slow_test_on_device
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -55,7 +55,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj)
         self.assertTrue(job.backend().name() == backend.name())
 
-    @run_on_device
+    @slow_test_on_device
     def test_running_job_properties(self, provider, backend):  # pylint: disable=unused-argument
         """Test fetching properties of a running job."""
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -110,7 +110,7 @@ class TestIBMQJobAttributes(JobTestCase):
         for job in retrieved_jobs:
             self.assertEqual(job.name(), job_name)
 
-    @run_on_device
+    @slow_test_on_device
     def test_error_message_device(self, provider, backend):  # pylint: disable=unused-argument
         """Test retrieving job error messages from a device backend."""
         qc_new = transpile(self._qc, backend)
