@@ -15,6 +15,7 @@
 """IBMQJob Test."""
 
 import time
+import copy
 from concurrent import futures
 from datetime import datetime, timedelta
 from unittest import SkipTest
@@ -483,6 +484,28 @@ class TestIBMQJob(JobTestCase):
         new_job2 = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
         self.assertTrue(isinstance(new_job2.backend(), IBMQRetiredBackend))
         self.assertNotEqual(new_job2.backend().name(), 'unknown')
+
+    @requires_provider
+    def test_refresh_job_result(self, provider):
+        """Test re-retrieving job result via refresh."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+        result = job.result()
+
+        # Save original cached results.
+        cached_result = copy.deepcopy(result)
+        self.assertTrue(cached_result)
+
+        # Modify cached results.
+        result.results[0].header.name = 'modified_result'
+        self.assertNotEqual(cached_result, result)
+        self.assertEqual(result.results[0].header.name, 'modified_result')
+
+        # Re-retrieve result via refresh.
+        result = job.result(refresh=True)
+        self.assertEqual(cached_result, result)
+        self.assertNotEqual(result.results[0].header.name, 'modified_result')
 
 
 def _bell_circuit():
