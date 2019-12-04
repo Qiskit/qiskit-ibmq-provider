@@ -253,13 +253,12 @@ class TestIBMQJobAttributes(JobTestCase):
 
         self.assertEqual(job.batman, 'bruce')
 
-    # @requires_provider
-    @run_on_device
-    def test_queue_info(self, backend, provider):
+    @requires_provider
+    def test_queue_info(self, provider):
         """Test retrieving queue information."""
         # Find the most busy backend.
-        # backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
-        #               key=lambda b: b.status().pending_jobs)
+        backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
+                      key=lambda b: b.status().pending_jobs)
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
         job = backend.run(qobj)

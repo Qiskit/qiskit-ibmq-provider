@@ -19,7 +19,7 @@ from marshmallow import pre_load
 from marshmallow.validate import OneOf
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
-from qiskit.validation import BaseSchema, BaseModel, bind_schema
+from qiskit.validation import BaseSchema
 from qiskit.validation.fields import String, Nested, Integer, DateTime
 
 from qiskit.providers.ibmq.utils.fields import map_field_names

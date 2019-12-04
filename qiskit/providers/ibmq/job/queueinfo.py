@@ -23,7 +23,8 @@ from qiskit.providers.ibmq.api.rest.validation import InfoQueueResponseSchema
 
 
 @bind_schema(InfoQueueResponseSchema)
-class IBMQJobQueueInfo(BaseModel):
+class QueueInfo(BaseModel):
+    """Queue information related to a job."""
 
     def __init__(
             self,
@@ -36,7 +37,7 @@ class IBMQJobQueueInfo(BaseModel):
             project_priority: int,
             **kwargs: Any
     ) -> None:
-        """Creates a new IBMQJobQueueInfo instance.
+        """Creates a new QueueInfo instance.
 
         Args:
             position: Position in the queue.
@@ -46,6 +47,7 @@ class IBMQJobQueueInfo(BaseModel):
             hub_priority: Dynamic priority for the hub.
             group_priority: Dynamic priority for the group.
             project_priority: Dynamic priority for the project.
+            kwargs: additional attributes that will be added as instance members.
         """
         self.position = position
         self._status = _status

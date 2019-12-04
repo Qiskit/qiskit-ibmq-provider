@@ -37,7 +37,7 @@ from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..job.exceptions import (IBMQJobApiError, IBMQJobFailureError,
                               IBMQJobInvalidStateError)
-from .queueinfo import IBMQJobQueueInfo
+from .queueinfo import QueueInfo
 from .schema import JobResponseSchema
 from .utils import build_error_report, api_status_to_job_status, api_to_job_error
 
@@ -136,7 +136,7 @@ class IBMQJob(BaseModel, BaseJob):
         self._api = api
         self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
         # self._queue_position = None
-        self._queue_info = None     # type: Optional[IBMQJobQueueInfo]
+        self._queue_info = None     # type: Optional[QueueInfo]
         self._update_status_position(_api_status, kwargs.pop('infoQueue', None))
 
         # Properties used for caching.
@@ -220,9 +220,9 @@ class IBMQJob(BaseModel, BaseJob):
                         print("Experiment failed!")
 
         Args:
-           timeout: number of seconds to wait for job
-           wait: time between queries to IBM Q server
-           partial: if true attempts to return partial results for the job.
+           timeout: number of seconds to wait for job.
+           wait: seconds between queries to IBM Q server. Default: 5.
+           partial: if true attempts to return partial results for the job. Default: False.
 
         Returns:
             Result object.
@@ -304,7 +304,7 @@ class IBMQJob(BaseModel, BaseJob):
         self._status = api_status_to_job_status(status)
         if status is ApiJobStatus.RUNNING and api_info_queue:
             try:
-                info_queue = IBMQJobQueueInfo.from_dict(api_info_queue)
+                info_queue = QueueInfo.from_dict(api_info_queue)
                 if info_queue._status == ApiJobStatus.PENDING_IN_QUEUE.value:
                     self._status = JobStatus.QUEUED
                     self._queue_info = info_queue
@@ -365,7 +365,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         Args:
             refresh (bool): if True, query the API and return the latest value.
-                Otherwise return the cached value.
+                Otherwise return the cached value. Default: False.
 
         Returns:
             Position in the queue or ``None`` if position is unknown or not applicable.
@@ -378,7 +378,7 @@ class IBMQJob(BaseModel, BaseJob):
             return self._queue_info.position
         return None
 
-    def queue_info(self) -> Optional[IBMQJobQueueInfo]:
+    def queue_info(self) -> Optional[QueueInfo]:
         """Return queue information for this job.
 
         The queue information may include queue position, estimated start and
@@ -389,7 +389,7 @@ class IBMQJob(BaseModel, BaseJob):
                 be immediately available.
 
         Returns:
-            An IBMQJobQueueInfo instance that contains queue information for
+            An QueueInfo instance that contains queue information for
                 this job, or ``None`` if queue information is unknown or not
                 applicable.
         """
@@ -496,9 +496,9 @@ class IBMQJob(BaseModel, BaseJob):
         """Wait until the job progress to a final state such as DONE or ERROR.
 
         Args:
-            timeout: seconds to wait for job. If None, wait indefinitely.
-            wait: seconds between queries.
-            required_status: the final job status required.
+            timeout: seconds to wait for job. If None, wait indefinitely. Default: None.
+            wait: seconds between queries. Default: 5.
+            required_status: the final job status required. Default: ``JOB_FINAL_STATES``.
 
         Returns:
             True if the final job status matches one of the required states.
