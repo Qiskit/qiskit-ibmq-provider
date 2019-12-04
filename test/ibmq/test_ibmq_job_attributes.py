@@ -15,7 +15,7 @@
 """IBMQJob Test."""
 
 import time
-from unittest import mock
+from unittest import mock, skip
 import re
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
@@ -110,6 +110,7 @@ class TestIBMQJobAttributes(JobTestCase):
         for job in retrieved_jobs:
             self.assertEqual(job.name(), job_name)
 
+    @skip('Skipping until staging device is fixed.')
     @slow_test_on_device
     def test_error_message_device(self, provider, backend):  # pylint: disable=unused-argument
         """Test retrieving job error messages from a device backend."""
