@@ -224,7 +224,7 @@ class IBMQJob(BaseModel, BaseJob):
            wait: time between queries to IBM Q server
            partial: if true attempts to return partial results for the job.
            refresh: if true, query the API for the result again.
-               Otherwise return the cached value.
+               Otherwise return the cached value. Default: False.
 
         Returns:
             Result object.
@@ -491,7 +491,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         Args:
             refresh: if true, query the API for the result again.
-               Otherwise return the cached value.
+               Otherwise return the cached value. Default: False.
 
         Returns:
             The job result.
