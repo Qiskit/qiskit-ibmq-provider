@@ -28,7 +28,7 @@ from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
 
 from ...ibmqtestcase import IBMQTestCase
-from ...decorators import requires_qe_access, run_on_device
+from ...decorators import requires_qe_access, slow_test_on_device
 
 
 class TestWebsocketIntegration(IBMQTestCase):
@@ -66,7 +66,7 @@ class TestWebsocketIntegration(IBMQTestCase):
 
         self.assertEqual(result.status, 'COMPLETED')
 
-    @run_on_device
+    @slow_test_on_device
     def test_websockets_device(self, provider, backend):  # pylint: disable=unused-argument
         """Test checking status of a job via websockets for a device."""
         qc = transpile(self.qc1, backend=backend)
