@@ -194,7 +194,7 @@ class TestAccountClient(IBMQTestCase):
         original_error = raised_exception.__cause__.response.json()['error']
         self.assertIn(original_error['message'], raised_exception.message,
                       "Original error message not in raised exception")
-        self.assertIn(original_error['code'], raised_exception.message,
+        self.assertIn(str(original_error['code']), raised_exception.message,
                       "Original error code not in raised exception")
 
     def test_custom_client_app_header(self):

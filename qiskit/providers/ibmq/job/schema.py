@@ -98,7 +98,6 @@ class JobResponseSchema(BaseSchema):
     # Optional properties
     _backend_info = Nested(JobResponseBackendSchema)
     allow_object_storage = Boolean()
-    error = String()
 
     @pre_load
     def preprocess_field_names(self, data, **_):  # type: ignore

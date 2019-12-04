@@ -140,7 +140,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Properties used for caching.
         self._cancelled = False
-        self._job_error_msg = self._error.message if self._error else None
+        self._job_error_msg = None  # type: Optional[str]
 
     def qobj(self) -> Qobj:
         """Return the Qobj for this job.
@@ -335,7 +335,8 @@ class IBMQJob(BaseModel, BaseJob):
             if not self._error:
                 self.refresh()
             if self._error:
-                self._job_error_msg = self._error.message
+                self._job_error_msg = self._format_message_from_error(
+                    self._error.__dict__)
             elif self._api_status:
                 # TODO this can be removed once API provides detailed error
                 self._job_error_msg = self._api_status.value
@@ -365,7 +366,7 @@ class IBMQJob(BaseModel, BaseJob):
         Returns:
             Job creation date.
         """
-        return str(self._creation_date)
+        return self._creation_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
     def job_id(self) -> str:
         """Return the job ID assigned by the API.
@@ -525,4 +526,22 @@ class IBMQJob(BaseModel, BaseJob):
             # If individual errors given
             self._job_error_msg = build_error_report(result_response['results'])
         elif 'error' in result_response:
-            self._job_error_msg = result_response['error']['message']
+            self._job_error_msg = self._format_message_from_error(result_response['error'])
+
+    def _format_message_from_error(self, error: Dict) -> str:
+        """Format message from the error field.
+
+        Args:
+            The error field.
+
+        Returns:
+            A formatted error message.
+
+        Raises:
+            IBMQJobApiError: If there was some unexpected failure in the server.
+        """
+        try:
+            return "{}. Error code: {}.".format(error['message'], error['code'])
+        except KeyError:
+            raise IBMQJobApiError('Failed to get job error message. Invalid error data received: {}'
+                                  .format(error))
