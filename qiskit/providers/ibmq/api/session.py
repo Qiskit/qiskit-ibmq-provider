@@ -198,6 +198,7 @@ class RetrySession(Session):
                     pass
 
             if self.access_token:
+                message = message.replace(self.access_token, '...')
                 # Modify the original message on the chained exceptions.
                 self._modify_chained_exception_messages(ex)
 
