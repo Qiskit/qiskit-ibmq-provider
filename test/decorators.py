@@ -124,7 +124,7 @@ def requires_device(func):
     return _wrapper
 
 
-def run_on_device(func):
+def slow_test_on_device(func):
     """Decorator that signals that the test should run on a real or semi-real device.
 
     It involves:
@@ -179,8 +179,6 @@ def run_on_device(func):
             raise Exception("Unable to find suitable backend.")
 
         kwargs.update({'provider': provider})
-        _backend = provider.get_backend(backend_name) if backend_name else \
-            least_busy(provider.backends(simulator=False))
         kwargs.update({'backend': _backend})
 
         return func(obj, *args, **kwargs)
