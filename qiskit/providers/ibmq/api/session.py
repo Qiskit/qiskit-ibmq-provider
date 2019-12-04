@@ -199,27 +199,26 @@ class RetrySession(Session):
 
             if self.access_token:
                 message = message.replace(self.access_token, '...')
-                # Replace the original message on the `RequestException` as well.
+                # Replace the original message on the `RequestException`.
                 ex.args = (message,)
-
-                def _modify_chain_messages(exc: BaseException) -> None:
-                    """Helper function to remove access token from exception messages."""
-                    if exc.__cause__:
-                        _modify_chain_messages(exc.__cause__)
-                    elif exc.__context__:
-                        _modify_chain_messages(exc.__context__)
-
-                    # Loop through args, if string, attempt to replace access token.
-                    modified_args = []
-                    for arg in exc.args:
-                        exc_message = arg
-                        if isinstance(exc_message, str):
-                            exc_message = exc_message.replace(self.access_token, '...')
-                        modified_args.append(exc_message)
-                    exc.args = tuple(modified_args)
-
-                _modify_chain_messages(ex)
+                # Replace the original message on the chained exceptions.
+                self._modify_chained_exception_messages(ex)
 
             raise RequestsApiError(message) from ex
 
         return response
+
+    def _modify_chained_exception_messages(self, exc: BaseException) -> None:
+        if exc.__cause__:
+            self._modify_chained_exception_messages(exc.__cause__)
+        elif exc.__context__:
+            self._modify_chained_exception_messages(exc.__context__)
+
+        # Loop through args, attempt to replace access token if string.
+        modified_args = []
+        for arg in exc.args:
+            exc_message = arg
+            if isinstance(exc_message, str):
+                exc_message = exc_message.replace(self.access_token, '...')
+            modified_args.append(exc_message)
+        exc.args = tuple(modified_args)
