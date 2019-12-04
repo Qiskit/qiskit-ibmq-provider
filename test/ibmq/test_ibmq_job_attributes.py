@@ -24,7 +24,6 @@ from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
-from qiskit.test import slow_test
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, slow_test_on_device
@@ -216,20 +215,21 @@ class TestIBMQJobAttributes(JobTestCase):
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
         job = backend.run(qobj)
+        queue_info = None
         for _ in range(10):
-            status = job.status()
+            queue_info = job.queue_info()
             # Even if job status is QUEUED, queue information may not be
             # immediately available.
-            if (status is JobStatus.QUEUED and job.queue_position()) or \
-                    status in leave_states:
+            if (job._status is JobStatus.QUEUED and job.queue_position()) or \
+                    job._status in leave_states:
                 break
             time.sleep(0.5)
 
-        if status is JobStatus.QUEUED:
+        if job._status is JobStatus.QUEUED:
             msg = "Job {} is queued but has no ".format(job.job_id())
             self.assertIsNotNone(job.queue_position(), msg + "queue position.")
-            self.assertIsNotNone(job._queue_info, msg + "queue info.")
-            for attr, value in job._queue_info.__dict__.items():
+            self.assertIsNotNone(queue_info, msg + "queue info.")
+            for attr, value in queue_info.__dict__.items():
                 self.assertIsNotNone(value, msg + attr)
         else:
             self.assertIsNone(job.queue_position())
