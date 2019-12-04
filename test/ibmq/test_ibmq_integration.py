@@ -13,7 +13,6 @@
 # that they have been altered from the originals.
 
 """IBMQ provider integration tests (compile and run)."""
-
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.result import Result
 from qiskit.execute import execute
