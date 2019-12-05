@@ -14,10 +14,10 @@
 
 """Tests for the AccountClient for IBM Q Experience."""
 
+import re
 from unittest import mock
 from urllib3.connectionpool import HTTPConnectionPool
 from urllib3.exceptions import MaxRetryError
-import re
 
 from requests.exceptions import RequestException
 
@@ -251,6 +251,7 @@ class TestAccountClient(IBMQTestCase):
                     self.assertIn('JOB_NOT_CANCELLED', str(ex))
 
     def test_access_token_not_in_exception_chain(self):
+        """Check that access token is replaced within chained request exceptions."""
         backend = self.provider.backends.ibmq_qasm_simulator
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
         qobj = assemble(circuit, backend, shots=1)
@@ -273,15 +274,16 @@ class TestAccountClient(IBMQTestCase):
                         HTTPConnectionPool('host'), 'url', reason=exception_message)):
                 _ = api.job_get(job_id)
 
-        def _check_token_not_in_exception_chain(test_class, access_token, exc):
+        def _assert_token_not_in_exc_chain(test_class, access_token, exc):
+            """Helper function to assert access token not in exception chain."""
             if exc.__cause__:
-                _check_token_not_in_exception_chain(test_class, access_token, exc.__cause__)
+                _assert_token_not_in_exc_chain(test_class, access_token, exc.__cause__)
             elif exc.__context__:
-                _check_token_not_in_exception_chain(test_class, access_token, exc.__context__)
+                _assert_token_not_in_exc_chain(test_class, access_token, exc.__context__)
             # Assert access token not in chained exception.
             test_class.assertNotIn(access_token, str(exc))
 
-        _check_token_not_in_exception_chain(self, access_token_, exception_cm.exception)
+        _assert_token_not_in_exc_chain(self, access_token_, exception_cm.exception)
 
 
 class TestAccountClientJobs(IBMQTestCase):
