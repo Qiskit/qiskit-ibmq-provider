@@ -15,6 +15,7 @@
 """Tests for the AccountClient for IBM Q Experience."""
 
 import re
+import traceback
 from unittest import mock
 from urllib3.connectionpool import HTTPConnectionPool
 from urllib3.exceptions import MaxRetryError
@@ -255,10 +256,7 @@ class TestAccountClient(IBMQTestCase):
         backend = self.provider.backends.ibmq_qasm_simulator
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
         qobj = assemble(circuit, backend, shots=1)
-
         api = backend._api
-        job = backend.run(qobj)
-        job_id = job.job_id()
 
         session_ = api.client_api.session
         access_token_ = session_.access_token
@@ -266,24 +264,16 @@ class TestAccountClient(IBMQTestCase):
         exception_message = 'The access token in this exception ' \
                             'message should be replaced: {}'.format(access_token_)
 
-        with self.assertRaises(RequestsApiError) as exception_cm:
+        try:
             with mock.patch.object(
                     HTTPConnectionPool,
                     'urlopen',
                     side_effect=MaxRetryError(
                         HTTPConnectionPool('host'), 'url', reason=exception_message)):
-                _ = api.job_get(job_id)
-
-        def _assert_token_not_in_exc_chain(test_class, access_token, exc):
-            """Helper function to assert access token not in exception chain."""
-            if exc.__cause__:
-                _assert_token_not_in_exc_chain(test_class, access_token, exc.__cause__)
-            elif exc.__context__:
-                _assert_token_not_in_exc_chain(test_class, access_token, exc.__context__)
-            # Assert access token not in chained exception.
-            test_class.assertNotIn(access_token, str(exc))
-
-        _assert_token_not_in_exc_chain(self, access_token_, exception_cm.exception)
+                _ = api.job_submit(backend.name(), qobj.to_dict(), use_object_storage=True)
+        except RequestsApiError:
+            exception_chain_as_str = traceback.format_exc()
+            self.assertNotIn(self.access_token, exception_chain_as_str)
 
 
 class TestAccountClientJobs(IBMQTestCase):
