@@ -263,7 +263,6 @@ class TestAccountClient(IBMQTestCase):
 
         exception_message = 'The access token in this exception ' \
                             'message should be replaced: {}'.format(access_token_)
-
         try:
             with mock.patch.object(
                     HTTPConnectionPool,
