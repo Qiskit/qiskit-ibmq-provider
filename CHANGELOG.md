@@ -24,7 +24,7 @@ The format is based on [Keep a Changelog].
 
 ### Deprecated
 
-- Python 3.5 support in qiskit-aqua is deprecated. Support will be
+- Python 3.5 support in qiskit-ibmq-provider is deprecated. Support will be
   removed on the upstream python community's end of life date for the version,
   which is 09/13/2020.  (\#445)
   
