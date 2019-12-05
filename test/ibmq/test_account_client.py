@@ -18,6 +18,7 @@ from unittest import mock
 import re
 
 from requests.exceptions import RequestException
+from requests.sessions import Session
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
@@ -247,6 +248,38 @@ class TestAccountClient(IBMQTestCase):
                     # in a temporary, noncancellable state. In this case we'll
                     # just retry.
                     self.assertIn('JOB_NOT_CANCELLED', str(ex))
+
+    def test_access_token_not_in_exception_chain(self):
+        backend_name = 'ibmq_qasm_simulator'
+        backend = self.provider.get_backend(backend_name)
+        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
+        qobj = assemble(circuit, backend, shots=1)
+
+        api = backend._api
+        job = backend.run(qobj)
+        job_id = job.job_id()
+
+        session = api.client_api.session
+        access_token = session.access_token
+
+        exception_message = 'Exception: This access token in this ' \
+                            'method should be replaced: {}'.format(access_token)
+        self.assertIn(access_token, exception_message)
+
+        with self.assertRaises(RequestsApiError) as exception_cm:
+            with mock.patch.object(
+                    Session, 'request',
+                    side_effect=RequestException(exception_message)) as session_mock:
+                _ = api.job_get(job_id)
+
+        def _check_token_not_in_exception_chain(exc):
+            if exc.__cause__:
+                _check_token_not_in_exception_chain(exc.__cause__)
+            elif exc.__context__:
+                _check_token_not_in_exception_chain(exc.__context__)
+            self.assertNotIn(self.access_token, str(exc))
+
+        _check_token_not_in_exception_chain(exception_cm.exception)
 
 
 class TestAccountClientJobs(IBMQTestCase):
