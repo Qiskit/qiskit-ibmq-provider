@@ -263,8 +263,8 @@ class TestAccountClient(IBMQTestCase):
         session_ = api.client_api.session
         access_token_ = session_.access_token
 
-        exception_message = 'Exception: This access token in this ' \
-                            'method should be replaced: {}'.format(access_token_)
+        exception_message = 'The access token in this exception ' \
+                            'message should be replaced: {}'.format(access_token_)
         self.assertIn(access_token_, exception_message)
 
         with self.assertRaises(RequestsApiError) as exception_cm:
