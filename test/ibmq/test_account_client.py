@@ -251,7 +251,7 @@ class TestAccountClient(IBMQTestCase):
                     # just retry.
                     self.assertIn('JOB_NOT_CANCELLED', str(ex))
 
-    def test_access_token_not_in_exception_chain(self):
+    def test_access_token_not_in_exception_traceback(self):
         """Check that access token is replaced within chained request exceptions."""
         backend = self.provider.backends.ibmq_qasm_simulator
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
