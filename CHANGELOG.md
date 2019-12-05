@@ -16,11 +16,18 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
-## Deprecated
+### Added
+
+- `IBMQJob.result()` now accepts an optional `refresh` parameter. If 
+  `refresh=True` is specified, the function re-queries the api for the 
+  results, rather than returning those cached. (\#469)
+
+### Deprecated
 
 - Python 3.5 support in qiskit-aqua is deprecated. Support will be
   removed on the upstream python community's end of life date for the version,
-  which is 09/13/2020.
+  which is 09/13/2020.  (\#445)
+  
 
 ## [0.4.3] - 2019-11-21
 

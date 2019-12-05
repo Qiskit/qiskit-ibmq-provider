@@ -15,8 +15,10 @@
 """IBMQJob Test."""
 
 import time
+import copy
 from concurrent import futures
 from datetime import datetime, timedelta
+from unittest import SkipTest
 
 import numpy
 from scipy.stats import chi2_contingency
@@ -28,14 +30,14 @@ from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
-from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError
+from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, JobError
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
 from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_qe_access,
-                          run_on_device, requires_device)
+                          slow_test_on_device, requires_device)
 
 
 class TestIBMQJob(JobTestCase):
@@ -81,9 +83,8 @@ class TestIBMQJob(JobTestCase):
         self.assertGreater(contingency1[1], 0.01)
         self.assertGreater(contingency2[1], 0.01)
 
-    @slow_test
-    @requires_device
-    def test_run_device(self, backend):
+    @slow_test_on_device
+    def test_run_device(self, provider, backend):   # pylint: disable=unused-argument
         """Test running in a real device."""
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         shots = qobj.config.shots
@@ -152,7 +153,7 @@ class TestIBMQJob(JobTestCase):
         job_ids = [job.job_id() for job in job_array]
         self.assertEqual(sorted(job_ids), sorted(list(set(job_ids))))
 
-    @run_on_device
+    @slow_test_on_device
     def test_run_async_device(self, provider, backend):  # pylint: disable=unused-argument
         """Test running in a real device asynchronously."""
         self.log.info('submitting to backend %s', backend.name())
@@ -208,7 +209,6 @@ class TestIBMQJob(JobTestCase):
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
-        self.wait_for_initialization(job, timeout=5)
         can_cancel = job.cancel()
         self.assertTrue(can_cancel)
         self.assertTrue(job.status() is JobStatus.CANCELLED)
@@ -234,37 +234,49 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(job.result().get_counts(), retrieved_job.result().get_counts())
         self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
 
-    @slow_test
     @requires_device
     @requires_provider
     def test_retrieve_job_uses_appropriate_backend(self, backend, provider):
         """Test that retrieved jobs come from their appropriate backend."""
-        simulator_backend = provider.get_backend('ibmq_qasm_simulator')
-        real_backend = backend
+        backend_1 = backend
+        # Get a second backend.
+        backend_2 = None
+        for backend_2 in provider.backends():
+            if backend_2.status().operational and backend_2.name() != backend_1.name():
+                break
+        if not backend_2:
+            raise SkipTest('Skipping test that requires multiple backends')
 
-        qobj_sim = assemble(
-            transpile(self._qc, backend=simulator_backend), backend=simulator_backend)
-        job_sim = simulator_backend.run(qobj_sim)
+        qobj_1 = assemble(
+            transpile(self._qc, backend=backend_1), backend=backend_1)
+        job_1 = backend_1.run(qobj_1)
 
-        qobj_real = assemble(
-            transpile(self._qc, backend=real_backend), backend=real_backend)
-        job_real = real_backend.run(qobj_real)
+        qobj_2 = assemble(
+            transpile(self._qc, backend=backend_2), backend=backend_2)
+        job_2 = backend_2.run(qobj_2)
 
         # test a retrieved job's backend is the same as the queried backend
-        self.assertEqual(simulator_backend.retrieve_job(job_sim.job_id()).backend().name(),
-                         simulator_backend.name())
-        self.assertEqual(real_backend.retrieve_job(job_real.job_id()).backend().name(),
-                         real_backend.name())
+        self.assertEqual(backend_1.retrieve_job(job_1.job_id()).backend().name(),
+                         backend_1.name())
+        self.assertEqual(backend_2.retrieve_job(job_2.job_id()).backend().name(),
+                         backend_2.name())
 
         # test retrieve requests for jobs that exist on other backends throw errors
         with self.assertWarns(Warning) as context_manager:
             self.assertRaises(IBMQBackendError,
-                              simulator_backend.retrieve_job, job_real.job_id())
+                              backend_1.retrieve_job, job_2.job_id())
         self.assertIn('belongs to', str(context_manager.warning))
         with self.assertWarns(Warning) as context_manager:
             self.assertRaises(IBMQBackendError,
-                              real_backend.retrieve_job, job_sim.job_id())
+                              backend_2.retrieve_job, job_1.job_id())
         self.assertIn('belongs to', str(context_manager.warning))
+
+        # Cleanup
+        for job in [job_1, job_2]:
+            try:
+                job.cancel()
+            except JobError:
+                pass
 
     @requires_provider
     def test_retrieve_job_error(self, provider):
@@ -472,6 +484,28 @@ class TestIBMQJob(JobTestCase):
         new_job2 = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
         self.assertTrue(isinstance(new_job2.backend(), IBMQRetiredBackend))
         self.assertNotEqual(new_job2.backend().name(), 'unknown')
+
+    @requires_provider
+    def test_refresh_job_result(self, provider):
+        """Test re-retrieving job result via refresh."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+        result = job.result()
+
+        # Save original cached results.
+        cached_result = copy.deepcopy(result)
+        self.assertTrue(cached_result)
+
+        # Modify cached results.
+        result.results[0].header.name = 'modified_result'
+        self.assertNotEqual(cached_result, result)
+        self.assertEqual(result.results[0].header.name, 'modified_result')
+
+        # Re-retrieve result via refresh.
+        result = job.result(refresh=True)
+        self.assertEqual(cached_result, result)
+        self.assertNotEqual(result.results[0].header.name, 'modified_result')
 
 
 def _bell_circuit():
