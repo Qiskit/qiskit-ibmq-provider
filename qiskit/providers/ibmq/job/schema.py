@@ -15,7 +15,7 @@
 """Schemas for job."""
 
 from marshmallow import pre_load
-from marshmallow.validate import Range, OneOf
+from marshmallow.validate import Range
 
 from qiskit.validation import BaseSchema
 from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime
@@ -24,7 +24,6 @@ from qiskit.result.models import ResultSchema
 
 from qiskit.providers.ibmq.utils.fields import Enum, map_field_names
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
-from qiskit.providers.ibmq.job.queueinfo import InfoQueueResponseSchema
 
 
 # Mapping between 'API job field': 'IBMQJob attribute', for solving name
@@ -110,13 +109,3 @@ class JobResponseSchema(BaseSchema):
         duplicates the unknown keys.
         """
         return map_field_names(FIELDS_MAP, data)
-
-
-class StatusResponseSchema(BaseSchema):
-    """Schema for StatusResponse"""
-
-    # Optional properties
-    infoQueue = Nested(InfoQueueResponseSchema, required=False)
-
-    # Required properties
-    status = String(required=True, validate=OneOf([status.value for status in ApiJobStatus]))
