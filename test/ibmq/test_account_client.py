@@ -258,11 +258,8 @@ class TestAccountClient(IBMQTestCase):
         qobj = assemble(circuit, backend, shots=1)
         api = backend._api
 
-        session_ = api.client_api.session
-        access_token_ = session_.access_token
-
         exception_message = 'The access token in this exception ' \
-                            'message should be replaced: {}'.format(access_token_)
+                            'message should be replaced: {}'.format(self.access_token)
         try:
             with mock.patch.object(
                     HTTPConnectionPool,
@@ -272,8 +269,10 @@ class TestAccountClient(IBMQTestCase):
                 _ = api.job_submit(backend.name(), qobj.to_dict(), use_object_storage=True)
         except RequestsApiError:
             exception_chain_as_str = traceback.format_exc()
-            self.assertTrue(exception_chain_as_str)
-            self.assertNotIn(self.access_token, exception_chain_as_str)
+
+        self.assertTrue(exception_chain_as_str)
+        if self.access_token in exception_chain_as_str:
+            self.fail('Access token not replaced in request exception traceback.')
 
 
 class TestAccountClientJobs(IBMQTestCase):
