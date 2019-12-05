@@ -269,7 +269,8 @@ class TestAccountClient(IBMQTestCase):
 
         with self.assertRaises(RequestsApiError) as exception_cm:
             with mock.patch.object(
-                    HTTPConnectionPool, 'urlopen',
+                    HTTPConnectionPool,
+                    'urlopen',
                     side_effect=MaxRetryError(
                         HTTPConnectionPool('host'), 'url', reason=exception_message)):
                 _ = api.job_get(job_id)
