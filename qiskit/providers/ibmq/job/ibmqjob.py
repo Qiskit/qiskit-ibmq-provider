@@ -512,6 +512,8 @@ class IBMQJob(BaseModel, BaseJob):
                 if self._status is JobStatus.ERROR:
                     raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
                                               'Use job.error_message() to get more details.')
+                if not self.kind:
+                    raise IBMQJobInvalidStateError('Job result is in an invalid format.')
                 raise IBMQJobApiError(str(err))
             finally:
                 # In case partial results are returned or job failure, an error message is cached.
