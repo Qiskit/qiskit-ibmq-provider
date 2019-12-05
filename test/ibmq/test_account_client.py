@@ -273,6 +273,7 @@ class TestAccountClient(IBMQTestCase):
                 _ = api.job_submit(backend.name(), qobj.to_dict(), use_object_storage=True)
         except RequestsApiError:
             exception_chain_as_str = traceback.format_exc()
+            self.assertTrue(exception_chain_as_str)
             self.assertNotIn(self.access_token, exception_chain_as_str)
 
 
