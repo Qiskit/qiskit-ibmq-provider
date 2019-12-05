@@ -15,10 +15,11 @@
 """Tests for the AccountClient for IBM Q Experience."""
 
 from unittest import mock
+from urllib3.connectionpool import HTTPConnectionPool
+from urllib3.exceptions import MaxRetryError
 import re
 
 from requests.exceptions import RequestException
-from requests.sessions import Session
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
@@ -250,8 +251,7 @@ class TestAccountClient(IBMQTestCase):
                     self.assertIn('JOB_NOT_CANCELLED', str(ex))
 
     def test_access_token_not_in_exception_chain(self):
-        backend_name = 'ibmq_qasm_simulator'
-        backend = self.provider.get_backend(backend_name)
+        backend = self.provider.backends.ibmq_qasm_simulator
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
         qobj = assemble(circuit, backend, shots=1)
 
@@ -259,27 +259,29 @@ class TestAccountClient(IBMQTestCase):
         job = backend.run(qobj)
         job_id = job.job_id()
 
-        session = api.client_api.session
-        access_token = session.access_token
+        session_ = api.client_api.session
+        access_token_ = session_.access_token
 
         exception_message = 'Exception: This access token in this ' \
-                            'method should be replaced: {}'.format(access_token)
-        self.assertIn(access_token, exception_message)
+                            'method should be replaced: {}'.format(access_token_)
+        self.assertIn(access_token_, exception_message)
 
         with self.assertRaises(RequestsApiError) as exception_cm:
             with mock.patch.object(
-                    Session, 'request',
-                    side_effect=RequestException(exception_message)) as session_mock:
+                    HTTPConnectionPool, 'urlopen',
+                    side_effect=MaxRetryError(
+                        HTTPConnectionPool('host'), 'url', reason=exception_message)):
                 _ = api.job_get(job_id)
 
-        def _check_token_not_in_exception_chain(exc):
+        def _check_token_not_in_exception_chain(test_class, access_token, exc):
             if exc.__cause__:
-                _check_token_not_in_exception_chain(exc.__cause__)
+                _check_token_not_in_exception_chain(test_class, access_token, exc.__cause__)
             elif exc.__context__:
-                _check_token_not_in_exception_chain(exc.__context__)
-            self.assertNotIn(self.access_token, str(exc))
+                _check_token_not_in_exception_chain(test_class, access_token, exc.__context__)
+            # Assert access token not in chained exception.
+            test_class.assertNotIn(access_token, str(exc))
 
-        _check_token_not_in_exception_chain(exception_cm.exception)
+        _check_token_not_in_exception_chain(self, access_token_, exception_cm.exception)
 
 
 class TestAccountClientJobs(IBMQTestCase):
