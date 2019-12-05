@@ -532,7 +532,7 @@ class IBMQJob(BaseModel, BaseJob):
         Args:
             result_response: Dictionary of the result response.
         """
-        if result_response and result_response['results']:
+        if result_response.get('results', None):
             # If individual errors given
             self._job_error_msg = build_error_report(result_response['results'])
         elif 'error' in result_response:
