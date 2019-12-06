@@ -500,7 +500,7 @@ class IBMQJob(BaseModel, BaseJob):
             IBMQJobApiError: If there was some unexpected failure in the server.
             IBMQJobFailureError: If the job failed and partial result could not
                 be retrieved.
-            IBMQJobInvalidStateError: If result is not in an expected format.
+            IBMQJobInvalidStateError: If result is in an unsupported format.
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         result_response = None
@@ -513,7 +513,7 @@ class IBMQJob(BaseModel, BaseJob):
                     raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
                                               'Use job.error_message() to get more details.')
                 if not self.kind:
-                    raise IBMQJobInvalidStateError('Job result is in an invalid format.')
+                    raise IBMQJobInvalidStateError('Job result is in an unsupported format.')
                 raise IBMQJobApiError(str(err))
             finally:
                 # In case partial results are returned or job failure, an error message is cached.
