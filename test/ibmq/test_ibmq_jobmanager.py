@@ -282,7 +282,9 @@ class TestResultManager(IBMQTestCase):
 
         result_manager = job_set.results()
         if cancelled:
-            with self.assertRaises(IBMQManagedResultDataNotAvailable):
+            with self.assertRaises(IBMQManagedResultDataNotAvailable,
+                                   msg="IBMQManagedResultDataNotAvailable not "
+                                       "raised for job".format(cjob.job_id())):
                 result_manager.get_counts(max_circs)
         else:
             self.log.warning("Unable to cancel job %s", cjob.job_id())
