@@ -120,7 +120,6 @@ class IBMQJob(BaseModel, BaseJob):
             api: object for connecting to the API.
             _job_id: job ID of this job.
             _creation_date: job creation date.
-            kind: job kind.
             _api_status: API job status.
             kwargs: additional job attributes, that will be added as
                 instance members.
@@ -501,6 +500,7 @@ class IBMQJob(BaseModel, BaseJob):
             IBMQJobApiError: If there was some unexpected failure in the server.
             IBMQJobFailureError: If the job failed and partial result could not
                 be retrieved.
+            IBMQJobInvalidStateError: If result is not in an expected format.
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         result_response = None
