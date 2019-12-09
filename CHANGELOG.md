@@ -21,6 +21,9 @@ The format is based on [Keep a Changelog].
 - `IBMQJob.result()` now accepts an optional `refresh` parameter. If 
   `refresh=True` is specified, the function re-queries the api for the 
   results, rather than returning those cached. (\#469)
+- `POST` network request are now retried if the status code is among specific
+  safe codes. In the case of the request failing during job submission, more
+  information is now displayed in the `INFO` and `DEBUG` log levels. (\#475)
 
 ## [0.4.3] - 2019-11-21
 
