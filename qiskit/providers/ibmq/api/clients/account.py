@@ -171,6 +171,8 @@ class AccountClient(BaseClient):
                 logger.info('Submitting the job via object storage failed: '
                             'retrying via regular POST upload: %s',
                             str(ex))
+                logger.debug('Submitting via object storage extra info:',
+                             exc_info=True)
 
         if not submit_info:
             # Submit Qobj via HTTP.
