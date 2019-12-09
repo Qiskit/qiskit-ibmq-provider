@@ -14,8 +14,11 @@
 
 """Tests for the AccountClient for IBM Q Experience."""
 
-from unittest import mock
 import re
+import traceback
+from unittest import mock
+from urllib3.connectionpool import HTTPConnectionPool
+from urllib3.exceptions import MaxRetryError
 
 from requests.exceptions import RequestException
 
@@ -247,6 +250,30 @@ class TestAccountClient(IBMQTestCase):
                     # in a temporary, noncancellable state. In this case we'll
                     # just retry.
                     self.assertIn('JOB_NOT_CANCELLED', str(ex))
+
+    def test_access_token_not_in_exception_traceback(self):
+        """Check that access token is replaced within chained request exceptions."""
+        backend = self.provider.backends.ibmq_qasm_simulator
+        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
+        qobj = assemble(circuit, backend, shots=1)
+        api = backend._api
+
+        exception_message = 'The access token in this exception ' \
+                            'message should be replaced: {}'.format(self.access_token)
+        exception_traceback_str = ''
+        try:
+            with mock.patch.object(
+                    HTTPConnectionPool,
+                    'urlopen',
+                    side_effect=MaxRetryError(
+                        HTTPConnectionPool('host'), 'url', reason=exception_message)):
+                _ = api.job_submit(backend.name(), qobj.to_dict(), use_object_storage=True)
+        except RequestsApiError:
+            exception_traceback_str = traceback.format_exc()
+
+        self.assertTrue(exception_traceback_str)
+        if self.access_token in exception_traceback_str:
+            self.fail('Access token not replaced in request exception traceback.')
 
 
 class TestAccountClientJobs(IBMQTestCase):
