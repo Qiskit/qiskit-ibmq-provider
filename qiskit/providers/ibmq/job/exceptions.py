@@ -24,17 +24,17 @@ class IBMQJobError(JobError, IBMQError):
     pass
 
 
-class IBMQJobApiError(JobError):
+class IBMQJobApiError(IBMQJobError):
     """Error that occurs unexpectedly when querying the API."""
     pass
 
 
-class IBMQJobFailureError(JobError):
+class IBMQJobFailureError(IBMQJobError):
     """Error that occurs because the job failed."""
     pass
 
 
-class IBMQJobInvalidStateError(JobError):
+class IBMQJobInvalidStateError(IBMQJobError):
     """Error that occurs because a job is not in a state for the operation."""
     pass
 
