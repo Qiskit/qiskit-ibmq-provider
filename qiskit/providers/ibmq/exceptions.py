@@ -27,16 +27,48 @@ class IBMQAccountError(IBMQError):
     pass
 
 
-class IBMQApiUrlError(IBMQAccountError):
-    """Errors raised due to mixing API versions."""
+class IBMQAccountCredentialsNotFound(IBMQAccountError):
+    """Error raised when credentials not found."""
+    pass
+
+
+class IBMQAccountCredentialsInvalidFormat(IBMQAccountError):
+    """Error raised when credentials format is invalid."""
+    pass
+
+
+class IBMQAccountCredentialsInvalidToken(IBMQAccountError):
+    """Error raised for an invalid IBM Q Experience API token.."""
+    pass
+
+
+class IBMQAccountCredentialsInvalidUrl(IBMQAccountError):
+    """Error raised for an invalid IBM Q Experience API url.."""
+    pass
+
+
+class IBMQAccountMultipleCredentialsFound(IBMQAccountError):
+    """Error raised when multiple credentials found."""
+    pass
 
 
 class IBMQProviderError(IBMQAccountError):
     """Errors related to provider handling."""
+    pass
 
 
 class IBMQBackendError(IBMQError):
     """IBM Q Backend Errors."""
+    pass
+
+
+class IBMQBackendApiError(IBMQBackendError):
+    """Error that occurs unexpectedly when querying the API."""
+    pass
+
+
+class IBMQBackendApiProtocolError(IBMQBackendError):
+    """Error raised when unexpected API return values received."""
     pass
 
 
