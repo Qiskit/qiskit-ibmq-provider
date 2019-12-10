@@ -439,28 +439,21 @@ class TestIBMQJob(JobTestCase):
         self.assertFalse(result.results[1].success)
 
     @slow_test
-    @requires_qe_access
-    def test_pulse_job(self, qe_token, qe_url):
+    @requires_provider
+    def test_pulse_job(self, provider):
         """Test running a pulse job."""
+        backends = provider.backends(open_pulse=True, operational=True)
+        if not backends:
+            raise SkipTest('Skipping pulse test since no pulse backend found.')
 
-        factory = IBMQFactory()
-        factory.enable_account(qe_token, qe_url)
-
-        backend = None
-        for provider in factory.providers():
-            backends = provider.backends(open_pulse=True)
-            if backends:
-                backend = least_busy(backends)
-                break
-
-        self.assertIsNotNone(backend)
+        backend = least_busy(backends)
         config = backend.configuration()
         defaults = backend.defaults()
-        cmd_def = defaults.build_cmd_def()
+        inst_map = defaults.circuit_instruction_map
 
         # Run 2 experiments - 1 with x pulse and 1 without
-        x = cmd_def.get('x', 0)
-        measure = cmd_def.get('measure', range(config.n_qubits)) << x.duration
+        x = inst_map.get('x', 0)
+        measure = inst_map.get('measure', range(config.n_qubits)) << x.duration
         ground_sched = measure
         excited_sched = x | measure
         schedules = [ground_sched, excited_sched]
