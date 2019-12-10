@@ -22,7 +22,7 @@ from configparser import ConfigParser, ParsingError
 from typing import Dict, Optional, Any
 
 from .credentials import Credentials, HubGroupProject
-from .exceptions import CredentialsError
+from .exceptions import InvalidCredentialsFormatError, CredentialsNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -46,16 +46,16 @@ def read_credentials_from_qiskitrc(
             {credential_unique_id: Credentials}
 
     Raises:
-        CredentialsError: if the file was not parseable. Please note that this
-            exception is not raised if the file does not exist (instead, an
-            empty dict is returned).
+        InvalidCredentialsFormatError: if the file was not parseable. Please
+            note that this exception is not raised if the file does not exist
+            (instead, an empty dict is returned).
     """
     filename = filename or DEFAULT_QISKITRC_FILE
     config_parser = ConfigParser()
     try:
         config_parser.read(filename)
     except ParsingError as ex:
-        raise CredentialsError(str(ex))
+        raise InvalidCredentialsFormatError(str(ex))
 
     # Build the credentials dictionary.
     credentials_dict = OrderedDict()  # type: ignore[var-annotated]
@@ -161,7 +161,7 @@ def remove_credentials(
             location is used (`HOME/.qiskit/qiskitrc`).
 
     Raises:
-        CredentialsError: If there is no account with that name on the
+        CredentialsNotFoundError: If there is no account with that name on the
             configuration file.
     """
     # Set the name of the Provider from the class.
@@ -170,6 +170,6 @@ def remove_credentials(
     try:
         del stored_credentials[credentials.unique_id()]
     except KeyError:
-        raise CredentialsError('The account "%s" does not exist in the '
-                               'configuration file')
+        raise CredentialsNotFoundError('The account "%s" does not exist in the '
+                                       'configuration file')
     write_qiskit_rc(stored_credentials, filename)

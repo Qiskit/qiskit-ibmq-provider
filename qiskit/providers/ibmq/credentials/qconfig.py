@@ -20,7 +20,7 @@ from typing import Dict
 from importlib.util import module_from_spec, spec_from_file_location
 
 from .credentials import Credentials, HubGroupProject
-from .exceptions import CredentialsError
+from .exceptions import InvalidCredentialsFormatError
 
 DEFAULT_QCONFIG_FILE = 'Qconfig.py'
 QE_URL = 'https://quantumexperience.ng.bluemix.net/api'
@@ -35,7 +35,7 @@ def read_credentials_from_qconfig() -> Dict[HubGroupProject, Credentials]:
             {credentials_unique_id: Credentials}
 
     Raises:
-        CredentialsError: if the Qconfig.py was not parseable. Please note that
+        InvalidCredentialsFormatError: if the Qconfig.py was not parseable. Please note that
             this exception is not raised if the file does not exist (instead, an
             empty dict is returned).
     """
@@ -63,7 +63,7 @@ def read_credentials_from_qconfig() -> Dict[HubGroupProject, Credentials]:
         credentials['token'] = q_config.APItoken    # type: ignore[attr-defined]
         credentials['url'] = credentials.get('url', QE_URL)
     except Exception as ex:  # pylint: disable=broad-except
-        raise CredentialsError('Error loading Qconfig.py: %s' % str(ex))
+        raise InvalidCredentialsFormatError('Error loading Qconfig.py: %s' % str(ex))
 
     credentials = Credentials(**credentials)
     return OrderedDict({credentials.unique_id(): credentials})

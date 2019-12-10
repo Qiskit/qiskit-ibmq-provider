@@ -20,3 +20,13 @@ from ..exceptions import IBMQError
 class CredentialsError(IBMQError):
     """Base class for errors raised during credential management."""
     pass
+
+
+class InvalidCredentialsFormatError(CredentialsError):
+    """Error raised when the credentials are in an invalid format."""
+    pass
+
+
+class CredentialsNotFoundError(CredentialsError):
+    """Error raised when the credentials are not found."""
+    pass
