@@ -14,7 +14,14 @@
 
 """Exceptions related to IBMQJob."""
 
-from qiskit.providers.exceptions import JobError
+from qiskit.providers.exceptions import JobError, JobTimeoutError
+
+from ..exceptions import IBMQError
+
+
+class IBMQJobError(JobError, IBMQError):
+    """Base class for job errors raised by the IBMQ provider module."""
+    pass
 
 
 class IBMQJobApiError(JobError):
@@ -29,4 +36,9 @@ class IBMQJobFailureError(JobError):
 
 class IBMQJobInvalidStateError(JobError):
     """Error that occurs because a job is not in a state for the operation."""
+    pass
+
+
+class IBMQJobTimeoutError(JobTimeoutError, IBMQJobError):
+    """Error raised when a job operation times out."""
     pass
