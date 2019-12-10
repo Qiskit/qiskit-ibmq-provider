@@ -21,5 +21,5 @@ Submodules
    :maxdepth: 1
 
    ibmqfactory
-   ibmqprovider
+   accountprovider
    ibmqbackend

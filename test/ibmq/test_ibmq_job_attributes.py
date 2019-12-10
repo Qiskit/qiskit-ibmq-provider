@@ -26,7 +26,7 @@ from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider, run_on_device
+from ..decorators import requires_provider, slow_test_on_device
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -55,7 +55,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj)
         self.assertTrue(job.backend().name() == backend.name())
 
-    @run_on_device
+    @slow_test_on_device
     def test_running_job_properties(self, provider, backend):  # pylint: disable=unused-argument
         """Test fetching properties of a running job."""
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -63,33 +63,8 @@ class TestIBMQJobAttributes(JobTestCase):
         _ = job.properties()
 
     @requires_provider
-    def test_job_name_backend(self, provider):
-        """Test using job names on a backend."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
-        # Use a unique job name
-        job_name = str(time.time()).replace('.', '')
-        job_id = backend.run(qobj, job_name=job_name).job_id()
-        job = backend.retrieve_job(job_id)
-        self.assertEqual(job.name(), job_name)
-
-        # Check using partial matching.
-        job_name_partial = job_name[8:]
-        retrieved_jobs = backend.jobs(job_name=job_name_partial)
-        self.assertGreaterEqual(len(retrieved_jobs), 1)
-        retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
-        self.assertIn(job_id, retrieved_job_ids)
-
-        # Check using regular expressions.
-        job_name_regex = '^{}$'.format(job_name)
-        retrieved_jobs = backend.jobs(job_name=job_name_regex)
-        self.assertEqual(len(retrieved_jobs), 1)
-        self.assertEqual(job_id, retrieved_jobs[0].job_id())
-
-    @requires_provider
-    def test_job_name_backend_service(self, provider):
-        """Test using job names on backend service."""
+    def test_job_name(self, provider):
+        """Test using job names on a simulator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 
@@ -115,28 +90,8 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
     @requires_provider
-    def test_duplicate_job_name_backend(self, provider):
-        """Test multiple jobs with the same custom job name using a backend."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
-        # Use a unique job name
-        job_name = str(time.time()).replace('.', '')
-        job_ids = set()
-        for _ in range(2):
-            job_ids.add(backend.run(qobj, job_name=job_name).job_id())
-
-        retrieved_jobs = backend.jobs(job_name=job_name)
-
-        self.assertEqual(len(retrieved_jobs), 2)
-        retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
-        self.assertEqual(job_ids, retrieved_job_ids)
-        for job in retrieved_jobs:
-            self.assertEqual(job.name(), job_name)
-
-    @requires_provider
-    def test_duplicate_job_name_backend_service(self, provider):
-        """Test multiple jobs with the same custom job name using backend service."""
+    def test_duplicate_job_name(self, provider):
+        """Test multiple jobs with the same custom job name using a simulator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 
@@ -148,13 +103,14 @@ class TestIBMQJobAttributes(JobTestCase):
 
         retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
                                                 job_name=job_name)
+
         self.assertEqual(len(retrieved_jobs), 2)
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)
         for job in retrieved_jobs:
             self.assertEqual(job.name(), job_name)
 
-    @run_on_device
+    @slow_test_on_device
     def test_error_message_device(self, provider, backend):  # pylint: disable=unused-argument
         """Test retrieving job error messages from a device backend."""
         qc_new = transpile(self._qc, backend)

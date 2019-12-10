@@ -165,11 +165,14 @@ class AccountClient(BaseClient):
                     qobj_dict=qobj_dict,
                     job_name=job_name,
                     job_share_level=job_share_level)
-            except Exception:  # pylint: disable=broad-except
+            except Exception as ex:  # pylint: disable=broad-except
                 # Fall back to submitting the Qobj via POST if object storage
                 # failed.
                 logger.info('Submitting the job via object storage failed: '
-                            'retrying via regular POST upload.')
+                            'retrying via regular POST upload: %s',
+                            str(ex))
+                logger.debug('Submitting via object storage extra info:',
+                             exc_info=True)
 
         if not submit_info:
             # Submit Qobj via HTTP.
@@ -372,13 +375,11 @@ class AccountClient(BaseClient):
             try:
                 status_response = self._job_final_status_websocket(job_id, timeout)
             except WebsocketTimeoutError as ex:
-                logger.warning('Timeout checking job status using websocket, '
-                               'retrying using HTTP')
-                logger.debug(ex)
+                logger.info('Timeout checking job status using websocket, '
+                            'retrying using HTTP: %s', ex)
             except (RuntimeError, WebsocketError) as ex:
-                logger.warning('Error checking job status using websocket, '
-                               'retrying using HTTP.')
-                logger.debug(ex)
+                logger.info('Error checking job status using websocket, '
+                            'retrying using HTTP: %s', ex)
 
             # Adjust timeout for HTTP retry.
             if timeout is not None:

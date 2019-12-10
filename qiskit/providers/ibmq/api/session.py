@@ -33,6 +33,27 @@ CLIENT_APPLICATION = 'ibmqprovider/' + ibmq_provider_version
 CUSTOM_HEADER_ENV_VAR = 'QE_CUSTOM_CLIENT_APP_HEADER'
 
 
+class PostForcelistRetry(Retry):
+    """Custom Retry that performs retry on POST errors in the forcelist.
+
+    Custom `urllib3.Retry` that allows retrying in `POST` requests *only* when
+    the status code returned belongs to the `STATUS_FORCELIST`. While `POST`
+    requests are recommended not to be retried due to not being idempotent,
+    the IBM Q API guarantees that retrying on specific 5xx errors is safe.
+    """
+
+    def is_retry(
+            self,
+            method: str,
+            status_code: int,
+            has_retry_after: bool = False
+    ) -> bool:
+        if method.upper() == 'POST' and status_code in self.status_forcelist:
+            return True
+
+        return super().is_retry(method, status_code, has_retry_after)
+
+
 class RetrySession(Session):
     """Session with retry and handling of IBM Q parameters.
 
@@ -108,7 +129,7 @@ class RetrySession(Session):
             retries_connect: number of connect retries for the requests.
             backoff_factor: backoff factor between retry attempts.
         """
-        retry = Retry(
+        retry = PostForcelistRetry(
             total=retries_total,
             connect=retries_connect,
             backoff_factor=backoff_factor,
@@ -199,9 +220,24 @@ class RetrySession(Session):
 
             if self.access_token:
                 message = message.replace(self.access_token, '...')
-                # Replace the original message on the `RequestException` as well.
-                ex.args = (message,)
+                # Modify the original message on the chained exceptions.
+                self._modify_chained_exception_messages(ex)
 
             raise RequestsApiError(message) from ex
 
         return response
+
+    def _modify_chained_exception_messages(self, exc: BaseException) -> None:
+        if exc.__cause__:
+            self._modify_chained_exception_messages(exc.__cause__)
+        elif exc.__context__:
+            self._modify_chained_exception_messages(exc.__context__)
+
+        # Loop through args, attempt to replace access token if string.
+        modified_args = []
+        for arg in exc.args:
+            exc_message = arg
+            if isinstance(exc_message, str):
+                exc_message = exc_message.replace(self.access_token, '...')
+            modified_args.append(exc_message)
+        exc.args = tuple(modified_args)
