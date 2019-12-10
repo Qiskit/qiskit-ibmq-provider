@@ -111,7 +111,6 @@ class IBMQJob(BaseModel, BaseJob):
                  api: AccountClient,
                  _job_id: str,
                  _creation_date: datetime,
-                 kind: ApiJobKind,
                  _api_status: ApiJobStatus,
                  **kwargs: Any) -> None:
         """IBMQJob init function.
@@ -121,14 +120,13 @@ class IBMQJob(BaseModel, BaseJob):
             api: object for connecting to the API.
             _job_id: job ID of this job.
             _creation_date: job creation date.
-            kind: job kind.
             _api_status: API job status.
             kwargs: additional job attributes, that will be added as
                 instance members.
         """
         # pylint: disable=redefined-builtin
         BaseModel.__init__(self, _backend=_backend, _job_id=_job_id,
-                           _creation_date=_creation_date, kind=kind,
+                           _creation_date=_creation_date,
                            _api_status=_api_status, **kwargs)
         BaseJob.__init__(self, self.backend(), self.job_id())
 
@@ -142,18 +140,21 @@ class IBMQJob(BaseModel, BaseJob):
         self._cancelled = False
         self._job_error_msg = None  # type: Optional[str]
 
-    def qobj(self) -> Qobj:
+    def qobj(self) -> Optional[Qobj]:
         """Return the Qobj for this job.
 
         Note that this method might involve querying the API for results if the
         Job has been created in a previous Qiskit session.
 
         Returns:
-            the Qobj for this job.
+            the Qobj for this job, or None if the job does not have a Qobj.
 
         Raises:
             IBMQJobApiError: if there was some unexpected failure in the server.
         """
+        if not self.kind:
+            return None
+
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if not self._qobj:  # type: ignore[has-type]
             self._wait_for_completion()
@@ -352,7 +353,6 @@ class IBMQJob(BaseModel, BaseJob):
                 self._job_error_msg = self._format_message_from_error(
                     self._error.__dict__)
             elif self._api_status:
-                # TODO this can be removed once API provides detailed error
                 self._job_error_msg = self._api_status.value
             else:
                 self._job_error_msg = "Unknown error."
@@ -542,6 +542,7 @@ class IBMQJob(BaseModel, BaseJob):
             IBMQJobApiError: If there was some unexpected failure in the server.
             IBMQJobFailureError: If the job failed and partial result could not
                 be retrieved.
+            IBMQJobInvalidStateError: If result is in an unsupported format.
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         result_response = None
@@ -553,6 +554,8 @@ class IBMQJob(BaseModel, BaseJob):
                 if self._status is JobStatus.ERROR:
                     raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
                                               'Use job.error_message() to get more details.')
+                if not self.kind:
+                    raise IBMQJobInvalidStateError('Job result is in an unsupported format.')
                 raise IBMQJobApiError(str(err))
             finally:
                 # In case partial results are returned or job failure, an error message is cached.
@@ -571,7 +574,7 @@ class IBMQJob(BaseModel, BaseJob):
         Args:
             result_response: Dictionary of the result response.
         """
-        if result_response and result_response['results']:
+        if result_response.get('results', None):
             # If individual errors given
             self._job_error_msg = build_error_report(result_response['results'])
         elif 'error' in result_response:

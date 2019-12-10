@@ -81,11 +81,11 @@ class JobResponseSchema(BaseSchema):
 
     # Required properties.
     _creation_date = DateTime(required=True)
-    kind = Enum(required=True, enum_cls=ApiJobKind)
     _job_id = String(required=True)
     _api_status = Enum(required=True, enum_cls=ApiJobStatus)
 
     # Optional properties with a default value.
+    kind = Enum(enum_cls=ApiJobKind, missing=None)
     _name = String(missing=None)
     shots = Integer(validate=Range(min=0), missing=None)
     _time_per_step = Dict(keys=String, values=String, missing=None)
