@@ -19,7 +19,7 @@ from unittest import mock, skip
 import re
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers import JobStatus
+from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
@@ -208,18 +208,33 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(job.batman, 'bruce')
 
     @requires_provider
-    def test_queue_position(self, provider):
-        """Test retrieving queue position."""
+    def test_queue_info(self, provider):
+        """Test retrieving queue information."""
         # Find the most busy backend.
-        backend = max([b for b in provider.backends() if b.status().operational],
+        backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
                       key=lambda b: b.status().pending_jobs)
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
         job = backend.run(qobj)
-        status = job.status()
-        if status is JobStatus.QUEUED:
-            self.assertIsNotNone(job.queue_position())
+        queue_info = None
+        for _ in range(10):
+            queue_info = job.queue_info()
+            # Even if job status is QUEUED, queue information may not be
+            # immediately available.
+            if (job._status is JobStatus.QUEUED and job.queue_position()) or \
+                    job._status in leave_states:
+                break
+            time.sleep(0.5)
+
+        if job._status is JobStatus.QUEUED:
+            msg = "Job {} is queued but has no ".format(job.job_id())
+            self.assertIsNotNone(job.queue_position(), msg + "queue position.")
+            self.assertIsNotNone(queue_info, msg + "queue info.")
+            for attr, value in queue_info.__dict__.items():
+                self.assertIsNotNone(value, msg + attr)
         else:
             self.assertIsNone(job.queue_position())
+            self.log.warning("Unable to retrieve queue information")
 
         # Cancel job so it doesn't consume more resources.
         try:

@@ -15,20 +15,42 @@
 """Schemas for validation."""
 # TODO The schemas defined here should be merged with others under rest/schemas
 # when they are ready
+from marshmallow import pre_load
 from marshmallow.validate import OneOf
+
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
 from qiskit.validation import BaseSchema
-from qiskit.validation.fields import String, Nested, Integer
+from qiskit.validation.fields import String, Nested, Integer, DateTime
+
+from qiskit.providers.ibmq.utils.fields import map_field_names
 
 
 # Helper schemas.
 
 class InfoQueueResponseSchema(BaseSchema):
-    """Nested schema for StatusResponseSchema"""
+    """Queue information schema, nested in StatusResponseSchema"""
 
     # Optional properties
     position = Integer(required=False, missing=0)
-    status = String(required=False)
+    _status = String(required=False, missing=None)
+    estimated_start_time = DateTime(required=False, missing=None)
+    estimated_complete_time = DateTime(required=False, missing=None)
+    hub_priority = Integer(required=False, missing=None)
+    group_priority = Integer(required=False, missing=None)
+    project_priority = Integer(required=False, missing=None)
+
+    @pre_load
+    def preprocess_field_names(self, data, **_):  # type: ignore
+        """Pre-process the info queue response fields."""
+        FIELDS_MAP = {  # pylint: disable=invalid-name
+            'status': '_status',
+            'estimatedStartTime': 'estimated_start_time',
+            'estimatedCompleteTime': 'estimated_complete_time',
+            'hubPriority': 'hub_priority',
+            'groupPriority': 'group_priority',
+            'projectPriority': 'project_priority'
+        }
+        return map_field_names(FIELDS_MAP, data)
 
 
 # Endpoint schemas.

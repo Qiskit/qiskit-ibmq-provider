@@ -166,11 +166,14 @@ class AccountClient(BaseClient):
                     qobj_dict=qobj_dict,
                     job_name=job_name,
                     job_share_level=job_share_level)
-            except Exception:  # pylint: disable=broad-except
+            except Exception as ex:  # pylint: disable=broad-except
                 # Fall back to submitting the Qobj via POST if object storage
                 # failed.
                 logger.info('Submitting the job via object storage failed: '
-                            'retrying via regular POST upload.')
+                            'retrying via regular POST upload: %s',
+                            str(ex))
+                logger.debug('Submitting via object storage extra info:',
+                             exc_info=True)
 
         if not submit_info:
             # Submit Qobj via HTTP.
