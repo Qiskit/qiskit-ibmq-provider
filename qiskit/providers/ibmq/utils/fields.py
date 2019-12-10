@@ -19,6 +19,8 @@ from typing import Dict, Any
 
 from qiskit.validation import ModelTypeValidator, BaseModel
 
+from .utils import to_python_identifier
+
 
 class Enum(ModelTypeValidator):
     """Field for enums."""
@@ -59,3 +61,20 @@ class Enum(ModelTypeValidator):
             return self.enum_cls(value)
         except ValueError:
             self.fail('invalid', input=value, enum_cls=self.enum_cls)
+
+
+def map_field_names(mapper: dict, data: dict) -> dict:
+    """Rename selected fields due to name clashes, and convert from camel-case
+    the rest of the fields.
+    """
+    rename_map = {}
+    for field_name in data:
+        if field_name in mapper:
+            rename_map[field_name] = mapper[field_name]
+        else:
+            rename_map[field_name] = to_python_identifier(field_name)
+
+    for old_name, new_name in rename_map.items():
+        data[new_name] = data.pop(old_name)
+
+    return data
