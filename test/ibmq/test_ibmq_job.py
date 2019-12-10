@@ -28,7 +28,6 @@ from qiskit.providers import JobStatus
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, JobError
 from qiskit.test import slow_test
@@ -36,8 +35,7 @@ from qiskit.compiler import assemble, transpile
 from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
-from ..decorators import (requires_provider, requires_qe_access,
-                          slow_test_on_device, requires_device)
+from ..decorators import requires_provider, slow_test_on_device, requires_device
 
 
 class TestIBMQJob(JobTestCase):
