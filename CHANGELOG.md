@@ -18,12 +18,20 @@ The format is based on [Keep a Changelog].
 
 ### Added
 
-- `IBMQJob.result()` now accepts an optional `refresh` parameter. If 
-  `refresh=True` is specified, the function re-queries the api for the 
-  results, rather than returning those cached. (\#469)
 - `IBMQJob` now has a new `queue_info()` method that returns queue 
   information, such as queue position, estimated start/end time, and 
   priority levels for the job. (\#467)  
+
+## [0.4.4] - 2019-12-09
+
+### Added
+
+- `IBMQJob.result()` now accepts an optional `refresh` parameter. If 
+  `refresh=True` is specified, the function re-queries the api for the 
+  results, rather than returning those cached. (\#469)
+- `POST` network request are now retried if the status code is among specific
+  safe codes. In the case of the request failing during job submission, more
+  information is now displayed in the `INFO` and `DEBUG` log levels. (\#475)
 
 ## [0.4.3] - 2019-11-21
 
@@ -258,7 +266,8 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.4...HEAD
+[0.4.4]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...0.4.4
 [0.4.3]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.2...0.4.3
 [0.4.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.0...0.4.1
