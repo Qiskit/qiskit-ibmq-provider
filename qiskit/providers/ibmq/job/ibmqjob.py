@@ -35,8 +35,8 @@ from qiskit.validation import BaseModel, ModelValidationError, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
-from ..job.exceptions import (IBMQJobApiError, IBMQJobFailureError,
-                              IBMQJobTimeoutError, IBMQJobInvalidStateError)
+from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
+                         IBMQJobTimeoutError, IBMQJobInvalidStateError)
 from .queueinfo import QueueInfo
 from .schema import JobResponseSchema
 from .utils import build_error_report, api_status_to_job_status, api_to_job_error
