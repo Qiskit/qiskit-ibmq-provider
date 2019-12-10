@@ -255,14 +255,14 @@ class IBMQBackendService(SimpleNamespace):
 
         Raises:
             IBMQBackendApiError: if there was some unexpected failure in the server.
-             IBMQBackendApiProtocolError: if unexpected return value received
+            IBMQBackendApiProtocolError: if unexpected return value received
                  from the server.
         """
         try:
             job_info = self._provider._api.job_get(job_id)
         except ApiError as ex:
             raise IBMQBackendApiError('Failed to get job "{}": {}'
-                                   .format(job_id, str(ex)))
+                                      .format(job_id, str(ex)))
 
         # Recreate the backend used for this job.
         backend_name = job_info.get('backend', {}).get('name', 'unknown')

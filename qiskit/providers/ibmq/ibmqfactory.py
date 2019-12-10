@@ -183,9 +183,9 @@ class IBMQFactory:
 
         Raises:
             IBMQAccountCredentialsInvalidUrl: if the URL is not a valid
-                 IBM Q Experience authentication URL.
-             IBMQAccountCredentialsInvalidToken: if the token is not a valid
-                 IBM Q Experience token.
+                IBM Q Experience authentication URL.
+            IBMQAccountCredentialsInvalidToken: if the token is not a valid
+                IBM Q Experience token.
         """
         if url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
