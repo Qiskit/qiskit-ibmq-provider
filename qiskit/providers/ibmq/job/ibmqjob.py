@@ -135,7 +135,6 @@ class IBMQJob(BaseModel, BaseJob):
         # Model attributes.
         self._api = api
         self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
-        # self._queue_position = None
         self._queue_info = None     # type: Optional[QueueInfo]
         self._update_status_position(_api_status, kwargs.pop('infoQueue', None))
 
