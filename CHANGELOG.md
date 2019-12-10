@@ -14,6 +14,14 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [UNRELEASED]
+
+### Added
+
+- `IBMQJob` now has a new `queue_info()` method that returns queue 
+  information, such as queue position, estimated start/end time, and 
+  priority levels for the job. (\#467)  
+
 ## [0.4.4] - 2019-12-09
 
 ### Added
