@@ -67,7 +67,7 @@ class IBMQBackendApiError(IBMQBackendError):
     pass
 
 
-class IBMQBackendApiProtocolError(IBMQBackendError):
+class IBMQBackendApiProtocolError(IBMQBackendApiError):
     """Error raised when unexpected API return values received."""
     pass
 
