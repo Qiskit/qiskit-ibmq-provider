@@ -161,7 +161,7 @@ class IBMQBackend(BaseBackend):
         # Error in the job after submission:
         # Transition to the `ERROR` final state.
         if 'error' in submit_info:
-            raise IBMQBackendApiError(
+            raise IBMQBackendError(
                 'Error submitting job: {}'.format(str(submit_info['error'])))
 
         # Submission success.
