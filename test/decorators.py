@@ -115,7 +115,8 @@ def requires_device(func):
             backend_name = os.getenv('QE_DEVICE')
             _backend = provider.get_backend(backend_name)
         else:
-            _backend = least_busy(provider.backends(simulator=False))
+            _backend = least_busy(provider.backends(
+                simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
 
         kwargs.update({'backend': _backend})
 

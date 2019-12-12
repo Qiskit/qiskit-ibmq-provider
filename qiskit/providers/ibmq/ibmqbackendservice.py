@@ -72,7 +72,7 @@ class IBMQBackendService(SimpleNamespace):
             name: backend name to filter by
             filters: more complex filters, such as lambda functions
                 e.g. AccountProvider.backends(
-                    filters=lambda b: b.configuration['n_qubits'] > 5)
+                    filters=lambda b: b.configuration().n_qubits > 5)
             timeout: number of seconds to wait for backend discovery.
             kwargs: simple filters specifying a true/false criteria in the
                 backend configuration or backend status or provider credentials
