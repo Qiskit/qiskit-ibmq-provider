@@ -138,13 +138,10 @@ class IBMQBackendService(SimpleNamespace):
 
                    job_list = backend.jobs(limit=5, status=JobStatus.ERROR)
 
-                Filter last five jobs with counts=1024, and counts for
-                states ``00`` and ``11`` each exceeding 400::
+                Filter last five jobs with hub name ``ibm-q``::
 
-                  cnts_filter = {'shots': 1024,
-                                 'qasms.result.data.counts.00': {'gt': 400},
-                                 'qasms.result.data.counts.11': {'gt': 400}}
-                  job_list = backend.jobs(limit=5, db_filter=cnts_filter)
+                  filter = {'hubInfo.hub.name': 'ibm-q'}
+                  job_list = backend.jobs(limit=5, db_filter=filter)
 
         Returns:
             list of IBMQJob instances
