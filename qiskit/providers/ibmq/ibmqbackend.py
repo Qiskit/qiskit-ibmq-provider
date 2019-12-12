@@ -144,6 +144,8 @@ class IBMQBackend(BaseBackend):
         Raises:
             IBMQBackendApiError: If an unexpected error occurred while submitting
                 the job.
+            IBMQBackendError: If an unexpected error occurred after submitting
+                the job.
             IBMQBackendApiProtocolError: If an unexpected value received when
                  the server.
         """
