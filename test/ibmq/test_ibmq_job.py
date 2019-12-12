@@ -28,7 +28,6 @@ from qiskit.providers import JobStatus
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, JobError
 from qiskit.test import slow_test
@@ -36,8 +35,7 @@ from qiskit.compiler import assemble, transpile
 from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
-from ..decorators import (requires_provider, requires_qe_access,
-                          slow_test_on_device, requires_device)
+from ..decorators import requires_provider, slow_test_on_device, requires_device
 
 
 class TestIBMQJob(JobTestCase):
@@ -374,21 +372,18 @@ class TestIBMQJob(JobTestCase):
                                     job.creation_date(), past_two_month_str))
 
     @requires_provider
-    def test_retrieve_jobs_filter_counts(self, provider):
-        """Test retrieving jobs filtered by counts."""
+    def test_retrieve_jobs_db_filter(self, provider):
+        """Test retrieving jobs using db_filter."""
         # TODO: consider generalizing backend name
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         # Submit jobs with desired attributes.
-        jobs = []
         qc = QuantumCircuit(3, 3)
         qc.h(0)
         qc.measure([0, 1, 2], [0, 1, 2])
         qobj = assemble(transpile(qc, backend=backend), backend=backend)
         for _ in range(2):
-            job = backend.run(qobj)
-            job.result()
-            jobs.append(job)
+            backend.run(qobj).result()
 
         my_filter = {'backend.name': backend.name(),
                      'summaryData.summary.qobj_config.n_qubits': 3,
@@ -396,8 +391,7 @@ class TestIBMQJob(JobTestCase):
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=2, skip=0, db_filter=my_filter)
-        self.assertEqual({o_job.job_id() for o_job in jobs},
-                         {r_job.job_id() for r_job in job_list})
+        self.assertTrue(job_list)
 
         for job in job_list:
             job.refresh()
@@ -453,28 +447,21 @@ class TestIBMQJob(JobTestCase):
         self.assertFalse(result.results[1].success)
 
     @slow_test
-    @requires_qe_access
-    def test_pulse_job(self, qe_token, qe_url):
+    @requires_provider
+    def test_pulse_job(self, provider):
         """Test running a pulse job."""
+        backends = provider.backends(open_pulse=True, operational=True)
+        if not backends:
+            raise SkipTest('Skipping pulse test since no pulse backend found.')
 
-        factory = IBMQFactory()
-        factory.enable_account(qe_token, qe_url)
-
-        backend = None
-        for provider in factory.providers():
-            backends = provider.backends(open_pulse=True)
-            if backends:
-                backend = least_busy(backends)
-                break
-
-        self.assertIsNotNone(backend)
+        backend = least_busy(backends)
         config = backend.configuration()
         defaults = backend.defaults()
-        cmd_def = defaults.build_cmd_def()
+        inst_map = defaults.circuit_instruction_map
 
         # Run 2 experiments - 1 with x pulse and 1 without
-        x = cmd_def.get('x', 0)
-        measure = cmd_def.get('measure', range(config.n_qubits)) << x.duration
+        x = inst_map.get('x', 0)
+        measure = inst_map.get('measure', range(config.n_qubits)) << x.duration
         ground_sched = measure
         excited_sched = x | measure
         schedules = [ground_sched, excited_sched]
