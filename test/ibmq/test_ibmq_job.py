@@ -397,7 +397,7 @@ class TestIBMQJob(JobTestCase):
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=2, skip=0, db_filter=my_filter)
         self.assertEqual({o_job.job_id() for o_job in jobs},
-                         {r_job.job_id() for r_job in jobs})
+                         {r_job.job_id() for r_job in job_list})
 
         for job in job_list:
             job.refresh()

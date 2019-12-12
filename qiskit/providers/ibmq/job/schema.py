@@ -87,6 +87,7 @@ class JobResponseSchema(BaseSchema):
     # Optional properties with a default value.
     kind = Enum(enum_cls=ApiJobKind, missing=None)
     _name = String(missing=None)
+    shots = Integer(validate=Range(min=0), missing=None)
     _time_per_step = Dict(keys=String, values=String, missing=None)
     _result = Nested(ResultSchema, missing=None)
     _qobj = Nested(QobjSchema, missing=None)
