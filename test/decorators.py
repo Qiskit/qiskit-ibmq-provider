@@ -174,7 +174,8 @@ def slow_test_on_device(func):
                     _backend = backends[0]
                     break
         else:
-            _backend = least_busy(provider.backends(simulator=False))
+            _backend = least_busy(provider.backends(
+                simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
 
         if not _backend:
             raise Exception("Unable to find suitable backend.")
