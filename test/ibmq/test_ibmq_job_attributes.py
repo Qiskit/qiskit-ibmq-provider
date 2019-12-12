@@ -231,7 +231,7 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertIsNotNone(job.queue_position(), msg + "queue position.")
             self.assertIsNotNone(queue_info, msg + "queue info.")
             for attr, value in queue_info.__dict__.items():
-                self.assertIsNotNone(value, msg + attr)
+                self.assertTrue(value, msg + attr)
         else:
             self.assertIsNone(job.queue_position())
             self.log.warning("Unable to retrieve queue information")

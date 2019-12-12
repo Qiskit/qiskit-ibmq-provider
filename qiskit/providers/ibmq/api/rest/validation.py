@@ -20,7 +20,7 @@ from marshmallow.validate import OneOf
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
 from qiskit.validation import BaseSchema
-from qiskit.validation.fields import String, Nested, Integer, DateTime
+from qiskit.validation.fields import String, Nested, Integer, DateTime, Float
 
 from qiskit.providers.ibmq.utils.fields import map_field_names
 
@@ -35,9 +35,9 @@ class InfoQueueResponseSchema(BaseSchema):
     _status = String(required=False, missing=None)
     estimated_start_time = DateTime(required=False, missing=None)
     estimated_complete_time = DateTime(required=False, missing=None)
-    hub_priority = Integer(required=False, missing=None)
-    group_priority = Integer(required=False, missing=None)
-    project_priority = Integer(required=False, missing=None)
+    hub_priority = Float(required=False, missing=None)
+    group_priority = Float(required=False, missing=None)
+    project_priority = Float(required=False, missing=None)
 
     @pre_load
     def preprocess_field_names(self, data, **_):  # type: ignore

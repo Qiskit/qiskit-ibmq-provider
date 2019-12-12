@@ -32,9 +32,9 @@ class QueueInfo(BaseModel):
             _status: str,
             estimated_start_time: datetime,
             estimated_complete_time: datetime,
-            hub_priority: int,
-            group_priority: int,
-            project_priority: int,
+            hub_priority: float,
+            group_priority: float,
+            project_priority: float,
             **kwargs: Any
     ) -> None:
         """Creates a new QueueInfo instance.
