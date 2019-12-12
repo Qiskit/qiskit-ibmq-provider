@@ -378,15 +378,12 @@ class TestIBMQJob(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         # Submit jobs with desired attributes.
-        jobs = []
         qc = QuantumCircuit(3, 3)
         qc.h(0)
         qc.measure([0, 1, 2], [0, 1, 2])
         qobj = assemble(transpile(qc, backend=backend), backend=backend)
         for _ in range(2):
-            job = backend.run(qobj)
-            job.result()
-            jobs.append(job)
+            backend.run(qobj).result()
 
         my_filter = {'backend.name': backend.name(),
                      'summaryData.summary.qobj_config.n_qubits': 3,
