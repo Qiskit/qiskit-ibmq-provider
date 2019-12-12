@@ -375,20 +375,34 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_jobs_filter_counts(self, provider):
         """Test retrieving jobs filtered by counts."""
         # TODO: consider generalizing backend name
-        # TODO: this tests depends on the previous executions of the user
         backend = provider.get_backend('ibmq_qasm_simulator')
 
-        my_filter = {'backend.name': 'ibmq_qasm_simulator',
-                     'shots': 1024,
-                     'qasms.result.data.counts.00': {'lt': 500}}
+        # Submit jobs with desired attributes.
+        jobs = []
+        qc = QuantumCircuit(3, 3)
+        qc.h(0)
+        qc.measure([0, 1, 2], [0, 1, 2])
+        qobj = assemble(transpile(qc, backend=backend), backend=backend)
+        for _ in range(2):
+            job = backend.run(qobj)
+            job.result()
+            jobs.append(job)
+
+        my_filter = {'backend.name': backend.name(),
+                     'summaryData.summary.qobj_config.n_qubits': 3,
+                     'status': 'COMPLETED'}
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
-                                          limit=5, skip=0, db_filter=my_filter)
+                                          limit=2, skip=0, db_filter=my_filter)
+        self.assertEqual({o_job.job_id() for o_job in jobs},
+                         {r_job.job_id() for r_job in job_list})
 
         for job in job_list:
-            result = job.result()
-            self.assertTrue(any(cresult.data.counts.to_dict()['0x0'] < 500
-                                for cresult in result.results))
+            job.refresh()
+            self.assertEqual(
+                job.summary_data['summary']['qobj_config']['n_qubits'], 3,
+                "Job {} does not have correct data.".format(job.job_id())
+            )
 
     @requires_provider
     def test_retrieve_jobs_filter_date(self, provider):
