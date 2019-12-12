@@ -128,6 +128,13 @@ jobs:
       python: 3.7
       sudo: true
 
+    # GNU/Linux, Python 3.8
+    - stage: test
+      <<: *stage_linux
+      if: type != cron
+      dist: xenial
+      python: 3.8
+
     # OSX, Python 3.5.6 (via pyenv)
     - stage: test
       <<: *stage_osx
@@ -151,6 +158,14 @@ jobs:
       env:
         - MPLBACKEND=ps
         - PYTHON_VERSION=3.7.2
+
+    # OSX, Python 3.8.0 (via pyenv)
+    - stage: test
+      <<: *stage_osx
+      if: type != cron
+      env:
+        - MPLBACKEND=ps
+        - PYTHON_VERSION=3.8.0
 
     # "slow tests" stage
     ###########################################################################
