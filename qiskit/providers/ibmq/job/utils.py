@@ -15,7 +15,7 @@
 """Utilities for working with IBM Q Jobs."""
 
 from datetime import datetime, timezone
-from typing import Dict, List, Tuple, Generator, Optional, Any
+from typing import Dict, List, Generator, Any
 from contextlib import contextmanager
 
 from qiskit.providers.jobstatus import JobStatus
@@ -29,8 +29,9 @@ API_TO_JOB_STATUS = {
     ApiJobStatus.CREATING: JobStatus.INITIALIZING,
     ApiJobStatus.CREATED: JobStatus.INITIALIZING,
     ApiJobStatus.VALIDATING: JobStatus.VALIDATING,
-    ApiJobStatus.VALIDATED: JobStatus.QUEUED,
+    ApiJobStatus.VALIDATED: JobStatus.VALIDATING,
     ApiJobStatus.RUNNING: JobStatus.RUNNING,
+    ApiJobStatus.PENDING_IN_QUEUE: JobStatus.QUEUED,
     ApiJobStatus.COMPLETED: JobStatus.DONE,
     ApiJobStatus.CANCELLED: JobStatus.CANCELLED,
     ApiJobStatus.ERROR_CREATING_JOB: JobStatus.ERROR,
@@ -46,26 +47,6 @@ def current_utc_time() -> str:
         current time in UTC format.
     """
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
-
-
-def is_job_queued(info_queue: Optional[Dict] = None) -> Tuple[bool, int]:
-    """Checks whether a job has been queued or not.
-
-    Args:
-        info_queue: queue information from the API response.
-
-    Returns:
-        a pair indicating if the job is queued and in which
-            position.
-    """
-    is_queued, position = False, 0
-    if info_queue:
-        if 'status' in info_queue:
-            queue_status = info_queue['status']
-            is_queued = queue_status == 'PENDING_IN_QUEUE'
-        if 'position' in info_queue:
-            position = info_queue['position']
-    return is_queued, position
 
 
 def build_error_report(results: List[Dict[str, Any]]) -> str:

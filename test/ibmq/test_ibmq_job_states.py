@@ -17,6 +17,7 @@
 """IBMQJob states test-suite."""
 
 import time
+import copy
 from contextlib import suppress
 from unittest import mock
 
@@ -318,6 +319,13 @@ class TestIBMQJobStates(JobTestCase):
                     else:
                         self.assertFalse(self._current_api.job_get.called)
 
+    def test_no_kind_job(self):
+        """Test a job without the kind field."""
+        job = self.run_with_api(NoKindJobAPI())
+        with self.assertRaises(IBMQJobInvalidStateError):
+            job.result()
+        self.assertIsNone(job.qobj())
+
     def run_with_api(self, api):
         """Creates a new ``IBMQJob`` running with the provided API object."""
         backend = IBMQBackend(mock.Mock(), mock.Mock(), mock.Mock(), api=api)
@@ -567,3 +575,20 @@ class ErroredCancellationAPI(BaseFakeAPI):
 
     def job_cancel(self, job_id, *_args, **_kwargs):
         return {'status': 'Error', 'error': 'test-error-while-cancelling'}
+
+
+class NoKindJobAPI(BaseFakeAPI):
+    """Class for emulating an API with qasm jobs."""
+
+    _job_status = [
+        {'status': 'COMPLETED'}
+    ]
+
+    no_kind_response = copy.deepcopy(VALID_JOB_RESPONSE)
+    del no_kind_response['kind']
+
+    def job_submit(self, *_args, **_kwargs):
+        return self.no_kind_response
+
+    def job_result(self, job_id, *_args, **_kwargs):
+        return self.no_kind_response

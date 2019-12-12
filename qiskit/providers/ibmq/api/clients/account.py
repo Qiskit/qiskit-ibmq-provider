@@ -29,6 +29,7 @@ from ..exceptions import (RequestsApiError, WebsocketError,
                           WebsocketTimeoutError, UserTimeoutExceededError)
 from ..rest import Api
 from ..session import RetrySession
+from ..exceptions import ApiIBMQProtocolError
 from .base import BaseClient
 from .websocket import WebsocketClient
 
@@ -165,11 +166,14 @@ class AccountClient(BaseClient):
                     qobj_dict=qobj_dict,
                     job_name=job_name,
                     job_share_level=job_share_level)
-            except Exception:  # pylint: disable=broad-except
+            except Exception as ex:  # pylint: disable=broad-except
                 # Fall back to submitting the Qobj via POST if object storage
                 # failed.
                 logger.info('Submitting the job via object storage failed: '
-                            'retrying via regular POST upload.')
+                            'retrying via regular POST upload: %s',
+                            str(ex))
+                logger.debug('Submitting via object storage extra info:',
+                             exc_info=True)
 
         if not submit_info:
             # Submit Qobj via HTTP.
@@ -285,11 +289,17 @@ class AccountClient(BaseClient):
 
         Returns:
             job information.
+
+        Raises:
+            ApiIBMQProtocolError: if an unexpected result is received from the server.
         """
         if use_object_storage:
             return self._job_result_object_storage(job_id)
 
-        return self.job_get(job_id)['qObjectResult']
+        try:
+            return self.job_get(job_id)['qObjectResult']
+        except KeyError as err:
+            raise ApiIBMQProtocolError(str(err))
 
     def _job_result_object_storage(self, job_id: str) -> Dict:
         """Retrieve and return a result using object storage.
