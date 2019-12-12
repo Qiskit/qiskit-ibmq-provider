@@ -33,6 +33,13 @@ The format is based on [Keep a Changelog].
   safe codes. In the case of the request failing during job submission, more
   information is now displayed in the `INFO` and `DEBUG` log levels. (\#475)
 
+### Deprecated
+
+- Python 3.5 support in qiskit-ibmq-provider is deprecated. Support will be
+  removed on the upstream python community's end of life date for the version,
+  which is 09/13/2020.  (\#445)
+  
+
 ## [0.4.3] - 2019-11-21
 
 ### Fixed
