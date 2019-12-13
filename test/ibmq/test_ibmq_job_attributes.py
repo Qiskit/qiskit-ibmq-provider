@@ -232,6 +232,9 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertIsNotNone(queue_info, msg + "queue info.")
             for attr, value in queue_info.__dict__.items():
                 self.assertTrue(value, msg + attr)
+            self.assertTrue(all(0 < priority <= 1.0 for priority in [
+                queue_info.hub_priority, queue_info.group_priority, queue_info.project_priority]),
+                            "Unexpected queue info {} for job {}".format(queue_info, job.job_id()))
         else:
             self.assertIsNone(job.queue_position())
             self.log.warning("Unable to retrieve queue information")
