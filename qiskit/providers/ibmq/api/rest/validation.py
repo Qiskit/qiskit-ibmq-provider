@@ -31,7 +31,7 @@ class InfoQueueResponseSchema(BaseSchema):
     """Queue information schema, nested in StatusResponseSchema"""
 
     # Optional properties
-    position = Integer(required=False, missing=0)
+    position = Integer(required=False, missing=None)
     _status = String(required=False, missing=None)
     estimated_start_time = DateTime(required=False, missing=None)
     estimated_complete_time = DateTime(required=False, missing=None)
