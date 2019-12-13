@@ -400,7 +400,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Return queue information only if it has any useful information.
         if self._queue_info and any(
-                value for attr, value in self._queue_info.__dict__.items()
+                value is not None for attr, value in self._queue_info.__dict__.items()
                 if not attr.startswith('_')):
             return self._queue_info
         return None

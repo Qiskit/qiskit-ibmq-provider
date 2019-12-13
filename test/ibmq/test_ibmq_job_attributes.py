@@ -221,17 +221,22 @@ class TestIBMQJobAttributes(JobTestCase):
             queue_info = job.queue_info()
             # Even if job status is QUEUED, queue information may not be
             # immediately available.
-            if (job._status is JobStatus.QUEUED and job.queue_position()) or \
+            if (job._status is JobStatus.QUEUED and job.queue_position() is not None) or \
                     job._status in leave_states:
                 break
             time.sleep(0.5)
 
         if job._status is JobStatus.QUEUED:
+            self.log.debug("Job id=%s, queue info=%s, queue position=%s",
+                           job.job_id(), queue_info, job.queue_position())
             msg = "Job {} is queued but has no ".format(job.job_id())
             self.assertIsNotNone(job.queue_position(), msg + "queue position.")
             self.assertIsNotNone(queue_info, msg + "queue info.")
             for attr, value in queue_info.__dict__.items():
                 self.assertIsNotNone(value, msg + attr)
+            self.assertTrue(all(0 < priority <= 1.0 for priority in [
+                queue_info.hub_priority, queue_info.group_priority, queue_info.project_priority]),
+                            "Unexpected queue info {} for job {}".format(queue_info, job.job_id()))
         else:
             self.assertIsNone(job.queue_position())
             self.log.warning("Unable to retrieve queue information")
