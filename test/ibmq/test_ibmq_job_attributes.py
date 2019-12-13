@@ -221,7 +221,7 @@ class TestIBMQJobAttributes(JobTestCase):
             queue_info = job.queue_info()
             # Even if job status is QUEUED, queue information may not be
             # immediately available.
-            if (job._status is JobStatus.QUEUED and job.queue_position()) or \
+            if (job._status is JobStatus.QUEUED and job.queue_position() is not None) or \
                     job._status in leave_states:
                 break
             time.sleep(0.5)
