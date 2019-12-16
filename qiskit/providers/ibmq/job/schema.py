@@ -15,7 +15,6 @@
 """Schemas for job."""
 
 from marshmallow import pre_load
-from marshmallow.validate import Range
 
 from qiskit.validation import BaseSchema
 from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime
