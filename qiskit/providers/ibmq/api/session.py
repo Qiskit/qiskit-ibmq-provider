@@ -112,9 +112,9 @@ class RetrySession(Session):
         """Set the session access token."""
         self._access_token = value
         if value:
-            self.params.update({'access_token': value})  # type: ignore[attr-defined]
+            self.headers.update({'X-Access-Token': value})  # type: ignore[attr-defined]
         else:
-            self.params.pop('access_token', None)  # type: ignore[attr-defined]
+            self.headers.pop('X-Access-Token', None)  # type: ignore[attr-defined]
 
     def _initialize_retry(
             self,
