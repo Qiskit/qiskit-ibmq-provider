@@ -226,11 +226,10 @@ class TestIBMQJobAttributes(JobTestCase):
                 break
             time.sleep(0.5)
 
-        if job._status is JobStatus.QUEUED:
+        if job._status is JobStatus.QUEUED and job.queue_position() is not None:
             self.log.debug("Job id=%s, queue info=%s, queue position=%s",
                            job.job_id(), queue_info, job.queue_position())
             msg = "Job {} is queued but has no ".format(job.job_id())
-            self.assertIsNotNone(job.queue_position(), msg + "queue position.")
             self.assertIsNotNone(queue_info, msg + "queue info.")
             for attr, value in queue_info.__dict__.items():
                 self.assertIsNotNone(value, msg + attr)

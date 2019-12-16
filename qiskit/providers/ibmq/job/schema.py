@@ -37,7 +37,8 @@ FIELDS_MAP = {
     'qObjectResult': '_result',
     'error': '_error',
     'name': '_name',
-    'timePerStep': '_time_per_step'
+    'timePerStep': '_time_per_step',
+    'shots': '_api_shots'
 }
 
 

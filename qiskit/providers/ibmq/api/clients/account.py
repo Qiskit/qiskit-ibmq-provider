@@ -232,7 +232,6 @@ class AccountClient(BaseClient):
         # Get the job via object storage.
         job_info = self.client_api.submit_job_object_storage(
             backend_name,
-            shots=qobj_dict.get('config', {}).get('shots', 1),
             job_name=job_name,
             job_share_level=_job_share_level)
 
