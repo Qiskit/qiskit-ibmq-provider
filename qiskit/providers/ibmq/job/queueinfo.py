@@ -14,7 +14,7 @@
 
 """Queue information related to a job."""
 
-from typing import Any
+from typing import Any, Optional
 from datetime import datetime
 
 from qiskit.validation import BaseModel, bind_schema
@@ -28,13 +28,13 @@ class QueueInfo(BaseModel):
 
     def __init__(
             self,
-            position: int,
-            _status: str,
-            estimated_start_time: datetime,
-            estimated_complete_time: datetime,
-            hub_priority: int,
-            group_priority: int,
-            project_priority: int,
+            position: Optional[int],
+            _status: Optional[str],
+            estimated_start_time: Optional[datetime],
+            estimated_complete_time: Optional[datetime],
+            hub_priority: Optional[float],
+            group_priority: Optional[float],
+            project_priority: Optional[float],
             **kwargs: Any
     ) -> None:
         """Creates a new QueueInfo instance.
