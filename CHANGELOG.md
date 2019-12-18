@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
-## [UNRELEASED]
+## [0.4.5] - 2019-12-18
 
 ### Added
 
@@ -273,7 +273,8 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.4...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.5...HEAD
+[0.4.5]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.4...0.4.5
 [0.4.4]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...0.4.4
 [0.4.3]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.2...0.4.3
 [0.4.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.1...0.4.2
