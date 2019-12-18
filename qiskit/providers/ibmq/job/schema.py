@@ -15,17 +15,14 @@
 """Schemas for job."""
 
 from marshmallow import pre_load
-from marshmallow.validate import Range
 
 from qiskit.validation import BaseSchema
 from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime
 from qiskit.qobj.qobj import QobjSchema
 from qiskit.result.models import ResultSchema
 
-from qiskit.providers.ibmq.utils import to_python_identifier
+from qiskit.providers.ibmq.utils.fields import Enum, map_field_names
 from qiskit.providers.ibmq.apiconstants import ApiJobKind, ApiJobStatus
-
-from ..utils.fields import Enum
 
 
 # Mapping between 'API job field': 'IBMQJob attribute', for solving name
@@ -39,7 +36,8 @@ FIELDS_MAP = {
     'qObjectResult': '_result',
     'error': '_error',
     'name': '_name',
-    'timePerStep': '_time_per_step'
+    'timePerStep': '_time_per_step',
+    'shots': '_api_shots'
 }
 
 
@@ -83,13 +81,12 @@ class JobResponseSchema(BaseSchema):
 
     # Required properties.
     _creation_date = DateTime(required=True)
-    kind = Enum(required=True, enum_cls=ApiJobKind)
     _job_id = String(required=True)
     _api_status = Enum(required=True, enum_cls=ApiJobStatus)
 
     # Optional properties with a default value.
+    kind = Enum(enum_cls=ApiJobKind, missing=None)
     _name = String(missing=None)
-    shots = Integer(validate=Range(min=0), missing=None)
     _time_per_step = Dict(keys=String, values=String, missing=None)
     _result = Nested(ResultSchema, missing=None)
     _qobj = Nested(QobjSchema, missing=None)
@@ -110,14 +107,4 @@ class JobResponseSchema(BaseSchema):
         marshmallow 3 allow to use directly `data_key`, as in 0.9 terra
         duplicates the unknown keys.
         """
-        rename_map = {}
-        for field_name in data:
-            if field_name in FIELDS_MAP:
-                rename_map[field_name] = FIELDS_MAP[field_name]
-            else:
-                rename_map[field_name] = to_python_identifier(field_name)
-
-        for old_name, new_name in rename_map.items():
-            data[new_name] = data.pop(old_name)
-
-        return data
+        return map_field_names(FIELDS_MAP, data)
