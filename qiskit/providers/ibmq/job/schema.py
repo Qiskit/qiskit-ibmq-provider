@@ -15,7 +15,6 @@
 """Schemas for job."""
 
 from marshmallow import pre_load
-from marshmallow.validate import Range
 
 from qiskit.validation import BaseSchema
 from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime
@@ -37,7 +36,8 @@ FIELDS_MAP = {
     'qObjectResult': '_result',
     'error': '_error',
     'name': '_name',
-    'timePerStep': '_time_per_step'
+    'timePerStep': '_time_per_step',
+    'shots': '_api_shots'
 }
 
 
@@ -87,7 +87,6 @@ class JobResponseSchema(BaseSchema):
     # Optional properties with a default value.
     kind = Enum(enum_cls=ApiJobKind, missing=None)
     _name = String(missing=None)
-    shots = Integer(validate=Range(min=0), missing=None)
     _time_per_step = Dict(keys=String, values=String, missing=None)
     _result = Nested(ResultSchema, missing=None)
     _qobj = Nested(QobjSchema, missing=None)
