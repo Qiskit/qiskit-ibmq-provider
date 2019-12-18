@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog].
 - `IBMQJob` now has a new `queue_info()` method that returns queue 
   information, such as queue position, estimated start/end time, and 
   priority levels for the job. (\#467)  
+- Python 3.8 is now supported in qiskit-ibmq-provider. (\#445)
 
 ## [0.4.4] - 2019-12-09
 
