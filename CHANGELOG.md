@@ -20,7 +20,7 @@ The format is based on [Keep a Changelog].
 
 - `IBMQJob` now has three new methods: `done()`, `running()`, and
   `cancelled()`. The methods are used to confirm the current status 
-  of a job.
+  of a job. (\#494)
   - `done()` returns true if the job status is `DONE`, else false.
   - `running()` returns true if the job status is `RUNNING`, else false.
   - `cancelled()` returns true if the job status is `CANCELLED`, else false.
