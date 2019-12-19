@@ -177,5 +177,5 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
         """Test provider_backends have correct attributes."""
         provider_backends = {back for back in dir(self.provider.backends)
                              if isinstance(getattr(self.provider.backends, back), IBMQBackend)}
-        backends = {back.name() for back in self.provider._backends.values()}
+        backends = {back.name().lower() for back in self.provider._backends.values()}
         self.assertEqual(provider_backends, backends)
