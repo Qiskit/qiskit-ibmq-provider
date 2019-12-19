@@ -80,6 +80,9 @@ def requires_provider(func):
         qe_token = kwargs.pop('qe_token')
         qe_url = kwargs.pop('qe_url')
         provider = ibmq_factory.enable_account(qe_token, qe_url)
+        if os.getenv('QE_HGP', None):
+            hgp = os.getenv('QE_HGP').split('/')
+            provider = ibmq_factory.get_provider(hub=hgp[0], group=hgp[1], project=hgp[2])
         kwargs.update({'provider': provider})
 
         return func(*args, **kwargs)

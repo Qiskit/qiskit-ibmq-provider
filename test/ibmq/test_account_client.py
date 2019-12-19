@@ -26,11 +26,10 @@ from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.api.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api.exceptions import ApiError, RequestsApiError
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_qe_access, requires_device
+from ..decorators import requires_qe_access, requires_device, requires_provider
 from ..contextmanagers import custom_envs, no_envs
 
 
@@ -57,11 +56,9 @@ class TestAccountClient(IBMQTestCase):
         cls.access_token = cls.provider._api.client_api.session.access_token
 
     @classmethod
-    @requires_qe_access
-    def _get_provider(cls, qe_token=None, qe_url=None):
+    @requires_provider
+    def _get_provider(cls, provider):
         """Helper for getting account credentials."""
-        ibmq_factory = IBMQFactory()
-        provider = ibmq_factory.enable_account(qe_token, qe_url)
         return provider
 
     def _get_client(self):
@@ -297,11 +294,9 @@ class TestAccountClientJobs(IBMQTestCase):
         cls.job_id = cls.job['id']
 
     @classmethod
-    @requires_qe_access
-    def _get_provider(cls, qe_token=None, qe_url=None):
+    @requires_provider
+    def _get_provider(cls, provider):
         """Helper for getting account credentials."""
-        ibmq_factory = IBMQFactory()
-        provider = ibmq_factory.enable_account(qe_token, qe_url)
         return provider
 
     @staticmethod

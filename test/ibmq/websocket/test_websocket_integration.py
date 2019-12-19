@@ -24,26 +24,18 @@ from qiskit.providers import JobTimeoutError
 from qiskit.providers.ibmq.api.clients.websocket import (
     WebsocketClient, WebsocketAuthenticationMessage)
 from qiskit.providers.ibmq.api.clients import AccountClient
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
 
 from ...ibmqtestcase import IBMQTestCase
-from ...decorators import requires_qe_access, slow_test_on_device
+from ...decorators import requires_provider, slow_test_on_device
 
 
 class TestWebsocketIntegration(IBMQTestCase):
     """Websocket integration tests."""
 
-    @classmethod
-    @requires_qe_access
-    def _get_provider(cls, qe_token=None, qe_url=None):
-        """Helper for getting account credentials."""
-        ibmq_factory = IBMQFactory()
-        provider = ibmq_factory.enable_account(qe_token, qe_url)
-        return provider
-
-    def setUp(self):
-        self.provider = self._get_provider()
+    @requires_provider
+    def setUp(self, provider):
+        self.provider = provider
         self.sim_backend = self.provider.get_backend(simulator=True)
 
         # Create a circuit

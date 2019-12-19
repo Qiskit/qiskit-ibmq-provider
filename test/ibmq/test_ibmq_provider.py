@@ -27,7 +27,7 @@ from qiskit.test import providers
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.models.backendproperties import BackendProperties
 
-from ..decorators import requires_qe_access, slow_test_on_device
+from ..decorators import requires_provider, slow_test_on_device
 from ..ibmqtestcase import IBMQTestCase
 
 
@@ -46,12 +46,11 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
         self.qc1.h(qr[0])
         self.qc1.measure(qr, cr)
 
-    @requires_qe_access
-    def _get_provider(self, qe_token, qe_url):
+    @requires_provider
+    def _get_provider(self, provider):
         """Return an instance of a Provider."""
         # pylint: disable=arguments-differ
-        ibmq = IBMQFactory()
-        return ibmq.enable_account(qe_token, qe_url)
+        return provider
 
     def test_remote_backends_exist_real_device(self):
         """Test if there are remote backends that are devices."""
