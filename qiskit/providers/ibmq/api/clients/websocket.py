@@ -44,6 +44,10 @@ logger = logging.getLogger(__name__)
 # Patch asyncio to allow nested use of `loop.run_until_complete()`.
 nest_asyncio.apply()
 
+# TODO Replace coroutine with async def once Python 3.5 is dropped.
+warnings.filterwarnings("ignore", category=DeprecationWarning,
+                        message="\"@coroutine\" decorator is deprecated")
+
 
 class WebsocketMessage(ABC):
     """Container for a message sent or received via websockets.
