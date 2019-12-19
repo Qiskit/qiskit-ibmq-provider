@@ -245,11 +245,10 @@ class TestAccountClient(IBMQTestCase):
                 if 'JOB_NOT_RUNNING' in str(ex):
                     self.assertEqual(job.status(), JobStatus.DONE)
                     break
-                else:
-                    # We may hit the JOB_NOT_CANCELLED error if the job is
-                    # in a temporary, noncancellable state. In this case we'll
-                    # just retry.
-                    self.assertIn('JOB_NOT_CANCELLED', str(ex))
+                # We may hit the JOB_NOT_CANCELLED error if the job is
+                # in a temporary, noncancellable state. In this case we'll
+                # just retry.
+                self.assertIn('JOB_NOT_CANCELLED', str(ex))
 
     def test_access_token_not_in_exception_traceback(self):
         """Check that access token is replaced within chained request exceptions."""
