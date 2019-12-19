@@ -26,11 +26,10 @@ from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.api.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api.exceptions import ApiError, RequestsApiError
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.jobstatus import JobStatus
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_qe_access, requires_device
+from ..decorators import requires_qe_access, requires_device, requires_provider
 from ..contextmanagers import custom_envs, no_envs
 
 
@@ -52,17 +51,11 @@ class TestAccountClient(IBMQTestCase):
         self.seed = 73846087
 
     @classmethod
-    def setUpClass(cls):
-        cls.provider = cls._get_provider()
+    @requires_provider
+    def setUpClass(cls, provider):
+        # pylint: disable=arguments-differ
+        cls.provider = provider
         cls.access_token = cls.provider._api.client_api.session.access_token
-
-    @classmethod
-    @requires_qe_access
-    def _get_provider(cls, qe_token=None, qe_url=None):
-        """Helper for getting account credentials."""
-        ibmq_factory = IBMQFactory()
-        provider = ibmq_factory.enable_account(qe_token, qe_url)
-        return provider
 
     def _get_client(self):
         """Helper for instantiating an AccountClient."""
@@ -174,9 +167,13 @@ class TestAccountClient(IBMQTestCase):
         """Check the backend pulse defaults of each backend."""
         api = self._get_client()
         api_backends = api.list_backends()
+        # TODO revert to testing all backends when api is fixed
+        test_backend_names = ['ibmq_armonk', 'ibmq_vigo', 'ibmq_qasm_simulator']
 
         for backend_info in api_backends:
             backend_name = backend_info['backend_name']
+            if backend_name not in test_backend_names:
+                continue
             with self.subTest(backend_name=backend_name):
                 defaults = api.backend_pulse_defaults(backend_name=backend_name)
                 is_open_pulse = backend_info['open_pulse']
@@ -284,8 +281,10 @@ class TestAccountClientJobs(IBMQTestCase):
     """
 
     @classmethod
-    def setUpClass(cls):
-        cls.provider = cls._get_provider()
+    @requires_provider
+    def setUpClass(cls, provider):
+        # pylint: disable=arguments-differ
+        cls.provider = provider
         cls.access_token = cls.provider._api.client_api.session.access_token
 
         backend_name = 'ibmq_qasm_simulator'
@@ -295,14 +294,6 @@ class TestAccountClientJobs(IBMQTestCase):
             backend_name, cls._get_qobj(backend).to_dict(),
             use_object_storage=backend.configuration().allow_object_storage)
         cls.job_id = cls.job['id']
-
-    @classmethod
-    @requires_qe_access
-    def _get_provider(cls, qe_token=None, qe_url=None):
-        """Helper for getting account credentials."""
-        ibmq_factory = IBMQFactory()
-        provider = ibmq_factory.enable_account(qe_token, qe_url)
-        return provider
 
     @staticmethod
     def _get_qobj(backend):
