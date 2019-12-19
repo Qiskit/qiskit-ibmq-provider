@@ -51,15 +51,11 @@ class TestAccountClient(IBMQTestCase):
         self.seed = 73846087
 
     @classmethod
-    def setUpClass(cls):
-        cls.provider = cls._get_provider()
-        cls.access_token = cls.provider._api.client_api.session.access_token
-
-    @classmethod
     @requires_provider
-    def _get_provider(cls, provider):
-        """Helper for getting account credentials."""
-        return provider
+    def setUpClass(cls, provider):
+        # pylint: disable=arguments-differ
+        cls.provider = provider
+        cls.access_token = cls.provider._api.client_api.session.access_token
 
     def _get_client(self):
         """Helper for instantiating an AccountClient."""
@@ -281,8 +277,10 @@ class TestAccountClientJobs(IBMQTestCase):
     """
 
     @classmethod
-    def setUpClass(cls):
-        cls.provider = cls._get_provider()
+    @requires_provider
+    def setUpClass(cls, provider):
+        # pylint: disable=arguments-differ
+        cls.provider = provider
         cls.access_token = cls.provider._api.client_api.session.access_token
 
         backend_name = 'ibmq_qasm_simulator'
@@ -292,12 +290,6 @@ class TestAccountClientJobs(IBMQTestCase):
             backend_name, cls._get_qobj(backend).to_dict(),
             use_object_storage=backend.configuration().allow_object_storage)
         cls.job_id = cls.job['id']
-
-    @classmethod
-    @requires_provider
-    def _get_provider(cls, provider):
-        """Helper for getting account credentials."""
-        return provider
 
     @staticmethod
     def _get_qobj(backend):

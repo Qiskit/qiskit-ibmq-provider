@@ -20,7 +20,6 @@ from datetime import datetime
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator, IBMQBackend
 from qiskit.qobj import QobjHeader
 from qiskit.test import providers

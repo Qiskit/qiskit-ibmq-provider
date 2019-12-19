@@ -35,6 +35,7 @@ class TestWebsocketIntegration(IBMQTestCase):
 
     @requires_provider
     def setUp(self, provider):
+        # pylint: disable=arguments-differ
         self.provider = provider
         self.sim_backend = self.provider.get_backend(simulator=True)
 
