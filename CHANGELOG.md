@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
-### Changed
+### Added
 
 - `IBMQJob` now has three new methods: `done()`, `running()`, and
   `cancelled()`. The methods are used to confirm the current status 
