@@ -19,7 +19,8 @@ from unittest import skipIf
 
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
-from qiskit.providers.ibmq.exceptions import IBMQAccountError, IBMQApiUrlError
+from qiskit.providers.ibmq.exceptions import (IBMQAccountError, IBMQAccountCredentialsInvalidUrl,
+                                              IBMQAccountCredentialsInvalidToken)
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory, QX_AUTH_URL
 
 from ..ibmqtestcase import IBMQTestCase
@@ -47,7 +48,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         qe_token = 'invalid'
         qe_url = API1_URL
 
-        with self.assertRaises(IBMQApiUrlError) as context_manager:
+        with self.assertRaises(IBMQAccountCredentialsInvalidUrl) as context_manager:
             ibmq = IBMQFactory()
             ibmq.enable_account(qe_token, qe_url)
 
@@ -58,7 +59,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         qe_token = 'invalid'
         qe_url = API_URL
 
-        with self.assertRaises(IBMQApiUrlError) as context_manager:
+        with self.assertRaises(IBMQAccountCredentialsInvalidUrl) as context_manager:
             ibmq = IBMQFactory()
             ibmq.enable_account(qe_token, qe_url)
 
@@ -69,7 +70,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         qe_token = 'invalid'
         qe_url = API_URL + '/Hubs/X/Groups/Y/Projects/Z'
 
-        with self.assertRaises(IBMQApiUrlError) as context_manager:
+        with self.assertRaises(IBMQAccountCredentialsInvalidUrl) as context_manager:
             ibmq = IBMQFactory()
             ibmq.enable_account(qe_token, qe_url)
 
@@ -180,19 +181,19 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
     def test_save_none_token(self):
         """Test saving an account with token=None. See #391"""
-        with self.assertRaises(IBMQApiUrlError) as context_manager:
+        with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
             self.factory.save_account(None)
         self.assertIn('Invalid token found', str(context_manager.exception))
 
     def test_save_empty_token(self):
         """Test saving an account with token=''. See #391"""
-        with self.assertRaises(IBMQApiUrlError) as context_manager:
+        with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
             self.factory.save_account('')
         self.assertIn('Invalid token found', str(context_manager.exception))
 
     def test_save_zero_token(self):
         """Test saving an account with token=0. See #391"""
-        with self.assertRaises(IBMQApiUrlError) as context_manager:
+        with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
             self.factory.save_account(0)
         self.assertIn('Invalid token found', str(context_manager.exception))
 

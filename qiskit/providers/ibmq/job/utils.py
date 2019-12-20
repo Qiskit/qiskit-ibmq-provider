@@ -19,10 +19,10 @@ from typing import Dict, List, Generator, Any
 from contextlib import contextmanager
 
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
 
 from ..apiconstants import ApiJobStatus
 from ..api.exceptions import ApiError
+from .exceptions import IBMQJobApiError
 
 
 API_TO_JOB_STATUS = {

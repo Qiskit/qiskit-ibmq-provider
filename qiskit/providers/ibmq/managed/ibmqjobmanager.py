@@ -86,7 +86,8 @@ class IBMQJobManager:
         """
         if (any(isinstance(exp, Schedule) for exp in experiments) and
                 not backend.configuration().open_pulse):
-            raise IBMQJobManagerInvalidStateError("The backend does not support pulse schedules.")
+            raise IBMQJobManagerInvalidStateError(
+                "Pulse schedules found, but the backend does not support pulse schedules.")
 
         experiment_list = self._split_experiments(
             experiments, backend=backend, max_experiments_per_job=max_experiments_per_job)

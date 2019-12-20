@@ -25,9 +25,10 @@ from qiskit.pulse import Schedule
 from qiskit.qobj import Qobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.exceptions import JobError, JobTimeoutError
+from qiskit.providers.exceptions import JobError
 
 from ..job.ibmqjob import IBMQJob
+from ..job.exceptions import IBMQJobTimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -126,14 +127,14 @@ class ManagedJob:
             Result object or ``None`` if result could not be retrieved.
 
         Raises:
-            JobTimeoutError: if the job does not return results before a
+            IBMQJobTimeoutError: if the job does not return results before a
                 specified timeout.
         """
         result = None
         if self.job is not None:
             try:
                 result = self.job.result(timeout=timeout, partial=partial)
-            except JobTimeoutError:
+            except IBMQJobTimeoutError:
                 raise
             except JobError as err:
                 warnings.warn(

@@ -25,7 +25,6 @@ from qiskit.pulse import Schedule
 from qiskit.compiler import assemble
 from qiskit.qobj import Qobj
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.exceptions import JobTimeoutError
 
 from .managedjob import ManagedJob
 from .managedresults import ManagedResults
@@ -33,6 +32,7 @@ from .utils import requires_submit, format_status_counts, format_job_details
 from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
                          IBMQJobManagerJobNotFound)
 from ..job import IBMQJob
+from ..job.exceptions import IBMQJobTimeoutError
 from ..ibmqbackend import IBMQBackend
 
 logger = logging.getLogger(__name__)
@@ -180,7 +180,7 @@ class ManagedJobSet:
                 result = mjob.result(timeout=timeout, partial=partial)
                 if result is None or not result.success:
                     success = False
-            except JobTimeoutError:
+            except IBMQJobTimeoutError:
                 raise IBMQJobManagerTimeoutError(
                     "Timeout waiting for results for experiments {}-{}.".format(
                         mjob.start_index, self._managed_jobs[-1].end_index))

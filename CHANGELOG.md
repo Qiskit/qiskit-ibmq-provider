@@ -21,6 +21,14 @@ The format is based on [Keep a Changelog].
 - `IBMQJob` now has three new methods: `done()`, `running()`, and
   `cancelled()`. The methods are used to indicate the job status. (\#494)
 
+### Changed
+
+- The Exception hierarchy has been refined with more specialized classes. 
+  You can, however, continue to catch their parent exceptions (such 
+  as `IBMQAccountError`). Also, the exception class `IBMQApiUrlError` 
+  has been replaced by `IBMQAccountCredentialsInvalidUrl` and 
+  `IBMQAccountCredentialsInvalidToken`. (\#480)
+
 ## [0.4.5] - 2019-12-18
 
 ### Added
