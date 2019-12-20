@@ -125,6 +125,39 @@ class TestIBMQJobStates(JobTestCase):
         with self.assertRaises(IBMQJobApiError):
             self.wait_for_initialization(job)
 
+    def test_done_status(self):
+        """Test checking whether the job status is done while progressing job states."""
+        job = self.run_with_api(QueuedAPI())
+
+        self.assertFalse(job.done())
+        self.wait_for_initialization(job)
+
+        self._current_api.progress()
+        self.assertFalse(job.done())
+
+        self._current_api.progress()
+        self.assertTrue(job.done())
+
+    def test_running_status(self):
+        """Test checking whether the job status is running while progressing job states."""
+        job = self.run_with_api(ValidatingAPI())
+
+        self.assertFalse(job.running())
+        self.wait_for_initialization(job)
+
+        self._current_api.progress()
+        self.assertTrue(job.running())
+
+    def test_cancelled_status(self):
+        """Test checking whether the job status is cancelled while progressing job states."""
+        job = self.run_with_api(CancellableAPI())
+
+        self.assertFalse(job.cancelled())
+        self.wait_for_initialization(job)
+
+        self._current_api.progress()
+        self.assertTrue(job.cancelled())
+
     def test_validating_job(self):
         job = self.run_with_api(ValidatingAPI())
 

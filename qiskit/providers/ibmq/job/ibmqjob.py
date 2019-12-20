@@ -290,6 +290,41 @@ class IBMQJob(BaseModel, BaseJob):
 
         return self._status
 
+    def done(self) -> bool:
+        """Return whether the job has successfully run.
+
+        Returns:
+            True if job status is done, else false.
+        """
+        return self._is_job_status(JobStatus.DONE)
+
+    def running(self) -> bool:
+        """Return whether the job is actively running.
+
+        Returns:
+            True if job status is running, else false.
+        """
+        return self._is_job_status(JobStatus.RUNNING)
+
+    def cancelled(self) -> bool:
+        """Return whether the job has been cancelled.
+
+        Returns:
+            True if job status is cancelled, else false.
+        """
+        return self._is_job_status(JobStatus.CANCELLED)
+
+    def _is_job_status(self, job_status: JobStatus) -> bool:
+        """Return whether the current job status matches the desired one.
+
+        Args:
+            job_status: the job status to check against.
+
+        Returns:
+            True if the current job status matches the desired one, else false.
+        """
+        return self.status() == job_status
+
     def _update_status_position(
             self,
             status: ApiJobStatus,
