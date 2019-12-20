@@ -73,7 +73,8 @@ disable=no-self-use,        # disabled as it is too verbose
     unnecessary-pass,   # allow for methods with just "pass", for clarity
     no-else-return,     # relax "elif" after a clause with a return
     missing-yield-doc,      # in coroutines, these checks can yield false
-    missing-yield-type-doc  # positives (pun intended)
+    missing-yield-type-doc,  # positives (pun intended)
+    import-outside-toplevel
 
 
 [REPORTS]

@@ -34,8 +34,8 @@ stage_generic: &stage_generic
   install:
     # Install step for jobs that require compilation and qa.
     - pip install cython
-    - pip install -U -r requirements.txt
-    - pip install -U -r requirements-dev.txt
+    - pip install -U -c constraints.txt -r requirements.txt
+    - pip install -U -c constraints.txt -r requirements-dev.txt
   script:
     # Run the tests.
     - make test
@@ -43,7 +43,6 @@ stage_generic: &stage_generic
 stage_linux: &stage_linux
   <<: *stage_generic
   os: linux
-  dist: trusty
   language: python
   python: 3.5
 
@@ -93,6 +92,7 @@ jobs:
     - stage: lint and pure python test
       <<: *stage_linux
       if: type != cron
+      python: 3.7
       script: make style && make lint
 
     # Type checking using mypy
