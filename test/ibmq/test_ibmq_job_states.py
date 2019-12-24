@@ -125,6 +125,39 @@ class TestIBMQJobStates(JobTestCase):
         with self.assertRaises(IBMQJobApiError):
             self.wait_for_initialization(job)
 
+    def test_done_status(self):
+        """Test checking whether the job status is done while progressing job states."""
+        job = self.run_with_api(QueuedAPI())
+
+        self.assertFalse(job.done())
+        self.wait_for_initialization(job)
+
+        self._current_api.progress()
+        self.assertFalse(job.done())
+
+        self._current_api.progress()
+        self.assertTrue(job.done())
+
+    def test_running_status(self):
+        """Test checking whether the job status is running while progressing job states."""
+        job = self.run_with_api(ValidatingAPI())
+
+        self.assertFalse(job.running())
+        self.wait_for_initialization(job)
+
+        self._current_api.progress()
+        self.assertTrue(job.running())
+
+    def test_cancelled_status(self):
+        """Test checking whether the job status is cancelled while progressing job states."""
+        job = self.run_with_api(CancellableAPI())
+
+        self.assertFalse(job.cancelled())
+        self.wait_for_initialization(job)
+
+        self._current_api.progress()
+        self.assertTrue(job.cancelled())
+
     def test_validating_job(self):
         job = self.run_with_api(ValidatingAPI())
 
@@ -376,7 +409,7 @@ class BaseFakeAPI:
         try:
             ApiJobStatus(complete_response['status'])
         except ValueError:
-            raise ApiIBMQProtocolError
+            raise ApiIBMQProtocolError('Api Error')
         return {key: value for key, value in complete_response.items()
                 if key in summary_fields}
 
@@ -488,7 +521,7 @@ class UnavailableRunAPI(BaseFakeAPI):
 
     def job_submit(self, *_args, **_kwargs):
         time.sleep(0.2)
-        raise ApiError()
+        raise ApiError('Api Error')
 
 
 class ThrowingAPI(BaseFakeAPI):
@@ -499,7 +532,7 @@ class ThrowingAPI(BaseFakeAPI):
     ]
 
     def job_get(self, job_id):
-        raise ApiError()
+        raise ApiError('Api Error')
 
 
 class ThrowingNonJobRelatedErrorAPI(BaseFakeAPI):
@@ -518,7 +551,7 @@ class ThrowingNonJobRelatedErrorAPI(BaseFakeAPI):
     def job_get(self, job_id):
         if self._number_of_exceptions_to_throw != 0:
             self._number_of_exceptions_to_throw -= 1
-            raise ApiError()
+            raise ApiError('Api Error')
 
         return super().job_get(job_id)
 
