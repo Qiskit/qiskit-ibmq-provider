@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -26,6 +26,7 @@ from qiskit.qobj import Qobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobError, JobTimeoutError
+from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 
 from ..job.ibmqjob import IBMQJob
 
@@ -42,7 +43,9 @@ class ManagedJob:
             qobj: Qobj,
             job_name: str,
             backend: IBMQBackend,
-            executor: ThreadPoolExecutor
+            executor: ThreadPoolExecutor,
+            job_share_level: ApiJobShareLevel,
+            job_set_id: str
     ):
         """Creates a new ManagedJob instance.
 
@@ -53,10 +56,14 @@ class ManagedJob:
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
+            job_share_level: Job share level.
+            job_set_id: Unique ID for the job set this job belongs in.
         """
         self.experiments = experiments
         self.start_index = start_index
         self.end_index = start_index + len(experiments) - 1
+        self._job_set_id = job_set_id
+        self._job_share_level = job_share_level
 
         # Properties that are populated by the future.
         self.job = None  # type: Optional[IBMQJob]
@@ -83,7 +90,11 @@ class ManagedJob:
             IBMQJob instance for the job.
         """
         try:
-            self.job = backend.run(qobj=qobj, job_name=job_name)
+            self.job = backend._submit_job(
+                qobj=qobj,
+                job_name=job_name,
+                job_share_level=self._job_share_level,
+                job_tag=[self._job_set_id])
         except Exception as err:  # pylint: disable=broad-except
             warnings.warn("Unable to submit job for experiments {}-{}: {}".format(
                 self.start_index, self.end_index, err))

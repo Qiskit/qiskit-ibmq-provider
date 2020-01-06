@@ -74,7 +74,7 @@ class IBMQBackend(BaseBackend):
             self,
             qobj: Qobj,
             job_name: Optional[str] = None,
-            job_share_level: Optional[str] = None
+            job_share_level: Optional[str] = None,
     ) -> IBMQJob:
         """Run a Qobj asynchronously.
 
@@ -83,6 +83,7 @@ class IBMQBackend(BaseBackend):
             job_name: custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
+                Default: None.
             job_share_level: allows sharing a job at the hub/group/project and
                 global level. The possible job share levels are: "global", "hub",
                 "group", "project", and "none".
@@ -122,7 +123,8 @@ class IBMQBackend(BaseBackend):
             self,
             qobj: Qobj,
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None
+            job_share_level: Optional[ApiJobShareLevel] = None,
+            job_tag: Optional[List[str]] = None
     ) -> IBMQJob:
         """Submit qobj job to IBM-Q.
         Args:
@@ -131,6 +133,7 @@ class IBMQBackend(BaseBackend):
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
             job_share_level: level the job should be shared at.
+            job_tag: tags to be associated with the job.
 
         Returns:
             an instance derived from BaseJob
@@ -149,7 +152,8 @@ class IBMQBackend(BaseBackend):
                 qobj_dict=qobj_dict,
                 use_object_storage=getattr(self.configuration(), 'allow_object_storage', False),
                 job_name=job_name,
-                job_share_level=job_share_level)
+                job_share_level=job_share_level,
+                job_tags=job_tag)
         except ApiError as ex:
             raise IBMQBackendError('Error submitting job: {}'.format(str(ex)))
 

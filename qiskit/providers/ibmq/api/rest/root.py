@@ -108,7 +108,8 @@ class Api(RestAdapterBase):
             backend_name: str,
             qobj_dict: Dict[str, Any],
             job_name: Optional[str] = None,
-            job_share_level: Optional[str] = None
+            job_share_level: Optional[str] = None,
+            job_tags: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Submit a job for executing.
 
@@ -117,6 +118,7 @@ class Api(RestAdapterBase):
             qobj_dict: the Qobj to be executed, as a dictionary.
             job_name: custom name to be assigned to the job.
             job_share_level: level the job should be shared at.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             json response.
@@ -135,6 +137,9 @@ class Api(RestAdapterBase):
         if job_share_level:
             payload['shareLevel'] = job_share_level
 
+        if job_tags:
+            payload['tags'] = job_tags
+
         return self.session.post(url, json=payload).json()
 
     def submit_job_object_storage(
@@ -142,7 +147,8 @@ class Api(RestAdapterBase):
             backend_name: str,
             shots: int = 1,
             job_name: Optional[str] = None,
-            job_share_level: Optional[str] = None
+            job_share_level: Optional[str] = None,
+            job_tags: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Submit a job for executing, using object storage.
 
@@ -151,6 +157,7 @@ class Api(RestAdapterBase):
             shots: number of shots.
             job_name: custom name to be assigned to the job.
             job_share_level: level the job should be shared at.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             json response.
@@ -169,6 +176,9 @@ class Api(RestAdapterBase):
 
         if job_share_level:
             payload['shareLevel'] = job_share_level
+
+        if job_tags:
+            payload['tags'] = job_tags
 
         return self.session.post(url, json=payload).json()
 

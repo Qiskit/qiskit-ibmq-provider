@@ -143,7 +143,8 @@ class AccountClient(BaseClient):
             qobj_dict: Dict[str, Any],
             use_object_storage: bool,
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None
+            job_share_level: Optional[ApiJobShareLevel] = None,
+            job_tags: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Submit a Qobj to a device.
 
@@ -153,6 +154,7 @@ class AccountClient(BaseClient):
             use_object_storage: `True` if object storage should be used.
             job_name: custom name to be assigned to the job.
             job_share_level: level the job should be shared at.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             job status.
@@ -165,7 +167,8 @@ class AccountClient(BaseClient):
                     backend_name=backend_name,
                     qobj_dict=qobj_dict,
                     job_name=job_name,
-                    job_share_level=job_share_level)
+                    job_share_level=job_share_level,
+                    job_tags=job_tags)
             except Exception as ex:  # pylint: disable=broad-except
                 # Fall back to submitting the Qobj via POST if object storage
                 # failed.
@@ -177,7 +180,12 @@ class AccountClient(BaseClient):
 
         if not submit_info:
             # Submit Qobj via HTTP.
-            submit_info = self._job_submit_post(backend_name, qobj_dict, job_name, job_share_level)
+            submit_info = self._job_submit_post(
+                backend_name=backend_name,
+                qobj_dict=qobj_dict,
+                job_name=job_name,
+                job_share_level=job_share_level,
+                job_tags=job_tags)
 
         return submit_info
 
@@ -186,7 +194,8 @@ class AccountClient(BaseClient):
             backend_name: str,
             qobj_dict: Dict[str, Any],
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None
+            job_share_level: Optional[ApiJobShareLevel] = None,
+            job_tags: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Submit a Qobj to a device using HTTP POST.
 
@@ -195,6 +204,7 @@ class AccountClient(BaseClient):
             qobj_dict: the Qobj to be executed, as a dictionary.
             job_name: custom name to be assigned to the job.
             job_share_level: level the job should be shared at.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             job status.
@@ -206,14 +216,16 @@ class AccountClient(BaseClient):
             backend_name,
             qobj_dict,
             job_name,
-            job_share_level=_job_share_level)
+            job_share_level=_job_share_level,
+            job_tags=job_tags)
 
     def _job_submit_object_storage(
             self,
             backend_name: str,
             qobj_dict: Dict[str, Any],
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None
+            job_share_level: Optional[ApiJobShareLevel] = None,
+            job_tags: Optional[List[str]] = None
     ) -> Dict:
         """Submit a Qobj to a device using object storage.
 
@@ -222,6 +234,7 @@ class AccountClient(BaseClient):
             qobj_dict: the Qobj to be executed, as a dictionary.
             job_name: custom name to be assigned to the job.
             job_share_level: level the job should be shared at.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             job status.
@@ -233,7 +246,8 @@ class AccountClient(BaseClient):
         job_info = self.client_api.submit_job_object_storage(
             backend_name,
             job_name=job_name,
-            job_share_level=_job_share_level)
+            job_share_level=_job_share_level,
+            job_tags=job_tags)
 
         # Get the upload URL.
         job_id = job_info['id']

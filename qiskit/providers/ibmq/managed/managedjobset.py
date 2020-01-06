@@ -19,6 +19,7 @@ from typing import List, Optional, Union, Any, Tuple
 from concurrent.futures import ThreadPoolExecutor
 import time
 import logging
+import uuid
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
@@ -26,6 +27,7 @@ from qiskit.compiler import assemble
 from qiskit.qobj import Qobj
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobTimeoutError
+from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 
 from .managedjob import ManagedJob
 from .managedresults import ManagedResults
@@ -41,11 +43,22 @@ logger = logging.getLogger(__name__)
 class ManagedJobSet:
     """A set of managed jobs."""
 
-    def __init__(self, name: Optional[str] = None) -> None:
-        """Creates a new ManagedJobSet instance."""
+    def __init__(
+            self,
+            job_share_level: ApiJobShareLevel,
+            name: Optional[str] = None
+    ) -> None:
+        """Creates a new ManagedJobSet instance.
+
+        Args:
+            job_share_level: Job share level.
+            name: Name for this set of jobs. Default: current datetime.
+        """
         self._managed_jobs = []  # type: List[ManagedJob]
-        self._name = name or datetime.utcnow().isoformat()
+        self._name = name or 'Job_set_' + datetime.utcnow().isoformat()
         self._backend = None  # type: Optional[IBMQBackend]
+        self._job_share_level = job_share_level
+        self._id = uuid.uuid4().hex
 
         # Used for caching
         self._managed_results = None  # type: Optional[ManagedResults]
@@ -82,7 +95,8 @@ class ManagedJobSet:
             self._managed_jobs.append(
                 ManagedJob(experiments, start_index=exp_index,
                            qobj=qobj, job_name=job_name, backend=backend,
-                           executor=executor)
+                           executor=executor, job_set_id=self._id,
+                           job_share_level=self._job_share_level)
             )
             exp_index += len(experiments)
 
