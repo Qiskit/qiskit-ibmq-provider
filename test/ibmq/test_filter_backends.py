@@ -34,9 +34,9 @@ class TestBackendFilters(IBMQTestCase):
 
         self.assertTrue(filtered_backends)
         for filtered_backend in filtered_backends:
-            with self.subTest(backend=filtered_backend):
-                self.assertEqual(n_qubits, backend.configuration().n_qubits)
-                self.assertFalse(backend.configuration().local)
+            with self.subTest(filtered_backend=filtered_backend):
+                self.assertEqual(n_qubits, filtered_backend.configuration().n_qubits)
+                self.assertFalse(filtered_backend.configuration().local)
 
     @requires_provider
     def test_filter_status_dict(self, provider):
