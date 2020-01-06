@@ -261,7 +261,7 @@ class IBMQJob(BaseModel, BaseJob):
         """
         try:
             response = self._api.job_cancel(self.job_id())
-            self._cancelled = 'error' not in response
+            self._cancelled = 'error' not in response and response['cancelled']
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
