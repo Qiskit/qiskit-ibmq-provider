@@ -56,7 +56,7 @@ class ManagedJob:
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
-            job_share_level: ApiJobShareLevel,
+            job_share_level: Job share level.
         """
         self.experiments = experiments
         self.start_index = start_index
