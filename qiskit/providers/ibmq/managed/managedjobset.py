@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -25,6 +25,7 @@ from qiskit.pulse import Schedule
 from qiskit.compiler import assemble
 from qiskit.qobj import Qobj
 from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 
 from .managedjob import ManagedJob
 from .managedresults import ManagedResults
@@ -56,6 +57,7 @@ class ManagedJobSet:
             experiment_list: Union[List[List[QuantumCircuit]], List[List[Schedule]]],
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
+            job_share_level: ApiJobShareLevel,
             **assemble_config: Any
     ) -> None:
         """Execute a list of circuits or pulse schedules on a backend.
@@ -64,6 +66,7 @@ class ManagedJobSet:
             experiment_list : Circuit(s) or pulse schedule(s) to execute.
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
+            job_share_level: Job share level.
             assemble_config: Additional arguments used to configure the Qobj
                 assembly. Refer to the ``qiskit.compiler.assemble`` documentation
                 for details on these arguments.
@@ -82,7 +85,7 @@ class ManagedJobSet:
             self._managed_jobs.append(
                 ManagedJob(experiments, start_index=exp_index,
                            qobj=qobj, job_name=job_name, backend=backend,
-                           executor=executor)
+                           executor=executor, job_share_level=job_share_level)
             )
             exp_index += len(experiments)
 

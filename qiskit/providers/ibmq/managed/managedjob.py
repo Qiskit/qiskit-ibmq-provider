@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -26,6 +26,7 @@ from qiskit.qobj import Qobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobError
+from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 
 from ..job.ibmqjob import IBMQJob
 from ..job.exceptions import IBMQJobTimeoutError
@@ -43,7 +44,8 @@ class ManagedJob:
             qobj: Qobj,
             job_name: str,
             backend: IBMQBackend,
-            executor: ThreadPoolExecutor
+            executor: ThreadPoolExecutor,
+            job_share_level: ApiJobShareLevel
     ):
         """Creates a new ManagedJob instance.
 
@@ -54,6 +56,7 @@ class ManagedJob:
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
+            job_share_level: ApiJobShareLevel,
         """
         self.experiments = experiments
         self.start_index = start_index
@@ -65,13 +68,15 @@ class ManagedJob:
 
         # Submit the job in its own future.
         self.future = executor.submit(
-            self._async_submit, qobj=qobj, job_name=job_name, backend=backend)
+            self._async_submit, qobj=qobj, job_name=job_name, backend=backend,
+            job_share_level=job_share_level)
 
     def _async_submit(
             self,
             qobj: Qobj,
             job_name: str,
             backend: IBMQBackend,
+            job_share_level: ApiJobShareLevel
     ) -> None:
         """Run a Qobj asynchronously and populate instance attributes.
 
@@ -79,12 +84,14 @@ class ManagedJob:
             qobj: Qobj to run.
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
+            job_share_level: Job share level.
 
         Returns:
             IBMQJob instance for the job.
         """
         try:
-            self.job = backend.run(qobj=qobj, job_name=job_name)
+            self.job = backend.run(qobj=qobj, job_name=job_name,
+                                   job_share_level=job_share_level.value)
         except Exception as err:  # pylint: disable=broad-except
             warnings.warn("Unable to submit job for experiments {}-{}: {}".format(
                 self.start_index, self.end_index, err))
