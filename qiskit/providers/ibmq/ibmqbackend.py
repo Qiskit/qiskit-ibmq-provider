@@ -111,7 +111,7 @@ class IBMQBackend(BaseBackend):
         api_job_share_level = None
         if job_share_level:
             try:
-                api_job_share_level = ApiJobShareLevel(job_share_level)
+                api_job_share_level = ApiJobShareLevel(job_share_level.lower())
             except ValueError:
                 raise IBMQBackendValueError(
                     '"{}" is not a valid job share level. '
