@@ -75,6 +75,7 @@ class IBMQBackend(BaseBackend):
             qobj: Qobj,
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
+            job_tag: Optional[List[str]] = None
     ) -> IBMQJob:
         """Run a Qobj asynchronously.
 
@@ -95,6 +96,7 @@ class IBMQBackend(BaseBackend):
                     * none: the job is not shared at any level.
 
                 If the job share level is not specified, then the job is not shared at any level.
+            job_tag: tags to be associated with the job. Default: None.
 
         Returns:
             an instance derived from BaseJob

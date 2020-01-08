@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -52,7 +52,8 @@ def requires_submit(func: Callable) -> Callable:
         Returns:
             return value of the decorated function.
         """
-        futures = [managed_job.future for managed_job in job_set._managed_jobs]
+        futures = [managed_job.future for managed_job
+                   in job_set._managed_jobs if managed_job.future]
         wait(futures)
         return func(job_set, *args, **kwargs)
 

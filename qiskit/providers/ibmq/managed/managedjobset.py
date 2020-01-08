@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 import logging
 import uuid
+import re
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
@@ -28,12 +29,13 @@ from qiskit.qobj import Qobj
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
+from qiskit.providers.ibmq.accountprovider import AccountProvider
 
 from .managedjob import ManagedJob
 from .managedresults import ManagedResults
 from .utils import requires_submit, format_status_counts, format_job_details
 from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
-                         IBMQJobManagerJobNotFound)
+                         IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet)
 from ..job import IBMQJob
 from ..ibmqbackend import IBMQBackend
 
@@ -45,20 +47,17 @@ class ManagedJobSet:
 
     def __init__(
             self,
-            job_share_level: ApiJobShareLevel,
             name: Optional[str] = None
     ) -> None:
         """Creates a new ManagedJobSet instance.
 
         Args:
-            job_share_level: Job share level.
-            name: Name for this set of jobs. Default: current datetime.
+            name: Name for this set of jobs. Default: "Jobset_" + current datetime.
         """
         self._managed_jobs = []  # type: List[ManagedJob]
-        self._name = name or 'Job_set_' + datetime.utcnow().isoformat()
+        self._name = name or 'Jobset_' + datetime.utcnow().isoformat()
         self._backend = None  # type: Optional[IBMQBackend]
-        self._job_share_level = job_share_level
-        self._id = uuid.uuid4().hex
+        self._id = 'ibmq_jobset_' + uuid.uuid4().hex
 
         # Used for caching
         self._managed_results = None  # type: Optional[ManagedResults]
@@ -69,6 +68,7 @@ class ManagedJobSet:
             experiment_list: Union[List[List[QuantumCircuit]], List[List[Schedule]]],
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
+            job_share_level: ApiJobShareLevel,
             **assemble_config: Any
     ) -> None:
         """Execute a list of circuits or pulse schedules on a backend.
@@ -77,6 +77,7 @@ class ManagedJobSet:
             experiment_list : Circuit(s) or pulse schedule(s) to execute.
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
+            job_share_level: Job share level.
             assemble_config: Additional arguments used to configure the Qobj
                 assembly. Refer to the ``qiskit.compiler.assemble`` documentation
                 for details on these arguments.
@@ -92,13 +93,60 @@ class ManagedJobSet:
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)
             job_name = "{}_{}_".format(self._name, i)
-            self._managed_jobs.append(
-                ManagedJob(experiments, start_index=exp_index,
-                           qobj=qobj, job_name=job_name, backend=backend,
-                           executor=executor, job_set_id=self._id,
-                           job_share_level=self._job_share_level)
-            )
+            mjob = ManagedJob(experiments=experiments, start_index=exp_index, job_set_id=self._id)
+            mjob.submit(qobj=qobj, job_name=job_name, backend=backend,
+                        executor=executor, job_share_level=job_share_level)
+            self._managed_jobs.append(mjob)
             exp_index += len(experiments)
+
+    def retrieve_jobs(self, provider: AccountProvider) -> None:
+        """Retrieve previously submitted jobs for this set.
+
+        Args:
+            provider: Provider used for this job set.
+
+        Raises:
+            IBMQJobManagerUnknownJobSet: If no jobs for this job set are found.
+            IBMQJobManagerInvalidStateError: If jobs for this job set are
+                found but have unexpected attributes.
+        """
+        if self._managed_jobs:
+            return
+
+        db_filter = {'tags': self._id}
+        jobs = provider.backends.jobs(limit=1000, db_filter=db_filter)
+
+        if not jobs:
+            raise IBMQJobManagerUnknownJobSet(
+                "{} is not a known job set within the provider {}.".format(self._id, provider))
+
+        # Extract common information from the first job.
+        job = jobs[0]
+        pattern = re.compile(r'(.*)_([0-9])+_$')
+        matched = pattern.match(job.name())
+        if not matched:
+            raise IBMQJobManagerInvalidStateError(
+                "Job {} is tagged for the job set {} but does not have a proper job name.".format(
+                    job.job_id(), self._id))
+        self._name = matched.group(1)
+        self._backend = job.backend()
+
+        for job in jobs:
+            # Verify the job is proper.
+            matched = pattern.match(job.name())
+            if not matched or matched.group(1) != self._name or \
+                    job.backend().name != self._backend.name:
+                raise IBMQJobManagerInvalidStateError(
+                    "Job {} is tagged for the job set {} but does not appear "
+                    "to belong to the set".format(job.job_id(), self._id))
+
+            mjob = ManagedJob(
+                experiments=job.qobj().experiments,
+                start_index=int(matched.group(2)),
+                job_set_id=self._id,
+                job=job
+            )
+            self._managed_jobs.append(mjob)
 
     def statuses(self) -> List[Union[JobStatus, None]]:
         """Return the status of each job.
@@ -120,7 +168,7 @@ class ManagedJobSet:
             A report on job statuses.
         """
         statuses = self.statuses()
-        report = ["Job set {}:".format(self.name()),
+        report = ["Job set name: {}, ID: {}".format(self.name(), self.id()),
                   "Summary report:"]
         report.extend(format_status_counts(statuses))
 
@@ -312,6 +360,14 @@ class ManagedJobSet:
             Name of this set of jobs.
         """
         return self._name
+
+    def id(self) -> str:
+        """Return the ID of this set of jobs.
+
+        Returns:
+            ID of this set of jobs.
+        """
+        return self._id
 
     def managed_jobs(self) -> List[ManagedJob]:
         """Return a list of managed jobs.

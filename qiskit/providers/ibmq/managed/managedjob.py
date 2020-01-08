@@ -40,44 +40,56 @@ class ManagedJob:
             self,
             experiments: Union[List[QuantumCircuit], List[Schedule]],
             start_index: int,
-            qobj: Qobj,
-            job_name: str,
-            backend: IBMQBackend,
-            executor: ThreadPoolExecutor,
-            job_share_level: ApiJobShareLevel,
-            job_set_id: str
+            job_set_id: str,
+            job: Optional[IBMQJob] = None
     ):
         """Creates a new ManagedJob instance.
 
         Args:
             experiments: Experiments for the job.
             start_index: Starting index of the experiment set.
-            qobj: Qobj to run.
-            job_name: Name of the job.
-            backend: Backend to execute the experiments on.
-            executor: The thread pool to use.
-            job_share_level: Job share level.
             job_set_id: Unique ID for the job set this job belongs in.
+            job: Job to be managed, or ``None`` if not already known. Default: None.
         """
         self.experiments = experiments
         self.start_index = start_index
         self.end_index = start_index + len(experiments) - 1
         self._job_set_id = job_set_id
-        self._job_share_level = job_share_level
+        self.future = None
 
-        # Properties that are populated by the future.
-        self.job = None  # type: Optional[IBMQJob]
+        # Properties that may be populated by the future.
+        self.job = job  # type: Optional[IBMQJob]
         self.submit_error = None  # type: Optional[Exception]
+
+    def submit(
+            self,
+            qobj: Qobj,
+            job_name: str,
+            backend: IBMQBackend,
+            executor: ThreadPoolExecutor,
+            job_share_level: ApiJobShareLevel,
+    ):
+        """Submit the job.
+
+        Args:
+            qobj: Qobj to run.
+            job_name: Name of the job.
+            backend: Backend to execute the experiments on.
+            executor: The thread pool to use.
+            job_share_level: Job share level.
+        """
 
         # Submit the job in its own future.
         self.future = executor.submit(
-            self._async_submit, qobj=qobj, job_name=job_name, backend=backend)
+            self._async_submit, qobj=qobj, job_name=job_name,
+            backend=backend, job_share_level=job_share_level)
 
     def _async_submit(
             self,
             qobj: Qobj,
             job_name: str,
             backend: IBMQBackend,
+            job_share_level: ApiJobShareLevel
     ) -> None:
         """Run a Qobj asynchronously and populate instance attributes.
 
@@ -85,6 +97,7 @@ class ManagedJob:
             qobj: Qobj to run.
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
+            job_share_level: Job share level.
 
         Returns:
             IBMQJob instance for the job.
@@ -93,7 +106,7 @@ class ManagedJob:
             self.job = backend._submit_job(
                 qobj=qobj,
                 job_name=job_name,
-                job_share_level=self._job_share_level,
+                job_share_level=job_share_level,
                 job_tag=[self._job_set_id])
         except Exception as err:  # pylint: disable=broad-except
             warnings.warn("Unable to submit job for experiments {}-{}: {}".format(
