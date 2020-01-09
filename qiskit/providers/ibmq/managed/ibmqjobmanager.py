@@ -109,6 +109,10 @@ class IBMQJobManager:
         else:
             api_job_share_level = ApiJobShareLevel.NONE
 
+        if job_tags and (not isinstance(job_tags, list) or
+                         not all(isinstance(tag, str) for tag in job_tags)):
+            raise IBMQJobManagerInvalidStateError("job_tags needs to be a list or strings.")
+
         experiment_list = self._split_experiments(
             experiments, backend=backend, max_experiments_per_job=max_experiments_per_job)
 
