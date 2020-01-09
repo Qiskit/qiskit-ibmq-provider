@@ -45,6 +45,7 @@ class IBMQJobManager:
             name: Optional[str] = None,
             max_experiments_per_job: Optional[int] = None,
             job_share_level: Optional[str] = None,
+            job_tags: Optional[List[str]] = None,
             **run_config: Any
     ) -> ManagedJobSet:
         """Execute a set of circuits or pulse schedules on a backend.
@@ -71,6 +72,9 @@ class IBMQJobManager:
             job_share_level: Allows sharing the jobs at the hub/group/project and
                 global level. The possible job share levels are: "global", "hub",
                 "group", "project", and "none". Default: "none".
+            job_tags: tags to be associated with the job. The tags can
+                subsequently used as a filter in the ``jobs()`` function call.
+                Default: None.
             run_config: Configuration of the runtime environment. Some
                 examples of these configuration parameters include:
                 ``qobj_id``, ``qobj_header``, ``shots``, ``memory``,
@@ -110,7 +114,7 @@ class IBMQJobManager:
 
         job_set = ManagedJobSet(name=name)
         job_set.run(experiment_list, backend=backend, executor=self._executor,
-                    job_share_level=api_job_share_level, **run_config)
+                    job_share_level=api_job_share_level, job_tags=job_tags, **run_config)
         self._job_sets.append(job_set)
 
         return job_set

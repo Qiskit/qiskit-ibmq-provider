@@ -58,6 +58,7 @@ class ManagedJobSet:
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
             job_share_level: ApiJobShareLevel,
+            job_tags: Optional[List[str]] = None,
             **assemble_config: Any
     ) -> None:
         """Execute a list of circuits or pulse schedules on a backend.
@@ -67,6 +68,9 @@ class ManagedJobSet:
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
             job_share_level: Job share level.
+            job_tags: tags to be associated with the job. The tags can
+                subsequently used as a filter in the ``jobs()`` function call.
+                Default: None.
             assemble_config: Additional arguments used to configure the Qobj
                 assembly. Refer to the ``qiskit.compiler.assemble`` documentation
                 for details on these arguments.
@@ -85,7 +89,8 @@ class ManagedJobSet:
             self._managed_jobs.append(
                 ManagedJob(experiments, start_index=exp_index,
                            qobj=qobj, job_name=job_name, backend=backend,
-                           executor=executor, job_share_level=job_share_level)
+                           executor=executor, job_share_level=job_share_level,
+                           job_tags=job_tags)
             )
             exp_index += len(experiments)
 
