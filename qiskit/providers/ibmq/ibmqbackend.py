@@ -253,6 +253,17 @@ class IBMQBackend(BaseBackend):
 
         return self._defaults
 
+    def jobs_limit(self) -> Dict[str, Any]:
+        """Return the job limits for the backend.
+
+        Returns:
+            the current limit of concurrent jobs for the user at a given
+            provider/backend combination, along with the current number
+            of jobs running on the backend as well.
+        """
+        # TODO: Return actual object, where you could dereference attributes?
+        return self._api.backend_jobs_limit(self.name())
+
     def jobs(
             self,
             limit: int = 10,
@@ -430,6 +441,10 @@ class IBMQRetiredBackend(IBMQBackend):
     def status(self) -> BackendStatus:
         """Return the online backend status."""
         return self._status
+
+    def jobs_limit(self) -> None:
+        """Return the job limits for the backend."""
+        return None
 
     def run(
             self,

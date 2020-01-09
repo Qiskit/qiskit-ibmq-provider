@@ -163,6 +163,14 @@ class TestAccountClient(IBMQTestCase):
         properties = api.backend_properties(backend.name())
         self.assertIsNotNone(properties)
 
+    @requires_device
+    def test_backend_jobs_limit(self, backend):
+        """Check the backend job limits of a real backend."""
+        api = self._get_client()
+
+        jobs_limit = api.backend_jobs_limit(backend.name())
+        self.assertIsNotNone(jobs_limit)
+
     def test_backend_pulse_defaults(self):
         """Check the backend pulse defaults of each backend."""
         api = self._get_client()

@@ -28,6 +28,7 @@ class Backend(RestAdapterBase):
         'properties': '/properties',
         'pulse_defaults': '/defaults',
         'status': '/queue/status',
+        'jobs_limit': '/jobsLimit'
     }
 
     def __init__(self, session: RetrySession, backend_name: str) -> None:
@@ -99,3 +100,8 @@ class Backend(RestAdapterBase):
             ret['dedicated'] = response['busy']
 
         return ret
+
+    def jobs_limit(self) -> Dict[str, Any]:
+        """Return backend job limits."""
+        url = self.get_url('jobs_limit')
+        return self.session.get(url).json()

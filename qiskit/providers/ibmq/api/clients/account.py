@@ -116,6 +116,17 @@ class AccountClient(BaseClient):
         """
         return self.client_api.backend(backend_name).pulse_defaults()
 
+    def backend_jobs_limit(self, backend_name: str) -> Dict[str, Any]:
+        """Return the job limits for the backend.
+
+        Args:
+            backend_name: the name of the backend.
+
+        Returns:
+            backend job limits.
+        """
+        return self.client_api.backend(backend_name).jobs_limit()
+
     # Jobs-related public functions.
 
     def list_jobs_statuses(
