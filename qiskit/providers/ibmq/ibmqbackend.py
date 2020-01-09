@@ -108,7 +108,6 @@ class IBMQBackend(BaseBackend):
             IBMQBackendValueError: If the specified job share level is not valid.
         """
         # pylint: disable=arguments-differ
-        api_job_share_level = None
         if job_share_level:
             try:
                 api_job_share_level = ApiJobShareLevel(job_share_level.lower())
@@ -117,6 +116,8 @@ class IBMQBackend(BaseBackend):
                     '"{}" is not a valid job share level. '
                     'Valid job share levels are: {}'
                     .format(job_share_level, ', '.join(level.value for level in ApiJobShareLevel)))
+        else:
+            api_job_share_level = ApiJobShareLevel.NONE
 
         validate_qobj_against_schema(qobj)
         return self._submit_job(qobj, job_name, api_job_share_level)
