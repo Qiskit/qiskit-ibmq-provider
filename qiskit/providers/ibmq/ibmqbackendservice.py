@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -102,6 +102,8 @@ class IBMQBackendService(SimpleNamespace):
             job_name: Optional[str] = None,
             start_datetime: Optional[datetime] = None,
             end_datetime: Optional[datetime] = None,
+            job_tags: Optional[List[str]] = None,
+            job_tags_operator: Optional[str] = "OR",
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return a list of jobs from the API.
@@ -116,23 +118,33 @@ class IBMQBackendService(SimpleNamespace):
         in the returned list.
 
         Args:
-            limit: number of jobs to retrieve.
-            skip: starting index for the job retrieval.
-            backend_name: name of the backend.
+            limit: number of jobs to retrieve. Default: 10.
+            skip: starting index for the job retrieval. Default: 0.
+            backend_name: name of the backend. Default: None.
             status: only get jobs with this status, where status is e.g.
-                `JobStatus.RUNNING` or `'RUNNING'`
+                `JobStatus.RUNNING` or `'RUNNING'`. Default: None.
             job_name: filter by job name. The `job_name` is matched partially
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
-                `_ can be used.
+                `_ can be used. Default: None.
             start_datetime: filter by start date. This is used to find jobs
-                whose creation dates are after (greater than or equal to) this date/time.
+                whose creation dates are after (greater than or equal to) this
+                date/time. Default: None.
             end_datetime: filter by end date. This is used to find jobs
-                whose creation dates are before (less than or equal to) this date/time.
+                whose creation dates are before (less than or equal to) this
+                date/time. Default: None.
+            job_tags: filter by tags assigned when the jobs are submitted. Default: None.
+            job_tags_operator: logical operator to use when filtering by job tags.
+                Valid values are "AND" and "OR":
+                 * If "AND" is specified, then a job must have all of the tags
+                    specified in ``job_tags`` to be included.
+                * If "OR" is specified, then a job only needs to be have any
+                    of the tags specified in ``job_tags`` to be included.
+                Default: OR.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
-                This is an interface to a database ``where`` filter. Some
-                examples of its usage are:
+                This is an interface to a database ``where`` filter. Default: None.
+                Some examples of its usage are:
 
                 Filter last five jobs with errors::
 
@@ -147,7 +159,7 @@ class IBMQBackendService(SimpleNamespace):
             list of IBMQJob instances
 
         Raises:
-            IBMQBackendValueError: status keyword value unrecognized
+            IBMQBackendValueError: if a keyword value is not recognized.
         """
         # Build the filter for the query.
         api_filter = {}  # type: Dict[str, Any]
@@ -171,8 +183,8 @@ class IBMQBackendService(SimpleNamespace):
             elif status == JobStatus.ERROR:
                 this_filter = {'status': {'regexp': '^ERROR'}}
             else:
-                raise IBMQBackendValueError('unrecognized value for "status" keyword '
-                                            'in job filter')
+                raise IBMQBackendValueError('Unrecognized value for "status" keyword '
+                                            'in jobs filter.')
             api_filter.update(this_filter)
 
         if job_name:
@@ -186,6 +198,19 @@ class IBMQBackendService(SimpleNamespace):
             api_filter['creationDate'] = {'gte': start_datetime.isoformat()}
         elif end_datetime:
             api_filter['creationDate'] = {'lte': end_datetime.isoformat()}
+
+        if job_tags:
+            job_tags_operator = job_tags_operator.upper()
+            if job_tags_operator not in ["AND", "OR"]:
+                raise IBMQBackendValueError(
+                    'Unrecognized value for "job_tags_operator" keyword in jobs filter.')
+            if job_tags_operator == "OR":
+                api_filter['tags'] = {'inq': job_tags}
+            else:
+                and_tags = []
+                for tag in job_tags:
+                    and_tags.append({'tags': tag})
+                api_filter['and'] = and_tags
 
         if db_filter:
             # Argument filters takes precedence over db_filter for same keys

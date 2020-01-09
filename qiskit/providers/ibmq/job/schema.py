@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -17,7 +17,7 @@
 from marshmallow import pre_load
 
 from qiskit.validation import BaseSchema
-from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime
+from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime, List
 from qiskit.qobj.qobj import QobjSchema
 from qiskit.result.models import ResultSchema
 
@@ -37,7 +37,8 @@ FIELDS_MAP = {
     'error': '_error',
     'name': '_name',
     'timePerStep': '_time_per_step',
-    'shots': '_api_shots'
+    'shots': '_api_shots',
+    'tags': '_tags'
 }
 
 
@@ -91,6 +92,7 @@ class JobResponseSchema(BaseSchema):
     _result = Nested(ResultSchema, missing=None)
     _qobj = Nested(QobjSchema, missing=None)
     _error = Nested(JobResponseErrorSchema, missing=None)
+    _tags = List(String, missing=[])
 
     # Optional properties
     _backend_info = Nested(JobResponseBackendSchema)
