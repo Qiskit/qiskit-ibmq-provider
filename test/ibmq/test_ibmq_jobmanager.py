@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -23,8 +23,8 @@ from qiskit.result import Result
 
 from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
 from qiskit.providers.ibmq.managed.managedresults import ManagedResults
-from qiskit.providers.ibmq.managed.exceptions import (IBMQJobManagerJobNotFound,
-                                                      IBMQManagedResultDataNotAvailable)
+from qiskit.providers.ibmq.managed.exceptions import (
+    IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers import JobError
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
@@ -200,6 +200,32 @@ class TestIBMQJobManager(IBMQTestCase):
                                name=name, max_experiments_per_job=1)
         rjob_set = self._jm.job_sets(name=name)[0]
         self.assertEqual(job_set, rjob_set)
+
+    @requires_provider
+    def test_share_job_in_project(self, provider):
+        """Test sharing managed jobs within a project."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+
+        circs = []
+        for _ in range(2):
+            circs.append(self._qc)
+        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1,
+                               job_share_level="project")
+        for job in job_set.jobs():
+            job.refresh()
+            self.assertEqual(getattr(job, 'share_level'), 'project',
+                             "Job {} has incorrect share level".format(job.job_id()))
+
+    @requires_provider
+    def test_invalid_job_share_level(self, provider):
+        """Test setting a non existent share level for managed jobs."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        circs = []
+        for _ in range(2):
+            circs.append(self._qc)
+
+        self.assertRaises(IBMQJobManagerInvalidStateError, self._jm.run,
+                          circs, backend=backend, job_share_level="invalid_job_share_level")
 
 
 class TestResultManager(IBMQTestCase):
