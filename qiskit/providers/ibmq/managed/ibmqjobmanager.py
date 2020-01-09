@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -20,6 +20,7 @@ from concurrent import futures
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
+from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 
 from .exceptions import IBMQJobManagerInvalidStateError
 from .utils import format_job_details, format_status_counts
@@ -43,6 +44,7 @@ class IBMQJobManager:
             backend: IBMQBackend,
             name: Optional[str] = None,
             max_experiments_per_job: Optional[int] = None,
+            job_share_level: Optional[str] = None,
             **run_config: Any
     ) -> ManagedJobSet:
         """Execute a set of circuits or pulse schedules on a backend.
@@ -66,6 +68,9 @@ class IBMQJobManager:
                 the backend.
                 If the specified value is greater the maximum allowed by the
                 backend, the default is used.
+            job_share_level: Allows sharing the jobs at the hub/group/project and
+                global level. The possible job share levels are: "global", "hub",
+                "group", "project", and "none". Default: "none".
             run_config: Configuration of the runtime environment. Some
                 examples of these configuration parameters include:
                 ``qobj_id``, ``qobj_header``, ``shots``, ``memory``,
@@ -89,11 +94,23 @@ class IBMQJobManager:
             raise IBMQJobManagerInvalidStateError(
                 "Pulse schedules found, but the backend does not support pulse schedules.")
 
+        # Validate job share level
+        if job_share_level:
+            try:
+                api_job_share_level = ApiJobShareLevel(job_share_level.lower())
+            except ValueError:
+                raise IBMQJobManagerInvalidStateError(
+                    '"{}" is not a valid job share level. Valid job share levels are: {}'.format(
+                        job_share_level, ', '.join(level.value for level in ApiJobShareLevel)))
+        else:
+            api_job_share_level = ApiJobShareLevel.NONE
+
         experiment_list = self._split_experiments(
             experiments, backend=backend, max_experiments_per_job=max_experiments_per_job)
 
         job_set = ManagedJobSet(name=name)
-        job_set.run(experiment_list, backend=backend, executor=self._executor, **run_config)
+        job_set.run(experiment_list, backend=backend, executor=self._executor,
+                    job_share_level=api_job_share_level, **run_config)
         self._job_sets.append(job_set)
 
         return job_set
