@@ -281,7 +281,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         with api_to_job_error():
             api_response = self._api.job_status(self.job_id())
-            self._update_status_position(ApiJobStatus(api_response['status']),
+            self._update_status_position(ApiJobStatus(api_response['status'].upper()),
                                          api_response.get('infoQueue', None))
 
         # Get all job attributes if the job is done.
@@ -555,7 +555,7 @@ class IBMQJob(BaseModel, BaseJob):
             except UserTimeoutExceededError:
                 raise IBMQJobTimeoutError(
                     'Timeout while waiting for job {}'.format(self._job_id))
-        self._update_status_position(ApiJobStatus(status_response['status']),
+        self._update_status_position(ApiJobStatus(status_response['status'].upper()),
                                      status_response.get('infoQueue', None))
         # Get all job attributes if the job is done.
         if self._status in JOB_FINAL_STATES:
