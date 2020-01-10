@@ -47,7 +47,7 @@ class ManagedJobSet:
         self._managed_jobs = []  # type: List[ManagedJob]
         self._name = name or datetime.utcnow().isoformat()
         self._backend = None  # type: Optional[IBMQBackend]
-        self._tags = []
+        self._tags = []  # type: List[str]
 
         # Used for caching
         self._managed_results = None  # type: Optional[ManagedResults]
