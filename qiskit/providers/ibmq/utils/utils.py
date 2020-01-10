@@ -17,7 +17,6 @@
 import re
 import keyword
 from typing import List, Optional, Type
-from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 
 
 def to_python_identifier(name: str) -> str:
@@ -44,7 +43,7 @@ def to_python_identifier(name: str) -> str:
     return name
 
 
-def validate_job_tags(job_tags: Optional[List[str]], exception: Type[Exception]):
+def validate_job_tags(job_tags: Optional[List[str]], exception: Type[Exception]) -> None:
     """Validates input job tags.
 
     Args:
