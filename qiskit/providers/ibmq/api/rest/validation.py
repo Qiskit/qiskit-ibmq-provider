@@ -63,3 +63,19 @@ class StatusResponseSchema(BaseSchema):
 
     # Required properties
     status = String(required=True, validate=OneOf([status.value for status in ApiJobStatus]))
+
+
+class BackendJobsLimitResponseSchema(BaseSchema):
+    """"""
+    # required properties
+    maximum_jobs = Integer(required=True)
+    running_jobs = Integer(required=True)
+
+    @pre_load
+    def preprocess_field_names(self, data, **_):  # type: ignore
+        """Pre-process the jobs limit response fields."""
+        FIELDS_MAP = {  # pylint: disable=invalid-name
+            'maximumJobs': 'maximum_jobs',
+            'runningJobs': 'running_jobs'
+        }
+        return map_field_names(FIELDS_MAP, data)

@@ -19,16 +19,18 @@ import warnings
 
 from typing import Dict, List, Union, Optional, Any
 from datetime import datetime as python_datetime
-from marshmallow import ValidationError
+from marshmallow import ValidationError, pre_load
 
 from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.providers import BaseBackend, JobStatus  # type: ignore[attr-defined]
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration, GateConfig)
+from qiskit.validation import BaseModel, bind_schema
 from qiskit.validation.exceptions import ModelValidationError
 from qiskit.tools.events.pubsub import Publisher
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
+from qiskit.providers.ibmq.api.rest.validation import BackendJobsLimitResponseSchema
 
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
@@ -39,6 +41,16 @@ from .job import IBMQJob
 from .utils import update_qobj_config
 
 logger = logging.getLogger(__name__)
+
+
+@bind_schema(BackendJobsLimitResponseSchema)
+class BackendJobsLimit(BaseModel):
+    """"""
+    def __init__(self, maximum_jobs: int, running_jobs: int, **kwargs) -> None:
+        BaseModel.__init__(self, maximum_jobs=maximum_jobs,
+                           running_jobs=running_jobs, **kwargs)
+        self.maximum_jobs = maximum_jobs
+        self.running_jobs = running_jobs
 
 
 class IBMQBackend(BaseBackend):
@@ -261,8 +273,13 @@ class IBMQBackend(BaseBackend):
             provider/backend combination, along with the current number
             of jobs running on the backend as well.
         """
-        # TODO: Return actual object, where you could dereference attributes?
-        return self._api.backend_jobs_limit(self.name())
+        api_jobs_limit = self._api.backend_jobs_limit(self.name())
+
+        try:
+            return BackendJobsLimit.from_dict(api_jobs_limit)
+        except ValidationError as ex:
+            raise LookupError(
+                "Couldn't get backend jobs limit: {0}".format(ex))
 
     def jobs(
             self,
