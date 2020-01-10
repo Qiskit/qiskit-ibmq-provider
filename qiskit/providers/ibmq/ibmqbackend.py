@@ -19,7 +19,7 @@ import warnings
 
 from typing import Dict, List, Union, Optional, Any
 from datetime import datetime as python_datetime
-from marshmallow import ValidationError, pre_load
+from marshmallow import ValidationError
 
 from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.providers import BaseBackend, JobStatus  # type: ignore[attr-defined]
