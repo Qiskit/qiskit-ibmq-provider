@@ -69,6 +69,7 @@ class ManagedJob:
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
             job_share_level: ApiJobShareLevel,
+            job_tags: Optional[List[str]] = None
     ):
         """Submit the job.
 
@@ -78,19 +79,21 @@ class ManagedJob:
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
             job_share_level: Job share level.
+            job_tags: tags to be assigned to the job.
         """
 
         # Submit the job in its own future.
         self.future = executor.submit(
-            self._async_submit, qobj=qobj, job_name=job_name,
-            backend=backend, job_share_level=job_share_level)
+            self._async_submit, qobj=qobj, job_name=job_name, backend=backend,
+            job_share_level=job_share_level, job_tags=job_tags)
 
     def _async_submit(
             self,
             qobj: Qobj,
             job_name: str,
             backend: IBMQBackend,
-            job_share_level: ApiJobShareLevel
+            job_share_level: ApiJobShareLevel,
+            job_tags: Optional[List[str]] = None
     ) -> None:
         """Run a Qobj asynchronously and populate instance attributes.
 
@@ -99,15 +102,16 @@ class ManagedJob:
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
             job_share_level: Job share level.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             IBMQJob instance for the job.
         """
         try:
-            self.job = backend._submit_job(
+            self.job = backend.run(
                 qobj=qobj,
                 job_name=job_name,
-                job_share_level=job_share_level,
+                job_share_level=job_share_level.value,
                 job_tag=[self._job_set_id])
         except Exception as err:  # pylint: disable=broad-except
             warnings.warn("Unable to submit job for experiments {}-{}: {}".format(

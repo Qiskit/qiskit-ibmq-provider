@@ -17,6 +17,7 @@ import copy
 import time
 from unittest import mock
 from inspect import getfullargspec, isfunction
+import uuid
 
 from qiskit import QuantumCircuit
 from qiskit.result import Result
@@ -226,6 +227,26 @@ class TestIBMQJobManager(IBMQTestCase):
 
         self.assertRaises(IBMQJobManagerInvalidStateError, self._jm.run,
                           circs, backend=backend, job_share_level="invalid_job_share_level")
+
+    @requires_provider
+    def test_job_tags(self, provider):
+        """Test job tags for managed jobs."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        circs = []
+        for _ in range(2):
+            circs.append(self._qc)
+
+        job_tags = [uuid.uuid4().hex]
+        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1,
+                               job_tags=job_tags)
+        # Wait for jobs to be submitted.
+        while JobStatus.INITIALIZING in job_set.statuses():
+            time.sleep(1)
+        rjobs = provider.backends.jobs(job_tags=job_tags)
+        self.assertEqual({job.job_id() for job in job_set.jobs()},
+                         {rjob.job_id() for rjob in rjobs},
+                         "Unexpected jobs retrieved. Job tag used was {}".format(job_tags))
+        self.assertEqual(job_set.tags(), job_tags)
 
 
 class TestResultManager(IBMQTestCase):

@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -17,6 +17,7 @@
 import time
 from unittest import mock, skip
 import re
+import uuid
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
@@ -160,8 +161,8 @@ class TestIBMQJobAttributes(JobTestCase):
 
         message = job.error_message()
         self.assertNotIn("Unknown", message)
+        self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', message), message)
 
-        # TODO Verify error code is in the message after API update
         r_message = provider.backends.retrieve_job(job.job_id()).error_message()
         self.assertEqual(message, r_message)
 
@@ -265,6 +266,64 @@ class TestIBMQJobAttributes(JobTestCase):
         retrieved_job = backend.retrieve_job(job.job_id())
         self.assertEqual(getattr(retrieved_job, 'share_level'), 'project',
                          "Job {} has incorrect share level".format(job.job_id()))
+
+    @requires_provider
+    def test_job_tags_or(self, provider):
+        """Test using job tags with an or operator."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        # Use a unique tag.
+        job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
+        job = backend.run(qobj, job_tags=job_tags)
+
+        rjobs = backend.jobs(job_tags=['phantom_tag'])
+        self.assertEqual(len(rjobs), 0,
+                         "Expected job {}, got {}".format(job.job_id(), rjobs))
+
+        # Check all tags, some of the tags, and a mixture of good and bad tags.
+        tags_to_check = [job_tags, job_tags[1:2], job_tags[0:1]+['phantom_tag']]
+        for tags in tags_to_check:
+            with self.subTest(tags=tags):
+                rjobs = backend.jobs(job_tags=tags)
+                self.assertEqual(len(rjobs), 1,
+                                 "Expected job {}, got {}".format(job.job_id(), rjobs))
+                self.assertEqual(rjobs[0].job_id(), job.job_id())
+                self.assertEqual(set(rjobs[0].tags()), set(job_tags))
+
+    @requires_provider
+    def test_job_tags_and(self, provider):
+        """Test using job tags with an and operator."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        # Use a unique tag.
+        job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
+        job = backend.run(qobj, job_tags=job_tags)
+
+        no_rjobs_tags = [job_tags[0:1]+['phantom_tags'], ['phantom_tag']]
+        for tags in no_rjobs_tags:
+            rjobs = backend.jobs(job_tags=tags, job_tags_operator="AND")
+            self.assertEqual(len(rjobs), 0,
+                             "Expected job {}, got {}".format(job.job_id(), rjobs))
+
+        has_rjobs_tags = [job_tags, job_tags[1:3]]
+        for tags in has_rjobs_tags:
+            with self.subTest(tags=tags):
+                rjobs = backend.jobs(job_tags=tags, job_tags_operator="AND")
+                self.assertEqual(len(rjobs), 1,
+                                 "Expected job {}, got {}".format(job.job_id(), rjobs))
+                self.assertEqual(rjobs[0].job_id(), job.job_id())
+                self.assertEqual(set(rjobs[0].tags()), set(job_tags))
+
+    @requires_provider
+    def test_invalid_job_tags(self, provider):
+        """Test using job tags with an and operator."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        self.assertRaises(IBMQBackendValueError, backend.run, qobj, job_tags={'foo'})
+        self.assertRaises(IBMQBackendValueError, backend.jobs, job_tags=[1, 2, 3])
 
 
 def _bell_circuit():
