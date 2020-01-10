@@ -315,6 +315,15 @@ class TestIBMQJobAttributes(JobTestCase):
                 self.assertEqual(rjobs[0].job_id(), job.job_id())
                 self.assertEqual(set(rjobs[0].tags()), set(job_tags))
 
+    @requires_provider
+    def test_invalid_job_tags(self, provider):
+        """Test using job tags with an and operator."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        self.assertRaises(IBMQBackendValueError, backend.run, qobj, job_tags={'foo'})
+        self.assertRaises(IBMQBackendValueError, backend.jobs, job_tags=[1, 2, 3])
+
 
 def _bell_circuit():
     qr = QuantumRegister(2, 'q')

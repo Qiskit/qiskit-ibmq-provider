@@ -29,7 +29,7 @@ from .apiconstants import ApiJobStatus
 from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackendApiProtocolError)
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
-from .utils import to_python_identifier
+from .utils import to_python_identifier, validate_job_tags
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +169,13 @@ class IBMQBackendService(SimpleNamespace):
 
         if status:
             if isinstance(status, str):
-                status = JobStatus[status]
+                try:
+                    status = JobStatus[status]
+                except KeyError:
+                    raise IBMQBackendValueError(
+                        '{} is not a valid status value. Valid values are {}'.format(
+                            status, ", ".join(job_status.name for job_status in JobStatus))) \
+                        from None
             if status == JobStatus.RUNNING:
                 this_filter = {'status': ApiJobStatus.RUNNING.value,
                                'infoQueue': {'exists': False}}
@@ -183,8 +189,9 @@ class IBMQBackendService(SimpleNamespace):
             elif status == JobStatus.ERROR:
                 this_filter = {'status': {'regexp': '^ERROR'}}
             else:
-                raise IBMQBackendValueError('Unrecognized value for "status" keyword '
-                                            'in jobs filter.')
+                raise IBMQBackendValueError(
+                    '{} is not a valid status value. Valid values are {}'.format(
+                        status, ", ".join(job_status.name for job_status in JobStatus)))
             api_filter.update(this_filter)
 
         if job_name:
@@ -200,17 +207,19 @@ class IBMQBackendService(SimpleNamespace):
             api_filter['creationDate'] = {'lte': end_datetime.isoformat()}
 
         if job_tags:
+            validate_job_tags(job_tags, IBMQBackendValueError)
             job_tags_operator = job_tags_operator.upper()
-            if job_tags_operator not in ["AND", "OR"]:
-                raise IBMQBackendValueError(
-                    'Unrecognized value for "job_tags_operator" keyword in jobs filter.')
             if job_tags_operator == "OR":
                 api_filter['tags'] = {'inq': job_tags}
-            else:
+            elif job_tags_operator == "AND":
                 and_tags = []
                 for tag in job_tags:
                     and_tags.append({'tags': tag})
                 api_filter['and'] = and_tags
+            else:
+                raise IBMQBackendValueError(
+                    '"{}" is not a valid job_tags_operator value. '
+                    'Valid values are "AND" and "OR"'.format(job_tags_operator))
 
         if db_filter:
             # Argument filters takes precedence over db_filter for same keys

@@ -21,6 +21,7 @@ from concurrent import futures
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
+from qiskit.providers.ibmq.utils import validate_job_tags
 
 from .exceptions import IBMQJobManagerInvalidStateError
 from .utils import format_job_details, format_status_counts
@@ -90,8 +91,7 @@ class IBMQJobManager:
             Managed job set.
 
         Raises:
-            IBMQJobManagerInvalidStateError: If the backend does not support
-                the experiment type.
+            IBMQJobManagerInvalidStateError: If an input parameter value is not valid.
         """
         if (any(isinstance(exp, Schedule) for exp in experiments) and
                 not backend.configuration().open_pulse):
@@ -109,9 +109,7 @@ class IBMQJobManager:
         else:
             api_job_share_level = ApiJobShareLevel.NONE
 
-        if job_tags and (not isinstance(job_tags, list) or
-                         not all(isinstance(tag, str) for tag in job_tags)):
-            raise IBMQJobManagerInvalidStateError("job_tags needs to be a list or strings.")
+        validate_job_tags(job_tags, IBMQJobManagerInvalidStateError)
 
         experiment_list = self._split_experiments(
             experiments, backend=backend, max_experiments_per_job=max_experiments_per_job)

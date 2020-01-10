@@ -16,6 +16,8 @@
 
 import re
 import keyword
+from typing import List, Optional, Type
+from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 
 
 def to_python_identifier(name: str) -> str:
@@ -40,3 +42,18 @@ def to_python_identifier(name: str) -> str:
         name += '_'
 
     return name
+
+
+def validate_job_tags(job_tags: Optional[List[str]], exception: Type[Exception]):
+    """Validates input job tags.
+
+    Args:
+        job_tags: Job tags to be validated.
+        exception: Exception to raise if the tags are invalid.
+
+    Raises:
+        Exception: If the job tags are invalid.
+    """
+    if job_tags and (not isinstance(job_tags, list) or
+                     not all(isinstance(tag, str) for tag in job_tags)):
+        raise exception("job_tags needs to be a list or strings.")

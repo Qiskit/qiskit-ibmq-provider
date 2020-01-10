@@ -36,7 +36,7 @@ from .credentials import Credentials
 from .exceptions import (IBMQBackendError, IBMQBackendValueError,
                          IBMQBackendApiError, IBMQBackendApiProtocolError)
 from .job import IBMQJob
-from .utils import update_qobj_config
+from .utils import update_qobj_config, validate_job_tags
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ class IBMQBackend(BaseBackend):
                 the job.
             IBMQBackendApiProtocolError: If an unexpected value received when
                  the server.
-            IBMQBackendValueError: If the specified job share level is not valid.
+            IBMQBackendValueError: If an input parameter value is not valid.
         """
         # pylint: disable=arguments-differ
         api_job_share_level = None
@@ -123,10 +123,7 @@ class IBMQBackend(BaseBackend):
                     'Valid job share levels are: {}'
                     .format(job_share_level, ', '.join(level.value for level in ApiJobShareLevel)))
 
-        if job_tags and (not isinstance(job_tags, list) or
-                         not all(isinstance(tag, str) for tag in job_tags)):
-            raise IBMQBackendValueError("job_tags needs to be a list or strings.")
-
+        validate_job_tags(job_tags, IBMQBackendValueError)
         validate_qobj_against_schema(qobj)
         return self._submit_job(qobj, job_name, api_job_share_level, job_tags)
 
@@ -329,7 +326,7 @@ class IBMQBackend(BaseBackend):
             list of IBMQJob instances
 
         Raises:
-            IBMQBackendValueError: status keyword value unrecognized
+            IBMQBackendValueError: if a keyword value is not recognized.
         """
         return self._provider.backends.jobs(
             limit, skip, self.name(), status,
