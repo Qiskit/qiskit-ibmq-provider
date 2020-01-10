@@ -26,7 +26,7 @@ from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-impo
 
 from .api.exceptions import ApiError
 from .apiconstants import ApiJobStatus
-from .exceptions import IBMQBackendError, IBMQBackendValueError
+from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackendApiProtocolError)
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
 from .utils import to_python_identifier
@@ -157,7 +157,8 @@ class IBMQBackendService(SimpleNamespace):
 
         if status:
             if isinstance(status, str):
-                status = JobStatus[status]
+                status = JobStatus[status.upper()]
+
             if status == JobStatus.RUNNING:
                 this_filter = {'status': ApiJobStatus.RUNNING.value,
                                'infoQueue': {'exists': False}}
@@ -251,13 +252,15 @@ class IBMQBackendService(SimpleNamespace):
             class instance
 
         Raises:
-            IBMQBackendError: if retrieval failed
+            IBMQBackendApiError: if there was some unexpected failure in the server.
+            IBMQBackendApiProtocolError: if unexpected return value received
+                 from the server.
         """
         try:
             job_info = self._provider._api.job_get(job_id)
         except ApiError as ex:
-            raise IBMQBackendError('Failed to get job "{}": {}'
-                                   .format(job_id, str(ex)))
+            raise IBMQBackendApiError('Failed to get job "{}": {}'
+                                      .format(job_id, str(ex)))
 
         # Recreate the backend used for this job.
         backend_name = job_info.get('backend', {}).get('name', 'unknown')
@@ -276,8 +279,8 @@ class IBMQBackendService(SimpleNamespace):
         try:
             job = IBMQJob.from_dict(job_info)
         except ModelValidationError as ex:
-            raise IBMQBackendError('Failed to get job "{}". Invalid job data received: {}'
-                                   .format(job_id, str(ex)))
+            raise IBMQBackendApiProtocolError(
+                'Failed to get job "{}". Invalid job data received: {}'.format(job_id, str(ex)))
 
         return job
 

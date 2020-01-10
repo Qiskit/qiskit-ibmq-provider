@@ -16,6 +16,7 @@
 
 import asyncio
 import json
+import warnings
 
 from qiskit.providers.ibmq.api.clients.websocket import WebsocketResponseMethod
 
@@ -121,7 +122,9 @@ def handle_token_retry_success(websocket):
 @asyncio.coroutine
 def handle_token_retry_failure(websocket):
     """Continually close the socket, until both the first attempt and retry fail."""
-    yield from websocket.close()
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        yield from websocket.close()
 
 
 @asyncio.coroutine
