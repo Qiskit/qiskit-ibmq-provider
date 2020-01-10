@@ -81,7 +81,7 @@ class ManagedJobSet:
             raise IBMQJobManagerInvalidStateError("Jobs were already submitted.")
 
         self._backend = backend
-        self._tags = job_tags
+        self._tags = job_tags.copy()
         exp_index = 0
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)
@@ -321,4 +321,4 @@ class ManagedJobSet:
         Returns:
             Tags assigned to this set of jobs.
         """
-        return self._tags
+        return self._tags.copy()

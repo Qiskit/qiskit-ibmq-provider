@@ -470,7 +470,7 @@ class IBMQJob(BaseModel, BaseJob):
         Returns:
             Tags assigned to this job.
         """
-        return self._tags
+        return self._tags.copy()
 
     def time_per_step(self) -> Optional[Dict]:
         """Return the date and time information on each step of the job processing.
