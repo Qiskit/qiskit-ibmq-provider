@@ -263,7 +263,8 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj, job_share_level='project')
 
         retrieved_job = backend.retrieve_job(job.job_id())
-        self.assertEqual(getattr(retrieved_job, 'share_level'), 'project')
+        self.assertEqual(getattr(retrieved_job, 'share_level'), 'project',
+                         "Job {} has incorrect share level".format(job.job_id()))
 
 
 def _bell_circuit():

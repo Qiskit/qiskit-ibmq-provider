@@ -157,7 +157,8 @@ class IBMQBackendService(SimpleNamespace):
 
         if status:
             if isinstance(status, str):
-                status = JobStatus[status]
+                status = JobStatus[status.upper()]
+
             if status == JobStatus.RUNNING:
                 this_filter = {'status': ApiJobStatus.RUNNING.value,
                                'infoQueue': {'exists': False}}
