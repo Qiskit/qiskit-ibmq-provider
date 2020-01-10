@@ -300,9 +300,12 @@ class TestResultManager(IBMQTestCase):
         for _ in range(2):
             # Try twice in case job is not in a cancellable state
             try:
-                cancelled = cjob.cancel()
-                if cancelled:
-                    break
+                if cjob.cancel():
+                    time.sleep(0.5)
+                    cjob.refresh()
+                    if cjob.cancelled():
+                        cancelled = True
+                        break
             except JobError:
                 pass
 
