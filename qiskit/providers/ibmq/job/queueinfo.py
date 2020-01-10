@@ -59,7 +59,7 @@ class QueueInfo(BaseModel):
 
         super().__init__(**kwargs)
 
-    def __str__(self):
+    def __str__(self) -> str:
         queue_info = [
             "Job Info:",
             "    position: {}".format(self.position),
