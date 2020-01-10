@@ -45,12 +45,18 @@ logger = logging.getLogger(__name__)
 
 @bind_schema(BackendJobsLimitResponseSchema)
 class BackendJobsLimit(BaseModel):
-    """"""
-    def __init__(self, maximum_jobs: int, running_jobs: int, **kwargs) -> None:
-        BaseModel.__init__(self, maximum_jobs=maximum_jobs,
-                           running_jobs=running_jobs, **kwargs)
+    """Jobs limit for a backend."""
+    def __init__(self, maximum_jobs: int, running_jobs: int, **kwargs: Any) -> None:
+        """Creates a new BackendJobsLimit instance.
+
+        Args:
+            maximum_jobs: maximum number of jobs for the backend.
+            running_jobs: current number of jobs running on the backend.
+            kwargs: additional attributes that will be added as instance members.
+        """
         self.maximum_jobs = maximum_jobs
         self.running_jobs = running_jobs
+        super().__init__(**kwargs)
 
 
 class IBMQBackend(BaseBackend):
@@ -265,13 +271,20 @@ class IBMQBackend(BaseBackend):
 
         return self._defaults
 
-    def jobs_limit(self) -> Dict[str, Any]:
-        """Return the job limits for the backend.
+    def jobs_limit(self) -> BackendJobsLimit:
+        """Return the jobs limit for the backend.
+
+        Note:
+            If `BackendJobsLimit.maximum_jobs = -1`, then there
+            are no limits to the maximum number of jobs that could
+            be submitted on the backend.
 
         Returns:
-            the current limit of concurrent jobs for the user at a given
-            provider/backend combination, along with the current number
-            of jobs running on the backend as well.
+            the current number of running jobs and the maximum number
+            of jobs for the backend.
+
+        Raises:
+            LookupError: If jobs limit for the backend can't be found.
         """
         api_jobs_limit = self._api.backend_jobs_limit(self.name())
 

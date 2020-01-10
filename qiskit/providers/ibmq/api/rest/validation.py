@@ -66,7 +66,8 @@ class StatusResponseSchema(BaseSchema):
 
 
 class BackendJobsLimitResponseSchema(BaseSchema):
-    """"""
+    """Schema for BackendJobsLimit"""
+
     # required properties
     maximum_jobs = Integer(required=True)
     running_jobs = Integer(required=True)

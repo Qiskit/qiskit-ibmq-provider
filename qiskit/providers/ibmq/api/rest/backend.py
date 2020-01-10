@@ -102,6 +102,6 @@ class Backend(RestAdapterBase):
         return ret
 
     def jobs_limit(self) -> Dict[str, Any]:
-        """Return backend job limits."""
+        """Return backend jobs limit."""
         url = self.get_url('jobs_limit')
         return self.session.get(url).json()
