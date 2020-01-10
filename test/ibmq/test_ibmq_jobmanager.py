@@ -301,6 +301,7 @@ class TestResultManager(IBMQTestCase):
             # Try twice in case job is not in a cancellable state
             try:
                 if cjob.cancel():
+                    # TODO skip checking for status when API is fixed.
                     time.sleep(0.5)
                     cjob.refresh()
                     if cjob.cancelled():
