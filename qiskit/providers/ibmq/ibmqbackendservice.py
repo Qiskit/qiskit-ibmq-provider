@@ -170,7 +170,7 @@ class IBMQBackendService(SimpleNamespace):
         if status:
             if isinstance(status, str):
                 try:
-                    status = JobStatus[status]
+                    status = JobStatus[status.upper()]
                 except KeyError:
                     raise IBMQBackendValueError(
                         '{} is not a valid status value. Valid values are {}'.format(

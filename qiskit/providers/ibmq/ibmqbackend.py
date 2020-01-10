@@ -113,15 +113,16 @@ class IBMQBackend(BaseBackend):
             IBMQBackendValueError: If an input parameter value is not valid.
         """
         # pylint: disable=arguments-differ
-        api_job_share_level = None
         if job_share_level:
             try:
-                api_job_share_level = ApiJobShareLevel(job_share_level)
+                api_job_share_level = ApiJobShareLevel(job_share_level.lower())
             except ValueError:
                 raise IBMQBackendValueError(
                     '"{}" is not a valid job share level. '
                     'Valid job share levels are: {}'
                     .format(job_share_level, ', '.join(level.value for level in ApiJobShareLevel)))
+        else:
+            api_job_share_level = ApiJobShareLevel.NONE
 
         validate_job_tags(job_tags, IBMQBackendValueError)
         validate_qobj_against_schema(qobj)
