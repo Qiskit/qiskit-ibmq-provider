@@ -58,9 +58,7 @@ class ManagedJob:
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
             job_share_level: Job share level.
-            job_tags: tags to be associated with the job. The tags can
-                subsequently used as a filter in the ``jobs()`` function call.
-                Default: None.
+            job_tags: tags to be assigned to the job.
         """
         self.experiments = experiments
         self.start_index = start_index
@@ -90,9 +88,7 @@ class ManagedJob:
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
             job_share_level: Job share level.
-            job_tags: tags to be associated with the job. The tags can
-                subsequently used as a filter in the ``jobs()`` function call.
-                Default: None.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             IBMQJob instance for the job.

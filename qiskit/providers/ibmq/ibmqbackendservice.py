@@ -133,7 +133,7 @@ class IBMQBackendService(SimpleNamespace):
             end_datetime: filter by end date. This is used to find jobs
                 whose creation dates are before (less than or equal to) this
                 date/time. Default: None.
-            job_tags: filter by tags assigned when the jobs are submitted. Default: None.
+            job_tags: filter by tags assigned to jobs. Default: None.
             job_tags_operator: logical operator to use when filtering by job tags.
                 Valid values are "AND" and "OR":
                  * If "AND" is specified, then a job must have all of the tags

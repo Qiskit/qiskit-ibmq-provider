@@ -154,7 +154,7 @@ class AccountClient(BaseClient):
             use_object_storage: `True` if object storage should be used.
             job_name: custom name to be assigned to the job.
             job_share_level: level the job should be shared at.
-            job_tags: tags to be associated with the job.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             job status.
@@ -200,7 +200,7 @@ class AccountClient(BaseClient):
             qobj_dict: the Qobj to be executed, as a dictionary.
             job_name: custom name to be assigned to the job.
             job_share_level: level the job should be shared at.
-            job_tags: tags to be associated with the job.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             job status.
@@ -230,7 +230,7 @@ class AccountClient(BaseClient):
             qobj_dict: the Qobj to be executed, as a dictionary.
             job_name: custom name to be assigned to the job.
             job_share_level: level the job should be shared at.
-            job_tags: tags to be associated with the job.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             job status.

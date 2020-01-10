@@ -68,9 +68,7 @@ class ManagedJobSet:
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
             job_share_level: Job share level.
-            job_tags: tags to be associated with the job. The tags can
-                subsequently used as a filter in the ``jobs()`` function call.
-                Default: None.
+            job_tags: tags to be assigned to the job.
             assemble_config: Additional arguments used to configure the Qobj
                 assembly. Refer to the ``qiskit.compiler.assemble`` documentation
                 for details on these arguments.

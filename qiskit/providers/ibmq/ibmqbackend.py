@@ -97,8 +97,8 @@ class IBMQBackend(BaseBackend):
                     * none: the job is not shared at any level.
 
                 If the job share level is not specified, then the job is not shared at any level.
-            job_tags: tags to be associated with the job. The tags can
-                subsequently used as a filter in the ``jobs()`` function call.
+            job_tags: tags to be assigned to the job. The tags can
+                subsequently be used as a filter in the ``jobs()`` function call.
                 Default: None.
 
         Returns:
@@ -142,7 +142,7 @@ class IBMQBackend(BaseBackend):
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
             job_share_level: level the job should be shared at.
-            job_tags: tags to be associated with the job.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             an instance derived from BaseJob
@@ -301,7 +301,7 @@ class IBMQBackend(BaseBackend):
                 whose creation dates are after (greater than or equal to) this date/time.
             end_datetime: filter by end date. This is used to find jobs
                 whose creation dates are before (less than or equal to) this date/time.
-            job_tags: filter by tags assigned when the jobs are submitted. Default: None.
+            job_tags: filter by tags assigned to jobs. Default: None.
             job_tags_operator: logical operator to use when filtering by job tags.
                 Valid values are "AND" and "OR":
                  * If "AND" is specified, then a job must have all of the tags
@@ -401,8 +401,8 @@ class IBMQSimulator(IBMQBackend):
             job_name: custom name to be assigned to the job
             job_share_level: allows sharing a job at the hub/group/project and
                 global level (see `IBMQBackend.run()` for more details).
-            job_tags: tags to be associated with the job. The tags can
-                subsequently used as a filter in the ``jobs()`` function call.
+            job_tags: tags to be assigned to the job. The tags can
+                subsequently be used as a filter in the ``jobs()`` function call.
                 Default: None.
 
         Returns:

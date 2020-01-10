@@ -73,8 +73,8 @@ class IBMQJobManager:
             job_share_level: Allows sharing the jobs at the hub/group/project and
                 global level. The possible job share levels are: "global", "hub",
                 "group", "project", and "none". Default: "none".
-            job_tags: tags to be associated with the job. The tags can
-                subsequently used as a filter in the ``jobs()`` function call.
+            job_tags: tags to be assigned to the job. The tags can
+                subsequently be used as a filter in the ``jobs()`` function call.
                 Default: None.
             run_config: Configuration of the runtime environment. Some
                 examples of these configuration parameters include:
