@@ -65,12 +65,12 @@ class StatusResponseSchema(BaseSchema):
     status = String(required=True, validate=OneOf([status.value for status in ApiJobStatus]))
 
 
-class BackendJobsLimitResponseSchema(BaseSchema):
-    """Schema for BackendJobsLimit"""
+class BackendJobLimitResponseSchema(BaseSchema):
+    """Schema for BackendJobLimit"""
 
-    # required properties
-    maximum_jobs = Integer(required=True)
-    running_jobs = Integer(required=True)
+    # Optional properties
+    maximum_jobs = Integer(required=False, missing=None)
+    running_jobs = Integer(required=False, missing=None)
 
     @pre_load
     def preprocess_field_names(self, data, **_):  # type: ignore

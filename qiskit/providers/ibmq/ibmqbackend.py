@@ -25,15 +25,14 @@ from qiskit.qobj import Qobj, validate_qobj_against_schema
 from qiskit.providers import BaseBackend, JobStatus  # type: ignore[attr-defined]
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration, GateConfig)
-from qiskit.validation import BaseModel, bind_schema
 from qiskit.validation.exceptions import ModelValidationError
 from qiskit.tools.events.pubsub import Publisher
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
-from qiskit.providers.ibmq.api.rest.validation import BackendJobsLimitResponseSchema
 
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
+from .backend import BackendJobLimit
 from .credentials import Credentials
 from .exceptions import (IBMQBackendError, IBMQBackendValueError,
                          IBMQBackendApiError, IBMQBackendApiProtocolError)
@@ -41,22 +40,6 @@ from .job import IBMQJob
 from .utils import update_qobj_config
 
 logger = logging.getLogger(__name__)
-
-
-@bind_schema(BackendJobsLimitResponseSchema)
-class BackendJobsLimit(BaseModel):
-    """Jobs limit for a backend."""
-    def __init__(self, maximum_jobs: int, running_jobs: int, **kwargs: Any) -> None:
-        """Creates a new BackendJobsLimit instance.
-
-        Args:
-            maximum_jobs: maximum number of jobs for the backend.
-            running_jobs: current number of jobs running on the backend.
-            kwargs: additional attributes that will be added as instance members.
-        """
-        self.maximum_jobs = maximum_jobs
-        self.running_jobs = running_jobs
-        super().__init__(**kwargs)
 
 
 class IBMQBackend(BaseBackend):
@@ -272,11 +255,11 @@ class IBMQBackend(BaseBackend):
 
         return self._defaults
 
-    def jobs_limit(self) -> BackendJobsLimit:
+    def job_limit(self) -> BackendJobLimit:
         """Return the jobs limit for the backend.
 
         Note:
-            If `BackendJobsLimit.maximum_jobs = -1`, then there
+            If `BackendJobLimit.maximum_jobs = -1`, then there
             are no limits to the maximum number of jobs that could
             be submitted on the backend.
 
@@ -287,10 +270,10 @@ class IBMQBackend(BaseBackend):
         Raises:
             LookupError: If jobs limit for the backend can't be found.
         """
-        api_jobs_limit = self._api.backend_jobs_limit(self.name())
+        api_job_limit = self._api.backend_job_limit(self.name())
 
         try:
-            return BackendJobsLimit.from_dict(api_jobs_limit)
+            return BackendJobLimit.from_dict(api_job_limit)
         except ValidationError as ex:
             raise LookupError(
                 "Couldn't get backend jobs limit: {0}".format(ex))
@@ -473,7 +456,7 @@ class IBMQRetiredBackend(IBMQBackend):
         """Return the online backend status."""
         return self._status
 
-    def jobs_limit(self) -> None:
+    def job_limit(self) -> None:
         """Return the job limits for the backend."""
         return None
 
