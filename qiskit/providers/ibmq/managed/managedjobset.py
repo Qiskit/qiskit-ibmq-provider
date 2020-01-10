@@ -47,6 +47,7 @@ class ManagedJobSet:
         self._managed_jobs = []  # type: List[ManagedJob]
         self._name = name or datetime.utcnow().isoformat()
         self._backend = None  # type: Optional[IBMQBackend]
+        self._tags = []
 
         # Used for caching
         self._managed_results = None  # type: Optional[ManagedResults]
@@ -80,6 +81,7 @@ class ManagedJobSet:
             raise IBMQJobManagerInvalidStateError("Jobs were already submitted.")
 
         self._backend = backend
+        self._tags = job_tags
         exp_index = 0
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)
@@ -312,3 +314,11 @@ class ManagedJobSet:
             A list of managed jobs.
         """
         return self._managed_jobs
+
+    def tags(self) -> List[str]:
+        """Return the tags assigned to this set of jobs.
+
+        Returns:
+            Tags assigned to this set of jobs.
+        """
+        return self._tags

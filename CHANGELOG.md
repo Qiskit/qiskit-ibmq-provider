@@ -22,7 +22,7 @@ The format is based on [Keep a Changelog].
   `cancelled()`. The methods are used to indicate the job status. (\#494)  
 - `backend.run()` now accepts an optional `job_tags` parameter. If
   specified, the `job_tags` are assigned to the job, which can also be used
-  as a filter in `backend.jobs()`. (\#TBD)
+  as a filter in `backend.jobs()`. (\#511)
 
 ### Changed
 

@@ -246,6 +246,7 @@ class TestIBMQJobManager(IBMQTestCase):
         self.assertEqual({job.job_id() for job in job_set.jobs()},
                          {rjob.job_id() for rjob in rjobs},
                          "Unexpected jobs retrieved. Job tag used was {}".format(job_tags))
+        self.assertEqual(job_set.tags(), job_tags)
 
 
 class TestResultManager(IBMQTestCase):
