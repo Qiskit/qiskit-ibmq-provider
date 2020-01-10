@@ -420,7 +420,7 @@ class BaseFakeAPI:
     def job_cancel(self, job_id, *_args, **_kwargs):
         if not job_id:
             return {'status': 'Error', 'error': 'Job ID not specified'}
-        return {} if self._can_cancel else {
+        return {'cancelled': True} if self._can_cancel else {
             'error': 'testing fake API can not cancel'}
 
     def job_final_status(self, job_id, *_args, **_kwargs):
