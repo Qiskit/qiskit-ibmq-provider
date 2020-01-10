@@ -58,3 +58,18 @@ class QueueInfo(BaseModel):
         self.project_priority = project_priority
 
         super().__init__(**kwargs)
+
+    def __str__(self):
+        queue_info = [
+            "Job Info:",
+            "    position: {}".format(self.position),
+            "    status: {}".format(self._status),
+            "Estimated Time Info:",
+            "    start time: {}".format(self.estimated_start_time),
+            "    complete time: {}".format(self.estimated_complete_time),
+            "Priority Info:",
+            "    hub: {}".format(self.hub_priority),
+            "    group: {}".format(self.group_priority),
+            "    project: {}".format(self.project_priority)
+        ]
+        return "\n".join(queue_info)
