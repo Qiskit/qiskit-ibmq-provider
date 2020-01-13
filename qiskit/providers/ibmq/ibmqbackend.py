@@ -263,17 +263,18 @@ class IBMQBackend(BaseBackend):
         of concurrent jobs a user could submit to the backend at a time.
 
         Note:
-            The job limit information for the backend is given for
-            this account (i.e. a specific backend with a specific
-            provider).
+            The job limit information for the backend is provider specific.
+            For example, if you have access to the same backend via
+            different providers, the job limit information might be
+            different for each provider.
 
             If the method call was successful, you can inspect the job
             limit for the backend by accessing the ``maximum_jobs``
             and ``running_jobs`` attributes of the ``BackendJobLimit``
-            class returned.
+            instance returned.
 
             For example:
-                backend_job_limit = IBMQBackend.job_limit()
+                backend_job_limit = backend.job_limit()
                 maximum_jobs = backend_job_limit.maximum_jobs
                 running_jobs = backend_job_limit.running_jobs
 
@@ -284,9 +285,7 @@ class IBMQBackend(BaseBackend):
                 could submit to the backend at a time.
 
         Returns:
-            the current number of jobs running on the backend and the
-            maximum number of concurrent jobs a user could submit to the
-            backend at a time.
+            the job limit for the backend with this provider.
 
         Raises:
             LookupError: If jobs limit for the backend can't be found.
@@ -299,21 +298,22 @@ class IBMQBackend(BaseBackend):
             raise LookupError(
                 "Couldn't get backend jobs limit: {0}".format(ex))
 
-    def remaining_jobs(self) -> int:
+    def remaining_jobs_count(self) -> int:
         """Return remaining jobs that could be submitted to the backend.
 
-        Return the remaining number of jobs that could be submitted to the
-        backend, for this account, before the job limit is reached. See
-        ``IBMQBackend.job_limit()`` for the job limit of a given backend.
+        Return the number of jobs that can be submitted to this backend
+        with this provider before the limit on concurrent jobs is reached.
 
         Note:
-            The number of remaining jobs for the backend is given for
-            this account (i.e. a specific backend with a specific
-            provider).
+            The number of remaining jobs for the backend is provider
+            specific. For example, if you have access to the same backend
+            via different providers, the number of remaining jobs might
+            be different. See ``IBMQBackend.job_limit()`` for the job
+            limit information of the backend.
 
         Returns:
             Remaining number of jobs a user could submit to the backend
-                for this account.
+            with this provider before the limit on concurrent jobs is reached.
 
         Raises:
             LookupError: If jobs limit for the backend can't be found.
