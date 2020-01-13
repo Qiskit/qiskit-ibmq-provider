@@ -25,7 +25,7 @@ The format is based on [Keep a Changelog].
   on the backend and also the maximum number of concurrent jobs that 
   could be submitted to the backend at a time. Note the job limit for a
   backend is given for a specific provider (i.e. a specific backend 
-  with a specific provider).(\#513)
+  with a specific provider). (\#513)
 
 ### Changed
 
