@@ -256,16 +256,38 @@ class IBMQBackend(BaseBackend):
         return self._defaults
 
     def job_limit(self) -> BackendJobLimit:
-        """Return the jobs limit for the backend.
+        """Return job limit for the backend.
+
+        The job limit information may include the number of jobs
+            currently running on the backend at this time and the
+            maximum number of concurrent jobs a user could submit
+            to the backend at a time.
 
         Note:
-            If `BackendJobLimit.maximum_jobs = -1`, then there
-            are no limits to the maximum number of jobs that could
-            be submitted on the backend.
+            The job limit information for the backend is given for
+            this account (i.e. a specific backend with a specific
+            provider).
+
+            If the method call was successful, you can inspect the job
+            limit for the backend by accessing the ``maximum_jobs``
+            and ``running_jobs`` attributes of the ``BackendJobLimit``
+            class returned.
+
+            For example:
+                backend_job_limit = IBMQBackend.job_limit()
+                maximum_jobs = backend_job_limit.maximum_jobs
+                running_jobs = backend_job_limit.running_jobs
+
+            * If ``maximum_jobs`` or ``running_jobs`` are ``None``, the
+                job limit information is currently not available.
+            * If ``maximum_jobs`` is equal to ``-1``, then there are
+                no limits to the maximum number of concurrent jobs a user
+                could submit to the backend at a time.
 
         Returns:
-            the current number of running jobs and the maximum number
-            of jobs for the backend.
+            the current number of jobs running on the backend and the
+            maximum number of concurrent jobs a user could submit to the
+            backend at a time.
 
         Raises:
             LookupError: If jobs limit for the backend can't be found.
@@ -277,6 +299,29 @@ class IBMQBackend(BaseBackend):
         except ValidationError as ex:
             raise LookupError(
                 "Couldn't get backend jobs limit: {0}".format(ex))
+
+    def remaining_jobs(self) -> int:
+        """Return remaining jobs that could be submitted to the backend.
+
+        Return the remaining number of jobs that could be submitted to the
+        backend, for this account, before the job limit is reached. See
+        ``IBMQBackend.job_limit()`` for the job limit information of a
+        given backend.
+
+        Note:
+            The number of remaining jobs for the backend is given for
+            this account (i.e. a specific backend with a specific
+            provider).
+
+        Returns:
+            Remaining number of jobs a user could submit to the backend
+                for this account.
+
+        Raises:
+            LookupError: If jobs limit for the backend can't be found.
+        """
+        backend_job_limit = self.job_limit()
+        return backend_job_limit.maximum_jobs - backend_job_limit.running_jobs
 
     def jobs(
             self,
