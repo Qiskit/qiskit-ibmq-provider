@@ -101,8 +101,10 @@ def format_job_details(
     for i, mjob in enumerate(managed_jobs):
         report.append("  experiments: {}-{}".format(mjob.start_index, mjob.end_index))
         report.append("    job index: {}".format(i))
-        if not mjob.future.done():
-            report.append("    status: {}".format(JobStatus.INITIALIZING.value))
+        if (mjob.job is None) and mjob.future \
+                and (not mjob.future.done()):  # type: ignore[warn-unreachable]
+            report.append("    status: {}".format(  # type: ignore[warn-unreachable]
+                JobStatus.INITIALIZING.value))
             continue
         if mjob.submit_error is not None:
             report.append("    status: job submit failed: {}".format(

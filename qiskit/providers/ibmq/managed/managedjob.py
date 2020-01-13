@@ -16,16 +16,14 @@
 
 import warnings
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor
 
-from qiskit.circuit import QuantumCircuit
 from qiskit.providers.ibmq import IBMQBackend
-from qiskit.pulse import Schedule
 from qiskit.qobj import Qobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.exceptions import JobError, JobTimeoutError
+from qiskit.providers.exceptions import JobError
 from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 
 from ..job.ibmqjob import IBMQJob
@@ -39,23 +37,19 @@ class ManagedJob:
 
     def __init__(
             self,
-            experiments: Union[List[QuantumCircuit], List[Schedule]],
             start_index: int,
-            job_set_id: str,
+            experiments_count: int,
             job: Optional[IBMQJob] = None
     ):
         """Creates a new ManagedJob instance.
 
         Args:
-            experiments: Experiments for the job.
             start_index: Starting index of the experiment set.
-            job_set_id: Unique ID for the job set this job belongs in.
+            experiments_count: Number of experiments.
             job: Job to be managed, or ``None`` if not already known. Default: None.
         """
-        self.experiments = experiments
         self.start_index = start_index
-        self.end_index = start_index + len(experiments) - 1
-        self._job_set_id = job_set_id
+        self.end_index = start_index + experiments_count - 1
         self.future = None
 
         # Properties that may be populated by the future.
@@ -70,7 +64,7 @@ class ManagedJob:
             executor: ThreadPoolExecutor,
             job_share_level: ApiJobShareLevel,
             job_tags: Optional[List[str]] = None
-    ):
+    ) -> None:
         """Submit the job.
 
         Args:
@@ -112,7 +106,7 @@ class ManagedJob:
                 qobj=qobj,
                 job_name=job_name,
                 job_share_level=job_share_level.value,
-                job_tag=[self._job_set_id])
+                job_tags=job_tags)
         except Exception as err:  # pylint: disable=broad-except
             warnings.warn("Unable to submit job for experiments {}-{}: {}".format(
                 self.start_index, self.end_index, err))

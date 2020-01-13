@@ -192,14 +192,15 @@ class IBMQJobManager:
             report.append("\nDetail report:")
             for i, job_set in enumerate(self._job_sets):
                 report.append(("  Job set name: {}, ID: {}".format(
-                    job_set.name(), job_set.id())))
+                    job_set.name(), job_set.job_set_id())))
                 report.extend(format_job_details(
                     job_set_statuses[i], job_set.managed_jobs()))
 
         return '\n'.join(report)
 
     def job_sets(self, name: Optional[str] = None) -> List[ManagedJobSet]:
-        """Returns a list of managed job sets matching the specified filtering.
+        """Returns a list of managed job sets matching the specified filtering
+            in this session.
 
         Args:
              name: Name of the managed job sets.
@@ -223,10 +224,10 @@ class IBMQJobManager:
             Retrieved job set, or ``None`` if no job set with that ID is found.
         """
         for mjs in self._job_sets:
-            if mjs.id() == job_set_id:
+            if mjs.job_set_id() == job_set_id:
                 return mjs
 
-        new_job_set = ManagedJobSet()
+        new_job_set = ManagedJobSet(short_id=job_set_id)
         new_job_set.retrieve_jobs(provider=provider)
         self._job_sets.append(new_job_set)
         return new_job_set

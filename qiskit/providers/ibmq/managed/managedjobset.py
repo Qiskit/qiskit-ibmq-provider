@@ -27,7 +27,6 @@ from qiskit.pulse import Schedule
 from qiskit.compiler import assemble
 from qiskit.qobj import Qobj
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 
@@ -46,19 +45,25 @@ logger = logging.getLogger(__name__)
 class ManagedJobSet:
     """A set of managed jobs."""
 
+    _id_prefix = "ibmq_jobset_"
+    _id_suffix = "_"
+
     def __init__(
             self,
-            name: Optional[str] = None
+            name: Optional[str] = None,
+            short_id: Optional[str] = None
     ) -> None:
         """Creates a new ManagedJobSet instance.
 
         Args:
-            name: Name for this set of jobs. Default: "Jobset_" + current datetime.
+            name: Name for this set of jobs. Default: current datetime.
+            short_id: Short ID for this set of jobs. Default: None.
         """
         self._managed_jobs = []  # type: List[ManagedJob]
-        self._name = name or 'Jobset_' + datetime.utcnow().isoformat()
+        self._name = name or datetime.utcnow().isoformat()
         self._backend = None  # type: Optional[IBMQBackend]
-        self._id = 'ibmq_jobset_' + uuid.uuid4().hex
+        self._id = short_id or uuid.uuid4().hex
+        self._id_long = self._id_prefix + self._id + self._id_suffix
         self._tags = []  # type: List[str]
 
         # Used for caching
@@ -93,14 +98,17 @@ class ManagedJobSet:
             raise IBMQJobManagerInvalidStateError("Jobs were already submitted.")
 
         self._backend = backend
-        self._tags = job_tags
+        if job_tags:
+            self._tags = job_tags.copy()
+
         exp_index = 0
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)
             job_name = "{}_{}_".format(self._name, i)
-            mjob = ManagedJob(experiments=experiments, start_index=exp_index, job_set_id=self._id)
+            mjob = ManagedJob(experiments_count=len(experiments), start_index=exp_index)
             mjob.submit(qobj=qobj, job_name=job_name, backend=backend,
-                        executor=executor, job_share_level=job_share_level, job_tags=job_tags)
+                        executor=executor, job_share_level=job_share_level,
+                        job_tags=self._tags+[self._id_long])
             self._managed_jobs.append(mjob)
             exp_index += len(experiments)
 
@@ -118,24 +126,30 @@ class ManagedJobSet:
         if self._managed_jobs:
             return
 
-        db_filter = {'tags': self._id}
-        jobs = provider.backends.jobs(limit=1000, db_filter=db_filter)
-
+        # IBMQBackend jobs() method does not have a way to pass in unlimited
+        # number of jobs to retrieve. 1000 should be a sufficiently large
+        # enough number.
+        jobs = provider.backends.jobs(    # type: ignore[attr-defined]
+            limit=1000, job_tags=[self._id_long])
         if not jobs:
             raise IBMQJobManagerUnknownJobSet(
-                "{} is not a known job set within the provider {}.".format(self._id, provider))
+                "{} is not a known job set within the provider {}.".format(
+                    self.job_set_id(), provider))
 
         # Extract common information from the first job.
-        job = jobs[0]
+        first_job = jobs[0]
         pattern = re.compile(r'(.*)_([0-9])+_$')
-        matched = pattern.match(job.name())
+        matched = pattern.match(first_job.name())
         if not matched:
             raise IBMQJobManagerInvalidStateError(
                 "Job {} is tagged for the job set {} but does not have a proper job name.".format(
-                    job.job_id(), self._id))
+                    first_job.job_id(), self.job_set_id()))
         self._name = matched.group(1)
-        self._backend = job.backend()
+        self._backend = first_job.backend()
+        self._tags = first_job.tags()
+        self._tags.remove(self._id_long)
 
+        jobs_dict = {}
         for job in jobs:
             # Verify the job is proper.
             matched = pattern.match(job.name())
@@ -143,15 +157,25 @@ class ManagedJobSet:
                     job.backend().name != self._backend.name:
                 raise IBMQJobManagerInvalidStateError(
                     "Job {} is tagged for the job set {} but does not appear "
-                    "to belong to the set".format(job.job_id(), self._id))
+                    "to belong to the set".format(job.job_id(), self.job_set_id()))
+            jobs_dict[int(matched.group(2))] = job
 
+        sorted_indexes = sorted(jobs_dict)
+        # Verify we got all jobs.
+        if sorted_indexes != list(range(len(sorted_indexes))):
+            raise IBMQJobManagerInvalidStateError(
+                "Unable to retrieve all jobs for job set {}".format(self.job_set_id()))
+
+        experiment_index = 0
+        for job_index in sorted_indexes:
+            job = jobs_dict[job_index]
             mjob = ManagedJob(
-                experiments=job.qobj().experiments,
-                start_index=int(matched.group(2)),
-                job_set_id=self._id,
+                start_index=experiment_index,
+                experiments_count=len(job.qobj().experiments),
                 job=job
             )
             self._managed_jobs.append(mjob)
+            experiment_index = mjob.end_index + 1
 
     def statuses(self) -> List[Union[JobStatus, None]]:
         """Return the status of each job.
@@ -173,7 +197,9 @@ class ManagedJobSet:
             A report on job statuses.
         """
         statuses = self.statuses()
-        report = ["Job set name: {}, ID: {}".format(self.name(), self.id()),
+        report = ["Job set name: {}".format(self.name()),
+                  "          ID: {}".format(self.job_set_id()),
+                  "        tags: {}".format(self.tags()),
                   "Summary report:"]
         report.extend(format_status_counts(statuses))
 
@@ -340,10 +366,10 @@ class ManagedJobSet:
         else:
             if isinstance(experiment, (QuantumCircuit, Schedule)):
                 experiment = experiment.name
-            for mjob in self._managed_jobs:
-                for i, exp in enumerate(mjob.experiments):
-                    if exp.name == experiment:
-                        return mjob.job, i
+            for job in self.jobs():
+                for i, exp in enumerate(job.qobj().experiments):
+                    if hasattr(exp.header, 'name') and exp.header.name == experiment:
+                        return job, i
 
         raise IBMQJobManagerJobNotFound("Unable to find the job for experiment {}".format(
             experiment))
@@ -366,12 +392,14 @@ class ManagedJobSet:
         """
         return self._name
 
-    def id(self) -> str:
+    def job_set_id(self) -> str:
         """Return the ID of this set of jobs.
 
         Returns:
             ID of this set of jobs.
         """
+        # Return only the short version of the ID to reduce the possibility the
+        # full ID is used for another job.
         return self._id
 
     def managed_jobs(self) -> List[ManagedJob]:
