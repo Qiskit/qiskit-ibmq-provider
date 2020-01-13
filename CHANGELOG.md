@@ -20,10 +20,12 @@ The format is based on [Keep a Changelog].
 
 - `IBMQJob` now has three new methods: `done()`, `running()`, and
   `cancelled()`. The methods are used to indicate the job status. (\#494)
-- `IBMQBackend` now has a new `jobs_limit()` method that returns the 
-  jobs limit for a backend, such as the current number of running jobs 
-  on the backend and also the maximum number of jobs that could be 
-  submitted to the backend. (\#513)
+- `IBMQBackend` now has a new `job_limit()` method that returns the 
+  job limit for a backend, such as the current number of jobs running 
+  on the backend and also the maximum number of concurrent jobs that 
+  could be submitted to the backend at a time. Note the job limit for a
+  backend is given for a specific provider (i.e. a specific backend 
+  with a specific provider).(\#513)
 
 ### Changed
 
