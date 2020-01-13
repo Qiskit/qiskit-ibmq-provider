@@ -171,6 +171,7 @@ class TestAccountClient(IBMQTestCase):
         job_limit = api.backend_job_limit(backend.name())
         self.assertIsNotNone(job_limit)
         self.assertIsNotNone(job_limit['maximumJobs'])
+        self.assertNotEqual(job_limit['maximumJobs'], 0)
         self.assertIsNotNone(job_limit['runningJobs'])
 
     def test_backend_pulse_defaults(self):
