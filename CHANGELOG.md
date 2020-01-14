@@ -19,7 +19,10 @@ The format is based on [Keep a Changelog].
 ### Added
 
 - `IBMQJob` now has three new methods: `done()`, `running()`, and
-  `cancelled()`. The methods are used to indicate the job status. (\#494)
+  `cancelled()`. The methods are used to indicate the job status. (\#494)  
+- `backend.run()` now accepts an optional `job_tags` parameter. If
+  specified, the `job_tags` are assigned to the job, which can also be used
+  as a filter in `backend.jobs()`. (\#511)
 
 ### Changed
 
