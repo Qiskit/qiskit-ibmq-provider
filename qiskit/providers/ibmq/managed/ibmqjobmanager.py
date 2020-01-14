@@ -21,6 +21,7 @@ from concurrent import futures
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
+from qiskit.providers.ibmq.utils import validate_job_tags
 
 from .exceptions import IBMQJobManagerInvalidStateError
 from .utils import format_job_details, format_status_counts
@@ -45,6 +46,7 @@ class IBMQJobManager:
             name: Optional[str] = None,
             max_experiments_per_job: Optional[int] = None,
             job_share_level: Optional[str] = None,
+            job_tags: Optional[List[str]] = None,
             **run_config: Any
     ) -> ManagedJobSet:
         """Execute a set of circuits or pulse schedules on a backend.
@@ -71,6 +73,9 @@ class IBMQJobManager:
             job_share_level: Allows sharing the jobs at the hub/group/project and
                 global level. The possible job share levels are: "global", "hub",
                 "group", "project", and "none". Default: "none".
+            job_tags: tags to be assigned to the job. The tags can
+                subsequently be used as a filter in the ``jobs()`` function call.
+                Default: None.
             run_config: Configuration of the runtime environment. Some
                 examples of these configuration parameters include:
                 ``qobj_id``, ``qobj_header``, ``shots``, ``memory``,
@@ -86,8 +91,7 @@ class IBMQJobManager:
             Managed job set.
 
         Raises:
-            IBMQJobManagerInvalidStateError: If the backend does not support
-                the experiment type.
+            IBMQJobManagerInvalidStateError: If an input parameter value is not valid.
         """
         if (any(isinstance(exp, Schedule) for exp in experiments) and
                 not backend.configuration().open_pulse):
@@ -105,12 +109,14 @@ class IBMQJobManager:
         else:
             api_job_share_level = ApiJobShareLevel.NONE
 
+        validate_job_tags(job_tags, IBMQJobManagerInvalidStateError)
+
         experiment_list = self._split_experiments(
             experiments, backend=backend, max_experiments_per_job=max_experiments_per_job)
 
         job_set = ManagedJobSet(name=name)
         job_set.run(experiment_list, backend=backend, executor=self._executor,
-                    job_share_level=api_job_share_level, **run_config)
+                    job_share_level=api_job_share_level, job_tags=job_tags, **run_config)
         self._job_sets.append(job_set)
 
         return job_set

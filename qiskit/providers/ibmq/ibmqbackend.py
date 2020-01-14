@@ -37,7 +37,7 @@ from .credentials import Credentials
 from .exceptions import (IBMQBackendError, IBMQBackendValueError,
                          IBMQBackendApiError, IBMQBackendApiProtocolError)
 from .job import IBMQJob
-from .utils import update_qobj_config
+from .utils import update_qobj_config, validate_job_tags
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,8 @@ class IBMQBackend(BaseBackend):
             self,
             qobj: Qobj,
             job_name: Optional[str] = None,
-            job_share_level: Optional[str] = None
+            job_share_level: Optional[str] = None,
+            job_tags: Optional[List[str]] = None
     ) -> IBMQJob:
         """Run a Qobj asynchronously.
 
@@ -85,6 +86,7 @@ class IBMQBackend(BaseBackend):
             job_name: custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
+                Default: None.
             job_share_level: allows sharing a job at the hub/group/project and
                 global level. The possible job share levels are: "global", "hub",
                 "group", "project", and "none".
@@ -96,6 +98,9 @@ class IBMQBackend(BaseBackend):
                     * none: the job is not shared at any level.
 
                 If the job share level is not specified, then the job is not shared at any level.
+            job_tags: tags to be assigned to the job. The tags can
+                subsequently be used as a filter in the ``jobs()`` function call.
+                Default: None.
 
         Returns:
             an instance derived from BaseJob
@@ -106,7 +111,7 @@ class IBMQBackend(BaseBackend):
                 the job.
             IBMQBackendApiProtocolError: If an unexpected value received when
                  the server.
-            IBMQBackendValueError: If the specified job share level is not valid.
+            IBMQBackendValueError: If an input parameter value is not valid.
         """
         # pylint: disable=arguments-differ
         if job_share_level:
@@ -120,14 +125,16 @@ class IBMQBackend(BaseBackend):
         else:
             api_job_share_level = ApiJobShareLevel.NONE
 
+        validate_job_tags(job_tags, IBMQBackendValueError)
         validate_qobj_against_schema(qobj)
-        return self._submit_job(qobj, job_name, api_job_share_level)
+        return self._submit_job(qobj, job_name, api_job_share_level, job_tags)
 
     def _submit_job(
             self,
             qobj: Qobj,
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None
+            job_share_level: Optional[ApiJobShareLevel] = None,
+            job_tags: Optional[List[str]] = None
     ) -> IBMQJob:
         """Submit qobj job to IBM-Q.
         Args:
@@ -136,6 +143,7 @@ class IBMQBackend(BaseBackend):
                 name can subsequently be used as a filter in the
                 ``jobs()`` function call. Job names do not need to be unique.
             job_share_level: level the job should be shared at.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             an instance derived from BaseJob
@@ -158,7 +166,8 @@ class IBMQBackend(BaseBackend):
                 qobj_dict=qobj_dict,
                 use_object_storage=getattr(self.configuration(), 'allow_object_storage', False),
                 job_name=job_name,
-                job_share_level=job_share_level)
+                job_share_level=job_share_level,
+                job_tags=job_tags)
         except ApiError as ex:
             raise IBMQBackendApiError('Error submitting job: {}'.format(str(ex)))
 
@@ -343,6 +352,8 @@ class IBMQBackend(BaseBackend):
             job_name: Optional[str] = None,
             start_datetime: Optional[python_datetime] = None,
             end_datetime: Optional[python_datetime] = None,
+            job_tags: Optional[List[str]] = None,
+            job_tags_operator: Optional[str] = "OR",
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return the jobs submitted to this backend.
@@ -371,6 +382,14 @@ class IBMQBackend(BaseBackend):
                 whose creation dates are after (greater than or equal to) this date/time.
             end_datetime: filter by end date. This is used to find jobs
                 whose creation dates are before (less than or equal to) this date/time.
+            job_tags: filter by tags assigned to jobs. Default: None.
+            job_tags_operator: logical operator to use when filtering by job tags.
+                Valid values are "AND" and "OR":
+                 * If "AND" is specified, then a job must have all of the tags
+                    specified in ``job_tags`` to be included.
+                * If "OR" is specified, then a job only needs to have any
+                    of the tags specified in ``job_tags`` to be included.
+                Default: OR.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -389,11 +408,11 @@ class IBMQBackend(BaseBackend):
             list of IBMQJob instances
 
         Raises:
-            IBMQBackendValueError: status keyword value unrecognized
+            IBMQBackendValueError: if a keyword value is not recognized.
         """
         return self._provider.backends.jobs(
             limit, skip, self.name(), status,
-            job_name, start_datetime, end_datetime, db_filter)
+            job_name, start_datetime, end_datetime, job_tags, job_tags_operator, db_filter)
 
     def retrieve_job(self, job_id: str) -> IBMQJob:
         """Return a job submitted to this backend.
@@ -450,8 +469,9 @@ class IBMQSimulator(IBMQBackend):
             qobj: Qobj,
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
+            job_tags: Optional[List[str]] = None,
             backend_options: Optional[Dict] = None,
-            noise_model: Any = None,
+            noise_model: Any = None
     ) -> IBMQJob:
         """Run qobj asynchronously.
 
@@ -462,13 +482,16 @@ class IBMQSimulator(IBMQBackend):
             job_name: custom name to be assigned to the job
             job_share_level: allows sharing a job at the hub/group/project and
                 global level (see `IBMQBackend.run()` for more details).
+            job_tags: tags to be assigned to the job. The tags can
+                subsequently be used as a filter in the ``jobs()`` function call.
+                Default: None.
 
         Returns:
             an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
-        return super(IBMQSimulator, self).run(qobj, job_name, job_share_level)
+        return super(IBMQSimulator, self).run(qobj, job_name, job_share_level, job_tags)
 
 
 class IBMQRetiredBackend(IBMQBackend):
@@ -525,7 +548,8 @@ class IBMQRetiredBackend(IBMQBackend):
             self,
             qobj: Qobj,
             job_name: Optional[str] = None,
-            job_share_level: Optional[str] = None
+            job_share_level: Optional[str] = None,
+            job_tags: Optional[List[str]] = None
     ) -> None:
         """Run a Qobj."""
         raise IBMQBackendError('This backend is no longer available.')
