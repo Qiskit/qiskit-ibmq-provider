@@ -100,7 +100,6 @@ class ManagedJobSet:
         self._backend = backend
         if job_tags:
             self._tags = job_tags.copy()
-
         exp_index = 0
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)

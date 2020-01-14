@@ -138,7 +138,7 @@ class IBMQBackendService(SimpleNamespace):
                 Valid values are "AND" and "OR":
                  * If "AND" is specified, then a job must have all of the tags
                     specified in ``job_tags`` to be included.
-                * If "OR" is specified, then a job only needs to be have any
+                * If "OR" is specified, then a job only needs to have any
                     of the tags specified in ``job_tags`` to be included.
                 Default: OR.
             db_filter: `loopback-based filter
