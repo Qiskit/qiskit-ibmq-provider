@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2018, 2019.
+# (C) Copyright IBM 2018, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -162,6 +162,17 @@ class TestAccountClient(IBMQTestCase):
 
         properties = api.backend_properties(backend.name())
         self.assertIsNotNone(properties)
+
+    @requires_device
+    def test_backend_job_limit(self, backend):
+        """Check the backend job limits of a real backend."""
+        api = self._get_client()
+
+        job_limit = api.backend_job_limit(backend.name())
+        self.assertIsNotNone(job_limit)
+        self.assertIsNotNone(job_limit['maximumJobs'])
+        self.assertNotEqual(job_limit['maximumJobs'], 0)
+        self.assertIsNotNone(job_limit['runningJobs'])
 
     def test_backend_pulse_defaults(self):
         """Check the backend pulse defaults of each backend."""

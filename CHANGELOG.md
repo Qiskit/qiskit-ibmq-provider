@@ -23,6 +23,14 @@ The format is based on [Keep a Changelog].
 - `backend.run()` now accepts an optional `job_tags` parameter. If
   specified, the `job_tags` are assigned to the job, which can also be used
   as a filter in `backend.jobs()`. (\#511)
+- `IBMQBackend` now has two new methods: `job_limit()` and 
+  `remaining_job_counts()`. `job_limit()` returns the job limit for a 
+  backend, which includes the current number of unfinished jobs you have on 
+  the backend and the the maximum number of unfinished jobs you can have on 
+  it. `remaining_job_counts()` returns the number of remaining jobs that 
+  could be submitted to the backend before the maximum limit of unfinished
+  jobs is reached. Note the job limit for a backend is given for a specific 
+  provider (i.e. a specific backend with a specific provider). (\#513)
 
 ### Changed
 
