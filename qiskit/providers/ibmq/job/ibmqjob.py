@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2019.
+# (C) Copyright IBM 2017, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -18,7 +18,7 @@ This module is used for creating a job objects for the IBM Q Experience.
 """
 
 import logging
-from typing import Dict, Optional, Tuple, Any
+from typing import Dict, Optional, Tuple, Any, List
 import warnings
 from datetime import datetime
 
@@ -465,6 +465,14 @@ class IBMQJob(BaseModel, BaseJob):
             the job name or ``None`` if no name was assigned to the job.
         """
         return self._name
+
+    def tags(self) -> List[str]:
+        """Return the tags assigned to this job.
+
+        Returns:
+            Tags assigned to this job.
+        """
+        return self._tags.copy()
 
     def time_per_step(self) -> Optional[Dict]:
         """Return the date and time information on each step of the job processing.

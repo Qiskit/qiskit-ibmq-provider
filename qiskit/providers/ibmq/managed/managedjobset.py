@@ -47,6 +47,7 @@ class ManagedJobSet:
         self._managed_jobs = []  # type: List[ManagedJob]
         self._name = name or datetime.utcnow().isoformat()
         self._backend = None  # type: Optional[IBMQBackend]
+        self._tags = []  # type: List[str]
 
         # Used for caching
         self._managed_results = None  # type: Optional[ManagedResults]
@@ -58,6 +59,7 @@ class ManagedJobSet:
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
             job_share_level: ApiJobShareLevel,
+            job_tags: Optional[List[str]] = None,
             **assemble_config: Any
     ) -> None:
         """Execute a list of circuits or pulse schedules on a backend.
@@ -67,6 +69,7 @@ class ManagedJobSet:
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
             job_share_level: Job share level.
+            job_tags: tags to be assigned to the job.
             assemble_config: Additional arguments used to configure the Qobj
                 assembly. Refer to the ``qiskit.compiler.assemble`` documentation
                 for details on these arguments.
@@ -78,6 +81,8 @@ class ManagedJobSet:
             raise IBMQJobManagerInvalidStateError("Jobs were already submitted.")
 
         self._backend = backend
+        if job_tags:
+            self._tags = job_tags.copy()
         exp_index = 0
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)
@@ -85,7 +90,8 @@ class ManagedJobSet:
             self._managed_jobs.append(
                 ManagedJob(experiments, start_index=exp_index,
                            qobj=qobj, job_name=job_name, backend=backend,
-                           executor=executor, job_share_level=job_share_level)
+                           executor=executor, job_share_level=job_share_level,
+                           job_tags=job_tags)
             )
             exp_index += len(experiments)
 
@@ -309,3 +315,11 @@ class ManagedJobSet:
             A list of managed jobs.
         """
         return self._managed_jobs
+
+    def tags(self) -> List[str]:
+        """Return the tags assigned to this set of jobs.
+
+        Returns:
+            Tags assigned to this set of jobs.
+        """
+        return self._tags
