@@ -342,6 +342,8 @@ class IBMQJob(BaseModel, BaseJob):
         self._status = api_status_to_job_status(status)
         if status is ApiJobStatus.RUNNING and api_info_queue:
             try:
+                api_info_queue['job_id'] = self.job_id()  # job_id is used for QueueInfo.format().
+
                 info_queue = QueueInfo.from_dict(api_info_queue)
                 if info_queue._status == ApiJobStatus.PENDING_IN_QUEUE.value:
                     self._status = JobStatus.QUEUED
