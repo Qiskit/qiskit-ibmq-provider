@@ -23,6 +23,10 @@ The format is based on [Keep a Changelog].
 - `backend.run()` now accepts an optional `job_tags` parameter. If
   specified, the `job_tags` are assigned to the job, which can also be used
   as a filter in `backend.jobs()`. (\#511)
+- `IBMQJobManager` now has a new method `retrieve_job_set()` that allows
+  you to retrieve a previously submitted job set using the job set ID.
+  A job set ID can be retrieved using the new `job_set.job_set_id()` 
+  method. (\#514)
 
 ### Changed
 

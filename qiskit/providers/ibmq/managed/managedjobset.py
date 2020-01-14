@@ -111,18 +111,20 @@ class ManagedJobSet:
             self._managed_jobs.append(mjob)
             exp_index += len(experiments)
 
-    def retrieve_jobs(self, provider: AccountProvider) -> None:
+    def retrieve_jobs(self, provider: AccountProvider, refresh: bool = False) -> None:
         """Retrieve previously submitted jobs for this set.
 
         Args:
             provider: Provider used for this job set.
+            refresh: If True, re-query the API for the job set.
+                Otherwise return the cached value. Default: False.
 
         Raises:
-            IBMQJobManagerUnknownJobSet: If no jobs for this job set are found.
+            IBMQJobManagerUnknownJobSet: If the job set cannot be found.
             IBMQJobManagerInvalidStateError: If jobs for this job set are
                 found but have unexpected attributes.
         """
-        if self._managed_jobs:
+        if not refresh and self._managed_jobs:
             return
 
         # IBMQBackend jobs() method does not have a way to pass in unlimited
@@ -165,6 +167,7 @@ class ManagedJobSet:
             raise IBMQJobManagerInvalidStateError(
                 "Unable to retrieve all jobs for job set {}".format(self.job_set_id()))
 
+        self._managed_jobs = []
         experiment_index = 0
         for job_index in sorted_indexes:
             job = jobs_dict[job_index]
