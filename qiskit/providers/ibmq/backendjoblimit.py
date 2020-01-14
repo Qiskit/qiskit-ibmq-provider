@@ -18,7 +18,7 @@ from typing import Any
 
 from qiskit.validation import BaseModel, bind_schema
 
-from ..api.rest.validation import BackendJobLimitResponseSchema
+from qiskit.providers.ibmq.api.rest.validation import BackendJobLimitResponseSchema
 
 
 @bind_schema(BackendJobLimitResponseSchema)
