@@ -32,7 +32,7 @@ from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
-from .backend import BackendJobLimit
+from .backendjoblimit import BackendJobLimit
 from .credentials import Credentials
 from .exceptions import (IBMQBackendError, IBMQBackendValueError,
                          IBMQBackendApiError, IBMQBackendApiProtocolError)
