@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2018, 2019.
+# (C) Copyright IBM 2018, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -28,6 +28,7 @@ class Backend(RestAdapterBase):
         'properties': '/properties',
         'pulse_defaults': '/defaults',
         'status': '/queue/status',
+        'jobs_limit': '/jobsLimit'
     }
 
     def __init__(self, session: RetrySession, backend_name: str) -> None:
@@ -99,3 +100,8 @@ class Backend(RestAdapterBase):
             ret['dedicated'] = response['busy']
 
         return ret
+
+    def job_limit(self) -> Dict[str, Any]:
+        """Return backend job limit."""
+        url = self.get_url('jobs_limit')
+        return self.session.get(url).json()
