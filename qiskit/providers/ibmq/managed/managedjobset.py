@@ -162,7 +162,7 @@ class ManagedJobSet:
             # Verify the job is proper.
             matched = pattern.match(job.name()) if job.name() else None
             if not matched or matched.group(1) != self._name or \
-                    job.backend().name != self._backend.name:
+                    job.backend().name() != self._backend.name():
                 raise IBMQJobManagerInvalidStateError(
                     "Job {} is tagged for the job set {} but does not appear "
                     "to belong to the set".format(job.job_id(), self.job_set_id()))
