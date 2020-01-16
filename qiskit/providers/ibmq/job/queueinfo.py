@@ -72,40 +72,34 @@ class QueueInfo(BaseModel):
         Returns:
              The job queue information report.
         """
-        _default_attr_value = 'unknown'
-        attributes_map = self._get_attributes_map(_default_attr_value)
-
-        status = attributes_map['_status']
-        if status != _default_attr_value:
-            attributes_map['_status'] = api_status_to_job_status(ApiJobStatus(status)).value
-
-        est_start_time = attributes_map['estimated_start_time']
-        if est_start_time != _default_attr_value:
-            attributes_map['estimated_start_time'] = arrow.get(est_start_time).humanize()
-
-        est_complete_time = attributes_map['estimated_complete_time']
-        if est_complete_time != _default_attr_value:
-            attributes_map['estimated_complete_time'] = arrow.get(est_complete_time).humanize()
+        status = api_status_to_job_status(ApiJobStatus(self._status)).value \
+            if self._status else self._get_value(self._status)
+        estimated_start_time = arrow.get(self.estimated_start_time).humanize() \
+            if self.estimated_start_time else self._get_value(self.estimated_start_time)
+        estimated_complete_time = arrow.get(self.estimated_complete_time).humanize() \
+            if self.estimated_complete_time else self._get_value(self.estimated_complete_time)
 
         queue_info = [
-            "Job {} queue information:".format(attributes_map['job_id']),
-            "    queue position: {}".format(attributes_map['position']),
-            "    status: {}".format(attributes_map['_status']),
-            "    estimated start time: {}".format(attributes_map['estimated_start_time']),
-            "    estimated completion time: {}".format(attributes_map['estimated_complete_time']),
-            "    hub priority: {}".format(attributes_map['hub_priority']),
-            "    group priority: {}".format(attributes_map['group_priority']),
-            "    project priority: {}".format(attributes_map['project_priority'])
+            "Job {} queue information:".format(self._get_value(self.job_id)),
+            "    queue position: {}".format(self._get_value(self.position)),
+            "    status: {}".format(status),
+            "    estimated start time: {}".format(estimated_start_time),
+            "    estimated completion time: {}".format(estimated_complete_time),
+            "    hub priority: {}".format(self._get_value(self.hub_priority)),
+            "    group priority: {}".format(self._get_value(self.group_priority)),
+            "    project priority: {}".format(self._get_value(self.project_priority))
         ]
 
         return '\n'.join(queue_info)
 
-    def _get_attributes_map(self, _default_value: str) -> Dict[str, Any]:
-        """Utility function to get the attributes map, while setting default values."""
-        _attributes_map = {}
-        for key, value in self.__dict__.items():
-            if value is None:
-                _attributes_map[key] = _default_value
-            else:
-                _attributes_map[key] = value
-        return _attributes_map
+    def _get_value(
+            self,
+            value: Optional[Any],
+            _default_attr_value: str = 'unknown'
+    ) -> Optional[Any]:
+        """Returns the value if it exists or a default.
+
+        Returns:
+            The value if it is not None, else a default value.
+        """
+        return value if value is not None else _default_attr_value
