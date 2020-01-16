@@ -66,6 +66,13 @@ class QueueInfo(BaseModel):
 
         super().__init__(**kwargs)
 
+    def __repr__(self):
+        """"""
+        queue_info = ["{}={}".format(key, repr(value))
+                      for key, value in self.__dict__.items()]
+
+        return "{}({})".format(self.__class__.__name__, ', '.join(queue_info))
+
     def format(self) -> str:
         """Build an user-friendly report for the job queue information.
 
