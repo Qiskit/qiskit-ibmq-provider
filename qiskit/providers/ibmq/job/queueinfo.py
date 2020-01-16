@@ -66,10 +66,10 @@ class QueueInfo(BaseModel):
 
         super().__init__(**kwargs)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """"""
-        queue_info = ["{}={}".format(key, repr(value))
-                      for key, value in self.__dict__.items()]
+        queue_info = ["{}={}".format(attr, repr(value))
+                      for attr, value in self.__dict__.items()]
 
         return "{}({})".format(self.__class__.__name__, ', '.join(queue_info))
 
@@ -99,14 +99,10 @@ class QueueInfo(BaseModel):
 
         return '\n'.join(queue_info)
 
-    def _get_value(
-            self,
-            value: Optional[Any],
-            _default_attr_value: str = 'unknown'
-    ) -> Optional[Any]:
+    def _get_value(self, value: Optional[Any], _default_value: str = 'unknown') -> Optional[Any]:
         """Returns the value if it exists or a default.
 
         Returns:
             The value if it is not None, else a default value.
         """
-        return value if value is not None else _default_attr_value
+        return value if value is not None else _default_value
