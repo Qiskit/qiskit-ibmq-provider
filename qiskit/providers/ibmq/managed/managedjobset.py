@@ -130,7 +130,7 @@ class ManagedJobSet:
         # IBMQBackend jobs() method does not have a way to pass in unlimited
         # number of jobs to retrieve. 1000 should be a sufficiently large
         # enough number.
-        jobs = []
+        jobs = []  # type: List[IBMQJob]
         page_limit = 1000
         while True:
             job_page = provider.backends.jobs(    # type: ignore[attr-defined]

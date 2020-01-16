@@ -14,7 +14,6 @@
 
 """Utilities for working with IBM Q Jobs."""
 
-from datetime import datetime, timezone
 from typing import Dict, List, Generator, Any
 from contextlib import contextmanager
 
