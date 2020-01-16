@@ -106,6 +106,7 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_skipped_status(self, provider):
         """Test one of jobs has no status."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(2):
@@ -120,10 +121,13 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_job_qobjs(self, provider):
         """Test retrieving qobjs for the jobs."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
+        provider._api = backend._api
+        qc2 = QuantumCircuit(1, 1)
+        qc2.x(0)
+        qc2.measure(0, 0)
+        circs = [self._qc, qc2]
 
-        circs = []
-        for _ in range(2):
-            circs.append(self._qc)
         job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
         jobs = job_set.jobs()
         job_set.results()
@@ -206,6 +210,7 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_share_job_in_project(self, provider):
         """Test sharing managed jobs within a project."""
         backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient()
 
         circs = []
         for _ in range(2):

@@ -276,6 +276,9 @@ class TestIBMQJobAttributes(JobTestCase):
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=job_tags)
+        # TODO No need to wait for job to run once api is fixed
+        while not job.running():
+            time.sleep(0.5)
 
         rjobs = backend.jobs(job_tags=['phantom_tag'])
         self.assertEqual(len(rjobs), 0,
