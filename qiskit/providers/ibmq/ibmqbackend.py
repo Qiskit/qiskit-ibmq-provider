@@ -35,7 +35,8 @@ from .api.exceptions import ApiError
 from .backendjoblimit import BackendJobLimit
 from .credentials import Credentials
 from .exceptions import (IBMQBackendError, IBMQBackendValueError,
-                         IBMQBackendApiError, IBMQBackendApiProtocolError)
+                         IBMQBackendApiError, IBMQBackendApiProtocolError,
+                         IBMQBackendJobLimitDataNotAvailable)
 from .job import IBMQJob
 from .utils import update_qobj_config, validate_job_tags
 
@@ -109,7 +110,7 @@ class IBMQBackend(BaseBackend):
             SchemaValidationError: If the job validation fails.
             IBMQBackendApiError: If an unexpected error occurred while submitting
                 the job.
-            IBMQBackendApiProtocolError: If an unexpected value received when
+            IBMQBackendApiProtocolError: If an unexpected value received from
                  the server.
             IBMQBackendValueError: If an input parameter value is not valid.
         """
@@ -156,7 +157,7 @@ class IBMQBackend(BaseBackend):
                 the job.
             IBMQBackendError: If an unexpected error occurred after submitting
                 the job.
-            IBMQBackendApiProtocolError: If an unexpected value received when
+            IBMQBackendApiProtocolError: If an unexpected value received from
                  the server.
         """
         try:
@@ -287,9 +288,7 @@ class IBMQBackend(BaseBackend):
                 maximum_jobs = backend_job_limit.maximum_jobs
                 running_jobs = backend_job_limit.running_jobs
 
-            * If ``maximum_jobs`` or ``running_jobs`` are ``None``, the
-                job limit information is currently not available.
-            * If ``maximum_jobs`` is equal to ``-1``, then there are
+            * If ``maximum_jobs`` is equal to ``None``, then there are
                 no limits to the maximum number of concurrent jobs a user
                 could submit to the backend at a time.
 
@@ -297,19 +296,28 @@ class IBMQBackend(BaseBackend):
             the job limit for the backend with this provider.
 
         Raises:
-            LookupError: If jobs limit for the backend can't be found.
+            IBMQBackendApiProtocolError: If an unexpected value received from the server.
+            IBMQBackendJobLimitDataNotAvailable: If the job limit information is not available.
         """
         api_job_limit = self._api.backend_job_limit(self.name())
 
         try:
-            return BackendJobLimit.from_dict(api_job_limit)
+            job_limit = BackendJobLimit.from_dict(api_job_limit)
+            if job_limit.maximum_jobs is None or job_limit.running_jobs is None:
+                raise IBMQBackendJobLimitDataNotAvailable(
+                    'Job limit data for the backend is not available.')
+            if job_limit.maximum_jobs == -1:
+                # Manually set `maximum` to `None` if backend has no limits.
+                job_limit.maximum_jobs = None
+            return job_limit
         except ValidationError as ex:
-            raise LookupError(
-                "Couldn't get backend jobs limit: {0}".format(ex))
+            raise IBMQBackendApiProtocolError(
+                'Unexpected return value from the server when '
+                'querying job limit data for the backend: {}.'.format(ex))
 
     def remaining_jobs_count(self) -> Optional[int]:
         """Return the number of remaining jobs that could be submitted to the backend.
-
+F
         Return the number of jobs that can be submitted to this backend
         with this provider before the limit on concurrent jobs is reached.
 
@@ -320,29 +328,24 @@ class IBMQBackend(BaseBackend):
             be different. See ``IBMQBackend.job_limit()`` for the job
             limit information of the backend.
 
-            * If ``-1`` is returned, then there are no limits to the
+            * If ``None`` is returned, then there are no limits to the
                 number of concurrent jobs a user could submit to the
                 backend.
-            * If ``None`` is returned, then the job limit information is
-                currently not available.
 
         Returns:
             Remaining number of jobs a user could submit to the backend
             with this provider before the limit on concurrent jobs is reached.
 
         Raises:
-            LookupError: If jobs limit for the backend can't be found.
+            IBMQBackendApiProtocolError: If an unexpected value received from the server.
+            IBMQBackendJobLimitDataNotAvailable: If the job limit information is not available.
         """
         job_limit = self.job_limit()
 
-        if job_limit.maximum_jobs is None or job_limit.running_jobs is None:
+        if job_limit.maximum_jobs is None:
             return None
-        if job_limit.maximum_jobs == -1:
-            return -1
-        if job_limit.maximum_jobs > 0 and job_limit.running_jobs >= 0:
-            return job_limit.maximum_jobs - job_limit.running_jobs
 
-        return None
+        return job_limit.maximum_jobs - job_limit.running_jobs
 
     def jobs(
             self,
