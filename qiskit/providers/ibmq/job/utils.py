@@ -40,15 +40,6 @@ API_TO_JOB_STATUS = {
 }
 
 
-def current_utc_time() -> str:
-    """Gets the current time in UTC format.
-
-    Returns:
-        current time in UTC format.
-    """
-    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
-
-
 def build_error_report(results: List[Dict[str, Any]]) -> str:
     """Build an user-friendly error report for a failed job.
 

@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 class IBMQJobManager:
-    """Job manager for IBM Q Experience.
+    """Job manager for IBM Quantum Experience.
 
     The Job Manager is a higher level mechanism for handling jobs composed of
     multiple circuits or pulse schedules. It splits the experiments into
@@ -41,7 +41,7 @@ class IBMQJobManager:
     it collects and presents the results in a unified view.
 
     To use the Job Manager to submit multiple experiments, invoking the
-    ``run()`` method:
+    ``run()`` method::
 
         from qiskit.providers.ibmq.managed import IBMQJobManager
         job_manager = IBMQJobManager()
@@ -51,13 +51,13 @@ class IBMQJobManager:
     represents the set of jobs for the experiments. You can use the
     ``ManagedJobSet`` methods, such as ``statuses()``, ``results()``, and
     ``error_messages()`` to get a combined view of the jobs in the set.
-    For example:
+    For example::
 
         results = job_set_foo.results()
         results.get_counts(5)  # Counts for experiment 5.
 
     The ``job_set_id()`` method of ``ManagedJobSet`` returns the job set ID,
-    which can be used to retrieve the job set later:
+    which can be used to retrieve the job set later::
 
         job_set_id = job_set_foo.job_set_id()
         retrieved_foo = job_manager.retrieve_job_set(job_set_id=job_set_id, provider=provider)
@@ -87,7 +87,7 @@ class IBMQJobManager:
             experiments: Circuit(s) or pulse schedule(s) to execute.
             backend: Backend to execute the experiments on.
             name: Name for this set of jobs. Each job within the set will have
-                a job name consists of the set name followed by a suffix.
+                a job name that consists of the set name followed by a suffix.
                 Default: current datetime.
             max_experiments_per_job: Maximum number of experiments to run in each job.
                 If not specified, the default is to use the maximum allowed by
@@ -235,10 +235,12 @@ class IBMQJobManager:
             IBMQJobManagerInvalidStateError: If jobs for this job set are
                 found but have unexpected attributes.
         """
-        if not refresh:
-            for mjs in self._job_sets:
-                if mjs.job_set_id() == job_set_id:
+        for index, mjs in enumerate(self._job_sets):
+            if mjs.job_set_id() == job_set_id:
+                if not refresh:
                     return mjs
+                del self._job_sets[index]
+                break
 
         new_job_set = ManagedJobSet(short_id=job_set_id)
         new_job_set.retrieve_jobs(provider=provider)
