@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -52,7 +52,8 @@ def requires_submit(func: Callable) -> Callable:
         Returns:
             return value of the decorated function.
         """
-        futures = [managed_job.future for managed_job in job_set._managed_jobs]
+        futures = [managed_job.future for managed_job
+                   in job_set._managed_jobs if managed_job.future]
         wait(futures)
         return func(job_set, *args, **kwargs)
 
@@ -100,8 +101,10 @@ def format_job_details(
     for i, mjob in enumerate(managed_jobs):
         report.append("  experiments: {}-{}".format(mjob.start_index, mjob.end_index))
         report.append("    job index: {}".format(i))
-        if not mjob.future.done():
-            report.append("    status: {}".format(JobStatus.INITIALIZING.value))
+        if (mjob.job is None) and mjob.future \
+                and (not mjob.future.done()):  # type: ignore[warn-unreachable]
+            report.append("    status: {}".format(  # type: ignore[warn-unreachable]
+                JobStatus.INITIALIZING.value))
             continue
         if mjob.submit_error is not None:
             report.append("    status: job submit failed: {}".format(

@@ -33,6 +33,10 @@ The format is based on [Keep a Changelog].
   could be submitted to the backend before the maximum limit of unfinished
   jobs is reached. Note the job limit for a backend is given for a specific 
   provider (i.e. a specific backend with a specific provider). (\#513)
+- `IBMQJobManager` now has a new method `retrieve_job_set()` that allows
+  you to retrieve a previously submitted job set using the job set ID.
+  A job set ID can be retrieved using the new `job_set.job_set_id()` 
+  method. (\#514)
 
 ### Changed
 

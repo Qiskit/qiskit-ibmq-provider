@@ -22,6 +22,7 @@ from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 from qiskit.providers.ibmq.utils import validate_job_tags
+from qiskit.providers.ibmq.accountprovider import AccountProvider
 
 from .exceptions import IBMQJobManagerInvalidStateError
 from .utils import format_job_details, format_status_counts
@@ -32,7 +33,35 @@ logger = logging.getLogger(__name__)
 
 
 class IBMQJobManager:
-    """Job manager for IBM Q Experience."""
+    """Job manager for IBM Quantum Experience.
+
+    The Job Manager is a higher level mechanism for handling jobs composed of
+    multiple circuits or pulse schedules. It splits the experiments into
+    multiple jobs based on backend restrictions. When the jobs are finished,
+    it collects and presents the results in a unified view.
+
+    To use the Job Manager to submit multiple experiments, invoking the
+    ``run()`` method::
+
+        from qiskit.providers.ibmq.managed import IBMQJobManager
+        job_manager = IBMQJobManager()
+        job_set_foo = job_manager.run(circs, backend=backend, name='foo')
+
+    The ``run()`` method returns a ``ManagedJobSet`` instance, which
+    represents the set of jobs for the experiments. You can use the
+    ``ManagedJobSet`` methods, such as ``statuses()``, ``results()``, and
+    ``error_messages()`` to get a combined view of the jobs in the set.
+    For example::
+
+        results = job_set_foo.results()
+        results.get_counts(5)  # Counts for experiment 5.
+
+    The ``job_set_id()`` method of ``ManagedJobSet`` returns the job set ID,
+    which can be used to retrieve the job set later::
+
+        job_set_id = job_set_foo.job_set_id()
+        retrieved_foo = job_manager.retrieve_job_set(job_set_id=job_set_id, provider=provider)
+    """
 
     def __init__(self) -> None:
         """Creates a new IBMQJobManager instance."""
@@ -54,17 +83,12 @@ class IBMQJobManager:
         The circuits or schedules will be split into multiple jobs. Circuits
         or schedules in a job will be executed together in each shot.
 
-        A name can be assigned to this job set. Each job in this set will have
-        a job name consists of the set name followed by an underscore (_)
-        followed by the job index and another underscore. For example, a job
-        for set ``foo`` can have a job name of ``foo_1_``.  The name can then
-        be used to retrieve the jobs later. If no name is given, the job
-        submission datetime will be used.
-
         Args:
             experiments: Circuit(s) or pulse schedule(s) to execute.
             backend: Backend to execute the experiments on.
-            name: Name for this set of jobs. Default: current datetime.
+            name: Name for this set of jobs. Each job within the set will have
+                a job name that consists of the set name followed by a suffix.
+                Default: current datetime.
             max_experiments_per_job: Maximum number of experiments to run in each job.
                 If not specified, the default is to use the maximum allowed by
                 the backend.
@@ -167,14 +191,16 @@ class IBMQJobManager:
         if detailed:
             report.append("\nDetail report:")
             for i, job_set in enumerate(self._job_sets):
-                report.append(("  Job set {}:".format(job_set.name())))
+                report.append(("  Job set name: {}, ID: {}".format(
+                    job_set.name(), job_set.job_set_id())))
                 report.extend(format_job_details(
                     job_set_statuses[i], job_set.managed_jobs()))
 
         return '\n'.join(report)
 
     def job_sets(self, name: Optional[str] = None) -> List[ManagedJobSet]:
-        """Returns a list of managed job sets matching the specified filtering.
+        """Returns a list of managed job sets matching the specified filtering
+            in this session.
 
         Args:
              name: Name of the managed job sets.
@@ -186,3 +212,37 @@ class IBMQJobManager:
             return [job_set for job_set in self._job_sets if job_set.name() == name]
 
         return self._job_sets
+
+    def retrieve_job_set(
+            self,
+            job_set_id: str,
+            provider: AccountProvider,
+            refresh: bool = False
+    ) -> ManagedJobSet:
+        """Retrieve a previously submitted job set.
+
+        Args:
+            job_set_id: ID of the job set.
+            provider: Provider used for this job set.
+            refresh: If True, re-query the API for the job set.
+                Otherwise return the cached value. Default: False.
+
+        Returns:
+            Retrieved job set.
+
+        Raises:
+            IBMQJobManagerUnknownJobSet: If the job set cannot be found.
+            IBMQJobManagerInvalidStateError: If jobs for this job set are
+                found but have unexpected attributes.
+        """
+        for index, mjs in enumerate(self._job_sets):
+            if mjs.job_set_id() == job_set_id:
+                if not refresh:
+                    return mjs
+                del self._job_sets[index]
+                break
+
+        new_job_set = ManagedJobSet(short_id=job_set_id)
+        new_job_set.retrieve_jobs(provider=provider)
+        self._job_sets.append(new_job_set)
+        return new_job_set
