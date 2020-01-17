@@ -72,21 +72,15 @@ class QueueInfo(BaseModel):
         Returns:
             a string representation of QueueInfo.
         """
-        # Handle converting the `_status` attribute specifically.
-        status = api_status_to_job_status(ApiJobStatus(self._status)).value \
-            if self._status else self._get_value(self._status)
-
-        queue_info = {'_status': status}
+        queue_info = []
         for attr, value in self.__dict__.items():
-            if attr in queue_info:
-                continue
             if isinstance(value, datetime):
                 value = value.isoformat()
-            queue_info[attr] = self._get_value(value)
-        # Concatenate the attributes and their values.
-        queue_info_args = ["{}='{}'".format(key, value) for key, value in queue_info.items()]
+            elif value in [status.value for status in ApiJobStatus]:
+                value = api_status_to_job_status(ApiJobStatus(value)).value
+            queue_info.append("{}='{}'".format(attr, self._get_value(value)))
 
-        return "<{}({})>".format(self.__class__.__name__, ', '.join(queue_info_args))
+        return "<{}({})>".format(self.__class__.__name__, ', '.join(queue_info))
 
     def format(self) -> str:
         """Build an user-friendly report for the job queue information.
