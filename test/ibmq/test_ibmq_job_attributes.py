@@ -61,6 +61,8 @@ class TestIBMQJobAttributes(JobTestCase):
         """Test fetching properties of a running job."""
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
+        while not job.running():
+            time.sleep(0.5)
         _ = job.properties()
 
     @requires_provider
@@ -303,6 +305,9 @@ class TestIBMQJobAttributes(JobTestCase):
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=job_tags)
+        # TODO No need to wait for job to run once api is fixed
+        while not job.running():
+            time.sleep(0.5)
 
         no_rjobs_tags = [job_tags[0:1]+['phantom_tags'], ['phantom_tag']]
         for tags in no_rjobs_tags:
