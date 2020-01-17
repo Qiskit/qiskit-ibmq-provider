@@ -14,7 +14,7 @@
 
 """Queue information related to a job."""
 
-from typing import Dict, Any, Optional
+from typing import Any, Optional
 from datetime import datetime
 
 import arrow
@@ -67,11 +67,26 @@ class QueueInfo(BaseModel):
         super().__init__(**kwargs)
 
     def __repr__(self) -> str:
-        """"""
-        queue_info = ["{}={}".format(attr, repr(value))
-                      for attr, value in self.__dict__.items()]
+        """Return the official string representation of QueueInfo.
 
-        return "<{}({})>".format(self.__class__.__name__, ', '.join(queue_info))
+        Returns:
+            a string representation of QueueInfo.
+        """
+        # Handle converting the `_status` attribute specifically.
+        status = api_status_to_job_status(ApiJobStatus(self._status)).value \
+            if self._status else self._get_value(self._status)
+
+        queue_info = {'_status': status}
+        for attr, value in self.__dict__.items():
+            if attr in queue_info:
+                continue
+            if isinstance(value, datetime):
+                value = value.isoformat()
+            queue_info[attr] = self._get_value(value)
+        # Concatenate the attributes and their values.
+        queue_info_args = ["{}='{}'".format(key, value) for key, value in queue_info.items()]
+
+        return "<{}({})>".format(self.__class__.__name__, ', '.join(queue_info_args))
 
     def format(self) -> str:
         """Build an user-friendly report for the job queue information.
