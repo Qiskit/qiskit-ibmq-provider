@@ -303,11 +303,8 @@ class IBMQBackend(BaseBackend):
 
         try:
             job_limit = BackendJobLimit.from_dict(api_job_limit)
-            if job_limit.maximum_jobs is None or job_limit.running_jobs is None:
-                raise IBMQBackendJobLimitDataNotAvailable(
-                    'Job limit data for the backend is not available.')
             if job_limit.maximum_jobs == -1:
-                # Manually set `maximum` to `None` if backend has no limits.
+                # Manually set `maximum` to `None` if backend has no job limit.
                 job_limit.maximum_jobs = None
             return job_limit
         except ValidationError as ex:
@@ -317,7 +314,7 @@ class IBMQBackend(BaseBackend):
 
     def remaining_jobs_count(self) -> Optional[int]:
         """Return the number of remaining jobs that could be submitted to the backend.
-F
+
         Return the number of jobs that can be submitted to this backend
         with this provider before the limit on concurrent jobs is reached.
 
