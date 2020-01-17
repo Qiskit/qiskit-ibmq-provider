@@ -35,8 +35,7 @@ from .api.exceptions import ApiError
 from .backendjoblimit import BackendJobLimit
 from .credentials import Credentials
 from .exceptions import (IBMQBackendError, IBMQBackendValueError,
-                         IBMQBackendApiError, IBMQBackendApiProtocolError,
-                         IBMQBackendJobLimitDataNotAvailable)
+                         IBMQBackendApiError, IBMQBackendApiProtocolError)
 from .job import IBMQJob
 from .utils import update_qobj_config, validate_job_tags
 
@@ -297,7 +296,6 @@ class IBMQBackend(BaseBackend):
 
         Raises:
             IBMQBackendApiProtocolError: If an unexpected value received from the server.
-            IBMQBackendJobLimitDataNotAvailable: If the job limit information is not available.
         """
         api_job_limit = self._api.backend_job_limit(self.name())
 
@@ -335,7 +333,6 @@ class IBMQBackend(BaseBackend):
 
         Raises:
             IBMQBackendApiProtocolError: If an unexpected value received from the server.
-            IBMQBackendJobLimitDataNotAvailable: If the job limit information is not available.
         """
         job_limit = self.job_limit()
 
