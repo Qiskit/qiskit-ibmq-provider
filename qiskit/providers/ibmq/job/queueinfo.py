@@ -71,7 +71,7 @@ class QueueInfo(BaseModel):
         queue_info = ["{}={}".format(attr, repr(value))
                       for attr, value in self.__dict__.items()]
 
-        return "{}({})".format(self.__class__.__name__, ', '.join(queue_info))
+        return "<{}({})>".format(self.__class__.__name__, ', '.join(queue_info))
 
     def format(self) -> str:
         """Build an user-friendly report for the job queue information.
@@ -99,10 +99,10 @@ class QueueInfo(BaseModel):
 
         return '\n'.join(queue_info)
 
-    def _get_value(self, value: Optional[Any], _default_value: str = 'unknown') -> Optional[Any]:
+    def _get_value(self, value: Optional[Any], default_value: str = 'unknown') -> Optional[Any]:
         """Returns the value if it exists or a default.
 
         Returns:
             The value if it is not None, else a default value.
         """
-        return value if value is not None else _default_value
+        return value or default_value
