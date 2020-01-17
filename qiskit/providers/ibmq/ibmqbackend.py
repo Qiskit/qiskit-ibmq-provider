@@ -266,7 +266,7 @@ class IBMQBackend(BaseBackend):
         return self._defaults
 
     def job_limit(self) -> BackendJobLimit:
-        """Return job limit for the backend.
+        """Return the job limit for the backend.
 
         The job limit information may include, for this backend, the
         current number of unfinished jobs you have and the maximum
