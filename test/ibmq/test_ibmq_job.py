@@ -89,8 +89,6 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         shots = qobj.config.shots
         job = backend.run(qobj)
-        while not job.status() is JobStatus.DONE:
-            time.sleep(4)
 
         result = job.result()
         counts_qx = result.get_counts(0)
@@ -99,13 +97,11 @@ class TestIBMQJob(JobTestCase):
 
         # Test fetching the job properties, as this is a real backend and is
         # guaranteed to have them.
-        _ = job.properties()
+        self.assertIsNotNone(job.properties())
 
     @requires_provider
-    def test_run_async_simulator(self, provider):
-        """Test running in a simulator asynchronously."""
-        IBMQJob._executor = futures.ThreadPoolExecutor(max_workers=2)
-
+    def test_run_multiple_simulator(self, provider):
+        """Test running multiple jobs in a simulator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         self.log.info('submitting to backend %s', backend.name())
@@ -119,10 +115,9 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(transpile([qc] * 10, backend=backend), backend=backend)
         num_jobs = 5
         job_array = [backend.run(qobj) for _ in range(num_jobs)]
-        found_async_jobs = False
         timeout = 30
         start_time = time.time()
-        while not found_async_jobs:
+        while True:
             check = sum(
                 [job.status() is JobStatus.RUNNING for job in job_array])
             if check >= 2:
@@ -154,8 +149,8 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(sorted(job_ids), sorted(list(set(job_ids))))
 
     @slow_test_on_device
-    def test_run_async_device(self, provider, backend):  # pylint: disable=unused-argument
-        """Test running in a real device asynchronously."""
+    def test_run_multiple_device(self, provider, backend):  # pylint: disable=unused-argument
+        """Test running multiple jobs in a real device."""
         self.log.info('submitting to backend %s', backend.name())
         num_qubits = 5
         qr = QuantumRegister(num_qubits, 'qr')
