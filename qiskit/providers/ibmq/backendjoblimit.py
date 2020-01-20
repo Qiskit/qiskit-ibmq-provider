@@ -36,4 +36,5 @@ class BackendJobLimit(BaseModel):
         """
         self.maximum_jobs = maximum_jobs
         self.running_jobs = running_jobs
+
         super().__init__(**kwargs)
