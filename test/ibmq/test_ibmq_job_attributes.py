@@ -107,7 +107,8 @@ class TestIBMQJobAttributes(JobTestCase):
         retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
                                                 job_name=job_name)
 
-        self.assertEqual(len(retrieved_jobs), 2)
+        self.assertEqual(len(retrieved_jobs), 2,
+                         "More than 2 jobs retrieved: {}".format(retrieved_jobs))
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)
         for job in retrieved_jobs:
@@ -278,9 +279,6 @@ class TestIBMQJobAttributes(JobTestCase):
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=job_tags)
-        # TODO No need to wait for job to run once api is fixed
-        while not job.running():
-            time.sleep(0.5)
 
         rjobs = backend.jobs(job_tags=['phantom_tag'])
         self.assertEqual(len(rjobs), 0,
@@ -305,9 +303,6 @@ class TestIBMQJobAttributes(JobTestCase):
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=job_tags)
-        # TODO No need to wait for job to run once api is fixed
-        while not job.running():
-            time.sleep(0.5)
 
         no_rjobs_tags = [job_tags[0:1]+['phantom_tags'], ['phantom_tag']]
         for tags in no_rjobs_tags:

@@ -16,7 +16,6 @@
 
 import time
 import copy
-from concurrent import futures
 from datetime import datetime, timedelta
 from unittest import SkipTest
 
@@ -28,7 +27,6 @@ from qiskit.providers import JobStatus
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
-from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, JobError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test import slow_test
