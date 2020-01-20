@@ -68,7 +68,7 @@ class BaseFakeJob:
                  job_tags=None, share_level=None):
         """Initialize a fake job."""
         self._job_id = job_id
-        self.status = ApiJobStatus.CREATING
+        self._status = ApiJobStatus.CREATING
         self.qobj = qobj
         self._future = executor.submit(self._auto_progress)
         self._result = None
@@ -80,9 +80,9 @@ class BaseFakeJob:
         """Automatically update job status."""
         for status in self._job_progress:
             time.sleep(0.5)
-            self.status = status
+            self._status = status
 
-        if self.status == ApiJobStatus.COMPLETED:
+        if self._status == ApiJobStatus.COMPLETED:
             new_result = copy.deepcopy(VALID_RESULT_RESPONSE)
             new_result['results'][0]['data']['counts'] = {
                 '0x0': randrange(1024), '0x3': randrange(1024)}
@@ -93,7 +93,7 @@ class BaseFakeJob:
         data = {
             'id': self._job_id,
             'kind': 'q-object',
-            'status': self.status.value,
+            'status': self._status.value,
             'creationDate': '2019-01-01T13:15:58.425972',
             'backend': {'name': self._backend_name}
         }
@@ -108,14 +108,18 @@ class BaseFakeJob:
         """Cancel the job."""
         self._future.cancel()
         wait([self._future])
-        self.status = ApiJobStatus.CANCELLED
+        self._status = ApiJobStatus.CANCELLED
         self._result = None
 
     def result(self):
-        """Returns job result."""
+        """Return job result."""
         if not self._result:
             raise RequestsApiError("Result is not available")
         return self._result
+
+    def status(self):
+        """Return job status."""
+        return self._status
 
 
 class CancelableFakeJob(BaseFakeJob):
@@ -134,7 +138,7 @@ class BaseFakeAccountClient:
     def __init__(self, job_limit=-1, job_class=BaseFakeJob):
         """Initialize a fake account client."""
         self._jobs = {}
-        self._result_retrieved = set()
+        self._results_retrieved = set()
         self._job_limit = job_limit
         self._executor = ThreadPoolExecutor()
         self._job_class = job_class
@@ -163,32 +167,30 @@ class BaseFakeAccountClient:
 
     def job_download_qobj(self, job_id, *_args, **_kwargs):
         """Retrieve and return a Qobj."""
-        return self._jobs[job_id].qobj
+        return self._get_job(job_id).qobj
 
     def job_result(self, job_id, *_args, **_kwargs):
         """Return a random job result."""
-        if job_id in self._result_retrieved:
+        if job_id in self._results_retrieved:
             raise ValueError("Result already retrieved for job {}!".format(job_id))
-        self._result_retrieved.add(job_id)
-        return self._jobs[job_id].result()
+        self._results_retrieved.add(job_id)
+        return self._get_job(job_id).result()
 
     def job_get(self, job_id, *_args, **_kwargs):
         """Return information about a job."""
-        return self._jobs[job_id].data()
+        return self._get_job(job_id).data()
 
     def job_status(self, job_id, *_args, **_kwargs):
         """Return the status of a job."""
-        if job_id not in self._jobs:
-            raise RequestsApiError('Job not found., Error code: 3250.')
-
-        return {'status': self._jobs[job_id].status.value}
+        return {'status': self._get_job(job_id).status().value}
 
     def job_final_status(self, job_id, *_args, **_kwargs):
         """Wait until the job progress to a final state."""
-        status = self._jobs[job_id].status
+        job = self._get_job(job_id)
+        status = job.status()
         while status not in API_JOB_FINAL_STATES:
             time.sleep(0.5)
-            status = self._jobs[job_id].status
+            status = job.status()
         return self.job_status(job_id)
 
     def job_properties(self, *_args, **_kwargs):
@@ -197,16 +199,22 @@ class BaseFakeAccountClient:
 
     def job_cancel(self, job_id, *_args, **_kwargs):
         """Submit a request for cancelling a job."""
-        self._jobs[job_id].cancel()
+        self._get_job(job_id).cancel()
         return {'cancelled': True}
 
     def backend_job_limit(self, *_args, **_kwargs):
         """Return the job limit for the backend."""
-        return {'maximumJobs': self._job_limit, 'runningJobs': self._unfinished_jobs}
+        return {'maximumJobs': self._job_limit, 'runningJobs': self._unfinished_jobs()}
 
     def _unfinished_jobs(self):
         """Return the number of unfinished jobs."""
-        return sum(1 for job in self._jobs.values() if job.status not in API_JOB_FINAL_STATES)
+        return sum(1 for job in self._jobs.values() if job.status() not in API_JOB_FINAL_STATES)
+
+    def _get_job(self, job_id):
+        """Return job if found."""
+        if job_id not in self._jobs:
+            raise RequestsApiError('Job not found., Error code: 3250.')
+        return self._jobs[job_id]
 
 
 class JobSubmitFailClient(BaseFakeAccountClient):
