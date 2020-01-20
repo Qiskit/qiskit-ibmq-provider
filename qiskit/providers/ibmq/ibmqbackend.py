@@ -279,13 +279,13 @@ class IBMQBackend(BaseBackend):
 
             If the method call was successful, you can inspect the job
             limit for the backend by accessing the ``maximum_jobs``
-            and ``running_jobs`` attributes of the ``BackendJobLimit``
+            and ``active_jobs`` attributes of the ``BackendJobLimit``
             instance returned.
 
             For example:
                 backend_job_limit = backend.job_limit()
                 maximum_jobs = backend_job_limit.maximum_jobs
-                running_jobs = backend_job_limit.running_jobs
+                active_jobs = backend_job_limit.active_jobs
 
             * If ``maximum_jobs`` is equal to ``None``, then there are
                 no limits to the maximum number of concurrent jobs a user
@@ -339,7 +339,7 @@ class IBMQBackend(BaseBackend):
         if job_limit.maximum_jobs is None:
             return None
 
-        return job_limit.maximum_jobs - job_limit.running_jobs
+        return job_limit.maximum_jobs - job_limit.active_jobs
 
     def jobs(
             self,

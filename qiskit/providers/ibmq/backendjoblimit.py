@@ -30,11 +30,11 @@ class BackendJobLimit(BaseModel):
         Args:
             maximum_jobs: maximum number of concurrent jobs this account is
                 allowed to submit to this backend with this provider at a time.
-            running_jobs: current number of jobs running on this backend with
+            running_jobs: current number of unfinished jobs on this backend with
                 this provider.
             kwargs: additional attributes that will be added as instance members.
         """
         self.maximum_jobs = maximum_jobs
-        self.running_jobs = running_jobs
+        self.active_jobs = running_jobs
 
         super().__init__(**kwargs)
