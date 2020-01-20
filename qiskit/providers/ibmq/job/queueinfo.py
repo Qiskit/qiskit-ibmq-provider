@@ -72,13 +72,23 @@ class QueueInfo(BaseModel):
         Returns:
             a string representation of QueueInfo.
         """
-        queue_info = []
-        for attr, value in self.__dict__.items():
-            if isinstance(value, datetime):
-                value = value.isoformat()
-            elif value in [status.value for status in ApiJobStatus]:
-                value = api_status_to_job_status(ApiJobStatus(value)).value
-            queue_info.append("{}='{}'".format(attr, self._get_value(value)))
+        status = api_status_to_job_status(ApiJobStatus(self._status)).value \
+            if self._status else self._get_value(self._status)
+        estimated_start_time = self.estimated_start_time.isoformat() \
+            if self.estimated_start_time else self._get_value(self.estimated_start_time)
+        estimated_complete_time = self.estimated_complete_time.isoformat() \
+            if self.estimated_complete_time else self._get_value(self.estimated_complete_time)
+
+        queue_info = [
+            "job_id: '{}'".format(self._get_value(self.job_id)),
+            "_status: '{}'".format(self._get_value(status)),
+            "estimated_start_time: '{}'".format(estimated_start_time),
+            "estimated_complete_time: '{}'".format(estimated_complete_time),
+            "position: '{}'".format(self._get_value(self.position)),
+            "hub_priority: '{}'".format(self._get_value(self.hub_priority)),
+            "group_priority: '{}'".format(self._get_value(self.group_priority)),
+            "project_priority: '{}'".format(self._get_value(self.project_priority))
+        ]
 
         return "<{}({})>".format(self.__class__.__name__, ', '.join(queue_info))
 
