@@ -102,7 +102,11 @@ class TestIBMQJobAttributes(JobTestCase):
         job_name = str(time.time()).replace('.', '')
         job_ids = set()
         for _ in range(2):
-            job_ids.add(backend.run(qobj, job_name=job_name).job_id())
+            job = backend.run(qobj, job_name=job_name)
+            job_ids.add(job.job_id())
+            # TODO No need to wait for job to run once api is fixed
+            while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+                time.sleep(0.5)
 
         retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
                                                 job_name=job_name)
@@ -279,6 +283,9 @@ class TestIBMQJobAttributes(JobTestCase):
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=job_tags)
+        # TODO No need to wait for job to run once api is fixed
+        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+            time.sleep(0.5)
 
         rjobs = backend.jobs(job_tags=['phantom_tag'])
         self.assertEqual(len(rjobs), 0,
@@ -303,6 +310,9 @@ class TestIBMQJobAttributes(JobTestCase):
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=job_tags)
+        # TODO No need to wait for job to run once api is fixed
+        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+            time.sleep(0.5)
 
         no_rjobs_tags = [job_tags[0:1]+['phantom_tags'], ['phantom_tag']]
         for tags in no_rjobs_tags:
