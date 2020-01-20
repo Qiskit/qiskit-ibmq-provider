@@ -194,8 +194,8 @@ class TestIBMQJobManager(IBMQTestCase):
         self.assertTrue(id1.isdisjoint(id2))
 
     @requires_provider
-    def test_retrieve_job_sets(self, provider):
-        """Test retrieving a set of jobs."""
+    def test_retrieve_job_sets_by_name(self, provider):
+        """Test retrieving job sets by name."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         backend._api = BaseFakeAccountClient()
         name = str(time.time()).replace('.', '')
@@ -205,6 +205,49 @@ class TestIBMQJobManager(IBMQTestCase):
                                name=name, max_experiments_per_job=1)
         rjob_set = self._jm.job_sets(name=name)[0]
         self.assertEqual(job_set, rjob_set)
+
+    @requires_provider
+    def test_retrieve_job_set(self, provider):
+        """Test retrieving a set of jobs."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        tags = ['test_retrieve_job_set']
+
+        circs_counts = [3, 4]
+        for count in circs_counts:
+            with self.subTest(count=count):
+                circs = []
+                for i in range(count):
+                    new_qc = copy.deepcopy(self._qc)
+                    new_qc.name = "test_qc_{}".format(i)
+                    circs.append(new_qc)
+
+                job_set = self._jm.run(circs, backend=backend,
+                                       max_experiments_per_job=2, job_tags=tags)
+                self.assertEqual(job_set.tags(), tags)
+                # Wait for jobs to be submitted.
+                while JobStatus.INITIALIZING in job_set.statuses():
+                    time.sleep(1)
+
+                rjob_set = IBMQJobManager().retrieve_job_set(
+                    job_set_id=job_set.job_set_id(), provider=provider)
+                self.assertEqual({job.job_id() for job in job_set.jobs()},
+                                 {rjob.job_id() for rjob in rjob_set.jobs()},
+                                 "Unexpected jobs retrieved. Job set id used was {}.".format(
+                                     job_set.job_set_id()))
+                self.assertEqual(rjob_set.tags(), job_set.tags())
+                self.assertEqual(len(rjob_set.qobjs()), len(job_set.qobjs()))
+                self.log.info("Job set report:\n%s", rjob_set.report())
+
+                mjobs = job_set.managed_jobs()
+                for index, rmjob in enumerate(rjob_set.managed_jobs()):
+                    mjob = mjobs[index]
+                    self.assertEqual(rmjob.start_index, mjob.start_index)
+                    self.assertEqual(rmjob.end_index, mjob.end_index)
+                    for exp_index, exp in enumerate(rmjob.job.qobj().experiments):
+                        self.assertEqual(exp.header.name,
+                                         mjob.job.qobj().experiments[exp_index].header.name)
+                rjob_set.results()
+                self.assertEqual(rjob_set.statuses(), [JobStatus.DONE]*len(job_set.jobs()))
 
     @requires_provider
     def test_share_job_in_project(self, provider):
