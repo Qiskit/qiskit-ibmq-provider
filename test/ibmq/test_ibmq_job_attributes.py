@@ -63,7 +63,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj)
         while not job.running():
             time.sleep(0.5)
-        _ = job.properties()
+        self.assertIsNotNone(job.properties())
 
     @requires_provider
     def test_job_name(self, provider):
