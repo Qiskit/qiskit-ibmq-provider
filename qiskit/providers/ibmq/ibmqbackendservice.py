@@ -98,7 +98,7 @@ class IBMQBackendService(SimpleNamespace):
             limit: int = 10,
             skip: int = 0,
             backend_name: Optional[str] = None,
-            status: Optional[Union[JobStatus, str]] = None,
+            status: Optional[Union[JobStatus, str, List[Union[JobStatus, str]]]] = None,
             job_name: Optional[str] = None,
             start_datetime: Optional[datetime] = None,
             end_datetime: Optional[datetime] = None,
@@ -168,30 +168,10 @@ class IBMQBackendService(SimpleNamespace):
             api_filter['backend.name'] = backend_name
 
         if status:
-            if isinstance(status, str):
-                try:
-                    status = JobStatus[status.upper()]
-                except KeyError:
-                    raise IBMQBackendValueError(
-                        '{} is not a valid status value. Valid values are {}'.format(
-                            status, ", ".join(job_status.name for job_status in JobStatus))) \
-                        from None
-            if status == JobStatus.RUNNING:
-                this_filter = {'status': ApiJobStatus.RUNNING.value,
-                               'infoQueue': {'exists': False}}
-            elif status == JobStatus.QUEUED:
-                this_filter = {'status': ApiJobStatus.RUNNING.value,
-                               'infoQueue.status': 'PENDING_IN_QUEUE'}
-            elif status == JobStatus.CANCELLED:
-                this_filter = {'status': ApiJobStatus.CANCELLED.value}
-            elif status == JobStatus.DONE:
-                this_filter = {'status': ApiJobStatus.COMPLETED.value}
-            elif status == JobStatus.ERROR:
-                this_filter = {'status': {'regexp': '^ERROR'}}
+            if isinstance(status, list):
+                this_filter = self._build_statuses_filter(status)
             else:
-                raise IBMQBackendValueError(
-                    '{} is not a valid status value. Valid values are {}'.format(
-                        status, ", ".join(job_status.name for job_status in JobStatus)))
+                this_filter = self._get_status_filter(status)
             api_filter.update(this_filter)
 
         if job_name:
@@ -274,6 +254,84 @@ class IBMQBackendService(SimpleNamespace):
             job_list.append(job)
 
         return job_list
+
+    def _build_statuses_filter(self, statuses: List[Union[JobStatus, str]]) -> Dict[str, Any]:
+        """Return the status db filter to use for multiple statuses.
+
+        Returns:
+            The status db filter used to query the api in order to search
+            for jobs based on multiple statuses.
+
+        Raises:
+            IBMQBackendError: If any of the status values is not recognized.
+        """
+        statuses_filter = {'or': []}  # type: Dict[str, List[Dict[str, Any]]]
+        for _status in statuses:
+            _status = self._get_status_filter(_status)
+            statuses_filter['or'].append({'and': [_status]})
+        return statuses_filter
+
+    def _get_status_filter(self, status: Union[JobStatus, str]) -> Dict[str, Any]:
+        """Return the status db filter to use for a status.
+
+        Returns:
+            The status db filter used to query the api in order to search
+            for jobs based on a specific status.
+
+        Raises:
+            IBMQBackendValueError: If the status value is not recognized.
+        """
+        if isinstance(status, str):
+            try:
+                status = JobStatus[status.upper()]
+            except KeyError:
+                raise IBMQBackendValueError(
+                    '{} is not a valid status value. Valid values are {}'.format(
+                        status, ", ".join(job_status.name for job_status in JobStatus))) \
+                    from None
+
+        _status_filter = {}  # type: Dict[str, Any]
+        if status == JobStatus.INITIALIZING:
+            _status_filter = {'status': {
+                'inq': [ApiJobStatus.CREATING.value, ApiJobStatus.CREATED.value]
+            }}
+        elif status == JobStatus.VALIDATING:
+            _status_filter = {'status': {
+                'inq': [ApiJobStatus.VALIDATING.value, ApiJobStatus.VALIDATED.value]
+            }}
+        elif status == JobStatus.RUNNING:
+            _status_filter = {'status': ApiJobStatus.RUNNING.value,
+                              'infoQueue': {'exists': False}}
+        elif status == JobStatus.QUEUED:
+            _status_filter = {'status': ApiJobStatus.RUNNING.value,
+                              'infoQueue.status': 'PENDING_IN_QUEUE'}
+        elif status == JobStatus.CANCELLED:
+            _status_filter = {'status': ApiJobStatus.CANCELLED.value}
+        elif status == JobStatus.DONE:
+            _status_filter = {'status': ApiJobStatus.COMPLETED.value}
+        elif status == JobStatus.ERROR:
+            _status_filter = {'status': {'regexp': '^ERROR'}}
+        else:
+            raise IBMQBackendValueError(
+                '{} is not a valid status value. Valid values are {}'.format(
+                    status, ", ".join(job_status.name for job_status in JobStatus)))
+
+        return _status_filter
+
+    def _validated_statuses(self, statuses: List[Union[JobStatus, str]]) -> List[JobStatus]:
+        """Return a list of validated JobStatus's.
+
+        Returns:
+            A list of JobStatus states.
+        """
+        validated_statuses = []
+        for _status in statuses:
+            this_filter = self._get_status_filter(_status)
+            # TODO: Make sure that we handle status and infoQueue correctly.
+            #  How do we query for multiple statuses correctly????
+            validated_statuses.append(this_filter)
+
+        return validated_statuses
 
     def retrieve_job(self, job_id: str) -> IBMQJob:
         """Return a single job from the API.
