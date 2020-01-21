@@ -31,7 +31,7 @@ from qiskit.validation.exceptions import ModelValidationError
 from qiskit.tools.events.pubsub import Publisher
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
-from .apiconstants import ApiJobShareLevel, API_JOB_FINAL_STATES
+from .apiconstants import ApiJobShareLevel, ApiJobStatus, API_JOB_FINAL_STATES
 from .job.utils import API_TO_JOB_STATUS
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
@@ -420,11 +420,9 @@ class IBMQBackend(BaseBackend):
         Returns:
             The list of current, unfinished jobs for this provider.
         """
-        # Get the list of all possible api job statuses.
-        api_job_statuses = copy.copy(API_TO_JOB_STATUS)
-        # Construct a list of the api job statuses which are not a final api job status.
-        active_api_job_states = [state for state in api_job_statuses
-                                 if state not in API_JOB_FINAL_STATES]
+        # Get the list of api job statuses which are not a final api job status.
+        active_api_job_states = [status for status in ApiJobStatus
+                                 if status not in API_JOB_FINAL_STATES]
         # Convert the non-final api job statuses to a list of `JobStatus` instances.
         active_job_states = list({API_TO_JOB_STATUS[status] for status in active_api_job_states})
 
