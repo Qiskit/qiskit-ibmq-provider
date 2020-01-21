@@ -267,9 +267,9 @@ class IBMQBackend(BaseBackend):
     def job_limit(self) -> BackendJobLimit:
         """Return the job limit for the backend.
 
-        The job limit information may include, for this backend, the
-        current number of unfinished jobs you have and the maximum
-        number of unfinished jobs you can have.
+        The job limit information for this backend includes the current
+        number of active jobs you have and the maximum number of active
+        jobs you can have.
 
         Note:
             The job limit information for the backend is provider specific.
@@ -279,17 +279,17 @@ class IBMQBackend(BaseBackend):
 
             If the method call was successful, you can inspect the job
             limit for the backend by accessing the ``maximum_jobs``
-            and ``running_jobs`` attributes of the ``BackendJobLimit``
+            and ``active_jobs`` attributes of the ``BackendJobLimit``
             instance returned.
 
             For example:
                 backend_job_limit = backend.job_limit()
                 maximum_jobs = backend_job_limit.maximum_jobs
-                running_jobs = backend_job_limit.running_jobs
+                active_jobs = backend_job_limit.active_jobs
 
             * If ``maximum_jobs`` is equal to ``None``, then there are
-                no limits to the maximum number of concurrent jobs a user
-                could submit to the backend at a time.
+                no limits to the maximum number of active jobs a
+                user could have on the backend at any given time.
 
         Returns:
             the job limit for the backend with this provider.
@@ -314,7 +314,7 @@ class IBMQBackend(BaseBackend):
         """Return the number of remaining jobs that could be submitted to the backend.
 
         Return the number of jobs that can be submitted to this backend
-        with this provider before the limit on concurrent jobs is reached.
+        with this provider before the maximum limit on active jobs is reached.
 
         Note:
             The number of remaining jobs for the backend is provider
@@ -323,13 +323,13 @@ class IBMQBackend(BaseBackend):
             be different. See ``IBMQBackend.job_limit()`` for the job
             limit information of the backend.
 
-            * If ``None`` is returned, then there are no limits to the
-                number of concurrent jobs a user could submit to the
-                backend.
+            * If ``None`` is returned, then there are no limits to the maximum
+                number of active jobs a user could have on the backend at any
+                given time.
 
         Returns:
             Remaining number of jobs a user could submit to the backend
-            with this provider before the limit on concurrent jobs is reached.
+            with this provider before the maximum limit on active jobs is reached.
 
         Raises:
             IBMQBackendApiProtocolError: If an unexpected value received from the server.
@@ -339,7 +339,7 @@ class IBMQBackend(BaseBackend):
         if job_limit.maximum_jobs is None:
             return None
 
-        return job_limit.maximum_jobs - job_limit.running_jobs
+        return job_limit.maximum_jobs - job_limit.active_jobs
 
     def jobs(
             self,
