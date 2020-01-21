@@ -298,9 +298,40 @@ class TestIBMQJob(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, skip=0, status=JobStatus.DONE)
-
         self.assertTrue(job_list)
         for job in job_list:
+            self.assertTrue(job.status() is JobStatus.DONE)
+
+    @requires_provider
+    def test_retrieve_all_job_statuses(self, provider):
+        """Test retrieving jobs filtered by all possible job statuses."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        # Get the most recent jobs with any status.
+        all_job_statuses = [status for status in JobStatus]
+        backend_jobs_filtered = backend.jobs(limit=10, status=all_job_statuses)
+        backend_jobs = backend.jobs(limit=10)
+        self.assertTrue(backend_jobs)
+        self.assertTrue(backend_jobs_filtered)
+        self.assertEqual(backend_jobs, backend_jobs_filtered)
+
+        for job in backend_jobs:
+            self.assertTrue(job.status() in all_job_statuses)
+
+    @requires_provider
+    def test_retrieve_one_job_status(self, provider):
+        """Test retrieving jobs filtered by one status in different manners."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        # Get the most recent jobs that are done.
+        backend_jobs = backend.jobs(limit=10, status=JobStatus.DONE)
+        backend_jobs_filtered_job_status = backend.jobs(limit=10, status=[JobStatus.DONE])
+        backend_jobs_filtered_str_status = backend.jobs(limit=10, status=['DONE'])
+        self.assertTrue(backend_jobs)
+        self.assertTrue(backend_jobs_filtered_job_status)
+        self.assertTrue(backend_jobs_filtered_str_status)
+        self.assertEqual(backend_jobs, backend_jobs_filtered_job_status)
+        self.assertEqual(backend_jobs, backend_jobs_filtered_str_status)
+
+        for job in backend_jobs:
             self.assertTrue(job.status() is JobStatus.DONE)
 
     @requires_provider
