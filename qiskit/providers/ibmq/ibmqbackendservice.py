@@ -318,21 +318,6 @@ class IBMQBackendService(SimpleNamespace):
 
         return _status_filter
 
-    def _validated_statuses(self, statuses: List[Union[JobStatus, str]]) -> List[JobStatus]:
-        """Return a list of validated JobStatus's.
-
-        Returns:
-            A list of JobStatus states.
-        """
-        validated_statuses = []
-        for _status in statuses:
-            this_filter = self._get_status_filter(_status)
-            # TODO: Make sure that we handle status and infoQueue correctly.
-            #  How do we query for multiple statuses correctly????
-            validated_statuses.append(this_filter)
-
-        return validated_statuses
-
     def retrieve_job(self, job_id: str) -> IBMQJob:
         """Return a single job from the API.
 
