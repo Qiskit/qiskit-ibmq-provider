@@ -84,10 +84,10 @@ class QueueInfo(BaseModel):
             "_status='{}'".format(self._get_value(status)),
             "estimated_start_time='{}'".format(estimated_start_time),
             "estimated_complete_time='{}'".format(estimated_complete_time),
-            "position='{}'".format(self._get_value(self.position)),
-            "hub_priority='{}'".format(self._get_value(self.hub_priority)),
-            "group_priority='{}'".format(self._get_value(self.group_priority)),
-            "project_priority='{}'".format(self._get_value(self.project_priority))
+            "position={}".format(self._get_value(self.position)),
+            "hub_priority={}".format(self._get_value(self.hub_priority)),
+            "group_priority={}".format(self._get_value(self.group_priority)),
+            "project_priority={}".format(self._get_value(self.project_priority))
         ]
 
         return "<{}({})>".format(self.__class__.__name__, ', '.join(queue_info))
