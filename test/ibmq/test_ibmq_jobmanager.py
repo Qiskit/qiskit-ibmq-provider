@@ -26,7 +26,7 @@ from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
 from qiskit.providers.ibmq.managed.managedresults import ManagedResults
 from qiskit.providers.ibmq.managed.exceptions import (
     IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
-from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers import JobError
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
@@ -285,6 +285,10 @@ class TestIBMQJobManager(IBMQTestCase):
         # Wait for jobs to be submitted.
         while JobStatus.INITIALIZING in job_set.statuses():
             time.sleep(1)
+        # TODO No need to wait for job to run once api is fixed
+        while any(status not in JOB_FINAL_STATES + (JobStatus.RUNNING,) for status in job_set.statuses()):
+            time.sleep(0.5)
+
         rjobs = provider.backends.jobs(job_tags=job_tags)
         self.assertEqual({job.job_id() for job in job_set.jobs()},
                          {rjob.job_id() for rjob in rjobs},
