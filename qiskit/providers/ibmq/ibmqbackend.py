@@ -16,7 +16,6 @@
 
 import logging
 import warnings
-import copy
 
 from typing import Dict, List, Union, Optional, Any
 from datetime import datetime as python_datetime
