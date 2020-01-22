@@ -323,13 +323,13 @@ class TestIBMQJob(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         # Get the most recent jobs that are done.
         backend_jobs = backend.jobs(limit=10, status=JobStatus.DONE)
-        backend_jobs_filtered_job_status = backend.jobs(limit=10, status=[JobStatus.DONE])
-        backend_jobs_filtered_str_status = backend.jobs(limit=10, status=['DONE'])
+        backend_jobs_status_filtered = backend.jobs(limit=10, status=[JobStatus.DONE])
+        backend_jobs_str_filtered = backend.jobs(limit=10, status=['DONE'])
         self.assertTrue(backend_jobs)
-        self.assertTrue(backend_jobs_filtered_job_status)
-        self.assertTrue(backend_jobs_filtered_str_status)
-        self.assertEqual(backend_jobs, backend_jobs_filtered_job_status)
-        self.assertEqual(backend_jobs, backend_jobs_filtered_str_status)
+        self.assertTrue(backend_jobs_status_filtered)
+        self.assertTrue(backend_jobs_str_filtered)
+        self.assertEqual(backend_jobs, backend_jobs_status_filtered)
+        self.assertEqual(backend_jobs, backend_jobs_str_filtered)
 
         for job in backend_jobs:
             self.assertTrue(job.status() is JobStatus.DONE)
