@@ -71,9 +71,13 @@ class TestIBMQJobAttributes(JobTestCase):
 
         # Use a unique job name
         job_name = str(time.time()).replace('.', '')
-        job_id = backend.run(qobj, job_name=job_name).job_id()
-        job = provider.backends.retrieve_job(job_id)
-        self.assertEqual(job.name(), job_name)
+        job = backend.run(qobj, job_name=job_name)
+        job_id = job.job_id()
+        # TODO No need to wait for job to run once api is fixed
+        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+            time.sleep(0.5)
+        rjob = provider.backends.retrieve_job(job_id)
+        self.assertEqual(rjob.name(), job_name)
 
         # Check using partial matching.
         job_name_partial = job_name[8:]
