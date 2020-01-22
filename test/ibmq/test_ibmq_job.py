@@ -306,16 +306,13 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_all_job_statuses(self, provider):
         """Test retrieving jobs filtered by all possible job statuses."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        # Get the most recent jobs with any status.
+        # Get the most recent jobs with any job status.
         all_job_statuses = [status for status in JobStatus]
         backend_jobs_filtered = backend.jobs(limit=10, status=all_job_statuses)
         backend_jobs = backend.jobs(limit=10)
         self.assertTrue(backend_jobs)
         self.assertTrue(backend_jobs_filtered)
         self.assertEqual(backend_jobs, backend_jobs_filtered)
-
-        for job in backend_jobs:
-            self.assertTrue(job.status() in all_job_statuses)
 
     @requires_provider
     def test_retrieve_one_job_status(self, provider):
@@ -338,12 +335,13 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_multiple_job_statuses(self, provider):
         """Test retrieving jobs filtered by multiple job statuses."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        status_filters = [JobStatus.ERROR, JobStatus.CANCELLED]
-        backend_jobs_filtered = backend.jobs(limit=10, status=status_filters)
+        # Get the most recent jobs that failed or were cancelled.
+        job_statuses_to_filter = [JobStatus.ERROR, JobStatus.CANCELLED]
+        backend_jobs_filtered = backend.jobs(limit=10, status=job_statuses_to_filter)
         self.assertTrue(backend_jobs_filtered)
 
         for job in backend_jobs_filtered:
-            self.assertTrue(job.status() in status_filters)
+            self.assertTrue(job.status() in job_statuses_to_filter)
 
     @requires_provider
     def test_retrieve_jobs_start_datetime(self, provider):

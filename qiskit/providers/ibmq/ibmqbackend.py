@@ -414,10 +414,21 @@ class IBMQBackend(BaseBackend):
             job_name, start_datetime, end_datetime, job_tags, job_tags_operator, db_filter)
 
     def active_jobs(self) -> List[IBMQJob]:
-        """Return the current, unfinished jobs for this provider.
+        """Return the current, unfinished jobs submitted to this backend.
+
+        Return the jobs submitted to this backend with this provider that are
+        currently in an unfinished status.
+
+        Note:
+            The list of active jobs for the backend is provider specific.
+            For example, if you have access to the same backend via different
+            providers, the list of active jobs will be different for each.
+
+            * The following `JobStatus` statuses are considered to be unfinished:
+                `INITIALIZING`, `VALIDATING`, `QUEUED`, and `RUNNING`.
 
         Returns:
-            The list of current, unfinished jobs for this provider.
+            list of the current unfinished jobs for this backend on this provider.
         """
         # Get the list of api job statuses which are not a final api job status.
         active_api_job_states = [status for status in ApiJobStatus
@@ -425,7 +436,10 @@ class IBMQBackend(BaseBackend):
         # Convert the non-final api job statuses to a list of `JobStatus` instances.
         active_job_states = list({API_TO_JOB_STATUS[status] for status in active_api_job_states})
 
-        return self.jobs(status=active_job_states)
+        # IBMQBackend jobs() method does not have a way to pass in unlimited
+        # number of jobs to retrieve. 1000 should be a sufficiently large
+        # enough number.
+        return self.jobs(status=active_job_states, limit=1000)
 
     def retrieve_job(self, job_id: str) -> IBMQJob:
         """Return a job submitted to this backend.
