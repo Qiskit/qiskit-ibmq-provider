@@ -266,9 +266,9 @@ class IBMQBackendService(SimpleNamespace):
             IBMQBackendError: If any of the status values is not recognized.
         """
         statuses_filter = {'or': []}  # type: Dict[str, List[Dict[str, Any]]]
-        for _status in statuses:
-            _status = self._get_status_filter(_status)
-            statuses_filter['or'].append({'and': [_status]})
+        for status in statuses:
+            status_filter = self._get_status_filter(status)
+            statuses_filter['or'].append(status_filter)
         return statuses_filter
 
     def _get_status_filter(self, status: Union[JobStatus, str]) -> Dict[str, Any]:
