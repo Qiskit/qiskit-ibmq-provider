@@ -307,8 +307,7 @@ class TestIBMQJob(JobTestCase):
         """Test retrieving jobs filtered by all possible job statuses."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         # Get the most recent jobs with any job status.
-        all_job_statuses = [status for status in JobStatus]
-        backend_jobs_filtered = backend.jobs(limit=10, status=all_job_statuses)
+        backend_jobs_filtered = backend.jobs(limit=10, status=[status for status in JobStatus])
         backend_jobs = backend.jobs(limit=10)
         self.assertTrue(backend_jobs)
         self.assertTrue(backend_jobs_filtered)
