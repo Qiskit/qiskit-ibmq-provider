@@ -17,7 +17,9 @@ The format is based on [Keep a Changelog].
 ## [UNRELEASED]
 
 ### Added
-
+- `QueueInfo` (returned by `IBMQJob.queue_info()`) now has a new method: 
+  `format()`. The method returns a formatted string of the queue information.
+  (\#515)
 - `IBMQJob` now has three new methods: `done()`, `running()`, and
   `cancelled()`. The methods are used to indicate the job status. (\#494)  
 - `backend.run()` now accepts an optional `job_tags` parameter. If
