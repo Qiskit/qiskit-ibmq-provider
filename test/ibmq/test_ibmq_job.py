@@ -296,10 +296,16 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_jobs_status(self, provider):
         """Test retrieving jobs filtered by status."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        job_list = provider.backends.jobs(backend_name=backend.name(),
-                                          limit=5, skip=0, status=JobStatus.DONE)
-        self.assertTrue(job_list)
-        for job in job_list:
+        # Get the most recent jobs that are done.
+        backend_jobs = backend.jobs(limit=10, skip=0, status=JobStatus.DONE)
+        backend_jobs_status_filtered = backend.jobs(limit=10, skip=0, status=[JobStatus.DONE])
+        backend_jobs_str_filtered = backend.jobs(limit=10, skip=0, status=['DONE'])
+        self.assertTrue(backend_jobs)
+        self.assertTrue(backend_jobs_status_filtered)
+        self.assertTrue(backend_jobs_str_filtered)
+
+        self.assertTrue(backend_jobs)
+        for job in backend_jobs:
             self.assertTrue(job.status() is JobStatus.DONE)
 
     @requires_provider
@@ -312,23 +318,6 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(backend_jobs)
         self.assertTrue(backend_jobs_filtered)
         self.assertEqual(backend_jobs, backend_jobs_filtered)
-
-    @requires_provider
-    def test_retrieve_one_job_status(self, provider):
-        """Test retrieving jobs filtered by one status in different manners."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        # Get the most recent jobs that are done.
-        backend_jobs = backend.jobs(limit=10, status=JobStatus.DONE)
-        backend_jobs_status_filtered = backend.jobs(limit=10, status=[JobStatus.DONE])
-        backend_jobs_str_filtered = backend.jobs(limit=10, status=['DONE'])
-        self.assertTrue(backend_jobs)
-        self.assertTrue(backend_jobs_status_filtered)
-        self.assertTrue(backend_jobs_str_filtered)
-        self.assertEqual(backend_jobs, backend_jobs_status_filtered)
-        self.assertEqual(backend_jobs, backend_jobs_str_filtered)
-
-        for job in backend_jobs:
-            self.assertTrue(job.status() is JobStatus.DONE)
 
     @requires_provider
     def test_retrieve_multiple_job_statuses(self, provider):
