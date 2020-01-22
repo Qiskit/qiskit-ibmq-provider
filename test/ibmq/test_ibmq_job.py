@@ -303,8 +303,9 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(backend_jobs)
         self.assertTrue(backend_jobs_status_filtered)
         self.assertTrue(backend_jobs_str_filtered)
+        self.assertEqual(backend_jobs, backend_jobs_status_filtered)
+        self.assertEqual(backend_jobs, backend_jobs_str_filtered)
 
-        self.assertTrue(backend_jobs)
         for job in backend_jobs:
             self.assertTrue(job.status() is JobStatus.DONE)
 
