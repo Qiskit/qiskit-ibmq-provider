@@ -26,6 +26,7 @@ from scipy.stats import chi2_contingency
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers import JobStatus
 from qiskit.providers.ibmq import least_busy
+from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
@@ -333,6 +334,17 @@ class TestIBMQJob(JobTestCase):
 
         for job in backend_jobs_filtered:
             self.assertTrue(job.status() in job_statuses_to_filter)
+
+    @requires_provider
+    def test_retrieve_active_jobs(self, provider):
+        """Test retrieving jobs that are currently unfinished."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        active_job_states = [status for status in ApiJobStatus
+                             if status not in API_JOB_FINAL_STATES]
+        active_jobs = backend.active_jobs()
+
+        for job in active_jobs:
+            self.assertTrue(job.status() in active_job_states)
 
     @requires_provider
     def test_retrieve_jobs_start_datetime(self, provider):
