@@ -344,7 +344,10 @@ class TestIBMQJob(JobTestCase):
         active_jobs = backend.active_jobs()
 
         for job in active_jobs:
-            self.assertTrue(job.status() in active_job_states)
+            # Check the `._status` attribute instead of calling `status()`
+            # in case a job transitions to the `DONE` status after the
+            # `backend.active_jobs()` call above.
+            self.assertTrue(job._status in active_job_states)
 
     @requires_provider
     def test_retrieve_jobs_start_datetime(self, provider):
