@@ -370,9 +370,14 @@ class IBMQBackend(BaseBackend):
         Args:
             limit: number of jobs to retrieve.
             skip: starting index for the job retrieval.
-            status: only get jobs
-                with this status, where status is e.g. `JobStatus.RUNNING` or
-                `'RUNNING'`
+            status: only get jobs with a specific status or jobs with a status that matches
+                any of the given list of statuses.
+                Example:
+                    To get jobs that are currently running, set `status=JobStatus.RUNNING`
+                        or similarly set `status='RUNNING'`.
+                    To get jobs that are either running or failed,
+                        set `status=[`JobStatus.RUNNING`, `JobStatus.ERROR`]
+                        or similarly set `status=['RUNNING', 'ERROR']
             job_name: filter by job name. The `job_name` is matched partially
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>`_
