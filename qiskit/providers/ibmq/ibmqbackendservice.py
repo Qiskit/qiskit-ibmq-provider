@@ -177,17 +177,16 @@ class IBMQBackendService(SimpleNamespace):
                             status, ", ".join(job_status.name for job_status in JobStatus))) \
                         from None
             if status == JobStatus.RUNNING:
-                this_filter = {'status': ApiJobStatus.RUNNING.value,
-                               'infoQueue': {'exists': False}}
+                this_filter = {'status': ApiJobStatus.RUNNING.value}
             elif status == JobStatus.QUEUED:
-                this_filter = {'status': ApiJobStatus.RUNNING.value,
-                               'infoQueue.status': 'PENDING_IN_QUEUE'}
+                # TODO: Should we change ApiJobStatus.PENDING_IN_QUEUE to ApiJobStatus.QUEUED?
+                this_filter = {'status': 'QUEUED'}
             elif status == JobStatus.CANCELLED:
                 this_filter = {'status': ApiJobStatus.CANCELLED.value}
             elif status == JobStatus.DONE:
                 this_filter = {'status': ApiJobStatus.COMPLETED.value}
             elif status == JobStatus.ERROR:
-                this_filter = {'status': {'regexp': '^ERROR'}}
+                this_filter = {'status': {'regexp': '^ERROR'}}  # type: ignore[assignment]
             else:
                 raise IBMQBackendValueError(
                     '{} is not a valid status value. Valid values are {}'.format(
