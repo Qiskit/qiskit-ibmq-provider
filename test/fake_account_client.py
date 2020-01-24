@@ -84,8 +84,11 @@ class BaseFakeJob:
 
         if self._status == ApiJobStatus.COMPLETED:
             new_result = copy.deepcopy(VALID_RESULT_RESPONSE)
+            counts = randrange(1024)
             new_result['results'][0]['data']['counts'] = {
-                '0x0': randrange(1024), '0x3': randrange(1024)}
+                '0x0': counts, '0x3': 1024-counts}
+            new_result['job_id'] = self._job_id
+            new_result['backend_name'] = self._backend_name
             self._result = new_result
 
     def data(self):
