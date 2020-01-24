@@ -703,4 +703,5 @@ class IBMQJob(BaseModel, BaseJob):
         Raises:
             IBMQJobApiError: if there was some unexpected failure in the server.
         """
+        api_info_queue['job_id'] = self.job_id()  # job_id is used for QueueInfo.format().
         self._status, self._queue_info = api_status_to_job_status(status, api_info_queue)
