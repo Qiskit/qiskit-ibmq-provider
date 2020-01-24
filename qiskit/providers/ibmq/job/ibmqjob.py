@@ -18,9 +18,12 @@ This module is used for creating a job objects for the IBM Q Experience.
 """
 
 import logging
-from typing import Dict, Optional, Tuple, Any, List
+from typing import Dict, Optional, Tuple, Any, List, Callable
 import warnings
 from datetime import datetime
+from collections import deque
+from concurrent import futures
+from threading import Event
 
 from marshmallow import ValidationError
 
@@ -105,6 +108,9 @@ class IBMQJob(BaseModel, BaseJob):
         ``JobStatus.ERROR`` and you can call ``error_message()`` to get more
         info.
     """
+
+    _executor = futures.ThreadPoolExecutor()
+    """Threads used for asynchronous processing."""
 
     def __init__(self,
                  _backend: BaseBackend,
@@ -325,33 +331,6 @@ class IBMQJob(BaseModel, BaseJob):
         """
         return self.status() == job_status
 
-    def _update_status_position(
-            self,
-            status: ApiJobStatus,
-            api_info_queue: Optional[Dict]
-    ) -> None:
-        """Update the job status and potentially queue information from an API response.
-
-        Args:
-            status: job status from the API response.
-            api_info_queue: job queue information from the API response.
-
-        Raises:
-            IBMQJobApiError: if there was some unexpected failure in the server.
-        """
-        self._status = api_status_to_job_status(status)
-        if status is ApiJobStatus.RUNNING and api_info_queue:
-            try:
-                info_queue = QueueInfo.from_dict(api_info_queue)
-                if info_queue._status == ApiJobStatus.PENDING_IN_QUEUE.value:
-                    self._status = JobStatus.QUEUED
-                    self._queue_info = info_queue
-            except ModelValidationError as ex:
-                raise IBMQJobApiError("Unexpected return value received from the server.") from ex
-
-        if self._status is not JobStatus.QUEUED:
-            self._queue_info = None
-
     def error_message(self) -> Optional[str]:
         """Provide details about the reason of failure.
 
@@ -533,11 +512,47 @@ class IBMQJob(BaseModel, BaseJob):
                       stacklevel=2)
         return BaseModel.to_dict(self)
 
+    def wait_for_final_state(
+            self,
+            timeout: Optional[float] = None,
+            wait: float = 5,
+            callback: Callable = None
+    ) -> None:
+        """Wait until the job progress to a final state such as DONE or ERROR.
+
+        Args:
+            timeout: seconds to wait for the job. If ``None``, wait indefinitely. Default: None.
+            wait: seconds between queries. Default: 5.
+            callback: callback function invoked after each query. Default: None.
+                The following positional arguments are provided to the callback function:
+                    * job_id: job ID
+                    * job_status: status of the job from the last query
+                    * job: this BaseJob instance
+                In addition, the following keyword arguments are also provided:
+                    * queue_info: A ``QueueInfo`` instance with job queue information.
+                        If you don't want to import the ``QueueInfo`` instance,
+                        you can use `to_dict()` to convert it to a dictionary.
+        Raises:
+            JobTimeoutError: if the job does not reach a final state before the
+                specified timeout.
+        """
+        exit_event = Event()
+        status_deque = deque(maxlen=1)  # type: deque
+        future = self._executor.submit(self._status_callback,
+                                       status_deque=status_deque,
+                                       exit_event=exit_event,
+                                       callback=callback,
+                                       wait=wait)
+        self._wait_for_completion(timeout=timeout, wait=wait, status_deque=status_deque)
+        exit_event.set()
+        future.result()
+
     def _wait_for_completion(
             self,
             timeout: Optional[float] = None,
             wait: float = 5,
-            required_status: Tuple[JobStatus] = JOB_FINAL_STATES
+            required_status: Tuple[JobStatus] = JOB_FINAL_STATES,
+            status_deque: Optional[deque] = None
     ) -> bool:
         """Wait until the job progress to a final state such as DONE or ERROR.
 
@@ -545,6 +560,7 @@ class IBMQJob(BaseModel, BaseJob):
             timeout: seconds to wait for job. If None, wait indefinitely. Default: None.
             wait: seconds between queries. Default: 5.
             required_status: the final job status required. Default: ``JOB_FINAL_STATES``.
+            status_deque: deque used to share the latest status. Default: None.
 
         Returns:
             True if the final job status matches one of the required states.
@@ -559,7 +575,7 @@ class IBMQJob(BaseModel, BaseJob):
         with api_to_job_error():
             try:
                 status_response = self._api.job_final_status(
-                    self.job_id(), timeout=timeout, wait=wait)
+                    self.job_id(), timeout=timeout, wait=wait, status_deque=status_deque)
             except UserTimeoutExceededError:
                 raise IBMQJobTimeoutError(
                     'Timeout while waiting for job {}'.format(self._job_id))
@@ -640,3 +656,51 @@ class IBMQJob(BaseModel, BaseJob):
         except KeyError:
             raise IBMQJobApiError('Failed to get job error message. Invalid error data received: {}'
                                   .format(error))
+
+    def _status_callback(
+            self,
+            status_deque: deque,
+            exit_event: Event,
+            callback: Callable,
+            wait: float
+    ) -> None:
+        """Invoke the callback function with the latest job status.
+
+        Args:
+            status_deque: Deque containing the latest status.
+            exit_event: Event used to notify this thread to quit.
+            callback: Callback function to invoke.
+            wait: Time between each callback function call.
+        """
+        exit_event.wait(wait)
+        while not exit_event.is_set():
+            try:
+                status_response = status_deque.pop()
+            except IndexError:
+                continue
+
+            try:
+                status, queue_info = api_status_to_job_status(
+                    status_response['status'], status_response.get('infoQueue', None))
+            except IBMQJobApiError as ex:
+                logger.warning("Unexpected error when getting job status: %s", ex)
+                continue
+
+            callback(self.job_id(), status, self, queue_info=queue_info)
+            exit_event.wait(wait)
+
+    def _update_status_position(
+            self,
+            status: ApiJobStatus,
+            api_info_queue: Optional[Dict]
+    ) -> None:
+        """Update the job status and potentially queue information from an API response.
+
+        Args:
+            status: job status from the API response.
+            api_info_queue: job queue information from the API response.
+
+        Raises:
+            IBMQJobApiError: if there was some unexpected failure in the server.
+        """
+        self._status, self._queue_info = api_status_to_job_status(status, api_info_queue)

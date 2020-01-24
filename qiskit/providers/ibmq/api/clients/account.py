@@ -17,6 +17,7 @@
 import asyncio
 import logging
 import time
+from collections import deque
 
 from typing import List, Dict, Any, Optional
 # Disabled unused-import because datetime is used only for type hints.
@@ -383,7 +384,8 @@ class AccountClient(BaseClient):
             self,
             job_id: str,
             timeout: Optional[float] = None,
-            wait: float = 5
+            wait: float = 5,
+            status_deque: Optional[deque] = None
     ) -> Dict[str, Any]:
         """Wait until the job progress to a final state.
 
@@ -391,6 +393,7 @@ class AccountClient(BaseClient):
             job_id: the id of the job
             timeout: seconds to wait for job. If None, wait indefinitely.
             wait: seconds between queries.
+            status_deque: deque used to share the latest status.
 
         Returns:
             job status.
@@ -405,7 +408,8 @@ class AccountClient(BaseClient):
         if self._use_websockets:
             start_time = time.time()
             try:
-                status_response = self._job_final_status_websocket(job_id, timeout)
+                status_response = self._job_final_status_websocket(
+                    job_id, timeout=timeout, status_deque=status_deque)
             except WebsocketTimeoutError as ex:
                 logger.info('Timeout checking job status using websocket, '
                             'retrying using HTTP: %s', ex)
@@ -426,13 +430,15 @@ class AccountClient(BaseClient):
     def _job_final_status_websocket(
             self,
             job_id: str,
-            timeout: Optional[float] = None
+            timeout: Optional[float] = None,
+            status_deque: Optional[deque] = None
     ) -> Dict[str, Any]:
         """Return the final status of a job via websocket.
 
         Args:
             job_id: the id of the job.
             timeout: seconds to wait for job. If None, wait indefinitely.
+            status_deque: deque used to share the latest status.
 
         Returns:
             job status.
@@ -454,7 +460,7 @@ class AccountClient(BaseClient):
             else:
                 raise
         return loop.run_until_complete(
-            self.client_ws.get_job_status(job_id, timeout=timeout))
+            self.client_ws.get_job_status(job_id, timeout=timeout, status_deque=status_deque))
 
     def _job_final_status_polling(
             self,

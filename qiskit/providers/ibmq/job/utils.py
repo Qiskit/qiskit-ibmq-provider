@@ -14,14 +14,16 @@
 
 """Utilities for working with IBM Q Jobs."""
 
-from typing import Dict, List, Generator, Any
+from typing import Dict, List, Generator, Any, Optional, Tuple
 from contextlib import contextmanager
 
+from marshmallow import ValidationError
 from qiskit.providers.jobstatus import JobStatus
 
 from ..apiconstants import ApiJobStatus
 from ..api.exceptions import ApiError
 from .exceptions import IBMQJobApiError
+from .queueinfo import QueueInfo
 
 
 API_TO_JOB_STATUS = {
@@ -57,16 +59,36 @@ def build_error_report(results: List[Dict[str, Any]]) -> str:
     return error_report
 
 
-def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
+def api_status_to_job_status(
+        api_status: ApiJobStatus,
+        api_info_queue: Optional[Dict] = None
+) -> Tuple[JobStatus, Optional[QueueInfo]]:
     """Return the corresponding job status for the input API job status.
 
     Args:
         api_status: API job status
+        api_info_queue: job queue information from the API response.
 
     Returns:
-        job status
+        A tuple of job status and queue information (``None`` if not available).
+
+    Raises:
+         IBMQJobApiError: if unexpected return value received from the server.
     """
-    return API_TO_JOB_STATUS[api_status]
+    queue_info = None
+    try:
+        status = API_TO_JOB_STATUS[api_status]
+        if api_status is ApiJobStatus.RUNNING and api_info_queue:
+            queue_info = QueueInfo.from_dict(api_info_queue)
+            if queue_info._status == ApiJobStatus.PENDING_IN_QUEUE.value:
+                status = JobStatus.QUEUED
+    except (KeyError, ValidationError) as ex:
+        raise IBMQJobApiError("Unexpected return value received from the server.") from ex
+
+    if status is not JobStatus.QUEUED:
+        queue_info = None
+
+    return status, queue_info
 
 
 @contextmanager
