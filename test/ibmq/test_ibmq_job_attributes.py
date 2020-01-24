@@ -73,9 +73,13 @@ class TestIBMQJobAttributes(JobTestCase):
 
         # Use a unique job name
         job_name = str(time.time()).replace('.', '')
-        job_id = backend.run(qobj, job_name=job_name).job_id()
-        job = provider.backends.retrieve_job(job_id)
-        self.assertEqual(job.name(), job_name)
+        job = backend.run(qobj, job_name=job_name)
+        job_id = job.job_id()
+        # TODO No need to wait for job to run once api is fixed
+        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+            time.sleep(0.5)
+        rjob = provider.backends.retrieve_job(job_id)
+        self.assertEqual(rjob.name(), job_name)
 
         # Check using partial matching.
         job_name_partial = job_name[8:]
@@ -244,6 +248,8 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertTrue(all(0 < priority <= 1.0 for priority in [
                 queue_info.hub_priority, queue_info.group_priority, queue_info.project_priority]),
                             "Unexpected queue info {} for job {}".format(queue_info, job.job_id()))
+            self.assertTrue(queue_info.format())
+            self.assertTrue(repr(queue_info))
         else:
             self.assertIsNone(job.queue_position())
             self.log.warning("Unable to retrieve queue information")
