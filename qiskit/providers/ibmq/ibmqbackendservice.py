@@ -179,7 +179,7 @@ class IBMQBackendService(SimpleNamespace):
             if status == JobStatus.RUNNING:
                 this_filter = {'status': ApiJobStatus.RUNNING.value}
             elif status == JobStatus.QUEUED:
-                this_filter = {'status': ApiJobStatus.QUEUED}
+                this_filter = {'status': ApiJobStatus.QUEUED.value}
             elif status == JobStatus.CANCELLED:
                 this_filter = {'status': ApiJobStatus.CANCELLED.value}
             elif status == JobStatus.DONE:
