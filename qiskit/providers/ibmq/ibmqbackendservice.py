@@ -266,7 +266,7 @@ class IBMQBackendService(SimpleNamespace):
             self,
             status_arg: Union[JobStatus, str, List[Union[JobStatus, str]]]
     ) -> Dict[str, Any]:
-        """Return the db filter to use when searching for jobs based on a status or list of statuses.
+        """Return the db filter to use when searching for jobs based on status or statuses.
 
         Returns:
             The status db filter used to query to api when searching for jobs that match
@@ -307,7 +307,7 @@ class IBMQBackendService(SimpleNamespace):
                         status, ", ".join(job_status.name for job_status in JobStatus))) \
                     from None
 
-        _status_filter = None
+        _status_filter = None  # type: Dict[str, Any]
         if status == JobStatus.INITIALIZING:
             _status_filter = {'status': {
                 'inq': [ApiJobStatus.CREATING.value, ApiJobStatus.CREATED.value]
