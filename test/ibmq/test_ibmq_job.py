@@ -317,7 +317,8 @@ class TestIBMQJob(JobTestCase):
         for queued_job in job_list_queued:
             self.assertIn(queued_job._status, acceptable_queued_states,
                           "status for job {} is '{}' but it should be in values '{}'"
-                          .format(queued_job.job_id(), queued_job._status, acceptable_queued_states))
+                          .format(queued_job.job_id(), queued_job._status,
+                                  acceptable_queued_states))
 
         # Cancel job so it doesn't consume more resources.
         try:
