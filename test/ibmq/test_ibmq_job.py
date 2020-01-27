@@ -530,7 +530,7 @@ class TestIBMQJob(JobTestCase):
     def test_wait_for_final_state(self, provider):
         """Test waiting for job to reach final state."""
 
-        def final_state_callback(c_job_id, c_status, c_job, *args, **kwargs):
+        def final_state_callback(c_job_id, c_status, c_job, **kwargs):
             """Job status query callback function."""
             self.assertEqual(c_job_id, job.job_id())
             self.assertNotIn(c_status, JOB_FINAL_STATES)

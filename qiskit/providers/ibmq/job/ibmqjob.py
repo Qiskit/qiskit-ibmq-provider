@@ -140,7 +140,8 @@ class IBMQJob(BaseModel, BaseJob):
         self._api = api
         self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
         self._queue_info = None     # type: Optional[QueueInfo]
-        self._update_status_position(_api_status, kwargs.pop('infoQueue', None))
+        self._status, self._queue_info = self._get_status_position(
+            _api_status, kwargs.pop('info_queue', None))
 
         # Properties used for caching.
         self._cancelled = False
@@ -287,8 +288,8 @@ class IBMQJob(BaseModel, BaseJob):
 
         with api_to_job_error():
             api_response = self._api.job_status(self.job_id())
-            self._update_status_position(ApiJobStatus(api_response['status']),
-                                         api_response.get('infoQueue', None))
+            self._status, self._queue_info = self._get_status_position(
+                ApiJobStatus(api_response['status']), api_response.get('infoQueue', None))
 
         # Get all job attributes if the job is done.
         if self._status in JOB_FINAL_STATES:
@@ -415,7 +416,7 @@ class IBMQJob(BaseModel, BaseJob):
         # Return queue information only if it has any useful information.
         if self._queue_info and any(
                 value is not None for attr, value in self._queue_info.__dict__.items()
-                if not attr.startswith('_')):
+                if not attr.startswith('_') and attr != 'job_id'):
             return self._queue_info
         return None
 
@@ -499,8 +500,8 @@ class IBMQJob(BaseModel, BaseJob):
 
             # Model attributes.
             self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
-            self._update_status_position(data.pop('_api_status'),
-                                         data.pop('infoQueue', None))
+            self._status, self._queue_info = self._get_status_position(
+                data.pop('_api_status'), data.pop('info_queue', None))
         except ValidationError as ex:
             raise IBMQJobApiError("Unexpected return value received from the server.") from ex
         finally:
@@ -581,8 +582,9 @@ class IBMQJob(BaseModel, BaseJob):
             except UserTimeoutExceededError:
                 raise IBMQJobTimeoutError(
                     'Timeout while waiting for job {}'.format(self._job_id))
-        self._update_status_position(ApiJobStatus(status_response['status']),
-                                     status_response.get('infoQueue', None))
+        self._status, self._queue_info = self._get_status_position(
+            ApiJobStatus(status_response['status']), status_response.get('infoQueue', None))
+
         # Get all job attributes if the job is done.
         if self._status in JOB_FINAL_STATES:
             self.refresh()
@@ -683,7 +685,7 @@ class IBMQJob(BaseModel, BaseJob):
                 continue
 
             try:
-                status, queue_info = api_status_to_job_status(
+                status, queue_info = self._get_status_position(
                     ApiJobStatus(status_response['status']), status_response.get('infoQueue', None))
             except IBMQJobApiError as ex:
                 logger.warning("Unexpected error when getting job status: %s", ex)
@@ -691,20 +693,35 @@ class IBMQJob(BaseModel, BaseJob):
 
             callback(self.job_id(), status, self, queue_info=queue_info)
 
-    def _update_status_position(
+    def _get_status_position(
             self,
-            status: ApiJobStatus,
-            api_info_queue: Optional[Dict]
-    ) -> None:
-        """Update the job status and potentially queue information from an API response.
+            api_status: ApiJobStatus,
+            api_info_queue: Optional[Dict] = None
+    ) -> Tuple[JobStatus, Optional[QueueInfo]]:
+        """Return the corresponding job status for the input API job status.
 
         Args:
-            status: job status from the API response.
+            api_status: API job status
             api_info_queue: job queue information from the API response.
 
+        Returns:
+            A tuple of job status and queue information (``None`` if not available).
+
         Raises:
-            IBMQJobApiError: if there was some unexpected failure in the server.
+             IBMQJobApiError: if unexpected return value received from the server.
         """
-        if api_info_queue:
-            api_info_queue['job_id'] = self.job_id()  # job_id is used for QueueInfo.format().
-        self._status, self._queue_info = api_status_to_job_status(status, api_info_queue)
+        queue_info = None
+        try:
+            status = api_status_to_job_status(api_status)
+            if api_status is ApiJobStatus.RUNNING and api_info_queue:
+                api_info_queue['job_id'] = self.job_id()  # job_id is used for QueueInfo.format().
+                queue_info = QueueInfo.from_dict(api_info_queue)
+                if queue_info._status == ApiJobStatus.PENDING_IN_QUEUE.value:
+                    status = JobStatus.QUEUED
+        except (KeyError, ValidationError) as ex:
+            raise IBMQJobApiError("Unexpected return value received from the server.") from ex
+
+        if status is not JobStatus.QUEUED:
+            queue_info = None
+
+        return status, queue_info
