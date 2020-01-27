@@ -533,7 +533,7 @@ class IBMQJob(BaseModel, BaseJob):
                         If you don't want to import the ``QueueInfo`` instance,
                         you can use `to_dict()` to convert it to a dictionary.
         Raises:
-            JobTimeoutError: if the job does not reach a final state before the
+            IBMQJobTimeoutError: if the job does not reach a final state before the
                 specified timeout.
         """
         exit_event = Event()
@@ -543,9 +543,11 @@ class IBMQJob(BaseModel, BaseJob):
                                        exit_event=exit_event,
                                        callback=callback,
                                        wait=wait)
-        self._wait_for_completion(timeout=timeout, wait=wait, status_deque=status_deque)
-        exit_event.set()
-        future.result()
+        try:
+            self._wait_for_completion(timeout=timeout, wait=wait, status_deque=status_deque)
+        finally:
+            exit_event.set()
+            future.result()
 
     def _wait_for_completion(
             self,
@@ -672,8 +674,9 @@ class IBMQJob(BaseModel, BaseJob):
             callback: Callback function to invoke.
             wait: Time between each callback function call.
         """
-        exit_event.wait(wait)
         while not exit_event.is_set():
+            exit_event.wait(wait)
+
             try:
                 status_response = status_deque.pop()
             except IndexError:
@@ -681,13 +684,12 @@ class IBMQJob(BaseModel, BaseJob):
 
             try:
                 status, queue_info = api_status_to_job_status(
-                    status_response['status'], status_response.get('infoQueue', None))
+                    ApiJobStatus(status_response['status']), status_response.get('infoQueue', None))
             except IBMQJobApiError as ex:
                 logger.warning("Unexpected error when getting job status: %s", ex)
                 continue
 
             callback(self.job_id(), status, self, queue_info=queue_info)
-            exit_event.wait(wait)
 
     def _update_status_position(
             self,
@@ -703,5 +705,6 @@ class IBMQJob(BaseModel, BaseJob):
         Raises:
             IBMQJobApiError: if there was some unexpected failure in the server.
         """
-        api_info_queue['job_id'] = self.job_id()  # job_id is used for QueueInfo.format().
         self._status, self._queue_info = api_status_to_job_status(status, api_info_queue)
+        if self._queue_info:
+            self._queue_info['job_id'] = self.job_id()  # job_id is used for QueueInfo.format().

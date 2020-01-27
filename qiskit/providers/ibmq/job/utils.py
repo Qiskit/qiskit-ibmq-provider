@@ -23,7 +23,6 @@ from qiskit.providers.jobstatus import JobStatus
 from ..apiconstants import ApiJobStatus
 from ..api.exceptions import ApiError
 from .exceptions import IBMQJobApiError
-from .queueinfo import QueueInfo
 
 
 API_TO_JOB_STATUS = {
@@ -62,7 +61,7 @@ def build_error_report(results: List[Dict[str, Any]]) -> str:
 def api_status_to_job_status(
         api_status: ApiJobStatus,
         api_info_queue: Optional[Dict] = None
-) -> Tuple[JobStatus, Optional[QueueInfo]]:
+) -> Tuple[JobStatus, Optional['QueueInfo']]:
     """Return the corresponding job status for the input API job status.
 
     Args:
@@ -75,6 +74,7 @@ def api_status_to_job_status(
     Raises:
          IBMQJobApiError: if unexpected return value received from the server.
     """
+    from .queueinfo import QueueInfo
     queue_info = None
     try:
         status = API_TO_JOB_STATUS[api_status]

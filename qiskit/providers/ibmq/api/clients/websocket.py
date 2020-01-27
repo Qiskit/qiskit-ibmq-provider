@@ -265,7 +265,7 @@ class WebsocketClient(BaseClient):
                             raise WebsocketTimeoutError('Timeout reached')
 
                         # Share the new status.
-                        if status_deque:
+                        if status_deque is not None:
                             status_deque.append(last_status)
 
                     except (futures.TimeoutError, asyncio.TimeoutError):
