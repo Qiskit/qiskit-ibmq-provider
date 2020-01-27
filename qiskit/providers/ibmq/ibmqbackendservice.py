@@ -121,8 +121,9 @@ class IBMQBackendService(SimpleNamespace):
             limit: number of jobs to retrieve. Default: 10.
             skip: starting index for the job retrieval. Default: 0.
             backend_name: name of the backend. Default: None.
-            status: only get jobs with this status, where status is e.g.
-                `JobStatus.RUNNING` or `'RUNNING'`. Default: None.
+            status: only get jobs with this status or one of the statuses.
+                For example, you can specify `status=JobStatus.RUNNING` or `status="RUNNING"`
+                    or `status=["RUNNING", "ERROR"]
             job_name: filter by job name. The `job_name` is matched partially
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
@@ -202,6 +203,15 @@ class IBMQBackendService(SimpleNamespace):
                     'Valid values are "AND" and "OR"'.format(job_tags_operator))
 
         if db_filter:
+            # Rather than overriding the logical operators `and`/`or`, first
+            # check to see if the `api_filter` query should be extended with the
+            # `api_filter` query for the same keys instead.
+            logical_operators_to_expand = ['or', 'and']
+            for key in db_filter:
+                key = key.lower()
+                if key in logical_operators_to_expand and key in api_filter:
+                    api_filter[key].extend(db_filter[key])
+
             # Argument filters takes precedence over db_filter for same keys
             api_filter = {**db_filter, **api_filter}
 
@@ -307,17 +317,15 @@ class IBMQBackendService(SimpleNamespace):
                 'inq': [ApiJobStatus.VALIDATING.value, ApiJobStatus.VALIDATED.value]
             }}
         elif status == JobStatus.RUNNING:
-            _status_filter = {'status': ApiJobStatus.RUNNING.value,
-                              'infoQueue': {'exists': False}}
+            _status_filter = {'status': ApiJobStatus.RUNNING.value}
         elif status == JobStatus.QUEUED:
-            _status_filter = {'status': ApiJobStatus.RUNNING.value,
-                              'infoQueue.status': 'PENDING_IN_QUEUE'}
+            _status_filter = {'status': ApiJobStatus.QUEUED.value}
         elif status == JobStatus.CANCELLED:
             _status_filter = {'status': ApiJobStatus.CANCELLED.value}
         elif status == JobStatus.DONE:
             _status_filter = {'status': ApiJobStatus.COMPLETED.value}
         elif status == JobStatus.ERROR:
-            _status_filter = {'status': {'regexp': '^ERROR'}}
+            _status_filter = {'status': {'regexp': '^ERROR'}}  # type: ignore[assignment]
         else:
             raise IBMQBackendValueError(
                 '{} is not a valid status value. Valid values are {}'.format(

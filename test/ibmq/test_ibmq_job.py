@@ -24,12 +24,13 @@ import numpy
 from scipy.stats import chi2_contingency
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers import JobStatus
+from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+from qiskit.providers.ibmq.job.utils import api_status_to_job_status
 from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, JobError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test import slow_test
@@ -298,30 +299,28 @@ class TestIBMQJob(JobTestCase):
         """Test retrieving jobs filtered by status."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         # Get the most recent jobs that are done.
-        backend_jobs = backend.jobs(limit=10, skip=0, status=JobStatus.DONE)
-        backend_jobs_status_filtered = backend.jobs(limit=10, skip=0, status=[JobStatus.DONE])
-        backend_jobs_str_filtered = backend.jobs(limit=10, skip=0, status=['DONE'])
-        self.assertTrue(backend_jobs)
-        self.assertTrue(backend_jobs_status_filtered)
-        self.assertTrue(backend_jobs_str_filtered)
-        self.assertEqual(backend_jobs, backend_jobs_status_filtered)
-        self.assertEqual(backend_jobs, backend_jobs_str_filtered)
+        status_args = [JobStatus.DONE, 'DONE', [JobStatus.DONE], ['DONE']]
+        for arg in status_args:
+            with self.subTest(arg=arg):
+                backend_jobs = backend.jobs(limit=10, skip=0, status=arg)
+                self.assertTrue(backend_jobs)
 
-        for job in backend_jobs:
-            self.assertTrue(job.status() is JobStatus.DONE)
+                for job in backend_jobs:
+                    self.assertTrue(job.status() is JobStatus.DONE,
+                                    "job status for job {} was '{}' but "
+                                    "it should be: '{}'"
+                                    .format(job.job_id(), job.status(), JobStatus.DONE))
 
     @requires_provider
     def test_retrieve_all_job_statuses(self, provider):
         """Test retrieving jobs filtered by all possible job statuses."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        # pylint: disable=unnecessary-comprehension
         all_job_statuses = [status for status in JobStatus]
         # Get the most recent jobs with any job status.
         backend_jobs_filtered = backend.jobs(limit=10, status=all_job_statuses)
         backend_jobs = backend.jobs(limit=10)
         self.assertTrue(backend_jobs)
         self.assertTrue(backend_jobs_filtered)
-        self.assertEqual(backend_jobs, backend_jobs_filtered)
 
     @requires_provider
     def test_retrieve_multiple_job_statuses(self, provider):
@@ -329,25 +328,56 @@ class TestIBMQJob(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         # Get the most recent jobs that failed or were cancelled.
         job_statuses_to_filter = [JobStatus.ERROR, JobStatus.CANCELLED]
-        backend_jobs_filtered = backend.jobs(limit=10, status=job_statuses_to_filter)
+        backend_jobs = backend.jobs(limit=10, status=job_statuses_to_filter)
+        self.assertTrue(backend_jobs)
+
+        for job in backend_jobs:
+            self.assertTrue(job._status in job_statuses_to_filter,
+                            "status for job {} is '{}' but it should be one of "
+                            "the values in '{}'"
+                            .format(job.job_id(), job._status, job_statuses_to_filter))
+
+    @requires_provider
+    def test_retrieve_jobs_statuses_and_filter(self, provider):
+        """Test retrieving jobs filtered by a status and a filter."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        job_status_to_filter = [JobStatus.ERROR]
+        backend_jobs_filtered = backend.jobs(limit=10, status=job_status_to_filter,
+                                             db_filter={'or': [{'status': 'CANCELLED'}]})
         self.assertTrue(backend_jobs_filtered)
 
         for job in backend_jobs_filtered:
-            self.assertTrue(job.status() in job_statuses_to_filter)
+            self.assertTrue(job.status() in job_status_to_filter + [JobStatus.CANCELLED],
+                            "status for job {} is '{}' but it should be one of "
+                            "the values: '{}'"
+                            .format(job.job_id(), job.status(),
+                                    job_status_to_filter + [JobStatus.CANCELLED]))
 
     @requires_provider
     def test_retrieve_active_jobs(self, provider):
         """Test retrieving jobs that are currently unfinished."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        active_job_states = [status for status in ApiJobStatus
-                             if status not in API_JOB_FINAL_STATES]
-        active_jobs = backend.active_jobs()
+        backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
+                      key=lambda b: b.status().pending_jobs)
+        active_job_statuses = {api_status_to_job_status(status) for status in ApiJobStatus
+                               if status not in API_JOB_FINAL_STATES}
 
-        for job in active_jobs:
-            # Check the `._status` attribute instead of calling `status()`
-            # in case a job transitions to the `DONE` status after the
-            # `backend.active_jobs()` call above.
-            self.assertTrue(job._status in active_job_states)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+        # Wait for the job to queue, run, or finish.
+        while job.status() not in list(JOB_FINAL_STATES) + [JobStatus.QUEUED, JobStatus.RUNNING]:
+            time.sleep(0.5)
+
+        active_jobs = backend.active_jobs()
+        for active_job in active_jobs:
+            self.assertTrue(active_job._status in active_job_statuses,
+                            "status for job {} is '{}' but it should be '{}'."
+                            .format(active_job.job_id(), active_job._status, active_job_statuses))
+
+        # Cancel job so it doesn't consume more resources.
+        try:
+            job.cancel()
+        except JobError:
+            pass
 
     @requires_provider
     def test_retrieve_jobs_start_datetime(self, provider):
