@@ -293,7 +293,7 @@ class IBMQBackendService(SimpleNamespace):
 
         Returns:
             The status db filter used to query the api when searching for jobs
-                that match a specific status.
+                that match a given status.
 
         Raises:
             IBMQBackendValueError: If the status value is not recognized.
@@ -307,7 +307,7 @@ class IBMQBackendService(SimpleNamespace):
                         status, ", ".join(job_status.name for job_status in JobStatus))) \
                     from None
 
-        _status_filter = None  # type: Dict[str, Any]
+        _status_filter = {}  # type: Dict[str, Any]
         if status == JobStatus.INITIALIZING:
             _status_filter = {'status': {
                 'inq': [ApiJobStatus.CREATING.value, ApiJobStatus.CREATED.value]
