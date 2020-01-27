@@ -312,14 +312,11 @@ class TestIBMQJob(JobTestCase):
 
         # Get the five most recent queued jobs.
         job_list_queued = backend.jobs(status=JobStatus.QUEUED, limit=5)
-        if (job.status() is JobStatus.QUEUED
-                or any(_job.status() is JobStatus.QUEUED for _job in job_list_queued)):
-            self.assertTrue(job_list_queued)
-            for queued_job in job_list_queued:
-                self.assertTrue(queued_job._status == JobStatus.QUEUED,
-                                "status for job {} is '{}' but it should be {}"
-                                .format(queued_job.job_id(), queued_job._status,
-                                        JobStatus.QUEUED))
+        for queued_job in job_list_queued:
+            self.assertTrue(queued_job._status == JobStatus.QUEUED,
+                            "status for job {} is '{}' but it should be {}"
+                            .format(queued_job.job_id(), queued_job._status,
+                                    JobStatus.QUEUED))
 
         # Cancel job so it doesn't consume more resources.
         try:
