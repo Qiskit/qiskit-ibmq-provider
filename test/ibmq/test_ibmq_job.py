@@ -316,7 +316,8 @@ class TestIBMQJob(JobTestCase):
         acceptable_queued_states = [JobStatus.QUEUED, JobStatus.RUNNING]
         for queued_job in job_list_queued:
             self.assertIn(queued_job._status, acceptable_queued_states,
-                          "status for job {} is '{}' but it should be in values '{}'"
+                          "status for job {} is '{}' but it should be "
+                          "one of the values in '{}'"
                           .format(queued_job.job_id(), queued_job._status,
                                   acceptable_queued_states))
 
