@@ -335,17 +335,17 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_jobs_statuses_and_filter(self, provider):
         """Test retrieving jobs filtered by a status and a filter."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        job_status_to_filter = [JobStatus.ERROR]
+        job_status_to_filter = [JobStatus.CANCELLED]
         backend_jobs_filtered = backend.jobs(limit=10, status=job_status_to_filter,
-                                             db_filter={'or': [{'status': 'CANCELLED'}]})
+                                             db_filter={'or': [{'status': {'regexp': '^ERROR'}}]})
         self.assertTrue(backend_jobs_filtered)
 
         for job in backend_jobs_filtered:
-            self.assertTrue(job.status() in job_status_to_filter + [JobStatus.CANCELLED],
+            self.assertTrue(job.status() in job_status_to_filter + [JobStatus.ERROR],
                             "status for job {} is '{}' but it should be one of "
                             "the values: '{}'"
                             .format(job.job_id(), job.status(),
-                                    job_status_to_filter + [JobStatus.CANCELLED]))
+                                    job_status_to_filter + [JobStatus.ERROR]))
 
     @requires_provider
     def test_retrieve_active_jobs(self, provider):

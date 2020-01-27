@@ -169,11 +169,8 @@ class IBMQBackendService(SimpleNamespace):
             api_filter['backend.name'] = backend_name
 
         if status:
-            if isinstance(status, list):
-                this_filter = self._build_statuses_db_filter(status)
-            else:
-                this_filter = self._get_status_db_filter(status)
-            api_filter.update(this_filter)
+            status_filter = self._get_status_db_filter(status)
+            api_filter.update(status_filter)
 
         if job_name:
             api_filter['name'] = {"regexp": job_name}
@@ -265,35 +262,38 @@ class IBMQBackendService(SimpleNamespace):
 
         return job_list
 
-    def _build_statuses_db_filter(self, statuses: List[Union[JobStatus, str]]) -> Dict[str, Any]:
-        """Return the db filter used to search for jobs that match any of the given statuses.
-
-        Return the db filter to use when querying the api for jobs that match any
-        of the given list of statuses.
+    def _get_status_db_filter(
+            self,
+            status_arg: Union[JobStatus, str, List[Union[JobStatus, str]]]
+    ) -> Dict[str, Any]:
+        """Return the db filter to use when searching for jobs based on a status or list of statuses.
 
         Returns:
-            The status db filter used to query the api when searching for jobs that
-            match any of the given list of statuses.
+            The status db filter used to query to api when searching for jobs that match
+                a given status or list of statuses.
 
         Raises:
-            IBMQBackendError: If any of the status values is not recognized.
+            IBMQBackendError: If a status value is not recognized.
         """
-        statuses_filter = {'or': []}  # type: Dict[str, List[Dict[str, Any]]]
-        for status in statuses:
-            # Get the db filter for an individual status.
-            status_filter = self._get_status_db_filter(status)
-            statuses_filter['or'].append(status_filter)
-        return statuses_filter
+        _final_status_filter = None
 
-    def _get_status_db_filter(self, status: Union[JobStatus, str]) -> Dict[str, Any]:
-        """Return the db filter used to search for jobs that match a specific status.
+        if isinstance(status_arg, list):
+            _final_status_filter = {'or': []}
+            for status in status_arg:
+                status_filter = self._get_status_filter(status)
+                _final_status_filter['or'].append(status_filter)
+        else:
+            status_filter = self._get_status_filter(status_arg)
+            _final_status_filter = status_filter
 
-        Return the db filter to use when querying the api for jobs that match
-        a specific status.
+        return _final_status_filter
+
+    def _get_status_filter(self, status: Union[JobStatus, str]) -> Dict[str, Any]:
+        """Return the db filter to use when searching for jobs based on a status.
 
         Returns:
             The status db filter used to query the api when searching for jobs
-            that match a specific status.
+                that match a specific status.
 
         Raises:
             IBMQBackendValueError: If the status value is not recognized.
@@ -307,7 +307,7 @@ class IBMQBackendService(SimpleNamespace):
                         status, ", ".join(job_status.name for job_status in JobStatus))) \
                     from None
 
-        _status_filter = {}  # type: Dict[str, Any]
+        _status_filter = None
         if status == JobStatus.INITIALIZING:
             _status_filter = {'status': {
                 'inq': [ApiJobStatus.CREATING.value, ApiJobStatus.CREATED.value]
