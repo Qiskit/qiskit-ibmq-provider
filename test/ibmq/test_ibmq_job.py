@@ -304,9 +304,8 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
 
-        # Wait for the job to be queued or reach a final state.
-        final_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
-        while job.status() not in final_states + [JobStatus.QUEUED]:
+        # Wait for the job to run, queue, or reach a final state.
+        while job.status() not in list(JOB_FINAL_STATES) + [JobStatus.RUNNING, JobStatus.QUEUED]:
             time.sleep(0.5)
 
         # Get the five most recent queued jobs.
