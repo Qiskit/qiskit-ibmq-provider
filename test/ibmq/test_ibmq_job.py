@@ -17,7 +17,7 @@
 import time
 import copy
 from datetime import datetime, timedelta
-from unittest import SkipTest
+from unittest import SkipTest, skip
 
 import numpy
 from scipy.stats import chi2_contingency
@@ -296,6 +296,7 @@ class TestIBMQJob(JobTestCase):
         for job in job_list:
             self.assertTrue(job.status() is JobStatus.DONE)
 
+    @skip('Enable when api fixes job statuses')
     @requires_provider
     def test_retrieve_jobs_queued(self, provider):
         """Test retrieving jobs that are queued."""
@@ -304,22 +305,21 @@ class TestIBMQJob(JobTestCase):
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
 
-        # Wait for the job to run, queue, or reach a final state.
-        leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING, JobStatus.QUEUED]
+        # Wait for the job to queue, run, or reach a final state.
+        leave_states = list(JOB_FINAL_STATES) + [JobStatus.QUEUED, JobStatus.RUNNING]
         while job.status() not in leave_states:
             time.sleep(0.5)
 
         # Get the five most recent queued jobs.
         job_list_queued = backend.jobs(status=JobStatus.QUEUED, limit=5)
-
-        # TODO: Only check for JobStatus.QUEUED when Api distinguishes RUNNING and QUEUED.
-        acceptable_queued_states = [JobStatus.QUEUED, JobStatus.RUNNING]
-        for queued_job in job_list_queued:
-            self.assertIn(queued_job._status, acceptable_queued_states,
-                          "status for job {} is '{}' but it should be "
-                          "one of the values in '{}'"
-                          .format(queued_job.job_id(), queued_job._status,
-                                  acceptable_queued_states))
+        if (job.status() is JobStatus.QUEUED
+                or any(_job.status() is JobStatus.QUEUED for _job in job_list_queued)):
+            self.assertTrue(job_list_queued)
+            for queued_job in job_list_queued:
+                self.assertTrue(queued_job._status == JobStatus.QUEUED,
+                                "status for job {} is '{}' but it should be {}"
+                                .format(queued_job.job_id(), queued_job._status,
+                                        JobStatus.QUEUED))
 
         # Cancel job so it doesn't consume more resources.
         try:
