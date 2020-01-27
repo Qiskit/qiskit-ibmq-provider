@@ -305,32 +305,19 @@ class TestIBMQJob(JobTestCase):
         job = backend.run(qobj)
 
         # Wait for the job to run, queue, or reach a final state.
-        while job.status() not in list(JOB_FINAL_STATES) + [JobStatus.RUNNING, JobStatus.QUEUED]:
+        leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING, JobStatus.QUEUED]
+        while job.status() not in leave_states:
             time.sleep(0.5)
 
         # Get the five most recent queued jobs.
         job_list_queued = backend.jobs(status=JobStatus.QUEUED, limit=5)
 
-        # There should be at least one job retrieved if the original job submitted
-        # is still queued.
-        if job.status() is JobStatus.QUEUED:
-            self.assertTrue(job_list_queued)
-
-            # Check to see if the retrieved jobs are queued.
-            queued_jobs = []
-            for queued_job in job_list_queued:
-                if queued_job.status() is JobStatus.QUEUED:
-                    queued_jobs.append(queued_job)
-
-            # There should be at least one job queued if the original job submitted
-            # is still queued.
-            if job.status() is JobStatus.QUEUED:
-                self.assertTrue(queued_jobs)
-                for queued_job in queued_jobs:
-                    self.assertTrue(queued_job._status == JobStatus.QUEUED,
-                                    "status for job {} should be '{}' but it is '{}'."
-                                    .format(queued_job.job_id(), JobStatus.QUEUED,
-                                            queued_job._status))
+        # TODO: Only check for JobStatus.QUEUED when Api distinguishes RUNNING and QUEUED.
+        acceptable_queued_states = [JobStatus.QUEUED, JobStatus.RUNNING]
+        for queued_job in job_list_queued:
+            self.assertIn(queued_job._status, acceptable_queued_states,
+                          "status for job {} is '{}' but it should be in values '{}'"
+                          .format(queued_job.job_id(), queued_job._status, acceptable_queued_states))
 
         # Cancel job so it doesn't consume more resources.
         try:
