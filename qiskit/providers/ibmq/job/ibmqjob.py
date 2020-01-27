@@ -524,15 +524,16 @@ class IBMQJob(BaseModel, BaseJob):
         Args:
             timeout: seconds to wait for the job. If ``None``, wait indefinitely. Default: None.
             wait: seconds between queries. Default: 5.
-            callback: callback function invoked after each query. Default: None.
+            callback: callback function invoked after each querying iteration. Default: None.
                 The following positional arguments are provided to the callback function:
                     * job_id: job ID
                     * job_status: status of the job from the last query
-                    * job: this BaseJob instance
+                    * job: this IBMQJob instance
                 In addition, the following keyword arguments are also provided:
                     * queue_info: A ``QueueInfo`` instance with job queue information.
-                        If you don't want to import the ``QueueInfo`` instance,
-                        you can use `to_dict()` to convert it to a dictionary.
+                        You can use the ``to_dict()`` method to convert the ``QueueInfo``
+                        instance to a dictionary, if desired.
+
         Raises:
             IBMQJobTimeoutError: if the job does not reach a final state before the
                 specified timeout.
