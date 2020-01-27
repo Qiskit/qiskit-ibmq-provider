@@ -329,7 +329,7 @@ class TestIBMQJob(JobTestCase):
                 self.assertTrue(queued_jobs)
                 for queued_job in queued_jobs:
                     self.assertTrue(queued_job._status == JobStatus.QUEUED,
-                                    "status for job {} should be {}, but it is {}."
+                                    "status for job {} should be '{}' but it is '{}'."
                                     .format(queued_job.job_id(), JobStatus.QUEUED,
                                             queued_job._status))
 
