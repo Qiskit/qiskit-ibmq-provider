@@ -61,7 +61,9 @@ class TestIBMQJobAttributes(JobTestCase):
         """Test fetching properties of a running job."""
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
-        _ = job.properties()
+        while not job.running():
+            time.sleep(0.5)
+        self.assertIsNotNone(job.properties())
 
     @requires_provider
     def test_job_name(self, provider):
@@ -113,7 +115,8 @@ class TestIBMQJobAttributes(JobTestCase):
         retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
                                                 job_name=job_name)
 
-        self.assertEqual(len(retrieved_jobs), 2)
+        self.assertEqual(len(retrieved_jobs), 2,
+                         "More than 2 jobs retrieved: {}".format(retrieved_jobs))
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)
         for job in retrieved_jobs:
