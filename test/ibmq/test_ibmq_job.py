@@ -23,7 +23,7 @@ import numpy
 from scipy.stats import chi2_contingency
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers import JobStatus
+from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
@@ -295,6 +295,49 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(job_list)
         for job in job_list:
             self.assertTrue(job.status() is JobStatus.DONE)
+
+    @requires_provider
+    def test_retrieve_jobs_queued(self, provider):
+        """Test retrieving jobs that are queued."""
+        backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
+                      key=lambda b: b.status().pending_jobs)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+
+        # Wait for the job to be queued or reach a final state.
+        final_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
+        while job.status() not in final_states + [JobStatus.QUEUED]:
+            time.sleep(0.5)
+
+        # Get the five most recent queued jobs.
+        job_list_queued = backend.jobs(status=JobStatus.QUEUED, limit=5)
+
+        # There should be at least one job retrieved if the original job submitted
+        # is still queued.
+        if job.status() is JobStatus.QUEUED:
+            self.assertTrue(job_list_queued)
+
+            # Check to see if the retrieved jobs are queued.
+            queued_jobs = []
+            for queued_job in job_list_queued:
+                if queued_job.status() is JobStatus.QUEUED:
+                    queued_jobs.append(queued_job)
+
+            # There should be at least one job queued if the original job submitted
+            # is still queued.
+            if job.status() is JobStatus.QUEUED:
+                self.assertTrue(queued_jobs)
+                for queued_job in queued_jobs:
+                    self.assertTrue(queued_job._status == JobStatus.QUEUED,
+                                    "status for job {} should be {}, but it is {}."
+                                    .format(queued_job.job_id(), JobStatus.QUEUED,
+                                            queued_job._status))
+
+        # Cancel job so it doesn't consume more resources.
+        try:
+            job.cancel()
+        except JobError:
+            pass
 
     @requires_provider
     def test_retrieve_jobs_start_datetime(self, provider):
