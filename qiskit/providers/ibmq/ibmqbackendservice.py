@@ -121,7 +121,7 @@ class IBMQBackendService(SimpleNamespace):
             limit: number of jobs to retrieve. Default: 10.
             skip: starting index for the job retrieval. Default: 0.
             backend_name: name of the backend. Default: None.
-            status: only get jobs with this status or one of the statuses.
+            status: only get jobs with this status or one of the statuses. Default: None.
                 For example, you can specify `status=JobStatus.RUNNING` or `status="RUNNING"`
                     or `status=["RUNNING", "ERROR"]
             job_name: filter by job name. The `job_name` is matched partially

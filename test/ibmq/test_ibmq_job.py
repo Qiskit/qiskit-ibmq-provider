@@ -28,7 +28,6 @@ from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
-from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.job.utils import api_status_to_job_status
 from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, JobError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
@@ -304,18 +303,6 @@ class TestIBMQJob(JobTestCase):
                                     "job status for job {} was '{}' but "
                                     "it should be: '{}'"
                                     .format(job.job_id(), job.status(), JobStatus.DONE))
-
-    @requires_provider
-    def test_retrieve_all_job_statuses(self, provider):
-        """Test retrieving jobs filtered by all possible job statuses."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        # pylint: disable=unnecessary-comprehension
-        all_job_statuses = [status for status in JobStatus]
-        # Get the most recent jobs with any job status.
-        backend_jobs_filtered = backend.jobs(limit=10, status=all_job_statuses)
-        backend_jobs = backend.jobs(limit=10)
-        self.assertTrue(backend_jobs)
-        self.assertTrue(backend_jobs_filtered)
 
     @requires_provider
     def test_retrieve_multiple_job_statuses(self, provider):

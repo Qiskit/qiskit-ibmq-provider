@@ -420,6 +420,9 @@ class IBMQBackend(BaseBackend):
         currently in an unfinished status, including: "INITIALIZING", "VALIDATING",
         "QUEUED", and "RUNNING".
 
+        Args:
+            limit: number of jobs to retrieve. Default: 10.
+
         Returns:
             a list of the current unfinished jobs for this backend on this provider.
         """
