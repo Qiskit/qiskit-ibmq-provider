@@ -320,7 +320,7 @@ class TestIBMQJob(JobTestCase):
                             .format(job.job_id(), job._status, job_statuses_to_filter))
 
     @requires_provider
-    def test_retrieve_jobs_statuses_and_filter(self, provider):
+    def test_retrieve_jobs_status_and_filter(self, provider):
         """Test retrieving jobs filtered by a status and a filter."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         job_status_to_filter = [JobStatus.CANCELLED]
@@ -349,7 +349,16 @@ class TestIBMQJob(JobTestCase):
         while job.status() not in list(JOB_FINAL_STATES) + [JobStatus.QUEUED, JobStatus.RUNNING]:
             time.sleep(0.5)
 
+        before_status = job.status()
         active_jobs = backend.active_jobs()
+        if before_status is JobStatus.QUEUED and job.status() is JobStatus.QUEUED:
+            # When retrieving jobs, the status of a recent job might be `RUNNING` when it is in fact
+            # `QUEUED`. This is due to queue info not being returned for the job. To ensure the job
+            # was retrieved, check whether the job id is in the list of queued jobs retrieved.
+            self.assertIn(job.job_id(), [active_job.job_id() for active_job in active_jobs],
+                          "job {} is queued but not retrieved when filtering for queued jobs."
+                          .format(job.job_id()))
+
         for active_job in active_jobs:
             self.assertTrue(active_job._status in active_job_statuses,
                             "status for job {} is '{}' but it should be '{}'."
