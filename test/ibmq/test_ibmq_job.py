@@ -308,32 +308,57 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_multiple_job_statuses(self, provider):
         """Test retrieving jobs filtered by multiple job statuses."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        # Get the most recent jobs that failed or were cancelled.
-        job_statuses_to_filter = [JobStatus.ERROR, JobStatus.CANCELLED]
-        backend_jobs = backend.jobs(limit=10, status=job_statuses_to_filter)
-        self.assertTrue(backend_jobs)
+        statuses_to_filter = [JobStatus.ERROR, JobStatus.CANCELLED]
+        status_filters = [
+            {'status': [JobStatus.ERROR, JobStatus.CANCELLED],
+             'db_filter': None},
+            {'status': [JobStatus.CANCELLED],
+             'db_filter': {'or': [{'status': {'regexp': '^ERROR'}}]}},
+            {'status': [JobStatus.ERROR],
+             'db_filter': {'or': [{'status': 'CANCELLED'}]}}
+        ]
 
-        for job in backend_jobs:
-            self.assertTrue(job._status in job_statuses_to_filter,
-                            "status for job {} is '{}' but it should be one of "
-                            "the values in '{}'"
-                            .format(job.job_id(), job._status, job_statuses_to_filter))
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        # Submit a job, then cancel it.
+        job_to_cancel = backend.run(qobj)
+        for _ in range(2):
+            # Try twice in case job is not in a cancellable state
+            try:
+                if job_to_cancel.cancel():
+                    status = job_to_cancel.status()
+                    # TODO Change the warning to assert once API is fixed
+                    if status is not JobStatus.CANCELLED:
+                        self.log.warning("cancel() was successful for job %s but its status is %s.",
+                                         job_to_cancel.job_id(), status)
+            except JobError:
+                pass
 
-    @requires_provider
-    def test_retrieve_jobs_status_and_filter(self, provider):
-        """Test retrieving jobs filtered by a status and a filter."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        job_status_to_filter = [JobStatus.CANCELLED]
-        backend_jobs_filtered = backend.jobs(limit=10, status=job_status_to_filter,
-                                             db_filter={'or': [{'status': {'regexp': '^ERROR'}}]})
-        self.assertTrue(backend_jobs_filtered)
+        # Submit a job that will fail.
+        qobj.config.shots = 10000  # Modify the number of shots to be an invalid amount.
+        job_to_fail = backend.run(qobj)
+        while job_to_fail.status() not in JOB_FINAL_STATES:
+            time.sleep(0.5)
 
-        for job in backend_jobs_filtered:
-            self.assertTrue(job.status() in job_status_to_filter + [JobStatus.ERROR],
-                            "status for job {} is '{}' but it should be one of "
-                            "the values: '{}'"
-                            .format(job.job_id(), job.status(),
-                                    job_status_to_filter + [JobStatus.ERROR]))
+        for status_filter in status_filters:
+            with self.subTest(status_filter=status_filter):
+                job_list = backend.jobs(status=status_filter['status'],
+                                        db_filter=status_filter['db_filter'])
+
+                if (job_to_cancel.status() is JobStatus.CANCELLED
+                        and job_to_fail.status() is JobStatus.ERROR):
+                    job_list_ids = [_job.job_id() for _job in job_list]
+                    # Assert `job_id` in the list of job id's (instead of the list of jobs),
+                    # because retrieved jobs might differ in attributes from the originally
+                    # submitted jobs.
+                    self.assertIn(job_to_fail.job_id(), job_list_ids)
+                    self.assertIn(job_to_cancel.job_id(), job_list_ids)
+
+                for filtered_job in job_list:
+                    self.assertIn(filtered_job._status, statuses_to_filter,
+                                  "job {} has status '{}' but it should be one "
+                                  "of the values '{}'"
+                                  .format(filtered_job.job_id(), filtered_job._status,
+                                          statuses_to_filter))
 
     @requires_provider
     def test_retrieve_active_jobs(self, provider):
