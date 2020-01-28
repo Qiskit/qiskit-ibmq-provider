@@ -540,16 +540,19 @@ class IBMQJob(BaseModel, BaseJob):
         """
         exit_event = Event()
         status_deque = deque(maxlen=1)  # type: deque
-        future = self._executor.submit(self._status_callback,
-                                       status_deque=status_deque,
-                                       exit_event=exit_event,
-                                       callback=callback,
-                                       wait=wait)
+        future = None
+        if callback:
+            future = self._executor.submit(self._status_callback,
+                                           status_deque=status_deque,
+                                           exit_event=exit_event,
+                                           callback=callback,
+                                           wait=wait)
         try:
             self._wait_for_completion(timeout=timeout, wait=wait, status_deque=status_deque)
         finally:
-            exit_event.set()
-            future.result()
+            if future:
+                exit_event.set()
+                future.result()
 
     def _wait_for_completion(
             self,
