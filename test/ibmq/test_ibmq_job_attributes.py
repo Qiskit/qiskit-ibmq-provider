@@ -24,6 +24,7 @@ from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
+from qiskit.providers.ibmq.utils import most_busy
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
@@ -223,8 +224,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_queue_info(self, provider):
         """Test retrieving queue information."""
         # Find the most busy backend.
-        backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
-                      key=lambda b: b.status().pending_jobs)
+        backend = most_busy(provider.backends(simulator=False))
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
         job = backend.run(qobj)

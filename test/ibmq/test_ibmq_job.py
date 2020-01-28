@@ -29,6 +29,7 @@ from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, JobError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
+from qiskit.providers.ibmq.utils import most_busy
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
 from qiskit.result import Result
@@ -197,9 +198,7 @@ class TestIBMQJob(JobTestCase):
     def test_cancel(self, provider):
         """Test job cancellation."""
         # Find the most busy backend
-        backend = max([b for b in provider.backends() if b.status().operational],
-                      key=lambda b: b.status().pending_jobs)
-
+        backend = most_busy(provider.backends(simulator=False))
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
 
@@ -300,8 +299,7 @@ class TestIBMQJob(JobTestCase):
     @requires_provider
     def test_retrieve_jobs_queued(self, provider):
         """Test retrieving jobs that are queued."""
-        backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
-                      key=lambda b: b.status().pending_jobs)
+        backend = most_busy(provider.backends(simulator=False))
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
 

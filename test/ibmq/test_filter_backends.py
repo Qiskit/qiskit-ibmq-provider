@@ -15,6 +15,7 @@
 """Backends Filtering Test."""
 
 from qiskit.providers.ibmq import least_busy
+from qiskit.providers.ibmq.utils import most_busy
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, requires_device
@@ -70,4 +71,11 @@ class TestBackendFilters(IBMQTestCase):
         """Test filtering by least busy function"""
         backends = provider.backends()
         filtered_backends = least_busy(backends)
+        self.assertTrue(filtered_backends)
+
+    @requires_provider
+    def test_filter_most_busy(self, provider):
+        """Test filtering by most busy function"""
+        backends = provider.backends()
+        filtered_backends = most_busy(backends)
         self.assertTrue(filtered_backends)
