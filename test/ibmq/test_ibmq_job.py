@@ -375,7 +375,7 @@ class TestIBMQJob(JobTestCase):
         if job.status() not in JOB_FINAL_STATES:
             # Assert `job_id` in the list of job id's (instead of the list of jobs),
             # because retrieved jobs might differ in attributes from the originally
-            # submitted jobs.
+            # submitted jobs or they might have changed status.
             self.assertIn(job.job_id(), [active_job.job_id() for active_job in active_jobs],
                           "job {} is active but not retrieved when filtering for active jobs."
                           .format(job.job_id()))
