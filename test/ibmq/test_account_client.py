@@ -19,11 +19,13 @@ import traceback
 from unittest import mock
 from urllib3.connectionpool import HTTPConnectionPool
 from urllib3.exceptions import MaxRetryError
+from collections import deque
 
 from requests.exceptions import RequestException
 
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
+from qiskit.providers.ibmq.apiconstants import ApiJobStatus
 from qiskit.providers.ibmq.api.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api.exceptions import ApiError, RequestsApiError
 from qiskit.providers.jobstatus import JobStatus
@@ -340,7 +342,14 @@ class TestAccountClientJobs(IBMQTestCase):
     def test_job_final_status_websocket(self):
         """Test getting a job's final status via websocket."""
         response = self.client._job_final_status_websocket(self.job_id)
-        self.assertIn('status', response)
+        self.assertEqual(response.pop('status', None), ApiJobStatus.COMPLETED.value)
+
+    def test_job_final_status_polling(self):
+        """Test getting a job's final status via polling."""
+        status_deque = deque(maxlen=1)
+        response = self.client._job_final_status_polling(self.job_id, status_deque=status_deque)
+        self.assertEqual(response.pop('status', None), ApiJobStatus.COMPLETED.value)
+        self.assertNotEqual(len(status_deque), 0)
 
     def test_job_properties(self):
         """Test getting job properties."""

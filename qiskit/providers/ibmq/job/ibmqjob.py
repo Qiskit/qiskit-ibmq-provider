@@ -519,7 +519,7 @@ class IBMQJob(BaseModel, BaseJob):
             wait: float = 5,
             callback: Callable = None
     ) -> None:
-        """Wait until the job progress to a final state such as DONE or ERROR.
+        """Wait until the job progresses to a final state such as DONE or ERROR.
 
         Args:
             timeout: seconds to wait for the job. If ``None``, wait indefinitely. Default: None.
