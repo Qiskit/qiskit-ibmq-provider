@@ -134,7 +134,7 @@ class IBMQJob(BaseModel, BaseJob):
         self._api = api
         self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
         self._queue_info = None     # type: Optional[QueueInfo]
-        self._update_status_position(_api_status, kwargs.pop('infoQueue', None))
+        self._update_status_position(_api_status, kwargs.pop('info_queue', None))
 
         # Properties used for caching.
         self._cancelled = False
@@ -523,7 +523,7 @@ class IBMQJob(BaseModel, BaseJob):
             # Model attributes.
             self._use_object_storage = (self.kind == ApiJobKind.QOBJECT_STORAGE)
             self._update_status_position(data.pop('_api_status'),
-                                         data.pop('infoQueue', None))
+                                         data.pop('info_queue', None))
         except ValidationError as ex:
             raise IBMQJobApiError("Unexpected return value received from the server.") from ex
         finally:

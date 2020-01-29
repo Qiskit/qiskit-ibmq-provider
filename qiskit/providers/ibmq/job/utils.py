@@ -31,6 +31,7 @@ API_TO_JOB_STATUS = {
     ApiJobStatus.VALIDATED: JobStatus.VALIDATING,
     ApiJobStatus.RUNNING: JobStatus.RUNNING,
     ApiJobStatus.PENDING_IN_QUEUE: JobStatus.QUEUED,
+    ApiJobStatus.QUEUED: JobStatus.QUEUED,
     ApiJobStatus.COMPLETED: JobStatus.DONE,
     ApiJobStatus.CANCELLED: JobStatus.CANCELLED,
     ApiJobStatus.ERROR_CREATING_JOB: JobStatus.ERROR,
