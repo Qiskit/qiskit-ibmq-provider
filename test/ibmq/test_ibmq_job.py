@@ -370,13 +370,9 @@ class TestIBMQJob(JobTestCase):
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
-        # Wait for the job to queue, run, or finish.
-        while job.status() not in list(JOB_FINAL_STATES) + [JobStatus.QUEUED, JobStatus.RUNNING]:
-            time.sleep(0.5)
 
-        before_status = job.status()
         active_jobs = backend.active_jobs()
-        if before_status is JobStatus.QUEUED and job.status() is JobStatus.QUEUED:
+        if job.status() not in JOB_FINAL_STATES:
             # When retrieving jobs, the status of a recent job might be `RUNNING` when it is in fact
             # `QUEUED`. This is due to queue info not being returned for the job. To ensure the job
             # was retrieved, check whether the job id is in the list of queued jobs retrieved.
