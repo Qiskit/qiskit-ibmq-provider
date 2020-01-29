@@ -14,8 +14,6 @@
 
 """General utility functions for testing."""
 
-from qiskit.exceptions import QiskitError
-
 
 def most_busy_backend(provider):
     """Return the most busy backend for the provider given.
@@ -29,13 +27,7 @@ def most_busy_backend(provider):
 
     Returns:
         IBMQBackend: the most busy backend.
-
-    Raises:
-        QiskitError: if passing a list of backend names that is
-            either empty or none have attribute ``pending_jobs``
     """
-    try:
-        return max([b for b in provider.backends(simulator=False) if b.status().operational],
-                   key=lambda b: b.status().pending_jobs)
-    except (ValueError, TypeError):
-        raise QiskitError("Can only find most busy backend from a non-empty list.")
+
+    return max([b for b in provider.backends(simulator=False) if b.status().operational],
+               key=lambda b: b.status().pending_jobs)
