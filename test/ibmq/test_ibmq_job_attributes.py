@@ -28,6 +28,7 @@ from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, slow_test_on_device
+from ..utils import most_busy_backend
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -223,8 +224,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_queue_info(self, provider):
         """Test retrieving queue information."""
         # Find the most busy backend.
-        backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
-                      key=lambda b: b.status().pending_jobs)
+        backend = most_busy_backend(provider)
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
         job = backend.run(qobj)

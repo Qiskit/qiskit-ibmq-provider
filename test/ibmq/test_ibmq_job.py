@@ -38,6 +38,7 @@ from qiskit.result import Result
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, slow_test_on_device, requires_device,
                           requires_qe_access)
+from ..utils import most_busy_backend
 
 
 class TestIBMQJob(JobTestCase):
@@ -199,9 +200,7 @@ class TestIBMQJob(JobTestCase):
     def test_cancel(self, provider):
         """Test job cancellation."""
         # Find the most busy backend
-        backend = max([b for b in provider.backends() if b.status().operational],
-                      key=lambda b: b.status().pending_jobs)
-
+        backend = most_busy_backend(provider)
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
 
@@ -363,8 +362,7 @@ class TestIBMQJob(JobTestCase):
     @requires_provider
     def test_retrieve_active_jobs(self, provider):
         """Test retrieving jobs that are currently unfinished."""
-        backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
-                      key=lambda b: b.status().pending_jobs)
+        backend = most_busy_backend(provider)
         active_job_statuses = {api_status_to_job_status(status) for status in ApiJobStatus
                                if status not in API_JOB_FINAL_STATES}
 
@@ -384,6 +382,41 @@ class TestIBMQJob(JobTestCase):
             self.assertTrue(active_job._status in active_job_statuses,
                             "status for job {} is '{}' but it should be '{}'."
                             .format(active_job.job_id(), active_job._status, active_job_statuses))
+
+        # Cancel job so it doesn't consume more resources.
+        try:
+            job.cancel()
+        except JobError:
+            pass
+
+    @requires_provider
+    def test_retrieve_jobs_queued(self, provider):
+        """Test retrieving jobs that are queued."""
+        backend = most_busy_backend(provider)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+
+        # Wait for the job to queue, run, or reach a final state.
+        leave_states = list(JOB_FINAL_STATES) + [JobStatus.QUEUED, JobStatus.RUNNING]
+        while job.status() not in leave_states:
+            time.sleep(0.5)
+
+        before_status = job._status
+        job_list_queued = backend.jobs(status=JobStatus.QUEUED, limit=5)
+        if before_status is JobStatus.QUEUED and job.status() is JobStatus.QUEUED:
+            # When retrieving jobs, the status of a recent job might be `RUNNING` when it is in fact
+            # `QUEUED`. This is due to queue info not being returned for the job. To ensure the job
+            # was retrieved, check whether the job id is in the list of queued jobs retrieved.
+            self.assertIn(job.job_id(), [queued_job.job_id() for queued_job in job_list_queued],
+                          "job {} is queued but not retrieved when filtering for queued jobs."
+                          .format(job.job_id()))
+
+        # TODO: Uncomment when api fixes job statuses.
+        # for queued_job in job_list_queued:
+        #     self.assertTrue(queued_job._status == JobStatus.QUEUED,
+        #                     "status for job {} is '{}' but it should be {}"
+        #                     .format(queued_job.job_id(), queued_job._status,
+        #                             JobStatus.QUEUED))
 
         # Cancel job so it doesn't consume more resources.
         try:
