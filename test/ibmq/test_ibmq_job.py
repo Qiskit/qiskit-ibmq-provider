@@ -373,11 +373,11 @@ class TestIBMQJob(JobTestCase):
 
         active_jobs = backend.active_jobs()
         if job.status() not in JOB_FINAL_STATES:
-            # When retrieving jobs, the status of a recent job might be `RUNNING` when it is in fact
-            # `QUEUED`. This is due to queue info not being returned for the job. To ensure the job
-            # was retrieved, check whether the job id is in the list of queued jobs retrieved.
+            # Assert `job_id` in the list of job id's (instead of the list of jobs),
+            # because retrieved jobs might differ in attributes from the originally
+            # submitted jobs.
             self.assertIn(job.job_id(), [active_job.job_id() for active_job in active_jobs],
-                          "job {} is queued but not retrieved when filtering for queued jobs."
+                          "job {} is active but not retrieved when filtering for active jobs."
                           .format(job.job_id()))
 
         for active_job in active_jobs:
