@@ -15,4 +15,4 @@
 """Utilities related to the IBMQ Provider."""
 
 from .qobj_utils import update_qobj_config
-from .utils import to_python_identifier, validate_job_tags, most_busy
+from .utils import to_python_identifier, validate_job_tags
