@@ -22,14 +22,16 @@ from datetime import datetime as python_datetime
 from marshmallow import ValidationError
 
 from qiskit.qobj import Qobj, validate_qobj_against_schema
-from qiskit.providers import BaseBackend, JobStatus  # type: ignore[attr-defined]
+from qiskit.providers.basebackend import BaseBackend  # type: ignore[attr-defined]
+from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
                                      PulseDefaults, BackendConfiguration, GateConfig)
 from qiskit.validation.exceptions import ModelValidationError
 from qiskit.tools.events.pubsub import Publisher
-from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
-from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 
+from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
+from .apiconstants import ApiJobShareLevel, ApiJobStatus, API_JOB_FINAL_STATES
+from .job.utils import api_status_to_job_status
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
 from .backendjoblimit import BackendJobLimit
@@ -345,7 +347,7 @@ class IBMQBackend(BaseBackend):
             self,
             limit: int = 10,
             skip: int = 0,
-            status: Optional[Union[JobStatus, str]] = None,
+            status: Optional[Union[JobStatus, str, List[Union[JobStatus, str]]]] = None,
             job_name: Optional[str] = None,
             start_datetime: Optional[python_datetime] = None,
             end_datetime: Optional[python_datetime] = None,
@@ -368,9 +370,9 @@ class IBMQBackend(BaseBackend):
         Args:
             limit: number of jobs to retrieve.
             skip: starting index for the job retrieval.
-            status: only get jobs
-                with this status, where status is e.g. `JobStatus.RUNNING` or
-                `'RUNNING'`
+            status: only get jobs with this status or one of the statuses. Default: None.
+                For example, you can specify `status=JobStatus.RUNNING` or `status="RUNNING"`
+                    or `status=["RUNNING", "ERROR"]
             job_name: filter by job name. The `job_name` is matched partially
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>`_
@@ -410,6 +412,26 @@ class IBMQBackend(BaseBackend):
         return self._provider.backends.jobs(
             limit, skip, self.name(), status,
             job_name, start_datetime, end_datetime, job_tags, job_tags_operator, db_filter)
+
+    def active_jobs(self, limit: int = 10) -> List[IBMQJob]:
+        """Return the current, unfinished jobs submitted to this backend.
+
+        Return the jobs submitted to this backend with this provider that are
+        currently in an unfinished status, including: "INITIALIZING", "VALIDATING",
+        "QUEUED", and "RUNNING".
+
+        Args:
+            limit: number of jobs to retrieve. Default: 10.
+
+        Returns:
+            a list of the current unfinished jobs for this backend on this provider.
+        """
+        # Get the list of api job statuses which are not a final api job status.
+        active_job_states = list({api_status_to_job_status(status)
+                                  for status in ApiJobStatus
+                                  if status not in API_JOB_FINAL_STATES})
+
+        return self.jobs(status=active_job_states, limit=limit)
 
     def retrieve_job(self, job_id: str) -> IBMQJob:
         """Return a job submitted to this backend.
@@ -539,6 +561,10 @@ class IBMQRetiredBackend(IBMQBackend):
 
     def remaining_jobs_count(self) -> None:
         """Return the number of remaining jobs that could be submitted to the backend."""
+        return None
+
+    def active_jobs(self, limit: int = 10) -> None:
+        """Return the current, unfinished jobs submitted to this backend."""
         return None
 
     def run(
