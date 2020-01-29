@@ -17,9 +17,9 @@
 import re
 import traceback
 from unittest import mock
+from collections import deque
 from urllib3.connectionpool import HTTPConnectionPool
 from urllib3.exceptions import MaxRetryError
-from collections import deque
 
 from requests.exceptions import RequestException
 
