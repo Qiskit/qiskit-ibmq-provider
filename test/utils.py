@@ -25,10 +25,10 @@ def most_busy_backend(provider):
     local backends that do not have this are not considered.
 
     Args:
-        provider: IBM Q Experience account provider.
+        provider (AccountProvider): IBM Q Experience account provider.
 
     Returns:
-        the most busy backend.
+        IBMQBackend: the most busy backend.
 
     Raises:
         QiskitError: if passing a list of backend names that is
