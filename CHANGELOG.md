@@ -17,6 +17,10 @@ The format is based on [Keep a Changelog].
 ## [UNRELEASED]
 
 ### Added
+- `IBMQBackend` now has a new method `active_jobs()`. The method returns the 
+  jobs submitted to a backend that are currently in an unfinished status.
+  Note the unfinished jobs returned for the backend are given for a specific 
+  provider (i.e. a specific backend with a specific provider). (\#521)
 - `QueueInfo` (returned by `IBMQJob.queue_info()`) now has a new method: 
   `format()`. The method returns a formatted string of the queue information.
   (\#515)

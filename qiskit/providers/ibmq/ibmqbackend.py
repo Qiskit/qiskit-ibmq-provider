@@ -563,6 +563,10 @@ class IBMQRetiredBackend(IBMQBackend):
         """Return the number of remaining jobs that could be submitted to the backend."""
         return None
 
+    def active_jobs(self, limit: int = 10) -> None:
+        """Return the current, unfinished jobs submitted to this backend."""
+        return None
+
     def run(
             self,
             qobj: Qobj,

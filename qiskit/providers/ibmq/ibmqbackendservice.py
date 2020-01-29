@@ -269,14 +269,13 @@ class IBMQBackendService(SimpleNamespace):
         """Return the db filter to use when searching for jobs based on status or statuses.
 
         Returns:
-            The status db filter used to query to api when searching for jobs that match
+            The status db filter used to query the api when searching for jobs that match
                 a given status or list of statuses.
 
         Raises:
             IBMQBackendError: If a status value is not recognized.
         """
         _final_status_filter = None
-
         if isinstance(status_arg, list):
             _final_status_filter = {'or': []}
             for status in status_arg:
