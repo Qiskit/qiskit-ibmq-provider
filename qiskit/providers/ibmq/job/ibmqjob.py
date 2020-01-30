@@ -277,6 +277,11 @@ class IBMQJob(BaseModel, BaseJob):
     def status(self) -> JobStatus:
         """Query the API to update the status.
 
+        Note:
+            This method is not designed to be invoked repeatedly in a loop for
+            an extended period of time. Doing so may cause an exception.
+            Use `wait_for_final_state()` if you want to wait for the job to finish.
+
         Returns:
             The status of the job, once updated.
 

@@ -15,6 +15,7 @@
 """Job REST adapter for the IBM Q Experience API."""
 
 import pprint
+from json.decoder import JSONDecodeError
 
 from typing import Dict, Any
 from marshmallow.exceptions import ValidationError
@@ -105,7 +106,14 @@ class Job(RestAdapterBase):
             ApiIBMQProtocolError: if an unexpected result is received from the server.
         """
         url = self.get_url('status')
-        api_response = self.session.get(url).json()
+        raw_response = self.session.get(url)
+        try:
+            api_response = raw_response.json()
+        except JSONDecodeError as err:
+            raise ApiIBMQProtocolError(
+                'Unrecognized answer from server: {}. '
+                'This could be caused by too many requests.'.format(raw_response)) from err
+
         try:
             # Validate the response.
             StatusResponseSchema().validate(api_response)
