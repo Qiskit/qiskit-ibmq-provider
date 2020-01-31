@@ -17,6 +17,10 @@ The format is based on [Keep a Changelog].
 ## [UNRELEASED]
 
 ### Added
+
+- `IBMQJob` now has a new method `wait_for_final_state()` that blocks
+  until the job finishes. One of its parameters is a callback function 
+  that it will invoke after every query to provide feedback. (\#529)
 - `IBMQBackend` now has a new method `active_jobs()`. The method returns the 
   jobs submitted to a backend that are currently in an unfinished status.
   Note the unfinished jobs returned for the backend are given for a specific 
@@ -41,9 +45,6 @@ The format is based on [Keep a Changelog].
   you to retrieve a previously submitted job set using the job set ID.
   A job set ID can be retrieved using the new `job_set.job_set_id()` 
   method. (\#514)
-- `IBMQJob` now has a new method `wait_for_final_state()` that blocks
-  until the job finishes. One of its parameters is a callback function 
-  that it will invoke after every query to provide feedback. (\#529)
 
 ### Changed
 
