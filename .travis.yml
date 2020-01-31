@@ -169,10 +169,11 @@ jobs:
 
     # "slow tests" stage
     ###########################################################################
-    # GNU/Linux, Python 3.5
+    # GNU/Linux, Python 3.6
     - stage: slow tests
       <<: *stage_linux
       if: type = cron
+      python: 3.6
       env:
         - QISKIT_TESTS=run_slow
       script:
