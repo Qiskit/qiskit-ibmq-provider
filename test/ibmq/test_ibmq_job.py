@@ -29,7 +29,8 @@ from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATE
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.job.utils import api_status_to_job_status
-from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, JobError
+from qiskit.providers.ibmq.job.exceptions import (IBMQJobInvalidStateError,
+                                                  JobError, IBMQJobTimeoutError)
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test import slow_test
 from qiskit.compiler import assemble, transpile
@@ -645,6 +646,55 @@ class TestIBMQJob(JobTestCase):
         result = job.result(refresh=True)
         self.assertEqual(cached_result, result)
         self.assertNotEqual(result.results[0].header.name, 'modified_result')
+
+    @requires_provider
+    def test_wait_for_final_state(self, provider):
+        """Test waiting for job to reach final state."""
+
+        def final_state_callback(c_job_id, c_status, c_job, **kwargs):
+            """Job status query callback function."""
+            self.assertEqual(c_job_id, job.job_id())
+            self.assertNotIn(c_status, JOB_FINAL_STATES)
+            self.assertEqual(c_job.job_id(), job.job_id())
+            self.assertIn('queue_info', kwargs)
+            if c_status is JobStatus.QUEUED:
+                self.assertIsNotNone(
+                    kwargs.pop('queue_info', None),
+                    "queue_info not found for job {}".format(c_job_id))
+            callback_info[0] = True
+            if callback_info[1]:
+                self.assertAlmostEqual(time.time() - callback_info[1], wait_time, delta=0.1)
+            callback_info[1] = time.time()
+
+        # The first is whether the callback function is invoked. The second
+        # is last called time. They're put in a list to be mutable.
+        callback_info = [False, None]
+        wait_time = 0.5
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+
+        try:
+            job.wait_for_final_state(timeout=30, wait=wait_time, callback=final_state_callback)
+            self.assertTrue(job.done())
+            self.assertTrue(callback_info[0])
+        finally:
+            # Ensure all threads ended.
+            for thread in job._executor._threads:
+                thread.join(0.1)
+
+    @requires_provider
+    def test_wait_for_final_state_timeout(self, provider):
+        """Test waiting for job to reach final state times out."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj)
+        try:
+            self.assertRaises(IBMQJobTimeoutError, job.wait_for_final_state, timeout=0.1)
+        finally:
+            # Ensure all threads ended.
+            for thread in job._executor._threads:
+                thread.join(0.1)
 
 
 def _bell_circuit():
