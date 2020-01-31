@@ -29,12 +29,15 @@
 import os
 from functools import wraps
 from unittest import SkipTest
+from typing import Optional
 
 from qiskit.test.testing_options import get_test_options
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
+from qiskit.providers.ibmq.accountprovider import AccountProvider
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
 
 def requires_qe_access(func):
@@ -186,7 +189,7 @@ def _get_credentials():
     raise Exception('Could not locate valid credentials.') from None
 
 
-def _get_custom_provider(ibmq_factory):
+def _get_custom_provider(ibmq_factory: IBMQFactory) -> Optional[AccountProvider]:
     """Find the provider for the specific hub/group/project, if any.
 
     Args:
@@ -203,7 +206,7 @@ def _get_custom_provider(ibmq_factory):
     return None  # No custom provider.
 
 
-def _get_backend(ibmq_factory, default_provider):
+def _get_backend(ibmq_factory: IBMQFactory, default_provider: AccountProvider) -> IBMQBackend:
     """Find the proper provider and backend based on environment variables.
 
     It involves:
@@ -222,6 +225,9 @@ def _get_backend(ibmq_factory, default_provider):
 
     Returns:
         A tuple of provider and backend
+
+    Raises:
+        Exception: if no suitable backend found.
     """
 
     if os.getenv('USE_STAGING_CREDENTIALS', ''):
@@ -235,7 +241,7 @@ def _get_backend(ibmq_factory, default_provider):
             if backends:
                 return provider, backends[0]
         raise Exception("Unable to find suitable backend.")
-    else:
-        provider = _get_custom_provider(ibmq_factory) or default_provider
-        return least_busy(provider.backends(
-            simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
+
+    provider = _get_custom_provider(ibmq_factory) or default_provider
+    return least_busy(provider.backends(
+        simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
