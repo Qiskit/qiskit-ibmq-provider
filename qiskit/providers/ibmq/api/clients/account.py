@@ -133,6 +133,7 @@ class AccountClient(BaseClient):
             self,
             limit: int = 10,
             skip: int = 0,
+            descending: bool = True,
             extra_filter: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """Return a list of statuses of jobs, with filtering and pagination.
@@ -140,12 +141,13 @@ class AccountClient(BaseClient):
         Args:
             limit: maximum number of items to return.
             skip: offset for the items to return.
+            descending: whether the jobs should be in descending order.
             extra_filter: additional filtering passed to the query.
 
         Returns:
             a list of job statuses.
         """
-        return self.client_api.jobs(limit=limit, skip=skip,
+        return self.client_api.jobs(limit=limit, skip=skip, descending=descending,
                                     extra_filter=extra_filter)
 
     def job_submit(

@@ -22,6 +22,7 @@ import uuid
 from qiskit import QuantumCircuit
 from qiskit.result import Result
 
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
 from qiskit.providers.ibmq.managed.managedresults import ManagedResults
 from qiskit.providers.ibmq.managed.exceptions import (
@@ -33,7 +34,7 @@ from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.compiler import transpile, assemble
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_provider
+from ..decorators import requires_provider, requires_qe_access
 from ..fake_account_client import BaseFakeAccountClient
 
 
@@ -290,6 +291,25 @@ class TestIBMQJobManager(IBMQTestCase):
                          {rjob.job_id() for rjob in rjobs},
                          "Unexpected jobs retrieved. Job tag used was {}".format(job_tags))
         self.assertEqual(job_set.tags(), job_tags)
+
+    @requires_qe_access
+    def test_job_limit(self, qe_token, qe_url):
+        """Test reaching job limit."""
+        ibmq_factory = IBMQFactory()
+        provider = ibmq_factory.enable_account(qe_token, qe_url)
+        # backend = provider.get_backend('ibmq_qasm_simulator')
+        backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
+                      key=lambda b: b.status().pending_jobs)
+        limit = backend.job_limit().maximum_jobs
+        self.assertIsNotNone(limit)
+        circs = []
+        for _ in range(limit+2):
+            circs.append(self._qc)
+        circs = transpile(circs, backend=backend)
+        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        ids = [job.job_id() for job in job_set.jobs()]
+        print(f"job set job ids are {ids}")
+        job_set.cancel()
 
 
 class TestResultManager(IBMQTestCase):

@@ -35,6 +35,9 @@ The format is based on [Keep a Changelog].
   you to retrieve a previously submitted job set using the job set ID.
   A job set ID can be retrieved using the new `job_set.job_set_id()` 
   method. (\#514)
+- `IBMQJobManager` now checks for the job limit. If the limit of active jobs
+  is reached, it waits for previous jobs to finish before submitting the
+  next one. (\#TBD)
 
 ### Changed
 

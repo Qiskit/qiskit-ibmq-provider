@@ -354,6 +354,7 @@ class IBMQBackend(BaseBackend):
             end_datetime: Optional[python_datetime] = None,
             job_tags: Optional[List[str]] = None,
             job_tags_operator: Optional[str] = "OR",
+            descending: bool = True,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return the jobs submitted to this backend.
@@ -390,6 +391,8 @@ class IBMQBackend(BaseBackend):
                 * If "OR" is specified, then a job only needs to have any
                     of the tags specified in ``job_tags`` to be included.
                 Default: OR.
+            descending: if True, return the jobs in descending order of the job
+                creation date (newest first). If False, return in ascending order. Default: True.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -412,7 +415,8 @@ class IBMQBackend(BaseBackend):
         """
         return self._provider.backends.jobs(
             limit, skip, self.name(), status,
-            job_name, start_datetime, end_datetime, job_tags, job_tags_operator, db_filter)
+            job_name, start_datetime, end_datetime, job_tags, job_tags_operator,
+            descending, db_filter)
 
     def retrieve_job(self, job_id: str) -> IBMQJob:
         """Return a job submitted to this backend.

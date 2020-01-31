@@ -18,16 +18,18 @@ import warnings
 import logging
 from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 
 from qiskit.providers.ibmq import IBMQBackend
 from qiskit.qobj import Qobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobError
-from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
+from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel, API_JOB_FINAL_STATES
 
 from ..job.ibmqjob import IBMQJob
 from ..job.exceptions import IBMQJobTimeoutError
+from ..exceptions import IBMQBackendApiError
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +64,7 @@ class ManagedJob:
             job_name: str,
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
+            submit_lock: Lock,
             job_share_level: ApiJobShareLevel,
             job_tags: Optional[List[str]] = None
     ) -> None:
@@ -72,20 +75,21 @@ class ManagedJob:
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
+            submit_lock: Lock used to synchronize job submission.
             job_share_level: Job share level.
-            job_tags: tags to be assigned to the job.
+            job_tags: Tags to be assigned to the job.
         """
-
         # Submit the job in its own future.
         self.future = executor.submit(
             self._async_submit, qobj=qobj, job_name=job_name, backend=backend,
-            job_share_level=job_share_level, job_tags=job_tags)
+            submit_lock=submit_lock, job_share_level=job_share_level, job_tags=job_tags)
 
     def _async_submit(
             self,
             qobj: Qobj,
             job_name: str,
             backend: IBMQBackend,
+            submit_lock: Lock,
             job_share_level: ApiJobShareLevel,
             job_tags: Optional[List[str]] = None
     ) -> None:
@@ -95,22 +99,42 @@ class ManagedJob:
             qobj: Qobj to run.
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
+            submit_lock: Lock used to synchronize job submission.
             job_share_level: Job share level.
-            job_tags: tags to be assigned to the job.
-
-        Returns:
-            IBMQJob instance for the job.
+            job_tags: Tags to be assigned to the job.
         """
+        submit_lock.acquire()
+        try_again = True
         try:
-            self.job = backend.run(
-                qobj=qobj,
-                job_name=job_name,
-                job_share_level=job_share_level.value,
-                job_tags=job_tags)
+            while try_again:
+                try_again = False
+                try:
+                    self.job = backend.run(
+                        qobj=qobj,
+                        job_name=job_name,
+                        job_share_level=job_share_level.value,
+                        job_tags=job_tags)
+                except IBMQBackendApiError as api_err:
+                    if 'User reached the maximum limits of concurrent jobs' in str(api_err):
+                        logger.warning("Job limit reached, waiting for jobs to finish "
+                                       "before submitting the next one.")
+                        final_states = [state.value for state in API_JOB_FINAL_STATES]
+                        oldest_running = backend.jobs(limit=1, descending=False,
+                                                      db_filter={"status": {"nin": final_states}})
+                        if oldest_running:
+                            oldest_running = oldest_running[0]
+                            logger.info("Waiting for job %s to finish", oldest_running.job_id())
+                            # TODO use public method when implemented.
+                            oldest_running._wait_for_completion()
+                        try_again = True
+                    else:
+                        raise
         except Exception as err:  # pylint: disable=broad-except
             warnings.warn("Unable to submit job for experiments {}-{}: {}".format(
                 self.start_index, self.end_index, err))
             self.submit_error = err
+        finally:
+            submit_lock.release()
 
     def status(self) -> Optional[JobStatus]:
         """Query the API for job status.

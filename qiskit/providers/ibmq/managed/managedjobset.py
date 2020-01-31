@@ -21,6 +21,7 @@ import time
 import logging
 import uuid
 import re
+import threading
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
@@ -62,7 +63,7 @@ class ManagedJobSet:
         self._managed_jobs = []  # type: List[ManagedJob]
         self._name = name or datetime.utcnow().isoformat()
         self._backend = None  # type: Optional[IBMQBackend]
-        self._id = short_id or uuid.uuid4().hex
+        self._id = short_id or uuid.uuid4().hex + '-' + str(time.time()).replace('.', '')
         self._id_long = self._id_prefix + self._id + self._id_suffix
         self._tags = []  # type: List[str]
 
@@ -100,6 +101,8 @@ class ManagedJobSet:
         self._backend = backend
         if job_tags:
             self._tags = job_tags.copy()
+
+        job_submit_lock = threading.Lock()  # Usd to synchronize job submit.
         exp_index = 0
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)
@@ -107,7 +110,7 @@ class ManagedJobSet:
             mjob = ManagedJob(experiments_count=len(experiments), start_index=exp_index)
             mjob.submit(qobj=qobj, job_name=job_name, backend=backend,
                         executor=executor, job_share_level=job_share_level,
-                        job_tags=self._tags+[self._id_long])
+                        job_tags=self._tags+[self._id_long], submit_lock=job_submit_lock)
             self._managed_jobs.append(mjob)
             exp_index += len(experiments)
 
