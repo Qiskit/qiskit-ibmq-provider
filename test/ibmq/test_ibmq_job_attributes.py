@@ -28,6 +28,7 @@ from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, slow_test_on_device
+from ..utils import most_busy_backend
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -61,7 +62,9 @@ class TestIBMQJobAttributes(JobTestCase):
         """Test fetching properties of a running job."""
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
-        _ = job.properties()
+        while not job.running():
+            time.sleep(0.5)
+        self.assertIsNotNone(job.properties())
 
     @requires_provider
     def test_job_name(self, provider):
@@ -71,9 +74,13 @@ class TestIBMQJobAttributes(JobTestCase):
 
         # Use a unique job name
         job_name = str(time.time()).replace('.', '')
-        job_id = backend.run(qobj, job_name=job_name).job_id()
-        job = provider.backends.retrieve_job(job_id)
-        self.assertEqual(job.name(), job_name)
+        job = backend.run(qobj, job_name=job_name)
+        job_id = job.job_id()
+        # TODO No need to wait for job to run once api is fixed
+        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+            time.sleep(0.5)
+        rjob = provider.backends.retrieve_job(job_id)
+        self.assertEqual(rjob.name(), job_name)
 
         # Check using partial matching.
         job_name_partial = job_name[8:]
@@ -100,12 +107,17 @@ class TestIBMQJobAttributes(JobTestCase):
         job_name = str(time.time()).replace('.', '')
         job_ids = set()
         for _ in range(2):
-            job_ids.add(backend.run(qobj, job_name=job_name).job_id())
+            job = backend.run(qobj, job_name=job_name)
+            job_ids.add(job.job_id())
+            # TODO No need to wait for job to run once api is fixed
+            while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+                time.sleep(0.5)
 
         retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
                                                 job_name=job_name)
 
-        self.assertEqual(len(retrieved_jobs), 2)
+        self.assertEqual(len(retrieved_jobs), 2,
+                         "More than 2 jobs retrieved: {}".format(retrieved_jobs))
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertEqual(job_ids, retrieved_job_ids)
         for job in retrieved_jobs:
@@ -212,8 +224,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_queue_info(self, provider):
         """Test retrieving queue information."""
         # Find the most busy backend.
-        backend = max([b for b in provider.backends(simulator=False) if b.status().operational],
-                      key=lambda b: b.status().pending_jobs)
+        backend = most_busy_backend(provider)
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
         job = backend.run(qobj)
@@ -237,6 +248,8 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertTrue(all(0 < priority <= 1.0 for priority in [
                 queue_info.hub_priority, queue_info.group_priority, queue_info.project_priority]),
                             "Unexpected queue info {} for job {}".format(queue_info, job.job_id()))
+            self.assertTrue(queue_info.format())
+            self.assertTrue(repr(queue_info))
         else:
             self.assertIsNone(job.queue_position())
             self.log.warning("Unable to retrieve queue information")
@@ -276,6 +289,9 @@ class TestIBMQJobAttributes(JobTestCase):
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=job_tags)
+        # TODO No need to wait for job to run once api is fixed
+        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+            time.sleep(0.5)
 
         rjobs = backend.jobs(job_tags=['phantom_tag'])
         self.assertEqual(len(rjobs), 0,
@@ -300,6 +316,9 @@ class TestIBMQJobAttributes(JobTestCase):
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=job_tags)
+        # TODO No need to wait for job to run once api is fixed
+        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+            time.sleep(0.5)
 
         no_rjobs_tags = [job_tags[0:1]+['phantom_tags'], ['phantom_tag']]
         for tags in no_rjobs_tags:

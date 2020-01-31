@@ -14,7 +14,6 @@
 
 """Utilities for working with IBM Q Jobs."""
 
-from datetime import datetime, timezone
 from typing import Dict, List, Generator, Any
 from contextlib import contextmanager
 
@@ -32,21 +31,13 @@ API_TO_JOB_STATUS = {
     ApiJobStatus.VALIDATED: JobStatus.VALIDATING,
     ApiJobStatus.RUNNING: JobStatus.RUNNING,
     ApiJobStatus.PENDING_IN_QUEUE: JobStatus.QUEUED,
+    ApiJobStatus.QUEUED: JobStatus.QUEUED,
     ApiJobStatus.COMPLETED: JobStatus.DONE,
     ApiJobStatus.CANCELLED: JobStatus.CANCELLED,
     ApiJobStatus.ERROR_CREATING_JOB: JobStatus.ERROR,
     ApiJobStatus.ERROR_VALIDATING_JOB: JobStatus.ERROR,
     ApiJobStatus.ERROR_RUNNING_JOB: JobStatus.ERROR
 }
-
-
-def current_utc_time() -> str:
-    """Gets the current time in UTC format.
-
-    Returns:
-        current time in UTC format.
-    """
-    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
 
 def build_error_report(results: List[Dict[str, Any]]) -> str:

@@ -69,8 +69,8 @@ class BackendJobLimitResponseSchema(BaseSchema):
     """Schema for BackendJobLimit"""
 
     # Optional properties
-    maximum_jobs = Integer(required=False, missing=None)
-    running_jobs = Integer(required=False, missing=None)
+    maximum_jobs = Integer(required=True)
+    running_jobs = Integer(required=True)
 
     @pre_load
     def preprocess_field_names(self, data, **_):  # type: ignore

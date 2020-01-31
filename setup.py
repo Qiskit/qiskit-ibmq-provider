@@ -21,7 +21,8 @@ requirements = [
     "qiskit-terra>=0.10",
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
-    "websockets>=7,<8"
+    "websockets>=7,<8",
+    "arrow>=0.15.5"
 ]
 
 # Handle version.

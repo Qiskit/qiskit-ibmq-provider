@@ -133,8 +133,15 @@ class ManagedJobSet:
         # IBMQBackend jobs() method does not have a way to pass in unlimited
         # number of jobs to retrieve. 1000 should be a sufficiently large
         # enough number.
-        jobs = provider.backends.jobs(    # type: ignore[attr-defined]
-            limit=1000, job_tags=[self._id_long])
+        jobs = []  # type: List[IBMQJob]
+        page_limit = 1000
+        while True:
+            job_page = provider.backends.jobs(    # type: ignore[attr-defined]
+                skip=len(jobs), limit=page_limit, job_tags=[self._id_long])
+            jobs += job_page
+            if len(job_page) < page_limit:
+                break
+
         if not jobs:
             raise IBMQJobManagerUnknownJobSet(
                 "{} is not a known job set within the provider {}.".format(
@@ -156,9 +163,9 @@ class ManagedJobSet:
         jobs_dict = {}
         for job in jobs:
             # Verify the job is proper.
-            matched = pattern.match(job.name())
+            matched = pattern.match(job.name()) if job.name() else None
             if not matched or matched.group(1) != self._name or \
-                    job.backend().name != self._backend.name:
+                    job.backend().name() != self._backend.name():
                 raise IBMQJobManagerInvalidStateError(
                     "Job {} is tagged for the job set {} but does not appear "
                     "to belong to the set".format(job.job_id(), self.job_set_id()))
