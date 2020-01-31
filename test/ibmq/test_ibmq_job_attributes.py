@@ -18,7 +18,6 @@ import time
 from unittest import mock
 import re
 import uuid
-from threading import Event
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
@@ -64,12 +63,17 @@ class TestIBMQJobAttributes(JobTestCase):
         def _job_callback(job_id, job_status, cjob, **kwargs):
             self.simple_job_callback(job_id, job_status, cjob, **kwargs)
             if job_status is JobStatus.RUNNING:
-                self.assertIsNotNone(cjob.properties())
-                cjob.cancel()
+                job_properties[0] = cjob.properties()
+                try:
+                    cjob.cancel()  # Cancel to go to final state.
+                except JobError:
+                    pass
 
+        job_properties = [None]
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
         job.wait_for_final_state(wait=30, callback=_job_callback)
+        self.assertIsNotNone(job_properties[0])
 
     @requires_provider
     def test_job_name(self, provider):

@@ -92,6 +92,7 @@ class TestIBMQJob(JobTestCase):
         shots = qobj.config.shots
         job = backend.run(qobj)
 
+        job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         result = job.result()
         counts_qx = result.get_counts(0)
         counts_ex = {'00': shots / 2, '11': shots / 2}
@@ -186,7 +187,9 @@ class TestIBMQJob(JobTestCase):
         self.assertTrue(num_jobs - num_error - num_done > 0)
 
         # Wait for all the results.
-        result_array = [job.result(timeout=180) for job in job_array]
+        for job in job_array:
+            job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
+        result_array = [job.result() for job in job_array]
 
         # Ensure all jobs have finished.
         self.assertTrue(
@@ -607,7 +610,9 @@ class TestIBMQJob(JobTestCase):
 
         qobj = assemble(schedules, backend, meas_level=1, shots=256)
         job = backend.run(qobj)
-        _ = job.result()
+        job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
+        self.assertTrue(job.done(), "Job {} didn't complete successfully.".format(job.job_id()))
+        self.assertIsNotNone(job.result(), "Job {} has no result.".format(job.job_id()))
 
     @requires_provider
     def test_retrieve_from_retired_backend(self, provider):

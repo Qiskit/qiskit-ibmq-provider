@@ -68,7 +68,8 @@ class TestWebsocketIntegration(IBMQTestCase):
         job = backend.run(qobj)
         # Manually disable the non-websocket polling.
         job._api._job_final_status_polling = None
-        result = job.result(timeout=180)
+        job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
+        result = job.result()
 
         self.assertTrue(result.success)
 

@@ -176,8 +176,8 @@ jobs:
       env:
         - QISKIT_TESTS=run_slow
       script:
-        # effectively increases timeout to 2h.
-        - travis_wait 120 make test
+        # effectively increases timeout to 1h.
+        - travis_wait 60 make test
     - if: tag IS present
       language: python
       python: "3.6"
