@@ -37,8 +37,7 @@ from qiskit.compiler import assemble, transpile
 from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
-from ..decorators import (requires_provider, slow_test_on_device, requires_device,
-                          requires_qe_access)
+from ..decorators import (requires_provider, requires_device, requires_qe_access)
 from ..utils import most_busy_backend
 
 
@@ -85,8 +84,9 @@ class TestIBMQJob(JobTestCase):
         self.assertGreater(contingency1[1], 0.01)
         self.assertGreater(contingency2[1], 0.01)
 
-    @slow_test_on_device
-    def test_run_device(self, provider, backend):   # pylint: disable=unused-argument
+    @slow_test
+    @requires_device
+    def test_run_device(self, backend):
         """Test running in a real device."""
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         shots = qobj.config.shots
@@ -151,8 +151,9 @@ class TestIBMQJob(JobTestCase):
         job_ids = [job.job_id() for job in job_array]
         self.assertEqual(sorted(job_ids), sorted(list(set(job_ids))))
 
-    @slow_test_on_device
-    def test_run_multiple_device(self, provider, backend):  # pylint: disable=unused-argument
+    @slow_test
+    @requires_device
+    def test_run_multiple_device(self, backend):
         """Test running multiple jobs in a real device."""
         self.log.info('submitting to backend %s', backend.name())
         num_qubits = 5
@@ -242,12 +243,12 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
 
     @requires_device
-    @requires_provider
-    def test_retrieve_job_uses_appropriate_backend(self, backend, provider):
+    def test_retrieve_job_uses_appropriate_backend(self, backend):
         """Test that retrieved jobs come from their appropriate backend."""
         backend_1 = backend
         # Get a second backend.
         backend_2 = None
+        provider = backend.provider()
         for backend_2 in provider.backends():
             if backend_2.status().operational and backend_2.name() != backend_1.name():
                 break

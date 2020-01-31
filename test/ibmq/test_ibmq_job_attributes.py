@@ -19,6 +19,7 @@ from unittest import mock
 import re
 import uuid
 
+from qiskit.test import slow_test
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
@@ -27,7 +28,7 @@ from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider, slow_test_on_device
+from ..decorators import requires_provider, requires_device
 from ..utils import most_busy_backend
 
 
@@ -57,8 +58,9 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj)
         self.assertTrue(job.backend().name() == backend.name())
 
-    @slow_test_on_device
-    def test_running_job_properties(self, provider, backend):  # pylint: disable=unused-argument
+    @slow_test
+    @requires_device
+    def test_running_job_properties(self, backend):
         """Test fetching properties of a running job."""
         def _job_callback(job_id, job_status, cjob, **kwargs):
             self.simple_job_callback(job_id, job_status, cjob, **kwargs)
@@ -132,8 +134,9 @@ class TestIBMQJobAttributes(JobTestCase):
         for job in retrieved_jobs:
             self.assertEqual(job.name(), job_name)
 
-    @slow_test_on_device
-    def test_error_message_device(self, provider, backend):  # pylint: disable=unused-argument
+    @slow_test
+    @requires_device
+    def test_error_message_device(self, backend):
         """Test retrieving job error messages from a device backend."""
 
         qc_new = transpile(self._qc, backend)
@@ -150,6 +153,7 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertTrue(message)
         self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', message), message)
 
+        provider = backend.provider()
         r_message = provider.backends.retrieve_job(job.job_id()).error_message()
         self.assertTrue(r_message)
         self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', r_message), r_message)

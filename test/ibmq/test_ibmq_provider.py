@@ -22,11 +22,11 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator, IBMQBackend
 from qiskit.qobj import QobjHeader
-from qiskit.test import providers
+from qiskit.test import providers, slow_test
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.models.backendproperties import BackendProperties
 
-from ..decorators import requires_provider, slow_test_on_device
+from ..decorators import requires_provider, requires_device
 from ..ibmqtestcase import IBMQTestCase
 
 
@@ -117,8 +117,9 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
                 self.assertEqual(result.results[0].header.some_field,
                                  'extra info')
 
-    @slow_test_on_device
-    def test_qobj_headers_in_result_devices(self, provider, backend):
+    @slow_test
+    @requires_device
+    def test_qobj_headers_in_result_devices(self, backend):
         """Test that the qobj headers are passed onto the results for devices."""
         # pylint: disable=unused-argument
 
