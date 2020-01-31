@@ -29,3 +29,9 @@ class IBMQTestCase(QiskitTestCase):
 
         from qiskit.providers.basicaer import BasicAer
         BasicAer._backends = BasicAer._verify_backends()
+
+    @classmethod
+    def simple_job_callback(cls, job_id, job_status, job, **kwargs):
+        """A callback function that logs current job status."""
+        queue_info = kwargs.get('queue_info', 'unknown')
+        cls.log.info("Job %s status is %, queue_info is %s", job_id, job_status, queue_info)

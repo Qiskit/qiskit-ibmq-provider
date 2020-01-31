@@ -177,6 +177,9 @@ def slow_test_on_device(func):
                     _backend = backends[0]
                     break
         else:
+            if os.getenv('QE_HGP', None):
+                hgp = os.getenv('QE_HGP').split('/')
+                provider = ibmq_factory.get_provider(hub=hgp[0], group=hgp[1], project=hgp[2])
             _backend = least_busy(provider.backends(
                 simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
 
