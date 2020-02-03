@@ -48,6 +48,8 @@ The format is based on [Keep a Changelog].
 
 ### Changed
 
+- `IBMQJobManager` now looks at the job limit and waits for old jobs
+  to finish before submitting new ones if the limit has been reached. (\#533)
 - The Exception hierarchy has been refined with more specialized classes. 
   You can, however, continue to catch their parent exceptions (such 
   as `IBMQAccountError`). Also, the exception class `IBMQApiUrlError` 
