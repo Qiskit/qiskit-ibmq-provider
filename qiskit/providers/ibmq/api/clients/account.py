@@ -411,7 +411,7 @@ class AccountClient(BaseClient):
             start_time = time.time()
             try:
                 status_response = self._job_final_status_websocket(
-                    job_id, timeout=timeout, status_deque=status_deque)
+                    job_id=job_id, timeout=timeout, status_deque=status_deque)
             except WebsocketTimeoutError as ex:
                 logger.info('Timeout checking job status using websocket, '
                             'retrying using HTTP: %s', ex)
