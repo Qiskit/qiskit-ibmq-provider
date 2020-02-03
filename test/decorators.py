@@ -37,7 +37,6 @@ from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
 from qiskit.providers.ibmq.accountprovider import AccountProvider
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
 
 def requires_qe_access(func):
@@ -112,7 +111,8 @@ def requires_device(func):
         * Use the backend specified by `QE_STAGING_DEVICE` if
             `USE_STAGING_CREDENTIALS` is set, otherwise use the backend
             specified by `QE_DEVICE`.
-        * if device environment variable is not set, use the least busy backend.
+        * if device environment variable is not set, use the least busy
+            real backend.
         * appends arguments `backend` to the decorated function.
 
     Args:
@@ -134,14 +134,17 @@ def requires_device(func):
             os.getenv('USE_STAGING_CREDENTIALS', '') else os.getenv('QE_DEVICE', None)
 
         _backend = None
+        provider = _get_custom_provider(ibmq_factory) or provider
+
         if backend_name:
-            for provider in ibmq_factory.providers():
+            # Put desired provider as the first in the list.
+            providers = [provider] + ibmq_factory.providers()
+            for provider in providers:
                 backends = provider.backends(name=backend_name)
                 if backends:
                     _backend = backends[0]
                     break
         else:
-            provider = _get_custom_provider(ibmq_factory) or provider
             _backend = least_busy(provider.backends(
                 simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
 
@@ -204,44 +207,3 @@ def _get_custom_provider(ibmq_factory: IBMQFactory) -> Optional[AccountProvider]
         hgp = hgp.split('/')
         return ibmq_factory.get_provider(hub=hgp[0], group=hgp[1], project=hgp[2])
     return None  # No custom provider.
-
-
-def _get_backend(ibmq_factory: IBMQFactory, default_provider: AccountProvider) -> IBMQBackend:
-    """Find the proper provider and backend based on environment variables.
-
-    It involves:
-        * If the `USE_STAGING_CREDENTIALS` environment variable is set:
-            * Return the backend specified by `QE_STAGING_DEVICE` if it
-                is set, and the first provider that offers the backend.
-            * Else returns the default provider and the least busy device.
-        * Else:
-            * Return the backend specified by `QE_DEVICE` if it
-                is set, and the first provider that offers the backend.
-            * Otherwise returns the default provider and the least busy device.
-
-    Args:
-        ibmq_factory: IBMQFactory instance with account already loaded.
-        default_provider: default provider to use
-
-    Returns:
-        A tuple of provider and backend
-
-    Raises:
-        Exception: if no suitable backend found.
-    """
-
-    if os.getenv('USE_STAGING_CREDENTIALS', ''):
-        backend_name = os.getenv('QE_STAGING_DEVICE', None)
-    else:
-        backend_name = os.getenv('QE_DEVICE', None)
-
-    if backend_name:
-        for provider in ibmq_factory.providers():
-            backends = provider.backends(name=backend_name)
-            if backends:
-                return provider, backends[0]
-        raise Exception("Unable to find suitable backend.")
-
-    provider = _get_custom_provider(ibmq_factory) or default_provider
-    return least_busy(provider.backends(
-        simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))

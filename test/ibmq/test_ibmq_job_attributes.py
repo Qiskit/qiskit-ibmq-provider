@@ -144,7 +144,6 @@ class TestIBMQJobAttributes(JobTestCase):
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
         job = backend.run(qobj)
-        self.log.info("Running job %s on backend %s", job.job_id(), backend)
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         with self.assertRaises(IBMQJobFailureError):
             job.result(partial=False)
