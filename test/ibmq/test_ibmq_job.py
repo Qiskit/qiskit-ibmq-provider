@@ -88,7 +88,7 @@ class TestIBMQJob(JobTestCase):
     @requires_device
     def test_run_device(self, backend):
         """Test running in a real device."""
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend, shots=2048)
         shots = qobj.config.shots
         job = backend.run(qobj)
 
