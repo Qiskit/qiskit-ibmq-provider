@@ -559,6 +559,20 @@ class TestIBMQJob(JobTestCase):
                             .format(i, job.creation_date(), date_today_str))
 
     @requires_provider
+    def test_retrieve_jobs_order(self, provider):
+        """Test retrieving jobs with different orders."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj=qobj)
+        job.wait_for_final_state()
+
+        newest_jobs = backend.jobs(limit=10, status=JobStatus.DONE, descending=True)
+        self.assertIn(job.job_id(), [rjob.job_id() for rjob in newest_jobs])
+
+        newest_jobs = backend.jobs(limit=10, status=JobStatus.DONE, descending=False)
+        self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in newest_jobs])
+
+    @requires_provider
     def test_double_submit_fails(self, provider):
         """Test submitting a job twice."""
         backend = provider.get_backend('ibmq_qasm_simulator')

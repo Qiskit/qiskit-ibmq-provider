@@ -102,7 +102,7 @@ class ManagedJobSet:
         if job_tags:
             self._tags = job_tags.copy()
 
-        job_submit_lock = threading.Lock()  # Usd to synchronize job submit.
+        job_submit_lock = threading.Lock()  # Used to synchronize job submit.
         exp_index = 0
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)

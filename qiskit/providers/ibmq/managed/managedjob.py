@@ -104,6 +104,7 @@ class ManagedJob:
             job_share_level: Job share level.
             job_tags: Tags to be assigned to the job.
         """
+        # pylint: disable=missing-raises-doc
         submit_lock.acquire()
         try_again = True
         try:
@@ -116,7 +117,7 @@ class ManagedJob:
                         job_share_level=job_share_level.value,
                         job_tags=job_tags)
                 except IBMQBackendApiError as api_err:
-                    if 'Error code: 3458.' in str(api_err):
+                    if 'Error code: 3458' in str(api_err):
                         logger.warning("Job limit reached, waiting for jobs to finish "
                                        "before submitting the next one.")
                         final_states = [state.value for state in API_JOB_FINAL_STATES]
