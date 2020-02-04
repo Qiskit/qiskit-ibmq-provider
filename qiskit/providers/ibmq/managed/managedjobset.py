@@ -62,7 +62,7 @@ class ManagedJobSet:
         self._managed_jobs = []  # type: List[ManagedJob]
         self._name = name or datetime.utcnow().isoformat()
         self._backend = None  # type: Optional[IBMQBackend]
-        self._id = short_id or uuid.uuid4().hex
+        self._id = short_id or uuid.uuid4().hex + '-' + str(time.time()).replace('.', '')
         self._id_long = self._id_prefix + self._id + self._id_suffix
         self._tags = []  # type: List[str]
 
