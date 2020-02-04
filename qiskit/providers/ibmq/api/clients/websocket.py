@@ -299,7 +299,7 @@ class WebsocketClient(BaseClient):
                 current_retry_attempt = current_retry_attempt + 1
                 if (current_retry_attempt > retries) or (not attempt_retry):
                     logger.error('Failed to establish a websocket connection after the '
-                                 'maximum number of retries. Maximum retries = {}'.format(retries))
+                                 'maximum number of retries. Maximum retries = %s', retries)
                     raise ex
 
                 # Sleep, and then `continue` with retrying.
