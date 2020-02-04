@@ -16,7 +16,7 @@ import os
 
 from setuptools import setup
 
-requirements = [
+REQUIREMENTS = [
     "nest-asyncio>=1.0.0,!=1.1.0",
     "qiskit-terra>=0.10",
     "requests>=2.19",
@@ -72,9 +72,13 @@ setup(
               'qiskit.providers.ibmq.credentials',
               'qiskit.providers.ibmq.job',
               'qiskit.providers.ibmq.managed',
-              'qiskit.providers.ibmq.utils'],
-    install_requires=requirements,
+              'qiskit.providers.ibmq.utils',
+              'qiskit.providers.ibmq.visualizations',
+              'qiskit.providers.ibmq.visualizations.interactive'],
+    install_requires=REQUIREMENTS,
     include_package_data=True,
     python_requires=">=3.5",
-    zip_safe=False
+    zip_safe=False,
+    extras_require={'visualization': ['matplotlib>=2.1', 'ipywidgets>=7.3.0',
+                                      "seaborn>=0.9.0", "plotly>=4.4"]},
 )
