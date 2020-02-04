@@ -18,6 +18,7 @@ import plotly.graph_objects as go
 from .plotly_wrapper import PlotlyWidget, PlotlyFigure
 from ..device_layouts import DEVICE_LAYOUTS
 
+
 def iplot_gate_map(backend, figsize=(None, None), label_qubits=True,
                    qubit_size=None, line_width=None, font_size=None,
                    qubit_color="#2f4b7c", qubit_labels=None,
@@ -75,10 +76,11 @@ def iplot_gate_map(backend, figsize=(None, None), label_qubits=True,
                           plot_bgcolor=background_color,
                           paper_bgcolor=background_color,
                           width=figsize[0], height=figsize[1],
-                          margin=dict(t=30, l=0, r=0, b=0)
-                         )
-        out = PlotlyWidget(fig)
-        return out
+                          margin=dict(t=30, l=0, r=0, b=0))
+
+        if as_widget:
+            return PlotlyWidget(fig)
+        return PlotlyFigure(fig)
 
     x_max = max([d[1] for d in grid_data])
     y_max = max([d[0] for d in grid_data])
@@ -159,9 +161,7 @@ def iplot_gate_map(backend, figsize=(None, None), label_qubits=True,
                            mode="lines",
                            hoverinfo='none',
                            line=dict(width=line_width,
-                                     color=line_color[ind]
-                                    ),
-                           ))
+                                     color=line_color[ind])))
 
     # Add the qubits themselves
     if qubit_labels is None:
@@ -199,8 +199,8 @@ def iplot_gate_map(backend, figsize=(None, None), label_qubits=True,
                       plot_bgcolor=background_color,
                       paper_bgcolor=background_color,
                       width=figsize[0], height=figsize[1],
-                      margin=dict(t=30, l=0, r=0, b=0)
-                     )
+                      margin=dict(t=30, l=0, r=0, b=0))
+
     if as_widget:
         return PlotlyWidget(fig)
     return PlotlyFigure(fig)
