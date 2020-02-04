@@ -18,7 +18,7 @@ import numpy as np
 import seaborn as sns
 
 HELIX_LIGHT_CMAP = sns.cubehelix_palette(start=2.5,
-                                         rot=0.4,
+                                         rot=0.6,
                                          hue=2,
                                          gamma=1,
                                          light=0.9,
@@ -27,7 +27,7 @@ HELIX_LIGHT_CMAP = sns.cubehelix_palette(start=2.5,
                                          as_cmap=True)
 
 HELIX_DARK_CMAP = sns.cubehelix_palette(start=2.5,
-                                        rot=0.4,
+                                        rot=0.6,
                                         hue=2,
                                         gamma=0.95,
                                         light=0.95,

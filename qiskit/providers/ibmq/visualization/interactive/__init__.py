@@ -24,3 +24,4 @@ except ImportError:
 if ('ipykernel' in sys.modules) and ('spyder' not in sys.modules):
     if HAS_PLOTLY:
         from .error_map import iplot_error_map
+        from .gate_map import iplot_gate_map

@@ -24,6 +24,7 @@ Interactive Visualizations
 .. autosummary::
    :toctree: ../stubs/
 
+   iplot_gate_map
    iplot_error_map
 """
 from .interactive import *
