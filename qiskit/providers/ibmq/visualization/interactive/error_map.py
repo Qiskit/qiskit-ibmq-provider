@@ -55,14 +55,14 @@ def iplot_error_map(backend,
         .. jupyter-execute::
 
            from qiskit import IBMQ
-           from qiskit.providers.ibmq.visualizations import iplot_error_map
+           from qiskit.providers.ibmq.visualization import iplot_error_map
 
            IBMQ.load_account()
 
            provider = IBMQ.get_provider(group='open', project='main')
            backend = provider.get_backend('ibmq_vigo')
 
-           iplot_error_map(backend)
+           iplot_error_map(backend, as_widget=True)
     """
     meas_text_color = '#FFFFFF'
     if background_color == 'white':

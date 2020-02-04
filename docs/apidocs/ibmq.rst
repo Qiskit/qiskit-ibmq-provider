@@ -13,13 +13,10 @@ qiskit.providers.ibmq
   :no-inheritance-diagram:
   :no-inherited-members:
 
-
-Submodules
-==========
-
 .. toctree::
    :maxdepth: 1
 
    ibmqfactory
    accountprovider
    ibmqbackend
+   visualization

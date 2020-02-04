@@ -11,6 +11,19 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-"""IBM Quantum visualizations
+"""
+===========================================================
+Visualizations (:mod:`qiskit.providers.ibmq.visualization`)
+===========================================================
+
+.. currentmodule:: qiskit.providers.ibmq.visualization
+
+Interactive Visualizations
+==========================
+
+.. autosummary::
+   :toctree: ../stubs/
+
+   iplot_error_map
 """
 from .interactive import *

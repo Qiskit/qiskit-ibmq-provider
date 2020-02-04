@@ -9,4 +9,8 @@ Sphinx>=1.8.3
 sphinx-rtd-theme>=0.4.0
 sphinx-tabs>=1.1.11 
 sphinx-automodapi
+matplotlib>=2.1
+jupyter
 plotly>=4.4
+seaborn>=0.9.0
+jupyter-sphinx
