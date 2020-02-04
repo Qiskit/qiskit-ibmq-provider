@@ -144,7 +144,8 @@ class IBMQBackendService(SimpleNamespace):
                     of the tags specified in ``job_tags`` to be included.
                 Default: OR.
             descending: if True, return the jobs in descending order of the job
-                creation date (newest first). If False, return in ascending order. Default: True.
+                creation date (i.e. newest first) until the limit is reached.
+                If False, return in ascending order. Default: True.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Default: None.

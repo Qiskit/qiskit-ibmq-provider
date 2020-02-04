@@ -48,6 +48,9 @@ The format is based on [Keep a Changelog].
 
 ### Changed
 
+- `IBMQBackend.jobs()` now accepts a new boolean parameter `descending`,
+  which can be used to indicate whether the jobs should be returned in
+  descending or ascending order. (\#533) 
 - `IBMQJobManager` now looks at the job limit and waits for old jobs
   to finish before submitting new ones if the limit has been reached. (\#533)
 - The Exception hierarchy has been refined with more specialized classes. 
