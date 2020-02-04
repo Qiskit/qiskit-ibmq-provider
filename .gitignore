@@ -101,3 +101,5 @@ ENV/
 # Qiskit specific ignores
 Qconfig.py
 .DS_Store
+
+/docs/stubs/
