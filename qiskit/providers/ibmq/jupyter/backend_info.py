@@ -15,6 +15,7 @@
 
 """Interactive Jobs widget
 """
+import threading
 import ipyvuetify as vue
 from IPython.display import display  # pylint: disable=import-error
 from .config_widget import config_tab
@@ -24,6 +25,9 @@ from .jobs_widget import jobs_tab
 from ..visualization.interactive import iplot_error_map
 
 
+def _async_job_loader(tab, backend):
+    tab.children = [jobs_tab(backend)]
+
 def backend_widget(backend):
     """Display backend information as a widget.
 
@@ -31,6 +35,7 @@ def backend_widget(backend):
         backend (IBMQBackend): A backend.
     """
     cred = backend.provider().credentials
+    last_tab = vue.TabItem(children=[])
     card = vue.Card(height=600, outlined=True,
                     children=[
                         vue.Toolbar(flat=True, color="#002d9c",
@@ -53,6 +58,12 @@ def backend_widget(backend):
                                      vue.TabItem(children=[gates_tab(backend)]),
                                      vue.TabItem(children=[iplot_error_map(backend,
                                                                            as_widget=True)]),
-                                     vue.TabItem(children=[jobs_tab(backend)])])
+                                     last_tab])
                     ])
+
+    # Load job data async for a bit better performance
+    thread = threading.Thread(target=_async_job_loader,
+                              args=(last_tab, backend))
+    thread.start()
+
     display(card)

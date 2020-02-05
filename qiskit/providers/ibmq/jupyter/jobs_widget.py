@@ -235,12 +235,12 @@ def _job_summary(backend):
                                 marker=dict(colors=wedge_colors),
                                 )
                     )
-    fig.update_layout(margin=dict(t=50, l=50, r=50, b=100))
+    fig.update_layout(margin=dict(t=10, l=10, r=10, b=10))
     sun_wid = PlotlyWidget(fig)
     sun_wid._active = 0
     sun_wid._job_index = index_jobs
 
-    def callback(_, selection, _):  # pylint: disable=duplicate-argument-name
+    def callback(trace, selection, _):  # pylint: disable=unused-argument
         idx = selection.point_inds[0]
         if idx != sun_wid._active:
             if idx:
@@ -272,13 +272,19 @@ def jobs_tab(backend):
                                            width='100%',
                                            overflow='hidden scroll',))
 
-    sum_wid = _job_summary(backend)
-    sum_wid._table = table
-    sum_wid._title = title
+    sun_wid = _job_summary(backend)
+    sun_wid._table = table
+    sun_wid._title = title
+
+    left = wid.Box(children=[sun_wid],
+                   layout=wid.Layout(width='40%',
+                                     overflow='hidden hidden'))
 
     right = wid.VBox(children=[title, table],
                      layout=wid.Layout(width='60%',
                                        overflow='hidden hidden'))
 
-    out = wid.HBox(children=[sum_wid, right], layout=wid.Layout(max_height='500px'))
+    out = wid.HBox(children=[left, right],
+                   layout=wid.Layout(max_height='500px',
+                                     margin='10px'))
     return out
