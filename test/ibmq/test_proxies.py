@@ -26,6 +26,7 @@ from qiskit.providers.ibmq import IBMQFactory
 from qiskit.providers.ibmq.api.clients import (AuthClient,
                                                VersionClient)
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
+from qiskit.providers.ibmq.credentials import Credentials
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_qe_access
 
@@ -38,8 +39,8 @@ except ImportError:
 ADDRESS = '127.0.0.1'
 PORT = 8080
 VALID_PROXIES = {'https': 'http://{}:{}'.format(ADDRESS, PORT)}
-INVALID_PORT_PROXIES = {'https': '{}:{}'.format(ADDRESS, '6666')}
-INVALID_ADDRESS_PROXIES = {'https': '{}:{}'.format('invalid', PORT)}
+INVALID_PORT_PROXIES = {'https': 'http://{}:{}'.format(ADDRESS, '6666')}
+INVALID_ADDRESS_PROXIES = {'https': 'http://{}:{}'.format('invalid', PORT)}
 
 
 @skipIf((sys.version_info > (3, 5) and pproxy_version == '1.2.2') or
@@ -144,6 +145,24 @@ class TestProxies(IBMQTestCase):
             version_finder.version()
 
         self.assertIsInstance(context_manager.exception.__cause__, ProxyError)
+
+    @requires_qe_access
+    def test_proxy_urls(self, qe_token, qe_url):
+        """Test different forms of the proxy urls."""
+        test_urls = [
+            '{}:{}'.format(ADDRESS, PORT),
+            'http://{}:{}'.format(ADDRESS, PORT),
+            '//{}:{}'.format(ADDRESS, PORT),
+            'http:{}:{}'.format(ADDRESS, PORT),
+            'http://user:123@{}:{}'.format(ADDRESS, PORT)
+        ]
+        for proxy_url in test_urls:
+            with self.subTest(proxy_url=proxy_url):
+                credentials = Credentials(
+                    qe_token, qe_url, proxies={'urls': {'https': proxy_url}})
+                version_finder = VersionClient(credentials.base_url,
+                                               **credentials.connection_parameters())
+                version_finder.version()
 
 
 def pproxy_desired_access_log_line(url):
