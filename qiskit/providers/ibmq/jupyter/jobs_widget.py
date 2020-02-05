@@ -256,7 +256,7 @@ def _job_summary(backend):
     return sun_wid
 
 
-def jobs_widget(backend):
+def jobs_tab(backend):
     """Constructs a widget containing job information for an input
     backend.
 
