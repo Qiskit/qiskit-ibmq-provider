@@ -28,6 +28,6 @@ def most_busy_backend(provider):
     Returns:
         IBMQBackend: the most busy backend.
     """
-
-    return max([b for b in provider.backends(simulator=False) if b.status().operational],
+    backends = provider.backends(simulator=False, operational=True)
+    return max([b for b in backends if b.configuration().n_qubits >= 5],
                key=lambda b: b.status().pending_jobs)
