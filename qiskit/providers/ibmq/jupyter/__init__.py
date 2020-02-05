@@ -25,7 +25,7 @@ Quantum devices.
 Detailed information on a single backend
 ========================================
 
-.. code-block::
+.. jupyter-execute::
 
     from qiskit import IBMQ
     import qiskit.providers.ibmq.jupyter
