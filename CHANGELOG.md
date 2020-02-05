@@ -48,6 +48,8 @@ The format is based on [Keep a Changelog].
 
 ### Changed
 
+- The use of proxy urls without a protocol (e.g. `http://`) is deprecated
+  due to recent Python changes. (\#538)
 - The Exception hierarchy has been refined with more specialized classes. 
   You can, however, continue to catch their parent exceptions (such 
   as `IBMQAccountError`). Also, the exception class `IBMQApiUrlError` 
