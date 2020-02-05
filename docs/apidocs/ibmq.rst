@@ -20,3 +20,4 @@ qiskit.providers.ibmq
    accountprovider
    ibmqbackend
    visualization
+   jupyter

@@ -29,7 +29,6 @@ Detailed information on a single backend
 
     from qiskit import IBMQ
     import qiskit.providers.ibmq.jupyter
-    %matplotlib inline
 
     IBMQ.load_account()
     provider = IBMQ.get_provider(hub='ibm-q')
