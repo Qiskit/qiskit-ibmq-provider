@@ -121,6 +121,7 @@ tr:nth-child(even) {background-color: #f6f6f6;}
 
     grid = wid.GridBox(children=[upper_table, image_widget, lower_table],
                        layout=wid.Layout(max_height='500px',
+                                         margin='10px',
                                          overflow='hidden scroll',
                                          grid_template_rows='auto auto',
                                          grid_template_columns='33% 21% 21% 21%',

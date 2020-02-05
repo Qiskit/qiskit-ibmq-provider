@@ -117,6 +117,7 @@ tr:nth-child(even) {background-color: #f6f6f6;};
                                  middle_table_widget, right_table_widget],
                        layout=wid.Layout(width='100%',
                                          max_height='500px',
+                                         margin='10px',
                                          overflow='hidden scroll',
                                          grid_template_rows='auto auto',
                                          grid_template_columns='33% 33% 33%',

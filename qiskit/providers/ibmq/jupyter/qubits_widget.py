@@ -95,6 +95,7 @@ tr:nth-child(even) {background-color: #f6f6f6 !important;}
 
     out = wid.VBox(children=[update_date_widget, qubit_widget],
                    layout=wid.Layout(max_height='500px',
+                                     margin='10px',
                                      overflow='hidden scroll',))
 
     return out
