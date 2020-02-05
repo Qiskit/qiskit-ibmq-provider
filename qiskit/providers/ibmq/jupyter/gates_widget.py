@@ -19,6 +19,7 @@ import math
 import ipywidgets as wid
 from ..utils.converters import utc_to_local
 
+
 def gates_tab(backend):
     """The multiple qubit gate error widget.
 
@@ -46,7 +47,7 @@ def gates_tab(backend):
 table {
     border-collapse: collapse;
     font-family:IBM Plex Sans, Arial, sans-serif !important;
-    
+
 }
 
 th, td {

@@ -44,7 +44,7 @@ if ('ipykernel' in sys.modules) and ('spyder' not in sys.modules):
     from IPython import get_ipython          # pylint: disable=import-error
     from qiskit.test.mock import FakeBackend
     from ..ibmqbackend import IBMQBackend
-    from .backend_info import  backend_widget
+    from .backend_info import backend_widget
 
     _IP = get_ipython()
     if _IP is not None:

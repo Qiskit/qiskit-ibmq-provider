@@ -28,6 +28,7 @@ from ..visualization.interactive import iplot_error_map
 def _async_job_loader(tab, backend):
     tab.children = [jobs_tab(backend)]
 
+
 def backend_widget(backend):
     """Display backend information as a widget.
 

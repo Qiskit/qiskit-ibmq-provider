@@ -18,6 +18,7 @@
 import ipywidgets as wid
 from ..utils.converters import utc_to_local
 
+
 def qubits_tab(backend):
     """The qubits properties widget
 

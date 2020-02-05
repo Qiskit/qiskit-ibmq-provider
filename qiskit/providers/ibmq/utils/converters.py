@@ -18,6 +18,7 @@
 import datetime
 import dateutil
 
+
 def utc_to_local(utc_dt):
     """Takes a UTC datetime object or string and
     converts it to a local timezone datetime.

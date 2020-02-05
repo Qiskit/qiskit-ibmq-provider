@@ -35,6 +35,7 @@ MONTH_NAMES = {1: 'Jan.',
                12: 'Dec.'
                }
 
+
 def _title_builder(sel_dict):
     """Builds the title string for the jobs table
 
@@ -86,8 +87,7 @@ tr:nth-child(even) {background-color: #f6f6f6 !important;}
             name = jdata[1]
         table_html += _temp_str.format(time=date_str,
                                        jid=name,
-                                       status=jdata[3]
-                                      )
+                                       status=jdata[3])
     table_html += table_footer
     return table_html
 
@@ -162,7 +162,7 @@ def _job_summary(backend):
             # Adding the months here.  So the total
             # jobs to include must include all the jobs
             # in all the days in that month.
-            month_dict = {'year': yr_key, 'month': key, 'jobs':[]}
+            month_dict = {'year': yr_key, 'month': key, 'jobs': []}
             total_jobs_month = 0
             for day in val.keys():
                 for jjj in val[day]:
@@ -181,12 +181,11 @@ def _job_summary(backend):
             values.append(total_jobs_month)
             wedge_colors.append(colors[month_counter % num_colors])
             month_counter += 1
-
-            #Do the days
+            # Do the days
             day_counter = 0
             for day_num, day_jobs in val.items():
                 day_dict = {'year': yr_key, 'month': key,
-                            'day': day_num, 'jobs':[]}
+                            'day': day_num, 'jobs': []}
                 day_dict['jobs'].extend(day_jobs)
 
                 index_jobs.append(day_dict)
