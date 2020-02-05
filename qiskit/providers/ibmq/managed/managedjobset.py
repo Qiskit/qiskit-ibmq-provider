@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -19,20 +19,24 @@ from typing import List, Optional, Union, Any, Tuple
 from concurrent.futures import ThreadPoolExecutor
 import time
 import logging
+import uuid
+import re
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 from qiskit.compiler import assemble
 from qiskit.qobj import Qobj
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.exceptions import JobTimeoutError
+from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
+from qiskit.providers.ibmq.accountprovider import AccountProvider
 
 from .managedjob import ManagedJob
 from .managedresults import ManagedResults
 from .utils import requires_submit, format_status_counts, format_job_details
 from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
-                         IBMQJobManagerJobNotFound)
+                         IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet)
 from ..job import IBMQJob
+from ..job.exceptions import IBMQJobTimeoutError
 from ..ibmqbackend import IBMQBackend
 
 logger = logging.getLogger(__name__)
@@ -41,11 +45,26 @@ logger = logging.getLogger(__name__)
 class ManagedJobSet:
     """A set of managed jobs."""
 
-    def __init__(self, name: Optional[str] = None) -> None:
-        """Creates a new ManagedJobSet instance."""
+    _id_prefix = "ibmq_jobset_"
+    _id_suffix = "_"
+
+    def __init__(
+            self,
+            name: Optional[str] = None,
+            short_id: Optional[str] = None
+    ) -> None:
+        """Creates a new ManagedJobSet instance.
+
+        Args:
+            name: Name for this set of jobs. Default: current datetime.
+            short_id: Short ID for this set of jobs. Default: None.
+        """
         self._managed_jobs = []  # type: List[ManagedJob]
         self._name = name or datetime.utcnow().isoformat()
         self._backend = None  # type: Optional[IBMQBackend]
+        self._id = short_id or uuid.uuid4().hex + '-' + str(time.time()).replace('.', '')
+        self._id_long = self._id_prefix + self._id + self._id_suffix
+        self._tags = []  # type: List[str]
 
         # Used for caching
         self._managed_results = None  # type: Optional[ManagedResults]
@@ -56,6 +75,8 @@ class ManagedJobSet:
             experiment_list: Union[List[List[QuantumCircuit]], List[List[Schedule]]],
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
+            job_share_level: ApiJobShareLevel,
+            job_tags: Optional[List[str]] = None,
             **assemble_config: Any
     ) -> None:
         """Execute a list of circuits or pulse schedules on a backend.
@@ -64,6 +85,8 @@ class ManagedJobSet:
             experiment_list : Circuit(s) or pulse schedule(s) to execute.
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
+            job_share_level: Job share level.
+            job_tags: tags to be assigned to the job.
             assemble_config: Additional arguments used to configure the Qobj
                 assembly. Refer to the ``qiskit.compiler.assemble`` documentation
                 for details on these arguments.
@@ -75,16 +98,93 @@ class ManagedJobSet:
             raise IBMQJobManagerInvalidStateError("Jobs were already submitted.")
 
         self._backend = backend
+        if job_tags:
+            self._tags = job_tags.copy()
         exp_index = 0
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)
             job_name = "{}_{}_".format(self._name, i)
-            self._managed_jobs.append(
-                ManagedJob(experiments, start_index=exp_index,
-                           qobj=qobj, job_name=job_name, backend=backend,
-                           executor=executor)
-            )
+            mjob = ManagedJob(experiments_count=len(experiments), start_index=exp_index)
+            mjob.submit(qobj=qobj, job_name=job_name, backend=backend,
+                        executor=executor, job_share_level=job_share_level,
+                        job_tags=self._tags+[self._id_long])
+            self._managed_jobs.append(mjob)
             exp_index += len(experiments)
+
+    def retrieve_jobs(self, provider: AccountProvider, refresh: bool = False) -> None:
+        """Retrieve previously submitted jobs for this set.
+
+        Args:
+            provider: Provider used for this job set.
+            refresh: If True, re-query the API for the job set.
+                Otherwise return the cached value. Default: False.
+
+        Raises:
+            IBMQJobManagerUnknownJobSet: If the job set cannot be found.
+            IBMQJobManagerInvalidStateError: If jobs for this job set are
+                found but have unexpected attributes.
+        """
+        if not refresh and self._managed_jobs:
+            return
+
+        # IBMQBackend jobs() method does not have a way to pass in unlimited
+        # number of jobs to retrieve. 1000 should be a sufficiently large
+        # enough number.
+        jobs = []  # type: List[IBMQJob]
+        page_limit = 1000
+        while True:
+            job_page = provider.backends.jobs(    # type: ignore[attr-defined]
+                skip=len(jobs), limit=page_limit, job_tags=[self._id_long])
+            jobs += job_page
+            if len(job_page) < page_limit:
+                break
+
+        if not jobs:
+            raise IBMQJobManagerUnknownJobSet(
+                "{} is not a known job set within the provider {}.".format(
+                    self.job_set_id(), provider))
+
+        # Extract common information from the first job.
+        first_job = jobs[0]
+        pattern = re.compile(r'(.*)_([0-9])+_$')
+        matched = pattern.match(first_job.name())
+        if not matched:
+            raise IBMQJobManagerInvalidStateError(
+                "Job {} is tagged for the job set {} but does not have a proper job name.".format(
+                    first_job.job_id(), self.job_set_id()))
+        self._name = matched.group(1)
+        self._backend = first_job.backend()
+        self._tags = first_job.tags()
+        self._tags.remove(self._id_long)
+
+        jobs_dict = {}
+        for job in jobs:
+            # Verify the job is proper.
+            matched = pattern.match(job.name()) if job.name() else None
+            if not matched or matched.group(1) != self._name or \
+                    job.backend().name() != self._backend.name():
+                raise IBMQJobManagerInvalidStateError(
+                    "Job {} is tagged for the job set {} but does not appear "
+                    "to belong to the set".format(job.job_id(), self.job_set_id()))
+            jobs_dict[int(matched.group(2))] = job
+
+        sorted_indexes = sorted(jobs_dict)
+        # Verify we got all jobs.
+        if sorted_indexes != list(range(len(sorted_indexes))):
+            raise IBMQJobManagerInvalidStateError(
+                "Unable to retrieve all jobs for job set {}".format(self.job_set_id()))
+
+        self._managed_jobs = []
+        experiment_index = 0
+        for job_index in sorted_indexes:
+            job = jobs_dict[job_index]
+            mjob = ManagedJob(
+                start_index=experiment_index,
+                experiments_count=len(job.qobj().experiments),
+                job=job
+            )
+            self._managed_jobs.append(mjob)
+            experiment_index = mjob.end_index + 1
 
     def statuses(self) -> List[Union[JobStatus, None]]:
         """Return the status of each job.
@@ -106,7 +206,9 @@ class ManagedJobSet:
             A report on job statuses.
         """
         statuses = self.statuses()
-        report = ["Job set {}:".format(self.name()),
+        report = ["Job set name: {}".format(self.name()),
+                  "          ID: {}".format(self.job_set_id()),
+                  "        tags: {}".format(self.tags()),
                   "Summary report:"]
         report.extend(format_status_counts(statuses))
 
@@ -180,7 +282,7 @@ class ManagedJobSet:
                 result = mjob.result(timeout=timeout, partial=partial)
                 if result is None or not result.success:
                     success = False
-            except JobTimeoutError:
+            except IBMQJobTimeoutError:
                 raise IBMQJobManagerTimeoutError(
                     "Timeout waiting for results for experiments {}-{}.".format(
                         mjob.start_index, self._managed_jobs[-1].end_index))
@@ -273,10 +375,10 @@ class ManagedJobSet:
         else:
             if isinstance(experiment, (QuantumCircuit, Schedule)):
                 experiment = experiment.name
-            for mjob in self._managed_jobs:
-                for i, exp in enumerate(mjob.experiments):
-                    if exp.name == experiment:
-                        return mjob.job, i
+            for job in self.jobs():
+                for i, exp in enumerate(job.qobj().experiments):
+                    if hasattr(exp.header, 'name') and exp.header.name == experiment:
+                        return job, i
 
         raise IBMQJobManagerJobNotFound("Unable to find the job for experiment {}".format(
             experiment))
@@ -299,6 +401,16 @@ class ManagedJobSet:
         """
         return self._name
 
+    def job_set_id(self) -> str:
+        """Return the ID of this set of jobs.
+
+        Returns:
+            ID of this set of jobs.
+        """
+        # Return only the short version of the ID to reduce the possibility the
+        # full ID is used for another job.
+        return self._id
+
     def managed_jobs(self) -> List[ManagedJob]:
         """Return a list of managed jobs.
 
@@ -306,3 +418,11 @@ class ManagedJobSet:
             A list of managed jobs.
         """
         return self._managed_jobs
+
+    def tags(self) -> List[str]:
+        """Return the tags assigned to this set of jobs.
+
+        Returns:
+            Tags assigned to this set of jobs.
+        """
+        return self._tags

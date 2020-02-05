@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -16,18 +16,18 @@
 
 import warnings
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor
 
-from qiskit.circuit import QuantumCircuit
 from qiskit.providers.ibmq import IBMQBackend
-from qiskit.pulse import Schedule
 from qiskit.qobj import Qobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.exceptions import JobError, JobTimeoutError
+from qiskit.providers.exceptions import JobError
+from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 
 from ..job.ibmqjob import IBMQJob
+from ..job.exceptions import IBMQJobTimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -37,40 +37,57 @@ class ManagedJob:
 
     def __init__(
             self,
-            experiments: Union[List[QuantumCircuit], List[Schedule]],
             start_index: int,
-            qobj: Qobj,
-            job_name: str,
-            backend: IBMQBackend,
-            executor: ThreadPoolExecutor
+            experiments_count: int,
+            job: Optional[IBMQJob] = None
     ):
         """Creates a new ManagedJob instance.
 
         Args:
-            experiments: Experiments for the job.
             start_index: Starting index of the experiment set.
+            experiments_count: Number of experiments.
+            job: Job to be managed, or ``None`` if not already known. Default: None.
+        """
+        self.start_index = start_index
+        self.end_index = start_index + experiments_count - 1
+        self.future = None
+
+        # Properties that may be populated by the future.
+        self.job = job  # type: Optional[IBMQJob]
+        self.submit_error = None  # type: Optional[Exception]
+
+    def submit(
+            self,
+            qobj: Qobj,
+            job_name: str,
+            backend: IBMQBackend,
+            executor: ThreadPoolExecutor,
+            job_share_level: ApiJobShareLevel,
+            job_tags: Optional[List[str]] = None
+    ) -> None:
+        """Submit the job.
+
+        Args:
             qobj: Qobj to run.
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
             executor: The thread pool to use.
+            job_share_level: Job share level.
+            job_tags: tags to be assigned to the job.
         """
-        self.experiments = experiments
-        self.start_index = start_index
-        self.end_index = start_index + len(experiments) - 1
-
-        # Properties that are populated by the future.
-        self.job = None  # type: Optional[IBMQJob]
-        self.submit_error = None  # type: Optional[Exception]
 
         # Submit the job in its own future.
         self.future = executor.submit(
-            self._async_submit, qobj=qobj, job_name=job_name, backend=backend)
+            self._async_submit, qobj=qobj, job_name=job_name, backend=backend,
+            job_share_level=job_share_level, job_tags=job_tags)
 
     def _async_submit(
             self,
             qobj: Qobj,
             job_name: str,
             backend: IBMQBackend,
+            job_share_level: ApiJobShareLevel,
+            job_tags: Optional[List[str]] = None
     ) -> None:
         """Run a Qobj asynchronously and populate instance attributes.
 
@@ -78,12 +95,18 @@ class ManagedJob:
             qobj: Qobj to run.
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
+            job_share_level: Job share level.
+            job_tags: tags to be assigned to the job.
 
         Returns:
             IBMQJob instance for the job.
         """
         try:
-            self.job = backend.run(qobj=qobj, job_name=job_name)
+            self.job = backend.run(
+                qobj=qobj,
+                job_name=job_name,
+                job_share_level=job_share_level.value,
+                job_tags=job_tags)
         except Exception as err:  # pylint: disable=broad-except
             warnings.warn("Unable to submit job for experiments {}-{}: {}".format(
                 self.start_index, self.end_index, err))
@@ -126,14 +149,14 @@ class ManagedJob:
             Result object or ``None`` if result could not be retrieved.
 
         Raises:
-            JobTimeoutError: if the job does not return results before a
+            IBMQJobTimeoutError: if the job does not return results before a
                 specified timeout.
         """
         result = None
         if self.job is not None:
             try:
                 result = self.job.result(timeout=timeout, partial=partial)
-            except JobTimeoutError:
+            except IBMQJobTimeoutError:
                 raise
             except JobError as err:
                 warnings.warn(

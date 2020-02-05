@@ -39,7 +39,7 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
         backends: backends to choose from
 
     Returns:
-        the the least busy backend
+        the least busy backend
 
     Raises:
         QiskitError: if passing a list of backend names that is

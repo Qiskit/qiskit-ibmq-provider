@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2019.
+# (C) Copyright IBM 2019, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -63,3 +63,20 @@ class StatusResponseSchema(BaseSchema):
 
     # Required properties
     status = String(required=True, validate=OneOf([status.value for status in ApiJobStatus]))
+
+
+class BackendJobLimitResponseSchema(BaseSchema):
+    """Schema for BackendJobLimit"""
+
+    # Optional properties
+    maximum_jobs = Integer(required=True)
+    running_jobs = Integer(required=True)
+
+    @pre_load
+    def preprocess_field_names(self, data, **_):  # type: ignore
+        """Pre-process the jobs limit response fields."""
+        FIELDS_MAP = {  # pylint: disable=invalid-name
+            'maximumJobs': 'maximum_jobs',
+            'runningJobs': 'running_jobs'
+        }
+        return map_field_names(FIELDS_MAP, data)

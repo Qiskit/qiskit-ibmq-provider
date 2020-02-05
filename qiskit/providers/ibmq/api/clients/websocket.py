@@ -23,6 +23,7 @@ from typing import Dict, Union, Generator, Optional, Any
 from concurrent import futures
 from ssl import SSLError
 import warnings
+from collections import deque
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
@@ -43,6 +44,11 @@ logger = logging.getLogger(__name__)
 # tornado) has its own event loop already so we need to patch it.
 # Patch asyncio to allow nested use of `loop.run_until_complete()`.
 nest_asyncio.apply()
+
+# TODO Replace coroutine with async def once Python 3.5 is dropped.
+# Also can upgrade to websocket 8 to avoid other deprecation warning.
+warnings.filterwarnings("ignore", category=DeprecationWarning,
+                        message="\"@coroutine\" decorator is deprecated")
 
 
 class WebsocketMessage(ABC):
@@ -175,7 +181,8 @@ class WebsocketClient(BaseClient):
             job_id: str,
             timeout: Optional[float] = None,
             retries: int = 5,
-            backoff_factor: float = 0.5
+            backoff_factor: float = 0.5,
+            status_deque: Optional[deque] = None
     ) -> Generator[Any, None, Dict[str, str]]:
         """Return the status of a job.
 
@@ -203,6 +210,7 @@ class WebsocketClient(BaseClient):
             retries: max number of retries.
             backoff_factor: backoff factor used to calculate the
                 time to wait between retries.
+            status_deque: deque used to share the latest status.
 
         Returns:
             the API response for the status of a job, as a dict that
@@ -255,6 +263,10 @@ class WebsocketClient(BaseClient):
 
                         if timeout and timeout <= 0:
                             raise WebsocketTimeoutError('Timeout reached')
+
+                        # Share the new status.
+                        if status_deque is not None:
+                            status_deque.append(last_status)
 
                     except (futures.TimeoutError, asyncio.TimeoutError):
                         # Timeout during our wait.
