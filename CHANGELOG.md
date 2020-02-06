@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+## [0.4.6] - 2020-02-05
+
 ### Added
 
 - `IBMQJob` now has a new method `wait_for_final_state()` that blocks
@@ -48,13 +50,17 @@ The format is based on [Keep a Changelog].
 
 ### Changed
 
-- The use of proxy urls without a protocol (e.g. `http://`) is deprecated
-  due to recent Python changes. (\#538)
 - The Exception hierarchy has been refined with more specialized classes. 
   You can, however, continue to catch their parent exceptions (such 
   as `IBMQAccountError`). Also, the exception class `IBMQApiUrlError` 
   has been replaced by `IBMQAccountCredentialsInvalidUrl` and 
   `IBMQAccountCredentialsInvalidToken`. (\#480)
+  
+### Deprecated
+
+- The use of proxy urls without a protocol (e.g. `http://`) is deprecated
+  due to recent Python changes. (\#538)
+
 
 ## [0.4.5] - 2019-12-18
 
@@ -316,7 +322,8 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.5...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.6...HEAD
+[0.4.6]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.5...0.4.6
 [0.4.5]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.4...0.4.5
 [0.4.4]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...0.4.4
 [0.4.3]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.2...0.4.3
