@@ -120,13 +120,7 @@ jobs:
     - stage: test
       <<: *stage_linux
       if: type != cron
-      # Compiling Python 3.7 requires an Ubuntu Xenial distribution
-      # and sudo set to true
-      # Fix when this is solved:
-      # https://github.com/travis-ci/travis-ci/issues/9815
-      dist: xenial
       python: 3.7
-      sudo: true
 
     # GNU/Linux, Python 3.8
     - stage: test
