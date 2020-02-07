@@ -11,8 +11,40 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+"""
+===========================================================
+Job Manager (:mod:`qiskit.providers.ibmq.managed`)
+===========================================================
 
-"""Module representing Jobs communicating with IBM Q."""
+.. currentmodule:: qiskit.providers.ibmq.managed
+
+High level mechanism for handling jobs.
+
+Classes
+==========================
+.. autosummary::
+   :toctree: ../stubs/
+
+   IBMQJobManager
+   ManagedJobSet
+   ManagedJob
+   ManagedResults
+
+Exceptions
+==========================
+.. autosummary::
+   :toctree: ../stubs/
+
+   IBMQJobManagerError
+   IBMQJobManagerInvalidStateError
+   IBMQJobManagerTimeoutError
+   IBMQJobManagerJobNotFound
+   IBMQManagedResultDataNotAvailable
+   IBMQJobManagerUnknownJobSet
+"""
 
 from .ibmqjobmanager import IBMQJobManager
 from .managedjobset import ManagedJobSet
+from .managedjob import ManagedJob
+from .managedresults import ManagedResults
+from .exceptions import *

@@ -20,6 +20,7 @@ from qiskit.result import Result
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 
+from ..managed import managedjobset
 from .exceptions import IBMQManagedResultDataNotAvailable
 from ..job.exceptions import JobError
 
@@ -34,7 +35,7 @@ class ManagedResults:
 
     def __init__(
             self,
-            job_set: 'ManagedJobSet',  # type: ignore[name-defined]
+            job_set: 'managedjobset.ManagedJobSet',
             backend_name: str,
             success: bool
     ):
@@ -75,7 +76,7 @@ class ManagedResults:
     def get_memory(
             self,
             experiment: Union[str, QuantumCircuit, Schedule, int]
-    ) -> Union[list, 'numpy.ndarray']:  # type: ignore[name-defined]
+    ):
         """Get the sequence of memory states (readouts) for each shot.
         The data from the experiment is a list of format
         ['00000', '01000', '10100', '10100', '11101', '11100', '00101', ..., '01010']
