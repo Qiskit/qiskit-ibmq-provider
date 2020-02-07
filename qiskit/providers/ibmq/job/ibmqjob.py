@@ -585,13 +585,17 @@ class IBMQJob(BaseModel, BaseJob):
         if self._status in JOB_FINAL_STATES:
             return self._status in required_status
 
-        with api_to_job_error():
-            try:
-                status_response = self._api.job_final_status(
-                    self.job_id(), timeout=timeout, wait=wait, status_deque=status_deque)
-            except UserTimeoutExceededError:
-                raise IBMQJobTimeoutError(
-                    'Timeout while waiting for job {}'.format(self._job_id))
+        try:
+            status_response = self._api.job_final_status(
+                self.job_id(), timeout=timeout, wait=wait, status_deque=status_deque)
+        except UserTimeoutExceededError:
+            raise IBMQJobTimeoutError(
+                'Timeout while waiting for job {}'.format(self._job_id))
+        except ApiError as api_err:
+            logger.error("Maximum retries exceeded: "
+                         "Error checking job status due to a network error.")
+            raise IBMQJobApiError(str(api_err))
+
         self._status, self._queue_info = self._get_status_position(
             ApiJobStatus(status_response['status']), status_response.get('infoQueue', None))
 

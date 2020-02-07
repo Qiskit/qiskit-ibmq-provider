@@ -389,12 +389,6 @@ class AccountClient(BaseClient):
     ) -> Dict[str, Any]:
         """Wait until the job progress to a final state.
 
-        Two attempts may be made when waiting for the job to progress
-        to a final state. First, there is an attempt to use websockets.
-        If the websocket connection is not available or fails, however,
-        there is another attempt to wait for the job's final status via
-        polling, using traditional http requests.
-
         Args:
             job_id: the id of the job
             timeout: seconds to wait for job. If None, wait indefinitely.
