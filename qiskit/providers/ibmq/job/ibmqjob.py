@@ -581,6 +581,8 @@ class IBMQJob(BaseModel, BaseJob):
         Raises:
             IBMQJobTimeoutError: if the job does not return results before a
                 specified timeout.
+            IBMQJobApiError: if there was an error getting the job status
+                due to a network issue.
         """
         if self._status in JOB_FINAL_STATES:
             return self._status in required_status
