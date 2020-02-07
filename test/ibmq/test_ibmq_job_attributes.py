@@ -15,10 +15,11 @@
 """IBMQJob Test."""
 
 import time
-from unittest import mock, skip
+from unittest import mock
 import re
 import uuid
 
+from qiskit.test import slow_test
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
@@ -27,7 +28,7 @@ from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
-from ..decorators import requires_provider, slow_test_on_device
+from ..decorators import requires_provider, requires_device
 from ..utils import most_busy_backend
 
 
@@ -57,14 +58,24 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj)
         self.assertTrue(job.backend().name() == backend.name())
 
-    @slow_test_on_device
-    def test_running_job_properties(self, provider, backend):  # pylint: disable=unused-argument
+    @slow_test
+    @requires_device
+    def test_running_job_properties(self, backend):
         """Test fetching properties of a running job."""
+        def _job_callback(job_id, job_status, cjob, **kwargs):
+            self.simple_job_callback(job_id, job_status, cjob, **kwargs)
+            if job_status is JobStatus.RUNNING:
+                job_properties[0] = cjob.properties()
+                try:
+                    cjob.cancel()  # Cancel to go to final state.
+                except JobError:
+                    pass
+
+        job_properties = [None]
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj)
-        while not job.running():
-            time.sleep(0.5)
-        self.assertIsNotNone(job.properties())
+        job.wait_for_final_state(wait=30, callback=_job_callback)
+        self.assertIsNotNone(job_properties[0])
 
     @requires_provider
     def test_job_name(self, provider):
@@ -123,22 +134,25 @@ class TestIBMQJobAttributes(JobTestCase):
         for job in retrieved_jobs:
             self.assertEqual(job.name(), job_name)
 
-    @skip('Skipping until staging device is fixed.')
-    @slow_test_on_device
-    def test_error_message_device(self, provider, backend):  # pylint: disable=unused-argument
+    @slow_test
+    @requires_device
+    def test_error_message_device(self, backend):
         """Test retrieving job error messages from a device backend."""
+
         qc_new = transpile(self._qc, backend)
         qobj = assemble([qc_new, qc_new], backend=backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
         job = backend.run(qobj)
+        job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         with self.assertRaises(IBMQJobFailureError):
-            job.result(timeout=300, partial=False)
+            job.result(partial=False)
 
         message = job.error_message()
         self.assertTrue(message)
         self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', message), message)
 
+        provider = backend.provider()
         r_message = provider.backends.retrieve_job(job.job_id()).error_message()
         self.assertTrue(r_message)
         self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', r_message), r_message)
