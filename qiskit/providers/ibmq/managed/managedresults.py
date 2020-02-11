@@ -15,12 +15,14 @@
 """Results managed by the job manager."""
 
 from typing import List, Optional, Union, Tuple, Dict
+# TODO Use TYPE_CHECKING instead of pylint disable after dropping python 3.5
+import numpy  # pylint: disable=unused-import
 
 from qiskit.result import Result
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 
-from ..managed import managedjobset
+from qiskit.providers.ibmq.managed import managedjobset  # pylint: disable=unused-import
 from .exceptions import IBMQManagedResultDataNotAvailable
 from ..job.exceptions import JobError
 
@@ -76,7 +78,7 @@ class ManagedResults:
     def get_memory(
             self,
             experiment: Union[str, QuantumCircuit, Schedule, int]
-    ):
+    ) -> Union[list, 'numpy.ndarray']:
         """Get the sequence of memory states (readouts) for each shot.
         The data from the experiment is a list of format
         ['00000', '01000', '10100', '10100', '11101', '11100', '00101', ..., '01010']
