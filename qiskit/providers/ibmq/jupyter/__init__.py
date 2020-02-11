@@ -35,6 +35,17 @@ Detailed information on a single backend
     backend = provider.get_backend('ibmq_vigo')
     backend
 
+
+IBM Quantum Experience (IQX) dashboard
+======================================
+
+.. jupyter-execute::
+
+    from qiskit import IBMQ
+    import qiskit.providers.ibmq.jupyter
+
+    %iqx_dashboard
+
 """
 import sys
 
