@@ -64,7 +64,7 @@ def iplot_error_map(backend,
 
            iplot_error_map(backend, as_widget=True)
     """
-    meas_text_color = '#FFFFFF'
+    meas_text_color = '#000000'
     if background_color == 'white':
         color_map = HELIX_LIGHT_CMAP
         text_color = '#000000'
@@ -364,7 +364,7 @@ def iplot_error_map(backend,
     for kk in range(num_left-1, -1, -1):
         fig.append_trace(go.Bar(x=[read_err[kk]], y=[kk],
                                 orientation='h',
-                                marker=dict(color='#b385e2'),
+                                marker=dict(color='#FBE0CC'),
                                 hoverinfo="text",
                                 hoverlabel=dict(font=dict(color=meas_text_color)),
                                 hovertext=[hover_text.format(kk,
@@ -401,7 +401,7 @@ def iplot_error_map(backend,
             fig.append_trace(go.Bar(x=[-read_err[kk]],
                                     y=[kk],
                                     orientation='h',
-                                    marker=dict(color='#b385e2'),
+                                    marker=dict(color='#FBE0CC'),
                                     hoverinfo="text",
                                     hoverlabel=dict(font=dict(color=meas_text_color)),
                                     hovertext=[hover_text.format(kk,
