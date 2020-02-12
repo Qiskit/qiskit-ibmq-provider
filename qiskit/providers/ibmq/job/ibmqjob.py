@@ -533,7 +533,7 @@ class IBMQJob(BaseModel, BaseJob):
                 The following positional arguments are provided to the callback function:
                     * job_id: job ID
                     * job_status: status of the job from the last query
-                    * job: this IBMQJob instance
+                    * job: this ``IBMQJob`` instance
                 In addition, the following keyword arguments are also provided:
                     * queue_info: A ``QueueInfo`` instance with job queue information,
                         or ``None`` if queue information is unknown or not applicable.

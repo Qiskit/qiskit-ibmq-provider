@@ -14,6 +14,8 @@
 
 """IBMQ Remote Backend Tests."""
 
+from unittest import skip
+
 from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
                     QuantumRegister)
 from qiskit.test import slow_test
@@ -23,6 +25,7 @@ from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
 
 
+@skip('Skipping since they should be run by backend.')
 class TestIBMQBackends(IBMQTestCase):
     """Qiskit test for remote backend validation.
 
