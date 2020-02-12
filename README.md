@@ -127,7 +127,7 @@ specific provider directly:
 Update the credentials? [y/N]
 ```
 
-Upon confirmation, your credentials will be overwritten with a valid IBM Q
+Upon confirmation, your credentials will be overwritten with a valid IBM Quantum
 Experience v2 set of credentials. For more complex cases, consider deleting your
 previous credentials via `IBMQ.delete_accounts()` and follow the instructions
 in the [IBM Quantum Experience account page].
