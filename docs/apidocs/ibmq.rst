@@ -19,5 +19,6 @@ Submodules
 
    job
    managed
+   credentials
    visualization
    jupyter
