@@ -1,10 +1,10 @@
-.. _qiskit-providers-ibmq-jupyter:
+.. _qiskit-providers-ibmq-managed:
 
 *****************************
-qiskit.providers.ibmq.jupyter
+qiskit.providers.ibmq.managed
 *****************************
 
-.. automodule:: qiskit.providers.ibmq.jupyter
+.. automodule:: qiskit.providers.ibmq.managed
    :no-members:
    :no-inherited-members:
    :no-special-members:

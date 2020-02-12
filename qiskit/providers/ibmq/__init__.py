@@ -12,15 +12,62 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Backends provided by IBM Quantum Experience."""
+"""
+============================================
+IBMQ Provider (:mod:`qiskit.providers.ibmq`)
+============================================
+
+.. currentmodule:: qiskit.providers.ibmq
+
+Provider for IBM Quantum Experience.
+
+Functions
+=========
+.. autosummary::
+    :toctree: ../stubs/
+
+    least_busy
+
+Classes
+=======
+.. autosummary::
+    :toctree: ../stubs/
+
+    AccountProvider
+    BackendJobLimit
+    IBMQBackend
+    IBMQBackendService
+    IBMQFactory
+
+Exceptions
+==========
+.. autosummary::
+    :toctree: ../stubs/
+
+    IBMQError
+    IBMQAccountError
+    IBMQAccountCredentialsNotFound
+    IBMQAccountCredentialsInvalidFormat
+    IBMQAccountCredentialsInvalidToken
+    IBMQAccountCredentialsInvalidUrl
+    IBMQAccountMultipleCredentialsFound
+    IBMQBackendError
+    IBMQBackendApiError
+    IBMQBackendApiProtocolError
+    IBMQBackendValueError
+    IBMQProviderError
+"""
 
 from typing import List
 
-from qiskit.exceptions import QiskitError
 from .ibmqfactory import IBMQFactory
 from .ibmqbackend import IBMQBackend, BaseBackend
 from .job import IBMQJob
 from .managed import IBMQJobManager
+from .accountprovider import AccountProvider
+from .backendjoblimit import BackendJobLimit
+from .exceptions import *
+from .ibmqbackendservice import IBMQBackendService
 
 from .version import __version__
 

@@ -6,18 +6,19 @@ qiskit.providers.ibmq
 
 .. currentmodule:: qiskit.providers.ibmq
 
-.. autofunction:: least_busy
+.. automodule:: qiskit.providers.ibmq
+   :no-members:
+   :no-inherited-members:
+   :no-special-members:
 
-.. automodapi:: qiskit.providers
-  :no-heading:
-  :no-inheritance-diagram:
-  :no-inherited-members:
+Submodules
+==========
 
 .. toctree::
    :maxdepth: 1
 
-   ibmqfactory
-   accountprovider
-   ibmqbackend
+   job
+   managed
+   credentials
    visualization
    jupyter

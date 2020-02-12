@@ -12,14 +12,47 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utilities for working with credentials for the IBMQ package."""
+"""
+===========================================================
+IBMQ Credentials (:mod:`qiskit.providers.ibmq.credentials`)
+===========================================================
+
+.. currentmodule:: qiskit.providers.ibmq.credentials
+
+Utilities for working with credentials for the IBMQ package.
+
+Functions
+=========
+.. autosummary::
+    :toctree: ../stubs/
+
+    discover_credentials
+
+Classes
+=========
+
+.. autosummary::
+    :toctree: ../stubs/
+
+    Credentials
+    HubGroupProject
+
+Exception
+=========
+.. autosummary::
+    :toctree: ../stubs/
+
+    CredentialsError
+    InvalidCredentialsFormatError
+    CredentialsNotFoundError
+"""
 
 from collections import OrderedDict
 from typing import Dict, Optional
 import logging
 
 from .credentials import Credentials, HubGroupProject
-from .exceptions import CredentialsError
+from .exceptions import CredentialsError, InvalidCredentialsFormatError, CredentialsNotFoundError
 from .configrc import read_credentials_from_qiskitrc, store_credentials
 from .environ import read_credentials_from_environ
 from .qconfig import read_credentials_from_qconfig
