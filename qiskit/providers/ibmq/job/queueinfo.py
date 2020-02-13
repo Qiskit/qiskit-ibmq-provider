@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Queue information related to a job."""
+"""Queue information for a job."""
 
 from typing import Any, Optional
 from datetime import datetime
@@ -28,7 +28,17 @@ from .utils import api_status_to_job_status
 
 @bind_schema(InfoQueueResponseSchema)
 class QueueInfo(BaseModel):
-    """Queue information related to a job."""
+    """Queue information for a job.
+
+    Attributes:
+        position: Job position in the queue within the scope of the provider.
+        estimated_start_time: Estimated start time for the job, in UTC.
+        estimated_complete_time: Estimated completion time for the job, in UTC.
+        hub_priority: Dynamic priority for the hub the job is in.
+        group_priority: Dynamic priority for the group the job is in.
+        project_priority: Dynamic priority for the project the job is in.
+        job_id: Job ID.
+    """
 
     def __init__(
             self,
@@ -42,7 +52,7 @@ class QueueInfo(BaseModel):
             job_id: Optional[str] = None,
             **kwargs: Any
     ) -> None:
-        """Creates a new QueueInfo instance.
+        """QueueInfo class.
 
         Args:
             position: Position in the queue.
@@ -52,8 +62,8 @@ class QueueInfo(BaseModel):
             hub_priority: Dynamic priority for the hub.
             group_priority: Dynamic priority for the group.
             project_priority: Dynamic priority for the project.
-            job_id: The ID of the job.
-            kwargs: additional attributes that will be added as instance members.
+            job_id: Job ID.
+            kwargs: Additional attributes.
         """
         self.position = position
         self._status = _status
@@ -67,10 +77,10 @@ class QueueInfo(BaseModel):
         super().__init__(**kwargs)
 
     def __repr__(self) -> str:
-        """Return the official string representation of QueueInfo.
+        """Return the string representation of ``QueueInfo``.
 
         Returns:
-            a string representation of QueueInfo.
+            A string representation of ``QueueInfo``.
         """
         status = api_status_to_job_status(ApiJobStatus(self._status)).value \
             if self._status else self._get_value(self._status)
@@ -93,7 +103,7 @@ class QueueInfo(BaseModel):
         return "<{}({})>".format(self.__class__.__name__, ', '.join(queue_info))
 
     def format(self) -> str:
-        """Build an user-friendly report for the job queue information.
+        """Build a user-friendly report for the job queue information.
 
         Returns:
              The job queue information report.
@@ -119,9 +129,9 @@ class QueueInfo(BaseModel):
         return '\n'.join(queue_info)
 
     def _get_value(self, value: Optional[Any], default_value: str = 'unknown') -> Optional[Any]:
-        """Returns the value if it exists or a default.
+        """Return the input value if it exists or the default.
 
         Returns:
-            The value if it is not None, else a default value.
+            The input value if it is not ``None``, else the input default value.
         """
         return value or default_value

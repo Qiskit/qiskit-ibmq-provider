@@ -12,10 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBMQJob module
-
-This module is used for creating a job objects for the IBM Q Experience.
-"""
+"""IBM Quantum Experience job."""
 
 import logging
 from typing import Dict, Optional, Tuple, Any, List, Callable
@@ -49,64 +46,55 @@ logger = logging.getLogger(__name__)
 
 @bind_schema(JobResponseSchema)
 class IBMQJob(BaseModel, BaseJob):
-    """Representation of a job that will be execute on a IBMQ backend.
+    """Representation of a job that executes on an IBM Quantum Experience backend.
 
-    Represent a job that is or has been executed on an IBMQ simulator or real
-    device. New jobs are intended to be created by calling ``run()`` on a
-    particular backend.
+    The job may be executed on a simulator or a real device. A new ``IBMQJob``
+    instance is returned when you call
+    :meth:`IBMQBackend.run()<qiskit.providers.ibmq.ibmqbackend.IBMQBackend.run()>`
+    to submit a job to a particular backend.
 
-    If the job was successfully submitted, you can inspect the job's status by
-    using ``status()``. Status can be one of ``JobStatus`` members::
+    If the job is successfully submitted, you can inspect the job's status by
+    calling :meth:`status()`. Job status can be one of the
+    :class:`JobStatus<qiskit.providers.jobstatus.JobStatus>` members.
+    For example::
 
         from qiskit.providers.jobstatus import JobStatus
 
-        job = IBMQBackend.run(...)
+        job = backend.run(...)
 
         try:
-            job_status = job.status() # It will query the backend API.
+            job_status = job.status()  # Query the backend server for job status.
             if job_status is JobStatus.RUNNING:
-                print('The job is still running')
-
+                print("The job is still running")
         except IBMQJobApiError as ex:
             print("Something wrong happened!: {}".format(ex))
 
-    A call to ``status()`` can raise if something happens at the server level
-    that prevents Qiskit from determining the status of the job. An example of
-    this is a temporary connection lose or a network failure.
+    Note:
+        An error may occur when querying the remote server to get job information.
+        The most common errors are temporary network failure
+        and server errors, in which case an
+        :class:`IBMQJobApiError<qiskit.providers.ibmq.job.exceptions.IBMQJobApiError>`
+        is raised. These errors usually clear quickly, and you can retry
+        the operation.
 
-    The ``status()`` method is an example of non-blocking API.
-    The ``result()`` method is an example of blocking API:
+    Some of the methods in this class are blocking, which means control may
+    not be returned immediately. :meth:`result()` is an example
+    of a blocking method::
 
-        job = IBMQBackend.run(...)
+        job = backend.run(...)
 
         try:
-            job_result = job.result() # It will block until finishing.
-            print('The job finished with result {}'.format(job_result))
-
+            job_result = job.result()  # It will block until job finishes.
+            print("The job finished with result {}".format(job_result))
         except JobError as ex:
             print("Something wrong happened!: {}".format(ex))
 
-    Many of the ``IBMQJob`` methods can raise ``IBMQJobApiError`` if unexpected
-    failures happened at the server level.
-
-    Job information retrieved from the API server is attached to the ``IBMQJob``
-    instance as attributes. Given that Qiskit and the API server can be updated
+    Job information retrieved from the server is attached to the ``IBMQJob``
+    instance as attributes. Given that Qiskit and the server can be updated
     independently, some of these attributes might be deprecated or experimental.
     Supported attributes can be retrieved via methods. For example, you
-    can use ``IBMQJob.creation_date()`` to retrieve the job creation date,
+    can use :meth:`creation_date()` to retrieve the job creation date,
     which is a supported attribute.
-
-    Note:
-        When querying the server for getting the job information, two kinds
-        of errors are possible. The most severe is the one preventing Qiskit
-        from getting a response from the server. This can be caused by a
-        network failure or a temporary system break. In these cases, the job
-         method will raise.
-
-        If Qiskit successfully retrieves the status of a job, it could be it
-        finished with errors. In that case, ``status()`` will simply return
-        ``JobStatus.ERROR`` and you can call ``error_message()`` to get more
-        info.
     """
 
     _executor = futures.ThreadPoolExecutor()
@@ -119,16 +107,15 @@ class IBMQJob(BaseModel, BaseJob):
                  _creation_date: datetime,
                  _api_status: ApiJobStatus,
                  **kwargs: Any) -> None:
-        """IBMQJob init function.
+        """IBMQJob class.
 
         Args:
-            _backend: the backend instance used to run this job.
-            api: object for connecting to the API.
-            _job_id: job ID of this job.
-            _creation_date: job creation date.
-            _api_status: API job status.
-            kwargs: additional job attributes, that will be added as
-                instance members.
+            _backend: The backend instance used to run this job.
+            api: Object for connecting to the server.
+            _job_id: Job ID.
+            _creation_date: Job creation date.
+            _api_status: Job status returned by the server.
+            kwargs: Additional job attributes.
         """
         # pylint: disable=redefined-builtin
         BaseModel.__init__(self, _backend=_backend, _job_id=_job_id,
@@ -150,14 +137,12 @@ class IBMQJob(BaseModel, BaseJob):
     def qobj(self) -> Optional[Qobj]:
         """Return the Qobj for this job.
 
-        Note that this method might involve querying the API for results if the
-        Job has been created in a previous Qiskit session.
-
         Returns:
-            the Qobj for this job, or None if the job does not have a Qobj.
+            The Qobj for this job, or ``None`` if the job does not have a Qobj.
 
         Raises:
-            IBMQJobApiError: if there was some unexpected failure in the server.
+            IBMQJobApiError: If an unexpected error occurred when retrieving
+                job information from the server.
         """
         if not self.kind:
             return None
@@ -176,11 +161,12 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the backend properties for this job.
 
         Returns:
-            the backend properties used for this job, or None if
-                properties are not available.
+            The backend properties used for this job, or ``None`` if
+            properties are not available.
 
         Raises:
-            IBMQJobApiError: if there was some unexpected failure in the server.
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
         """
         with api_to_job_error():
             properties = self._api.job_properties(job_id=self.job_id())
@@ -200,47 +186,50 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the result of the job.
 
         Note:
-            Some IBMQ job results can be read only once. A second attempt to
-            query the API for the job will fail, as the job is "consumed".
+            Some IBM Quantum Experience job results can be read only once. A
+            second attempt to query the server for the same job will fail, as the
+            job is "consumed".
 
-            The first call to this method in an ``IBMQJob`` instance will query
-            the API and consume the job if it finished successfully (otherwise
-            it will raise a ``JobError`` exception without consuming the job).
-            Subsequent calls to that instance's method will also return the
-            results, since they are cached. However, attempting to retrieve the
-            results again in another instance or session might fail due to the
-            job having been consumed.
+            The first call to this method in an ``IBMQJob`` instance will
+            query the server and consume any available job results. Subsequent
+            calls to that instance's ``result()`` will also return the results, since
+            they are cached. However, attempting to retrieve the results again in
+            another instance or session might fail due to the job results
+            having been consumed.
 
-            When `partial=True`, the result method returns a `Result` object
-            containing partial results. If partial results are returned, precaution
-            should be taken when accessing individual experiments, as doing so might
-            cause an exception. Verifying whether some experiments of a job failed can
-            be done by checking the boolean attribute `Result.success`.
+        Note:
+            When `partial=True`, this method will attempt to retrieve partial
+            results of failed jobs. In this case, precaution should
+            be taken when accessing individual experiments, as doing so might
+            cause an exception. The ``success`` attribute of the returned
+            :class:`Result<qiskit.result.Result>` instance can be used to verify
+            whether it contains partial results.
 
-            For example:
-                If there is a job with two experiments (where one fails), getting
-                the counts of the unsuccessful experiment would raise an exception
-                since there are no counts to return for it:
-                i.e.
-                    try:
-                        counts = result.get_counts("failed_experiment")
-                    except QiskitError:
-                        print("Experiment failed!")
+            For example, if one of the experiments in the job failed, trying to
+            get the counts of the unsuccessful experiment would raise an exception
+            since there are no counts to return::
+                try:
+                    counts = result.get_counts("failed_experiment")
+                except QiskitError:
+                    print("Experiment failed!")
+
+        If the job failed, you can use :meth:`error_message()` to get more information.
 
         Args:
-           timeout: number of seconds to wait for job.
-           wait: time in seconds between queries to IBM Q server. Default: 5.
-           partial: if true attempts to return partial results for the job. Default: False.
-           refresh: if true, query the API for the result again.
-               Otherwise return the cached value. Default: False.
+           timeout: Number of seconds to wait for job.
+           wait: Time in seconds between queries.
+           partial: If True, return partial results if possible.
+           refresh: If True, query the server again for the result. Otherwise return
+            the cached value.
 
         Returns:
-            Result object.
+            Job result.
 
         Raises:
-            IBMQJobInvalidStateError: if the job was cancelled.
+            IBMQJobInvalidStateError: If the job was cancelled.
             IBMQJobFailureError: If the job failed.
-            IBMQJobApiError: If there was some unexpected failure in the server.
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
         """
         # pylint: disable=arguments-differ
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
@@ -257,14 +246,18 @@ class IBMQJob(BaseModel, BaseJob):
         return self._retrieve_result(refresh=refresh)
 
     def cancel(self) -> bool:
-        """Attempt to cancel a job.
+        """Attempt to cancel the job.
+
+        Note:
+            Depending on the state the job is in, it might be impossible to
+            cancel the job.
 
         Returns:
-            True if job can be cancelled, else False. Note this operation
-            might not be possible depending on the environment.
+            True if the job is cancelled, else False.
 
         Raises:
-            IBMQJobApiError: if there was some unexpected failure in the server.
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
         """
         try:
             response = self._api.job_cancel(self.job_id())
@@ -275,18 +268,21 @@ class IBMQJob(BaseModel, BaseJob):
             raise IBMQJobApiError('Error cancelling job: %s' % error)
 
     def status(self) -> JobStatus:
-        """Query the API to update the status.
+        """Query the server for the latest job status.
 
         Note:
             This method is not designed to be invoked repeatedly in a loop for
-            an extended period of time. Doing so may cause an exception.
-            Use `wait_for_final_state()` if you want to wait for the job to finish.
+            an extended period of time. Doing so may cause the server to reject
+            your request.
+            Use :meth:`wait_for_final_state()` if you want to wait for the job to finish.
 
         Returns:
-            The status of the job, once updated.
+            The status of the job. If the job failed, you can use
+            :meth:`error_message()` to get more information.
 
         Raises:
-            IBMQJobApiError: if there was some unexpected failure in the server.
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
         """
         if self._status in JOB_FINAL_STATES:
             return self._status
@@ -306,7 +302,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return whether the job has successfully run.
 
         Returns:
-            True if job status is done, else false.
+            True if the job is done, else False.
         """
         return self._is_job_status(JobStatus.DONE)
 
@@ -314,7 +310,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return whether the job is actively running.
 
         Returns:
-            True if job status is running, else false.
+            True if the job is running, else False.
         """
         return self._is_job_status(JobStatus.RUNNING)
 
@@ -322,7 +318,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return whether the job has been cancelled.
 
         Returns:
-            True if job status is cancelled, else false.
+            True if the job has been cancelled, else False.
         """
         return self._is_job_status(JobStatus.CANCELLED)
 
@@ -330,26 +326,15 @@ class IBMQJob(BaseModel, BaseJob):
         """Return whether the current job status matches the desired one.
 
         Args:
-            job_status: the job status to check against.
+            job_status: The job status to check against.
 
         Returns:
-            True if the current job status matches the desired one, else false.
+            True if the current job status matches the desired one, else False.
         """
         return self.status() == job_status
 
     def error_message(self) -> Optional[str]:
         """Provide details about the reason of failure.
-
-        Note:
-            Some IBMQ job results can be read only once. A second attempt to
-            query the API for the job will fail, as the job is "consumed".
-
-            The first call to this method in an ``IBMQJob`` instance will query
-            the API and consume the job if it failed at some point (otherwise
-            it will return ``None``). Subsequent calls to that instance's method
-            will also return the failure details, since they are cached.
-            However, attempting to retrieve the error details again in another
-            instance or session might fail due to the job having been consumed.
 
         Returns:
             An error report if the job failed or ``None`` otherwise.
@@ -380,14 +365,15 @@ class IBMQJob(BaseModel, BaseJob):
         return self._job_error_msg
 
     def queue_position(self, refresh: bool = False) -> Optional[int]:
-        """Return the position in the server queue for the provider.
+        """Return the position of the job in the server queue.
 
-        Note: The position returned is within the scope of the account provider
-            and may differ from the global queue position for the device.
+        Note:
+            The position returned is within the scope of the provider
+            and may differ from the global queue position.
 
         Args:
-            refresh: if True, query the API and return the latest value.
-                Otherwise return the cached value. Default: False.
+            refresh: If True, query the server to get the latest value.
+                Otherwise return the cached value.
 
         Returns:
             Position in the queue or ``None`` if position is unknown or not applicable.
@@ -404,16 +390,17 @@ class IBMQJob(BaseModel, BaseJob):
         """Return queue information for this job.
 
         The queue information may include queue position, estimated start and
-            end time, and dynamic priorities for the hub/group/project.
+        end time, and dynamic priorities for the hub, group, and project. See
+        :class:`QueueInfo` for more information.
 
         Note:
             Even if the job is queued, some of its queue information may not
-                be immediately available.
+            be immediately available.
 
         Returns:
-            An QueueInfo instance that contains queue information for
-                this job, or ``None`` if queue information is unknown or not
-                applicable.
+            A :class:`QueueInfo` instance that contains queue information for
+            this job, or ``None`` if queue information is unknown or not
+            applicable.
         """
         # Get latest queue information.
         self.status()
@@ -426,7 +413,7 @@ class IBMQJob(BaseModel, BaseJob):
         return None
 
     def creation_date(self) -> str:
-        """Return creation date.
+        """Return job creation date.
 
         Returns:
             Job creation date.
@@ -434,10 +421,10 @@ class IBMQJob(BaseModel, BaseJob):
         return self._creation_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
     def job_id(self) -> str:
-        """Return the job ID assigned by the API.
+        """Return the job ID assigned by the server.
 
         Returns:
-            the job ID.
+            Job ID.
         """
         return self._job_id
 
@@ -445,7 +432,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the name assigned to this job.
 
         Returns:
-            the job name or ``None`` if no name was assigned to the job.
+            Job name or ``None`` if no name was assigned to this job.
         """
         return self._name
 
@@ -460,29 +447,31 @@ class IBMQJob(BaseModel, BaseJob):
     def time_per_step(self) -> Optional[Dict]:
         """Return the date and time information on each step of the job processing.
 
+        The output dictionary contains the date and time information on each
+        step of the job processing. The keys of the dictionary are the names
+        of the steps, and the values are the date and time data. For example::
+
+            {'CREATING': '2020-02-13T20:19:25.717Z',
+             'CREATED': '2020-02-13T20:19:26.467Z',
+             'VALIDATING': '2020-02-13T20:19:26.527Z'}
+
         Returns:
-            a dictionary containing the date and time information on each
-                step of the job processing. The keys of the dictionary are the
-                names of the steps, and the values are the date and time
-                information. ``None`` is returned if the information is not
-                yet available.
+            Date and time information on job processing steps, or ``None``
+            if the information is not yet available.
         """
         if not self._time_per_step or self._status not in JOB_FINAL_STATES:
             self.refresh()
         return self._time_per_step
 
     def submit(self) -> None:
-        """Submit job to IBM-Q.
+        """Submit this job to an IBM Quantum Experience backend.
 
         Note:
-            This function is deprecated, please use ``IBMQBackend.run()`` to
-                submit a job.
-
-        Events:
-            The job has started.
+            This function is deprecated, please use
+            :meth:`IBMQBackend.run()<qiskit.providers.ibmq.ibmqbackend.IBMQBackend.run()>`
+            to submit a job.
 
         Raises:
-            IBMQJobApiError: if there was some unexpected failure in the server.
             IBMQJobInvalidStateError: If the job has already been submitted.
         """
         if self.job_id() is not None:
@@ -492,7 +481,15 @@ class IBMQJob(BaseModel, BaseJob):
                       "IBMQBackend.run() to submit a job.", DeprecationWarning, stacklevel=2)
 
     def refresh(self) -> None:
-        """Obtain the latest job information from the API."""
+        """Obtain the latest job information from the server.
+
+        This method may add additional attributes to this job instance, if new
+        information becomes available.
+
+        Raises:
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
+        """
         with api_to_job_error():
             api_response = self._api.job_get(self.job_id())
 
@@ -524,21 +521,24 @@ class IBMQJob(BaseModel, BaseJob):
             wait: float = 5,
             callback: Callable = None
     ) -> None:
-        """Wait until the job progresses to a final state such as DONE or ERROR.
+        """Wait until the job progresses to a final state such as ``DONE`` or ``ERROR``.
 
         Args:
-            timeout: seconds to wait for the job. If ``None``, wait indefinitely. Default: None.
-            wait: seconds to wait between queries. Default: 5.
-            callback: callback function invoked after each querying iteration. Default: None.
+            timeout: Seconds to wait for the job. If ``None``, wait indefinitely.
+            wait: Seconds to wait between queries.
+            callback: Callback function invoked after each querying iteration.
                 The following positional arguments are provided to the callback function:
-                    * job_id: job ID
-                    * job_status: status of the job from the last query
-                    * job: this ``IBMQJob`` instance
+
+                    * job_id: Job ID
+                    * job_status: Status of the job from the last query.
+                    * job: This ``IBMQJob`` instance.
+
                 In addition, the following keyword arguments are also provided:
-                    * queue_info: A ``QueueInfo`` instance with job queue information,
-                        or ``None`` if queue information is unknown or not applicable.
-                        You can use the ``to_dict()`` method to convert the ``QueueInfo``
-                        instance to a dictionary, if desired.
+
+                    * queue_info: A :class:`QueueInfo` instance with job queue information,
+                      or ``None`` if queue information is unknown or not applicable.
+                      You can use the ``to_dict()`` method to convert the
+                      :class:`QueueInfo` instance to a dictionary, if desired.
 
         Raises:
             IBMQJobTimeoutError: if the job does not reach a final state before the
@@ -567,13 +567,13 @@ class IBMQJob(BaseModel, BaseJob):
             required_status: Tuple[JobStatus] = JOB_FINAL_STATES,
             status_deque: Optional[deque] = None
     ) -> bool:
-        """Wait until the job progress to a final state such as DONE or ERROR.
+        """Wait until the job progress to a final state such as ``DONE`` or ``ERROR``.
 
         Args:
-            timeout: seconds to wait for job. If None, wait indefinitely. Default: None.
-            wait: seconds between queries. Default: 5.
-            required_status: the final job status required. Default: ``JOB_FINAL_STATES``.
-            status_deque: deque used to share the latest status. Default: None.
+            timeout: Seconds to wait for job. If None, wait indefinitely.
+            wait: Seconds between queries.
+            required_status: The final job status required.
+            status_deque: Deque used to share the latest status.
 
         Returns:
             True if the final job status matches one of the required states.
@@ -605,14 +605,15 @@ class IBMQJob(BaseModel, BaseJob):
         """Retrieve the job result response.
 
         Args:
-            refresh: if true, query the API for the result again.
-               Otherwise return the cached value. Default: False.
+            refresh: If True, query the server for the result.
+               Otherwise return the cached value.
 
         Returns:
             The job result.
 
         Raises:
-            IBMQJobApiError: If there was some unexpected failure in the server.
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
             IBMQJobFailureError: If the job failed and partial result could not
                 be retrieved.
             IBMQJobInvalidStateError: If result is in an unsupported format.
@@ -663,7 +664,7 @@ class IBMQJob(BaseModel, BaseJob):
             A formatted error message.
 
         Raises:
-            IBMQJobApiError: If there was some unexpected failure in the server.
+            IBMQJobApiError: If invalid data received from the server.
         """
         try:
             return "{}. Error code: {}.".format(error['message'], error['code'])
@@ -708,11 +709,11 @@ class IBMQJob(BaseModel, BaseJob):
             api_status: ApiJobStatus,
             api_info_queue: Optional[Dict] = None
     ) -> Tuple[JobStatus, Optional[QueueInfo]]:
-        """Return the corresponding job status for the input API job status.
+        """Return the corresponding job status for the input server job status.
 
         Args:
-            api_status: API job status
-            api_info_queue: job queue information from the API response.
+            api_status: Server job status
+            api_info_queue: Job queue information from the server response.
 
         Returns:
             A tuple of job status and queue information (``None`` if not available).

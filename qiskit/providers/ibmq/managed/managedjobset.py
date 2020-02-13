@@ -250,21 +250,22 @@ class ManagedJobSet:
             another instance or session might fail due to the job results
             having been consumed.
 
-        When `partial=True`, this method will attempt to retrieve partial
-        results of failed jobs if possible. In this case, precaution should
-        be taken when accessing individual experiments, as doing so might
-        cause an exception. The ``success`` attribute of a
-        :class:`ManagedResults<qiskit.providers.ibmq.managed.managedresults.ManagedResults>`
-        instance can be used to verify whether it contains
-        partial results.
+        Note:
+            When `partial=True`, this method will attempt to retrieve partial
+            results of failed jobs. In this case, precaution should
+            be taken when accessing individual experiments, as doing so might
+            cause an exception. The ``success`` attribute of the returned
+            :class:`ManagedResults<qiskit.providers.ibmq.managed.managedresults.ManagedResults>`
+            instance can be used to verify whether it contains
+            partial results.
 
-        For example, if one of the experiments failed, trying to get the counts
-        of the unsuccessful experiment would raise an exception since there
-        are no counts to return for it::
-            try:
-                counts = managed_results.get_counts("failed_experiment")
-            except QiskitError:
-                print("Experiment failed!")
+            For example, if one of the experiments failed, trying to get the counts
+            of the unsuccessful experiment would raise an exception since there
+            are no counts to return::
+                try:
+                    counts = managed_results.get_counts("failed_experiment")
+                except QiskitError:
+                    print("Experiment failed!")
 
         Args:
            timeout: Number of seconds to wait for job results.
@@ -366,6 +367,7 @@ class ManagedJobSet:
         Args:
             experiment: Retrieve the job used to submit this experiment. Several
                 types are accepted for convenience:
+
                     * str: The name of the experiment.
                     * QuantumCircuit: The name of the circuit instance will be used.
                     * Schedule: The name of the schedule instance will be used.

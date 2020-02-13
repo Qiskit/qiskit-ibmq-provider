@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utilities for working with IBM Q Jobs."""
+"""Utilities for working with IBM Quantum Experience jobs."""
 
 from typing import Dict, List, Generator, Any
 from contextlib import contextmanager
@@ -41,13 +41,13 @@ API_TO_JOB_STATUS = {
 
 
 def build_error_report(results: List[Dict[str, Any]]) -> str:
-    """Build an user-friendly error report for a failed job.
+    """Build a user-friendly error report for a failed job.
 
     Args:
-        results: result section of the job response.
+        results: Result section of the job response.
 
     Returns:
-        the error report.
+        The error report.
     """
     error_list = []
     for index, result in enumerate(results):
@@ -59,20 +59,20 @@ def build_error_report(results: List[Dict[str, Any]]) -> str:
 
 
 def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
-    """Return the corresponding job status for the input API job status.
+    """Return the corresponding job status for the input server job status.
 
     Args:
-        api_status: API job status
+        api_status: Server job status
 
     Returns:
-        job status
+        Job status
     """
     return API_TO_JOB_STATUS[api_status]
 
 
 @contextmanager
 def api_to_job_error() -> Generator[None, None, None]:
-    """Convert an ApiError to an IBMQJobApiError."""
+    """Convert an ``ApiError`` to an ``IBMQJobApiError``."""
     try:
         yield
     except ApiError as api_err:
