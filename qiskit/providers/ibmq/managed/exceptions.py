@@ -12,13 +12,13 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Exception for the job manager modules."""
+"""Exception for the Job Manager modules."""
 
 from ..exceptions import IBMQError
 
 
 class IBMQJobManagerError(IBMQError):
-    """Base class for errors raise by job manager."""
+    """Base class for errors raise by the Job Manager."""
     pass
 
 
@@ -28,7 +28,7 @@ class IBMQJobManagerInvalidStateError(IBMQJobManagerError):
 
 
 class IBMQJobManagerTimeoutError(IBMQJobManagerError):
-    """Errors raised when a job manager operation times out."""
+    """Errors raised when a Job Manager operation times out."""
     pass
 
 
