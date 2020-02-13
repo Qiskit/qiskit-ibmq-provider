@@ -15,19 +15,19 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
+
 from typing import Dict, List, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider  # type: ignore[attr-defined]
+from qiskit.validation.exceptions import ModelValidationError
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
-from qiskit.validation.exceptions import ModelValidationError
 
 from .api.clients import AccountClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
 from .ibmqbackendservice import IBMQBackendService
-
 
 logger = logging.getLogger(__name__)
 
@@ -36,22 +36,21 @@ class AccountProvider(BaseProvider):
     """Provider for a single IBM Quantum Experience account."""
 
     def __init__(self, credentials: Credentials, access_token: str) -> None:
-        """Return a new AccountProvider.
+        """Initialize a new AccountProvider instance.
 
-        The ``provider_backends`` attribute can be used to autocomplete
-        backend names, by pressing ``tab`` after
-        ``AccountProvider.provider_backends.``. Note that this feature may
-        not be available if an error occurs during backend discovery.
+        The `backends` attribute can be used to autocomplete the names of
+        backends available to this provider. To autocomplete, press ``tab``
+        after ``AccountProvider.backends.``. Note: This feature may not be
+        available if an error occurs during backend discovery.
 
         Args:
-            credentials: IBM Q Experience credentials.
-            access_token: access token for IBM Q Experience.
+            credentials: IBM Quantum Experience credentials.
+            access_token: IBM Quantum Experience access token.
         """
         super().__init__()
 
         self.credentials = credentials
-
-        # Set the clients.
+        # set the client.
         self._api = AccountClient(access_token,
                                   credentials.url,
                                   credentials.websockets_url,
@@ -63,6 +62,7 @@ class AccountProvider(BaseProvider):
         self.backends = IBMQBackendService(self)  # type: ignore[assignment]
 
     def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
+        """Return all the backends accessible via this provider."""
         # pylint: disable=method-hidden
         # This method is only for faking the subclassing of `BaseProvider`, as
         # `.backends()` is an abstract method. Upon initialization, it is
@@ -70,10 +70,11 @@ class AccountProvider(BaseProvider):
         pass
 
     def _discover_remote_backends(self, timeout: Optional[float] = None) -> Dict[str, IBMQBackend]:
-        """Return the remote backends available.
+        """Return the remote backends available for this provider.
 
         Args:
-            timeout: number of seconds to wait for the discovery.
+            timeout: maximum number of seconds to wait for the discovery of
+                remote backends.
 
         Returns:
             a dict of the remote backend instances, keyed by backend name.

@@ -24,13 +24,14 @@ from .api.rest.validation import BackendJobLimitResponseSchema
 @bind_schema(BackendJobLimitResponseSchema)
 class BackendJobLimit(BaseModel):
     """Jobs limit for a backend."""
+
     def __init__(self, maximum_jobs: int, running_jobs: int, **kwargs: Any) -> None:
-        """Creates a new BackendJobLimit instance.
+        """Initialize a new BackendJobLimit instance.
 
         Args:
-            maximum_jobs: maximum number of concurrent jobs this account is
+            maximum_jobs: the maximum number of concurrent jobs this account is
                 allowed to submit to this backend with this provider at a time.
-            running_jobs: current number of active jobs on this backend with
+            running_jobs: the current number of active jobs on this backend with
                 this provider.
             kwargs: additional attributes that will be added as instance members.
         """

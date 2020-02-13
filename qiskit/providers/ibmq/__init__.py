@@ -71,8 +71,8 @@ from .ibmqbackendservice import IBMQBackendService
 
 from .version import __version__
 
-# Global instance to be used as the entry point for convenience.
 IBMQ = IBMQFactory()
+"""Global instance to be used as the entry point for convenience."""
 
 
 def least_busy(backends: List[BaseBackend]) -> BaseBackend:
@@ -83,14 +83,14 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
     local backends that do not have this are not considered.
 
     Args:
-        backends: backends to choose from
+        backends: the backends to choose from.
 
     Returns:
-        the least busy backend
+        the backend with the fewest number of pending jobs.
 
     Raises:
-        QiskitError: if passing a list of backend names that is
-            either empty or none have attribute ``pending_jobs``
+        QiskitError: if the list of backends is empty or none of
+            the backends in the list have a ``pending_jobs`` attribute.
     """
     try:
         return min([b for b in backends if b.status().operational],

@@ -15,6 +15,7 @@
 """Backend namespace for an IBM Quantum Experience account provider."""
 
 import logging
+
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
 from datetime import datetime
@@ -38,10 +39,10 @@ class IBMQBackendService(SimpleNamespace):
     """Backend namespace for an IBM Quantum Experience account provider."""
 
     def __init__(self, provider: 'accountprovider.AccountProvider') -> None:
-        """Creates a new IBMQBackendService instance.
+        """Initialize a new IBMQBackendService instance.
 
         Args:
-            provider: IBM Q Experience account provider
+            provider: IBM Quantum Experience account provider.
         """
         super().__init__()
 
@@ -49,7 +50,7 @@ class IBMQBackendService(SimpleNamespace):
         self._discover_backends()
 
     def _discover_backends(self) -> None:
-        """Discovers the remote backends if not already known."""
+        """Discovers the remote backends for this provider, if not already known."""
         for backend in self._provider._backends.values():
             backend_name = to_python_identifier(backend.name())
 
@@ -69,17 +70,19 @@ class IBMQBackendService(SimpleNamespace):
         """Return all backends accessible via this provider, subject to optional filtering.
 
         Args:
-            name: backend name to filter by
+            name: backend name to filter by.
             filters: more complex filters, such as lambda functions
-                e.g. AccountProvider.backends(
-                    filters=lambda b: b.configuration().n_qubits > 5)
-            timeout: number of seconds to wait for backend discovery.
-            kwargs: simple filters specifying a true/false criteria in the
-                backend configuration or backend status or provider credentials
-                e.g. AccountProvider.backends(n_qubits=5, operational=True)
+                Example::
+                    AccountProvider.backends(filters=lambda b: b.configuration().n_qubits > 5)
+            timeout: maximum number of seconds to wait for the discovery of
+                remote backends.
+            kwargs: simple filters that specify a true/false criteria in the
+                backend configuration, backends status, or provider credentials.
+                An example to get the operational backends with 5 qubits::
+                    AccountProvider.backends(n_qubits=5, operational=True).
 
         Returns:
-            list of backends available that match the filter
+            the list of available backends that match the filter.
         """
         backends = self._provider._backends.values()
 
@@ -106,21 +109,22 @@ class IBMQBackendService(SimpleNamespace):
             job_tags_operator: Optional[str] = "OR",
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
-        """Return a list of jobs from the API.
+        """Return a list of jobs from the API, subject to optional filtering.
 
         Return a list of jobs, with optional filtering and pagination. Note
         that the API has a limit for the number of jobs returned in a single
-        call, and this function might involve making several calls to the API.
-        See also the `skip` parameter for more control over pagination.
+        call. As a result, this function might involve making several calls
+        to the API. See the `skip` parameter for more control over pagination.
 
-        Note that jobs submitted with earlier versions of Qiskit
-        (in particular, those that predate the Qobj format) are not included
-        in the returned list.
+        Note:
+             the jobs submitted with earlier versions of Qiskit
+             (in particular, those that predate the Qobj format)
+             are not included in the returned list.
 
         Args:
             limit: number of jobs to retrieve. Default: 10.
             skip: starting index for the job retrieval. Default: 0.
-            backend_name: name of the backend. Default: None.
+            backend_name: name of the backend to retrieve jobs from. Default: None.
             status: only get jobs with this status or one of the statuses. Default: None.
                 For example, you can specify `status=JobStatus.RUNNING` or `status="RUNNING"`
                     or `status=["RUNNING", "ERROR"]
@@ -137,10 +141,10 @@ class IBMQBackendService(SimpleNamespace):
             job_tags: filter by tags assigned to jobs. Default: None.
             job_tags_operator: logical operator to use when filtering by job tags.
                 Valid values are "AND" and "OR":
-                 * If "AND" is specified, then a job must have all of the tags
-                    specified in ``job_tags`` to be included.
-                * If "OR" is specified, then a job only needs to have any
-                    of the tags specified in ``job_tags`` to be included.
+                    * If "AND" is specified, then a job must have all of the tags
+                        specified in ``job_tags`` to be included.
+                    * If "OR" is specified, then a job only needs to have any
+                        of the tags specified in ``job_tags`` to be included.
                 Default: OR.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
@@ -157,7 +161,7 @@ class IBMQBackendService(SimpleNamespace):
                   job_list = backend.jobs(limit=5, db_filter=filter)
 
         Returns:
-            list of IBMQJob instances
+            list of IBMQJob instances.
 
         Raises:
             IBMQBackendValueError: if a keyword value is not recognized.
@@ -266,11 +270,11 @@ class IBMQBackendService(SimpleNamespace):
             self,
             status_arg: Union[JobStatus, str, List[Union[JobStatus, str]]]
     ) -> Dict[str, Any]:
-        """Return the db filter to use when searching for jobs based on status or statuses.
+        """Return the db filter to use when retrieving jobs based on a status or statuses.
 
         Returns:
-            The status db filter used to query the api when searching for jobs that match
-                a given status or list of statuses.
+            The status db filter used to query the api when retrieving jobs that match
+            a given status or list of statuses.
 
         Raises:
             IBMQBackendError: If a status value is not recognized.
@@ -288,11 +292,11 @@ class IBMQBackendService(SimpleNamespace):
         return _final_status_filter
 
     def _get_status_filter(self, status: Union[JobStatus, str]) -> Dict[str, Any]:
-        """Return the db filter to use when searching for jobs based on a status.
+        """Return the db filter to use when retrieving jobs based on a status.
 
         Returns:
-            The status db filter used to query the api when searching for jobs
-                that match a given status.
+            The status db filter used to query the api when retrieving jobs
+            that match a given status.
 
         Raises:
             IBMQBackendValueError: If the status value is not recognized.
@@ -336,13 +340,14 @@ class IBMQBackendService(SimpleNamespace):
         """Return a single job from the API.
 
         Args:
-            job_id: the job id of the job to retrieve
+            job_id: id of the job to retrieve.
 
         Returns:
-            class instance
+            the job with the given id.
 
         Raises:
-            IBMQBackendApiError: if there was some unexpected failure in the server.
+            IBMQBackendApiError: if an unexpected error occurred when retrieving
+                the job from the API.
             IBMQBackendApiProtocolError: if unexpected return value received
                  from the server.
         """

@@ -38,12 +38,12 @@ class IBMQAccountCredentialsInvalidFormat(IBMQAccountError):
 
 
 class IBMQAccountCredentialsInvalidToken(IBMQAccountError):
-    """Error raised for an invalid IBM Q Experience API token.."""
+    """Error raised for an invalid IBM Quantum Experience API token."""
     pass
 
 
 class IBMQAccountCredentialsInvalidUrl(IBMQAccountError):
-    """Error raised for an invalid IBM Q Experience API url.."""
+    """Error raised for an invalid IBM Quantum Experience API url."""
     pass
 
 
