@@ -24,9 +24,10 @@ class PlotlyFigure:
     """A simple wrapper around ``plotly.graph_objects.Figure`` class.
 
     This wrapper class allows the figures to be more or less drop in replacements
-    for Matplotlib Figures. For example, you can use :meth:`savefig()` to
+    for ``matplotlib`` figures. For example, you can use :meth:`savefig()` to
     save the figure.
     """
+
     def __init__(self, fig: go.Figure):
         """PlotlyFigure class.
 
