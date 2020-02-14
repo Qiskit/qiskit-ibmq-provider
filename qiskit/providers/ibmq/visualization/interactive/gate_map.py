@@ -12,37 +12,52 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Interactive gate map"""
+"""Interactive gate map for IBM Quantum Experience devices."""
+
+from typing import Tuple, Union, Optional, List
 
 import plotly.graph_objects as go
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+
 from .plotly_wrapper import PlotlyWidget, PlotlyFigure
 from ..device_layouts import DEVICE_LAYOUTS
 
 
-def iplot_gate_map(backend, figsize=(None, None), label_qubits=True,
-                   qubit_size=None, line_width=None, font_size=None,
-                   qubit_color="#2f4b7c", qubit_labels=None,
-                   line_color="#2f4b7c", font_color="white",
-                   background_color='white',
-                   as_widget=False):
+def iplot_gate_map(
+        backend: IBMQBackend,
+        figsize: Tuple[Optional[int]] = (None, None),
+        label_qubits: bool = True,
+        qubit_size: Optional[float] = None,
+        line_width: Optional[float] = None,
+        font_size: Optional[int] = None,
+        qubit_color: Union[List[str], str] = "#2f4b7c",
+        qubit_labels: Optional[List[str]] = None,
+        line_color: Union[List[str], str] = "#2f4b7c",
+        font_color: str = "white",
+        background_color: str = 'white',
+        as_widget: bool = False
+) -> Union[PlotlyFigure, PlotlyWidget]:
     """Plots an interactive gate map of a device.
 
     Args:
-        backend (BaseBackend): A backend instance,
-        figsize (tuple): Output figure size (wxh) in inches.
-        label_qubits (bool): Label the qubits.
-        qubit_size (float): Size of qubit marker.
-        line_width (float): Width of lines.
-        font_size (int): Font size of qubit labels.
-        qubit_color (list): A list of colors for the qubits
-        qubit_labels (list): A list of qubit labels
-        line_color (list): A list of colors for each line from coupling_map.
-        font_color (str): The font color for the qubit labels.
-        background_color (str): The background color, 'white' or 'black'.
-        as_widget (bool): Display figure as ipywidget.
+        backend: Plot the gate map for this backend.
+        figsize: Output figure size (wxh) in inches.
+        label_qubits: Labels for the qubits.
+        qubit_size: Size of qubit marker.
+        line_width: Width of lines.
+        font_size: Font size of qubit labels.
+        qubit_color: A list of colors for the qubits. If a single color is given,
+            it's used for all qubits.
+        qubit_labels: A list of qubit labels
+        line_color: A list of colors for each line from the coupling map. If a
+            single color is given, it's used for all lines.
+        font_color: The font color for the qubit labels.
+        background_color: The background color, either 'white' or 'black'.
+        as_widget: True if the figure is to be returned as a ``PlotlyWidget``.
+            Otherwise the figure is to be returned as a ``PlotlyFigure``.
 
     Returns:
-        PlotlyFigure or PlotlyWidget: The output figure.
+        The gate map figure.
 
     Example:
         .. jupyter-execute::

@@ -13,43 +13,48 @@
 # that they have been altered from the originals.
 # pylint: disable=invalid-name
 
-"""Interactive error map for IBM  Quantum devices."""
+"""Interactive error map for IBM Quantum Experience devices."""
 
 import math
+from typing import Tuple, Union
+
 import numpy as np
 import matplotlib as mpl
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+
 from .plotly_wrapper import PlotlyWidget, PlotlyFigure
 from ..device_layouts import DEVICE_LAYOUTS
 from ..colormaps import (HELIX_LIGHT, HELIX_LIGHT_CMAP,
                          HELIX_DARK, HELIX_DARK_CMAP)
 
 
-def iplot_error_map(backend,
-                    figsize=(700, 500),
-                    show_title=True,
-                    remove_badcal_edges=True,
-                    background_color='white',
-                    as_widget=False):
-    """Plots the gate map of a device.
+def iplot_error_map(
+        backend: IBMQBackend,
+        figsize: Tuple[int] = (700, 500),
+        show_title: bool = True,
+        remove_badcal_edges: bool = True,
+        background_color: str = 'white',
+        as_widget: bool = False
+) -> Union[PlotlyFigure, PlotlyWidget]:
+    """Plot the error map of a device.
 
-    Parameters:
-        backend (IBMQBackend): A backend instance.
-        figsize (tuple): Figure size in pixels.
-        show_title (bool): Show figure title.
-        remove_badcal_edges (bool): Remove bad CX gate calibration
-                                    data.
-        background_color (str): Set the background color to 'white'
-                                or 'black'.
-        as_widget (bool): Return figure as a ipywidget.
+    Args:
+        backend: Plot the error map for this backend.
+        figsize: Figure size in pixels.
+        show_title: Whether to show figure title.
+        remove_badcal_edges: Whether to remove bad CX gate calibration data.
+        background_color: Background color, either 'white' or 'black'.
+        as_widget: True if the figure is to be returned as a ``PlotlyWidget``.
+            Otherwise the figure is to be returned as a ``PlotlyFigure``.
 
     Returns:
-        PlotlyFigure: The output figure.
+        The error map figure.
 
     Raises:
-        ValueError: Invalid color selection.
-        TypeError: If tried to pass a simulator.
+        ValueError: If an invalid input is received.
+        TypeError: If the specified `backend` is a simulator.
 
     Example:
         .. jupyter-execute::

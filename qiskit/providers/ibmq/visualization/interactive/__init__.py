@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Quantum visualization library."""
+"""IBM Quantum Experience visualization library."""
 import sys
 
 try:
