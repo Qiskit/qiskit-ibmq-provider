@@ -34,10 +34,10 @@ logger = logging.getLogger(__name__)
 class AccountProvider(BaseProvider):
     """Provider for a single IBM Quantum Experience account.
 
-    The account provider is a high level mechanism that provides access
-    to the IBM Quantum Experience backends available to this account.
+    The account provider facilitates access to the IBM Quantum Experience
+    backends available to this account.
 
-    One simple way of creating an instance is by enabling a session::
+    You can access a provider by enabling a session::
 
         from qiskit import IBMQ
         provider = IBMQ.enable_account(<INSERT_IBM_QUANTUM_EXPERIENCE_TOKEN>)
@@ -46,8 +46,9 @@ class AccountProvider(BaseProvider):
 
         backends = provider.backends()
 
-    The :meth:`get_backend()` method returns the backend that matches the filters
-    passed as argument. An example of retrieving a backend by providing a name::
+    The :meth:`get_backend()` method returns a backend that matches the filters
+    passed as argument. An example of retrieving a backend that matches a
+    specified name::
 
         simulator_backend = provider.get_backend('ibmq_qasm_simulator')
     """
