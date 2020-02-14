@@ -29,11 +29,11 @@ class BackendJobLimit(BaseModel):
         """Initialize a new BackendJobLimit instance.
 
         Args:
-            maximum_jobs: the maximum number of concurrent jobs this account is
-                allowed to submit to this backend with this provider at a time.
-            running_jobs: the current number of active jobs on this backend with
+            maximum_jobs: The maximum number of concurrent jobs this account is
+                allowed to submit to this backend, with this provider, at a time.
+            running_jobs: The current number of active jobs on this backend, with
                 this provider.
-            kwargs: additional attributes that will be added as instance members.
+            kwargs: Additional attributes that will be added as instance members.
         """
         self.maximum_jobs = maximum_jobs
         self.active_jobs = running_jobs

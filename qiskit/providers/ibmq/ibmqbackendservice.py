@@ -70,19 +70,19 @@ class IBMQBackendService(SimpleNamespace):
         """Return all backends accessible via this provider, subject to optional filtering.
 
         Args:
-            name: backend name to filter by.
-            filters: more complex filters, such as lambda functions
+            name: Backend name to filter by.
+            filters: More complex filters, such as lambda functions
                 Example::
                     AccountProvider.backends(filters=lambda b: b.configuration().n_qubits > 5)
-            timeout: maximum number of seconds to wait for the discovery of
+            timeout: Maximum number of seconds to wait for the discovery of
                 remote backends.
-            kwargs: simple filters that specify a true/false criteria in the
+            kwargs: Simple filters that specify a true/false criteria in the
                 backend configuration, backends status, or provider credentials.
                 An example to get the operational backends with 5 qubits::
                     AccountProvider.backends(n_qubits=5, operational=True).
 
         Returns:
-            the list of available backends that match the filter.
+            The list of available backends that match the filter.
         """
         backends = self._provider._backends.values()
 
@@ -109,7 +109,7 @@ class IBMQBackendService(SimpleNamespace):
             job_tags_operator: Optional[str] = "OR",
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
-        """Return a list of jobs from the API, subject to optional filtering.
+        """Return a list of jobs, subject to optional filtering.
 
         Return a list of jobs, with optional filtering and pagination. Note
         that the API has a limit for the number of jobs returned in a single
@@ -117,38 +117,37 @@ class IBMQBackendService(SimpleNamespace):
         to the API. See the `skip` parameter for more control over pagination.
 
         Note:
-             the jobs submitted with earlier versions of Qiskit
+             The jobs submitted with earlier versions of Qiskit
              (in particular, those that predate the Qobj format)
              are not included in the returned list.
 
         Args:
-            limit: number of jobs to retrieve. Default: 10.
-            skip: starting index for the job retrieval. Default: 0.
-            backend_name: name of the backend to retrieve jobs from. Default: None.
-            status: only get jobs with this status or one of the statuses. Default: None.
+            limit: Number of jobs to retrieve.
+            skip: Starting index for the job retrieval.
+            backend_name: Name of the backend to retrieve jobs from.
+            status: Only get jobs with this status or one of the statuses.
                 For example, you can specify `status=JobStatus.RUNNING` or `status="RUNNING"`
                     or `status=["RUNNING", "ERROR"]
-            job_name: filter by job name. The `job_name` is matched partially
+            job_name: Filter by job name. The `job_name` is matched partially
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
-                `_ can be used. Default: None.
-            start_datetime: filter by start date. This is used to find jobs
+                `_ can be used.
+            start_datetime: Filter by start date. This is used to find jobs
                 whose creation dates are after (greater than or equal to) this
-                date/time. Default: None.
-            end_datetime: filter by end date. This is used to find jobs
+                date/time.
+            end_datetime: Filter by end date. This is used to find jobs
                 whose creation dates are before (less than or equal to) this
-                date/time. Default: None.
-            job_tags: filter by tags assigned to jobs. Default: None.
-            job_tags_operator: logical operator to use when filtering by job tags.
+                date/time.
+            job_tags: Filter by tags assigned to jobs.
+            job_tags_operator: Logical operator to use when filtering by job tags.
                 Valid values are "AND" and "OR":
                     * If "AND" is specified, then a job must have all of the tags
                         specified in ``job_tags`` to be included.
                     * If "OR" is specified, then a job only needs to have any
                         of the tags specified in ``job_tags`` to be included.
-                Default: OR.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
-                This is an interface to a database ``where`` filter. Default: None.
+                This is an interface to a database ``where`` filter.
                 Some examples of its usage are:
 
                 Filter last five jobs with errors::
@@ -161,10 +160,10 @@ class IBMQBackendService(SimpleNamespace):
                   job_list = backend.jobs(limit=5, db_filter=filter)
 
         Returns:
-            list of IBMQJob instances.
+            A list of IBMQJob instances.
 
         Raises:
-            IBMQBackendValueError: if a keyword value is not recognized.
+            IBMQBackendValueError: If a keyword value is not recognized.
         """
         # Build the filter for the query.
         api_filter = {}  # type: Dict[str, Any]
@@ -337,18 +336,18 @@ class IBMQBackendService(SimpleNamespace):
         return _status_filter
 
     def retrieve_job(self, job_id: str) -> IBMQJob:
-        """Return a single job from the API.
+        """Return a single job.
 
         Args:
-            job_id: id of the job to retrieve.
+            job_id: The ID of the job to retrieve.
 
         Returns:
-            the job with the given id.
+            The job with the given id.
 
         Raises:
-            IBMQBackendApiError: if an unexpected error occurred when retrieving
-                the job from the API.
-            IBMQBackendApiProtocolError: if unexpected return value received
+            IBMQBackendApiError: If an unexpected error occurred when retrieving
+                the job.
+            IBMQBackendApiProtocolError: If unexpected return value received
                  from the server.
         """
         try:

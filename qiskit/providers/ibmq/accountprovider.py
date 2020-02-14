@@ -15,7 +15,6 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
-
 from typing import Dict, List, Optional, Any
 from collections import OrderedDict
 
@@ -38,10 +37,11 @@ class AccountProvider(BaseProvider):
     def __init__(self, credentials: Credentials, access_token: str) -> None:
         """Initialize a new AccountProvider instance.
 
-        The `backends` attribute can be used to autocomplete the names of
-        backends available to this provider. To autocomplete, press ``tab``
-        after ``AccountProvider.backends.``. Note: This feature may not be
-        available if an error occurs during backend discovery.
+        Note:
+            The `backends` attribute can be used to autocomplete the names of
+            backends available to this provider. To autocomplete, press ``tab``
+            after ``AccountProvider.backends.``. This feature may not be
+            available if an error occurs during backend discovery.
 
         Args:
             credentials: IBM Quantum Experience credentials.
@@ -62,7 +62,7 @@ class AccountProvider(BaseProvider):
         self.backends = IBMQBackendService(self)  # type: ignore[assignment]
 
     def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
-        """Return all the backends accessible via this provider."""
+        """Return all backends accessible via this provider, subject to optional filtering."""
         # pylint: disable=method-hidden
         # This method is only for faking the subclassing of `BaseProvider`, as
         # `.backends()` is an abstract method. Upon initialization, it is
@@ -73,11 +73,11 @@ class AccountProvider(BaseProvider):
         """Return the remote backends available for this provider.
 
         Args:
-            timeout: maximum number of seconds to wait for the discovery of
+            timeout: Maximum number of seconds to wait for the discovery of
                 remote backends.
 
         Returns:
-            a dict of the remote backend instances, keyed by backend name.
+            A dict of the remote backend instances, keyed by backend name.
         """
         ret = OrderedDict()  # type: ignore[var-annotated]
         configs_list = self._api.list_backends(timeout=timeout)

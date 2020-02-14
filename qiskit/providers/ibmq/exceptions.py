@@ -12,13 +12,13 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Exception for the IBMQ module."""
+"""Exceptions related to the IBM Quantum Experience provider."""
 
 from qiskit.exceptions import QiskitError
 
 
 class IBMQError(QiskitError):
-    """Base class for errors raised by the IBMQ provider module."""
+    """Base class for errors raised by the provider modules."""
     pass
 
 
@@ -28,27 +28,27 @@ class IBMQAccountError(IBMQError):
 
 
 class IBMQAccountCredentialsNotFound(IBMQAccountError):
-    """Error raised when credentials not found."""
+    """Errors raised when credentials are not found."""
     pass
 
 
 class IBMQAccountCredentialsInvalidFormat(IBMQAccountError):
-    """Error raised when credentials format is invalid."""
+    """Errors raised when the credential's format is invalid."""
     pass
 
 
 class IBMQAccountCredentialsInvalidToken(IBMQAccountError):
-    """Error raised for an invalid IBM Quantum Experience API token."""
+    """Errors raised when an IBM Quantum Experience token is invalid."""
     pass
 
 
 class IBMQAccountCredentialsInvalidUrl(IBMQAccountError):
-    """Error raised for an invalid IBM Quantum Experience API url."""
+    """Errors raised when an IBM Quantum Experience url is invalid."""
     pass
 
 
 class IBMQAccountMultipleCredentialsFound(IBMQAccountError):
-    """Error raised when multiple credentials found."""
+    """Errors raised when multiple credentials are found."""
     pass
 
 
@@ -58,20 +58,20 @@ class IBMQProviderError(IBMQAccountError):
 
 
 class IBMQBackendError(IBMQError):
-    """IBM Q Backend Errors."""
+    """Base class for errors raised by the backend modules."""
     pass
 
 
 class IBMQBackendApiError(IBMQBackendError):
-    """Error that occurs unexpectedly when querying the API."""
+    """Errors that occur unexpectedly when querying the server."""
     pass
 
 
 class IBMQBackendApiProtocolError(IBMQBackendApiError):
-    """Error raised when unexpected API return values received."""
+    """Errors raised when an unexpected value is received from the server."""
     pass
 
 
 class IBMQBackendValueError(IBMQBackendError, ValueError):
-    """Value errors thrown within IBMQBackend."""
+    """Value errors raised by the backend modules."""
     pass

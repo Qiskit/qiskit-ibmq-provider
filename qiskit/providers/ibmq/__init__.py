@@ -14,12 +14,12 @@
 
 """
 ============================================
-IBMQ Provider (:mod:`qiskit.providers.ibmq`)
+IBM Quantum Experience Provider (:mod:`qiskit.providers.ibmq`)
 ============================================
 
 .. currentmodule:: qiskit.providers.ibmq
 
-Provider for IBM Quantum Experience.
+Modules representing the IBMQ Quantum Experience Provider.
 
 Functions
 =========
@@ -79,21 +79,24 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
     """Return the least busy backend from a list.
 
     Return the least busy available backend for those that
-    have a `pending_jobs` in their `status`. Backends such as
-    local backends that do not have this are not considered.
+    have a `pending_jobs` in their `status`. Note that local
+    backends may not have this attribute.
 
     Args:
-        backends: the backends to choose from.
+        backends: The backends to choose from.
 
     Returns:
-        the backend with the fewest number of pending jobs.
+        The backend with the fewest number of pending jobs.
 
     Raises:
-        QiskitError: if the list of backends is empty or none of
-            the backends in the list have a ``pending_jobs`` attribute.
+        QiskitError: If the backends list is empty or if any backend in the
+            list does not have a `pending_jobs` attribute in its status.
     """
     try:
         return min([b for b in backends if b.status().operational],
                    key=lambda b: b.status().pending_jobs)
     except (ValueError, TypeError):
-        raise QiskitError("Can only find least_busy backend from a non-empty list.")
+        raise QiskitError('Can only find least_busy backend from a non-empty list.')
+    except AttributeError:
+        raise QiskitError('A backend in the list does not have the `pending_jobs` '
+                          'attribute in its status.')
