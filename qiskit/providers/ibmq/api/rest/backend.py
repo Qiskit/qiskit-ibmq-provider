@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Backend REST adapter for the IBM Q Experience API."""
+"""Backend REST adapter."""
 
 import json
 from typing import Dict, Optional, Any
@@ -35,8 +35,8 @@ class Backend(RestAdapterBase):
         """Backend constructor.
 
         Args:
-            session: session to be used in the adaptor.
-            backend_name: name of the backend.
+            session: Session to be used in the adaptor.
+            backend_name: Name of the backend.
         """
         self.backend_name = backend_name
         super().__init__(session, '/devices/{}'.format(backend_name))
@@ -45,10 +45,10 @@ class Backend(RestAdapterBase):
         """Return backend properties.
 
         Args:
-            datetime: datetime used for additional filtering passed to the query.
+            datetime: Date and time used for additional filtering passed to the query.
 
         Returns:
-            json response of backend properties.
+            JSON response of backend properties.
         """
         # pylint: disable=redefined-outer-name
         url = self.get_url('properties')
@@ -72,12 +72,20 @@ class Backend(RestAdapterBase):
         return response
 
     def pulse_defaults(self) -> Dict[str, Any]:
-        """Return backend pulse defaults."""
+        """Return backend pulse defaults.
+
+        Returns:
+            JSON response of pulse defaults.
+        """
         url = self.get_url('pulse_defaults')
         return self.session.get(url).json()
 
     def status(self) -> Dict[str, Any]:
-        """Return backend status."""
+        """Return backend status.
+
+        Returns:
+            JSON response of backend status.
+        """
         url = self.get_url('status')
         response = self.session.get(url).json()
 
@@ -102,6 +110,10 @@ class Backend(RestAdapterBase):
         return ret
 
     def job_limit(self) -> Dict[str, Any]:
-        """Return backend job limit."""
+        """Return backend job limit.
+
+        Returns:
+            JSON response of job limit.
+        """
         url = self.get_url('jobs_limit')
         return self.session.get(url).json()

@@ -12,13 +12,13 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Exceptions related to the IBM Q Experience API."""
+"""Exceptions related to the IBM Quantum Experience API."""
 
 from ..exceptions import IBMQError
 
 
 class ApiError(IBMQError):
-    """Generic IBM Q API error."""
+    """Generic IBM Quantum API error."""
     pass
 
 
@@ -33,7 +33,7 @@ class WebsocketError(ApiError):
 
 
 class WebsocketIBMQProtocolError(WebsocketError):
-    """Exceptions related to IBM Q protocol error."""
+    """Exceptions related to IBM Quantum protocol error."""
     pass
 
 
@@ -48,12 +48,12 @@ class WebsocketTimeoutError(WebsocketError):
 
 
 class AuthenticationLicenseError(ApiError):
-    """Exception due to user not accepting latest license agreement via web."""
+    """Exception due to user not having accepted the license agreement."""
     pass
 
 
 class ApiIBMQProtocolError(ApiError):
-    """Exception related to IBM Q API protocol error."""
+    """Exception related to IBM Quantum API protocol error."""
     pass
 
 
