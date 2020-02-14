@@ -54,7 +54,7 @@ class IBMQBackend(BaseBackend):
             credentials: Credentials,
             api: AccountClient
     ) -> None:
-        """Initialize an IBM Quantum Experience remote backend.
+        """IBMQBackend class.
 
         Args:
             configuration: Backend configuration.
@@ -511,7 +511,7 @@ class IBMQRetiredBackend(IBMQBackend):
             credentials: Credentials,
             api: AccountClient
     ) -> None:
-        """Initialize an IBM Quantum Experience remote backend.
+        """IBMQRetiredBackend class.
 
         Args:
             configuration: Backend configuration.

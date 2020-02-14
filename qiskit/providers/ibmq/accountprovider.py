@@ -35,7 +35,7 @@ class AccountProvider(BaseProvider):
     """Provider for a single IBM Quantum Experience account."""
 
     def __init__(self, credentials: Credentials, access_token: str) -> None:
-        """Initialize a new AccountProvider instance.
+        """AccountProvider class.
 
         Note:
             The `backends` attribute can be used to autocomplete the names of

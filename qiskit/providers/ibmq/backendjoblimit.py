@@ -26,7 +26,7 @@ class BackendJobLimit(BaseModel):
     """Jobs limit for a backend."""
 
     def __init__(self, maximum_jobs: int, running_jobs: int, **kwargs: Any) -> None:
-        """Initialize a new BackendJobLimit instance.
+        """BackendJobLimit class.
 
         Args:
             maximum_jobs: The maximum number of concurrent jobs this account is

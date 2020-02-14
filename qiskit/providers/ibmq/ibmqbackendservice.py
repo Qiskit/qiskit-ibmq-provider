@@ -39,7 +39,7 @@ class IBMQBackendService(SimpleNamespace):
     """Backend namespace for an IBM Quantum Experience account provider."""
 
     def __init__(self, provider: 'accountprovider.AccountProvider') -> None:
-        """Initialize a new IBMQBackendService instance.
+        """IBMQBackendService class.
 
         Args:
             provider: IBM Quantum Experience account provider.

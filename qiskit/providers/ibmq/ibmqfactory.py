@@ -41,7 +41,7 @@ class IBMQFactory:
     """Factory and Account manager for IBM Quantum Experience."""
 
     def __init__(self) -> None:
-        """Initialize a new IBMQFactory instance."""
+        """IBMQFactory class."""
         self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
 
