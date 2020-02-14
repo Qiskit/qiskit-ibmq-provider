@@ -61,7 +61,7 @@ class ManagedJobSet:
             name: Optional[str] = None,
             short_id: Optional[str] = None
     ) -> None:
-        """ManagedJobSet class.
+        """ManagedJobSet constructor.
 
         Args:
             name: Name for this set of jobs. If not specified, the current
@@ -199,8 +199,8 @@ class ManagedJobSet:
         """Return the status of each job in this set.
 
         Returns:
-            A list of job statuses. The entry is ``None`` if the job status
-            cannot be retrieved due to server error.
+            A list of job statuses. An entry in the list is ``None`` if the
+            job status could not be retrieved due to server error.
         """
         return [mjob.status() for mjob in self._managed_jobs]
 
@@ -239,9 +239,9 @@ class ManagedJobSet:
         the timeout is reached.
 
         Note:
-            Some IBM Quantum Experience job results can be read only once. A
-            second attempt to query the server for the same job will fail, as the
-            job is "consumed".
+            Some IBM Quantum Experience job results can only be read once. A
+            second attempt to query the server for the same job will fail,
+            since the job has already been "consumed".
 
             The first call to this method in a ``ManagedJobSet`` instance will
             query the server and consume any available job results. Subsequent
@@ -398,11 +398,11 @@ class ManagedJobSet:
 
     @requires_submit
     def qobjs(self) -> List[Qobj]:
-        """Return the Qobj's for the jobs in this set.
+        """Return the ``Qobj``s for the jobs in this set.
 
         Returns:
-            A list of Qobj's for the jobs. The entry is ``None`` if the Qobj
-            could not be retrieved.
+            A list of ``Qobj``s for the jobs. An entry in the list is ``None``
+            if the ``Qobj`` could not be retrieved.
         """
         return [mjob.qobj() for mjob in self._managed_jobs]
 

@@ -52,7 +52,7 @@ class QueueInfo(BaseModel):
             job_id: Optional[str] = None,
             **kwargs: Any
     ) -> None:
-        """QueueInfo class.
+        """QueueInfo constructor.
 
         Args:
             position: Position in the queue.

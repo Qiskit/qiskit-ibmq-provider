@@ -75,7 +75,7 @@ class IBMQJobManager:
     """
 
     def __init__(self) -> None:
-        """IBMQJobManager class."""
+        """IBMQJobManager constructor."""
         self._job_sets = []  # type: List[ManagedJobSet]
         self._executor = futures.ThreadPoolExecutor()
 

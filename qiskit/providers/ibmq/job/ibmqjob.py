@@ -84,7 +84,7 @@ class IBMQJob(BaseModel, BaseJob):
         job = backend.run(...)
 
         try:
-            job_result = job.result()  # It will block until job finishes.
+            job_result = job.result()  # It will block until the job finishes.
             print("The job finished with result {}".format(job_result))
         except JobError as ex:
             print("Something wrong happened!: {}".format(ex))
@@ -107,7 +107,7 @@ class IBMQJob(BaseModel, BaseJob):
                  _creation_date: datetime,
                  _api_status: ApiJobStatus,
                  **kwargs: Any) -> None:
-        """IBMQJob class.
+        """IBMQJob constructor.
 
         Args:
             _backend: The backend instance used to run this job.
@@ -186,9 +186,9 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the result of the job.
 
         Note:
-            Some IBM Quantum Experience job results can be read only once. A
-            second attempt to query the server for the same job will fail, as the
-            job is "consumed".
+            Some IBM Quantum Experience job results can only be read once. A
+            second attempt to query the server for the same job will fail,
+            since the job has already been "consumed".
 
             The first call to this method in an ``IBMQJob`` instance will
             query the server and consume any available job results. Subsequent
@@ -208,6 +208,7 @@ class IBMQJob(BaseModel, BaseJob):
             For example, if one of the experiments in the job failed, trying to
             get the counts of the unsuccessful experiment would raise an exception
             since there are no counts to return::
+
                 try:
                     counts = result.get_counts("failed_experiment")
                 except QiskitError:
@@ -216,11 +217,11 @@ class IBMQJob(BaseModel, BaseJob):
         If the job failed, you can use :meth:`error_message()` to get more information.
 
         Args:
-           timeout: Number of seconds to wait for job.
-           wait: Time in seconds between queries.
-           partial: If True, return partial results if possible.
-           refresh: If True, query the server again for the result. Otherwise return
-            the cached value.
+            timeout: Number of seconds to wait for job.
+            wait: Time in seconds between queries.
+            partial: If True, return partial results if possible.
+            refresh: If True, re-query the server for the result. Otherwise
+                return the cached value.
 
         Returns:
             Job result.
@@ -276,9 +277,12 @@ class IBMQJob(BaseModel, BaseJob):
             your request.
             Use :meth:`wait_for_final_state()` if you want to wait for the job to finish.
 
+        Note:
+            If the job failed, you can use :meth:`error_message()` to get
+            more information.
+
         Returns:
-            The status of the job. If the job failed, you can use
-            :meth:`error_message()` to get more information.
+            The status of the job.
 
         Raises:
             IBMQJobApiError: If an unexpected error occurred when communicating
@@ -372,7 +376,7 @@ class IBMQJob(BaseModel, BaseJob):
             and may differ from the global queue position.
 
         Args:
-            refresh: If True, query the server to get the latest value.
+            refresh: If True, re-query the server to get the latest value.
                 Otherwise return the cached value.
 
         Returns:
@@ -605,7 +609,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Retrieve the job result response.
 
         Args:
-            refresh: If True, query the server for the result.
+            refresh: If True, re-query the server for the result.
                Otherwise return the cached value.
 
         Returns:

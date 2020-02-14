@@ -41,7 +41,7 @@ class ManagedJob:
             experiments_count: int,
             job: Optional[IBMQJob] = None
     ):
-        """ManagedJob class.
+        """ManagedJob constructor.
 
         Args:
             start_index: Starting index of the experiment set.

@@ -41,7 +41,7 @@ class ManagedResults:
             backend_name: str,
             success: bool
     ):
-        """ManagedResults class.
+        """ManagedResults constructor.
 
         Args:
             job_set: Managed job set for these results.
