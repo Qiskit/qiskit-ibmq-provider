@@ -23,7 +23,11 @@ from .api.rest.validation import BackendJobLimitResponseSchema
 
 @bind_schema(BackendJobLimitResponseSchema)
 class BackendJobLimit(BaseModel):
-    """Jobs limit for a backend."""
+    """Job limit for a backend.
+
+    Represent the job limit for a backend on a specific provider. This
+    class is returned by the :meth:`job_limit()<IBMQBackend.job_limit>` method.
+    """
 
     def __init__(self, maximum_jobs: int, running_jobs: int, **kwargs: Any) -> None:
         """BackendJobLimit class.
