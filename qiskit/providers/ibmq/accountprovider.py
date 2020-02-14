@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 class AccountProvider(BaseProvider):
     """Provider for a single IBM Quantum Experience account.
 
-    The account provider facilitates access to the IBM Quantum Experience
+    The account provider class provides to the IBM Quantum Experience
     backends available to this account.
 
     You can access a provider by enabling a session::
