@@ -45,7 +45,32 @@ logger = logging.getLogger(__name__)
 
 
 class IBMQBackend(BaseBackend):
-    """Backend class interfacing with an IBM Quantum Experience backend."""
+    """Backend class interfacing with an IBM Quantum Experience backend.
+
+    Represent a real device that is able to submit jobs against an actual
+    IBM Quantum Experience backend.
+
+    The :meth:`run()` method returns an :class:`IBMQJob<qiskit.providers.ibmq.job.IBMQJob>`
+    instance, which represents a job that is to be executed on a real device. It might be
+    possible to retrieve this job or others with the :meth:`retrieve_job()` method by specifying
+    the job ID::
+
+        backend.retrieve_job(<JOB_ID>)
+
+    Other methods return information about the backend. For example, the :meth:`status()`
+    method returns the most recent status of the backend, including whether it is operational
+    and also the number of jobs that are in the queue for the backend::
+
+        status = backend.status()
+        is_operational = status.operational
+        jobs_in_queue = status.pending_jobs
+
+    It is also possible to see the number of remaining jobs you are able to submit to the
+    backend with the :meth:`job_limit()` method, which returns a
+    :class:`BackendJobLimit<BackendJobLimit>` instance::
+
+        job_limit = backend.job_limit()
+    """
 
     def __init__(
             self,
