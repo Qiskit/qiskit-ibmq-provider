@@ -36,7 +36,28 @@ logger = logging.getLogger(__name__)
 
 
 class IBMQBackendService(SimpleNamespace):
-    """Backend namespace for an IBM Quantum Experience account provider."""
+    """Backend namespace for an IBM Quantum Experience account provider.
+
+    Represent a namespace for the IBM Quantum Experience backends available
+    to this account. This namespace is used to override the
+    :meth:`backends<AccountProvider.backends>` method for convenience.
+
+    It is still possible to access all the backends this account has access to in an exact
+    manner::
+
+        backends = provider.backends()
+
+    However, you are now able to retrieve jobs based on your account, instead of retrieving them
+    from a specific backend. For example, to retrieve the ten most recent jobs you have submitted
+    on your account, regardless of the backend they were submitted to, you could do::
+
+        most_recent_jobs = provider.backends.jobs(limit=10)
+
+    Likewise, you are able to retrieve single jobs based on your account, rather having to search
+    for the job on the specific backend you submitted it to::
+
+        job = provider.backends.retrieve_job(<JOB_ID>)
+    """
 
     def __init__(self, provider: 'accountprovider.AccountProvider') -> None:
         """IBMQBackendService class.
