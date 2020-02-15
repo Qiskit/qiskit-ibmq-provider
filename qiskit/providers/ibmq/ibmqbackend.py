@@ -125,8 +125,9 @@ class IBMQBackend(BaseBackend):
                     * none: the job is not shared at any level.
 
                 If the job share level is not specified, the job is not shared at any level.
-            job_tags: Tags to be assigned to the job. The tags can subsequently be used as
-                a filter in the ``jobs()`` function call.
+            job_tags: Tags to be assigned to the jobs. The tags can
+                 subsequently be used as a filter in the :meth:`IBMQBackend.jobs()`
+                 function call.
 
         Returns:
             The job to be executed, an instance derived from BaseJob.
@@ -491,7 +492,7 @@ class IBMQSimulator(IBMQBackend):
             refresh: bool = False,
             datetime: Optional[python_datetime] = None
     ) -> None:
-        """Return the online backend properties."""
+        """Return `None`, simulators do not have backend properties."""
         return None
 
     def run(
@@ -515,8 +516,9 @@ class IBMQSimulator(IBMQBackend):
                 to be unique.
             job_share_level: Allows sharing a job at the hub/group/project and
                 global level (see `IBMQBackend.run()` for more details).
-            job_tags: Tags to be assigned to the job. The tags can
-                subsequently be used as a filter in the ``jobs()`` function call.
+            job_tags: Tags to be assigned to the jobs. The tags can
+                 subsequently be used as a filter in the :meth:`IBMQBackend.jobs()`
+                 function call.
 
         Returns:
             The job to be executed, an instance derived from BaseJob.
