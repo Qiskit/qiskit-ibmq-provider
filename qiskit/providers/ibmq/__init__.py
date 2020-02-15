@@ -72,7 +72,7 @@ from .ibmqbackendservice import IBMQBackendService
 from .version import __version__
 
 IBMQ = IBMQFactory()
-"""Global instance to be used as the entry point for convenience."""
+"""A global instance of an account manager that is used as the entry point for convenience."""
 
 
 def least_busy(backends: List[BaseBackend]) -> BaseBackend:
