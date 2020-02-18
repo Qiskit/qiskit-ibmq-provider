@@ -55,7 +55,8 @@ class PostForcelistRetry(Retry):
             status_code: Status code.
             has_retry_after: Whether retry has been done before.
 
-        Returns: True if the request should be retried, False otherwise.
+        Returns:
+            True if the request should be retried, False otherwise.
         """
         if method.upper() == 'POST' and status_code in self.status_forcelist:
             return True
