@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utilities related to the IBMQ Provider."""
+"""Utilities related to the IBM Quantum Experience Provider."""
 
 from .qobj_utils import update_qobj_config
 from .utils import to_python_identifier, validate_job_tags

@@ -31,6 +31,7 @@ class Enum(ModelTypeValidator):
     }
 
     def __init__(self, enum_cls: enum.EnumMeta, *args: Any, **kwargs: Any) -> None:
+        """Enum constructor."""
         self.valid_types = (enum_cls,)
         self.valid_strs = [elem.value for elem in enum_cls]  # type: ignore[var-annotated]
         self.enum_cls = enum_cls
@@ -64,8 +65,15 @@ class Enum(ModelTypeValidator):
 
 
 def map_field_names(mapper: dict, data: dict) -> dict:
-    """Rename selected fields due to name clashes, and convert from camel-case
-    the rest of the fields.
+    """Rename selected fields due to name clashes and convert camel-case fields
+    to valid python identifiers.
+
+    Args:
+        mapper: Mapper of selected field names to rename.
+        data: Response data.
+
+    Returns:
+        Response data with fields that are valid python identifiers.
     """
     rename_map = {}
     for field_name in data:
