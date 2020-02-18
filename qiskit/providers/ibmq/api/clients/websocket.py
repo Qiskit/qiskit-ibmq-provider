@@ -300,7 +300,8 @@ class WebsocketClient(BaseClient):
                 # Check whether the websocket error should be retried.
                 current_retry_attempt = current_retry_attempt + 1
                 if (current_retry_attempt > retries) or (not attempt_retry):
-                    logger.debug('Max retries exceeded: Failed to establish a websocket')
+                    logger.debug('Max retries exceeded: Failed to establish a websocket '
+                                 'connection due to a network error.')
                     raise ex
 
                 # Sleep, and then `continue` with retrying.
