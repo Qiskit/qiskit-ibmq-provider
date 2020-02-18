@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBMQ Remote Backend Tests."""
+"""Test remote backends."""
 
 from unittest import skip
 
@@ -27,15 +27,16 @@ from ..decorators import requires_provider
 
 @skip('Skipping since they should be run by backend.')
 class TestIBMQBackends(IBMQTestCase):
-    """Qiskit test for remote backend validation.
+    """Tests for remote backend validation.
 
-    Executes a series of circuits of special interest using
+    Execute a series of circuits of special interest using
     all available remote backends, comparing results against
     local simulator 'local_qasm_simulator' as ground truth.
     """
 
     @slow_test
     def setUp(self):
+        """Initial test setup."""
         super().setUp()
         self._local_backend = BasicAer.get_backend('qasm_simulator')
         self._remote_backends = self.get_backends()
@@ -102,8 +103,7 @@ class TestIBMQBackends(IBMQTestCase):
                                            result_local.get_counts(circuit), delta=50)
 
     def test_readout_order(self):
-        """Test one circuit, one register, out-of-order readout.
-        """
+        """Test one circuit, one register, out-of-order readout."""
         qr = QuantumRegister(4)
         cr = ClassicalRegister(4)
         circuit = QuantumCircuit(qr, cr)

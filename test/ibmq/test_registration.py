@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Test the registration and credentials features of the IBMQ module."""
+"""Test the registration and credentials modules."""
 
 import logging
 import os
@@ -49,10 +49,10 @@ PROXIES = {
 # TODO: NamedTemporaryFiles do not support name in Windows
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
 class TestCredentials(IBMQTestCase):
-    """Tests for the credential subsystem."""
+    """Tests for the credential modules."""
 
     def test_autoregister_no_credentials(self):
-        """Test register() with no credentials available."""
+        """Test ``register()`` with no credentials available."""
         with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             with self.assertRaises(IBMQAccountError) as context_manager:
                 IBMQ.load_account()
@@ -117,7 +117,7 @@ class TestCredentials(IBMQTestCase):
 
 
 class TestCredentialsKwargs(IBMQTestCase):
-    """Test for `Credentials.connection_parameters()`."""
+    """Test for ``Credentials.connection_parameters()``."""
 
     def test_no_proxy_params(self):
         """Test when no proxy parameters are passed."""
@@ -203,9 +203,10 @@ class TestCredentialsKwargs(IBMQTestCase):
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
 class TestIBMQAccountUpdater(IBMQTestCase):
-    """Tests for the update_credentials() helper."""
+    """Tests for the ``update_credentials()`` helper."""
 
     def setUp(self):
+        """Initial test setup."""
         super().setUp()
 
         # Avoid stdout output during tests.
@@ -213,6 +214,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
         self.patcher.start()
 
     def tearDown(self):
+        """Test cleanup."""
         super().tearDown()
 
         # Reenable stdout output.
@@ -336,13 +338,13 @@ def custom_qconfig(contents=b''):
 
 
 def _mocked_initialize_provider(self, credentials: Credentials):
-    """Mock `_initialize_provider()`, just storing the credentials."""
+    """Mock ``_initialize_provider()``, just storing the credentials."""
     self._credentials = credentials
 
 
 @contextmanager
 def mock_ibmq_provider():
-    """Mock the initialization of IBMQFactory, so it does not query the api."""
+    """Mock the initialization of ``IBMQFactory``, so it does not query the API."""
     patcher = patch.object(IBMQFactory, '_initialize_providers',
                            side_effect=_mocked_initialize_provider,
                            autospec=True)

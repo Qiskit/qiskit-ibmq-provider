@@ -12,8 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
-"""Tests for all IBMQ backends."""
+"""Tests for the AccountProvider class."""
 
 from datetime import datetime
 
@@ -31,13 +30,13 @@ from ..ibmqtestcase import IBMQTestCase
 
 
 class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
-    """Tests for all the IBMQ backends through the new API."""
+    """Tests for the AccountProvider class."""
 
     provider_cls = AccountProvider
     backend_name = 'ibmq_qasm_simulator'
 
     def setUp(self):
-        """Required method for testing"""
+        """Initial test setup."""
         super().setUp()
         qr = QuantumRegister(1)
         cr = ClassicalRegister(1)
@@ -47,7 +46,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
 
     @requires_provider
     def _get_provider(self, provider):
-        """Return an instance of a Provider."""
+        """Return an instance of a provider."""
         # pylint: disable=arguments-differ
         return provider
 
@@ -62,7 +61,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
         self.assertTrue(remotes)
 
     def test_remote_backends_instantiate_simulators(self):
-        """Test if remote backends that are simulators are an IBMQSimulator instance."""
+        """Test if remote backends that are simulators are an ``IBMQSimulator`` instance."""
         remotes = self.provider.backends(simulator=True)
         for backend in remotes:
             with self.subTest(backend=backend):

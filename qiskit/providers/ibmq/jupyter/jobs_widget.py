@@ -13,11 +13,16 @@
 # that they have been altered from the originals.
 # pylint: disable=protected-access
 
-"""Interactive Jobs widget
-"""
+"""Interactive Jobs widget."""
+
 import datetime
+from typing import Union
+
 import ipywidgets as wid
 import plotly.graph_objects as go
+from qiskit.test.mock.fake_backend import FakeBackend
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+
 from ..utils.converters import utc_to_local
 from ..visualization.interactive.plotly_wrapper import PlotlyWidget
 
@@ -36,14 +41,14 @@ MONTH_NAMES = {1: 'Jan.',
                }
 
 
-def _title_builder(sel_dict):
-    """Builds the title string for the jobs table
+def _title_builder(sel_dict: dict) -> str:
+    """Build the title string for the jobs table.
 
-    Parameters:
-        sel_dict (dict): Dictionary containing info on jobs.
+    Args:
+        sel_dict: Dictionary containing information on jobs.
 
     Returns:
-        str: HTML string for title.
+        HTML string for title.
     """
     if 'day' not in sel_dict.keys():
         title_str = 'Jobs in {mon} {yr} ({num})'.format(mon=MONTH_NAMES[sel_dict['month']],
@@ -57,7 +62,15 @@ def _title_builder(sel_dict):
     return "<h4>{}</h4>".format(title_str)
 
 
-def _job_table_builder(sel_dict):
+def _job_table_builder(sel_dict: dict) -> str:
+    """Build the job table.
+
+    Args:
+        sel_dict: Dictionary containing information on jobs.
+
+    Returns:
+        HTML string for job table.
+    """
     table_html = "<table>"
     table_html += """<style>
 table {
@@ -92,13 +105,14 @@ tr:nth-child(even) {background-color: #f6f6f6 !important;}
     return table_html
 
 
-def _job_summary(backend):
+def _job_summary(backend: Union[IBMQBackend, FakeBackend]) -> PlotlyWidget:
     """Interactive jobs summary for a backend.
+
     Args:
-        backend (BaseBackend): A backend instance.
+        backend: Display jobs summary for this backend.
 
     Returns:
-        FigureWrapper: A figure for the rendered histogram.
+        A figure for the rendered histogram.
 
     Example:
         .. jupyter-execute::
@@ -255,15 +269,14 @@ def _job_summary(backend):
     return sun_wid
 
 
-def jobs_tab(backend):
-    """Constructs a widget containing job information for an input
-    backend.
+def jobs_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.HBox:
+    """Construct a widget containing job information for an input backend.
 
-    Parameters:
-        backend (IBMQBackend): Input backend.
+    Args:
+        backend: Input backend.
 
     Returns:
-        HBox: An ipywidget.
+        An ipywidget.
     """
     title = wid.HTML('<h4>Click graph to display jobs</h4>')
     table = wid.HTML('', layout=wid.Layout(max_height='500px',

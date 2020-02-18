@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Test IBMQ online qasm simulator."""
+"""Test IBM Quantum online QASM simulator."""
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
@@ -22,7 +22,7 @@ from ..decorators import requires_provider
 
 
 class TestIbmqQasmSimulator(IBMQTestCase):
-    """Test IBM Q Qasm Simulator."""
+    """Test IBM Quantum QASM Simulator."""
 
     @requires_provider
     def test_execute_one_circuit_simulator_online(self, provider):

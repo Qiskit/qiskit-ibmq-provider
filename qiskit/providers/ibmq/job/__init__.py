@@ -13,13 +13,13 @@
 # that they have been altered from the originals.
 
 """
-====================================================
-IBMQ Provider Job (:mod:`qiskit.providers.ibmq.job`)
-====================================================
+=============================================================
+Job (:mod:`qiskit.providers.ibmq.job`)
+=============================================================
 
 .. currentmodule:: qiskit.providers.ibmq.job
 
-Module representing IBM Quantum Experience jobs.
+Modules representing IBM Quantum Experience jobs.
 
 Classes
 =========

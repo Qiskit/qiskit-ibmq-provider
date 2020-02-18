@@ -13,17 +13,22 @@
 # that they have been altered from the originals.
 # pylint: disable=invalid-name
 
-"""Widgert for backend configuration tab.
-"""
+"""Widget for qubit properties tab."""
+
+from typing import Union
+
 import ipywidgets as wid
+from qiskit.test.mock.fake_backend import FakeBackend
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+
 from ..utils.converters import utc_to_local
 
 
-def qubits_tab(backend):
-    """The qubits properties widget
+def qubits_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.VBox:
+    """The qubit properties widget.
 
     Args:
-        backend (IBMQBackend | FakeBackend): The backend.
+        backend: Display qubit properties for this backend.
 
     Returns:
         VBox: A VBox widget.

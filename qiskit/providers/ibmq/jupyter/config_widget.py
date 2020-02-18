@@ -13,17 +13,21 @@
 # that they have been altered from the originals.
 # pylint: disable=protected-access
 
-"""Widgert for backend configuration tab.
-"""
+"""Widget for the backend configuration tab."""
+
+from typing import Union
+
 import ipywidgets as wid
+from qiskit.test.mock.fake_backend import FakeBackend
 from qiskit.providers.ibmq.visualization.interactive import iplot_gate_map
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
 
-def config_tab(backend):
+def config_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.GridBox:
     """The backend configuration widget.
 
     Args:
-        backend (IBMQBackend | FakeBackend): The backend.
+        backend: Display configuration widget for this backend.
 
     Returns:
         GridBox: A GridBox widget.
