@@ -42,7 +42,6 @@ class IBMQFactory:
 
     def __init__(self) -> None:
         """IBMQFactory constructor."""
-        """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
 
