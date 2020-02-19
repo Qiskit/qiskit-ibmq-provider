@@ -34,6 +34,11 @@ logger = logging.getLogger(__name__)
 class AccountProvider(BaseProvider):
     """Provider for a single IBM Quantum Experience account.
 
+    Attributes:
+        credentials: IBM Quantum Experience credentials.
+        access_token: IBM Quantum Experience access token.
+        backends: Namespace for the backends available to this provider.
+
     The account provider class provides access to the IBM Quantum Experience
     backends available to this account.
 

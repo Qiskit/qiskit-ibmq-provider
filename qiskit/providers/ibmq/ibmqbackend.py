@@ -47,6 +47,11 @@ logger = logging.getLogger(__name__)
 class IBMQBackend(BaseBackend):
     """Backend class interfacing with an IBM Quantum Experience device.
 
+    Attributes:
+        hub: Name of the hub this backend belongs to.
+        group: Name of the group this backend belongs to.
+        project: Name of the project this backend belongs to.
+
     You can run experiments on a backend using the :meth:`run()` method after
     assembling them into the :class:`Qobj<qiskit.qobj.qobj.Qobj>` format. The
     :meth:`run()` method returns an :class:`IBMQJob<qiskit.providers.ibmq.job.IBMQJob>`
