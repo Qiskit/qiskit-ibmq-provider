@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Job manager used to manage jobs for IBM Q Experience."""
+"""Job Manager used to manage jobs for IBM Quantum Experience."""
 
 import logging
 from typing import List, Optional, Union, Any
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 class IBMQJobManager:
-    """Job manager for IBM Quantum Experience.
+    """Job Manager for IBM Quantum Experience.
 
     The Job Manager is a higher level mechanism for handling jobs composed of
     multiple circuits or pulse schedules. It splits the experiments into
@@ -41,30 +41,31 @@ class IBMQJobManager:
     it collects and presents the results in a unified view.
 
     To use the Job Manager to submit multiple experiments, invoking the
-    ``run()`` method::
+    :meth:`run()` method::
 
         from qiskit.providers.ibmq.managed import IBMQJobManager
         job_manager = IBMQJobManager()
         job_set_foo = job_manager.run(circs, backend=backend, name='foo')
 
-    The ``run()`` method returns a ``ManagedJobSet`` instance, which
+    The :meth:`run()` method returns a :class:`ManagedJobSet` instance, which
     represents the set of jobs for the experiments. You can use the
-    ``ManagedJobSet`` methods, such as ``statuses()``, ``results()``, and
-    ``error_messages()`` to get a combined view of the jobs in the set.
+    :class:`ManagedJobSet` methods, such as :meth:`statuses()<ManagedJobSet.statuses>`,
+    :meth:`results()<ManagedJobSet.results>`, and
+    :meth:`error_messages()<ManagedJobSet.error_messages>` to get a combined
+    view of the jobs in the set.
     For example::
 
         results = job_set_foo.results()
         results.get_counts(5)  # Counts for experiment 5.
 
-    The ``job_set_id()`` method of ``ManagedJobSet`` returns the job set ID,
-    which can be used to retrieve the job set later::
+    The :meth:`job_set_id()<ManagedJobSet.job_set_id>` method of ``ManagedJobSet``
+    returns the job set ID, which can be used to retrieve the job set later::
 
         job_set_id = job_set_foo.job_set_id()
         retrieved_foo = job_manager.retrieve_job_set(job_set_id=job_set_id, provider=provider)
     """
 
     def __init__(self) -> None:
-        """Creates a new IBMQJobManager instance."""
         self._job_sets = []  # type: List[ManagedJobSet]
         self._executor = futures.ThreadPoolExecutor()
 

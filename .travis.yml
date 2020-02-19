@@ -120,13 +120,7 @@ jobs:
     - stage: test
       <<: *stage_linux
       if: type != cron
-      # Compiling Python 3.7 requires an Ubuntu Xenial distribution
-      # and sudo set to true
-      # Fix when this is solved:
-      # https://github.com/travis-ci/travis-ci/issues/9815
-      dist: xenial
       python: 3.7
-      sudo: true
 
     # GNU/Linux, Python 3.8
     - stage: test
@@ -169,15 +163,16 @@ jobs:
 
     # "slow tests" stage
     ###########################################################################
-    # GNU/Linux, Python 3.5
+    # GNU/Linux, Python 3.6
     - stage: slow tests
       <<: *stage_linux
       if: type = cron
+      python: 3.6
       env:
         - QISKIT_TESTS=run_slow
       script:
-        # effectively increases timeout to 2h.
-        - travis_wait 120 make test
+        # effectively increases timeout to 1h.
+        - travis_wait 60 make test
     - if: tag IS present
       language: python
       python: "3.6"

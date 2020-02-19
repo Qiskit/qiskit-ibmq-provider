@@ -22,11 +22,11 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator, IBMQBackend
 from qiskit.qobj import QobjHeader
-from qiskit.test import providers
+from qiskit.test import providers, slow_test
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.models.backendproperties import BackendProperties
 
-from ..decorators import requires_provider, slow_test_on_device
+from ..decorators import requires_provider, requires_device
 from ..ibmqtestcase import IBMQTestCase
 
 
@@ -117,28 +117,26 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
                 self.assertEqual(result.results[0].header.some_field,
                                  'extra info')
 
-    @slow_test_on_device
-    def test_qobj_headers_in_result_devices(self, provider, backend):
+    @slow_test
+    @requires_device
+    def test_qobj_headers_in_result_devices(self, backend):
         """Test that the qobj headers are passed onto the results for devices."""
         # pylint: disable=unused-argument
-        backends = provider.backends(simulator=False, filters=lambda b: b.status().operational)
 
         custom_qobj_header = {'x': 1, 'y': [1, 2, 3], 'z': {'a': 4}}
 
-        for backend_ in backends:
-            with self.subTest(backend=backend_):
-                circuits = transpile(self.qc1, backend=backend_)
+        qobj = assemble(transpile(self.qc1, backend=backend), backend=backend)
+        # Update the Qobj header.
+        qobj.header = QobjHeader.from_dict(custom_qobj_header)
+        # Update the Qobj.experiment header.
+        qobj.experiments[0].header.some_field = 'extra info'
 
-                qobj = assemble(circuits, backend=backend_)
-                # Update the Qobj header.
-                qobj.header = QobjHeader.from_dict(custom_qobj_header)
-                # Update the Qobj.experiment header.
-                qobj.experiments[0].header.some_field = 'extra info'
-
-                result = backend_.run(qobj).result()
-                self.assertEqual(result.header.to_dict(), custom_qobj_header)
-                self.assertEqual(result.results[0].header.some_field,
-                                 'extra info')
+        job = backend.run(qobj)
+        job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
+        result = job.result()
+        self.assertEqual(result.header.to_dict(), custom_qobj_header)
+        self.assertEqual(result.results[0].header.some_field,
+                         'extra info')
 
     def test_aliases(self):
         """Test that display names of devices map the regular names."""
