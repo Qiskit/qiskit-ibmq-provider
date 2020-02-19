@@ -127,8 +127,8 @@ class IBMQBackend(BaseBackend):
                 name can subsequently be used as a filter in the
                 :meth:`jobs()` method. Job names do not need to be unique.
             job_share_level: Allows sharing a job at the hub, group, project,
-                or global level. The possible job share levels are: "global", "hub",
-                "group", "project", and "none".
+                or global level. The possible job share levels are: ``global``, ``hub``,
+                ``group``, ``project``, and ``none``.
 
                     * global: The job is public to any user.
                     * hub: The job is shared between the users in the same hub.
