@@ -34,19 +34,19 @@ logger = logging.getLogger(__name__)
 class AccountProvider(BaseProvider):
     """Provider for a single IBM Quantum Experience account.
 
-    Attributes:
-        credentials: IBM Quantum Experience credentials.
-        access_token: IBM Quantum Experience access token.
-        backends: Namespace for the backends available to this provider.
-
     The account provider class provides access to the IBM Quantum Experience
     backends available to this account.
 
-    You can access a provider by enabling an account with
-    :meth:`IBMQFactory.enable_account()<IBMQFactory.enable_account>`::
+    You can access a provider by enabling an account with the
+    :meth:`IBMQFactory.enable_account()<IBMQFactory.enable_account>` method, which
+    returns the default provider you have access to::
 
         from qiskit import IBMQ
         provider = IBMQ.enable_account(<INSERT_IBM_QUANTUM_EXPERIENCE_TOKEN>)
+
+    To select a different provider, use the
+    :meth:`IBMQ.get_provider()<IBMQFactory.get_provider>` method and specify the hub,
+    group, or project name of the desired provider.
 
     The :meth:`backends()` method returns all the backends available to this account::
 
@@ -62,18 +62,18 @@ class AccountProvider(BaseProvider):
     As an example, to retrieve the same backend from the example above::
 
         simulator_backend = provider.backends.ibmq_qasm_simulator
+
+    Note:
+        The ``backends`` attribute can be used to autocomplete the names of
+        backends available to this provider. To autocomplete, press ``tab``
+        after ``provider.backends.``. This feature may not be available
+        if an error occurs during backend discovery. Also note that
+        this feature is only available in interactive sessions, such as
+        in Jupyter Notebook and Python.
     """
 
     def __init__(self, credentials: Credentials, access_token: str) -> None:
         """AccountProvider constructor.
-
-        Note:
-            The ``backends`` attribute can be used to autocomplete the names of
-            backends available to this provider. To autocomplete, press ``tab``
-            after ``provider.backends.``. This feature may not be available
-            if an error occurs during backend discovery. Also note that
-            this feature is only available in interactive sessions, such as
-            in jupyter notebooks and the python interpreter.
 
         Args:
             credentials: IBM Quantum Experience credentials.

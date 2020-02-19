@@ -38,18 +38,20 @@ logger = logging.getLogger(__name__)
 class IBMQBackendService(SimpleNamespace):
     """Backend namespace for an IBM Quantum Experience account provider.
 
-    Represent a namespace for the IBM Quantum Experience backends available
-    to this account. This namespace is used to override the
-    :meth:`backends<AccountProvider.backends>` method for convenience.
+    Represent a namespace that provides backend related services for the IBM
+    Quantum Experience backends available to this provider. An instance of
+    this class is used to override the ``backends`` attribute, which belongs
+    to the :class:`AccountProvider<AccountProvider>` class, for convenience.
 
-    It is still possible to access all the backends this account has access to in an exact
-    manner::
+    Essentially, overriding ``backends`` transforms it into a callable attribute.
+    This allows you to more easily access a list of backends or a specific backend::
 
-        backends = provider.backends()
+        backends = provider.backends()  # Invoke backends() to get the backends.
+        sim_backend = provider.backends.ibmq_qasm_simulator  # Get a specific backend instance.
 
-    However, you are now able to retrieve jobs based on your account, instead of retrieving them
-    from a specific backend. For example, to retrieve the ten most recent jobs you have submitted
-    on your account, regardless of the backend they were submitted to, you could do::
+    Also, you are able to retrieve jobs from a provider without specifying the backend name.
+    For example, to retrieve the ten most recent jobs you have submitted, regardless of the
+    backend they were submitted to, you could do::
 
         most_recent_jobs = provider.backends.jobs(limit=10)
 
@@ -93,11 +95,11 @@ class IBMQBackendService(SimpleNamespace):
         Args:
             name: Backend name to filter by.
             filters: More complex filters, such as lambda functions.
-                Example::
+                For example::
                     AccountProvider.backends(filters=lambda b: b.configuration().n_qubits > 5)
             timeout: Maximum number of seconds to wait for the discovery of
                 remote backends.
-            kwargs: Simple filters that specify a `True`/`False` criteria in the
+            kwargs: Simple filters that specify a ``True``/``False`` criteria in the
                 backend configuration, backends status, or provider credentials.
                 An example to get the operational backends with 5 qubits::
                     AccountProvider.backends(n_qubits=5, operational=True).
@@ -177,7 +179,7 @@ class IBMQBackendService(SimpleNamespace):
                   job_list = backend.jobs(limit=5, db_filter=filter)
 
         Returns:
-            A list of IBMQJob instances.
+            A list of ``IBMQJob`` instances.
 
         Raises:
             IBMQBackendValueError: If a keyword value is not recognized.

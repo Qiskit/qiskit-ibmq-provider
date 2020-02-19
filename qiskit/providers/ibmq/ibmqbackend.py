@@ -47,11 +47,6 @@ logger = logging.getLogger(__name__)
 class IBMQBackend(BaseBackend):
     """Backend class interfacing with an IBM Quantum Experience device.
 
-    Attributes:
-        hub: Name of the hub this backend belongs to.
-        group: Name of the group this backend belongs to.
-        project: Name of the project this backend belongs to.
-
     You can run experiments on a backend using the :meth:`run()` method after
     assembling them into the :class:`Qobj<qiskit.qobj.Qobj>` format. The
     :meth:`run()` method returns an :class:`IBMQJob<qiskit.providers.ibmq.job.IBMQJob>`
@@ -244,11 +239,11 @@ class IBMQBackend(BaseBackend):
         """Return the backend properties, subject to optional filtering.
 
         Args:
-            refresh: If `True`, re-query the server for the backend properties.
+            refresh: If ``True``, re-query the server for the backend properties.
                 Otherwise, return a cached version.
-            datetime: By specifying a datetime, this function returns an instance
+            datetime: By specifying `datetime`, this function returns an instance
                 of the :class:`BackendProperties<qiskit.providers.models.BackendProperties>`
-                whose timestamp is closest to, but older than, the specified datetime.
+                whose timestamp is closest to, but older than, the specified ``datetime``.
 
         Returns:
             The backend properties or ``None`` if the backend properties are not
@@ -290,7 +285,7 @@ class IBMQBackend(BaseBackend):
         """Return the pulse defaults for the backend.
 
         Args:
-            refresh: If `True`, re-query the server for the backend pulse defaults.
+            refresh: If ``True``, re-query the server for the backend pulse defaults.
                 Otherwise, return a cached version.
 
         Returns:
@@ -535,7 +530,7 @@ class IBMQSimulator(IBMQBackend):
                 as a filter in the :meth:`IBMQBackend.jobs()<IBMQBackend.jobs>` method.
 
         Returns:
-            The job to be executed, an instance derived from BaseJob.
+            The job to be executed, an instance derived from ``BaseJob``.
         """
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)

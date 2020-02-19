@@ -13,9 +13,9 @@
 # that they have been altered from the originals.
 
 """
-============================================
+==============================================================
 IBM Quantum Experience Provider (:mod:`qiskit.providers.ibmq`)
-============================================
+==============================================================
 
 .. currentmodule:: qiskit.providers.ibmq
 
@@ -79,7 +79,7 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
     """Return the least busy backend from a list.
 
     Return the least busy available backend for those that
-    have a `pending_jobs` in their `status`. Note that local
+    have a ``pending_jobs`` in their ``status``. Note that local
     backends may not have this attribute.
 
     Args:

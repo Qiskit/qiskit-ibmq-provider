@@ -38,7 +38,7 @@ UPDATE_ACCOUNT_TEXT = "Please update your accounts and programs by following the
 
 
 class IBMQFactory:
-    """Factory and Account manager for IBM Quantum Experience."""
+    """Factory and account manager for IBM Quantum Experience."""
 
     def __init__(self) -> None:
         """IBMQFactory constructor."""
@@ -56,7 +56,7 @@ class IBMQFactory:
         """Authenticate against IBM Quantum Experience for use during this session.
 
         Note:
-            With version 0.4 of this `qiskit-ibmq-provider` package, use of
+            With version 0.4 of this ``qiskit-ibmq-provider`` package, use of
             the legacy Quantum Experience and Qconsole (also known as the
             IBM Quantum Experience v1) credentials is no longer supported.
 
@@ -285,7 +285,7 @@ class IBMQFactory:
         """Interactive helper for migrating stored credentials to IBM Quantum Experience v2.
 
         Args:
-            force: If `True`, disable interactive prompts and perform the changes.
+            force: If ``True``, disable interactive prompts and perform the changes.
 
         Returns:
             The credentials for IBM Quantum Experience v2 if updating is successful
@@ -372,7 +372,7 @@ class IBMQFactory:
         """Authenticate against IBM Q Experience and populate the providers.
 
         Args:
-            credentials: Credentials for IBM Q Experience.
+            credentials: Credentials for IBM Quantum Experience.
         """
         auth_client = AuthClient(credentials.token,
                                  credentials.base_url,

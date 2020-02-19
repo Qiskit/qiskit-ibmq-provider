@@ -43,7 +43,7 @@ class IBMQAccountCredentialsInvalidToken(IBMQAccountError):
 
 
 class IBMQAccountCredentialsInvalidUrl(IBMQAccountError):
-    """Errors raised when an IBM Quantum Experience url is invalid."""
+    """Errors raised when an IBM Quantum Experience URL is invalid."""
     pass
 
 
