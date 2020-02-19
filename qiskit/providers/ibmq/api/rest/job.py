@@ -15,10 +15,13 @@
 """Job REST adapter for the IBM Q Experience API."""
 
 import pprint
+import json
 from json.decoder import JSONDecodeError
 
 from typing import Dict, Any
 from marshmallow.exceptions import ValidationError
+
+from qiskit.providers.ibmq.utils import json_encoder
 
 from .base import RestAdapterBase
 from .validation import StatusResponseSchema
@@ -137,7 +140,8 @@ class Job(RestAdapterBase):
         Returns:
             text response, that will be empty if the request was successful.
         """
-        response = self.session.put(url, json=qobj_dict, bare=True)
+        data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEconder)
+        response = self.session.put(url, data=data, bare=True)
         return response.text
 
     def get_object_storage(self, url: str) -> Dict[str, Any]:
