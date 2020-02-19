@@ -79,7 +79,8 @@ class IBMQBackend(BaseBackend):
             qobj: Qobj,
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
-            job_tags: Optional[List[str]] = None
+            job_tags: Optional[List[str]] = None,
+            validate_qobj: bool = False
     ) -> IBMQJob:
         """Run a Qobj asynchronously.
 
@@ -103,6 +104,8 @@ class IBMQBackend(BaseBackend):
             job_tags: tags to be assigned to the job. The tags can
                 subsequently be used as a filter in the ``jobs()`` function call.
                 Default: None.
+            validate_qobj: When set true run jsonschema validation against the
+                submitted payload
 
         Returns:
             an instance derived from BaseJob
@@ -128,7 +131,8 @@ class IBMQBackend(BaseBackend):
             api_job_share_level = ApiJobShareLevel.NONE
 
         validate_job_tags(job_tags, IBMQBackendValueError)
-        validate_qobj_against_schema(qobj)
+        if validate_qobj:
+            validate_qobj_against_schema(qobj)
         return self._submit_job(qobj, job_name, api_job_share_level, job_tags)
 
     def _submit_job(
