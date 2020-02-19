@@ -503,7 +503,7 @@ class IBMQSimulator(IBMQBackend):
             refresh: bool = False,
             datetime: Optional[python_datetime] = None
     ) -> None:
-        """Return `None`, simulators do not have backend properties."""
+        """Return ``None``, simulators do not have backend properties."""
         return None
 
     def run(
