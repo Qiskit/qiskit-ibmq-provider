@@ -236,7 +236,7 @@ class IBMQJobManager:
         Args:
             job_set_id: Job set ID.
             provider: Provider used for this job set.
-            refresh: If True, re-query the server for the job set information.
+            refresh: If ``True``, re-query the server for the job set information.
                 Otherwise return the cached value.
 
         Returns:
