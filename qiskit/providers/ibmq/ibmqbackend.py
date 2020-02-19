@@ -104,7 +104,7 @@ class IBMQBackend(BaseBackend):
             job_tags: tags to be assigned to the job. The tags can
                 subsequently be used as a filter in the ``jobs()`` function call.
                 Default: None.
-            validate_qobj: When set true run jsonschema validation against the
+            validate_qobj: If ``True``, run JSON schema validation against the
                 submitted payload
 
         Returns:
@@ -509,15 +509,16 @@ class IBMQSimulator(IBMQBackend):
             job_tags: tags to be assigned to the job. The tags can
                 subsequently be used as a filter in the ``jobs()`` function call.
                 Default: None.
-            validate_qobj: When set true run jsonschema validation against the
-                  submitted payload
+            validate_qobj: If ``True``, run JSON schema validation against the
+                submitted payload
 
         Returns:
             an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
-        return super(IBMQSimulator, self).run(qobj, job_name, job_share_level, job_tags)
+        return super(IBMQSimulator, self).run(qobj, job_name, job_share_level, job_tags,
+                                              validate_qobj)
 
 
 class IBMQRetiredBackend(IBMQBackend):
