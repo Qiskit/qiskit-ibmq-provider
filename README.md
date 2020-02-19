@@ -1,4 +1,4 @@
-# Qiskit IBMQ Provider
+# Qiskit IBM Quantum Provider
 
 [![License](https://img.shields.io/github/license/Qiskit/qiskit-ibmq-provider.svg?style=popout-square)](https://opensource.org/licenses/Apache-2.0)[![Build Status](https://img.shields.io/travis/com/Qiskit/qiskit-ibmq-provider/master.svg?style=popout-square)](https://travis-ci.com/Qiskit/qiskit-ibmq-provider)[![](https://img.shields.io/github/release/Qiskit/qiskit-ibmq-provider.svg?style=popout-square)](https://github.com/Qiskit/qiskit-ibmq-provider/releases)[![](https://img.shields.io/pypi/dm/qiskit-ibmq-provider.svg?style=popout-square)](https://pypi.org/project/qiskit-ibmq-provider/)
 
@@ -22,7 +22,7 @@ install the latest (and well-tested) version.
 To install from source, follow the instructions in the
 [contribution guidelines].
 
-## Setting up the IBMQ provider
+## Setting up the IBM Quantum Provider
 
 Once the package is installed, you can access the provider from Qiskit.
 
@@ -32,9 +32,9 @@ Once the package is installed, you can access the provider from Qiskit.
 > If you are still using a v1 account, please follow the steps described in
 > [update instructions](#updating-to-the-new-IBM-Q-Experience) to update your account.
 
-### Configure your IBMQ credentials
+### Configure your IBM Quantum Experience credentials
 
-1. Create an IBM Quantum account or log in to your existing account by visiting
+1. Create an IBM Quantum Experience account or log in to your existing account by visiting
    the [IBM Quantum Experience login page].
 
 2. Copy (and/or optionally regenerate) your API token from your
@@ -47,7 +47,7 @@ Once the package is installed, you can access the provider from Qiskit.
    IBMQ.save_account('MY_API_TOKEN')
    ```
 
-### Accessing your IBMQ backends
+### Accessing your IBM Quantum Experience backends
 
 After calling `IBMQ.save_account()`, your credentials will be stored on disk.
 Once they are stored, at any point in the future you can load and use them
@@ -70,7 +70,7 @@ provider = IBMQ.enable_account('MY_API_TOKEN')
 backend = provider.get_backend('ibmq_qasm_simulator')
 ```
 
-By default, all IBM Quantum accounts have access to the same, open project
+By default, all IBM Quantum Experience accounts have access to the same, open project
 (hub: `ibm-q`, group: `open`, project: `main`). For convenience, the
 `IBMQ.load_account()` and `IBMQ.enable_account()` methods will return a provider
 for that project. If you have access to other projects, you can use:
@@ -82,7 +82,7 @@ provider_2 = IBMQ.get_provider(hub='MY_HUB', group='MY_GROUP', project='MY_PROJE
 ## Updating to the new IBM Quantum Experience
 
 Since November 2019 (and with version `0.4` of this `qiskit-ibmq-provider`
-package), the IBMQProvider only supports the new [IBM Quantum Experience], dropping
+package), the IBM Quantum Provider only supports the new [IBM Quantum Experience], dropping
 support for the legacy Quantum Experience and Qconsole accounts. The new IBM Quantum
 Experience is also referred as `v2`, whereas the legacy one and Qconsole as `v1`.
 
@@ -194,7 +194,7 @@ depth details:
 
 ## Contribution Guidelines
 
-If you'd like to contribute to IBM Quantum provider, please take a look at our
+If you'd like to contribute to IBM Quantum Provider, please take a look at our
 [contribution guidelines]. This project adheres to Qiskit's [code of conduct].
 By participating, you are expect to uphold to this code.
 
@@ -210,7 +210,7 @@ Now you're set up and ready to check out some of the other examples from our
 
 ## Authors and Citation
 
-The Qiskit IBM Quantum provider is the work of [many people] who contribute to the
+The Qiskit IBM Quantum Provider is the work of [many people] who contribute to the
 project at different levels. If you use Qiskit, please cite as per the included
 [BibTeX file].
 
