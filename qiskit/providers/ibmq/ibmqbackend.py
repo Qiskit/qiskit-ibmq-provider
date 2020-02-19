@@ -494,7 +494,8 @@ class IBMQSimulator(IBMQBackend):
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
             backend_options: Optional[Dict] = None,
-            noise_model: Any = None
+            noise_model: Any = None,
+            validate_qobj: bool = False
     ) -> IBMQJob:
         """Run qobj asynchronously.
 
@@ -508,6 +509,8 @@ class IBMQSimulator(IBMQBackend):
             job_tags: tags to be assigned to the job. The tags can
                 subsequently be used as a filter in the ``jobs()`` function call.
                 Default: None.
+            validate_qobj: When set true run jsonschema validation against the
+                  submitted payload
 
         Returns:
             an instance derived from BaseJob
@@ -576,7 +579,8 @@ class IBMQRetiredBackend(IBMQBackend):
             qobj: Qobj,
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
-            job_tags: Optional[List[str]] = None
+            job_tags: Optional[List[str]] = None,
+            validate_qobj: bool = False
     ) -> None:
         """Run a Qobj."""
         raise IBMQBackendError('This backend is no longer available.')
