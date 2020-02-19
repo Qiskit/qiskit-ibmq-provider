@@ -356,7 +356,7 @@ class IBMQBackend(BaseBackend):
             specific. For example, if you have access to the same backend
             via different providers, the number of remaining jobs might
             be different for each. See :class:`BackendJobLimit<BackendJobLimit>`
-            for the job limit information of the backend.
+            for the job limit information of a backend.
 
         If ``None`` is returned, there are no limits to the maximum
         number of active jobs you could have on the backend.
@@ -389,7 +389,7 @@ class IBMQBackend(BaseBackend):
     ) -> List[IBMQJob]:
         """Return the jobs submitted to this backend, subject to optional filtering.
 
-        Retrieve the jobs submitted to this backend that match the given filters
+        Retrieve jobs submitted to this backend that match the given filters
         and paginate the results if desired. Note that the server has a limit for the
         number of jobs returned in a single call. As a result, this function might involve
         making several calls to the server. See also the `skip` parameter for more control

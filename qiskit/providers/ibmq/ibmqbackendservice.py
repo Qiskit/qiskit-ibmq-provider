@@ -132,10 +132,11 @@ class IBMQBackendService(SimpleNamespace):
     ) -> List[IBMQJob]:
         """Return a list of jobs, subject to optional filtering.
 
-        Return a list of jobs, with optional filtering and pagination. Note
-        that the server has a limit for the number of jobs returned in a single
-        call. As a result, this function might involve making several calls
-        to the server. See the `skip` parameter for more control over pagination.
+        Retrieve jobs that match the given filters and paginate the results
+        if desired. Note that the server has a limit for the number of jobs
+        returned in a single call. As a result, this function might involve
+        making several calls to the server. See the `skip` parameter for
+        more control over pagination.
 
         Note:
              The jobs submitted with earlier versions of Qiskit
