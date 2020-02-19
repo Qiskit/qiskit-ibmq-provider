@@ -46,7 +46,7 @@ def iplot_error_map(
         show_title: Whether to show figure title.
         remove_badcal_edges: Whether to remove bad CX gate calibration data.
         background_color: Background color, either 'white' or 'black'.
-        as_widget: True if the figure is to be returned as a ``PlotlyWidget``.
+        as_widget: ``True`` if the figure is to be returned as a ``PlotlyWidget``.
             Otherwise the figure is to be returned as a ``PlotlyFigure``.
 
     Returns:

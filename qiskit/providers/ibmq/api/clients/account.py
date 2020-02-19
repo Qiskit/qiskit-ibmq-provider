@@ -163,7 +163,7 @@ class AccountClient(BaseClient):
         Args:
             backend_name: The name of the backend.
             qobj_dict: The ``Qobj`` to be executed, as a dictionary.
-            use_object_storage: True if object storage should be used.
+            use_object_storage: ``True`` if object storage should be used.
             job_name: Custom name to be assigned to the job.
             job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
@@ -279,7 +279,7 @@ class AccountClient(BaseClient):
 
         Args:
             job_id: The ID of the job.
-            use_object_storage: True if object storage should be used.
+            use_object_storage: ``True`` if object storage should be used.
 
         Returns:
             ``Qobj`` in dictionary form.
@@ -311,7 +311,7 @@ class AccountClient(BaseClient):
 
         Args:
             job_id: The ID of the job.
-            use_object_storage: True if object storage should be used.
+            use_object_storage: ``True`` if object storage should be used.
 
         Returns:
             Job result.

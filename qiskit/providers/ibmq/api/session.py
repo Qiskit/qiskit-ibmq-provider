@@ -56,7 +56,7 @@ class PostForcelistRetry(Retry):
             has_retry_after: Whether retry has been done before.
 
         Returns:
-            True if the request should be retried, False otherwise.
+            ``True`` if the request should be retried, ``False`` otherwise.
         """
         if method.upper() == 'POST' and status_code in self.status_forcelist:
             return True
@@ -190,7 +190,7 @@ class RetrySession(Session):
         Args:
             method: Method for the new request (e.g. ``POST``).
             url: URL for the new request.
-            bare: If True, do not send IBM Quantum Experience specific information
+            bare: If ``True``, do not send IBM Quantum Experience specific information
                 (such as access token) in the request or modify the input `url`.
             **kwargs: Additional arguments for the request.
 

@@ -53,7 +53,7 @@ def iplot_gate_map(
             single color is given, it's used for all lines.
         font_color: The font color for the qubit labels.
         background_color: The background color, either 'white' or 'black'.
-        as_widget: True if the figure is to be returned as a ``PlotlyWidget``.
+        as_widget: ``True`` if the figure is to be returned as a ``PlotlyWidget``.
             Otherwise the figure is to be returned as a ``PlotlyFigure``.
 
     Returns:
