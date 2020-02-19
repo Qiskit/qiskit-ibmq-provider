@@ -9,6 +9,7 @@ Sphinx>=1.8.3
 sphinx-rtd-theme>=0.4.0
 sphinx-tabs>=1.1.11 
 sphinx-automodapi
+sphinx-autodoc-typehints
 matplotlib>=2.1
 jupyter
 plotly>=4.4
@@ -16,3 +17,5 @@ ipyvuetify>=1.1
 seaborn>=0.9.0
 pyperclip>=1.7
 jupyter-sphinx
+reno>=2.11.0
+

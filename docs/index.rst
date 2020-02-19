@@ -1,10 +1,9 @@
-##################################
-Qiskit IBM Q Account documentation
-##################################
+####################################
+Qiskit IBM Q Provider documentation
+####################################
 
 .. toctree::
   :maxdepth: 2
-  :hidden:
 
   API References <apidocs/ibmq>
 
