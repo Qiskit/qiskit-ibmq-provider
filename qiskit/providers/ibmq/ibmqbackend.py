@@ -53,7 +53,7 @@ class IBMQBackend(BaseBackend):
         project: Name of the project this backend belongs to.
 
     You can run experiments on a backend using the :meth:`run()` method after
-    assembling them into the :class:`Qobj<qiskit.qobj.qobj.Qobj>` format. The
+    assembling them into the :class:`Qobj<qiskit.qobj.Qobj>` format. The
     :meth:`run()` method returns an :class:`IBMQJob<qiskit.providers.ibmq.job.IBMQJob>`
     instance that represents the submitted job. Each job has a unique job ID, which
     can later be used to retrieve the job. An example of this flow::
@@ -74,7 +74,7 @@ class IBMQBackend(BaseBackend):
         backends.
 
     Other methods return information about the backend. For example, the :meth:`status()` method
-    returns a :class:`BackendStatus<qiskit.providers.models.backendstatus.BackendStatus>` instance.
+    returns a :class:`BackendStatus<qiskit.providers.models.BackendStatus>` instance.
     The instance contains the ``operational`` and ``pending_jobs`` attributes, which state whether
     the backend is operational and also the number of jobs in the server queue for the backend,
     respectively::
@@ -247,8 +247,7 @@ class IBMQBackend(BaseBackend):
             refresh: If `True`, re-query the server for the backend properties.
                 Otherwise, return a cached version.
             datetime: By specifying a datetime, this function returns an instance
-                of the :class:`BackendProperties
-                <qiskit.providers.models.backendproperties.BackendProperties>`
+                of the :class:`BackendProperties<qiskit.providers.models.BackendProperties>`
                 whose timestamp is closest to, but older than, the specified datetime.
 
         Returns:

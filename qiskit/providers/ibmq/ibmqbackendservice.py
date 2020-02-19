@@ -92,12 +92,12 @@ class IBMQBackendService(SimpleNamespace):
 
         Args:
             name: Backend name to filter by.
-            filters: More complex filters, such as lambda functions
+            filters: More complex filters, such as lambda functions.
                 Example::
                     AccountProvider.backends(filters=lambda b: b.configuration().n_qubits > 5)
             timeout: Maximum number of seconds to wait for the discovery of
                 remote backends.
-            kwargs: Simple filters that specify a true/false criteria in the
+            kwargs: Simple filters that specify a `True`/`False` criteria in the
                 backend configuration, backends status, or provider credentials.
                 An example to get the operational backends with 5 qubits::
                     AccountProvider.backends(n_qubits=5, operational=True).
@@ -137,11 +137,6 @@ class IBMQBackendService(SimpleNamespace):
         returned in a single call. As a result, this function might involve
         making several calls to the server. See the `skip` parameter for
         more control over pagination.
-
-        Note:
-             The jobs submitted with earlier versions of Qiskit
-             (in particular, those that predate the Qobj format)
-             are not included in the returned list.
 
         Args:
             limit: Number of jobs to retrieve.
