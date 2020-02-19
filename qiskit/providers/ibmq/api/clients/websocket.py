@@ -290,11 +290,11 @@ class WebsocketClient(BaseClient):
                                              .format(message, ex.code)) from ex
 
             except WebsocketError as ex:
-                logger.debug('A websocket error occured when getting the job status: %s', ex)
+                logger.debug('A websocket error occurred when getting the job status: %s', ex)
 
                 # Specific `WebsocketError` exceptions that are not worth retrying.
                 if isinstance(ex, (WebsocketTimeoutError, WebsocketIBMQProtocolError)):
-                    logger.debug('The websocket error that occured could not be retried: %s', ex)
+                    logger.debug('The websocket error that occurred could not be retried: %s', ex)
                     raise ex
 
                 # Check whether the websocket error should be retried.
