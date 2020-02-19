@@ -88,7 +88,7 @@ class TestIBMQJob(JobTestCase):
     @requires_device
     def test_run_device(self, backend):
         """Test running in a real device."""
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend, shots=2048)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend, shots=8192)
         shots = qobj.config.shots
         job = backend.run(qobj)
 
@@ -96,7 +96,7 @@ class TestIBMQJob(JobTestCase):
         result = job.result()
         counts_qx = result.get_counts(0)
         counts_ex = {'00': shots / 2, '11': shots / 2}
-        self.assertDictAlmostEqual(counts_qx, counts_ex, shots * 0.1)
+        self.assertDictAlmostEqual(counts_qx, counts_ex, shots * 0.2)
 
         # Test fetching the job properties, as this is a real backend and is
         # guaranteed to have them.
