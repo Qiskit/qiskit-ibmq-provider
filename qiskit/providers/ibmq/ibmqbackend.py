@@ -71,7 +71,8 @@ class IBMQBackend(BaseBackend):
     Other methods return information about the backend. For example, the :meth:`status()` method
     returns a :class:`BackendStatus<qiskit.providers.models.backendstatus.BackendStatus>` instance.
     The instance contains the ``operational`` and ``pending_jobs`` attributes, which state whether
-    the backend is operational and also the number of jobs in the queue for the backend, respectively::
+    the backend is operational and also the number of jobs in the server queue for the backend,
+    respectively::
 
         status = backend.status()
         is_operational = status.operational
@@ -445,7 +446,7 @@ class IBMQBackend(BaseBackend):
         Return the jobs submitted to this backend, with this provider, that are
         currently in an unfinished job status state. The unfinished
         :class:`JobStatus<qiskit.providers.jobstatus.JobStatus>` states
-        include: "INITIALIZING", "VALIDATING", "QUEUED", and "RUNNING".
+        include: ``INITIALIZING``, ``VALIDATING``, ``QUEUED``, and ``RUNNING``.
 
         Args:
             limit: Number of jobs to retrieve.
