@@ -65,7 +65,7 @@ class IBMQBackend(BaseBackend):
 
     Note:
         You should not instantiate the ``IBMQBackend`` class directly. Instead, use
-        the methods provided by the :class:`AccountProvider` class to retrieve and handle
+        the methods provided by an :class:`AccountProvider` instance to retrieve and handle
         backends.
 
     Other methods return information about the backend. For example, the :meth:`status()` method
