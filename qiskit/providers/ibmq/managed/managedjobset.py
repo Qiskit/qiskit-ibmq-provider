@@ -125,7 +125,7 @@ class ManagedJobSet:
 
         Args:
             provider: Provider used for this job set.
-            refresh: If True, re-query the server for the job set.
+            refresh: If ``True``, re-query the server for the job set.
                 Otherwise return the cached value.
 
         Raises:
@@ -208,7 +208,7 @@ class ManagedJobSet:
         """Return a report on current job statuses.
 
         Args:
-            detailed: If True, return a detailed report. Otherwise return a
+            detailed: If ``True``, return a detailed report. Otherwise return a
                 summary report.
 
         Returns:
@@ -269,7 +269,7 @@ class ManagedJobSet:
 
         Args:
            timeout: Number of seconds to wait for job results.
-           partial: If true, attempt to retrieve partial job results.
+           partial: If ``True``, attempt to retrieve partial job results.
 
         Returns:
             A :class:`ManagedResults<qiskit.providers.ibmq.managed.managedresults.ManagedResults>`

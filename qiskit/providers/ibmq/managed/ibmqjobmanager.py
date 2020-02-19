@@ -189,7 +189,7 @@ class IBMQJobManager:
         """Return a report on the statuses of all jobs managed by this Job Manager.
 
         Args:
-            detailed: True if a detailed report is be returned. False
+            detailed: ``True`` if a detailed report is be returned. ``False``
                 if a summary report is to be returned.
 
         Returns:
@@ -236,7 +236,7 @@ class IBMQJobManager:
         Args:
             job_set_id: Job set ID.
             provider: Provider used for this job set.
-            refresh: If True, re-query the server for the job set information.
+            refresh: If ``True``, re-query the server for the job set information.
                 Otherwise return the cached value.
 
         Returns:

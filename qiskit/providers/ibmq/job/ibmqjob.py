@@ -219,8 +219,8 @@ class IBMQJob(BaseModel, BaseJob):
         Args:
             timeout: Number of seconds to wait for job.
             wait: Time in seconds between queries.
-            partial: If True, return partial results if possible.
-            refresh: If True, re-query the server for the result. Otherwise
+            partial: If ``True``, return partial results if possible.
+            refresh: If ``True``, re-query the server for the result. Otherwise
                 return the cached value.
 
         Returns:
@@ -254,7 +254,7 @@ class IBMQJob(BaseModel, BaseJob):
             cancel the job.
 
         Returns:
-            True if the job is cancelled, else False.
+            ``True`` if the job is cancelled, else ``False``.
 
         Raises:
             IBMQJobApiError: If an unexpected error occurred when communicating
@@ -306,7 +306,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return whether the job has successfully run.
 
         Returns:
-            True if the job is done, else False.
+            ``True`` if the job is done, else ``False``.
         """
         return self._is_job_status(JobStatus.DONE)
 
@@ -314,7 +314,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return whether the job is actively running.
 
         Returns:
-            True if the job is running, else False.
+            ``True`` if the job is running, else ``False``.
         """
         return self._is_job_status(JobStatus.RUNNING)
 
@@ -322,7 +322,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Return whether the job has been cancelled.
 
         Returns:
-            True if the job has been cancelled, else False.
+            ``True`` if the job has been cancelled, else ``False``.
         """
         return self._is_job_status(JobStatus.CANCELLED)
 
@@ -333,7 +333,7 @@ class IBMQJob(BaseModel, BaseJob):
             job_status: The job status to check against.
 
         Returns:
-            True if the current job status matches the desired one, else False.
+            ``True`` if the current job status matches the desired one, else ``False``.
         """
         return self.status() == job_status
 
@@ -376,7 +376,7 @@ class IBMQJob(BaseModel, BaseJob):
             and may differ from the global queue position.
 
         Args:
-            refresh: If True, re-query the server to get the latest value.
+            refresh: If ``True``, re-query the server to get the latest value.
                 Otherwise return the cached value.
 
         Returns:
@@ -580,7 +580,7 @@ class IBMQJob(BaseModel, BaseJob):
             status_deque: Deque used to share the latest status.
 
         Returns:
-            True if the final job status matches one of the required states.
+            ``True`` if the final job status matches one of the required states.
 
         Raises:
             IBMQJobTimeoutError: if the job does not return results before a
@@ -609,7 +609,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Retrieve the job result response.
 
         Args:
-            refresh: If True, re-query the server for the result.
+            refresh: If ``True``, re-query the server for the result.
                Otherwise return the cached value.
 
         Returns:

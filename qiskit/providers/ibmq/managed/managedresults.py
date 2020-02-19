@@ -46,8 +46,8 @@ class ManagedResults:
         Args:
             job_set: Managed job set for these results.
             backend_name: Name of the backend used to run the experiments.
-            success: True if all experiments were successful and results
-                available. False otherwise.
+            success: ``True`` if all experiments were successful and results
+                available. ``False`` otherwise.
 
         Attributes:
             backend_name: Name of the backend used to run the experiments.

@@ -143,7 +143,7 @@ class ManagedJob:
 
         Args:
            timeout: Number of seconds to wait for job.
-           partial: If true, attempt to retrieve partial job results.
+           partial: If ``True``, attempt to retrieve partial job results.
 
         Returns:
             Result object or ``None`` if result could not be retrieved.
