@@ -90,7 +90,7 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
 
     Raises:
         QiskitError: If the backends list is empty.
-        AttributeError: If a backend in the list does not have the `pending_jobs`
+        AttributeError: If a backend in the list does not have the ``pending_jobs``
             attribute in its status.
     """
     try:
