@@ -18,6 +18,7 @@
 import threading
 import ipyvuetify as vue
 from IPython.display import display  # pylint: disable=import-error
+from ..ibmqbackend import IBMQBackend
 from .config_widget import config_tab
 from .qubits_widget import qubits_tab
 from .gates_widget import gates_tab
@@ -29,11 +30,11 @@ def _async_job_loader(tab, backend):
     tab.children = [jobs_tab(backend)]
 
 
-def backend_widget(backend):
+def backend_widget(backend: IBMQBackend) -> None:
     """Display backend information as a widget.
 
     Parameters:
-        backend (IBMQBackend): A backend.
+        backend: An IBM Quantum backend.
     """
     cred = backend.provider().credentials
     last_tab = vue.TabItem(children=[])

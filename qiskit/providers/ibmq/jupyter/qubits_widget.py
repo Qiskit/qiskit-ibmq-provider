@@ -16,14 +16,15 @@
 """Widgert for backend configuration tab.
 """
 import ipywidgets as wid
+from ..ibmqbackend import IBMQBackend
 from ..utils.converters import utc_to_local
 
 
-def qubits_tab(backend):
+def qubits_tab(backend: IBMQBackend) -> wid.VBox:
     """The qubits properties widget
 
     Args:
-        backend (IBMQBackend | FakeBackend): The backend.
+        backend: The backend.
 
     Returns:
         VBox: A VBox widget.

@@ -17,10 +17,11 @@
 """
 import math
 import ipywidgets as wid
+from ..ibmqbackend import IBMQBackend
 from ..utils.converters import utc_to_local
 
 
-def gates_tab(backend):
+def gates_tab(backend: IBMQBackend) -> wid.GridBox:
     """The multiple qubit gate error widget.
 
     Args:

@@ -17,12 +17,14 @@
 """
 
 import threading
+from typing import List, Tuple, Dict
 import ipywidgets as wid
 from IPython.display import display, Javascript
 from IPython.core.magic import line_magic, Magics, magics_class
 from qiskit.tools.events.pubsub import Subscriber
 from qiskit.exceptions import QiskitError
 from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
+from ..ibmqbackend import IBMQBackend
 from .job_widgets import (make_clear_button,
                           make_labels, create_job_widget)
 from .backend_widget import make_backend_widget
@@ -33,7 +35,9 @@ from .watcher_monitor import _job_monitor
 class Accordion_with_thread(wid.Accordion):  # pylint: disable=invalid-name
     """An Accordion that will close an attached thread
     """
-    def __init__(self, children=(), **kwargs):
+    def __init__(self,
+                 children: Tuple = (),
+                 **kwargs):
         super(Accordion_with_thread, self).__init__(children=children, **kwargs)
         self._thread = None
 
@@ -48,7 +52,8 @@ class Accordion_with_thread(wid.Accordion):  # pylint: disable=invalid-name
         self.close()
 
 
-def _add_device_to_list(backend, device_list):
+def _add_device_to_list(backend: IBMQBackend,
+                        device_list: List):
     device_pane = make_backend_widget(backend)
     device_list.children = list(device_list.children) + [device_pane]
 
@@ -58,13 +63,13 @@ class IQXDashboard(Subscriber):
     """
     def __init__(self):
         super().__init__()
-        self.jobs = []
+        self.jobs: List = []
         self._init_subscriber()
-        self.dashboard = None
-        self.backend_dict = None
-        self.job_viewer = None
-        self._clear_jobs_button = make_clear_button(self)
-        self._jobs_labels = make_labels()
+        self.dashboard: Accordion_with_thread = None
+        self.backend_dict: Dict = None
+        self.job_viewer: wid.VBox = None
+        self._clear_jobs_button: wid.GridBox = make_clear_button(self)
+        self._jobs_labels: wid.HBox = make_labels()
         self.refresh_jobs_board()
 
     def _get_backends(self):
@@ -123,7 +128,7 @@ class IQXDashboard(Subscriber):
             self.dashboard.close()
         self.dashboard = None
 
-    def update_single_job(self, update_info):
+    def update_single_job(self, update_info: Tuple):
         """Update a single job instance
 
         Args:
@@ -156,11 +161,11 @@ class IQXDashboard(Subscriber):
                 queue = str(update_info[2])
             job_wid.children[4].value = queue
 
-    def cancel_job(self, job_id):
+    def cancel_job(self, job_id: str):
         """Cancels a job in the watcher
 
         Args:
-            job_id (str): Job id to remove.
+            job_id: Job id to remove.
 
         Raises:
             Exception: Job id not found.
@@ -221,11 +226,11 @@ class IQXDashboard(Subscriber):
         self.subscribe("ibmq.job.start", _add_job)
 
 
-def build_dashboard_widget():
+def build_dashboard_widget() -> Accordion_with_thread:
     """Builds the dashboard widget
 
     Returns:
-        widget: Dashboard widget.
+        Dashboard widget.
     """
     tabs = wid.Tab(layout=wid.Layout(width='760px',
                                      max_height='650px')

@@ -15,9 +15,10 @@
 """A module for the async backend widget updates"""
 import time
 import threading
+from typing import List
 
-
-def update_backend_info(device_list, interval=30):
+def update_backend_info(device_list: List,
+                        interval: int = 30) -> None:
     """Updates the device list from another thread
     """
     my_thread = threading.currentThread()

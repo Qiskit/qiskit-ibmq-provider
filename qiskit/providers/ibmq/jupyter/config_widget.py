@@ -17,16 +17,17 @@
 """
 import ipywidgets as wid
 from qiskit.providers.ibmq.visualization.interactive import iplot_gate_map
+from ..ibmqbackend import IBMQBackend
 
 
-def config_tab(backend):
+def config_tab(backend: IBMQBackend) -> wid.GridBox:
     """The backend configuration widget.
 
     Args:
-        backend (IBMQBackend | FakeBackend): The backend.
+        backend: An IBM Quantum backend.
 
     Returns:
-        GridBox: A GridBox widget.
+        A GridBox widget.
     """
     status = backend.status().to_dict()
     config = backend.configuration().to_dict()
