@@ -26,15 +26,15 @@ class BackendJobLimit(BaseModel):
     """Job limit for a backend.
 
     Represent the job limit for a backend on a specific provider. This
-    class is returned by the :meth:`job_limit()<IBMQBackend.job_limit>` method.
+    instance is returned by the :meth:`job_limit()<IBMQBackend.job_limit>` method.
     """
 
     def __init__(self, maximum_jobs: int, running_jobs: int, **kwargs: Any) -> None:
-        """BackendJobLimit class.
+        """BackendJobLimit constructor.
 
         Args:
             maximum_jobs: The maximum number of concurrent jobs this account is
-                allowed to submit to this backend, with this provider, at a time.
+                allowed to submit to this backend, with this provider.
             running_jobs: The current number of active jobs on this backend, with
                 this provider.
             kwargs: Additional attributes that will be added as instance members.

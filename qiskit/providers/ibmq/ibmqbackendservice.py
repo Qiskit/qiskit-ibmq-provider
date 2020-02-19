@@ -53,14 +53,14 @@ class IBMQBackendService(SimpleNamespace):
 
         most_recent_jobs = provider.backends.jobs(limit=10)
 
-    Likewise, you are able to retrieve single jobs based on your account, rather having to search
-    for the job on the specific backend you submitted it to::
+    Likewise, you are able to retrieve a single job based on your account, rather than having
+    to retrieve the job from the specific backend you submitted it to::
 
         job = provider.backends.retrieve_job(<JOB_ID>)
     """
 
     def __init__(self, provider: 'accountprovider.AccountProvider') -> None:
-        """IBMQBackendService class.
+        """IBMQBackendService constructor.
 
         Args:
             provider: IBM Quantum Experience account provider.
@@ -133,9 +133,9 @@ class IBMQBackendService(SimpleNamespace):
         """Return a list of jobs, subject to optional filtering.
 
         Return a list of jobs, with optional filtering and pagination. Note
-        that the API has a limit for the number of jobs returned in a single
+        that the server has a limit for the number of jobs returned in a single
         call. As a result, this function might involve making several calls
-        to the API. See the `skip` parameter for more control over pagination.
+        to the server. See the `skip` parameter for more control over pagination.
 
         Note:
              The jobs submitted with earlier versions of Qiskit
@@ -148,11 +148,11 @@ class IBMQBackendService(SimpleNamespace):
             backend_name: Name of the backend to retrieve jobs from.
             status: Only get jobs with this status or one of the statuses.
                 For example, you can specify `status=JobStatus.RUNNING` or `status="RUNNING"`
-                    or `status=["RUNNING", "ERROR"]
+                or `status=["RUNNING", "ERROR"]`
             job_name: Filter by job name. The `job_name` is matched partially
                 and `regular expressions
-                <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>
-                `_ can be used.
+                <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>`_
+                can be used.
             start_datetime: Filter by start date. This is used to find jobs
                 whose creation dates are after (greater than or equal to) this
                 date/time.
@@ -160,12 +160,12 @@ class IBMQBackendService(SimpleNamespace):
                 whose creation dates are before (less than or equal to) this
                 date/time.
             job_tags: Filter by tags assigned to jobs.
-            job_tags_operator: Logical operator to use when filtering by job tags.
-                Valid values are "AND" and "OR":
+            job_tags_operator: Logical operator to use when filtering by job tags. Valid
+                values are "AND" and "OR":
                     * If "AND" is specified, then a job must have all of the tags
-                        specified in ``job_tags`` to be included.
+                      specified in ``job_tags`` to be included.
                     * If "OR" is specified, then a job only needs to have any
-                        of the tags specified in ``job_tags`` to be included.
+                      of the tags specified in ``job_tags`` to be included.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter.
@@ -236,7 +236,7 @@ class IBMQBackendService(SimpleNamespace):
             # Argument filters takes precedence over db_filter for same keys
             api_filter = {**db_filter, **api_filter}
 
-        # Retrieve the requested number of jobs, using pagination. The API
+        # Retrieve the requested number of jobs, using pagination. The server
         # might limit the number of jobs per request.
         job_responses = []  # type: List[Dict[str, Any]]
         current_page_limit = limit
@@ -248,7 +248,7 @@ class IBMQBackendService(SimpleNamespace):
             skip = skip + len(job_page)
 
             if not job_page:
-                # Stop if there are no more jobs returned by the API.
+                # Stop if there are no more jobs returned by the server.
                 break
 
             if limit:

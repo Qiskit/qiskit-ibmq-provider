@@ -37,7 +37,8 @@ class AccountProvider(BaseProvider):
     The account provider class provides access to the IBM Quantum Experience
     backends available to this account.
 
-    You can access a provider by enabling a session::
+    You can access a provider by enabling an account with
+    :meth:`IBMQFactory.enable_account()<IBMQFactory.enable_account>`::
 
         from qiskit import IBMQ
         provider = IBMQ.enable_account(<INSERT_IBM_QUANTUM_EXPERIENCE_TOKEN>)
@@ -51,16 +52,23 @@ class AccountProvider(BaseProvider):
     specified name::
 
         simulator_backend = provider.get_backend('ibmq_qasm_simulator')
+
+    It is also possible to use the ``backends`` attribute to reference a backend.
+    As an example, to retrieve the same backend from the example above::
+
+        simulator_backend = provider.backends.ibmq_qasm_simulator
     """
 
     def __init__(self, credentials: Credentials, access_token: str) -> None:
-        """AccountProvider class.
+        """AccountProvider constructor.
 
         Note:
-            The `backends` attribute can be used to autocomplete the names of
+            The ``backends`` attribute can be used to autocomplete the names of
             backends available to this provider. To autocomplete, press ``tab``
-            after ``AccountProvider.backends.``. This feature may not be
-            available if an error occurs during backend discovery.
+            after ``provider.backends.``. This feature may not be available
+            if an error occurs during backend discovery. Also note that
+            this feature is only available in interactive sessions, such as
+            in jupyter notebooks and the python interpreter.
 
         Args:
             credentials: IBM Quantum Experience credentials.

@@ -41,7 +41,8 @@ class IBMQFactory:
     """Factory and Account manager for IBM Quantum Experience."""
 
     def __init__(self) -> None:
-        """IBMQFactory class."""
+        """IBMQFactory constructor."""
+        """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
 
@@ -61,9 +62,10 @@ class IBMQFactory:
             IBM Quantum Experience v1) credentials is no longer supported.
 
         Args:
-            token: IBM Quantum Experience API token.
+            token: IBM Quantum Experience token.
             url: URL for the IBM Quantum Experience authentication server.
-            **kwargs: additional settings for the connection:
+            **kwargs: Additional settings for the connection:
+
                 * proxies (dict): proxy configuration.
                 * verify (bool): verify the server's TLS certificate.
 
@@ -141,8 +143,8 @@ class IBMQFactory:
                 'Multiple IBM Q Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = credentials_list[0]
-        # Explicitly check via an API call, to allow environment auth URLs
-        # contain API 2 URL (but not auth) slipping through.
+        # Explicitly check via a server call, to allow environment auth URLs
+        # contain IBM Quantum Experience v2 URL (but not auth) slipping through.
         version_info = self._check_api_version(credentials)
 
         # Check the URL is a valid authentication URL.
@@ -178,11 +180,11 @@ class IBMQFactory:
         """Save the account to disk for future use.
 
         Args:
-            token: IBM Quantum Experience API token.
+            token: IBM Quantum Experience token.
             url: URL for the IBM Quantum Experience authentication server.
             overwrite: Overwrite existing credentials.
             **kwargs:
-                * proxies (dict): Proxy configuration for the API.
+                * proxies (dict): Proxy configuration for the server.
                 * verify (bool): If False, ignores SSL certificates errors
 
         Raises:
@@ -288,7 +290,7 @@ class IBMQFactory:
 
         Returns:
             The credentials for IBM Quantum Experience v2 if updating is successful
-                or ``None`` otherwise.
+            or ``None`` otherwise.
         """
         return update_credentials(force)
 
@@ -358,7 +360,7 @@ class IBMQFactory:
 
     @staticmethod
     def _check_api_version(credentials: Credentials) -> Dict[str, Union[bool, str]]:
-        """Check the version of the API in a set of credentials.
+        """Check the version of the remote server in a set of credentials.
 
         Returns:
             A dictionary with version information.

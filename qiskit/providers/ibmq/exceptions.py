@@ -33,7 +33,7 @@ class IBMQAccountCredentialsNotFound(IBMQAccountError):
 
 
 class IBMQAccountCredentialsInvalidFormat(IBMQAccountError):
-    """Errors raised when the credential's format is invalid."""
+    """Errors raised when the credentials format is invalid."""
     pass
 
 

@@ -19,7 +19,7 @@ IBM Quantum Experience Provider (:mod:`qiskit.providers.ibmq`)
 
 .. currentmodule:: qiskit.providers.ibmq
 
-Modules representing the IBMQ Quantum Experience Provider.
+Modules representing the IBM Quantum Experience Provider.
 
 Functions
 =========
@@ -89,8 +89,9 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
         The backend with the fewest number of pending jobs.
 
     Raises:
-        QiskitError: If the backends list is empty or if any backend in the
-            list does not have a `pending_jobs` attribute in its status.
+        QiskitError: If the backends list is empty.
+        AttributeError: If a backend in the list does not have a `pending_jobs`
+            attribute in its status.
     """
     try:
         return min([b for b in backends if b.status().operational],
