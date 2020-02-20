@@ -55,8 +55,7 @@ class IBMQBackendService(SimpleNamespace):
 
         most_recent_jobs = provider.backends.jobs(limit=10)
 
-    Likewise, you are able to retrieve a single job based on your account, rather than having
-    to retrieve the job from the specific backend you submitted it to::
+    It is also possible to retrieve a single job without specifying the backend name::
 
         job = provider.backends.retrieve_job(<JOB_ID>)
     """
