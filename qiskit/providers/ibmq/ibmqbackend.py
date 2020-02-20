@@ -493,8 +493,8 @@ class IBMQSimulator(IBMQBackend):
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
-            backend_options: Optional[Dict] = None,
             validate_qobj: bool = False,
+            backend_options: Optional[Dict] = None,
             noise_model: Any = None
     ) -> IBMQJob:
         """Run qobj asynchronously.
