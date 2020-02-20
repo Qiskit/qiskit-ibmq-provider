@@ -28,7 +28,7 @@ from ..job.exceptions import JobError
 
 
 class ManagedResults:
-    """Results managed by the Job Manager. foo
+    """Results managed by the Job Manager.
 
     This class is a wrapper around the :class:`Result<qiskit.result.Result>` class and
     provides the same methods. Please refer to the
