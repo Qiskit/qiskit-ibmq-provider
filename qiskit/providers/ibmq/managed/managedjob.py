@@ -146,7 +146,7 @@ class ManagedJob:
            partial: If ``True``, attempt to retrieve partial job results.
 
         Returns:
-            Result object or ``None`` if result could not be retrieved.
+            Job result or ``None`` if result could not be retrieved.
 
         Raises:
             IBMQJobTimeoutError: If the job does not return results before a

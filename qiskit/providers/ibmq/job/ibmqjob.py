@@ -514,7 +514,11 @@ class IBMQJob(BaseModel, BaseJob):
             JobResponseSchema.model_cls = saved_model_cls
 
     def to_dict(self) -> None:
-        """Serialize the model into a Python dict of simple types."""
+        """Serialize the model into a Python dict of simple types.
+
+        Note:
+            This is an inherited but unsupported method and may not work properly.
+        """
         warnings.warn("IBMQJob.to_dict() is not supported and may not work properly.",
                       stacklevel=2)
         return BaseModel.to_dict(self)

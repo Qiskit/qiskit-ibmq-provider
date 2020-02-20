@@ -28,11 +28,11 @@ from ..job.exceptions import JobError
 
 
 class ManagedResults:
-    """Results managed by the Job Manager.
+    """Results managed by the Job Manager. foo
 
-    This class is a wrapper around the :class:`Result` class. It provides the
-    same methods as the :class:`Result` class. Please refer to the
-    :class:`Result` class for more information on the methods.
+    This class is a wrapper around the :class:`Result<qiskit.result.Result>` class and
+    provides the same methods. Please refer to the
+    :class:`Result<qiskit.result.Result>` class for more information on the methods.
     """
 
     def __init__(
@@ -69,7 +69,8 @@ class ManagedResults:
                     * int: The position of the experiment.
 
         Returns:
-            Refer to the :meth:`Result.data()` for information on return data.
+            Refer to the :meth:`Result.data()<qiskit.result.Result.data()>` for
+            information on return data.
 
         Raises:
             IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
@@ -91,7 +92,8 @@ class ManagedResults:
             experiment: Retrieve result for this experiment, as specified by :meth:`data()`.
 
         Returns:
-            Refer to the :meth:`Result.get_memory()` for information on return data.
+            Refer to the :meth:`Result.get_memory()<qiskit.result.Result.get_memory()>`
+            for information on return data.
 
         Raises:
             IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
@@ -111,7 +113,8 @@ class ManagedResults:
             experiment: Retrieve result for this experiment, as specified by :meth:`data()`.
 
         Returns:
-            Refer to the meth:`Result.get_counts()` for information on return data.
+            Refer to the :meth:`Result.get_counts()<qiskit.result.Result.get_counts()>`
+            for information on return data.
 
         Raises:
             IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
@@ -134,7 +137,8 @@ class ManagedResults:
                 If ``None``, skip rounding.
 
         Returns:
-            Refer to the :meth:`Result.get_statevector()` for information on return data.
+            Refer to the :meth:`Result.get_statevector()<qiskit.result.Result.get_statevector()>`
+            for information on return data.
 
         Raises:
             IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
@@ -157,7 +161,8 @@ class ManagedResults:
                 If ``None``, skip rounding.
 
         Returns:
-            Refer to the :meth:`Result.get_unitary()` for information on return data.
+            Refer to the :meth:`Result.get_unitary()<qiskit.result.Result.get_unitary()>`
+            for information on return data.
 
         Raises:
             IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
