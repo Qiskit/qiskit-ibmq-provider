@@ -55,7 +55,7 @@ class IBMQJob(BaseModel, BaseJob):
 
     If the job is successfully submitted, you can inspect the job's status by
     calling :meth:`status()`. Job status can be one of the
-    :class:`JobStatus<qiskit.providers.jobstatus.JobStatus>` members.
+    :class:`~qiskit.providers.JobStatus` members.
     For example::
 
         from qiskit.providers.jobstatus import JobStatus
@@ -73,7 +73,7 @@ class IBMQJob(BaseModel, BaseJob):
         An error may occur when querying the remote server to get job information.
         The most common errors are temporary network failures
         and server errors, in which case an
-        :class:`IBMQJobApiError<qiskit.providers.ibmq.job.exceptions.IBMQJobApiError>`
+        :class:`~qiskit.providers.ibmq.job.IBMQJobApiError`
         is raised. These errors usually clear quickly, so retrying the operation is
         likely to succeed.
 
@@ -202,7 +202,7 @@ class IBMQJob(BaseModel, BaseJob):
             results of failed jobs. In this case, precaution should
             be taken when accessing individual experiments, as doing so might
             cause an exception. The ``success`` attribute of the returned
-            :class:`Result<qiskit.result.Result>` instance can be used to verify
+            :class:`~qiskit.result.Result` instance can be used to verify
             whether it contains partial results.
 
             For example, if one of the experiments in the job failed, trying to

@@ -346,7 +346,7 @@ class ManagedJobSet:
         """Return jobs in this job set.
 
         Returns:
-            A list of :class:`IBMQJob<qiskit.providers.ibmq.job.IBMQJob>`
+            A list of :class:`~qiskit.providers.ibmq.job.IBMQJob`
             instances that represents the submitted jobs.
             An entry in the list is ``None`` if the job failed to be submitted.
         """

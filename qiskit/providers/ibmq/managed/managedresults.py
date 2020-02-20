@@ -30,9 +30,9 @@ from ..job.exceptions import JobError
 class ManagedResults:
     """Results managed by the Job Manager.
 
-    This class is a wrapper around the :class:`Result<qiskit.result.Result>` class and
+    This class is a wrapper around the :class:`~qiskit.result.Result` class and
     provides the same methods. Please refer to the
-    :class:`Result<qiskit.result.Result>` class for more information on the methods.
+    :class:`~qiskit.result.Result` class for more information on the methods.
     """
 
     def __init__(
