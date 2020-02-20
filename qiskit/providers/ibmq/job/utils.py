@@ -62,10 +62,10 @@ def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
     """Return the corresponding job status for the input server job status.
 
     Args:
-        api_status: Server job status
+        api_status: Server job status.
 
     Returns:
-        Job status
+        Job status.
     """
     return API_TO_JOB_STATUS[api_status]
 

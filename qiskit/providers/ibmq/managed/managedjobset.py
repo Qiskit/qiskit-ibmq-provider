@@ -46,7 +46,7 @@ class ManagedJobSet:
     """A set of managed jobs.
 
     An instance of this class is returned when you submit experiments using
-    :meth:`IBMQJobManager.run()<qiskit.providers.ibmq.managed.IBMQJobManager.run()>`.
+    :meth:`IBMQJobManager.run()`.
     It provides methods that allow you to interact
     with the jobs as a single entity. For example, you can retrieve the results
     for all of the jobs using :meth:`results()` and cancel all jobs using
@@ -200,7 +200,7 @@ class ManagedJobSet:
 
         Returns:
             A list of job statuses. An entry in the list is ``None`` if the
-            job status could not be retrieved due to server error.
+            job status could not be retrieved due to a server error.
         """
         return [mjob.status() for mjob in self._managed_jobs]
 
@@ -255,7 +255,7 @@ class ManagedJobSet:
             results of failed jobs. In this case, precaution should
             be taken when accessing individual experiments, as doing so might
             cause an exception. The ``success`` attribute of the returned
-            :class:`ManagedResults<qiskit.providers.ibmq.managed.managedresults.ManagedResults>`
+            :class:`ManagedResults`
             instance can be used to verify whether it contains
             partial results.
 
@@ -272,7 +272,7 @@ class ManagedJobSet:
            partial: If ``True``, attempt to retrieve partial job results.
 
         Returns:
-            A :class:`ManagedResults<qiskit.providers.ibmq.managed.managedresults.ManagedResults>`
+            A :class:`ManagedResults`
             instance that can be used to retrieve results
             for individual experiments.
 
@@ -348,7 +348,7 @@ class ManagedJobSet:
         Returns:
             A list of :class:`IBMQJob<qiskit.providers.ibmq.job.IBMQJob>`
             instances that represents the submitted jobs.
-            An entry is ``None`` if the job failed to be submitted.
+            An entry in the list is ``None`` if the job failed to be submitted.
         """
         return [mjob.job for mjob in self._managed_jobs]
 
@@ -398,11 +398,11 @@ class ManagedJobSet:
 
     @requires_submit
     def qobjs(self) -> List[Qobj]:
-        """Return the ``Qobj``s for the jobs in this set.
+        """Return the Qobjs for the jobs in this set.
 
         Returns:
-            A list of ``Qobj``s for the jobs. An entry in the list is ``None``
-            if the ``Qobj`` could not be retrieved.
+            A list of Qobjs for the jobs. An entry in the list is ``None``
+            if the Qobj could not be retrieved.
         """
         return [mjob.qobj() for mjob in self._managed_jobs]
 

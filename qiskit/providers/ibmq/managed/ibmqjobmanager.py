@@ -110,7 +110,8 @@ class IBMQJobManager:
                 global level. The level can be one of: ``global``, ``hub``,
                 ``group``, ``project``, and ``none``.
             job_tags: Tags to be assigned to the jobs. The tags can
-                subsequently be used as a filter in the :meth:`IBMQBackend.jobs()`
+                subsequently be used as a filter in the
+                :meth:`IBMQBackend.jobs()<qiskit.providers.ibmq.ibmqbackend.IBMQBackend.jobs()>`
                 function call.
             run_config: Configuration of the runtime environment. Some
                 examples of these configuration parameters include:
@@ -189,7 +190,7 @@ class IBMQJobManager:
         """Return a report on the statuses of all jobs managed by this Job Manager.
 
         Args:
-            detailed: ``True`` if a detailed report is be returned. ``False``
+            detailed: ``True`` if a detailed report is to be returned. ``False``
                 if a summary report is to be returned.
 
         Returns:

@@ -71,11 +71,11 @@ class IBMQJob(BaseModel, BaseJob):
 
     Note:
         An error may occur when querying the remote server to get job information.
-        The most common errors are temporary network failure
+        The most common errors are temporary network failures
         and server errors, in which case an
         :class:`IBMQJobApiError<qiskit.providers.ibmq.job.exceptions.IBMQJobApiError>`
-        is raised. These errors usually clear quickly, and you can retry
-        the operation.
+        is raised. These errors usually clear quickly, so retrying the operation is
+        likely to succeed.
 
     Some of the methods in this class are blocking, which means control may
     not be returned immediately. :meth:`result()` is an example
@@ -574,7 +574,7 @@ class IBMQJob(BaseModel, BaseJob):
         """Wait until the job progress to a final state such as ``DONE`` or ``ERROR``.
 
         Args:
-            timeout: Seconds to wait for job. If None, wait indefinitely.
+            timeout: Seconds to wait for job. If ``None``, wait indefinitely.
             wait: Seconds between queries.
             required_status: The final job status required.
             status_deque: Deque used to share the latest status.
