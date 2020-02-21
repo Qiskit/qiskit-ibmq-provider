@@ -17,8 +17,7 @@
 from marshmallow import pre_load
 
 from qiskit.validation import BaseSchema
-from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime, List
-from qiskit.qobj.qobj import QobjSchema
+from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime, List, Raw
 from qiskit.result.models import ResultSchema
 
 from qiskit.providers.ibmq.utils.fields import Enum, map_field_names
@@ -91,7 +90,7 @@ class JobResponseSchema(BaseSchema):
     _name = String(missing=None)
     _time_per_step = Dict(keys=String, values=String, missing=None)
     _result = Nested(ResultSchema, missing=None)
-    _qobj = Nested(QobjSchema, missing=None)
+    _qobj = Raw(missing=None)
     _error = Nested(JobResponseErrorSchema, missing=None)
     _tags = List(String, missing=[])
 
