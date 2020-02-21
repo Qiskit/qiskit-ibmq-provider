@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Model for representing hub/group/project tuples."""
+"""Model for representing a hub/group/project tuple."""
 
 from collections import namedtuple
 
