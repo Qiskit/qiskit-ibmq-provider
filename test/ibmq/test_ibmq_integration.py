@@ -88,7 +88,7 @@ class TestIBMQIntegration(IBMQTestCase):
         qc.measure(qubit_reg, clbit_reg)
         qobj = assemble(transpile(qc, backend=backend, seed_transpiler=self.seed),
                         backend=backend)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         result = job.result(timeout=20)
         self.assertIsInstance(result, Result)
 
@@ -107,7 +107,7 @@ class TestIBMQIntegration(IBMQTestCase):
         qc_extra.measure(qubit_reg, clbit_reg)
         qobj = assemble(transpile([qc, qc_extra], backend=backend, seed_transpiler=self.seed),
                         backend=backend)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         result = job.result()
         self.assertIsInstance(result, Result)
 

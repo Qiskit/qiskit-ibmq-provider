@@ -111,7 +111,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
                 qobj.header = QobjHeader.from_dict(custom_qobj_header)
                 qobj.experiments[0].header.some_field = 'extra info'
 
-                result = backend.run(qobj).result()
+                result = backend.run(qobj, validate_qobj=True).result()
                 self.assertEqual(result.header.to_dict(), custom_qobj_header)
                 self.assertEqual(result.results[0].header.some_field,
                                  'extra info')
@@ -130,7 +130,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
         # Update the Qobj.experiment header.
         qobj.experiments[0].header.some_field = 'extra info'
 
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         result = job.result()
         self.assertEqual(result.header.to_dict(), custom_qobj_header)

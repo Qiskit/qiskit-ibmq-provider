@@ -146,7 +146,7 @@ class TestIBMQJobManager(IBMQTestCase):
         qc_new = transpile(self._qc, backend)
         qobj = assemble([qc_new, qc_new], backend=backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
 
         circs = []
         for _ in range(4):

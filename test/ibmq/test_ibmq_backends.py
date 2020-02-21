@@ -54,13 +54,13 @@ class TestIBMQBackends(IBMQTestCase):
         circuit.measure(qr[0], cr[0])
 
         qobj = assemble(transpile(circuit, backend=self._local_backend))
-        result_local = self._local_backend.run(qobj).result()
+        result_local = self._local_backend.run(qobj, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             if not remote_backend.status().operational:
                 continue
             with self.subTest(backend=remote_backend):
-                result_remote = remote_backend.run(qobj).result()
+                result_remote = remote_backend.run(qobj, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
@@ -73,11 +73,11 @@ class TestIBMQBackends(IBMQTestCase):
         circuit.measure(qr[0], cr[0])
 
         qobj = assemble(transpile(circuit, backend=self._local_backend))
-        result_local = self._local_backend.run(qobj).result()
+        result_local = self._local_backend.run(qobj, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             with self.subTest(backend=remote_backend):
-                result_remote = remote_backend.run(qobj).result()
+                result_remote = remote_backend.run(qobj, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
@@ -94,11 +94,11 @@ class TestIBMQBackends(IBMQTestCase):
         circuit.measure(qr[3], cr[3])
 
         qobj = assemble(transpile(circuit, backend=self._local_backend))
-        result_local = self._local_backend.run(qobj).result()
+        result_local = self._local_backend.run(qobj, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             with self.subTest(backend=remote_backend):
-                result_remote = remote_backend.run(qobj).result()
+                result_remote = remote_backend.run(qobj, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
@@ -115,12 +115,12 @@ class TestIBMQBackends(IBMQTestCase):
         circuit.measure(qr[3], cr[3])
 
         qobj_local = assemble(transpile(circuit, backend=self._local_backend))
-        result_local = self._local_backend.run(qobj_local).result()
+        result_local = self._local_backend.run(qobj_local, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             with self.subTest(backend=remote_backend):
                 qobj_remote = assemble(transpile(circuit, backend=remote_backend))
-                result_remote = remote_backend.run(qobj_remote).result()
+                result_remote = remote_backend.run(qobj_remote, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
@@ -144,11 +144,11 @@ class TestIBMQBackends(IBMQTestCase):
         circuit.measure(qr2[1], cr1[1])
 
         qobj = assemble(transpile(circuit, backend=self._local_backend))
-        result_local = self._local_backend.run(qobj).result()
+        result_local = self._local_backend.run(qobj, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             with self.subTest(backend=remote_backend):
-                result_remote = remote_backend.run(qobj).result()
+                result_remote = remote_backend.run(qobj, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
@@ -181,11 +181,11 @@ class TestIBMQBackends(IBMQTestCase):
         circuit2.measure(qr2[1], cr1[2])
 
         qobj = assemble(transpile([circuit1, circuit2], backend=self._local_backend))
-        result_local = self._local_backend.run(qobj).result()
+        result_local = self._local_backend.run(qobj, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             with self.subTest(backend=remote_backend):
-                result_remote = remote_backend.run(qobj).result()
+                result_remote = remote_backend.run(qobj, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit1),
                                            result_local.get_counts(circuit1), delta=50)
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit2),
