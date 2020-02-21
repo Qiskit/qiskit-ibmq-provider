@@ -27,7 +27,7 @@ REGEX_IBMQ_HUBS = (
     '(?P<prefix>http[s]://.+/api)'
     '/Hubs/(?P<hub>[^/]+)/Groups/(?P<group>[^/]+)/Projects/(?P<project>[^/]+)'
 )
-"""str: Regex that matches a IBMQ URL with hub information."""
+"""str: Regex that matches an IBM Quantum Experience URL with hub information."""
 
 TEMPLATE_IBMQ_HUBS = '{prefix}/Network/{hub}/Groups/{group}/Projects/{project}'
 """str: Template for creating an IBM Quantum Experience URL with hub/group/project information."""
