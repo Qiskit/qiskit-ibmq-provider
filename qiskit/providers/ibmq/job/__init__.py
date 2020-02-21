@@ -13,9 +13,9 @@
 # that they have been altered from the originals.
 
 """
-=============================================================
-IBM Quantum Experience Job (:mod:`qiskit.providers.ibmq.job`)
-=============================================================
+======================================
+Job (:mod:`qiskit.providers.ibmq.job`)
+======================================
 
 .. currentmodule:: qiskit.providers.ibmq.job
 

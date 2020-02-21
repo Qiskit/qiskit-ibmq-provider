@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Authentication REST adapter for the IBM Q Experience API."""
+"""Authentication REST adapter."""
 
 from typing import Dict, Any
 from .base import RestAdapterBase
@@ -33,13 +33,17 @@ class Auth(RestAdapterBase):
             api_token: API token.
 
         Returns:
-            json response.
+            JSON response.
         """
         url = self.get_url('login')
         return self.session.post(url, json={'apiToken': api_token}).json()
 
     def user_info(self) -> Dict[str, Any]:
-        """Return user information."""
+        """Return user information.
+
+        Returns:
+            JSON response of user information.
+        """
         url = self.get_url('user_info')
         response = self.session.get(url).json()
 

@@ -13,13 +13,13 @@
 # that they have been altered from the originals.
 
 """
-===========================================================
-IBMQ Credentials (:mod:`qiskit.providers.ibmq.credentials`)
-===========================================================
+=============================================================================
+Credentials (:mod:`qiskit.providers.ibmq.credentials`)
+=============================================================================
 
 .. currentmodule:: qiskit.providers.ibmq.credentials
 
-Utilities for working with credentials for the IBMQ package.
+Utilities for working with IBM Quantum Experience credentials.
 
 Functions
 =========

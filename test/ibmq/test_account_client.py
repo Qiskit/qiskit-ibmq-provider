@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Tests for the AccountClient for IBM Q Experience."""
+"""Tests for the AccountClient class."""
 
 import re
 import traceback
@@ -39,6 +39,7 @@ class TestAccountClient(IBMQTestCase):
     """Tests for AccountClient."""
 
     def setUp(self):
+        """Initial test setup."""
         qr = QuantumRegister(2)
         cr = ClassicalRegister(2)
         self.qc1 = QuantumCircuit(qr, cr, name='qc1')
@@ -55,6 +56,7 @@ class TestAccountClient(IBMQTestCase):
     @classmethod
     @requires_provider
     def setUpClass(cls, provider):
+        """Initial class level setup."""
         # pylint: disable=arguments-differ
         cls.provider = provider
         cls.access_token = cls.provider._api.client_api.session.access_token
@@ -295,7 +297,7 @@ class TestAccountClientJobs(IBMQTestCase):
     """Tests for AccountClient methods related to jobs.
 
     This TestCase submits a Job during class invocation, available at
-    `cls.job`. Tests should inspect that job according to their needs.
+    ``cls.job``. Tests should inspect that job according to their needs.
     """
 
     @classmethod
@@ -386,7 +388,7 @@ class TestAuthClient(IBMQTestCase):
 
     @requires_qe_access
     def test_valid_login(self, qe_token, qe_url):
-        """Test valid authenticating against IBM Q."""
+        """Test valid authentication."""
         client = AuthClient(qe_token, qe_url)
         self.assertTrue(client.client_api.session.access_token)
 

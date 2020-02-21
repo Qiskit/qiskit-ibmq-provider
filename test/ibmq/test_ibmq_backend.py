@@ -13,6 +13,7 @@
 # that they have been altered from the originals.
 
 """IBMQBackend Test."""
+
 from inspect import getfullargspec
 
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
@@ -25,11 +26,10 @@ class TestIBMQBackend(IBMQTestCase):
     """Test ibmqbackend module."""
 
     def test_backend_jobs_signature(self):
-        """Test `IBMQBackend.jobs` signature is similar to `IBMQBackendService.jobs`
+        """Test ``IBMQBackend.jobs()`` signature is similar to ``IBMQBackendService.jobs()``.
 
-        The signature of `IBMQBackend.jobs` is similar to the signature of
-        `IBMQBackendService.jobs` if its parameter list is a subset of the
-        parameter list of `IBMQBackendService.jobs`.
+        Ensure that the parameter list of ``IBMQBackend.jobs()`` is a subset of that
+        of ``IBMQBackendService.jobs()``.
         """
         # Acceptable params `IBMQBackendService.jobs` has that `IBMQBackend.jobs` does not.
         acceptable_differing_params = {'backend_name'}

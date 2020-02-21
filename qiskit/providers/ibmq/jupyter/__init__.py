@@ -13,7 +13,7 @@
 # that they have been altered from the originals.
 """
 ================================================================
-IBM Quantum Jupyter Tools (:mod:`qiskit.providers.ibmq.jupyter`)
+Jupyter Tools (:mod:`qiskit.providers.ibmq.jupyter`)
 ================================================================
 
 .. currentmodule:: qiskit.providers.ibmq.jupyter

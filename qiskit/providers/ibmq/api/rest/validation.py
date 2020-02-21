@@ -13,6 +13,7 @@
 # that they have been altered from the originals.
 
 """Schemas for validation."""
+
 # TODO The schemas defined here should be merged with others under rest/schemas
 # when they are ready
 from marshmallow import pre_load

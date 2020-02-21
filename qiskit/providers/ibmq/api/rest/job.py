@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Job REST adapter for the IBM Q Experience API."""
+"""Job REST adapter."""
 
 import pprint
 from json.decoder import JSONDecodeError
@@ -45,17 +45,17 @@ class Job(RestAdapterBase):
         """Job constructor.
 
         Args:
-            session: session to be used in the adaptor.
-            job_id: id of the job.
+            session: Session to be used in the adapter.
+            job_id: ID of the job.
         """
         self.job_id = job_id
         super().__init__(session, '/Jobs/{}'.format(job_id))
 
     def get(self) -> Dict[str, Any]:
-        """Return a job.
+        """Return job information.
 
         Returns:
-            json response.
+            JSON response of job information.
         """
         url = self.get_url('self')
 
@@ -67,32 +67,56 @@ class Job(RestAdapterBase):
         return response
 
     def callback_upload(self) -> Dict[str, Any]:
-        """Notify the API after uploading a Qobj via object storage."""
+        """Notify the API after uploading a ``Qobj`` via object storage.
+
+        Returns:
+            JSON response.
+        """
         url = self.get_url('callback_upload')
         return self.session.post(url).json()
 
     def callback_download(self) -> Dict[str, Any]:
-        """Notify the API after downloading a Qobj via object storage."""
+        """Notify the API after downloading a ``Qobj`` via object storage.
+
+        Returns:
+            JSON response.
+        """
         url = self.get_url('callback_download')
         return self.session.post(url).json()
 
     def cancel(self) -> Dict[str, Any]:
-        """Cancel a job."""
+        """Cancel a job.
+
+        Returns:
+            JSON response.
+        """
         url = self.get_url('cancel')
         return self.session.post(url).json()
 
     def download_url(self) -> Dict[str, Any]:
-        """Return an object storage URL for downloading the Qobj."""
+        """Return an object storage URL for downloading the ``Qobj``.
+
+        Returns:
+            JSON response.
+        """
         url = self.get_url('download_url')
         return self.session.get(url).json()
 
     def properties(self) -> Dict[str, Any]:
-        """Return the backend properties of a job."""
+        """Return the backend properties of a job.
+
+        Returns:
+            JSON response.
+        """
         url = self.get_url('properties')
         return self.session.get(url).json()
 
     def result_url(self) -> Dict[str, Any]:
-        """Return an object storage URL for downloading results."""
+        """Return an object storage URL for downloading results.
+
+        Returns:
+            JSON response.
+        """
         url = self.get_url('result_url')
         return self.session.get(url).json()
 
@@ -100,10 +124,10 @@ class Job(RestAdapterBase):
         """Return the status of a job.
 
         Returns:
-            status of a job
+            JSON response of job status.
 
         Raises:
-            ApiIBMQProtocolError: if an unexpected result is received from the server.
+            ApiIBMQProtocolError: If an unexpected result is received from the server.
         """
         url = self.get_url('status')
         raw_response = self.session.get(url)
@@ -123,19 +147,23 @@ class Job(RestAdapterBase):
         return api_response
 
     def upload_url(self) -> Dict[str, Any]:
-        """Return an object storage URL for uploading the Qobj."""
+        """Return an object storage URL for uploading the ``Qobj``.
+
+        Returns:
+            JSON response.
+        """
         url = self.get_url('upload_url')
         return self.session.get(url).json()
 
     def put_object_storage(self, url: str, qobj_dict: Dict[str, Any]) -> str:
-        """Upload a Qobj via object storage.
+        """Upload a ``Qobj`` via object storage.
 
         Args:
-            url: object storage URL.
-            qobj_dict: the qobj to be uploaded, in dict form.
+            url: Object storage URL.
+            qobj_dict: The ``Qobj`` to be uploaded, in dictionary form.
 
         Returns:
-            text response, that will be empty if the request was successful.
+            Text response, which is empty if the request was successful.
         """
         response = self.session.put(url, json=qobj_dict, bare=True)
         return response.text
@@ -144,9 +172,9 @@ class Job(RestAdapterBase):
         """Get via object_storage.
 
         Args:
-            url: object storage URL.
+            url: Object storage URL.
 
         Returns:
-            json response.
+            JSON response.
         """
         return self.session.get(url, bare=True).json()
