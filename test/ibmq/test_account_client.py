@@ -242,7 +242,7 @@ class TestAccountClient(IBMQTestCase):
         qobj = assemble(circuit, backend, shots=1)
 
         api = backend._api
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         job_id = job.job_id()
 
         max_retry = 2
