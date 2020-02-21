@@ -12,7 +12,12 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Contains the package version."""
+"""Contains the package version.
+
+Example::
+    from qiskit.providers.ibmq.version import __version__
+    print(__version__)
+"""
 
 import os
 
