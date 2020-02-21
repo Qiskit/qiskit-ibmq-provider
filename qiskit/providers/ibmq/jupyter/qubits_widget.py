@@ -31,7 +31,7 @@ def qubits_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.VBox:
         backend: Display qubit properties for this backend.
 
     Returns:
-        VBox: A VBox widget.
+        A widget containing qubit information.
     """
     props = backend.properties().to_dict()
 

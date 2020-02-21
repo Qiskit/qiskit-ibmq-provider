@@ -26,13 +26,13 @@ from ..utils.converters import utc_to_local
 
 
 def gates_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.GridBox:
-    """The multiple qubit gate error widget.
+    """Construct the multiple qubit gate error widget.
 
     Args:
         backend: The backend to display.
 
     Returns:
-        VBox: A VBox widget.
+        A widget with gate information.
     """
     props = backend.properties().to_dict()
     update_date = utc_to_local(props['last_update_date'])

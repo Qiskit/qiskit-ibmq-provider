@@ -30,7 +30,7 @@ def config_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.GridBox:
         backend: Display configuration widget for this backend.
 
     Returns:
-        GridBox: A GridBox widget.
+        A widget containing backend configuration information.
     """
     status = backend.status().to_dict()
     config = backend.configuration().to_dict()

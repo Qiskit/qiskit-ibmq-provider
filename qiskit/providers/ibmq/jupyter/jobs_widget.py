@@ -112,20 +112,7 @@ def _job_summary(backend: Union[IBMQBackend, FakeBackend]) -> PlotlyWidget:
         backend: Display jobs summary for this backend.
 
     Returns:
-        A figure for the rendered histogram.
-
-    Example:
-        .. jupyter-execute::
-
-           from qiskit import IBMQ
-           from theia.visualization import job_summary
-
-           IBMQ.load_account()
-
-           provider = IBMQ.get_provider(group='open', project='main')
-           backend = provider.get_backend('ibmq_vigo')
-
-           job_summary(backend)
+        A figure for the rendered job summary.
     """
     now = datetime.datetime.now()
     past_year_date = now - datetime.timedelta(days=365)
@@ -276,7 +263,7 @@ def jobs_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.HBox:
         backend: Input backend.
 
     Returns:
-        An ipywidget.
+        An widget containing job summary.
     """
     title = wid.HTML('<h4>Click graph to display jobs</h4>')
     table = wid.HTML('', layout=wid.Layout(max_height='500px',
