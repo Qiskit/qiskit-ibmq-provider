@@ -13,9 +13,9 @@
 # that they have been altered from the originals.
 
 """
-=============================================================================
-IBM Quantum Experience Credentials (:mod:`qiskit.providers.ibmq.credentials`)
-=============================================================================
+======================================================
+Credentials (:mod:`qiskit.providers.ibmq.credentials`)
+======================================================
 
 .. currentmodule:: qiskit.providers.ibmq.credentials
 

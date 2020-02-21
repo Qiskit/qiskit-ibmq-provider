@@ -25,7 +25,7 @@ class TestBackendFilters(IBMQTestCase):
 
     @requires_device
     def test_filter_config_properties(self, backend):
-        """Test filtering by configuration properties"""
+        """Test filtering by configuration properties."""
         # Use the default backend as a reference for the filter.
         provider = backend._provider
         n_qubits = backend.configuration().n_qubits
@@ -40,7 +40,7 @@ class TestBackendFilters(IBMQTestCase):
 
     @requires_provider
     def test_filter_status_dict(self, provider):
-        """Test filtering by dictionary of mixed status/configuration properties"""
+        """Test filtering by dictionary of mixed status/configuration properties."""
         filtered_backends = provider.backends(
             operational=True,  # from status
             local=False, simulator=True)  # from configuration
@@ -54,7 +54,7 @@ class TestBackendFilters(IBMQTestCase):
 
     @requires_provider
     def test_filter_config_callable(self, provider):
-        """Test filtering by lambda function on configuration properties"""
+        """Test filtering by lambda function on configuration properties."""
         filtered_backends = provider.backends(
             filters=lambda x: (not x.configuration().simulator
                                and x.configuration().n_qubits >= 5))
@@ -67,7 +67,7 @@ class TestBackendFilters(IBMQTestCase):
 
     @requires_provider
     def test_filter_least_busy(self, provider):
-        """Test filtering by least busy function"""
+        """Test filtering by least busy function."""
         backends = provider.backends()
         filtered_backends = least_busy(backends)
         self.assertTrue(filtered_backends)

@@ -12,19 +12,28 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 # pylint: disable=import-outside-toplevel
-"""A module of Plotly class wrappers.
-"""
+
+"""Plotly class wrappers."""
+
+from typing import Tuple, Optional, Any
 
 import plotly.graph_objects as go
 
 
-class PlotlyFigure():
-    """A simple wrapper around Plotly Figure class.
+class PlotlyFigure:
+    """A simple wrapper around ``plotly.graph_objects.Figure`` class.
 
-    Allows the figures to be more or less drop in replacements
-    for Matplotlib Figures, e.g. savefig is a method here.
+    This wrapper class allows the figures to be more or less drop in replacements
+    for ``matplotlib`` figures. For example, you can use :meth:`savefig()` to
+    save the figure.
     """
-    def __init__(self, fig):
+
+    def __init__(self, fig: go.Figure):
+        """PlotlyFigure class.
+
+        Args:
+            fig: Figure to use.
+        """
         self._fig = fig
 
     def __repr__(self):
@@ -39,8 +48,12 @@ class PlotlyFigure():
         else:
             print(repr(self))
 
-    def show(self, *args, **kwargs):
+    def show(self, *args, **kwargs) -> None:
         """Display the figure.
+
+        Args:
+            *args: Variable length argument list to be passed to ``plotly.io.show()``.
+            **kwargs: Arbitrary keyword arguments to be passed to ``plotly.io.show()``.
         """
         import plotly.io as pio
 
@@ -49,16 +62,22 @@ class PlotlyFigure():
             config = {'displayModeBar': False,
                       'editable': False}
 
-        return pio.show(self._fig, *args, config=config, **kwargs)
+        pio.show(self._fig, *args, config=config, **kwargs)
 
-    def savefig(self, filename, figsize=(None, None), scale=1, transparent=False):
+    def savefig(
+            self,
+            filename: str,
+            figsize: Tuple[Optional[int]] = (None, None),
+            scale: float = 1,
+            transparent: bool = False
+    ) -> None:
         """Save the figure.
 
-        Parameters:
-            filename (str): Filename to save to.
-            figsize (tuple): Figure size (W x H) in pixels.
-            scale (float): Scales the output figure.
-            transparent (bool): Transparent background.
+        Args:
+            filename: Filename to save to.
+            figsize: Figure size (W x H) in pixels.
+            scale: Scale of the output figure.
+            transparent: Whether to use transparent background.
         """
         if transparent:
             plot_color = self._fig.layout['plot_bgcolor']
@@ -72,10 +91,14 @@ class PlotlyFigure():
 
 
 class PlotlyWidget(go.FigureWidget):
-    """A wrapper around the Plotly widget class.
-    """
-    def show(self, *args, **kwargs):
+    """A wrapper around the ``plotly.graph_objects.FigureWidget`` class."""
+
+    def show(self, *args: Any, **kwargs: Any) -> None:
         """Display the figure.
+
+        Args:
+            *args: Variable length argument list to be passed to ``plotly.io.show()``.
+            **kwargs: Arbitrary keyword arguments to be passed to ``plotly.io.show()``.
         """
         import plotly.io as pio
 
@@ -85,12 +108,18 @@ class PlotlyWidget(go.FigureWidget):
                       'displayModeBar': False,
                       'editable': False}
 
-        return pio.show(self, *args, config=config, **kwargs)
+        pio.show(self, *args, config=config, **kwargs)
 
-    def savefig(self, filename, figsize=(None, None), scale=1, transparent=False):
-        """Safe the figure as a static image.
+    def savefig(
+            self,
+            filename: str,
+            figsize: Tuple[Optional[int]] = (None, None),
+            scale: float = 1,
+            transparent: bool = False
+    ) -> None:
+        """Save the figure as a static image.
 
-        Parameters:
+        Args:
             filename (str): Name of the file to which the image is saved.
             figsize (tuple): Size of figure in pixels.
             scale (float): Scale factor for non-vectorized image formats.

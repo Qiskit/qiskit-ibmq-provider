@@ -16,6 +16,14 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Changed
+
+- JSON schema validation is no longer run by default on qobj objects passed
+  to `IBMQBackend.run()`. This siginficantly speeds up the execution of the
+  `run` method and the API server will return 400 if the qobj is invalid. If
+  you would like to still run the validation you can set the `validate_qobj`
+  kwarg to `True` which will enable the JSON schema validation. (\#554)
+
 ## [0.4.6] - 2020-02-05
 
 ### Added
@@ -55,7 +63,7 @@ The format is based on [Keep a Changelog].
   as `IBMQAccountError`). Also, the exception class `IBMQApiUrlError` 
   has been replaced by `IBMQAccountCredentialsInvalidUrl` and 
   `IBMQAccountCredentialsInvalidToken`. (\#480)
-  
+
 ### Deprecated
 
 - The use of proxy urls without a protocol (e.g. `http://`) is deprecated

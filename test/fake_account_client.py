@@ -52,6 +52,7 @@ VALID_RESULT_RESPONSE = {
         }
     ]
 }
+"""A valid job result response."""
 
 
 class BaseFakeJob:
