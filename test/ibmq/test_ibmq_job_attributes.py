@@ -45,7 +45,7 @@ class TestIBMQJobAttributes(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         self.log.info('job_id: %s', job.job_id())
         self.assertTrue(job.job_id() is not None)
 
@@ -55,7 +55,7 @@ class TestIBMQJobAttributes(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         self.assertTrue(job.backend().name() == backend.name())
 
     @slow_test
@@ -73,7 +73,7 @@ class TestIBMQJobAttributes(JobTestCase):
 
         job_properties = [None]
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         job.wait_for_final_state(wait=30, callback=_job_callback)
         self.assertIsNotNone(job_properties[0])
 
@@ -85,7 +85,7 @@ class TestIBMQJobAttributes(JobTestCase):
 
         # Use a unique job name
         job_name = str(time.time()).replace('.', '')
-        job = backend.run(qobj, job_name=job_name)
+        job = backend.run(qobj, job_name=job_name, validate_qobj=True)
         job_id = job.job_id()
         # TODO No need to wait for job to run once api is fixed
         while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
@@ -118,7 +118,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job_name = str(time.time()).replace('.', '')
         job_ids = set()
         for _ in range(2):
-            job = backend.run(qobj, job_name=job_name)
+            job = backend.run(qobj, job_name=job_name, validate_qobj=True)
             job_ids.add(job.job_id())
             # TODO No need to wait for job to run once api is fixed
             while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
@@ -143,7 +143,7 @@ class TestIBMQJobAttributes(JobTestCase):
         qobj = assemble([qc_new, qc_new], backend=backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         with self.assertRaises(IBMQJobFailureError):
             job.result(partial=False)
@@ -166,7 +166,7 @@ class TestIBMQJobAttributes(JobTestCase):
         qobj = assemble([qc_new, qc_new], backend=backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         with self.assertRaises(IBMQJobFailureError):
             job.result()
 
@@ -181,7 +181,7 @@ class TestIBMQJobAttributes(JobTestCase):
         """Test retrieving job error message for a validation error."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend), shots=10000)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         with self.assertRaises(IBMQJobFailureError):
             job.result()
 
@@ -197,7 +197,7 @@ class TestIBMQJobAttributes(JobTestCase):
         """Test refreshing job data."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         job._wait_for_completion()
 
         rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
@@ -210,7 +210,7 @@ class TestIBMQJobAttributes(JobTestCase):
         """Test retrieving time per step."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         job.result()
         self.assertTrue(job.time_per_step())
 
@@ -230,7 +230,7 @@ class TestIBMQJobAttributes(JobTestCase):
         original_submit = backend._api.job_submit
         with mock.patch.object(AccountClient, 'job_submit',
                                side_effect=_mocked__api_job_submit):
-            job = backend.run(qobj)
+            job = backend.run(qobj, validate_qobj=True)
 
         self.assertEqual(job.batman, 'bruce')
 
@@ -241,7 +241,7 @@ class TestIBMQJobAttributes(JobTestCase):
         backend = most_busy_backend(provider)
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         queue_info = None
         for _ in range(10):
             queue_info = job.queue_info()
@@ -280,7 +280,8 @@ class TestIBMQJobAttributes(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         with self.assertRaises(IBMQBackendValueError) as context_manager:
-            backend.run(qobj, job_share_level='invalid_job_share_level')
+            backend.run(qobj, job_share_level='invalid_job_share_level',
+                        validate_qobj=True)
         self.assertIn('not a valid job share', context_manager.exception.message)
 
     @requires_provider
@@ -288,7 +289,8 @@ class TestIBMQJobAttributes(JobTestCase):
         """Test successfully sharing a job within a shareable project."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj, job_share_level='project')
+        job = backend.run(qobj, job_share_level='project',
+                          validate_qobj=True)
 
         retrieved_job = backend.retrieve_job(job.job_id())
         self.assertEqual(getattr(retrieved_job, 'share_level'), 'project',
@@ -302,7 +304,7 @@ class TestIBMQJobAttributes(JobTestCase):
 
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
-        job = backend.run(qobj, job_tags=job_tags)
+        job = backend.run(qobj, job_tags=job_tags, validate_qobj=True)
         # TODO No need to wait for job to run once api is fixed
         while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
             time.sleep(0.5)
@@ -329,7 +331,7 @@ class TestIBMQJobAttributes(JobTestCase):
 
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
-        job = backend.run(qobj, job_tags=job_tags)
+        job = backend.run(qobj, job_tags=job_tags, validate_qobj=True)
         # TODO No need to wait for job to run once api is fixed
         while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
             time.sleep(0.5)
