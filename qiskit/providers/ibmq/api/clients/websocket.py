@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for websocket communication with the IBM Q Experience API."""
+"""Client for communicating with the IBM Quantum Experience API via websocket."""
 
 import asyncio
 import json
@@ -52,51 +52,59 @@ warnings.filterwarnings("ignore", category=DeprecationWarning,
 
 
 class WebsocketMessage(ABC):
-    """Container for a message sent or received via websockets.
+    """Container for a message sent or received via websockets."""
 
-    Args:
-        type_: message type.
-    """
     def __init__(self, type_: str) -> None:
+        """WebsocketMessage constructor.
+
+        Args:
+            type_: Message type.
+        """
         self.type_ = type_
 
     @abstractmethod
     def get_data(self) -> Union[str, Dict[str, str]]:
-        """Getter for "abstract" attribute subclasses define, `data`."""
+        """Return the message data."""
         pass
 
     def as_json(self) -> str:
-        """Return a json representation of the message."""
+        """Return a JSON representation of the message."""
         return json.dumps({'type': self.type_, 'data': self.get_data()})
 
 
 class WebsocketAuthenticationMessage(WebsocketMessage):
-    """Container for an authentication message sent via websockets.
+    """Container for an authentication message sent via websockets."""
 
-    Args:
-        type_: message type.
-        data: data type.
-    """
     def __init__(self, type_: str, data: str) -> None:
+        """WebsocketAuthenticationMessage constructor.
+
+        Args:
+            type_: Message type.
+            data: Message data.
+        """
         super().__init__(type_)
         self.data = data
 
     def get_data(self) -> str:
+        """Return the message data."""
         return self.data
 
 
 class WebsocketResponseMethod(WebsocketMessage):
-    """Container for a message received via websockets.
+    """Container for a message received via websockets."""
 
-    Args:
-        type_: message type.
-        data: data type.
-    """
     def __init__(self, type_: str, data: Dict[str, str]) -> None:
+        """WebsocketResponseMethod constructor.
+
+        Args:
+            type_: Message type.
+            data: Message data.
+        """
         super().__init__(type_)
         self.data = data
 
     def get_data(self) -> Dict[str, str]:
+        """Return the message data."""
         return self.data
 
     @classmethod
@@ -111,31 +119,34 @@ class WebsocketResponseMethod(WebsocketMessage):
 
 
 class WebsocketClient(BaseClient):
-    """Client for websocket communication with the IBM Q Experience API.
+    """Client for websocket communication with the IBM Quantum Experience API."""
 
-    Args:
-        websocket_url: URL for websocket communication with IBM Q.
-        access_token: access token for IBM Q.
-    """
-    BACKOFF_MAX = 8  # Maximum time to wait between retries.
+    BACKOFF_MAX = 8
+    """Maximum time to wait between retries."""
 
     def __init__(self, websocket_url: str, access_token: str) -> None:
+        """WebsocketClient constructor.
+
+        Args:
+            websocket_url: URL for websocket communication with IBM Quantum Experience.
+            access_token: Access token for IBM Quantum Experience.
+        """
         self.websocket_url = websocket_url.rstrip('/')
         self.access_token = access_token
 
     @asyncio.coroutine
     def _connect(self, url: str) -> Generator[Any, None, WebSocketClientProtocol]:
-        """Authenticate against the websocket server, returning the connection.
+        """Authenticate with the websocket server and return the connection.
 
         Returns:
-            an open websocket connection.
+            An open websocket connection.
 
         Raises:
-            WebsocketError: if the connection to the websocket server could
+            WebsocketError: If the connection to the websocket server could
                 not be established.
-            WebsocketAuthenticationError: if the connection to the websocket
+            WebsocketAuthenticationError: If the connection to the websocket
                 was established, but the authentication failed.
-            WebsocketIBMQProtocolError: if the connection to the websocket
+            WebsocketIBMQProtocolError: If the connection to the websocket
                 server was established, but the answer was unexpected.
         """
         try:
@@ -186,39 +197,40 @@ class WebsocketClient(BaseClient):
     ) -> Generator[Any, None, Dict[str, str]]:
         """Return the status of a job.
 
-        Reads status messages from the API, which are issued at regular
+        Read status messages from the server, which are issued at regular
         intervals. When a final state is reached, the server
         closes the socket. If the websocket connection is closed without
         a reason, the exponential backoff algorithm is used as a basis to
-        reestablish connections. The algorithm takes effect when a
-        connection closes, it is given by:
+        re-establish the connection. The steps are:
 
             1. When a connection closes, sleep for a calculated backoff
-                time.
-            2. Try to retrieve another socket and increment a retry
-                counter.
+               time.
+            2. Try to make a new connection and increment the retry
+               counter.
             3. Attempt to get the job status.
+
                 - If the connection is closed, go back to step 1.
                 - If the job status is read successfully, reset the retry
-                    counter.
-            4. Continue until the job status is complete or the maximum
-                number of retries is met.
+                  counter.
+
+            4. Continue until the job reaches a final state or the maximum
+               number of retries is met.
 
         Args:
-            job_id: id of the job.
-            timeout: timeout, in seconds.
-            retries: max number of retries.
-            backoff_factor: backoff factor used to calculate the
+            job_id: ID of the job.
+            timeout: Timeout value, in seconds.
+            retries: Max number of retries.
+            backoff_factor: Backoff factor used to calculate the
                 time to wait between retries.
-            status_deque: deque used to share the latest status.
+            status_deque: Deque used to share the latest status.
 
         Returns:
-            the API response for the status of a job, as a dict that
-                contains at least the keys ``status`` and ``id``.
+            The final API response for the status of the job, as a dictionary that
+            contains at least the keys ``status`` and ``id``.
 
         Raises:
-            WebsocketError: if the websocket connection ended unexpectedly.
-            WebsocketTimeoutError: if the timeout has been reached.
+            WebsocketError: If the websocket connection ended unexpectedly.
+            WebsocketTimeoutError: If the timeout has been reached.
         """
         url = '{}/jobs/{}/status'.format(self.websocket_url, job_id)
 
@@ -327,22 +339,22 @@ class WebsocketClient(BaseClient):
         raise WebsocketError(exception_message)
 
     def _backoff_time(self, backoff_factor: float, current_retry_attempt: int) -> float:
-        """Calculate the backoff time to sleep for.
+        """Calculate the backoff time to wait for.
 
-        Exponential backoff time formula:
-                {backoff_factor} * (2 ** (current_retry_attempt - 1))
+        Exponential backoff time formula::
+            {backoff_factor} * (2 ** (current_retry_attempt - 1))
 
         Args:
-            backoff_factor: backoff factor, in seconds.
-            current_retry_attempt: current number of retry attempts.
+            backoff_factor: Backoff factor, in seconds.
+            current_retry_attempt: Current number of retry attempts.
 
         Returns:
-            The number of seconds to sleep for, before a retry attempt is made.
+            The number of seconds to wait for, before making the next retry attempt.
         """
         backoff_time = backoff_factor * (2 ** (current_retry_attempt - 1))
         return min(self.BACKOFF_MAX, backoff_time)
 
     def _authentication_message(self) -> 'WebsocketAuthenticationMessage':
-        """Return the message used for authenticating against the server."""
+        """Return the message used for authenticating with the server."""
         return WebsocketAuthenticationMessage(type_='authentication',
                                               data=self.access_token)

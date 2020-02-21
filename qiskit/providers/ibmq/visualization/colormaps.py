@@ -12,10 +12,13 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""An interactive backend error map.
-"""
+"""An interactive backend error map."""
+
+from typing import List, Union
+
 import numpy as np
 import seaborn as sns
+from matplotlib.colors import ListedColormap
 
 HELIX_LIGHT_CMAP = sns.cubehelix_palette(start=2.5,
                                          rot=0.6,
@@ -25,6 +28,7 @@ HELIX_LIGHT_CMAP = sns.cubehelix_palette(start=2.5,
                                          dark=0.15,
                                          reverse=True,
                                          as_cmap=True)
+"""Color map with a white background."""
 
 HELIX_DARK_CMAP = sns.cubehelix_palette(start=2.5,
                                         rot=0.6,
@@ -34,9 +38,20 @@ HELIX_DARK_CMAP = sns.cubehelix_palette(start=2.5,
                                         dark=0.25,
                                         reverse=True,
                                         as_cmap=True)
+"""Color map in dark mode, with a black background."""
 
 
-def _sns_to_plotly(cmap, pl_entries=255):
+def _sns_to_plotly(cmap: ListedColormap, pl_entries: int = 255
+                   ) -> List[List[Union[float, str]]]:
+    """Convert a color map to a plotly color scale.
+
+    Args:
+        cmap: Color map to be converted.
+        pl_entries: Number of entries in the color scale.
+
+    Returns:
+        Color scale.
+    """
     hgt = 1.0/(pl_entries-1)
     pl_colorscale = []
 

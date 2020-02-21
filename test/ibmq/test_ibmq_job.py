@@ -45,6 +45,7 @@ class TestIBMQJob(JobTestCase):
     """Test ibmqjob module."""
 
     def setUp(self):
+        """Initial test setup."""
         super().setUp()
         self._qc = _bell_circuit()
 
@@ -704,6 +705,7 @@ class TestIBMQJob(JobTestCase):
 
 
 def _bell_circuit():
+    """Return a bell state circuit."""
     qr = QuantumRegister(2, 'q')
     cr = ClassicalRegister(2, 'c')
     qc = QuantumCircuit(qr, cr)

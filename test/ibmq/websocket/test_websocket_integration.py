@@ -36,6 +36,7 @@ class TestWebsocketIntegration(IBMQTestCase):
 
     @requires_provider
     def setUp(self, provider):
+        """Initial test setup."""
         # pylint: disable=arguments-differ
         self.provider = provider
         self.sim_backend = self.provider.get_backend(simulator=True)
@@ -156,6 +157,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         """Test checking status of multiple jobs in parallel via websockets."""
 
         def _run_job_get_result(q):
+            """Run a job and get its result."""
             job = self.sim_backend.run(self.qobj, validate_qobj=True)
             # Manually disable the non-websocket polling.
             job._api._job_final_status_polling = None
