@@ -55,7 +55,7 @@ class TestIBMQJobModel(JobTestCase):
 
         delattr(qobj, 'qobj_id')
         with self.assertRaises(SchemaValidationError):
-            backend.run(qobj)
+            backend.run(qobj, validate_qobj=True)
 
     def test_valid_job(self):
         """Test the model can be created from a response."""
