@@ -19,39 +19,70 @@ from typing import Dict, List, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider  # type: ignore[attr-defined]
+from qiskit.validation.exceptions import ModelValidationError
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
-from qiskit.validation.exceptions import ModelValidationError
 
 from .api.clients import AccountClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
 from .ibmqbackendservice import IBMQBackendService
 
-
 logger = logging.getLogger(__name__)
 
 
 class AccountProvider(BaseProvider):
-    """Provider for a single IBM Quantum Experience account."""
+    """Provider for a single IBM Quantum Experience account.
+
+    The account provider class provides access to the IBM Quantum Experience
+    backends available to this account.
+
+    You can access a provider by enabling an account with the
+    :meth:`IBMQ.enable_account()<IBMQFactory.enable_account>` method, which
+    returns the default provider you have access to::
+
+        from qiskit import IBMQ
+        provider = IBMQ.enable_account(<INSERT_IBM_QUANTUM_EXPERIENCE_TOKEN>)
+
+    To select a different provider, use the
+    :meth:`IBMQ.get_provider()<IBMQFactory.get_provider>` method and specify the hub,
+    group, or project name of the desired provider.
+
+    The :meth:`backends()` method returns all the backends available to this account::
+
+        backends = provider.backends()
+
+    The :meth:`get_backend()` method returns a backend that matches the filters
+    passed as argument. An example of retrieving a backend that matches a
+    specified name::
+
+        simulator_backend = provider.get_backend('ibmq_qasm_simulator')
+
+    It is also possible to use the ``backends`` attribute to reference a backend.
+    As an example, to retrieve the same backend from the example above::
+
+        simulator_backend = provider.backends.ibmq_qasm_simulator
+
+    Note:
+        The ``backends`` attribute can be used to autocomplete the names of
+        backends available to this provider. To autocomplete, press ``tab``
+        after ``provider.backends.``. This feature may not be available
+        if an error occurs during backend discovery. Also note that
+        this feature is only available in interactive sessions, such as
+        in Jupyter Notebook and the Python interpreter.
+    """
 
     def __init__(self, credentials: Credentials, access_token: str) -> None:
-        """Return a new AccountProvider.
-
-        The ``provider_backends`` attribute can be used to autocomplete
-        backend names, by pressing ``tab`` after
-        ``AccountProvider.provider_backends.``. Note that this feature may
-        not be available if an error occurs during backend discovery.
+        """AccountProvider constructor.
 
         Args:
-            credentials: IBM Q Experience credentials.
-            access_token: access token for IBM Q Experience.
+            credentials: IBM Quantum Experience credentials.
+            access_token: IBM Quantum Experience access token.
         """
         super().__init__()
 
         self.credentials = credentials
-
-        # Set the clients.
+        # set the client.
         self._api = AccountClient(access_token,
                                   credentials.url,
                                   credentials.websockets_url,
@@ -63,6 +94,7 @@ class AccountProvider(BaseProvider):
         self.backends = IBMQBackendService(self)  # type: ignore[assignment]
 
     def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
+        """Return all backends accessible via this provider, subject to optional filtering."""
         # pylint: disable=method-hidden
         # This method is only for faking the subclassing of `BaseProvider`, as
         # `.backends()` is an abstract method. Upon initialization, it is
@@ -70,13 +102,14 @@ class AccountProvider(BaseProvider):
         pass
 
     def _discover_remote_backends(self, timeout: Optional[float] = None) -> Dict[str, IBMQBackend]:
-        """Return the remote backends available.
+        """Return the remote backends available for this provider.
 
         Args:
-            timeout: number of seconds to wait for the discovery.
+            timeout: Maximum number of seconds to wait for the discovery of
+                remote backends.
 
         Returns:
-            a dict of the remote backend instances, keyed by backend name.
+            A dict of the remote backend instances, keyed by backend name.
         """
         ret = OrderedDict()  # type: ignore[var-annotated]
         configs_list = self._api.list_backends(timeout=timeout)
