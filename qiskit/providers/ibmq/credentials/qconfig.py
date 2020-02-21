@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utilities for reading credentials from the deprecated `Qconfig.py` file."""
+"""Utilities for reading credentials from the deprecated ``Qconfig.py`` file."""
 
 import os
 from collections import OrderedDict
@@ -27,17 +27,16 @@ QE_URL = 'https://quantumexperience.ng.bluemix.net/api'
 
 
 def read_credentials_from_qconfig() -> Dict[HubGroupProject, Credentials]:
-    """Read a `QConfig.py` file and return its credentials.
+    """Read the ``QConfig.py`` file and return its credentials.
 
     Returns:
-        dictionary with the credentials, in the form::
-
-            {credentials_unique_id: Credentials}
+        A dictionary with the read credentials, in the
+        ``{credentials_unique_id: Credentials}`` format.
 
     Raises:
-        InvalidCredentialsFormatError: if the Qconfig.py was not parseable. Please note that
-            this exception is not raised if the file does not exist (instead, an
-            empty dict is returned).
+        InvalidCredentialsFormatError: If the ``Qconfig.py`` file could not
+            be parsed. Note that this exception is not raised if the input file
+            does not exist, and an empty dictionary is returned instead.
     """
     if not os.path.isfile(DEFAULT_QCONFIG_FILE):
         return OrderedDict()
