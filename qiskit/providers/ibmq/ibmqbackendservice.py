@@ -40,11 +40,9 @@ class IBMQBackendService(SimpleNamespace):
 
     Represent a namespace that provides backend related services for the IBM
     Quantum Experience backends available to this provider. An instance of
-    this class is used to override the ``backends`` attribute, which belongs
-    to the :class:`AccountProvider<AccountProvider>` class, for convenience.
-
-    Essentially, overriding ``backends`` transforms it into a callable attribute.
-    This allows you to more easily access a list of backends or a specific backend::
+    this class is used as a callable attribute to the :class:`AccountProvider`
+    class. This allows a convenient way to query for all backends or to access
+    a specific backend::
 
         backends = provider.backends()  # Invoke backends() to get the backends.
         sim_backend = provider.backends.ibmq_qasm_simulator  # Get a specific backend instance.

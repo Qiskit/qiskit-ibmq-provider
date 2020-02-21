@@ -26,7 +26,8 @@ class BackendJobLimit(BaseModel):
     """Job limit for a backend.
 
     Represent the job limit for a backend on a specific provider. This
-    instance is returned by the :meth:`job_limit()<IBMQBackend.job_limit>` method.
+    instance is returned by the :meth:`IBMQBackend.job_limit()<IBMQBackend.job_limit>`
+    method.
 
     Attributes:
         maximum_jobs: The current number of active jobs on this backend, with

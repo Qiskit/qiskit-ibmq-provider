@@ -38,7 +38,7 @@ class AccountProvider(BaseProvider):
     backends available to this account.
 
     You can access a provider by enabling an account with the
-    :meth:`IBMQFactory.enable_account()<IBMQFactory.enable_account>` method, which
+    :meth:`IBMQ.enable_account()<IBMQFactory.enable_account>` method, which
     returns the default provider you have access to::
 
         from qiskit import IBMQ
@@ -69,7 +69,7 @@ class AccountProvider(BaseProvider):
         after ``provider.backends.``. This feature may not be available
         if an error occurs during backend discovery. Also note that
         this feature is only available in interactive sessions, such as
-        in Jupyter Notebook and Python.
+        in Jupyter Notebook and the Python interpreter.
     """
 
     def __init__(self, credentials: Credentials, access_token: str) -> None:
