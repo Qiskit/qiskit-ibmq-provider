@@ -79,7 +79,8 @@ class IBMQBackend(BaseBackend):
             qobj: Qobj,
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
-            job_tags: Optional[List[str]] = None
+            job_tags: Optional[List[str]] = None,
+            validate_qobj: bool = False
     ) -> IBMQJob:
         """Run a Qobj asynchronously.
 
@@ -103,6 +104,8 @@ class IBMQBackend(BaseBackend):
             job_tags: tags to be assigned to the job. The tags can
                 subsequently be used as a filter in the ``jobs()`` function call.
                 Default: None.
+            validate_qobj: If ``True``, run JSON schema validation against the
+                submitted payload
 
         Returns:
             an instance derived from BaseJob
@@ -128,7 +131,8 @@ class IBMQBackend(BaseBackend):
             api_job_share_level = ApiJobShareLevel.NONE
 
         validate_job_tags(job_tags, IBMQBackendValueError)
-        validate_qobj_against_schema(qobj)
+        if validate_qobj:
+            validate_qobj_against_schema(qobj)
         return self._submit_job(qobj, job_name, api_job_share_level, job_tags)
 
     def _submit_job(
@@ -489,6 +493,7 @@ class IBMQSimulator(IBMQBackend):
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
+            validate_qobj: bool = False,
             backend_options: Optional[Dict] = None,
             noise_model: Any = None
     ) -> IBMQJob:
@@ -504,13 +509,16 @@ class IBMQSimulator(IBMQBackend):
             job_tags: tags to be assigned to the job. The tags can
                 subsequently be used as a filter in the ``jobs()`` function call.
                 Default: None.
+            validate_qobj: If ``True``, run JSON schema validation against the
+                submitted payload
 
         Returns:
             an instance derived from BaseJob
         """
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
-        return super(IBMQSimulator, self).run(qobj, job_name, job_share_level, job_tags)
+        return super(IBMQSimulator, self).run(qobj, job_name, job_share_level, job_tags,
+                                              validate_qobj)
 
 
 class IBMQRetiredBackend(IBMQBackend):
@@ -572,7 +580,8 @@ class IBMQRetiredBackend(IBMQBackend):
             qobj: Qobj,
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
-            job_tags: Optional[List[str]] = None
+            job_tags: Optional[List[str]] = None,
+            validate_qobj: bool = False
     ) -> None:
         """Run a Qobj."""
         raise IBMQBackendError('This backend is no longer available.')
