@@ -39,7 +39,7 @@ class PostForcelistRetry(Retry):
     Retrying of ``POST`` requests are allowed *only* when the status code
     returned is on the ``STATUS_FORCELIST``. While ``POST``
     requests are recommended not to be retried due to not being idempotent,
-    the IBM Quantum API guarantees that retrying on specific 5xx errors is safe.
+    the IBM Quantum Experience API guarantees that retrying on specific 5xx errors is safe.
     """
 
     def is_retry(

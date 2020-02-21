@@ -18,7 +18,7 @@ from ..exceptions import IBMQError
 
 
 class ApiError(IBMQError):
-    """Generic IBM Quantum API error."""
+    """Generic IBM Quantum Experience API error."""
     pass
 
 
