@@ -290,20 +290,24 @@ class WebsocketClient(BaseClient):
                                              .format(message, ex.code)) from ex
 
             except WebsocketError as ex:
-                logger.info('A websocket error occurred: %s', ex)
+                logger.debug('A websocket error occurred when getting the job status: %s', ex)
 
                 # Specific `WebsocketError` exceptions that are not worth retrying.
                 if isinstance(ex, (WebsocketTimeoutError, WebsocketIBMQProtocolError)):
+                    logger.debug('The websocket error that occurred could not be retried: %s', ex)
                     raise ex
 
+                # Check whether the websocket error should be retried.
                 current_retry_attempt = current_retry_attempt + 1
                 if (current_retry_attempt > retries) or (not attempt_retry):
+                    logger.debug('Max retries exceeded: Failed to establish a websocket '
+                                 'connection due to a network error.')
                     raise ex
 
                 # Sleep, and then `continue` with retrying.
                 backoff_time = self._backoff_time(backoff_factor, current_retry_attempt)
-                logger.info('Retrying get_job_status via websocket after %s seconds: '
-                            'Attempt #%s.', backoff_time, current_retry_attempt)
+                logger.debug('Retrying get_job_status via websocket after %s seconds: '
+                             'Attempt #%s', backoff_time, current_retry_attempt)
                 yield from asyncio.sleep(backoff_time)  # Block asyncio loop for given backoff time.
 
                 continue  # Continues next iteration after `finally` block.
@@ -316,8 +320,11 @@ class WebsocketClient(BaseClient):
                         yield from websocket.close()
 
         # Execution should not reach here, sanity check.
-        raise WebsocketError('Failed to establish a websocket '
-                             'connection after {} retries.'.format(retries))
+        exception_message = 'Max retries exceeded: Failed to establish a websocket ' \
+                            'connection due to a network error.'
+
+        logger.debug(exception_message)
+        raise WebsocketError(exception_message)
 
     def _backoff_time(self, backoff_factor: float, current_retry_attempt: int) -> float:
         """Calculate the backoff time to sleep for.

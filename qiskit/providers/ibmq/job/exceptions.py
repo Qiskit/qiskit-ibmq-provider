@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Exceptions related to IBMQJob."""
+"""Exceptions related to IBM Quantum Experience jobs."""
 
 from qiskit.providers.exceptions import JobError, JobTimeoutError
 
@@ -20,25 +20,25 @@ from ..exceptions import IBMQError
 
 
 class IBMQJobError(JobError, IBMQError):
-    """Base class for job errors raised by the IBMQ provider module."""
+    """Base class for errors raised by the job modules."""
     pass
 
 
 class IBMQJobApiError(IBMQJobError):
-    """Error that occurs unexpectedly when querying the API."""
+    """Errors that occur unexpectedly when querying the server."""
     pass
 
 
 class IBMQJobFailureError(IBMQJobError):
-    """Error that occurs because the job failed."""
+    """Errors raised when a job failed."""
     pass
 
 
 class IBMQJobInvalidStateError(IBMQJobError):
-    """Error that occurs because a job is not in a state for the operation."""
+    """Errors raised when a job is not in a valid state for the operation."""
     pass
 
 
 class IBMQJobTimeoutError(JobTimeoutError, IBMQJobError):
-    """Error raised when a job operation times out."""
+    """Errors raised when a job operation times out."""
     pass
