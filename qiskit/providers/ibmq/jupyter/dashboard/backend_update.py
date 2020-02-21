@@ -44,6 +44,8 @@ def update_backend_info(device_list: List,
                     if stat_msg in ['maintenance', 'internal']:
                         color = '#FFB000'
 
+                    # Grab the particular status widget of interest
+                    # from the parent backend device widget.
                     status_wid = backend.children[0].children[1].children[0].children[1].children[1]
                     if status_wid.value.split('>')[1].split("<")[0] != stat_msg:
                         status_wid.value = stat_str.format(color=color, msg=stat_msg)

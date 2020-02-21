@@ -13,11 +13,11 @@
 # that they have been altered from the originals.
 
 """
-==================================
-Dashboard (:mod:`theia.dashboard`)
-==================================
+==================================================
+Dashboard (:mod:`qiskit.providers.ibmq.dashboard`)
+==================================================
 
-.. currentmodule:: theia.dashboard
+.. currentmodule:: qiskit.providers.ibmq.dashboard
 
 
 """

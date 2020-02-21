@@ -24,6 +24,7 @@ from IPython.core.magic import line_magic, Magics, magics_class
 from qiskit.tools.events.pubsub import Subscriber
 from qiskit.exceptions import QiskitError
 from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
+from ... import IBMQ
 from ...ibmqbackend import IBMQBackend
 from .job_widgets import (make_clear_button,
                           make_labels, create_job_widget)
@@ -73,7 +74,6 @@ class IQXDashboard(Subscriber):
         self.refresh_jobs_board()
 
     def _get_backends(self):
-        from qiskit import IBMQ  # pylint: disable=import-outside-toplevel
         ibmq_backends = {}
         for pro in IBMQ.providers():
             pro_name = "{hub}/{group}/{project}".format(hub=pro.credentials.hub,
@@ -132,7 +132,8 @@ class IQXDashboard(Subscriber):
         """Update a single job instance
 
         Args:
-            update_info (tuple): Updated job info.
+            update_info: Updated job info containing job ID,
+                         status string, est time, and status value.
         """
         job_id = update_info[0]
         found_job = False
@@ -287,7 +288,6 @@ class IQXDashboardMagic(Magics):
     def iqx_dashboard(self, line='', cell=None):
         """A Jupyter magic function to enable job watcher.
         """
-        from qiskit import IBMQ  # pylint: disable=import-outside-toplevel
         pro = IBMQ.providers()
         if not pro:
             try:
