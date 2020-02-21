@@ -22,3 +22,4 @@ Submodules
    credentials
    visualization
    jupyter
+   utils
