@@ -20,7 +20,6 @@ from typing import Dict
 
 from .credentials import Credentials, HubGroupProject
 
-# Dictionary that maps `ENV_VARIABLE_NAME` to credential parameter.
 VARIABLES_MAP = {
     'QE_TOKEN': 'token',
     'QE_URL': 'url',
@@ -28,15 +27,15 @@ VARIABLES_MAP = {
     'QE_GROUP': 'group',
     'QE_PROJECT': 'project'
 }
+"""Dictionary that maps `ENV_VARIABLE_NAME` to credential parameter."""
 
 
 def read_credentials_from_environ() -> Dict[HubGroupProject, Credentials]:
-    """Read the environment variables and return its credentials.
+    """Extract credentials from the environment variables.
 
     Returns:
-        dictionary with the credentials, in the form::
-
-            {credentials_unique_id: Credentials}
+        A dictionary containing the credentials, in the
+        ``{credentials_unique_id: Credentials}`` format
     """
     # The token is the only required parameter.
     if not (os.getenv('QE_TOKEN') and os.getenv('QE_URL')):

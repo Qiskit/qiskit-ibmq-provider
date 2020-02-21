@@ -54,6 +54,7 @@ class TestWebsocketClientMock(IBMQTestCase):
     """Tests for the the websocket client against a mock server."""
     @classmethod
     def setUpClass(cls):
+        """Initial class level setup."""
         super().setUpClass()
 
         # Launch the mock server.
@@ -62,6 +63,7 @@ class TestWebsocketClientMock(IBMQTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """Class level cleanup."""
         super().tearDownClass()
 
         # Close the mock server.

@@ -12,4 +12,4 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Qiskit IBMQ Provider schema-conformant objects"""
+"""Schemas used for communicating with the IBM Quantum Experience services."""

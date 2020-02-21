@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for determining the version of an IBM Q Experience service."""
+"""Client for determining the version of an IBM Quantum Experience service."""
 
 from typing import Dict, Union, Any
 
@@ -23,26 +23,29 @@ from .base import BaseClient
 
 
 class VersionClient(BaseClient):
-    """Client for determining the version of an IBM Q Experience service."""
+    """Client for determining the version of an IBM Quantum Experience service."""
 
     def __init__(self, url: str, **request_kwargs: Any) -> None:
         """VersionClient constructor.
 
         Args:
-            url: URL for the service.
-            **request_kwargs: arguments for the `requests` Session.
+            url: URL of the service.
+            **request_kwargs: Arguments for the request ``Session``.
         """
         self.client_version_finder = VersionFinder(
             RetrySession(url, **request_kwargs))
 
     def version(self) -> Dict[str, Union[bool, str]]:
-        """Return the version info.
+        """Return the version information.
 
         Returns:
-            a dict with information about the API version,
+            A dictionary with information about the API version,
             with the following keys:
-                * `new_api` (bool): whether the new API is being used
+
+                * ``new_api`` (bool): Whether the new API is being used
+
             And the following optional keys:
-                * `api-*` (str): the versions of each individual API component
+
+                * ``api-*`` (str): The versions of each individual API component
         """
         return self.client_version_finder.version()

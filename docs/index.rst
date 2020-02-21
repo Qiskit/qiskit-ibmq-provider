@@ -1,6 +1,6 @@
-####################################
-Qiskit IBM Q Provider documentation
-####################################
+#########################################
+Qiskit IBM Quantum Provider documentation
+#########################################
 
 .. toctree::
   :maxdepth: 2

@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBMQJob Test."""
+"""Test IBMQJob attributes."""
 
 import time
 from unittest import mock
@@ -33,15 +33,16 @@ from ..utils import most_busy_backend
 
 
 class TestIBMQJobAttributes(JobTestCase):
-    """Test ibmqjob module."""
+    """Test IBMQJob instance attributes."""
 
     def setUp(self):
+        """Initial test setup."""
         super().setUp()
         self._qc = _bell_circuit()
 
     @requires_provider
     def test_job_id(self, provider):
-        """Test getting a job id."""
+        """Test getting a job ID."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -362,6 +363,7 @@ class TestIBMQJobAttributes(JobTestCase):
 
 
 def _bell_circuit():
+    """Return a bell state circuit."""
     qr = QuantumRegister(2, 'q')
     cr = ClassicalRegister(2, 'c')
     qc = QuantumCircuit(qr, cr)

@@ -50,6 +50,7 @@ class TestProxies(IBMQTestCase):
     """Tests for proxy capabilities."""
 
     def setUp(self):
+        """Initial test setup."""
         super().setUp()
         listen_flag = '-l' if pproxy_version >= '1.7.2' else '-i'
         # launch a mock server.
@@ -57,6 +58,7 @@ class TestProxies(IBMQTestCase):
         self.proxy_process = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     def tearDown(self):
+        """Test cleanup."""
         super().tearDown()
 
         # terminate the mock server.
