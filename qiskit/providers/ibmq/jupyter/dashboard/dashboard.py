@@ -180,7 +180,9 @@ class IQXDashboard(Subscriber):
                 break
         if not do_pop:
             raise Exception('job_id not found')
-        if 'CANCELLED' not in self.jobs[ind].children[3].value:
+        if self.jobs[ind].children[3].value not in ['CANCELLED',
+                                                    'DONE',
+                                                    'ERROR']:
             try:
                 self.jobs[ind].job.cancel()
                 status = self.jobs[ind].job.status()
