@@ -13,12 +13,16 @@
 # that they have been altered from the originals.
 # pylint: disable=protected-access
 
-"""Interactive Jobs widget
-"""
+"""Interactive Jobs widget."""
+
 import datetime
-from typing import Dict
+from typing import Union
+
 import ipywidgets as wid
 import plotly.graph_objects as go
+from qiskit.test.mock.fake_backend import FakeBackend
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+
 from ..utils.converters import utc_to_local
 from ..ibmqbackend import IBMQBackend
 from ..visualization.interactive.plotly_wrapper import PlotlyWidget
@@ -38,11 +42,11 @@ MONTH_NAMES = {1: 'Jan.',
                }
 
 
-def _title_builder(sel_dict: Dict) -> str:
-    """Builds the title string for the jobs table
+def _title_builder(sel_dict: dict) -> str:
+    """Build the title string for the jobs table.
 
-    Parameters:
-        sel_dict: Dictionary containing info on jobs.
+    Args:
+        sel_dict: Dictionary containing information on jobs.
 
     Returns:
         HTML string for title.
@@ -59,7 +63,15 @@ def _title_builder(sel_dict: Dict) -> str:
     return "<h4>{}</h4>".format(title_str)
 
 
-def _job_table_builder(sel_dict: Dict) -> str:
+def _job_table_builder(sel_dict: dict) -> str:
+    """Build the job table.
+
+    Args:
+        sel_dict: Dictionary containing information on jobs.
+
+    Returns:
+        HTML string for job table.
+    """
     table_html = "<table>"
     table_html += """<style>
 table {
@@ -94,26 +106,14 @@ tr:nth-child(even) {background-color: #f6f6f6 !important;}
     return table_html
 
 
-def _job_summary(backend: IBMQBackend) -> PlotlyWidget:
+def _job_summary(backend: Union[IBMQBackend, FakeBackend]) -> PlotlyWidget:
     """Interactive jobs summary for a backend.
+
     Args:
-        backend: A backend instance.
+        backend: Display jobs summary for this backend.
 
     Returns:
-        A figure for the rendered histogram.
-
-    Example:
-        .. jupyter-execute::
-
-           from qiskit import IBMQ
-           from theia.visualization import job_summary
-
-           IBMQ.load_account()
-
-           provider = IBMQ.get_provider(group='open', project='main')
-           backend = provider.get_backend('ibmq_vigo')
-
-           job_summary(backend)
+        A figure for the rendered job summary.
     """
     now = datetime.datetime.now()
     past_year_date = now - datetime.timedelta(days=365)
@@ -257,15 +257,14 @@ def _job_summary(backend: IBMQBackend) -> PlotlyWidget:
     return sun_wid
 
 
-def jobs_tab(backend: IBMQBackend) -> wid.HBox:
-    """Constructs a widget containing job information for an input
-    backend.
+def jobs_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.HBox:
+    """Construct a widget containing job information for an input backend.
 
-    Parameters:
+    Args:
         backend: Input backend.
 
     Returns:
-        An ipywidget HBox.
+        An widget containing job summary.
     """
     title = wid.HTML('<h4>Click graph to display jobs</h4>')
     table = wid.HTML('', layout=wid.Layout(max_height='500px',

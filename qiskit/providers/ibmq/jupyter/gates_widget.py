@@ -13,22 +13,26 @@
 # that they have been altered from the originals.
 # pylint: disable=invalid-name
 
-"""Widgert for backend configuration tab.
-"""
+"""Widget for backend gates tab."""
+
 import math
+from typing import Union
+
 import ipywidgets as wid
-from ..ibmqbackend import IBMQBackend
+from qiskit.test.mock.fake_backend import FakeBackend
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+
 from ..utils.converters import utc_to_local
 
 
-def gates_tab(backend: IBMQBackend) -> wid.GridBox:
-    """The multiple qubit gate error widget.
+def gates_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.GridBox:
+    """Construct the multiple qubit gate error widget.
 
     Args:
-        backend (IBMQBackend | FakeBackend): The backend.
+        backend: The backend to display.
 
     Returns:
-        VBox: A VBox widget.
+        A widget with gate information.
     """
     props = backend.properties().to_dict()
     update_date = utc_to_local(props['last_update_date'])

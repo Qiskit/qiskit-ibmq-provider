@@ -17,8 +17,7 @@
 from marshmallow import pre_load
 
 from qiskit.validation import BaseSchema
-from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime, List
-from qiskit.qobj.qobj import QobjSchema
+from qiskit.validation.fields import Dict, String, Nested, Integer, Boolean, DateTime, List, Raw
 from qiskit.result.models import ResultSchema
 
 from qiskit.providers.ibmq.utils.fields import Enum, map_field_names
@@ -62,21 +61,22 @@ class JobResponseErrorSchema(BaseSchema):
 # Endpoint schemas.
 
 class JobResponseSchema(BaseSchema):
-    """Schema for IBMQJob.
+    """Schema for ``IBMQJob``.
 
-    Schema for an `IBMQJob`. The following conventions are in use in order to
-    provide enough flexibility in regards to attributes:
+    The following conventions are in use in order to provide enough
+    flexibility in regards to attributes:
 
-    * the "Required properties" reflect attributes that will always be present
-      in the model.
-    * the "Optional properties with a default value" reflect attributes that
-      are always present in the model, but might contain uninitialized values
-      depending on the state of the job.
-    * some properties are prepended by underscore due to name clashes and extra
-      constraints in the IBMQJob class (for example, existing IBMQJob methods
-      that have the same name as a response field).
+        * the "Required properties" reflect attributes that will always be present
+          in the model.
+        * the "Optional properties with a default value" reflect attributes that
+          are always present in the model, but might contain uninitialized values
+          depending on the state of the job.
+        * some properties are prepended by underscore due to name clashes and extra
+          constraints in the ``IBMQJob`` class (for example, existing ``IBMQJob``
+          methods that have the same name as a response field).
 
-    The schema is used for GET Jobs, GET Jobs/{id}, and POST Jobs responses.
+    The schema is used for ``GET /Jobs``, ``GET /Jobs/{id}``, and ``POST /Jobs``
+    responses.
     """
     # pylint: disable=invalid-name
 
@@ -90,7 +90,7 @@ class JobResponseSchema(BaseSchema):
     _name = String(missing=None)
     _time_per_step = Dict(keys=String, values=String, missing=None)
     _result = Nested(ResultSchema, missing=None)
-    _qobj = Nested(QobjSchema, missing=None)
+    _qobj = Raw(missing=None)
     _error = Nested(JobResponseErrorSchema, missing=None)
     _tags = List(String, missing=[])
 
@@ -103,7 +103,7 @@ class JobResponseSchema(BaseSchema):
         """Pre-process the job response fields.
 
         Rename selected fields of the job response due to name clashes, and
-        convert from camel-case the rest of the fields.
+        convert the rest of the fields to Python convention.
 
         TODO: when updating to terra 0.10, check if changes related to
         marshmallow 3 allow to use directly `data_key`, as in 0.9 terra

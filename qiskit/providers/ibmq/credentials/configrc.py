@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utilities for reading and writing credentials from and to config files."""
+"""Utilities for reading and writing credentials from and to configuration files."""
 
 import logging
 import os
@@ -28,27 +28,27 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
                                      '.qiskit', 'qiskitrc')
+"""Default location of the configuration file."""
 
 
 def read_credentials_from_qiskitrc(
         filename: Optional[str] = None
 ) -> Dict[HubGroupProject, Credentials]:
-    """Read a configuration file and return a dict with its sections.
+    """Read a configuration file and return a dictionary with its contents.
 
     Args:
-        filename: full path to the qiskitrc file. If `None`, the default
-            location is used (`HOME/.qiskit/qiskitrc`).
+        filename: Full path to the configuration file. If ``None``, the default
+            location is used (``$HOME/.qiskit/qiskitrc``).
 
     Returns:
-        dictionary with the contents of the configuration file, with
-            the form::
-
-            {credential_unique_id: Credentials}
+        A dictionary with the contents of the configuration file, in the
+        ``{credential_unique_id: Credentials}`` format. The dictionary is
+        empty if the input file does not exist.
 
     Raises:
-        InvalidCredentialsFormatError: if the file was not parseable. Please
-            note that this exception is not raised if the file does not exist
-            (instead, an empty dict is returned).
+        InvalidCredentialsFormatError: If the file cannot be parsed. Note
+            that this exception is not raised if the input file
+            does not exist, and an empty dictionary is returned instead.
     """
     filename = filename or DEFAULT_QISKITRC_FILE
     config_parser = ConfigParser()
@@ -83,14 +83,13 @@ def write_qiskit_rc(
     """Write credentials to the configuration file.
 
     Args:
-        credentials: dictionary with the credentials, with the form::
-
-            {credentials_unique_id: Credentials}
-
-        filename: full path to the qiskitrc file. If `None`, the default
-            location is used (`HOME/.qiskit/qiskitrc`).
+        credentials: Dictionary with the credentials, in the
+            ``{credentials_unique_id: Credentials}`` format.
+        filename: Full path to the configuration file. If ``None``, the default
+            location is used (``$HOME/.qiskit/qiskitrc``).
     """
     def _credentials_object_to_dict(obj: Credentials) -> Dict[str, Any]:
+        """Convert a ``Credential`` object to a dictionary."""
         return {key: getattr(obj, key) for key in
                 ['token', 'url', 'proxies', 'verify']
                 if getattr(obj, key)}
@@ -128,10 +127,10 @@ def store_credentials(
     """Store the credentials for a single account in the configuration file.
 
     Args:
-        credentials: credentials instance.
-        overwrite: overwrite existing credentials.
-        filename: full path to the qiskitrc file. If `None`, the default
-            location is used (`HOME/.qiskit/qiskitrc`).
+        credentials: Credentials to save.
+        overwrite: ``True`` if any existing credentials are to be overwritten.
+        filename: Full path to the configuration file. If ``None``, the default
+            location is used (``$HOME/.qiskit/qiskitrc``).
     """
     # Read the current providers stored in the configuration file.
     filename = filename or DEFAULT_QISKITRC_FILE
@@ -153,12 +152,12 @@ def remove_credentials(
         credentials: Credentials,
         filename: Optional[str] = None
 ) -> None:
-    """Remove credentials from qiskitrc.
+    """Remove credentials from the configuration file.
 
     Args:
-        credentials: credentials.
-        filename: full path to the qiskitrc file. If `None`, the default
-            location is used (`HOME/.qiskit/qiskitrc`).
+        credentials: Credentials to remove.
+        filename: Full path to the configuration file. If ``None``, the default
+            location is used (``$HOME/.qiskit/qiskitrc``).
 
     Raises:
         CredentialsNotFoundError: If there is no account with that name on the

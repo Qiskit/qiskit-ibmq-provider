@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Q Experience API clients."""
+"""IBM Quantum Experience API clients."""
 
 from .base import BaseClient
 from .account import AccountClient
