@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Factory and credentials manager for IBM Q Experience."""
+"""Factory and Account manager for IBM Quantum Experience."""
 
 import logging
 from typing import Dict, List, Union, Optional, Any
@@ -38,9 +38,10 @@ UPDATE_ACCOUNT_TEXT = "Please update your accounts and programs by following the
 
 
 class IBMQFactory:
-    """Factory and credentials manager for IBM Q Experience."""
+    """Factory and account manager for IBM Quantum Experience."""
 
     def __init__(self) -> None:
+        """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
 
@@ -52,29 +53,31 @@ class IBMQFactory:
             url: str = QX_AUTH_URL,
             **kwargs: Any
     ) -> Optional[AccountProvider]:
-        """Authenticate against IBM Q Experience for use during this session.
+        """Authenticate against IBM Quantum Experience for use during this session.
 
-        Note: with version 0.4 of this qiskit-ibmq-provider package, use of
-            the legacy Quantum Experience and Qconsole (also known
-            as the IBM Q Experience v1) credentials is fully deprecated.
+        Note:
+            With version 0.4 of this ``qiskit-ibmq-provider`` package, use of
+            the legacy Quantum Experience and Qconsole (also known as the
+            IBM Quantum Experience v1) credentials is no longer supported.
 
         Args:
-            token: IBM Q Experience API token.
-            url: URL for the IBM Q Experience authentication server.
-            **kwargs: additional settings for the connection:
+            token: IBM Quantum Experience token.
+            url: URL for the IBM Quantum Experience authentication server.
+            **kwargs: Additional settings for the connection:
+
                 * proxies (dict): proxy configuration.
                 * verify (bool): verify the server's TLS certificate.
 
         Returns:
-            the provider for the default open access project.
+            The provider for the default open access project.
 
         Raises:
-            IBMQAccountError: if an IBM Q Experience account is already in
+            IBMQAccountError: If an IBM Quantum Experience account is already in
                 use.
-            IBMQAccountCredentialsInvalidUrl: if the URL specified is not
-                a valid IBM Q Experience authentication URL.
+            IBMQAccountCredentialsInvalidUrl: If the URL specified is not
+                a valid IBM Quantum Experience authentication URL.
         """
-        # Check if an IBM Q Experience account is already in use.
+        # Check if an IBM Quantum Experience account is already in use.
         if self._credentials:
             raise IBMQAccountError('An IBM Q Experience account is already '
                                    'enabled.')
@@ -102,10 +105,10 @@ class IBMQFactory:
         return providers[0]
 
     def disable_account(self) -> None:
-        """Disable the account in the current session.
+        """Disable the account currently in use for this session.
 
         Raises:
-            IBMQAccountCredentialsNotFound: if no account is in use in the session.
+            IBMQAccountCredentialsNotFound: If no account is in use in the session.
         """
         if not self._credentials:
             raise IBMQAccountCredentialsNotFound('No account is in use for this session.')
@@ -114,15 +117,17 @@ class IBMQFactory:
         self._providers = OrderedDict()
 
     def load_account(self) -> Optional[AccountProvider]:
-        """Authenticate against IBM Q Experience from stored credentials.
+        """Authenticate against IBM Quantum Experience from stored credentials.
 
         Returns:
-            the provider for the default open access project.
+            The provider for the default open access project.
 
         Raises:
-            IBMQAccountCredentialsNotFound: if no IBM Q Experience credentials can be found.
-            IBMQAccountMultipleCredentialsFound: if multiple IBM Q Experience credentials found.
-            IBMQAccountCredentialsInvalidUrl: if invalid IBM Q Experience
+            IBMQAccountCredentialsNotFound: If no IBM Quantum Experience credentials
+                can be found.
+            IBMQAccountMultipleCredentialsFound: If multiple IBM Quantum Experience
+                credentials found.
+            IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials found.
         """
         # Check for valid credentials.
@@ -137,8 +142,8 @@ class IBMQFactory:
                 'Multiple IBM Q Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = credentials_list[0]
-        # Explicitly check via an API call, to allow environment auth URLs
-        # contain API 2 URL (but not auth) slipping through.
+        # Explicitly check via a server call, to allow environment auth URLs
+        # contain IBM Quantum Experience v2 URL (but not auth) slipping through.
         version_info = self._check_api_version(credentials)
 
         # Check the URL is a valid authentication URL.
@@ -174,18 +179,18 @@ class IBMQFactory:
         """Save the account to disk for future use.
 
         Args:
-            token: IBM Q Experience API token.
-            url: URL for the IBM Q Experience authentication server.
-            overwrite: overwrite existing credentials.
+            token: IBM Quantum Experience token.
+            url: URL for the IBM Quantum Experience authentication server.
+            overwrite: Overwrite existing credentials.
             **kwargs:
-                * proxies (dict): Proxy configuration for the API.
+                * proxies (dict): Proxy configuration for the server.
                 * verify (bool): If False, ignores SSL certificates errors
 
         Raises:
-            IBMQAccountCredentialsInvalidUrl: if the URL is not a valid
-                IBM Q Experience authentication URL.
-            IBMQAccountCredentialsInvalidToken: if the token is not a valid
-                IBM Q Experience token.
+            IBMQAccountCredentialsInvalidUrl: If the URL is not a valid
+                IBM Quantum Experience authentication URL.
+            IBMQAccountCredentialsInvalidToken: If the token is not a valid
+                IBM Quantum Experience token.
         """
         if url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
@@ -204,9 +209,12 @@ class IBMQFactory:
         """Delete the saved account from disk.
 
         Raises:
-            IBMQAccountCredentialsNotFound: if no valid IBM Q Experience credentials found.
-            IBMQAccountMultipleCredentialsFound: if multiple IBM Q Experience credentials found.
-            IBMQAccountCredentialsInvalidUrl: if invalid IBM Q Experience credentials found.
+            IBMQAccountCredentialsNotFound: If no valid IBM Quantum Experience
+                credentials found.
+            IBMQAccountMultipleCredentialsFound: If multiple IBM Quantum Experience
+                credentials found.
+            IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
+                credentials found.
         """
         stored_credentials = read_credentials_from_qiskitrc()
         if not stored_credentials:
@@ -229,11 +237,13 @@ class IBMQFactory:
         """List the account stored on disk.
 
         Returns:
-            dictionary with information about the account stored on disk.
+            A dictionary with information about the account stored on disk.
 
         Raises:
-            IBMQAccountMultipleCredentialsFound: if multiple IBM Q Experience credentials found.
-            IBMQAccountCredentialsInvalidUrl: if invalid IBM Q Experience credentials found.
+            IBMQAccountMultipleCredentialsFound: If multiple IBM Quantum Experience
+                credentials found.
+            IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
+                credentials found.
         """
         stored_credentials = read_credentials_from_qiskitrc()
         if not stored_credentials:
@@ -255,10 +265,10 @@ class IBMQFactory:
         }
 
     def active_account(self) -> Optional[Dict[str, str]]:
-        """List the IBM Q Experience account currently in the session.
+        """Return the IBM Quantum Experience account currently in use for this session.
 
         Returns:
-            information about the account currently in the session.
+            Information about the account currently in the session.
         """
         if not self._credentials:
             # Return None instead of raising, maintaining the same behavior
@@ -272,14 +282,14 @@ class IBMQFactory:
 
     @staticmethod
     def update_account(force: bool = False) -> Optional[Credentials]:
-        """Interactive helper from migrating stored credentials to IBM Q Experience v2.
+        """Interactive helper for migrating stored credentials to IBM Quantum Experience v2.
 
         Args:
-            force: if `True`, disable interactive prompts and perform the changes.
+            force: If ``True``, disable interactive prompts and perform the changes.
 
         Returns:
-            if the updating is possible, credentials for the API
-            version 2; and `None` otherwise.
+            The credentials for IBM Quantum Experience v2 if updating is successful
+            or ``None`` otherwise.
         """
         return update_credentials(force)
 
@@ -291,15 +301,15 @@ class IBMQFactory:
             group: Optional[str] = None,
             project: Optional[str] = None
     ) -> List[AccountProvider]:
-        """Return a list of providers with optional filtering.
+        """Return a list of providers, subject to optional filtering.
 
         Args:
-            hub: name of the hub.
-            group: name of the group.
-            project: name of the project.
+            hub: Name of the hub.
+            group: Name of the group.
+            project: Name of the project.
 
         Returns:
-            list of providers that match the specified criteria.
+            A list of providers that match the specified criteria.
         """
         filters = []
 
@@ -323,11 +333,16 @@ class IBMQFactory:
     ) -> AccountProvider:
         """Return a provider for a single hub/group/project combination.
 
+        Args:
+            hub: Name of the hub.
+            group: Name of the group.
+            project: Name of the project.
+
         Returns:
-            provider that match the specified criteria.
+            A provider that matches the specified criteria.
 
         Raises:
-            IBMQProviderError: if no provider matches the specified criteria,
+            IBMQProviderError: If no provider matches the specified criteria,
                 or more than one provider match the specified criteria.
         """
         providers = self.providers(hub, group, project)
@@ -344,10 +359,10 @@ class IBMQFactory:
 
     @staticmethod
     def _check_api_version(credentials: Credentials) -> Dict[str, Union[bool, str]]:
-        """Check the version of the API in a set of credentials.
+        """Check the version of the remote server in a set of credentials.
 
         Returns:
-            dictionary with version information.
+            A dictionary with version information.
         """
         version_finder = VersionClient(credentials.base_url,
                                        **credentials.connection_parameters())
@@ -357,7 +372,7 @@ class IBMQFactory:
         """Authenticate against IBM Q Experience and populate the providers.
 
         Args:
-            credentials: credentials for IBM Q Experience.
+            credentials: Credentials for IBM Quantum Experience.
         """
         auth_client = AuthClient(credentials.token,
                                  credentials.base_url,

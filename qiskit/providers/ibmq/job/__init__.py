@@ -12,6 +12,37 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Module representing Jobs communicating with IBM Q."""
+"""
+======================================
+Job (:mod:`qiskit.providers.ibmq.job`)
+======================================
+
+.. currentmodule:: qiskit.providers.ibmq.job
+
+Modules representing IBM Quantum Experience jobs.
+
+Classes
+=========
+
+.. autosummary::
+    :toctree: ../stubs/
+
+    IBMQJob
+    QueueInfo
+
+Exception
+=========
+.. autosummary::
+    :toctree: ../stubs/
+
+    IBMQJobError
+    IBMQJobApiError
+    IBMQJobFailureError
+    IBMQJobInvalidStateError
+    IBMQJobTimeoutError
+"""
 
 from .ibmqjob import IBMQJob
+from .queueinfo import QueueInfo
+from .exceptions import (IBMQJobError, IBMQJobApiError, IBMQJobFailureError,
+                         IBMQJobInvalidStateError, IBMQJobTimeoutError)

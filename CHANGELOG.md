@@ -16,6 +16,16 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Changed
+
+- JSON schema validation is no longer run by default on qobj objects passed
+  to `IBMQBackend.run()`. This siginficantly speeds up the execution of the
+  `run` method and the API server will return 400 if the qobj is invalid. If
+  you would like to still run the validation you can set the `validate_qobj`
+  kwarg to `True` which will enable the JSON schema validation. (\#554)
+
+## [0.4.6] - 2020-02-05
+
 ### Added
 
 - `IBMQJob` now has a new method `wait_for_final_state()` that blocks
@@ -58,6 +68,12 @@ The format is based on [Keep a Changelog].
   as `IBMQAccountError`). Also, the exception class `IBMQApiUrlError` 
   has been replaced by `IBMQAccountCredentialsInvalidUrl` and 
   `IBMQAccountCredentialsInvalidToken`. (\#480)
+
+### Deprecated
+
+- The use of proxy urls without a protocol (e.g. `http://`) is deprecated
+  due to recent Python changes. (\#538)
+
 
 ## [0.4.5] - 2019-12-18
 
@@ -319,7 +335,8 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.5...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.6...HEAD
+[0.4.6]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.5...0.4.6
 [0.4.5]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.4...0.4.5
 [0.4.4]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...0.4.4
 [0.4.3]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.2...0.4.3

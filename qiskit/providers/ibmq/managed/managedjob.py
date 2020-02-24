@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Experiments managed by the job manager."""
+"""Job managed by the Job Manager."""
 
 import warnings
 import logging
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class ManagedJob:
-    """Job managed by job manager."""
+    """Job managed by the Job Manager."""
 
     def __init__(
             self,
@@ -43,12 +43,12 @@ class ManagedJob:
             experiments_count: int,
             job: Optional[IBMQJob] = None
     ):
-        """Creates a new ManagedJob instance.
+        """ManagedJob constructor.
 
         Args:
             start_index: Starting index of the experiment set.
             experiments_count: Number of experiments.
-            job: Job to be managed, or ``None`` if not already known. Default: None.
+            job: Job to be managed, or ``None`` if not already known.
         """
         self.start_index = start_index
         self.end_index = start_index + experiments_count - 1
@@ -74,7 +74,7 @@ class ManagedJob:
             qobj: Qobj to run.
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
-            executor: The thread pool to use.
+            executor: The thread pool used to submit the job.
             submit_lock: Lock used to synchronize job submission.
             job_share_level: Job share level.
             job_tags: Tags to be assigned to the job.
@@ -138,7 +138,7 @@ class ManagedJob:
             submit_lock.release()
 
     def status(self) -> Optional[JobStatus]:
-        """Query the API for job status.
+        """Query the server for job status.
 
         Returns:
             Current job status, or ``None`` if an error occurred.
@@ -167,14 +167,14 @@ class ManagedJob:
         """Return the result of the job.
 
         Args:
-           timeout: number of seconds to wait for job
-           partial: If true, attempt to retrieve partial job results.
+           timeout: Number of seconds to wait for job.
+           partial: If ``True``, attempt to retrieve partial job results.
 
         Returns:
-            Result object or ``None`` if result could not be retrieved.
+            Job result or ``None`` if result could not be retrieved.
 
         Raises:
-            IBMQJobTimeoutError: if the job does not return results before a
+            IBMQJobTimeoutError: If the job does not return results before a
                 specified timeout.
         """
         result = None
@@ -204,7 +204,7 @@ class ManagedJob:
             return "Unknown error."
 
     def cancel(self) -> None:
-        """Attempt to cancel a job."""
+        """Attempt to cancel the job."""
         cancelled = False
         cancel_error = "Unknown error"
         try:

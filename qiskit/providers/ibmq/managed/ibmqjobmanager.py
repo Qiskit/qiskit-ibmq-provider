@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Job manager used to manage jobs for IBM Q Experience."""
+"""Job Manager used to manage jobs for IBM Quantum Experience."""
 
 import logging
 from typing import List, Optional, Union, Any
@@ -33,38 +33,49 @@ logger = logging.getLogger(__name__)
 
 
 class IBMQJobManager:
-    """Job manager for IBM Quantum Experience.
+    """Job Manager for IBM Quantum Experience.
 
-    The Job Manager is a higher level mechanism for handling jobs composed of
+    The Job Manager is a higher level mechanism for handling
+    :class:`jobs<qiskit.providers.ibmq.job.IBMQJob>` composed of
     multiple circuits or pulse schedules. It splits the experiments into
     multiple jobs based on backend restrictions. When the jobs are finished,
     it collects and presents the results in a unified view.
 
-    To use the Job Manager to submit multiple experiments, invoking the
-    ``run()`` method::
+    You can use the :meth:`run()` method to submit multiple experiments
+    with the Job Manager::
 
         from qiskit.providers.ibmq.managed import IBMQJobManager
+        from qiskit.circuit.random import random_circuit
+
+        # Build a thousand circuits.
+        circs = []
+        for _ in range(1000):
+            circs.append(random_circuit(n_qubits=5, depth=4))
+
+        # Use Job Manager to break the circuits into multiple jobs.
         job_manager = IBMQJobManager()
         job_set_foo = job_manager.run(circs, backend=backend, name='foo')
 
-    The ``run()`` method returns a ``ManagedJobSet`` instance, which
+    The :meth:`run()` method returns a :class:`ManagedJobSet` instance, which
     represents the set of jobs for the experiments. You can use the
-    ``ManagedJobSet`` methods, such as ``statuses()``, ``results()``, and
-    ``error_messages()`` to get a combined view of the jobs in the set.
+    :class:`ManagedJobSet` methods, such as :meth:`statuses()<ManagedJobSet.statuses>`,
+    :meth:`results()<ManagedJobSet.results>`, and
+    :meth:`error_messages()<ManagedJobSet.error_messages>` to get a combined
+    view of the jobs in the set.
     For example::
 
         results = job_set_foo.results()
         results.get_counts(5)  # Counts for experiment 5.
 
-    The ``job_set_id()`` method of ``ManagedJobSet`` returns the job set ID,
-    which can be used to retrieve the job set later::
+    The :meth:`job_set_id()<ManagedJobSet.job_set_id>` method of :class:`ManagedJobSet`
+    returns the job set ID, which can be used to retrieve the job set later::
 
         job_set_id = job_set_foo.job_set_id()
         retrieved_foo = job_manager.retrieve_job_set(job_set_id=job_set_id, provider=provider)
     """
 
     def __init__(self) -> None:
-        """Creates a new IBMQJobManager instance."""
+        """IBMQJobManager constructor."""
         self._job_sets = []  # type: List[ManagedJobSet]
         self._executor = futures.ThreadPoolExecutor()
 
@@ -86,20 +97,22 @@ class IBMQJobManager:
         Args:
             experiments: Circuit(s) or pulse schedule(s) to execute.
             backend: Backend to execute the experiments on.
-            name: Name for this set of jobs. Each job within the set will have
+            name: Name for this set of jobs.
+                Each job within the set will have
                 a job name that consists of the set name followed by a suffix.
-                Default: current datetime.
+                If not specified, the current date and time is used.
             max_experiments_per_job: Maximum number of experiments to run in each job.
                 If not specified, the default is to use the maximum allowed by
                 the backend.
                 If the specified value is greater the maximum allowed by the
                 backend, the default is used.
-            job_share_level: Allows sharing the jobs at the hub/group/project and
-                global level. The possible job share levels are: "global", "hub",
-                "group", "project", and "none". Default: "none".
-            job_tags: tags to be assigned to the job. The tags can
-                subsequently be used as a filter in the ``jobs()`` function call.
-                Default: None.
+            job_share_level: Allow sharing the jobs at the hub, group, project, or
+                global level. The level can be one of: ``global``, ``hub``,
+                ``group``, ``project``, and ``none``.
+            job_tags: Tags to be assigned to the jobs. The tags can
+                subsequently be used as a filter in the
+                :meth:`IBMQBackend.jobs()<qiskit.providers.ibmq.ibmqbackend.IBMQBackend.jobs()>`
+                function call.
             run_config: Configuration of the runtime environment. Some
                 examples of these configuration parameters include:
                 ``qobj_id``, ``qobj_header``, ``shots``, ``memory``,
@@ -108,11 +121,12 @@ class IBMQJobManager:
                 ``meas_level``, ``meas_return``, ``meas_map``,
                 ``memory_slot_size``, ``rep_time``, and ``parameter_binds``.
 
-                Refer to the documentation on ``qiskit.compiler.assemble()``
+                Refer to the documentation on :func:`qiskit.compiler.assemble`
                 for details on these arguments.
 
         Returns:
-            Managed job set.
+            A :class:`ManagedJobSet` instance representing the set of jobs for
+            the experiments.
 
         Raises:
             IBMQJobManagerInvalidStateError: If an input parameter value is not valid.
@@ -151,7 +165,7 @@ class IBMQJobManager:
             backend: IBMQBackend,
             max_experiments_per_job: Optional[int] = None
     ) -> List[Union[List[QuantumCircuit], List[Schedule]]]:
-        """Split a list of experiments into sublists.
+        """Split a list of experiments into sub-lists.
 
         Args:
             experiments: Experiments to be split.
@@ -159,7 +173,7 @@ class IBMQJobManager:
             max_experiments_per_job: Maximum number of experiments to run in each job.
 
         Returns:
-            A list of sublists of experiments.
+            A list of sub-lists of experiments.
         """
         if hasattr(backend.configuration(), 'max_experiments'):
             backend_max = backend.configuration().max_experiments
@@ -173,10 +187,10 @@ class IBMQJobManager:
         return [experiments[x:x + chunk_size] for x in range(0, len(experiments), chunk_size)]
 
     def report(self, detailed: bool = True) -> str:
-        """Return a report on the statuses of all jobs managed by this manager.
+        """Return a report on the statuses of all jobs managed by this Job Manager.
 
         Args:
-            detailed: True if a detailed report is be returned. False
+            detailed: ``True`` if a detailed report is to be returned. ``False``
                 if a summary report is to be returned.
 
         Returns:
@@ -199,14 +213,13 @@ class IBMQJobManager:
         return '\n'.join(report)
 
     def job_sets(self, name: Optional[str] = None) -> List[ManagedJobSet]:
-        """Returns a list of managed job sets matching the specified filtering
-            in this session.
+        """Return job sets being managed in this session, subject to optional filtering.
 
         Args:
              name: Name of the managed job sets.
 
         Returns:
-            A list of managed job sets.
+            A list of managed job sets that match the filter.
         """
         if name:
             return [job_set for job_set in self._job_sets if job_set.name() == name]
@@ -222,10 +235,10 @@ class IBMQJobManager:
         """Retrieve a previously submitted job set.
 
         Args:
-            job_set_id: ID of the job set.
+            job_set_id: Job set ID.
             provider: Provider used for this job set.
-            refresh: If True, re-query the API for the job set.
-                Otherwise return the cached value. Default: False.
+            refresh: If ``True``, re-query the server for the job set information.
+                Otherwise return the cached value.
 
         Returns:
             Retrieved job set.

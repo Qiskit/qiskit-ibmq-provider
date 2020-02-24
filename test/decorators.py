@@ -12,17 +12,31 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Decorators for using with IBMQProvider unit tests."""
+"""Decorators for using with IBMQProvider unit tests.
+
+    Environment variables used by the decorators:
+        * QE_TOKEN: default token to use.
+        * QE_URL: default url to use.
+        * QE_HGP: default hub/group/project to use.
+        * QE_DEVICE: default device to use.
+        * USE_STAGING_CREDENTIALS: True if use staging credentials.
+        * QE_STAGING_TOKEN: staging token to use.
+        * QE_STAGING_URL: staging url to use.
+        * QE_STAGING_HGP: staging hub/group/project to use.
+        * QE_STAGING_DEVICE: staging device to use.
+"""
 
 import os
 from functools import wraps
 from unittest import SkipTest
+from typing import Optional
 
 from qiskit.test.testing_options import get_test_options
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
+from qiskit.providers.ibmq.accountprovider import AccountProvider
 
 
 def requires_qe_access(func):
@@ -31,7 +45,7 @@ def requires_qe_access(func):
     It involves:
         * determines if the test should be skipped by checking environment
             variables.
-        * if the `USE_ALTERNATE_ENV_CREDENTIALS` environment variable is
+        * if the `USE_STAGING_CREDENTIALS` environment variable is
           set, it reads the credentials from an alternative set of environment
           variables.
         * if the test is not skipped, it reads `qe_token` and `qe_url` from
@@ -80,9 +94,7 @@ def requires_provider(func):
         qe_token = kwargs.pop('qe_token')
         qe_url = kwargs.pop('qe_url')
         provider = ibmq_factory.enable_account(qe_token, qe_url)
-        if os.getenv('QE_HGP', None):
-            hgp = os.getenv('QE_HGP').split('/')
-            provider = ibmq_factory.get_provider(hub=hgp[0], group=hgp[1], project=hgp[2])
+        provider = _get_custom_provider(ibmq_factory) or provider
         kwargs.update({'provider': provider})
 
         return func(*args, **kwargs)
@@ -93,14 +105,15 @@ def requires_provider(func):
 def requires_device(func):
     """Decorator that retrieves the appropriate backend to use for testing.
 
-    This decorator delegates into the `requires_provider` decorator, but instead of the
-    provider it appends a `backend` argument to the decorated function.
-
     It involves:
-        * If the `QE_DEVICE` environment variable is set, the test is to be
-            run against the backend specified by `QE_DEVICE`.
-        * If the `QE_DEVICE` environment variable is not set, the test is to
-            be run against least busy device.
+        * Enable the account using credentials obtained from the
+            `requires_qe_access` decorator.
+        * Use the backend specified by `QE_STAGING_DEVICE` if
+            `USE_STAGING_CREDENTIALS` is set, otherwise use the backend
+            specified by `QE_DEVICE`.
+        * if device environment variable is not set, use the least busy
+            real backend.
+        * appends arguments `backend` to the decorated function.
 
     Args:
         func (callable): test function to be decorated.
@@ -109,69 +122,24 @@ def requires_device(func):
         callable: the decorated function.
     """
     @wraps(func)
-    @requires_provider
-    def _wrapper(*args, **kwargs):
-        provider = kwargs.pop('provider')
-
-        _backend = None
-        if os.getenv('QE_DEVICE'):
-            backend_name = os.getenv('QE_DEVICE')
-            _backend = provider.get_backend(backend_name)
-        else:
-            _backend = least_busy(provider.backends(
-                simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
-
-        kwargs.update({'backend': _backend})
-
-        return func(*args, **kwargs)
-
-    return _wrapper
-
-
-def slow_test_on_device(func):
-    """Decorator that signals that the test should run on a real or semi-real device.
-
-    It involves:
-        * skips the test if online tests are to be skipped.
-        * if the `USE_STAGING_CREDENTIALS` environment variable is set, then enable
-            the staging account using credentials specified by the
-            `QE_STAGING_TOKEN` and `QE_STAGING_URL` environment variables.
-            Backend name specified by `QE_STAGING_DEVICE`, if set, will
-            also be used.
-        * else skips the test if slow tests are to be skipped.
-        * else enable the account using credentials returned by `_get_credentials()`
-            and use the backend specified by `QE_DEVICE`, if set.
-        * if backend value is not already set, use the least busy backend.
-        * appends arguments `provider` and `backend` to the decorated function.
-
-    Args:
-        func (callable): test function to be decorated.
-
-    Returns:
-        callable: the decorated function.
-    """
-    @wraps(func)
+    @requires_qe_access
     def _wrapper(obj, *args, **kwargs):
 
-        if get_test_options()['skip_online']:
-            raise SkipTest('Skipping online tests')
-
-        if os.getenv('USE_STAGING_CREDENTIALS', ''):
-            credentials = Credentials(os.getenv('QE_STAGING_TOKEN'), os.getenv('QE_STAGING_URL'))
-            backend_name = os.getenv('QE_STAGING_DEVICE', None)
-        else:
-            if not get_test_options()['run_slow']:
-                raise SkipTest('Skipping slow tests')
-            credentials = _get_credentials()
-            backend_name = os.getenv('QE_DEVICE', None)
-
-        obj.using_ibmq_credentials = credentials.is_ibmq()
         ibmq_factory = IBMQFactory()
-        provider = ibmq_factory.enable_account(credentials.token, credentials.url)
+        qe_token = kwargs.pop('qe_token')
+        qe_url = kwargs.pop('qe_url')
+        provider = ibmq_factory.enable_account(qe_token, qe_url)
+
+        backend_name = os.getenv('QE_STAGING_DEVICE', None) if \
+            os.getenv('USE_STAGING_CREDENTIALS', '') else os.getenv('QE_DEVICE', None)
 
         _backend = None
+        provider = _get_custom_provider(ibmq_factory) or provider
+
         if backend_name:
-            for provider in ibmq_factory.providers():
+            # Put desired provider as the first in the list.
+            providers = [provider] + ibmq_factory.providers()
+            for provider in providers:
                 backends = provider.backends(name=backend_name)
                 if backends:
                     _backend = backends[0]
@@ -183,7 +151,6 @@ def slow_test_on_device(func):
         if not _backend:
             raise Exception("Unable to find suitable backend.")
 
-        kwargs.update({'provider': provider})
         kwargs.update({'backend': _backend})
 
         return func(obj, *args, **kwargs)
@@ -201,11 +168,11 @@ def _get_credentials():
         Exception: when the credential could not be set and they are needed
             for that set of options
     """
-    if os.getenv('USE_ALTERNATE_ENV_CREDENTIALS', ''):
+    if os.getenv('USE_STAGING_CREDENTIALS', ''):
         # Special case: instead of using the standard credentials mechanism,
         # load them from different environment variables. This assumes they
         # will always be in place, as is used by the Travis setup.
-        return Credentials(os.getenv('IBMQ_TOKEN'), os.getenv('IBMQ_URL'))
+        return Credentials(os.getenv('QE_STAGING_TOKEN'), os.getenv('QE_STAGING_URL'))
 
     # Attempt to read the standard credentials.
     discovered_credentials = discover_credentials()
@@ -223,3 +190,20 @@ def _get_credentials():
         return list(discovered_credentials.values())[0]
 
     raise Exception('Could not locate valid credentials.') from None
+
+
+def _get_custom_provider(ibmq_factory: IBMQFactory) -> Optional[AccountProvider]:
+    """Find the provider for the specific hub/group/project, if any.
+
+    Args:
+        ibmq_factory: IBMQFactory instance with account already loaded.
+
+    Returns:
+        Custom provider or ``None`` if default is to be used.
+    """
+    hgp = os.getenv('QE_STAGING_HGP', None) if os.getenv('USE_STAGING_CREDENTIALS', '') else \
+        os.getenv('QE_HGP', None)
+    if hgp:
+        hgp = hgp.split('/')
+        return ibmq_factory.get_provider(hub=hgp[0], group=hgp[1], project=hgp[2])
+    return None  # No custom provider.

@@ -12,7 +12,8 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBMQ provider integration tests (compile and run)."""
+"""Integration tests."""
+
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.result import Result
 from qiskit.execute import execute
@@ -23,7 +24,7 @@ from ..decorators import requires_provider, requires_device
 
 
 class TestIBMQIntegration(IBMQTestCase):
-    """Qiskit's IBMQ Provider integration tests."""
+    """Integration tests."""
 
     seed = 42
 
@@ -48,7 +49,7 @@ class TestIBMQIntegration(IBMQTestCase):
 
     @requires_device
     def test_compile_remote(self, backend):
-        """Test Compiler remote."""
+        """Test transpile with a remote backend."""
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
         qc = QuantumCircuit(qubit_reg, clbit_reg, name="bell")
@@ -61,7 +62,7 @@ class TestIBMQIntegration(IBMQTestCase):
 
     @requires_device
     def test_compile_two_remote(self, backend):
-        """Test Compiler remote on two circuits."""
+        """Test transpile with a remote backend on two circuits."""
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
         qc = QuantumCircuit(qubit_reg, clbit_reg, name="bell")
@@ -76,7 +77,7 @@ class TestIBMQIntegration(IBMQTestCase):
 
     @requires_provider
     def test_compile_run_remote(self, provider):
-        """Test Compiler and run remote."""
+        """Test transpile and run on a remote backend."""
         backend = provider.get_backend(local=False, simulator=True)
 
         qubit_reg = QuantumRegister(2, name='q')
@@ -87,13 +88,13 @@ class TestIBMQIntegration(IBMQTestCase):
         qc.measure(qubit_reg, clbit_reg)
         qobj = assemble(transpile(qc, backend=backend, seed_transpiler=self.seed),
                         backend=backend)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         result = job.result(timeout=20)
         self.assertIsInstance(result, Result)
 
     @requires_provider
     def test_compile_two_run_remote(self, provider):
-        """Test Compiler and run two circuits."""
+        """Test transpile and run two circuits."""
         backend = provider.get_backend(local=False, simulator=True)
 
         qubit_reg = QuantumRegister(2, name='q')
@@ -106,13 +107,13 @@ class TestIBMQIntegration(IBMQTestCase):
         qc_extra.measure(qubit_reg, clbit_reg)
         qobj = assemble(transpile([qc, qc_extra], backend=backend, seed_transpiler=self.seed),
                         backend=backend)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         result = job.result()
         self.assertIsInstance(result, Result)
 
     @requires_provider
     def test_execute_remote(self, provider):
-        """Test Execute remote."""
+        """Test executing on a remote backend."""
         backend = provider.get_backend(local=False, simulator=True)
 
         qubit_reg = QuantumRegister(2)
@@ -128,7 +129,7 @@ class TestIBMQIntegration(IBMQTestCase):
 
     @requires_provider
     def test_execute_two_remote(self, provider):
-        """Test execute two remote."""
+        """Test executing two circuits on a remote backend."""
         backend = provider.get_backend(local=False, simulator=True)
 
         qubit_reg = QuantumRegister(2)

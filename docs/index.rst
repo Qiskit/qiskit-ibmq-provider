@@ -1,12 +1,11 @@
-##################################
-Qiskit IBM Q Account documentation
-##################################
+#########################################
+Qiskit IBM Quantum Provider documentation
+#########################################
 
 .. toctree::
   :maxdepth: 2
-  :hidden:
 
-  API References <apidocs/ibmq>
+  API References <apidocs/ibmq-provider>
 
 .. Hiding - Indices and tables
    :ref:`genindex`
