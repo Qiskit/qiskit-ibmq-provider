@@ -390,7 +390,8 @@ class IBMQBackendService(SimpleNamespace):
             job = IBMQJob.from_dict(job_info)
         except ModelValidationError as ex:
             raise IBMQBackendApiProtocolError(
-                'Failed to get job "{}". Invalid job data received: {}'.format(job_id, str(ex)))
+                'Unexpected return value from the server '
+                'when getting job "{}": {}'.format(job_id, str(ex)))
 
         return job
 
