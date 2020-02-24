@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Custom fields for validation."""
+"""Custom fields for model validation."""
 
 import enum
 from typing import Dict, Any
@@ -23,7 +23,7 @@ from .utils import to_python_identifier
 
 
 class Enum(ModelTypeValidator):
-    """Field for enums."""
+    """Custom field for enums."""
 
     default_error_messages = {
         'invalid': '"{input}" cannot be parsed as a {enum_cls}.',
@@ -31,6 +31,7 @@ class Enum(ModelTypeValidator):
     }
 
     def __init__(self, enum_cls: enum.EnumMeta, *args: Any, **kwargs: Any) -> None:
+        """Enum constructor."""
         self.valid_types = (enum_cls,)
         self.valid_strs = [elem.value for elem in enum_cls]  # type: ignore[var-annotated]
         self.enum_cls = enum_cls
@@ -44,6 +45,7 @@ class Enum(ModelTypeValidator):
             obj: BaseModel,
             **_: Any
     ) -> str:
+        """Serialize the `value`."""
         try:
             return value.value
         except AttributeError:
@@ -57,6 +59,7 @@ class Enum(ModelTypeValidator):
             data: Dict[str, Any],
             **_: Any
     ) -> enum.EnumMeta:
+        """Deserialize the `value`."""
         try:
             return self.enum_cls(value)
         except ValueError:
@@ -64,8 +67,15 @@ class Enum(ModelTypeValidator):
 
 
 def map_field_names(mapper: dict, data: dict) -> dict:
-    """Rename selected fields due to name clashes, and convert from camel-case
-    the rest of the fields.
+    """Rename selected fields due to name clashes and convert camel-case fields
+    to valid python identifiers.
+
+    Args:
+        mapper: Mapper of selected field names to rename.
+        data: Response data.
+
+    Returns:
+        Response data with fields that are valid python identifiers.
     """
     rename_map = {}
     for field_name in data:

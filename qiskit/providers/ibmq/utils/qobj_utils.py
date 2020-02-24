@@ -20,14 +20,14 @@ from qiskit.qobj import QobjHeader, Qobj
 
 
 def _serialize_noise_model(config: Dict[str, Any]) -> Dict[str, Any]:
-    """Traverse the dictionary looking for noise_model keys and apply
-       a transformation so it can be serialized.
+    """Traverse the dictionary looking for ``noise_model`` keys and apply
+    a transformation so it can be serialized.
 
-       Args:
-           config: The dictionary to traverse
+    Args:
+        config: The dictionary to traverse.
 
-       Returns:
-           The transformed dictionary
+    Returns:
+        The transformed dictionary.
     """
     for k, v in config.items():
         if isinstance(config[k], dict):
@@ -49,15 +49,15 @@ def update_qobj_config(
         backend_options: Optional[Dict] = None,
         noise_model: Any = None
 ) -> Qobj:
-    """Update a Qobj configuration from options and noise model.
+    """Update a ``Qobj`` configuration from backend options and a noise model.
 
     Args:
-        qobj: description of job
-        backend_options: backend options
-        noise_model: noise model
+        qobj: Description of the job.
+        backend_options: Backend options.
+        noise_model: Noise model.
 
     Returns:
-        qobj.
+        The updated ``Qobj``.
     """
     config = qobj.config.to_dict()
 

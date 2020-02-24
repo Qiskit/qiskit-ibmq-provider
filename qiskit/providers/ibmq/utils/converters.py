@@ -12,31 +12,30 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Converters
-"""
+"""Utilities related to conversion."""
 
+from typing import Union
 import datetime
 import dateutil
 
 
-def utc_to_local(utc_dt):
-    """Takes a UTC datetime object or string and
-    converts it to a local timezone datetime.
+def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
+    """Convert a UTC ``datetime`` object or string to a local timezone ``datetime``.
 
-    Parameters:
-        utc_dt (datetime or str): Input UTC datetime.
+    Args:
+        utc_dt: Input UTC `datetime`.
 
     Returns:
-        datetime: Local date and time.
+        A ``datetime`` with the local timezone.
 
     Raises:
-        TypeError: Invalid input type.
+        TypeError: If the input parameter value is not valid.
     """
     if isinstance(utc_dt, str):
         utc_dt = dateutil.parser.parse(utc_dt)
     if not isinstance(utc_dt, datetime.datetime):
         TypeError('Input is not string or datetime.')
-    utc_dt = utc_dt.replace(tzinfo=datetime.timezone.utc)
+    utc_dt = utc_dt.replace(tzinfo=datetime.timezone.utc)  # type: ignore[arg-type]
     local_tz = datetime.datetime.now().astimezone().tzinfo
-    local_dt = utc_dt.astimezone(local_tz)
+    local_dt = utc_dt.astimezone(local_tz)  # type: ignore[attr-defined]
     return local_dt

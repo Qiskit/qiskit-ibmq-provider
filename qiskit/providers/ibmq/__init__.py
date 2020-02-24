@@ -13,13 +13,13 @@
 # that they have been altered from the originals.
 
 """
-==============================================================
-IBM Quantum Experience Provider (:mod:`qiskit.providers.ibmq`)
-==============================================================
+===================================================
+IBM Quantum Provider (:mod:`qiskit.providers.ibmq`)
+===================================================
 
 .. currentmodule:: qiskit.providers.ibmq
 
-Modules representing the IBM Quantum Experience Provider.
+Modules representing the IBM Quantum Provider.
 
 Functions
 =========
