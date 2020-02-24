@@ -32,7 +32,7 @@ from ..colormaps import (HELIX_LIGHT, HELIX_LIGHT_CMAP,
 
 def iplot_error_map(
         backend: IBMQBackend,
-        figsize: Tuple[int] = (700, 500),
+        figsize: Tuple[int] = (800, 500),
         show_title: bool = True,
         remove_badcal_edges: bool = True,
         background_color: str = 'white',
@@ -283,6 +283,10 @@ def iplot_error_map(
                                            np.round(single_gate_errors[kk], 3),
                                            np.round(t1s[kk], 2),
                                            np.round(t2s[kk], 2)))
+
+    if n_qubits > 20:
+        qubit_size = 23
+        font_size = 11
 
     if n_qubits > 50:
         qubit_size = 20
