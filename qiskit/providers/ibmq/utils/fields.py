@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Custom fields for validation."""
+"""Custom fields for model validation."""
 
 import enum
 from typing import Dict, Any
@@ -23,7 +23,7 @@ from .utils import to_python_identifier
 
 
 class Enum(ModelTypeValidator):
-    """Field for enums."""
+    """Custom field for enums."""
 
     default_error_messages = {
         'invalid': '"{input}" cannot be parsed as a {enum_cls}.',
@@ -45,6 +45,7 @@ class Enum(ModelTypeValidator):
             obj: BaseModel,
             **_: Any
     ) -> str:
+        """Serialize the `value`."""
         try:
             return value.value
         except AttributeError:
@@ -58,6 +59,7 @@ class Enum(ModelTypeValidator):
             data: Dict[str, Any],
             **_: Any
     ) -> enum.EnumMeta:
+        """Deserialize the `value`."""
         try:
             return self.enum_cls(value)
         except ValueError:

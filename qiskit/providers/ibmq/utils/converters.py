@@ -19,17 +19,17 @@ import datetime
 import dateutil
 
 
-def utc_to_local(utc_dt: Union[datetime, str]) -> datetime:
-    """Converts a UTC datetime object or string to a local timezone datetime.
+def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
+    """Converts a UTC ``datetime`` object or string to a local timezone ``datetime``.
 
     Args:
-        utc_dt: Input UTC datetime.
+        utc_dt: Input UTC `datetime`.
 
     Returns:
-        Local timezone datetime.
+        A ``datetime`` with the local timezone.
 
     Raises:
-        TypeError: Invalid input type.
+        TypeError: If the input parameter value is not valid.
     """
     if isinstance(utc_dt, str):
         utc_dt = dateutil.parser.parse(utc_dt)

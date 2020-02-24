@@ -20,8 +20,8 @@ from qiskit.qobj import QobjHeader, Qobj
 
 
 def _serialize_noise_model(config: Dict[str, Any]) -> Dict[str, Any]:
-    """Traverse the dictionary looking for noise_model keys and apply
-       a transformation so it can be serialized.
+    """Traverse the dictionary looking for ``noise_model`` keys and apply
+    a transformation so it can be serialized.
 
     Args:
         config: The dictionary to traverse.
@@ -49,7 +49,7 @@ def update_qobj_config(
         backend_options: Optional[Dict] = None,
         noise_model: Any = None
 ) -> Qobj:
-    """Update a Qobj configuration from backend options and a noise model.
+    """Update a ``Qobj`` configuration from backend options and a noise model.
 
     Args:
         qobj: Description of the job.
@@ -57,7 +57,7 @@ def update_qobj_config(
         noise_model: Noise model.
 
     Returns:
-        The updated Qobj.
+        The updated ``Qobj``.
     """
     config = qobj.config.to_dict()
 

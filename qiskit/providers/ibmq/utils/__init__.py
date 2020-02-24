@@ -14,7 +14,7 @@
 
 """
 ==============================================================================
-IBM Quantum Experience Provider Utilities (:mod:`qiskit.providers.ibmq.utils`)
+Utilities (:mod:`qiskit.providers.ibmq.utils`)
 ==============================================================================
 
 .. currentmodule:: qiskit.providers.ibmq.utils
