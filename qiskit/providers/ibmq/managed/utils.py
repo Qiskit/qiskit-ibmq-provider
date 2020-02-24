@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utility functions for IBMQJobManager."""
+"""Utility functions for ``IBMQJobManager``."""
 
 from typing import Callable, Any, List, Union
 from functools import wraps
@@ -25,16 +25,13 @@ from .managedjob import ManagedJob
 
 
 def requires_submit(func: Callable) -> Callable:
-    """Decorator used by ManagedJobSet to wait for all jobs to be submitted.
+    """Decorator used by ``ManagedJobSet`` to wait for all jobs to be submitted.
 
     Args:
-        func (callable): function to be decorated.
+        func: Function to be decorated.
 
     Returns:
-        callable: the decorated function.
-
-    Raises:
-        IBMQJobManagerInvalidStateError: If jobs have not been submitted.
+        The decorated function.
     """
     @wraps(func)
     def _wrapper(
@@ -45,9 +42,9 @@ def requires_submit(func: Callable) -> Callable:
         """Wrapper function.
 
         Args:
-            job_set: ManagedJobSet instance used to manage a set of jobs.
-            args: arguments to be passed to the decorated function.
-            kwargs: keyword arguments to be passed to the decorated function.
+            job_set: Managed job set.
+            args: Arguments to be passed to the decorated function.
+            kwargs: Keyword arguments to be passed to the decorated function.
 
         Returns:
             return value of the decorated function.

@@ -13,11 +13,16 @@
 # that they have been altered from the originals.
 # pylint: disable=protected-access
 
-"""Interactive Jobs widget
-"""
+"""Interactive backend widget."""
+
 import threading
+from typing import Union
+
 import ipyvuetify as vue
 from IPython.display import display  # pylint: disable=import-error
+from qiskit.test.mock.fake_backend import FakeBackend
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+
 from .config_widget import config_tab
 from .qubits_widget import qubits_tab
 from .gates_widget import gates_tab
@@ -25,15 +30,21 @@ from .jobs_widget import jobs_tab
 from ..visualization.interactive import iplot_error_map
 
 
-def _async_job_loader(tab, backend):
+def _async_job_loader(tab: vue.TabItem, backend: Union[IBMQBackend, FakeBackend]) -> None:
+    """Asynchronous job loader.
+
+    Args:
+        tab: Tab item.
+        backend: Backend to use.
+    """
     tab.children = [jobs_tab(backend)]
 
 
-def backend_widget(backend):
+def backend_widget(backend: Union[IBMQBackend, FakeBackend]) -> None:
     """Display backend information as a widget.
 
-    Parameters:
-        backend (IBMQBackend): A backend.
+    Args:
+        backend: Display information about this backend.
     """
     cred = backend.provider().credentials
     last_tab = vue.TabItem(children=[])

@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""A set of jobs being managed by the IBMQJobManager."""
+"""A set of jobs being managed by the :class:`IBMQJobManager`."""
 
 from datetime import datetime
 from typing import List, Optional, Union, Any, Tuple
@@ -43,7 +43,15 @@ logger = logging.getLogger(__name__)
 
 
 class ManagedJobSet:
-    """A set of managed jobs."""
+    """A set of managed jobs.
+
+    An instance of this class is returned when you submit experiments using
+    :meth:`IBMQJobManager.run()`.
+    It provides methods that allow you to interact
+    with the jobs as a single entity. For example, you can retrieve the results
+    for all of the jobs using :meth:`results()` and cancel all jobs using
+    :meth:`cancel()`.
+    """
 
     _id_prefix = "ibmq_jobset_"
     _id_suffix = "_"
@@ -53,11 +61,12 @@ class ManagedJobSet:
             name: Optional[str] = None,
             short_id: Optional[str] = None
     ) -> None:
-        """Creates a new ManagedJobSet instance.
+        """ManagedJobSet constructor.
 
         Args:
-            name: Name for this set of jobs. Default: current datetime.
-            short_id: Short ID for this set of jobs. Default: None.
+            name: Name for this set of jobs. If not specified, the current
+                date and time is used.
+            short_id: Short ID for this set of jobs.
         """
         self._managed_jobs = []  # type: List[ManagedJob]
         self._name = name or datetime.utcnow().isoformat()
@@ -84,11 +93,11 @@ class ManagedJobSet:
         Args:
             experiment_list : Circuit(s) or pulse schedule(s) to execute.
             backend: Backend to execute the experiments on.
-            executor: The thread pool to use.
+            executor: The thread pool used to submit jobs asynchronously.
             job_share_level: Job share level.
-            job_tags: tags to be assigned to the job.
+            job_tags: Tags to be assigned to the job.
             assemble_config: Additional arguments used to configure the Qobj
-                assembly. Refer to the ``qiskit.compiler.assemble`` documentation
+                assembly. Refer to the :func:`qiskit.compiler.assemble` documentation
                 for details on these arguments.
 
         Raises:
@@ -112,12 +121,12 @@ class ManagedJobSet:
             exp_index += len(experiments)
 
     def retrieve_jobs(self, provider: AccountProvider, refresh: bool = False) -> None:
-        """Retrieve previously submitted jobs for this set.
+        """Retrieve previously submitted jobs in this set.
 
         Args:
             provider: Provider used for this job set.
-            refresh: If True, re-query the API for the job set.
-                Otherwise return the cached value. Default: False.
+            refresh: If ``True``, re-query the server for the job set.
+                Otherwise return the cached value.
 
         Raises:
             IBMQJobManagerUnknownJobSet: If the job set cannot be found.
@@ -187,11 +196,11 @@ class ManagedJobSet:
             experiment_index = mjob.end_index + 1
 
     def statuses(self) -> List[Union[JobStatus, None]]:
-        """Return the status of each job.
+        """Return the status of each job in this set.
 
         Returns:
-            A list of job statuses. The entry is ``None`` if the job status
-                cannot be retrieved due to server error.
+            A list of job statuses. An entry in the list is ``None`` if the
+            job status could not be retrieved due to a server error.
         """
         return [mjob.status() for mjob in self._managed_jobs]
 
@@ -199,8 +208,8 @@ class ManagedJobSet:
         """Return a report on current job statuses.
 
         Args:
-            detailed: True if a detailed report is be returned. False
-                if a summary report is to be returned.
+            detailed: If ``True``, return a detailed report. Otherwise return a
+                summary report.
 
         Returns:
             A report on job statuses.
@@ -227,43 +236,45 @@ class ManagedJobSet:
         """Return the results of the jobs.
 
         This call will block until all job results become available or
-            the timeout is reached.
+        the timeout is reached.
 
         Note:
-            Some IBMQ job results can be read only once. A second attempt to
-            query the API for the job will fail, as the job is "consumed".
+            Some IBM Quantum Experience job results can only be read once. A
+            second attempt to query the server for the same job will fail,
+            since the job has already been "consumed".
 
-            The first call to this method in a ``ManagedJobSet`` instance will query
-            the API and consume any available job results. Subsequent calls to
-            that instance's method will also return the results, since they are
-            cached. However, attempting to retrieve the results again in
+            The first call to this method in a ``ManagedJobSet`` instance will
+            query the server and consume any available job results. Subsequent
+            calls to that instance's method will also return the results, since
+            they are cached. However, attempting to retrieve the results again in
             another instance or session might fail due to the job results
             having been consumed.
 
+        Note:
             When `partial=True`, this method will attempt to retrieve partial
-            results of failed jobs if possible. In this case, precaution should
+            results of failed jobs. In this case, precaution should
             be taken when accessing individual experiments, as doing so might
-            cause an exception. The ``success`` attribute of a
-            ``ManagedResults`` instance can be used to verify whether it contains
+            cause an exception. The ``success`` attribute of the returned
+            :class:`ManagedResults`
+            instance can be used to verify whether it contains
             partial results.
 
-            For example:
-                If one of the experiments failed, trying to get the counts of
-                the unsuccessful experiment would raise an exception since
-                there are no counts to return for it:
-                i.e.
-                    try:
-                        counts = managed_results.get_counts("failed_experiment")
-                    except QiskitError:
-                        print("Experiment failed!")
+            For example, if one of the experiments failed, trying to get the counts
+            of the unsuccessful experiment would raise an exception since there
+            are no counts to return::
+                try:
+                    counts = managed_results.get_counts("failed_experiment")
+                except QiskitError:
+                    print("Experiment failed!")
 
         Args:
            timeout: Number of seconds to wait for job results.
-           partial: If true, attempt to retrieve partial job results.
+           partial: If ``True``, attempt to retrieve partial job results.
 
         Returns:
-            A ``ManagedResults`` instance that can be used to retrieve results
-                for individual experiments.
+            A :class:`ManagedResults`
+            instance that can be used to retrieve results
+            for individual experiments.
 
         Raises:
             IBMQJobManagerTimeoutError: if unable to retrieve all job results before the
@@ -302,7 +313,7 @@ class ManagedJobSet:
     def error_messages(self) -> Optional[str]:
         """Provide details about job failures.
 
-        This call will block until all job results become available.
+        This call will block until all jobs finish.
 
         Returns:
             An error report if one or more jobs failed or ``None`` otherwise.
@@ -326,17 +337,18 @@ class ManagedJobSet:
 
     @requires_submit
     def cancel(self) -> None:
-        """Cancel all managed jobs."""
+        """Cancel all jobs in this job set."""
         for mjob in self._managed_jobs:
             mjob.cancel()
 
     @requires_submit
     def jobs(self) -> List[Union[IBMQJob, None]]:
-        """Return a list of submitted jobs.
+        """Return jobs in this job set.
 
         Returns:
-            A list of IBMQJob instances that represents the submitted jobs. The
-                entry is ``None`` if the job submit failed.
+            A list of :class:`~qiskit.providers.ibmq.job.IBMQJob`
+            instances that represents the submitted jobs.
+            An entry in the list is ``None`` if the job failed to be submitted.
         """
         return [mjob.job for mjob in self._managed_jobs]
 
@@ -345,24 +357,25 @@ class ManagedJobSet:
             self,
             experiment: Union[str, QuantumCircuit, Schedule, int]
     ) -> Tuple[Optional[IBMQJob], int]:
-        """Returns the job used to submit the experiment and the experiment index.
+        """Retrieve the job used to submit the specified experiment and its index.
 
-        For example, if ``IBMQJobManager`` is used to submit 1000 experiments,
-            and ``IBMQJobManager`` divides them into 2 jobs: job 1
-            has experiments 0-499, and job 2 has experiments 500-999. In this
-            case ``job_set.job(501)`` will return (job2, 1).
+        For example, if :class:`IBMQJobManager` is used to submit 1000 experiments,
+        and :class:`IBMQJobManager` divides them into 2 jobs: job 1
+        has experiments 0-499, and job 2 has experiments 500-999. In this
+        case ``job_set.job(501)`` will return ``(job2, 1)``.
 
         Args:
-            experiment: the index of the experiment. Several types are
-                accepted for convenience::
-                * str: the name of the experiment.
-                * QuantumCircuit: the name of the circuit instance will be used.
-                * Schedule: the name of the schedule instance will be used.
-                * int: the position of the experiment.
+            experiment: Retrieve the job used to submit this experiment. Several
+                types are accepted for convenience:
+
+                    * str: The name of the experiment.
+                    * QuantumCircuit: The name of the circuit instance will be used.
+                    * Schedule: The name of the schedule instance will be used.
+                    * int: The position of the experiment.
 
         Returns:
             A tuple of the job used to submit the experiment, or ``None`` if
-                the job submit failed, and the experiment index.
+            the job submit failed, and the experiment index.
 
         Raises:
             IBMQJobManagerJobNotFound: If the job for the experiment could not
@@ -385,34 +398,34 @@ class ManagedJobSet:
 
     @requires_submit
     def qobjs(self) -> List[Qobj]:
-        """Return the Qobj for the jobs.
+        """Return the Qobjs for the jobs in this set.
 
         Returns:
-            A list of Qobj for the jobs. The entry is ``None`` if the Qobj
-                could not be retrieved.
+            A list of Qobjs for the jobs. An entry in the list is ``None``
+            if the Qobj could not be retrieved.
         """
         return [mjob.qobj() for mjob in self._managed_jobs]
 
     def name(self) -> str:
-        """Return the name of this set of jobs.
+        """Return the name of this job set.
 
         Returns:
-            Name of this set of jobs.
+            Name of this job set.
         """
         return self._name
 
     def job_set_id(self) -> str:
-        """Return the ID of this set of jobs.
+        """Return the ID of this job set.
 
         Returns:
-            ID of this set of jobs.
+            ID of this job set.
         """
         # Return only the short version of the ID to reduce the possibility the
         # full ID is used for another job.
         return self._id
 
     def managed_jobs(self) -> List[ManagedJob]:
-        """Return a list of managed jobs.
+        """Return the managed jobs in this set.
 
         Returns:
             A list of managed jobs.
@@ -420,9 +433,9 @@ class ManagedJobSet:
         return self._managed_jobs
 
     def tags(self) -> List[str]:
-        """Return the tags assigned to this set of jobs.
+        """Return the tags assigned to this job set.
 
         Returns:
-            Tags assigned to this set of jobs.
+            Tags assigned to this job set.
         """
         return self._tags

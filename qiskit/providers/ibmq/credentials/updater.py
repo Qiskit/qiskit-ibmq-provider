@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Helper for updating credentials from IBM Q Experience v1 to v2."""
+"""Helper for updating IBM Quantum Experience credentials from v1 to v2."""
 
 from typing import Optional
 from .credentials import Credentials
@@ -34,24 +34,18 @@ def update_credentials(force: bool = False) -> Optional[Credentials]:
     """Update or provide information about updating stored credentials.
 
     This function is an interactive helper to update credentials stored in
-    disk from IBM Q Experience v1 to v2. Upon invocation, the
+    disk from IBM Quantum Experience v1 to v2. Upon invocation, the
     function will inspect the credentials stored in disk and attempt to
     convert them to the new version, displaying the changes and asking for
     confirmation before overwriting the credentials.
 
-    The function attempts to preserve the existing advanced parameters (such
-    as proxies), but has limited conflict resolution handling. For complex
-    configurations with multiple credentials, an alternative is to directly
-    clear the existing credentials via `IBMQ.delete_accounts()` and recreate
-    the configuration from the instructions at the IBM Q Experience site.
-
     Args:
-        force: if `True`, disable interactive prompts and perform the
+        force: If ``True``, disable interactive prompts and perform the
             changes.
 
     Returns:
-        if the updating is possible, credentials for IBM Q
-            Experience version 2; and `None` otherwise.
+        IBM Quantum Experience v2 credentials, if it was possible to make the
+        update. Otherwise ``None``.
     """
     # Get the list of stored credentials.
     credentials_list = list(read_credentials_from_qiskitrc().values())
@@ -148,7 +142,7 @@ def update_credentials(force: bool = False) -> Optional[Credentials]:
 
 
 def is_directly_updatable(credentials: Credentials) -> bool:
-    """Returns `True` if credentials can be updated directly."""
+    """Returns ``True`` if credentials can be updated directly."""
     if credentials.base_url == QE_URL:
         return True
 

@@ -13,43 +13,48 @@
 # that they have been altered from the originals.
 # pylint: disable=invalid-name
 
-"""Interactive error map for IBM  Quantum devices."""
+"""Interactive error map for IBM Quantum Experience devices."""
 
 import math
+from typing import Tuple, Union
+
 import numpy as np
 import matplotlib as mpl
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+
 from .plotly_wrapper import PlotlyWidget, PlotlyFigure
 from ..device_layouts import DEVICE_LAYOUTS
 from ..colormaps import (HELIX_LIGHT, HELIX_LIGHT_CMAP,
                          HELIX_DARK, HELIX_DARK_CMAP)
 
 
-def iplot_error_map(backend,
-                    figsize=(700, 500),
-                    show_title=True,
-                    remove_badcal_edges=True,
-                    background_color='white',
-                    as_widget=False):
-    """Plots the gate map of a device.
+def iplot_error_map(
+        backend: IBMQBackend,
+        figsize: Tuple[int] = (700, 500),
+        show_title: bool = True,
+        remove_badcal_edges: bool = True,
+        background_color: str = 'white',
+        as_widget: bool = False
+) -> Union[PlotlyFigure, PlotlyWidget]:
+    """Plot the error map of a device.
 
-    Parameters:
-        backend (IBMQBackend): A backend instance.
-        figsize (tuple): Figure size in pixels.
-        show_title (bool): Show figure title.
-        remove_badcal_edges (bool): Remove bad CX gate calibration
-                                    data.
-        background_color (str): Set the background color to 'white'
-                                or 'black'.
-        as_widget (bool): Return figure as a ipywidget.
+    Args:
+        backend: Plot the error map for this backend.
+        figsize: Figure size in pixels.
+        show_title: Whether to show figure title.
+        remove_badcal_edges: Whether to remove bad CX gate calibration data.
+        background_color: Background color, either 'white' or 'black'.
+        as_widget: ``True`` if the figure is to be returned as a ``PlotlyWidget``.
+            Otherwise the figure is to be returned as a ``PlotlyFigure``.
 
     Returns:
-        PlotlyFigure: The output figure.
+        The error map figure.
 
     Raises:
-        ValueError: Invalid color selection.
-        TypeError: If tried to pass a simulator.
+        ValueError: If an invalid input is received.
+        TypeError: If the specified `backend` is a simulator.
 
     Example:
         .. jupyter-execute::
@@ -129,36 +134,37 @@ def iplot_error_map(backend,
 
     q_colors = [mpl.colors.rgb2hex(color_map(single_norm(err))) for err in single_gate_errors]
 
-    line_colors = []
-    if cmap:
-        cx_errors = []
-        for line in cmap:
-            for item in props['gates']:
-                if item['qubits'] == line:
-                    cx_errors.append(item['parameters'][0]['value'])
-                    break
+    if n_qubits > 1:
+        line_colors = []
+        if cmap:
+            cx_errors = []
+            for line in cmap:
+                for item in props['gates']:
+                    if item['qubits'] == line:
+                        cx_errors.append(item['parameters'][0]['value'])
+                        break
+                else:
+                    continue
+
+            # Convert to percent
+            cx_errors = 100 * np.asarray(cx_errors)
+
+            # remove bad cx edges
+            if remove_badcal_edges:
+                cx_idx = np.where(cx_errors != 100.0)[0]
             else:
-                continue
+                cx_idx = np.arange(len(cx_errors))
 
-        # Convert to percent
-        cx_errors = 100 * np.asarray(cx_errors)
+            avg_cx_err = np.mean(cx_errors[cx_idx])
 
-        # remove bad cx edges
-        if remove_badcal_edges:
-            cx_idx = np.where(cx_errors != 100.0)[0]
-        else:
-            cx_idx = np.arange(len(cx_errors))
+            cx_norm = mpl.colors.Normalize(
+                vmin=min(cx_errors[cx_idx]), vmax=max(cx_errors[cx_idx]))
 
-        avg_cx_err = np.mean(cx_errors[cx_idx])
-
-        cx_norm = mpl.colors.Normalize(
-            vmin=min(cx_errors[cx_idx]), vmax=max(cx_errors[cx_idx]))
-
-        for err in cx_errors:
-            if err != 100.0 or not remove_badcal_edges:
-                line_colors.append(mpl.colors.rgb2hex(color_map(cx_norm(err))))
-            else:
-                line_colors.append("#ff0000")
+            for err in cx_errors:
+                if err != 100.0 or not remove_badcal_edges:
+                    line_colors.append(mpl.colors.rgb2hex(color_map(cx_norm(err))))
+                else:
+                    line_colors.append("#ff0000")
 
     # Measurement errors
     read_err = []
@@ -218,7 +224,7 @@ def iplot_error_map(backend,
                         )
 
     # Add lines for couplings
-    if cmap:
+    if cmap and n_qubits > 1:
         for ind, edge in enumerate(cmap):
             is_symmetric = False
             if edge[::-1] in cmap:
@@ -318,29 +324,30 @@ def iplot_error_map(backend,
     # H error rate colorbar
     min_1q_err = min(single_gate_errors)
     max_1q_err = max(single_gate_errors)
-    fig.append_trace(go.Heatmap(z=[np.linspace(min_1q_err,
-                                               max_1q_err, 100),
-                                   np.linspace(min_1q_err,
-                                               max_1q_err, 100)],
-                                colorscale=plotly_cmap,
-                                showscale=False,
-                                hoverinfo='none'), row=2, col=1)
+    if n_qubits > 1:
+        fig.append_trace(go.Heatmap(z=[np.linspace(min_1q_err,
+                                                   max_1q_err, 100),
+                                       np.linspace(min_1q_err,
+                                                   max_1q_err, 100)],
+                                    colorscale=plotly_cmap,
+                                    showscale=False,
+                                    hoverinfo='none'), row=2, col=1)
 
-    fig.update_yaxes(row=2,
-                     col=1,
-                     visible=False)
+        fig.update_yaxes(row=2,
+                         col=1,
+                         visible=False)
 
-    fig.update_xaxes(row=2,
-                     col=1,
-                     tickvals=[0, 49, 99],
-                     ticktext=[np.round(min_1q_err, 3),
-                               np.round((max_1q_err-min_1q_err)/2+min_1q_err, 3),
-                               np.round(max_1q_err, 3)])
+        fig.update_xaxes(row=2,
+                         col=1,
+                         tickvals=[0, 49, 99],
+                         ticktext=[np.round(min_1q_err, 3),
+                                   np.round((max_1q_err-min_1q_err)/2+min_1q_err, 3),
+                                   np.round(max_1q_err, 3)])
 
     # CX error rate colorbar
-    min_cx_err = min(cx_errors)
-    max_cx_err = max(cx_errors)
-    if cmap:
+    if cmap and n_qubits > 1:
+        min_cx_err = min(cx_errors)
+        max_cx_err = max(cx_errors)
         fig.append_trace(go.Heatmap(z=[np.linspace(min_cx_err,
                                                    max_cx_err, 100),
                                        np.linspace(min_cx_err,
