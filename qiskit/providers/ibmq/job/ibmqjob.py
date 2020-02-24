@@ -118,6 +118,11 @@ class IBMQJob(BaseModel, BaseJob):
             kwargs: Additional job attributes.
         """
         # pylint: disable=redefined-builtin
+
+        # Convert qobj from dictionary to Qobj.
+        if '_qobj' in kwargs and isinstance(kwargs['_qobj'], dict):
+            self._qobj = Qobj.from_dict(kwargs.pop('_qobj'))
+
         BaseModel.__init__(self, _backend=_backend, _job_id=_job_id,
                            _creation_date=_creation_date,
                            _api_status=_api_status, **kwargs)
