@@ -21,8 +21,6 @@ from collections import deque
 from urllib3.connectionpool import HTTPConnectionPool
 from urllib3.exceptions import MaxRetryError
 
-from requests.exceptions import RequestException
-
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
@@ -79,27 +77,7 @@ class TestAccountClient(IBMQTestCase):
         # Run the job through the AccountClient directly using object storage.
         api = backend._api
 
-        try:
-            job = api._job_submit_object_storage(backend_name, qobj.to_dict())
-        except RequestsApiError as ex:
-            # Get the original connection that was raised.
-            original_exception = ex.__cause__
-
-            if isinstance(original_exception, RequestException):
-                # Get the response from the original request exception.
-                error_response = original_exception.response    # pylint: disable=no-member
-                if error_response is not None and error_response.status_code == 400:
-                    try:
-                        api_code = error_response.json()['error']['code']
-
-                        # If we reach that point, it means the backend does not
-                        # support qobject storage.
-                        self.assertEqual(api_code, 'Q_OBJECT_STORAGE_IS_NOT_ALLOWED')
-                        return
-                    except (ValueError, KeyError):
-                        pass
-            raise
-
+        job = api.job_submit(backend_name, qobj.to_dict())
         job_id = job['id']
         self.assertEqual(job['kind'], 'q-object-external-storage')
 
