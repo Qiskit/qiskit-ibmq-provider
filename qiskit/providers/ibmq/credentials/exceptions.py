@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Exception for the Credentials module."""
+"""Exception for the ``Credentials`` module."""
 
 from ..exceptions import IBMQError
 
@@ -23,10 +23,10 @@ class CredentialsError(IBMQError):
 
 
 class InvalidCredentialsFormatError(CredentialsError):
-    """Error raised when the credentials are in an invalid format."""
+    """Errors raised when the credentials are in an invalid format."""
     pass
 
 
 class CredentialsNotFoundError(CredentialsError):
-    """Error raised when the credentials are not found."""
+    """Errors raised when the credentials are not found."""
     pass

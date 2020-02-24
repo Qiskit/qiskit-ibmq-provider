@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Tests for the IBMQFactory."""
+"""Tests for the IBMQFactory class."""
 
 import os
 from unittest import skipIf
@@ -34,7 +34,7 @@ API1_URL = 'https://quantumexperience.ng.bluemix.net/api'
 
 
 class TestIBMQFactoryEnableAccount(IBMQTestCase):
-    """Tests for IBMQFactory `enable_account()`."""
+    """Tests for IBMQFactory ``enable_account()``."""
 
     @requires_qe_access
     def test_auth_url(self, qe_token, qe_url):
@@ -117,13 +117,15 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
 class TestIBMQFactoryAccounts(IBMQTestCase):
-    """Tests for the IBMQ account handling."""
+    """Tests for account handling."""
 
     @classmethod
     def setUpClass(cls):
+        """Initial class setup."""
         cls.token = 'API_TOKEN'
 
     def setUp(self):
+        """Initial test setup."""
         super().setUp()
 
         # Reference for saving accounts.
@@ -203,9 +205,11 @@ class TestIBMQFactoryProvider(IBMQTestCase):
 
     @requires_qe_access
     def _get_provider(self, qe_token=None, qe_url=None):
+        """Return default provider."""
         return self.ibmq.enable_account(qe_token, qe_url)
 
     def setUp(self):
+        """Initial test setup."""
         super().setUp()
 
         self.ibmq = IBMQFactory()

@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Base Client for accessing IBM Q Experience."""
+"""Base client for accessing IBM Quantum Experience."""
 
 
 class BaseClient:

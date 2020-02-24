@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Session customized for IBM Q Experience access."""
+"""Session customized for IBM Quantum Experience access."""
 
 import os
 from typing import Dict, Optional, Any, Tuple, Union
@@ -34,12 +34,12 @@ CUSTOM_HEADER_ENV_VAR = 'QE_CUSTOM_CLIENT_APP_HEADER'
 
 
 class PostForcelistRetry(Retry):
-    """Custom Retry that performs retry on POST errors in the forcelist.
+    """Custom ``urllib3.Retry`` class that performs retry on ``POST`` errors in the force list.
 
-    Custom `urllib3.Retry` that allows retrying in `POST` requests *only* when
-    the status code returned belongs to the `STATUS_FORCELIST`. While `POST`
+    Retrying of ``POST`` requests are allowed *only* when the status code
+    returned is on the ``STATUS_FORCELIST``. While ``POST``
     requests are recommended not to be retried due to not being idempotent,
-    the IBM Q API guarantees that retrying on specific 5xx errors is safe.
+    the IBM Quantum Experience API guarantees that retrying on specific 5xx errors is safe.
     """
 
     def is_retry(
@@ -48,6 +48,16 @@ class PostForcelistRetry(Retry):
             status_code: int,
             has_retry_after: bool = False
     ) -> bool:
+        """Indicate whether the request should be retried.
+
+        Args:
+            method: Request method.
+            status_code: Status code.
+            has_retry_after: Whether retry has been done before.
+
+        Returns:
+            ``True`` if the request should be retried, ``False`` otherwise.
+        """
         if method.upper() == 'POST' and status_code in self.status_forcelist:
             return True
 
@@ -55,11 +65,10 @@ class PostForcelistRetry(Retry):
 
 
 class RetrySession(Session):
-    """Session with retry and handling of IBM Q parameters.
+    """Custom session with retry and handling of specific parameters.
 
-    Custom session for use with IBM Q, that includes a retry mechanism based
-    on urllib3 and handling of specific parameters based on
-    ``requests.Session``.
+    This is a child class of ``requests.Session``. It has its own retry
+    policy and handles IBM Quantum Experience specific parameters.
     """
 
     def __init__(
@@ -77,15 +86,15 @@ class RetrySession(Session):
         """RetrySession constructor.
 
         Args:
-            base_url: base URL for the session's requests.
-            access_token: access token.
-            retries_total: number of total retries for the requests.
-            retries_connect: number of connect retries for the requests.
-            backoff_factor: backoff factor between retry attempts.
-            verify: enable SSL verification.
-            proxies: proxy URLs mapped by protocol.
-            auth: authentication handler.
-            timeout: timeout for the requests, in the form (connection_timeout,
+            base_url: Base URL for the session's requests.
+            access_token: Access token.
+            retries_total: Number of total retries for the requests.
+            retries_connect: Number of connect retries for the requests.
+            backoff_factor: Backoff factor between retry attempts.
+            verify: Whether to enable SSL verification.
+            proxies: Proxy URLs mapped by protocol.
+            auth: Authentication handler.
+            timeout: Timeout for the requests, in the form of (connection_timeout,
                 total_timeout).
         """
         super().__init__()
@@ -122,12 +131,12 @@ class RetrySession(Session):
             retries_connect: int,
             backoff_factor: float
     ) -> None:
-        """Set the Session retry policy.
+        """Set the session retry policy.
 
         Args:
-            retries_total: number of total retries for the requests.
-            retries_connect: number of connect retries for the requests.
-            backoff_factor: backoff factor between retry attempts.
+            retries_total: Number of total retries for the requests.
+            retries_connect: Number of connect retries for the requests.
+            backoff_factor: Backoff factor between retry attempts.
         """
         retry = PostForcelistRetry(
             total=retries_total,
@@ -146,12 +155,12 @@ class RetrySession(Session):
             proxies: Dict[str, str],
             auth: Optional[AuthBase] = None
     ) -> None:
-        """Set the Session parameters and attributes.
+        """Set the session parameters and attributes.
 
         Args:
-            verify: enable SSL verification.
-            proxies: proxy URLs mapped by protocol.
-            auth: authentication handler.
+            verify: Whether to enable SSL verification.
+            proxies: Proxy URLs mapped by protocol.
+            auth: Authentication handler.
         """
         client_app_header = CLIENT_APPLICATION
 
@@ -173,20 +182,23 @@ class RetrySession(Session):
             bare: bool = False,
             **kwargs: Any
     ) -> Response:
-        """Constructs a Request, prepending the base url.
+        """Construct, prepare, and send a ``Request``.
+
+        If `bare` is not specified, prepend the base URL to the input `url`.
+        Timeout value is passed if proxies are not used.
 
         Args:
-            method: method for the new `Request` object.
-            url: URL for the new `Request` object.
-            bare: if `True`, do not send IBM Q specific information
-                (access token) in the request or modify the `url`.
-            kwargs: additional arguments for the request.
+            method: Method for the new request (e.g. ``POST``).
+            url: URL for the new request.
+            bare: If ``True``, do not send IBM Quantum Experience specific information
+                (such as access token) in the request or modify the input `url`.
+            **kwargs: Additional arguments for the request.
 
         Returns:
             Response object.
 
         Raises:
-            RequestsApiError: if the request failed.
+            RequestsApiError: If the request failed.
         """
         # pylint: disable=arguments-differ
         if bare:
@@ -228,6 +240,11 @@ class RetrySession(Session):
         return response
 
     def _modify_chained_exception_messages(self, exc: BaseException) -> None:
+        """Modify the chained exception messages.
+
+        Args:
+            exc: Exception whose parent messages are to be modified.
+        """
         if exc.__cause__:
             self._modify_chained_exception_messages(exc.__cause__)
         elif exc.__context__:
