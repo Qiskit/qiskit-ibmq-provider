@@ -68,21 +68,6 @@ class TestAccountClient(IBMQTestCase):
                              self.provider.credentials.websockets_url,
                              use_websockets=True)
 
-    def test_job_submit(self):
-        """Test job_submit, running a job against a simulator."""
-        # Create a Qobj.
-        backend_name = 'ibmq_qasm_simulator'
-        backend = self.provider.get_backend(backend_name)
-        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
-        qobj = assemble(circuit, backend, shots=1)
-
-        # Run the job through the AccountClient directly.
-        api = backend._api
-        job = api.job_submit(backend_name, qobj.to_dict(), use_object_storage=False)
-
-        self.assertIn('status', job)
-        self.assertIsNotNone(job['status'])
-
     def test_job_submit_object_storage(self):
         """Test running a job against a simulator using object storage."""
         # Create a Qobj.
@@ -127,24 +112,6 @@ class TestAccountClient(IBMQTestCase):
 
         self.assertEqual(qobj_downloaded, qobj.to_dict())
         self.assertEqual(result['status'], 'COMPLETED')
-
-    def test_job_submit_object_storage_fallback(self):
-        """Test job_submit fallback when object storage fails."""
-        # Create a Qobj.
-        backend_name = 'ibmq_qasm_simulator'
-        backend = self.provider.get_backend(backend_name)
-        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
-        qobj = assemble(circuit, backend, shots=1)
-
-        # Run via the AccountClient, making object storage fail.
-        api = backend._api
-        with mock.patch.object(api, '_job_submit_object_storage',
-                               side_effect=Exception()), \
-                mock.patch.object(api, '_job_submit_post') as mocked_post:
-            _ = api.job_submit(backend_name, qobj.to_dict(), use_object_storage=True)
-
-        # Assert the POST has been called.
-        self.assertEqual(mocked_post.called, True)
 
     def test_list_jobs_statuses(self):
         """Check get status jobs by user authenticated."""
@@ -284,7 +251,7 @@ class TestAccountClient(IBMQTestCase):
                     'urlopen',
                     side_effect=MaxRetryError(
                         HTTPConnectionPool('host'), 'url', reason=exception_message)):
-                _ = api.job_submit(backend.name(), qobj.to_dict(), use_object_storage=True)
+                _ = api.job_submit(backend.name(), qobj.to_dict())
         except RequestsApiError:
             exception_traceback_str = traceback.format_exc()
 
@@ -311,8 +278,7 @@ class TestAccountClientJobs(IBMQTestCase):
         backend = cls.provider.get_backend(backend_name)
         cls.client = backend._api
         cls.job = cls.client.job_submit(
-            backend_name, cls._get_qobj(backend).to_dict(),
-            use_object_storage=backend.configuration().allow_object_storage)
+            backend_name, cls._get_qobj(backend).to_dict())
         cls.job_id = cls.job['id']
 
     @staticmethod

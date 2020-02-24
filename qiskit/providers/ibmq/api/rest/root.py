@@ -149,7 +149,7 @@ class Api(RestAdapterBase):
         data = json.dumps(payload, cls=json_encoder.IQXJsonEconder)
         return self.session.post(url, data=data).json()
 
-    def submit_job_object_storage(
+    def create_remote_job(
             self,
             backend_name: str,
             shots: int = 1,
@@ -157,7 +157,7 @@ class Api(RestAdapterBase):
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None
     ) -> Dict[str, Any]:
-        """Submit a job for executing, using object storage.
+        """Create a job instance on the remote server.
 
         Args:
             backend_name: The name of the backend.
