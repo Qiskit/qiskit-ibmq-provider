@@ -18,6 +18,8 @@ import json
 
 from typing import Dict, List, Optional, Any
 
+from qiskit.providers.ibmq.utils import json_encoder
+
 from .base import RestAdapterBase
 from .backend import Backend
 from .job import Job
@@ -144,7 +146,8 @@ class Api(RestAdapterBase):
         if job_tags:
             payload['tags'] = job_tags
 
-        return self.session.post(url, json=payload).json()
+        data = json.dumps(payload, cls=json_encoder.IQXJsonEconder)
+        return self.session.post(url, data=data).json()
 
     def submit_job_object_storage(
             self,

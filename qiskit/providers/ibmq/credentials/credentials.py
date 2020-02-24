@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Model for representing IBM Q credentials."""
+"""Represent IBM Quantum Experience account credentials."""
 
 import re
 import warnings
@@ -23,22 +23,22 @@ from requests_ntlm import HttpNtlmAuth
 from .hubgroupproject import HubGroupProject
 
 
-# Regex that matches a IBMQ URL with hub information
 REGEX_IBMQ_HUBS = (
     '(?P<prefix>http[s]://.+/api)'
     '/Hubs/(?P<hub>[^/]+)/Groups/(?P<group>[^/]+)/Projects/(?P<project>[^/]+)'
 )
+"""str: Regex that matches an IBM Quantum Experience URL with hub information."""
 
-# Template for creating an IBMQ URL with hub information
 TEMPLATE_IBMQ_HUBS = '{prefix}/Network/{hub}/Groups/{group}/Projects/{project}'
+"""str: Template for creating an IBM Quantum Experience URL with hub/group/project information."""
 
 
 class Credentials:
-    """IBM Q account credentials.
+    """IBM Quantum Experience account credentials.
 
-    Note that, by convention, two credentials that have the same hub, group
-    and project (regardless of other attributes) are considered equivalent.
-    The `unique_id()` returns the unique identifier.
+    Note:
+        By convention, two credentials that have the same hub, group,
+        and project are considered equivalent, regardless of other attributes.
     """
 
     def __init__(
@@ -52,24 +52,17 @@ class Credentials:
             proxies: Optional[Dict] = None,
             verify: bool = True
     ) -> None:
-        """Return new set of credentials.
+        """Credentials constructor.
 
         Args:
-            token: Quantum Experience or IBMQ API token.
-            url: URL for Quantum Experience or IBMQ.
+            token: IBM Quantum Experience API token.
+            url: IBM Quantum Experience URL.
             websockets_url: URL for websocket server.
-            hub: the hub used for IBMQ.
-            group: the group used for IBMQ.
-            project: the project used for IBMQ.
-            proxies: proxy configuration for the API.
-            verify: if False, ignores SSL certificates errors
-
-        Note:
-            `hub`, `group` and `project` are stored as attributes for
-            convenience, but their usage in the API is deprecated. The new-style
-            URLs (that includes these parameters as part of the url string, and
-            is automatically set during instantiation) should be used when
-            communicating with the API.
+            hub: The hub to use.
+            group: The group to use.
+            project: The project to use.
+            proxies: Proxy configuration.
+            verify: If ``False``, ignores SSL certificates errors.
         """
         self.token = token
         (self.url, self.base_url,
@@ -83,7 +76,7 @@ class Credentials:
         self._prepend_protocol_if_needed()
 
     def is_ibmq(self) -> bool:
-        """Return whether the credentials represent a IBMQ account."""
+        """Return whether the credentials represent an IBM Quantum Experience account."""
         return all([self.hub, self.group, self.project])
 
     def __eq__(self, other: object) -> bool:
@@ -92,20 +85,21 @@ class Credentials:
     def unique_id(self) -> HubGroupProject:
         """Return a value that uniquely identifies these credentials.
 
-        By convention, we assume (hub, group, project) is always unique.
+        By convention, two credentials that have the same hub, group,
+        and project are considered equivalent.
 
         Returns:
-            the (hub, group, project) tuple.
+            The (hub, group, project) tuple.
         """
         return HubGroupProject(self.hub, self.group, self.project)
 
     def connection_parameters(self) -> Dict[str, Any]:
-        """Return a dict of kwargs in the format expected by `requests`.
+        """Construct connection related parameters.
 
         Returns:
-            a dict with connection-related arguments in the format
-                expected by `requests`. The following keys can be present:
-                `proxies`, `verify`, `auth`.
+            A dictionary with connection-related parameters in the format
+            expected by ``requests``. The following keys can be present:
+            ``proxies``, ``verify``, and ``auth``.
         """
         request_kwargs = {
             'verify': self.verify
@@ -153,19 +147,22 @@ def _unify_ibmq_url(
     """Return a new-style set of credential values (url and hub parameters).
 
     Args:
-        url: URL for Quantum Experience or IBM Q.
-        hub: the hub used for IBM Q.
-        group: the group used for IBM Q.
-        project: the project used for IBM Q.
+        url: URL for IBM Quantum Experience.
+        hub: The hub to use.
+        group: The group to use.
+        project: The project to use.
 
     Returns:
-        tuple[url, base_url, hub, group, token]:
-            * url: new-style Quantum Experience or IBM Q URL (the hub,
-                group and project included in the URL).
-            * base_url: base URL for the API, without hub/group/project.
-            * hub: the hub used for IBM Q.
-            * group: the group used for IBM Q.
-            * project: the project used for IBM Q.
+        A tuple that consists of ``url``, ``base_url``, ``hub``, ``group``,
+        and ``project``, where
+
+            * url: The new-style IBM Quantum Experience URL that contains
+              the hub, group, and project names.
+            * base_url: Base URL that does not contain the hub, group, and
+              project names.
+            * hub: The hub to use.
+            * group: The group to use.
+            * project: The project to use.
     """
     # Check if the URL is "new style", and retrieve embedded parameters from it.
     regex_match = re.match(REGEX_IBMQ_HUBS, url, re.IGNORECASE)
