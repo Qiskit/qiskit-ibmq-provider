@@ -19,7 +19,7 @@ Utilities (:mod:`qiskit.providers.ibmq.utils`)
 
 .. currentmodule:: qiskit.providers.ibmq.utils
 
-Utilities related to the IBM Quantum Experience Provider.
+Utility functions related to the IBM Quantum Provider.
 
 Functions
 =========
