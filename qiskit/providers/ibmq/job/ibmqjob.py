@@ -120,7 +120,7 @@ class IBMQJob(BaseModel, BaseJob):
         # pylint: disable=redefined-builtin
 
         # Convert qobj from dictionary to Qobj.
-        if '_qobj' in kwargs and isinstance(kwargs['_qobj'], dict):
+        if isinstance(kwargs.get('_qobj', None), dict):
             self._qobj = Qobj.from_dict(kwargs.pop('_qobj'))
 
         BaseModel.__init__(self, _backend=_backend, _job_id=_job_id,
