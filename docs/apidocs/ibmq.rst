@@ -17,9 +17,9 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
-   utils
    job
    managed
    credentials
    visualization
    jupyter
+   utils

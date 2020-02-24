@@ -20,7 +20,7 @@ import dateutil
 
 
 def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
-    """Converts a UTC ``datetime`` object or string to a local timezone ``datetime``.
+    """Convert a UTC ``datetime`` object or string to a local timezone ``datetime``.
 
     Args:
         utc_dt: Input UTC `datetime`.
