@@ -12,33 +12,37 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""A module of widgets for job monitoring"""
+"""A module of widgets for job monitoring."""
+
 import sys
 import time
 import threading
+
+from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+
 from ...utils.converters import utc_to_local
 
 
-def _job_monitor(job, status, watcher):
-    """Monitor the status of a IBMQJob instance.
+def _job_monitor(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> None:
+    """Monitor the status of an ``IBMQJob`` instance.
 
     Args:
-        job (BaseJob): Job to monitor.
-        status (Enum): Job status.
-        watcher (JobWatcher): Job watcher instance
+        job: Job to monitor.
+        status: Job status.
+        watcher: Job watcher instance.
     """
     thread = threading.Thread(target=_job_checker, args=(job, status, watcher))
     thread.start()
 
 
-def _job_checker(job, status, watcher):
-    """A simple job status checker
+def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> None:
+    """A simple job status checker.
 
     Args:
-        job (BaseJob): The job to check.
-        status (Enum): Job status.
-        watcher (JobWatcher): Job watcher instance
-
+        job: The job to check.
+        status: Job status.
+        watcher: Job watcher instance.
     """
     prev_status_name = None
     prev_queue_pos = None

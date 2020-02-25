@@ -25,7 +25,7 @@ from ..device_layouts import DEVICE_LAYOUTS
 
 def iplot_gate_map(
         backend: IBMQBackend,
-        figsize: Tuple[Optional[int]] = (None, None),
+        figsize: Tuple[Optional[int], Optional[int]] = (None, None),
         label_qubits: bool = True,
         qubit_size: Optional[float] = None,
         line_width: Optional[float] = None,

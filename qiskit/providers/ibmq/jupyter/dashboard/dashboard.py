@@ -11,21 +11,22 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-# pylint: disable=import-error, unused-argument, attribute-defined-outside-init
-# pylint: disable=protected-access
-"""The core IBMQ dashboard launcher
-"""
+
+"""The core IBM Quantum Experience dashboard launcher."""
 
 import threading
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any, Optional
+from collections import namedtuple
+
 import ipywidgets as wid
 from IPython.display import display, Javascript
 from IPython.core.magic import line_magic, Magics, magics_class
 from qiskit.tools.events.pubsub import Subscriber
 from qiskit.exceptions import QiskitError
 from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
+from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+
 from ... import IBMQ
-from ...ibmqbackend import IBMQBackend
 from .job_widgets import (make_clear_button,
                           make_labels, create_job_widget)
 from .backend_widget import make_backend_widget
@@ -33,17 +34,30 @@ from .backend_update import update_backend_info
 from .watcher_monitor import _job_monitor
 
 
-class Accordion_with_thread(wid.Accordion):  # pylint: disable=invalid-name
-    """An Accordion that will close an attached thread
-    """
+BackendWithProviders = namedtuple('BackendWithProviders', ['backend', 'providers'])
+"""Named tuple used to pass a backend and its providers."""
+
+
+class AccordionWithThread(wid.Accordion):
+    """An ``Accordion`` that will close an attached thread."""
+
     def __init__(self,
-                 children: Tuple = (),
-                 **kwargs):
-        super(Accordion_with_thread, self).__init__(children=children, **kwargs)
+                 children: Optional[List] = None,
+                 **kwargs: Any):
+        """AccordionWithThread constructor.
+
+        Args:
+            children: A list of widgets to be attached to the accordion.
+            **kwargs: Additional keywords to be passed to ``ipywidgets.Accordion``.
+        """
+        children = children or []
+        super(AccordionWithThread, self).__init__(children=children, **kwargs)
         self._thread = None
+        # Devices VBox.
+        self._device_list = None  # type: Optional[wid.VBox]
 
     def __del__(self):
-        """Object disposal"""
+        """Object disposal."""
         if hasattr(self, '_thread'):
             try:
                 self._thread.do_run = False
@@ -53,27 +67,48 @@ class Accordion_with_thread(wid.Accordion):  # pylint: disable=invalid-name
         self.close()
 
 
-def _add_device_to_list(backend: IBMQBackend,
-                        device_list: List):
+def _add_device_to_list(backend: BackendWithProviders,
+                        device_list: wid.VBox) -> None:
+    """Add the backend to the device list widget.
+
+    Args:
+        backend: Backend to add.
+        device_list: Widget showing the devices.
+    """
     device_pane = make_backend_widget(backend)
     device_list.children = list(device_list.children) + [device_pane]
 
 
 class IQXDashboard(Subscriber):
-    """An IQX dashboard.
+    """An IBM Quantum Experience dashboard.
+
+    This dashboard shows both device and job information.
     """
+
     def __init__(self):
+        """IQXDashboard constructor."""
         super().__init__()
-        self.jobs: List = []
+
+        # A list of job widgets. Each represents a job and has 5 children:
+        # close button, Job ID, backend, status, and estimated start time.
+        self.jobs = []  # type: List
+
         self._init_subscriber()
-        self.dashboard: Accordion_with_thread = None
-        self.backend_dict: Dict = None
-        self.job_viewer: wid.VBox = None
-        self._clear_jobs_button: wid.GridBox = make_clear_button(self)
-        self._jobs_labels: wid.HBox = make_labels()
+        self.dashboard = None  # type: Optional[AccordionWithThread]
+
+        # Backend dictionary. The keys are the backend names and the values
+        # are named tuples of ``IBMQBackend`` instances and a list of provider names.
+        self.backend_dict = None  # type: Optional[Dict[str, BackendWithProviders]]
+
+        # Jobs tab on the dashboard.
+        self.job_viewer = None  # type: Optional[wid.VBox]
+        self._clear_jobs_button = make_clear_button(self)  # type: wid.GridBox
+        self._jobs_labels = make_labels()  # type: wid.HBox
         self.refresh_jobs_board()
 
-    def _get_backends(self):
+    def _get_backends(self) -> None:
+        """Get all the backends accessible with this account."""
+
         ibmq_backends = {}
         for pro in IBMQ.providers():
             pro_name = "{hub}/{group}/{project}".format(hub=pro.credentials.hub,
@@ -82,22 +117,21 @@ class IQXDashboard(Subscriber):
             for back in pro.backends():
                 if not back.configuration().simulator:
                     if back.name() not in ibmq_backends.keys():
-                        ibmq_backends[back.name()] = [back, [pro_name]]
+                        ibmq_backends[back.name()] = \
+                            BackendWithProviders(backend=back, providers=[pro_name])
                     else:
-                        ibmq_backends[back.name()][1].append(pro_name)
+                        ibmq_backends[back.name()].providers.append(pro_name)
 
         self.backend_dict = ibmq_backends
 
-    def refresh_jobs_board(self):
-        """Refreshes the job viewer.
-        """
+    def refresh_jobs_board(self) -> None:
+        """Refresh the job viewer."""
         if self.job_viewer is not None:
             self.job_viewer.children = [self._clear_jobs_button,
                                         self._jobs_labels] + list(reversed(self.jobs))
 
-    def refresh_device_list(self):
-        """Refresh the list of devices
-        """
+    def refresh_device_list(self) -> None:
+        """Refresh the list of devices."""
         for _wid in self.dashboard._device_list.children:
             _wid.close()
         self.dashboard._device_list.children = []
@@ -106,9 +140,8 @@ class IQXDashboard(Subscriber):
                                        args=(back, self.dashboard._device_list))
             _thread.start()
 
-    def start_dashboard(self):
-        """Starts the job viewer
-        """
+    def start_dashboard(self) -> None:
+        """Starts the dashboard."""
         self.dashboard = build_dashboard_widget()
         self.job_viewer = self.dashboard.children[0].children[1]
         self._get_backends()
@@ -119,21 +152,20 @@ class IQXDashboard(Subscriber):
         self.dashboard._thread.start()
         self.refresh_jobs_board()
 
-    def stop_dashboard(self):
-        """Stops the job viewer.
-        """
+    def stop_dashboard(self) -> None:
+        """Stops the dashboard."""
         if self.dashboard:
             self.dashboard._thread.do_run = False
             self.dashboard._thread.join()
             self.dashboard.close()
         self.dashboard = None
 
-    def update_single_job(self, update_info: Tuple):
-        """Update a single job instance
+    def update_single_job(self, update_info: Tuple) -> None:
+        """Update a single job instance.
 
         Args:
             update_info: Updated job info containing job ID,
-                         status string, est time, and status value.
+                status string, est time, and status value.
         """
         job_id = update_info[0]
         found_job = False
@@ -155,21 +187,21 @@ class IQXDashboard(Subscriber):
             else:
                 stat = update_info[1]
             job_wid.children[3].value = stat
-            # update queue
+            # update estimated start time.
             if update_info[2] == 0:
-                queue = '-'
+                est_start = '-'
             else:
-                queue = str(update_info[2])
-            job_wid.children[4].value = queue
+                est_start = str(update_info[2])
+            job_wid.children[4].value = est_start
 
-    def cancel_job(self, job_id: str):
-        """Cancels a job in the watcher
+    def cancel_job(self, job_id: str) -> None:
+        """Cancel a job in the watcher.
 
         Args:
-            job_id: Job id to remove.
+            job_id: ID of the job to cancel.
 
         Raises:
-            Exception: Job id not found.
+            Exception: If job ID is not found.
         """
         do_pop = False
         ind = None
@@ -179,7 +211,7 @@ class IQXDashboard(Subscriber):
                 ind = idx
                 break
         if not do_pop:
-            raise Exception('job_id not found')
+            raise Exception('Job is not found.')
         if self.jobs[ind].children[3].value not in ['CANCELLED',
                                                     'DONE',
                                                     'ERROR']:
@@ -193,9 +225,8 @@ class IQXDashboard(Subscriber):
                                         status.name, 0,
                                         status.value))
 
-    def clear_done(self):
-        """Clears the done jobs from the list.
-        """
+    def clear_done(self) -> None:
+        """Clear the done jobs from the list."""
         _temp_jobs = []
         do_refresh = False
         for job in self.jobs:
@@ -209,15 +240,25 @@ class IQXDashboard(Subscriber):
             self.jobs = _temp_jobs
             self.refresh_jobs_board()
 
-    def _init_subscriber(self):
+    def _init_subscriber(self) -> None:
+        """Initializes a subscriber that listens to job start events."""
 
-        def _add_job(job):
+        def _add_job(job: IBMQJob) -> None:
+            """Callback function when a job start event is received.
+
+            When a job starts, this function creates a job widget and adds
+            the widget to the list of jobs the dashboard keeps tracking.
+
+            Args:
+                job: Job to start watching.
+            """
             status = job.status()
+            queue_info = job.queue_info()
             job_widget = create_job_widget(self, job,
-                                           job.backend(),
+                                           job.backend().name(),
                                            status.name,
-                                           job.queue_position(),
-                                           status.value)
+                                           queue_info.position,
+                                           queue_info.estimated_start_time)
             self.jobs.append(job_widget)
             _job_monitor(job, status, self)
 
@@ -229,8 +270,8 @@ class IQXDashboard(Subscriber):
         self.subscribe("ibmq.job.start", _add_job)
 
 
-def build_dashboard_widget() -> Accordion_with_thread:
-    """Builds the dashboard widget
+def build_dashboard_widget() -> AccordionWithThread:
+    """Build the dashboard widget.
 
     Returns:
         Dashboard widget.
@@ -255,10 +296,10 @@ def build_dashboard_widget() -> Accordion_with_thread:
     tabs.set_title(0, 'Devices')
     tabs.set_title(1, 'Jobs')
 
-    acc = Accordion_with_thread(children=[tabs],
-                                layout=wid.Layout(width='auto',
-                                                  max_height='700px',
-                                                  ))
+    acc = AccordionWithThread(children=[tabs],
+                              layout=wid.Layout(width='auto',
+                                                max_height='700px',
+                                                ))
 
     acc._device_list = acc.children[0].children[0].children[0]
 
@@ -284,31 +325,33 @@ def build_dashboard_widget() -> Accordion_with_thread:
 
 @magics_class
 class IQXDashboardMagic(Magics):
-    """A class for enabling/disabling the job watcher.
-    """
+    """A class for enabling/disabling the IBM Quantum Experience dashboard."""
+
     @line_magic
-    def iqx_dashboard(self, line='', cell=None):
-        """A Jupyter magic function to enable job watcher.
-        """
+    def iqx_dashboard(self, line='', cell=None) -> None:
+        """A Jupyter magic function to enable the dashboard."""
+        # pylint: disable=unused-argument
         pro = IBMQ.providers()
         if not pro:
             try:
                 IBMQ.load_account()
             except Exception:
-                raise QiskitError("Could not load IBMQ account from local file.")
+                raise QiskitError(
+                    "Could not load IBM Quantum Experience account from the local file.")
             else:
                 pro = IBMQ.providers()
                 if not pro:
-                    raise QiskitError("No providers found.  Must load your IBMQ account.")
+                    raise QiskitError(
+                        "No providers found.  Must load your IBM Quantum Experience account.")
         _IQX_DASHBOARD.stop_dashboard()
         _IQX_DASHBOARD.start_dashboard()
 
     @line_magic
-    def disable_ibmq_dashboard(self, line='', cell=None):
-        """A Jupyter magic function to disable job watcher.
-        """
+    def disable_ibmq_dashboard(self, line='', cell=None) -> None:
+        """A Jupyter magic function to disable the dashboard."""
+        # pylint: disable=unused-argument
         _IQX_DASHBOARD.stop_dashboard()
 
 
-# The Jupyter IBMQ dashboard instance
 _IQX_DASHBOARD = IQXDashboard()
+"""The Jupyter IBM Quantum Experience dashboard instance."""
