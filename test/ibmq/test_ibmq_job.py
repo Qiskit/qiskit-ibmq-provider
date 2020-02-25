@@ -574,8 +574,8 @@ class TestIBMQJob(JobTestCase):
         newest_jobs = backend.jobs(limit=10, status=JobStatus.DONE, descending=True)
         self.assertIn(job.job_id(), [rjob.job_id() for rjob in newest_jobs])
 
-        newest_jobs = backend.jobs(limit=10, status=JobStatus.DONE, descending=False)
-        self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in newest_jobs])
+        oldest_jobs = backend.jobs(limit=10, status=JobStatus.DONE, descending=False)
+        self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in oldest_jobs])
 
     @requires_provider
     def test_double_submit_fails(self, provider):

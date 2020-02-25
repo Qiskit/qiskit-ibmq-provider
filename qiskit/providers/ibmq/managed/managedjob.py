@@ -106,10 +106,8 @@ class ManagedJob:
         """
         # pylint: disable=missing-raises-doc
         submit_lock.acquire()
-        try_again = True
         try:
-            while try_again:
-                try_again = False
+            while self.job is None:
                 try:
                     self.job = backend.run(
                         qobj=qobj,
@@ -127,7 +125,6 @@ class ManagedJob:
                             oldest_running = oldest_running[0]
                             logger.info("Waiting for job %s to finish", oldest_running.job_id())
                             oldest_running.wait_for_final_state(timeout=300)
-                        try_again = True
                     else:
                         raise
         except Exception as err:  # pylint: disable=broad-except

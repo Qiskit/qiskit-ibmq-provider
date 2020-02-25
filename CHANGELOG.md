@@ -18,8 +18,13 @@ The format is based on [Keep a Changelog].
 
 ### Changed
 
+- `IBMQBackend.jobs()` now accepts a new boolean parameter `descending`,
+  which can be used to indicate whether the jobs should be returned in
+  descending or ascending order. (\#533) 
+- `IBMQJobManager` now looks at the job limit and waits for old jobs
+  to finish before submitting new ones if the limit has been reached. (\#533)  
 - JSON schema validation is no longer run by default on qobj objects passed
-  to `IBMQBackend.run()`. This siginficantly speeds up the execution of the
+  to `IBMQBackend.run()`. This significantly speeds up the execution of the
   `run` method and the API server will return 400 if the qobj is invalid. If
   you would like to still run the validation you can set the `validate_qobj`
   kwarg to `True` which will enable the JSON schema validation. (\#554)
@@ -58,11 +63,6 @@ The format is based on [Keep a Changelog].
 
 ### Changed
 
-- `IBMQBackend.jobs()` now accepts a new boolean parameter `descending`,
-  which can be used to indicate whether the jobs should be returned in
-  descending or ascending order. (\#533) 
-- `IBMQJobManager` now looks at the job limit and waits for old jobs
-  to finish before submitting new ones if the limit has been reached. (\#533)
 - The Exception hierarchy has been refined with more specialized classes. 
   You can, however, continue to catch their parent exceptions (such 
   as `IBMQAccountError`). Also, the exception class `IBMQApiUrlError` 
