@@ -32,7 +32,7 @@ from ..colormaps import (HELIX_LIGHT, HELIX_LIGHT_CMAP,
 
 def iplot_error_map(
         backend: IBMQBackend,
-        figsize: Tuple[int] = (700, 500),
+        figsize: Tuple[int] = (800, 500),
         show_title: bool = True,
         remove_badcal_edges: bool = True,
         background_color: str = 'white',
@@ -69,7 +69,7 @@ def iplot_error_map(
 
            iplot_error_map(backend, as_widget=True)
     """
-    meas_text_color = '#FFFFFF'
+    meas_text_color = '#000000'
     if background_color == 'white':
         color_map = HELIX_LIGHT_CMAP
         text_color = '#000000'
@@ -285,6 +285,10 @@ def iplot_error_map(
                                            np.round(t1s[kk], 2),
                                            np.round(t2s[kk], 2)))
 
+    if n_qubits > 20:
+        qubit_size = 23
+        font_size = 11
+
     if n_qubits > 50:
         qubit_size = 20
         font_size = 9
@@ -371,7 +375,7 @@ def iplot_error_map(
     for kk in range(num_left-1, -1, -1):
         fig.append_trace(go.Bar(x=[read_err[kk]], y=[kk],
                                 orientation='h',
-                                marker=dict(color='#b385e2'),
+                                marker=dict(color='#eedccb'),
                                 hoverinfo="text",
                                 hoverlabel=dict(font=dict(color=meas_text_color)),
                                 hovertext=[hover_text.format(kk,
@@ -408,7 +412,7 @@ def iplot_error_map(
             fig.append_trace(go.Bar(x=[-read_err[kk]],
                                     y=[kk],
                                     orientation='h',
-                                    marker=dict(color='#b385e2'),
+                                    marker=dict(color='#eedccb'),
                                     hoverinfo="text",
                                     hoverlabel=dict(font=dict(color=meas_text_color)),
                                     hovertext=[hover_text.format(kk,
