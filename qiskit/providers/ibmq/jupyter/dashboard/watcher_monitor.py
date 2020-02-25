@@ -58,10 +58,15 @@ def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> No
             if status.name == 'QUEUED':
                 queue_pos = job.queue_position()
                 if queue_pos != prev_queue_pos:
-                    est_time = utc_to_local(job.queue_info().estimated_start_time)
+                    queue_info = job.queue_info()
+                    if queue_info and queue_info.estimated_start_time:
+                        est_time = utc_to_local(queue_info.estimated_start_time
+                                                ).strftime("%H:%M %Z (%m/%d)")
+                    else:
+                        est_time = 0
 
                     update_info = (job.job_id(), status.name+' ({})'.format(queue_pos),
-                                   est_time.strftime("%H:%M %Z (%m/%d)"), status.value)
+                                   est_time, status.value)
 
                     watcher.update_single_job(update_info)
                     if queue_pos is not None:

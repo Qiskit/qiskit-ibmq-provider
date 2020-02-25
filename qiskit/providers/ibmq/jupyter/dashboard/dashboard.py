@@ -254,11 +254,13 @@ class IQXDashboard(Subscriber):
             """
             status = job.status()
             queue_info = job.queue_info()
+            position = queue_info.position if queue_info else None
+            est_time = queue_info.estimated_start_time if queue_info else None
             job_widget = create_job_widget(self, job,
                                            job.backend().name(),
                                            status.name,
-                                           queue_info.position,
-                                           queue_info.estimated_start_time)
+                                           position,
+                                           est_time)
             self.jobs.append(job_widget)
             _job_monitor(job, status, self)
 
