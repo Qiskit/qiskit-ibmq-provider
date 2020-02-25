@@ -170,6 +170,7 @@ class RetrySession(Session):
             client_app_header += "/" + custom_header
 
         self.headers.update({'X-Qx-Client-Application': client_app_header})
+        self.headers['Content-Type'] = 'application/json'
 
         self.auth = auth
         self.proxies = proxies or {}

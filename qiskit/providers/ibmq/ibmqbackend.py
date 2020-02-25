@@ -225,7 +225,7 @@ class IBMQBackend(BaseBackend):
         submit_info.update({
             '_backend': self,
             'api': self._api,
-            'qObject': qobj_dict
+            'qObject': qobj
         })
         try:
             job = IBMQJob.from_dict(submit_info)

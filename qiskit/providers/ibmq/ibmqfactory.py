@@ -309,7 +309,7 @@ class IBMQFactory:
             project: Name of the project.
 
         Returns:
-            list of providers that match the specified criteria.
+            A list of providers that match the specified criteria.
         """
         filters = []
 
