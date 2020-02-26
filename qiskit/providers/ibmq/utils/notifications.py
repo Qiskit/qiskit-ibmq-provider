@@ -17,7 +17,6 @@ import sys
 
 #pylint: disable=simplifiable-if-statement
 if ('ipykernel' in sys.modules) and ('spyder' not in sys.modules):
-    from ..jupyter.exceptions import exception_widget
     HAS_JUPYTER = True
 else:
     HAS_JUPYTER = False
@@ -39,6 +38,8 @@ def raise_pretty(error: Exception) -> None:
             raise_pretty(TypeError('Your not my type.'))
     """
     if HAS_JUPYTER:
+        # pylint: disable=import-outside-toplevel
+        from ..jupyter.exceptions import exception_widget
         exception_widget(error)
     else:
         raise error

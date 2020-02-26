@@ -23,6 +23,7 @@ from urllib3.util.retry import Retry
 
 from .exceptions import RequestsApiError
 from ..version import __version__ as ibmq_provider_version
+from ..utils.notifications import raise_pretty
 
 STATUS_FORCELIST = (
     502,  # Bad Gateway
@@ -236,7 +237,7 @@ class RetrySession(Session):
                 # Modify the original message on the chained exceptions.
                 self._modify_chained_exception_messages(ex)
 
-            raise RequestsApiError(message) from ex
+            raise_pretty(RequestsApiError(message))
 
         return response
 
