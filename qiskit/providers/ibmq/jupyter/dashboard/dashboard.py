@@ -23,8 +23,8 @@ from IPython.display import display, Javascript
 from IPython.core.magic import line_magic, Magics, magics_class
 from qiskit.tools.events.pubsub import Subscriber
 from qiskit.exceptions import QiskitError
-from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
-from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+from ...job.exceptions import IBMQJobApiError
+from ...job.ibmqjob import IBMQJob
 
 from ... import IBMQ
 from .job_widgets import (make_clear_button,
