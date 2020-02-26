@@ -24,6 +24,7 @@ from qiskit.test.mock.fake_backend import FakeBackend
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
 from ..utils.converters import utc_to_local
+from ..ibmqbackend import IBMQBackend
 from ..visualization.interactive.plotly_wrapper import PlotlyWidget
 
 MONTH_NAMES = {1: 'Jan.',
