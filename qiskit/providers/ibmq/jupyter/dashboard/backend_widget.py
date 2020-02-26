@@ -12,26 +12,26 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Module for constructing backend widgets.
-"""
+"""Module for constructing backend widgets."""
 
 import ipywidgets as wid
+
 from ...visualization.interactive import iplot_gate_map
 from .provider_buttons import provider_buttons
 
 
-def make_backend_widget(backend_item):
-    """ Constructs a backend widget for a given device.
+def make_backend_widget(backend_item: 'BackendWithProviders') -> wid.HBox:
+    """ Construct a backend widget for a given device.
 
-    Parameters:
-        backend_item (list): A list containing a backend instance and a list
-                             of providers from which the backend can be accessed.
+    Args:
+        backend_item: A ``BackendWithProviders`` instance containing the
+            backend instance and a list of providers from which the backend can be accessed.
 
     Returns:
-        HBox: The ipywidget with backend information.
+        The widget with backend information.
     """
-    backend = backend_item[0]
-    backend_providers = backend_item[1]
+    backend = backend_item.backend
+    backend_providers = backend_item.providers
 
     status = backend.status()
     config = backend.configuration()
