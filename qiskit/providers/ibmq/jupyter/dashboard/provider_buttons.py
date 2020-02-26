@@ -11,18 +11,23 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-"""Module for creating provider buttons in dashbaord
-"""
+
+"""Module for creating provider buttons in the dashboard."""
 
 import time
 import threading
+from typing import List, Any
+
 import ipyvuetify as vue
 import ipywidgets as wid
 import pyperclip
 
 
-def _copy_text_thread(button):
-    """ A function that signals button text was copied to clipboard
+def _copy_text_thread(button: vue.Btn) -> None:
+    """A function that signals button text was copied to clipboard.
+
+    Args:
+        button: Button whose text is to be copied.
     """
     old_text = button.children[0]
     hub, group, project = old_text.split('/')
@@ -33,19 +38,23 @@ def _copy_text_thread(button):
     button.children = [old_text]
 
 
-def _copy_text(*args):
+def _copy_text(*args: Any) -> None:
+    """Copy the text on the input button."""
     thread = threading.Thread(target=_copy_text_thread, args=(args[0],))
     thread.start()
 
 
-def provider_buttons(providers):
-    """ Generates a collection of provider buttons for a backend.
+def provider_buttons(providers: List[str]) -> wid.VBox:
+    """Generate a collection of provider buttons for a backend.
 
-    Parameters:
-        providers (list): A list of providers.
+    When one of these buttons is clicked, the code to get the particular
+    provider is copied to the clipboard.
+
+    Args:
+        providers: A list of provider names.
 
     Returns:
-        VBox: An ipywidgets VBox instance.
+        A widget with provider buttons.
     """
     vbox_buttons = []
     for pro in providers:
