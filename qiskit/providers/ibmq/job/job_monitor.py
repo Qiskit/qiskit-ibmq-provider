@@ -59,13 +59,13 @@ def _text_checker(job: IBMQJob,
             time_str = ''
             if time_tuple[0]:
                 time_str += '{} days'.format(time_tuple[0])
-                time_str += ', {} hours'.format(time_tuple[1])
+                time_str += ' {} hours'.format(time_tuple[1])
             elif time_tuple[1]:
                 time_str += '{} hours'.format(time_tuple[1])
-                time_str += ', {} minutes'.format(time_tuple[2])
+                time_str += ' {} minutes'.format(time_tuple[2])
             elif time_tuple[2]:
                 time_str += '{} minutes'.format(time_tuple[2])
-                time_str += '{} seconds'.format(time_tuple[3])
+                time_str += ' {} seconds'.format(time_tuple[3])
             elif time_tuple[3]:
                 time_str += '{} seconds'.format(time_tuple[3])
 
