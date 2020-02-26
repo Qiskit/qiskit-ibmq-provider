@@ -14,8 +14,9 @@
 
 """Utilities related to conversion."""
 
-from typing import Union
+from typing import Union, Tuple
 import datetime
+from math import ceil
 import dateutil
 
 
@@ -39,3 +40,24 @@ def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
     local_tz = datetime.datetime.now().astimezone().tzinfo
     local_dt = utc_dt.astimezone(local_tz)  # type: ignore[attr-defined]
     return local_dt
+
+
+def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
+    """Converts seconds in a datetime delta to a duration.
+
+    Args:
+        seconds: Number of seconds in time delta.
+
+    Returns:
+        A tuple containing the duration in terms of days,
+        hours, minutes, seconds, and milliseconds.
+    """
+    days = int(seconds // (3600 * 24))
+    hours = int((seconds // 3600) % 24)
+    minutes = int((seconds // 60) % 60)
+    seconds = int(seconds % 60)
+    millisec = 0
+    if seconds < 1:
+        millisec = int(ceil(seconds*1000))
+        seconds = 0
+    return days, hours, minutes, seconds, millisec

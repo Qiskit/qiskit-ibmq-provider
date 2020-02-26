@@ -21,14 +21,31 @@ Utilities (:mod:`qiskit.providers.ibmq.utils`)
 
 Utility functions related to the IBM Quantum Provider.
 
-Functions
-=========
+Conversion
+==========
 .. autosummary::
     :toctree: ../stubs/
 
+    seconds_to_duration
     utc_to_local
+
+Qobj Utils
+==========
+.. autosummary::
+    :toctree: ../stubs/
+
+    update_qobj_config
+
+Misc Functions
+==============
+.. autosummary::
+    :toctree: ../stubs/
+
+    to_python_identifier
+    validate_job_tags
+
 """
 
-from .converters import utc_to_local
+from .converters import utc_to_local, seconds_to_duration
 from .qobj_utils import update_qobj_config
 from .utils import to_python_identifier, validate_job_tags
