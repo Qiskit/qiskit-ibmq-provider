@@ -20,8 +20,8 @@ The format is based on [Keep a Changelog].
 
 ### Added
 
-- Some of the visualization and Jupyter tools, including `plot_gate_map()`, 
-  `plot_error_map()`, job watcher and backend overview, have been moved 
+- Some of the visualization and Jupyter tools, including gate/error map plotting,  
+  job watcher and backend overview, have been moved 
   from `qiskit-terra` to `qiskit-ibmq-provider`. In addition, you can now 
   use `%iqx_dashboard` to get a dashboard that provides both job and 
   backend information. (\#535) (\#541)  
