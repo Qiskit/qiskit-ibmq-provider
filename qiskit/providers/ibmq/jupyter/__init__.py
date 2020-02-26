@@ -24,7 +24,7 @@ Quantum devices.
 
 Note:
     To use the tools locally, you'll need to install packages
-    listed in ``requirement-dev.txt``.
+    listed in ``requirements-dev.txt``.
 
 Detailed information on a single backend
 ========================================
