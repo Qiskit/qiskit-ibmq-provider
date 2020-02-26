@@ -43,7 +43,7 @@ def _text_checker(job: IBMQJob,
     msg = status.value
     prev_msg = msg
     msg_len = len(msg)
-
+    prev_time_str = ''
     if not quiet:
         print('\r%s: %s' % ('Job Status', msg), end='', file=output)
     while status.name not in ['DONE', 'CANCELLED', 'ERROR']:
@@ -52,22 +52,30 @@ def _text_checker(job: IBMQJob,
         msg = status.value
 
         if status.name == 'QUEUED':
-            est_time = job.queue_info().estimated_start_time
-            time_delta = est_time.replace(tzinfo=None) - datetime.datetime.utcnow()
-            time_tuple = seconds_to_duration(time_delta.total_seconds())
+            queue_info = job.queue_info()
 
             time_str = ''
-            if time_tuple[0]:
-                time_str += '{} days'.format(time_tuple[0])
-                time_str += ' {} hours'.format(time_tuple[1])
-            elif time_tuple[1]:
-                time_str += '{} hours'.format(time_tuple[1])
-                time_str += ' {} minutes'.format(time_tuple[2])
-            elif time_tuple[2]:
-                time_str += '{} minutes'.format(time_tuple[2])
-                time_str += ' {} seconds'.format(time_tuple[3])
-            elif time_tuple[3]:
-                time_str += '{} seconds'.format(time_tuple[3])
+            if queue_info:
+                est_time = queue_info.estimated_start_time
+                time_delta = est_time.replace(tzinfo=None) - datetime.datetime.utcnow()
+                time_tuple = seconds_to_duration(time_delta.total_seconds())
+
+                if time_tuple[0]:
+                    time_str += '{} days'.format(time_tuple[0])
+                    time_str += ' {} hours'.format(time_tuple[1])
+                elif time_tuple[1]:
+                    time_str += '{} hours'.format(time_tuple[1])
+                    time_str += ' {} minutes'.format(time_tuple[2])
+                elif time_tuple[2]:
+                    time_str += '{} minutes'.format(time_tuple[2])
+                    time_str += ' {} seconds'.format(time_tuple[3])
+                elif time_tuple[3]:
+                    time_str += '{} seconds'.format(time_tuple[3])
+
+                prev_time_str = time_str
+
+            else:
+                time_str = prev_time_str
 
             msg += ' ({queue}) [Est. wait time: {time}]'.format(queue=job.queue_position(),
                                                                 time=time_str)
