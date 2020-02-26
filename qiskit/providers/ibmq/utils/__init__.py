@@ -27,8 +27,16 @@ Functions
     :toctree: ../stubs/
 
     utc_to_local
+
+Exceptions
+==========
+.. autosummary::
+    :toctree: ../stubs/
+
+    raise_pretty
 """
 
 from .converters import utc_to_local
 from .qobj_utils import update_qobj_config
 from .utils import to_python_identifier, validate_job_tags
+from .notifications import raise_pretty
