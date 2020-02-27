@@ -16,11 +16,21 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+## [0.5.0] - 2020-02-26
+
+### Added
+
+- Some of the visualization and Jupyter tools, including gate/error map and
+  backend information, have been moved 
+  from `qiskit-terra` to `qiskit-ibmq-provider`. In addition, you can now 
+  use `%iqx_dashboard` to get a dashboard that provides both job and 
+  backend information. (\#535) (\#541)  
+
 ### Changed
 
-- JSON schema validation is no longer run by default on qobj objects passed
-  to `IBMQBackend.run()`. This siginficantly speeds up the execution of the
-  `run` method and the API server will return 400 if the qobj is invalid. If
+- JSON schema validation is no longer run by default on Qobj objects passed
+  to `IBMQBackend.run()`. This significantly speeds up the execution of the
+  `run` method and the API server will return 400 if the Qobj is invalid. If
   you would like to still run the validation you can set the `validate_qobj`
   kwarg to `True` which will enable the JSON schema validation. (\#554)
 
@@ -330,7 +340,8 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.6...HEAD
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.5.0...HEAD
+[0.4.6]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.6...0.5.0
 [0.4.6]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.5...0.4.6
 [0.4.5]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.4...0.4.5
 [0.4.4]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...0.4.4
