@@ -20,21 +20,17 @@ import numpy as np
 import seaborn as sns
 from matplotlib.colors import ListedColormap
 
-HELIX_LIGHT_CMAP = sns.cubehelix_palette(start=2.5,
-                                         rot=0.6,
-                                         hue=2,
-                                         gamma=1,
+HELIX_LIGHT_CMAP = sns.cubehelix_palette(start=3.1,
+                                         hue=1.5,
                                          light=0.9,
-                                         dark=0.15,
+                                         dark=0.1,
                                          reverse=True,
                                          as_cmap=True)
 """Color map with a white background."""
 
-HELIX_DARK_CMAP = sns.cubehelix_palette(start=2.5,
-                                        rot=0.6,
-                                        hue=2,
-                                        gamma=0.95,
-                                        light=0.95,
+HELIX_DARK_CMAP = sns.cubehelix_palette(start=3.1,
+                                        hue=1.5,
+                                        light=0.97,
                                         dark=0.25,
                                         reverse=True,
                                         as_cmap=True)
