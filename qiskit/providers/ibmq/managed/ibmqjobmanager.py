@@ -134,7 +134,7 @@ class IBMQJobManager:
         if (any(isinstance(exp, Schedule) for exp in experiments) and
                 not backend.configuration().open_pulse):
             raise IBMQJobManagerInvalidStateError(
-                "Pulse schedules found, but the backend does not support pulse schedules.")
+                'Pulse schedules found, but the backend does not support pulse schedules.')
 
         # Validate job share level
         if job_share_level:

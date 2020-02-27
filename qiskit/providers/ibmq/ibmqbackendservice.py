@@ -369,7 +369,7 @@ class IBMQBackendService(SimpleNamespace):
         try:
             job_info = self._provider._api.job_get(job_id)
         except ApiError as ex:
-            raise IBMQBackendApiError('Failed to get job "{}": {}'
+            raise IBMQBackendApiError('Failed to get job {}: {}'
                                       .format(job_id, str(ex)))
 
         # Recreate the backend used for this job.
@@ -390,8 +390,8 @@ class IBMQBackendService(SimpleNamespace):
             job = IBMQJob.from_dict(job_info)
         except ModelValidationError as ex:
             raise IBMQBackendApiProtocolError(
-                'Unexpected return value from the server '
-                'when getting job "{}": {}'.format(job_id, str(ex)))
+                'Unexpected return value received from the server '
+                'when retrieving job {}: {}'.format(job_id, str(ex)))
 
         return job
 

@@ -62,7 +62,7 @@ def read_credentials_from_qconfig() -> Dict[HubGroupProject, Credentials]:
         credentials['token'] = q_config.APItoken    # type: ignore[attr-defined]
         credentials['url'] = credentials.get('url', QE_URL)
     except Exception as ex:  # pylint: disable=broad-except
-        raise InvalidCredentialsFormatError('Error loading Qconfig.py: %s' % str(ex))
+        raise InvalidCredentialsFormatError('Error loading Qconfig.py: {}'.format(str(ex)))
 
     credentials = Credentials(**credentials)
     return OrderedDict({credentials.unique_id(): credentials})

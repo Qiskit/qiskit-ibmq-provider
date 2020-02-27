@@ -230,7 +230,7 @@ class IBMQBackend(BaseBackend):
         try:
             job = IBMQJob.from_dict(submit_info)
         except ModelValidationError as err:
-            raise IBMQBackendApiProtocolError('Unexpected return value from the server '
+            raise IBMQBackendApiProtocolError('Unexpected return value received from the server '
                                               'when submitting job: {}'.format(str(err)))
         Publisher().publish("ibmq.job.start", job)
         return job
@@ -348,7 +348,7 @@ class IBMQBackend(BaseBackend):
             return job_limit
         except ValidationError as ex:
             raise IBMQBackendApiProtocolError(
-                'Unexpected return value from the server when '
+                'Unexpected return value received from the server when '
                 'querying job limit data for the backend: {}.'.format(ex))
 
     def remaining_jobs_count(self) -> Optional[int]:
@@ -480,12 +480,12 @@ class IBMQBackend(BaseBackend):
         job_backend = job.backend()
 
         if self.name() != job_backend.name():
-            warnings.warn('Job "{}" belongs to another backend than the one queried. '
-                          'The query was made on backend "{}", '
-                          'but the job actually belongs to backend "{}".'
+            warnings.warn('Job {} belongs to another backend than the one queried. '
+                          'The query was made on backend {}, '
+                          'but the job actually belongs to the backend {}.'
                           .format(job_id, self.name(), job_backend.name()))
-            raise IBMQBackendError('Failed to get job "{}": '
-                                   'job does not belong to backend "{}".'
+            raise IBMQBackendError('Failed to get job {}: '
+                                   'job does not belong to the backend {}.'
                                    .format(job_id, self.name()))
 
         return self._provider.backends.retrieve_job(job_id)
@@ -608,7 +608,7 @@ class IBMQRetiredBackend(IBMQBackend):
             validate_qobj: bool = False
     ) -> None:
         """Run a Qobj."""
-        raise IBMQBackendError('This backend is no longer available.')
+        raise IBMQBackendError('This backend ({}) is no longer available.'.format(self.name()))
 
     @classmethod
     def from_name(
