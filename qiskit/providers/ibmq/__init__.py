@@ -89,15 +89,14 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
         The backend with the fewest number of pending jobs.
 
     Raises:
-        QiskitError: If the backends list is empty.
-        AttributeError: If a backend in the list does not have the ``pending_jobs``
-            attribute in its status.
+        IBMQError: If the backends list is empty or if a backend in the list
+            does not have the ``pending_jobs`` attribute in its status.
     """
     try:
         return min([b for b in backends if b.status().operational],
                    key=lambda b: b.status().pending_jobs)
     except (ValueError, TypeError):
-        raise QiskitError('Can only find least_busy backend from a non-empty list.') from None
+        raise IBMQError('Unable to find the least_busy backend from an empty list.') from None
     except AttributeError:
-        raise QiskitError('A backend in the list does not have the `pending_jobs` '
-                          'attribute in its status.')
+        raise IBMQError('A backend in the list does not have the `pending_jobs` '
+                        'attribute in its status.')
