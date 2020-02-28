@@ -13,12 +13,13 @@
 # that they have been altered from the originals.
 
 
-"""A module for monitoring various qiskit functionality"""
+"""A module for monitoring jobs."""
 
 import sys
 import time
 import datetime
-from typing import TextIO
+from typing import TextIO, Optional
+
 from .ibmqjob import IBMQJob
 from ..utils.converters import seconds_to_duration
 
@@ -32,9 +33,9 @@ def _text_checker(job: IBMQJob,
     Args:
         job: The job to check.
         interval: The interval at which to check.
-        _interval_set (bool): Was interval time set by user?
-        output (file): The file like object to write status messages to.
-        By default this is sys.stdout.
+        _interval_set: Was interval time set by user?
+        output: The file like object to write status messages to.
+            By default this is sys.stdout.
 
     """
     status = job.status()
@@ -58,6 +59,8 @@ def _text_checker(job: IBMQJob,
                     est_time = queue_info.estimated_start_time
                     time_delta = est_time.replace(tzinfo=None) - datetime.datetime.utcnow()
                     time_tuple = seconds_to_duration(time_delta.total_seconds())
+                    # The returned tuple contains the duration in terms of
+                    # days, hours, minutes, seconds, and milliseconds.
 
                     if time_tuple[0]:
                         time_str += '{} days'.format(time_tuple[0])
@@ -105,15 +108,15 @@ def _text_checker(job: IBMQJob,
 
 
 def job_monitor(job: IBMQJob,
-                interval: float = None,
+                interval: Optional[float] = None,
                 output: TextIO = sys.stdout) -> None:
-    """Monitor the status of a IBMQJob instance.
+    """Monitor the status of an ``IBMQJob`` instance.
 
     Args:
         job: Job to monitor.
         interval: Time interval between status queries.
         output: The file like object to write status messages to.
-                By default this is sys.stdout.
+            By default this is sys.stdout.
     """
     if interval is None:
         _interval_set = False
