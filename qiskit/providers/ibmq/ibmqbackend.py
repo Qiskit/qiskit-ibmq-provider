@@ -162,7 +162,7 @@ class IBMQBackend(BaseBackend):
                 raise IBMQBackendValueError(
                     '"{}" is not a valid job share level. '
                     'Valid job share levels are: {}'
-                    .format(job_share_level, ', '.join(level.value for level in ApiJobShareLevel)))
+                    .format(job_share_level, ', '.join(level.value for level in ApiJobShareLevel))) from None
         else:
             api_job_share_level = ApiJobShareLevel.NONE
 
@@ -482,10 +482,10 @@ class IBMQBackend(BaseBackend):
         if self.name() != job_backend.name():
             warnings.warn('Job {} belongs to another backend than the one queried. '
                           'The query was made on backend {}, '
-                          'but the job actually belongs to the backend {}.'
+                          'but the job actually belongs to backend {}.'
                           .format(job_id, self.name(), job_backend.name()))
             raise IBMQBackendError('Failed to get job {}: '
-                                   'job does not belong to the backend {}.'
+                                   'job does not belong to backend {}.'
                                    .format(job_id, self.name()))
 
         return self._provider.backends.retrieve_job(job_id)

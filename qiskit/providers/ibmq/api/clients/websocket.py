@@ -112,8 +112,9 @@ class WebsocketResponseMethod(WebsocketMessage):
         """Instantiate a message from a bytes response."""
         try:
             parsed_dict = json.loads(json_string.decode('utf8'))
-        except (ValueError, AttributeError) as ex:
-            raise WebsocketIBMQProtocolError('Unable to parse message') from ex
+        except (ValueError, AttributeError):
+            raise WebsocketIBMQProtocolError('Unable to parse the message received from '
+                                             'the server: {}'.format(json_string))
 
         return cls(parsed_dict['type'], parsed_dict.get('data', None))
 
@@ -162,7 +163,7 @@ class WebsocketClient(BaseClient):
 
         # pylint: disable=broad-except
         except Exception as ex:
-            raise WebsocketError('Could not connect to server') from ex
+            raise WebsocketError('Failed to connect to the server.') from ex
 
         try:
             # Authenticate against the server.
@@ -178,11 +179,12 @@ class WebsocketClient(BaseClient):
             auth_response = WebsocketResponseMethod.from_bytes(auth_response_raw)
 
             if auth_response.type_ != 'authenticated':
-                raise WebsocketIBMQProtocolError(auth_response.as_json())
+                raise WebsocketIBMQProtocolError('Failed to authenticate against the server: {}'
+                                                 .format(auth_response.as_json()))
         except ConnectionClosed as ex:
             yield from websocket.close()
             raise WebsocketAuthenticationError(
-                'Error during websocket authentication') from ex
+                'Unexpected error occurred when authenticating against the server.') from ex
 
         return websocket
 
@@ -274,7 +276,7 @@ class WebsocketClient(BaseClient):
                             return last_status
 
                         if timeout and timeout <= 0:
-                            raise WebsocketTimeoutError('Timeout reached')
+                            raise WebsocketTimeoutError('Timeout reached while getting job status.')
 
                         # Share the new status.
                         if status_deque is not None:
@@ -282,7 +284,7 @@ class WebsocketClient(BaseClient):
 
                     except (futures.TimeoutError, asyncio.TimeoutError):
                         # Timeout during our wait.
-                        raise WebsocketTimeoutError('Timeout reached') from None
+                        raise WebsocketTimeoutError('Timeout reached while getting job status.') from None
                     except ConnectionClosed as ex:
                         # From the API:
                         # 4001: closed due to an internal errors

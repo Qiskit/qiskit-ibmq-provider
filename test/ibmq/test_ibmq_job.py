@@ -137,8 +137,8 @@ class TestIBMQJob(JobTestCase):
                               check, job.job_id())
             self.log.info('-  %s', str(time.time() - start_time))
             if time.time() - start_time > timeout:
-                raise TimeoutError('failed to see multiple running jobs after '
-                                   '{0} s'.format(timeout))
+                raise TimeoutError('Failed to see multiple running jobs after '
+                                   '{0} seconds.'.format(timeout))
             time.sleep(0.2)
 
         result_array = [job.result() for job in job_array]

@@ -487,7 +487,7 @@ class IBMQJob(BaseModel, BaseJob):
             IBMQJobInvalidStateError: If the job has already been submitted.
         """
         if self.job_id() is not None:
-            raise IBMQJobInvalidStateError("The job {} has already been submitted.".format(self.job_id()))
+            raise IBMQJobInvalidStateError('The job {} has already been submitted.'.format(self.job_id()))
 
         warnings.warn("job.submit() is deprecated. Please use "
                       "IBMQBackend.run() to submit a job.", DeprecationWarning, stacklevel=2)
@@ -609,10 +609,10 @@ class IBMQJob(BaseModel, BaseJob):
                 self.job_id(), timeout=timeout, wait=wait, status_deque=status_deque)
         except UserTimeoutExceededError:
             raise IBMQJobTimeoutError(
-                'Timeout while waiting for job {}'.format(self._job_id))
+                'Timeout while waiting for job {}.'.format(self._job_id))
         except ApiError as api_err:
-            logger.error("Maximum retries exceeded: "
-                         "Error checking job status due to a network error.")
+            logger.error('Maximum retries exceeded: '
+                         'Error checking job status due to a network error.')
             raise IBMQJobApiError('Error checking job status due to a network '
                                   'error: {}'.format(str(api_err)))
 
@@ -698,8 +698,8 @@ class IBMQJob(BaseModel, BaseJob):
         try:
             return "{}. Error code: {}.".format(error['message'], error['code'])
         except KeyError:
-            raise IBMQJobApiError('Failed to get job error message. Invalid error data received: {}'
-                                  .format(error))
+            raise IBMQJobApiError('Failed to get error message for job {}. '
+                                  'Invalid error data received: {}'.format(self.job_id(), error))
 
     def _status_callback(
             self,

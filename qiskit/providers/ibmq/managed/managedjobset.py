@@ -104,7 +104,8 @@ class ManagedJobSet:
             IBMQJobManagerInvalidStateError: If the jobs were already submitted.
         """
         if self._managed_jobs:
-            raise IBMQJobManagerInvalidStateError('Jobs were already submitted.')
+            raise IBMQJobManagerInvalidStateError(
+                'The jobs for this managed job set have already been submitted.')
 
         self._backend = backend
         if job_tags:
@@ -393,8 +394,8 @@ class ManagedJobSet:
                     if hasattr(exp.header, 'name') and exp.header.name == experiment:
                         return job, i
 
-        raise IBMQJobManagerJobNotFound('Unable to find the job for experiment {}.'.format(
-            experiment))
+        raise IBMQJobManagerJobNotFound(
+            'Unable to find the job for experiment {}.'.format(experiment))
 
     @requires_submit
     def qobjs(self) -> List[Qobj]:

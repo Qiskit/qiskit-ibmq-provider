@@ -143,7 +143,7 @@ class IBMQJobManager:
             except ValueError:
                 raise IBMQJobManagerInvalidStateError(
                     '"{}" is not a valid job share level. Valid job share levels are: {}'.format(
-                        job_share_level, ', '.join(level.value for level in ApiJobShareLevel)))
+                        job_share_level, ', '.join(level.value for level in ApiJobShareLevel))) from None
         else:
             api_job_share_level = ApiJobShareLevel.NONE
 
