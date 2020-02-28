@@ -26,7 +26,6 @@ from ..utils.converters import seconds_to_duration
 def _text_checker(job: IBMQJob,
                   interval: float,
                   _interval_set: bool = False,
-                  quiet: bool = False,
                   output: TextIO = sys.stdout) -> None:
     """A text-based job status checker.
 
@@ -34,7 +33,6 @@ def _text_checker(job: IBMQJob,
         job: The job to check.
         interval: The interval at which to check.
         _interval_set (bool): Was interval time set by user?
-        quiet (bool): If True, do not print status messages.
         output (file): The file like object to write status messages to.
         By default this is sys.stdout.
 
@@ -44,8 +42,8 @@ def _text_checker(job: IBMQJob,
     prev_msg = msg
     msg_len = len(msg)
     prev_time_str = ''
-    if not quiet:
-        print('\r%s: %s' % ('Job Status', msg), end='', file=output)
+
+    print('\r%s: %s' % ('Job Status', msg), end='', file=output)
     while status.name not in ['DONE', 'CANCELLED', 'ERROR']:
         time.sleep(interval)
         status = job.status()
@@ -56,23 +54,24 @@ def _text_checker(job: IBMQJob,
 
             time_str = ''
             if queue_info:
-                est_time = queue_info.estimated_start_time
-                time_delta = est_time.replace(tzinfo=None) - datetime.datetime.utcnow()
-                time_tuple = seconds_to_duration(time_delta.total_seconds())
+                if queue_info.estimated_start_time:
+                    est_time = queue_info.estimated_start_time
+                    time_delta = est_time.replace(tzinfo=None) - datetime.datetime.utcnow()
+                    time_tuple = seconds_to_duration(time_delta.total_seconds())
 
-                if time_tuple[0]:
-                    time_str += '{} days'.format(time_tuple[0])
-                    time_str += ' {} hours'.format(time_tuple[1])
-                elif time_tuple[1]:
-                    time_str += '{} hours'.format(time_tuple[1])
-                    time_str += ' {} minutes'.format(time_tuple[2])
-                elif time_tuple[2]:
-                    time_str += '{} minutes'.format(time_tuple[2])
-                    time_str += ' {} seconds'.format(time_tuple[3])
-                elif time_tuple[3]:
-                    time_str += '{} seconds'.format(time_tuple[3])
+                    if time_tuple[0]:
+                        time_str += '{} days'.format(time_tuple[0])
+                        time_str += ' {} hours'.format(time_tuple[1])
+                    elif time_tuple[1]:
+                        time_str += '{} hours'.format(time_tuple[1])
+                        time_str += ' {} minutes'.format(time_tuple[2])
+                    elif time_tuple[2]:
+                        time_str += '{} minutes'.format(time_tuple[2])
+                        time_str += ' {} seconds'.format(time_tuple[3])
+                    elif time_tuple[3]:
+                        time_str += '{} seconds'.format(time_tuple[3])
 
-                prev_time_str = time_str
+                    prev_time_str = time_str
 
             else:
                 time_str = prev_time_str
@@ -81,12 +80,16 @@ def _text_checker(job: IBMQJob,
                                                                 time=time_str)
 
             if job.queue_position() is None:
-                interval = 2
+                if not _interval_set:
+                    interval = 2
             elif not _interval_set:
                 interval = max(job.queue_position(), 2)
         else:
             if not _interval_set:
                 interval = 2
+
+        if status.name == 'ERROR':
+            msg = 'ERROR - {}'.format(job.error_message())
 
         # Adjust length of message so there are no artifacts
         if len(msg) < msg_len:
@@ -94,23 +97,21 @@ def _text_checker(job: IBMQJob,
         elif len(msg) > msg_len:
             msg_len = len(msg)
 
-        if msg != prev_msg and not quiet:
+        if msg != prev_msg:
             print('\r%s: %s' % ('Job Status', msg), end='', file=output)
             prev_msg = msg
-    if not quiet:
-        print('', file=output)
+
+    print('', file=output)
 
 
 def job_monitor(job: IBMQJob,
                 interval: float = None,
-                quiet: bool = False,
                 output: TextIO = sys.stdout) -> None:
     """Monitor the status of a IBMQJob instance.
 
     Args:
         job: Job to monitor.
         interval: Time interval between status queries.
-        quiet: If True, do not print status messages.
         output: The file like object to write status messages to.
                 By default this is sys.stdout.
     """
@@ -121,4 +122,4 @@ def job_monitor(job: IBMQJob,
         _interval_set = True
 
     _text_checker(job, interval, _interval_set,
-                  quiet=quiet, output=output)
+                  output=output)

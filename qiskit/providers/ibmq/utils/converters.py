@@ -55,9 +55,11 @@ def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
     days = int(seconds // (3600 * 24))
     hours = int((seconds // 3600) % 24)
     minutes = int((seconds // 60) % 60)
-    seconds = int(seconds % 60)
+    seconds = seconds % 60
     millisec = 0
     if seconds < 1:
         millisec = int(ceil(seconds*1000))
         seconds = 0
+    else:
+        seconds = int(seconds)
     return days, hours, minutes, seconds, millisec
