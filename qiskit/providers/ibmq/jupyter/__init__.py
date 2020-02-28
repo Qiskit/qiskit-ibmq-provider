@@ -22,6 +22,10 @@ A Collection of Jupyter magic functions and tools
 that extend the functionality of Qiskit for the IBM
 Quantum devices.
 
+Note:
+    To use the tools locally, you'll need to install packages
+    listed in ``requirements-dev.txt``.
+
 Detailed information on a single backend
 ========================================
 

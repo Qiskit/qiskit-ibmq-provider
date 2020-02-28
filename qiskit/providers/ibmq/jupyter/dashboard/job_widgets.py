@@ -12,19 +12,25 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""A module of widgets for job tracking"""
+"""A module of widgets for job tracking."""
+
+from typing import Optional
+from datetime import datetime
 
 import ipywidgets as widgets
 
+from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+from qiskit.providers.ibmq.utils.converters import utc_to_local
 
-def make_clear_button(watcher):
-    """Makes the clear button
+
+def make_clear_button(watcher: 'IQXDashboard') -> widgets.GridBox:
+    """Makes the clear button.
 
     Args:
-        watcher (widget): The watcher widget instance.
+        watcher: The watcher widget instance.
 
     Returns:
-        widget: The clear button widget.
+        The clear button widget.
     """
     clear = widgets.Button(
         description='Clear',
@@ -34,6 +40,7 @@ def make_clear_button(watcher):
                               padding="0px 0px 0px 0px"))
 
     def on_clear_button_clicked(_):
+        """Clear finished jobs."""
         watcher.clear_done()
 
     clear.on_click(on_clear_button_clicked)
@@ -48,11 +55,11 @@ def make_clear_button(watcher):
     return clear_button
 
 
-def make_labels():
+def make_labels() -> widgets.HBox:
     """Makes the labels widget.
 
     Returns:
-        widget: The labels widget.
+        The labels widget.
     """
     labels0 = widgets.HTML(value="<h5>Job ID</h5>",
                            layout=widgets.Layout(width='190px'))
@@ -69,20 +76,24 @@ def make_labels():
     return labels
 
 
-# pylint: disable=unused-argument
-def create_job_widget(watcher, job, backend, status='', queue_pos=None, msg=''):
-    """Creates a widget corresponding to a particular job instance.
+def create_job_widget(watcher: 'IQXDashboard',
+                      job: IBMQJob,
+                      backend: str,
+                      status: str = '',
+                      queue_pos: Optional[int] = None,
+                      est_start_time: Optional[datetime] = None) -> widgets.HBox:
+    """Create a widget corresponding to a particular job instance.
 
     Args:
-        watcher (widget): The job watcher instance.
-        job (IBMQJob): The job.
-        backend (str): The backend the job is running on.
-        status (str): The job status.
-        queue_pos (int): Queue position, if any.
-        msg (str): Job message, if any.
+        watcher: The job watcher instance.
+        job: The job.
+        backend: Name of the backend the job is running on.
+        status: The job status.
+        queue_pos: Queue position, if any.
+        est_start_time: Estimated start time, if any.
 
     Returns:
-        widget: The job widget
+        The job widget.
     """
     job_id = job.job_id()
 
@@ -90,14 +101,14 @@ def create_job_widget(watcher, job, backend, status='', queue_pos=None, msg=''):
                             layout=widgets.Layout(width='190px'))
     backend_label = widgets.HTML(value="{}".format(backend),
                                  layout=widgets.Layout(width='165px'))
-    status_label = widgets.HTML(value="{}".format(status),
+
+    queue_str = ' ({})'.format(queue_pos) if status == 'QUEUED' and queue_pos else ''
+    status_label = widgets.HTML(value="{}{}".format(status, queue_str),
                                 layout=widgets.Layout(width='125px'))
-    if queue_pos is None:
-        queue_pos = '-'
-    else:
-        queue_pos = str(queue_pos)
-    queue_label = widgets.HTML(value="{}".format(queue_pos),
-                               layout=widgets.Layout(width='125px'))
+
+    est_time = utc_to_local(est_start_time).strftime("%H:%M %Z (%m/%d)") if est_start_time else '-'
+    est_time_label = widgets.HTML(value="{}".format(est_time),
+                                  layout=widgets.Layout(width='125px'))
 
     close_button = widgets.Button(button_style='', icon='close',
                                   layout=widgets.Layout(width='30px',
@@ -105,11 +116,12 @@ def create_job_widget(watcher, job, backend, status='', queue_pos=None, msg=''):
     close_button.style.button_color = 'white'
 
     def cancel_on_click(_):
+        """Cancel the job."""
         watcher.cancel_job(job_id)
     close_button.on_click(cancel_on_click)
 
     job_grid = widgets.HBox(children=[close_button, id_label, backend_label,
-                                      status_label, queue_label],
+                                      status_label, est_time_label],
                             layout=widgets.Layout(min_width='690px',
                                                   max_width='690px'))
     job_grid.job_id = job_id
