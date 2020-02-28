@@ -53,7 +53,7 @@ class IBMQFactory:
             url: str = QX_AUTH_URL,
             **kwargs: Any
     ) -> Optional[AccountProvider]:
-        """Authenticate against IBM Quantum Experience for use during this session.
+        """Authenticate against IBM Quantum Experience for use during the session.
 
         Note:
             With version 0.4 of this ``qiskit-ibmq-provider`` package, use of
@@ -73,13 +73,13 @@ class IBMQFactory:
 
         Raises:
             IBMQAccountError: If an IBM Quantum Experience account is already in
-                use for this session.
+                use for the session.
             IBMQAccountCredentialsInvalidUrl: If the URL specified is not
                 a valid IBM Quantum Experience authentication URL.
         """
         # Check if an IBM Quantum Experience account is already in use.
         if self._credentials:
-            raise IBMQAccountError('An IBM Quantum Experience account is already in use for this session.')
+            raise IBMQAccountError('An IBM Quantum Experience account is already in use for the session.')
 
         # Check the version used by these credentials.
         credentials = Credentials(token, url, **kwargs)
@@ -88,8 +88,8 @@ class IBMQFactory:
         # Check the URL is a valid authentication URL.
         if not version_info['new_api'] or 'api-auth' not in version_info:
             raise IBMQAccountCredentialsInvalidUrl(
-                'The URL specified ({}) is not an IBM Quantum Experience '
-                'authentication URL'.format(credentials.url))
+                'The URL specified ({}) is not an IBM Quantum Experience authentication '
+                'URL. Authentication URL: {}.'.format(credentials.url, QX_AUTH_URL))
 
         # Initialize the providers.
         self._initialize_providers(credentials)
@@ -104,13 +104,13 @@ class IBMQFactory:
         return providers[0]
 
     def disable_account(self) -> None:
-        """Disable the account currently in use for this session.
+        """Disable the account currently in use for the session.
 
         Raises:
-            IBMQAccountCredentialsNotFound: If no account is in use for this session.
+            IBMQAccountCredentialsNotFound: If no account is in use for the session.
         """
         if not self._credentials:
-            raise IBMQAccountError('No IBM Quantum Experience account is in use for this session.')
+            raise IBMQAccountError('No IBM Quantum Experience account is in use for the session.')
 
         self._credentials = None
         self._providers = OrderedDict()
@@ -193,11 +193,12 @@ class IBMQFactory:
         """
         if url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
-                'Invalid IBM Quantum Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
+                'The URL specified ({}) is not an IBM Quantum Experience authentication '
+                'URL. Authentication URL: {}.'.format(url, QX_AUTH_URL))
 
         if not token or not isinstance(token, str):
             raise IBMQAccountCredentialsInvalidToken(
-                'Invalid IBM Quantum Experience token found: "%s" %s' % (token, type(token)))
+                'Invalid IBM Quantum Experience token found: "{}" {}.'.format(token, type(token)))
 
         credentials = Credentials(token, url, **kwargs)
 
@@ -228,7 +229,7 @@ class IBMQFactory:
 
         if credentials.url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
-                'Invalid IBM Quantum Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
+                'Invalid IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
         remove_credentials(credentials)
 
@@ -265,7 +266,7 @@ class IBMQFactory:
         }
 
     def active_account(self) -> Optional[Dict[str, str]]:
-        """Return the IBM Quantum Experience account currently in use for this session.
+        """Return the IBM Quantum Experience account currently in use for the session.
 
         Returns:
             Information about the account currently in the session.
