@@ -296,14 +296,14 @@ class ManagedJobSet:
                     success = False
             except IBMQJobTimeoutError:
                 raise IBMQJobManagerTimeoutError(
-                    'Timeout waiting for results for experiments {}-{}.'.format(
+                    'Timeout while waiting for the results for experiments {}-{}.'.format(
                         mjob.start_index, self._managed_jobs[-1].end_index))
 
             if timeout:
                 timeout = original_timeout - (time.time() - start_time)
                 if timeout <= 0:
                     raise IBMQJobManagerTimeoutError(
-                        'Timeout waiting for results for experiments {}-{}.'.format(
+                        'Timeout while waiting for the results for experiments {}-{}.'.format(
                             mjob.start_index, self._managed_jobs[-1].end_index))
 
         self._managed_results = ManagedResults(self, self._backend.name(), success)
