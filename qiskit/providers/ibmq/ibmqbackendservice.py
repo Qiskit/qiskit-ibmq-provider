@@ -321,7 +321,7 @@ class IBMQBackendService(SimpleNamespace):
                 status = JobStatus[status.upper()]
             except KeyError:
                 raise IBMQBackendValueError(
-                    '{} is not a valid status value. Valid values are {}'.format(
+                    '"{}" is not a valid status value. Valid values are {}'.format(
                         status, ", ".join(job_status.name for job_status in JobStatus))) \
                     from None
 
@@ -346,7 +346,7 @@ class IBMQBackendService(SimpleNamespace):
             _status_filter = {'status': {'regexp': '^ERROR'}}  # type: ignore[assignment]
         else:
             raise IBMQBackendValueError(
-                '{} is not a valid status value. Valid values are {}'.format(
+                '"{}" is not a valid status value. Valid values are {}'.format(
                     status, ", ".join(job_status.name for job_status in JobStatus)))
 
         return _status_filter

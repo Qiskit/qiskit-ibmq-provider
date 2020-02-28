@@ -28,6 +28,7 @@ from .plotly_wrapper import PlotlyWidget, PlotlyFigure
 from ..device_layouts import DEVICE_LAYOUTS
 from ..colormaps import (HELIX_LIGHT, HELIX_LIGHT_CMAP,
                          HELIX_DARK, HELIX_DARK_CMAP)
+from ..exceptions import VisualizationValueError, VisualizationTypeError
 
 
 def iplot_error_map(
@@ -79,10 +80,11 @@ def iplot_error_map(
         text_color = '#FFFFFF'
         plotly_cmap = HELIX_DARK
     else:
-        raise ValueError('Invalid background_color selection.')
+        raise VisualizationValueError(
+            '"{}" is not a valid background_color selection.'.format(background_color))
 
     if backend.configuration().simulator:
-        raise TypeError('Requires a device backend, not simulator.')
+        raise VisualizationTypeError('Requires a device backend, not a simulator.')
 
     config = backend.configuration()
     n_qubits = config.n_qubits

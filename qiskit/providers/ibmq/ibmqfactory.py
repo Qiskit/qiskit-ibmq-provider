@@ -258,7 +258,7 @@ class IBMQFactory:
 
         if credentials.url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
-                'Invalid IBM Q Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
+                'Invalid IBM Q Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
         return {
             'token': credentials.token,

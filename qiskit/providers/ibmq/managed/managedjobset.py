@@ -151,8 +151,7 @@ class ManagedJobSet:
 
         if not jobs:
             raise IBMQJobManagerUnknownJobSet(
-                '{} is not a known job set within the provider {}.'.format(
-                    self.job_set_id(), provider))
+                '{} is not a known job set within the provider {}.'.format(self.job_set_id(), provider))
 
         # Extract common information from the first job.
         first_job = jobs[0]
