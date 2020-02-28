@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Test IBMQ online qasm simulator."""
+"""Test IBM Quantum online QASM simulator."""
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
@@ -22,7 +22,7 @@ from ..decorators import requires_provider
 
 
 class TestIbmqQasmSimulator(IBMQTestCase):
-    """Test IBM Q Qasm Simulator."""
+    """Test IBM Quantum QASM Simulator."""
 
     @requires_provider
     def test_execute_one_circuit_simulator_online(self, provider):
@@ -37,7 +37,7 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         qobj = assemble(transpile(qc, backend=backend, seed_transpiler=73846087),
                         backend=backend)
         shots = qobj.config.shots
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         result = job.result()
         counts = result.get_counts(qc)
         target = {'0': shots / 2, '1': shots / 2}
@@ -63,7 +63,7 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         shots = 1024
         qobj = assemble(transpile([qcr1, qcr2], backend=backend, seed_transpiler=73846087),
                         backend=backend, shots=shots)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         result = job.result()
         counts1 = result.get_counts(qcr1)
         counts2 = result.get_counts(qcr2)
@@ -97,7 +97,7 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         qcr2.measure(qr2[1], cr2[1])
         qobj = assemble(transpile([qcr1, qcr2], backend, seed_transpiler=8458),
                         backend=backend, shots=1024)
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
         result = job.result()
         result1 = result.get_counts(qcr1)
         result2 = result.get_counts(qcr2)
@@ -118,6 +118,6 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         circuit.x(qr[0]).c_if(cr, 1)
 
         qobj = assemble(transpile(circuit, backend=backend))
-        result = backend.run(qobj).result()
+        result = backend.run(qobj, validate_qobj=True).result()
 
         self.assertEqual(result.get_counts(circuit), {'0001': 1024})

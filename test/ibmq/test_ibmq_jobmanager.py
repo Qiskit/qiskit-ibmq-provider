@@ -13,6 +13,7 @@
 # that they have been altered from the originals.
 
 """Tests for the IBMQJobManager."""
+
 import copy
 import time
 from unittest import mock
@@ -41,6 +42,7 @@ class TestIBMQJobManager(IBMQTestCase):
     """Tests for IBMQJobManager."""
 
     def setUp(self):
+        """Initial test setup."""
         self._qc = _bell_circuit()
         self._jm = IBMQJobManager()
 
@@ -144,7 +146,7 @@ class TestIBMQJobManager(IBMQTestCase):
         qc_new = transpile(self._qc, backend)
         qobj = assemble([qc_new, qc_new], backend=backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
-        job = backend.run(qobj)
+        job = backend.run(qobj, validate_qobj=True)
 
         circs = []
         for _ in range(4):
@@ -306,6 +308,7 @@ class TestResultManager(IBMQTestCase):
     """Tests for ResultManager."""
 
     def setUp(self):
+        """Initial test setup."""
         self._qc = _bell_circuit()
         self._jm = IBMQJobManager()
 
@@ -394,7 +397,7 @@ class TestResultManager(IBMQTestCase):
             self.log.warning("Unable to cancel job %s", cjob.job_id())
 
     def test_ibmq_managed_results_signature(self):
-        """Test `ManagedResults` and `Result` contain the same public methods.
+        """Test ``ManagedResults`` and ``Result`` contain the same public methods.
 
         Note:
             Aside from ensuring the two classes contain the same public
@@ -440,6 +443,7 @@ class TestResultManager(IBMQTestCase):
 
 
 def _bell_circuit():
+    """Return a bell state circuit."""
     qc = QuantumCircuit(2, 2)
     qc.h(0)
     qc.cx(0, 1)

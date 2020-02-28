@@ -12,14 +12,39 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utilities for working with credentials for the IBMQ package."""
+"""
+======================================================
+Credentials (:mod:`qiskit.providers.ibmq.credentials`)
+======================================================
+
+.. currentmodule:: qiskit.providers.ibmq.credentials
+
+Utilities for working with IBM Quantum Experience account credentials.
+
+Classes
+=========
+
+.. autosummary::
+    :toctree: ../stubs/
+
+    Credentials
+
+Exceptions
+==========
+.. autosummary::
+    :toctree: ../stubs/
+
+    CredentialsError
+    InvalidCredentialsFormatError
+    CredentialsNotFoundError
+"""
 
 from collections import OrderedDict
 from typing import Dict, Optional
 import logging
 
 from .credentials import Credentials, HubGroupProject
-from .exceptions import CredentialsError
+from .exceptions import CredentialsError, InvalidCredentialsFormatError, CredentialsNotFoundError
 from .configrc import read_credentials_from_qiskitrc, store_credentials
 from .environ import read_credentials_from_environ
 from .qconfig import read_credentials_from_qconfig
@@ -30,24 +55,22 @@ logger = logging.getLogger(__name__)
 def discover_credentials(
         qiskitrc_filename: Optional[str] = None
 ) -> Dict[HubGroupProject, Credentials]:
-    """Automatically discover credentials for IBM Q.
+    """Automatically discover credentials for IBM Quantum Experience.
 
-    This method looks for credentials in the following locations, in order,
-    and returning as soon as credentials are found::
+    This method looks for credentials in the following places in order and
+    returns the first ones found:
 
-        1. in the `Qconfig.py` file in the current working directory.
-        2. in the environment variables.
-        3. in the `qiskitrc` configuration file
+        1. The ``Qconfig.py`` file in the current working directory.
+        2. The the environment variables.
+        3. The ``qiskitrc`` configuration file
 
     Args:
-        qiskitrc_filename: location for the `qiskitrc` configuration
-            file. If `None`, defaults to `{HOME}/.qiskitrc/qiskitrc`.
+        qiskitrc_filename: Full path to the ``qiskitrc`` configuration
+            file. If ``None``, ``$HOME/.qiskitrc/qiskitrc`` is used.
 
     Returns:
-        dictionary with the contents of the configuration file, with
-            the form::
-
-            {credentials_unique_id: Credentials}
+        A dictionary of found credentials, if any, in the
+        ``{credentials_unique_id: Credentials}`` format.
     """
     credentials = OrderedDict()  # type: ignore[var-annotated]
 

@@ -12,7 +12,8 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for accessing authentication features of IBM Q Experience."""
+"""Client for accessing IBM Quantum Experience authentication services."""
+
 from typing import Dict, List, Optional, Any
 from requests.exceptions import RequestException
 
@@ -24,15 +25,15 @@ from .base import BaseClient
 
 
 class AuthClient(BaseClient):
-    """Client for accessing authentication features of IBM Q Experience."""
+    """Client for accessing IBM Quantum Experience authentication services."""
 
     def __init__(self, api_token: str, auth_url: str, **request_kwargs: Any) -> None:
         """AuthClient constructor.
 
         Args:
-            api_token: IBM Q Experience API token.
+            api_token: IBM Quantum Experience API token.
             auth_url: URL for the authentication service.
-            **request_kwargs: arguments for the `requests` Session.
+            **request_kwargs: Arguments for the request ``Session``.
         """
         self.api_token = api_token
         self.auth_url = auth_url
@@ -42,13 +43,13 @@ class AuthClient(BaseClient):
         self.client_api = self._init_service_clients(**request_kwargs)
 
     def _init_service_clients(self, **request_kwargs: Any) -> Api:
-        """Initialize the clients used for communicating with the API and ws.
+        """Initialize the clients used for communicating with the API.
 
         Args:
-            **request_kwargs: arguments for the `requests` Session.
+            **request_kwargs: Arguments for the request ``Session``.
 
         Returns:
-            client for the api server.
+            Client for the API server.
         """
         # Request an access token.
         access_token = self._request_access_token()
@@ -63,14 +64,14 @@ class AuthClient(BaseClient):
         return client_api
 
     def _request_access_token(self) -> str:
-        """Request a new access token from the API authentication server.
+        """Request a new access token from the API authentication service.
 
         Returns:
-            access token.
+            A new access token.
 
         Raises:
-            AuthenticationLicenseError: if the user hasn't accepted the license agreement.
-            RequestsApiError: if the request failed.
+            AuthenticationLicenseError: If the user hasn't accepted the license agreement.
+            RequestsApiError: If the request failed.
         """
         try:
             response = self.client_auth.login(self.api_token)
@@ -96,26 +97,27 @@ class AuthClient(BaseClient):
     # User account-related public functions.
 
     def user_urls(self) -> Dict[str, str]:
-        """Retrieve the API URLs from the authentication server.
+        """Retrieve the API URLs from the authentication service.
 
         Returns:
-            a dict with the base URLs for the services. Currently
-                supported keys:
-                    * ``http``: the API URL for http communication.
-                    * ``ws``: the API URL for websocket communication.
+            A dict with the base URLs for the services. Currently
+            supported keys are:
+
+                * ``http``: The API URL for HTTP communication.
+                * ``ws``: The API URL for websocket communication.
         """
         response = self.client_auth.user_info()
         return response['urls']
 
     def user_hubs(self) -> List[Dict[str, str]]:
-        """Retrieve the hubs available to the user.
+        """Retrieve the hub/group/project sets available to the user.
 
-        The first entry in the list will be the default one, as indicated by
-        the API (by having `isDefault` in all hub, group, project fields).
+        The first entry in the list will be the default set, as indicated by
+        the ``isDefault`` field from the API.
 
         Returns:
-            a list of dicts with the hubs, which contains the keys
-                `hub`, `group`, `project`.
+            A list of dictionaries with the hub, group, and project values keyed by
+            ``hub``, ``group``, and ``project``, respectively.
         """
         response = self.client_api.hubs()
 
@@ -142,7 +144,7 @@ class AuthClient(BaseClient):
         """Return the version of the API.
 
         Returns:
-            versions of the API components.
+            API version.
         """
         return self.client_api.version()
 
@@ -150,7 +152,7 @@ class AuthClient(BaseClient):
         """Return the current access token.
 
         Returns:
-            the access token in use.
+            The access token in use.
         """
         return self.client_auth.session.access_token
 
@@ -158,7 +160,7 @@ class AuthClient(BaseClient):
         """Return the current service URLs.
 
         Returns:
-            a dict with the base URLs for the services, in the same
-                format as `.user_urls()`.
+            A dict with the base URLs for the services, in the same
+            format as :meth:`user_urls()`.
         """
         return self._service_urls

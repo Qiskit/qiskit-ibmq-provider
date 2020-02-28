@@ -12,7 +12,23 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utilities related to the IBMQ Provider."""
+"""
+==============================================================================
+Utilities (:mod:`qiskit.providers.ibmq.utils`)
+==============================================================================
 
+.. currentmodule:: qiskit.providers.ibmq.utils
+
+Utility functions related to the IBM Quantum Provider.
+
+Functions
+=========
+.. autosummary::
+    :toctree: ../stubs/
+
+    utc_to_local
+"""
+
+from .converters import utc_to_local
 from .qobj_utils import update_qobj_config
 from .utils import to_python_identifier, validate_job_tags

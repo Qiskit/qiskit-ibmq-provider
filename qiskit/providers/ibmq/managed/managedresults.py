@@ -12,39 +12,46 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Results managed by the job manager."""
+"""Results managed by the Job Manager."""
 
 from typing import List, Optional, Union, Tuple, Dict
+# TODO Use TYPE_CHECKING instead of pylint disable after dropping python 3.5
+import numpy  # pylint: disable=unused-import
 
 from qiskit.result import Result
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 
+from qiskit.providers.ibmq.managed import managedjobset  # pylint: disable=unused-import
 from .exceptions import IBMQManagedResultDataNotAvailable
 from ..job.exceptions import JobError
 
 
 class ManagedResults:
-    """Results managed by job manager.
+    """Results managed by the Job Manager.
 
-    This class is a wrapper around the `Result` class. It provides the same
-    methods as the `Result` class. Please refer to the `Result` class for
-    more information on the methods.
+    This class is a wrapper around the :class:`~qiskit.result.Result` class and
+    provides the same methods. Please refer to the
+    :class:`~qiskit.result.Result` class for more information on the methods.
     """
 
     def __init__(
             self,
-            job_set: 'ManagedJobSet',  # type: ignore[name-defined]
+            job_set: 'managedjobset.ManagedJobSet',
             backend_name: str,
             success: bool
     ):
-        """Creates a new ManagedResults instance.
+        """ManagedResults constructor.
 
         Args:
             job_set: Managed job set for these results.
             backend_name: Name of the backend used to run the experiments.
-            success: True if all experiments were successful and results
-                available. False otherwise.
+            success: ``True`` if all experiments were successful and results
+                available. ``False`` otherwise.
+
+        Attributes:
+            backend_name: Name of the backend used to run the experiments.
+            success: Whether all experiments were successful.
         """
         self._job_set = job_set
         self.backend_name = backend_name
@@ -54,15 +61,16 @@ class ManagedResults:
         """Get the raw data for an experiment.
 
         Args:
-            experiment: the index of the experiment. Several types are
-                accepted for convenience::
-                * str: the name of the experiment.
-                * QuantumCircuit: the name of the circuit instance will be used.
-                * Schedule: the name of the schedule instance will be used.
-                * int: the position of the experiment.
+            experiment: Retrieve result for this experiment. Several types are
+                accepted for convenience:
+                    * str: The name of the experiment.
+                    * QuantumCircuit: The name of the circuit instance will be used.
+                    * Schedule: The name of the schedule instance will be used.
+                    * int: The position of the experiment.
 
         Returns:
-            Refer to the ``Result.data()`` documentation for return information.
+            Refer to the :meth:`Result.data()<qiskit.result.Result.data()>` for
+            information on return data.
 
         Raises:
             IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
@@ -75,16 +83,17 @@ class ManagedResults:
     def get_memory(
             self,
             experiment: Union[str, QuantumCircuit, Schedule, int]
-    ) -> Union[list, 'numpy.ndarray']:  # type: ignore[name-defined]
+    ) -> Union[list, 'numpy.ndarray']:
         """Get the sequence of memory states (readouts) for each shot.
         The data from the experiment is a list of format
         ['00000', '01000', '10100', '10100', '11101', '11100', '00101', ..., '01010']
 
         Args:
-            experiment: the index of the experiment, as specified by ``data()``.
+            experiment: Retrieve result for this experiment, as specified by :meth:`data()`.
 
         Returns:
-            Refer to the ``Result.get_memory()`` documentation for return information.
+            Refer to the :meth:`Result.get_memory()<qiskit.result.Result.get_memory()>`
+            for information on return data.
 
         Raises:
             IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
@@ -101,10 +110,11 @@ class ManagedResults:
         """Get the histogram data of an experiment.
 
         Args:
-            experiment: the index of the experiment, as specified by ``data()``.
+            experiment: Retrieve result for this experiment, as specified by :meth:`data()`.
 
         Returns:
-            Refer to the ``Result.get_counts()`` documentation for return information.
+            Refer to the :meth:`Result.get_counts()<qiskit.result.Result.get_counts()>`
+            for information on return data.
 
         Raises:
             IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
@@ -122,12 +132,13 @@ class ManagedResults:
         """Get the final statevector of an experiment.
 
         Args:
-            experiment: the index of the experiment, as specified by ``data()``.
-            decimals: the number of decimals in the statevector.
-                If None, does not round.
+            experiment: Retrieve result for this experiment, as specified by :meth:`data()`.
+            decimals: The number of decimals in the statevector.
+                If ``None``, skip rounding.
 
         Returns:
-            Refer to the ``Result.get_statevector()`` documentation for return information.
+            Refer to the :meth:`Result.get_statevector()<qiskit.result.Result.get_statevector()>`
+            for information on return data.
 
         Raises:
             IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
@@ -145,12 +156,13 @@ class ManagedResults:
         """Get the final unitary of an experiment.
 
         Args:
-            experiment: the index of the experiment, as specified by ``data()``.
-            decimals: the number of decimals in the unitary.
-                If None, does not round.
+            experiment: Retrieve result for this experiment, as specified by :meth:`data()`.
+            decimals: The number of decimals in the unitary.
+                If ``None``, skip rounding.
 
         Returns:
-            Refer to the ``Result.get_unitary()`` documentation for return information.
+            Refer to the :meth:`Result.get_unitary()<qiskit.result.Result.get_unitary()>`
+            for information on return data.
 
         Raises:
             IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
@@ -167,7 +179,7 @@ class ManagedResults:
         """Get the result of the job used to submit the experiment.
 
         Args:
-            experiment: the index of the experiment, as specified by ``data()``.
+            experiment: Retrieve result for this experiment, as specified by :meth:`data()`.
 
         Returns:
             A tuple of the result of the job used to submit the experiment and

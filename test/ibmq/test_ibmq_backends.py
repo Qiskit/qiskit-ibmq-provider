@@ -12,7 +12,9 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBMQ Remote Backend Tests."""
+"""Test remote backends."""
+
+from unittest import skip
 
 from qiskit import (BasicAer, ClassicalRegister, QuantumCircuit,
                     QuantumRegister)
@@ -23,16 +25,18 @@ from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
 
 
+@skip('Skipping since they should be run by backend.')
 class TestIBMQBackends(IBMQTestCase):
-    """Qiskit test for remote backend validation.
+    """Tests for remote backend validation.
 
-    Executes a series of circuits of special interest using
+    Execute a series of circuits of special interest using
     all available remote backends, comparing results against
     local simulator 'local_qasm_simulator' as ground truth.
     """
 
     @slow_test
     def setUp(self):
+        """Initial test setup."""
         super().setUp()
         self._local_backend = BasicAer.get_backend('qasm_simulator')
         self._remote_backends = self.get_backends()
@@ -50,13 +54,13 @@ class TestIBMQBackends(IBMQTestCase):
         circuit.measure(qr[0], cr[0])
 
         qobj = assemble(transpile(circuit, backend=self._local_backend))
-        result_local = self._local_backend.run(qobj).result()
+        result_local = self._local_backend.run(qobj, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             if not remote_backend.status().operational:
                 continue
             with self.subTest(backend=remote_backend):
-                result_remote = remote_backend.run(qobj).result()
+                result_remote = remote_backend.run(qobj, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
@@ -69,11 +73,11 @@ class TestIBMQBackends(IBMQTestCase):
         circuit.measure(qr[0], cr[0])
 
         qobj = assemble(transpile(circuit, backend=self._local_backend))
-        result_local = self._local_backend.run(qobj).result()
+        result_local = self._local_backend.run(qobj, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             with self.subTest(backend=remote_backend):
-                result_remote = remote_backend.run(qobj).result()
+                result_remote = remote_backend.run(qobj, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
@@ -90,17 +94,16 @@ class TestIBMQBackends(IBMQTestCase):
         circuit.measure(qr[3], cr[3])
 
         qobj = assemble(transpile(circuit, backend=self._local_backend))
-        result_local = self._local_backend.run(qobj).result()
+        result_local = self._local_backend.run(qobj, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             with self.subTest(backend=remote_backend):
-                result_remote = remote_backend.run(qobj).result()
+                result_remote = remote_backend.run(qobj, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
     def test_readout_order(self):
-        """Test one circuit, one register, out-of-order readout.
-        """
+        """Test one circuit, one register, out-of-order readout."""
         qr = QuantumRegister(4)
         cr = ClassicalRegister(4)
         circuit = QuantumCircuit(qr, cr)
@@ -112,12 +115,12 @@ class TestIBMQBackends(IBMQTestCase):
         circuit.measure(qr[3], cr[3])
 
         qobj_local = assemble(transpile(circuit, backend=self._local_backend))
-        result_local = self._local_backend.run(qobj_local).result()
+        result_local = self._local_backend.run(qobj_local, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             with self.subTest(backend=remote_backend):
                 qobj_remote = assemble(transpile(circuit, backend=remote_backend))
-                result_remote = remote_backend.run(qobj_remote).result()
+                result_remote = remote_backend.run(qobj_remote, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
@@ -141,11 +144,11 @@ class TestIBMQBackends(IBMQTestCase):
         circuit.measure(qr2[1], cr1[1])
 
         qobj = assemble(transpile(circuit, backend=self._local_backend))
-        result_local = self._local_backend.run(qobj).result()
+        result_local = self._local_backend.run(qobj, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             with self.subTest(backend=remote_backend):
-                result_remote = remote_backend.run(qobj).result()
+                result_remote = remote_backend.run(qobj, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit),
                                            result_local.get_counts(circuit), delta=50)
 
@@ -178,11 +181,11 @@ class TestIBMQBackends(IBMQTestCase):
         circuit2.measure(qr2[1], cr1[2])
 
         qobj = assemble(transpile([circuit1, circuit2], backend=self._local_backend))
-        result_local = self._local_backend.run(qobj).result()
+        result_local = self._local_backend.run(qobj, validate_qobj=True).result()
 
         for remote_backend in self._remote_backends:
             with self.subTest(backend=remote_backend):
-                result_remote = remote_backend.run(qobj).result()
+                result_remote = remote_backend.run(qobj, validate_qobj=True).result()
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit1),
                                            result_local.get_counts(circuit1), delta=50)
                 self.assertDictAlmostEqual(result_remote.get_counts(circuit2),
