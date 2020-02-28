@@ -304,7 +304,7 @@ class WebsocketClient(BaseClient):
                                              .format(message, ex.code)) from ex
 
             except WebsocketError as ex:
-                logger.debug('A websocket error occurred when getting the job status: %s', ex)
+                logger.debug('A websocket error occurred while getting job status: %s', ex)
 
                 # Specific `WebsocketError` exceptions that are not worth retrying.
                 if isinstance(ex, (WebsocketTimeoutError, WebsocketIBMQProtocolError)):
