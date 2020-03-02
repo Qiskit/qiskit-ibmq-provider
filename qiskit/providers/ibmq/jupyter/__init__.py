@@ -24,7 +24,7 @@ Quantum devices.
 
 Note:
     To use these tools locally, you'll need to install the
-    ``visualization`` extra packages::
+    additional dependencies for the visualization functions::
 
         pip install qiskit-ibmq-provider[visualization]
 
