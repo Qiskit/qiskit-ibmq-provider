@@ -54,8 +54,8 @@ def iplot_error_map(
         The error map figure.
 
     Raises:
-        ValueError: If an invalid input is received.
-        TypeError: If the specified `backend` is a simulator.
+        VisualizationValueError: If an invalid input is received.
+        VisualizationTypeError: If the specified `backend` is a simulator.
 
     Example:
         .. jupyter-execute::

@@ -151,7 +151,8 @@ class ManagedJobSet:
 
         if not jobs:
             raise IBMQJobManagerUnknownJobSet(
-                '{} is not a known job set within the provider {}.'.format(self.job_set_id(), provider))
+                '{} is not a known job set within the provider {}.'.format(
+                    self.job_set_id(), provider))
 
         # Extract common information from the first job.
         first_job = jobs[0]
@@ -159,8 +160,8 @@ class ManagedJobSet:
         matched = pattern.match(first_job.name())
         if not matched:
             raise IBMQJobManagerInvalidStateError(
-                'Job {} is tagged for the job set {} but it does not have a proper job name.'.format(
-                    first_job.job_id(), self.job_set_id()))
+                'Job {} is tagged for the job set {} but it does not '
+                'have a proper job name.'.format(first_job.job_id(), self.job_set_id()))
         self._name = matched.group(1)
         self._backend = first_job.backend()
         self._tags = first_job.tags()

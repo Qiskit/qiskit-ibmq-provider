@@ -487,7 +487,8 @@ class IBMQJob(BaseModel, BaseJob):
             IBMQJobInvalidStateError: If the job has already been submitted.
         """
         if self.job_id() is not None:
-            raise IBMQJobInvalidStateError('The job {} has already been submitted.'.format(self.job_id()))
+            raise IBMQJobInvalidStateError(
+                'The job {} has already been submitted.'.format(self.job_id()))
 
         warnings.warn("job.submit() is deprecated. Please use "
                       "IBMQBackend.run() to submit a job.", DeprecationWarning, stacklevel=2)

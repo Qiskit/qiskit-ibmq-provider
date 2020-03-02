@@ -284,7 +284,8 @@ class WebsocketClient(BaseClient):
 
                     except (futures.TimeoutError, asyncio.TimeoutError):
                         # Timeout during our wait.
-                        raise WebsocketTimeoutError('Timeout reached while getting job status.') from None
+                        raise WebsocketTimeoutError(
+                            'Timeout reached while getting job status.') from None
                     except ConnectionClosed as ex:
                         # From the API:
                         # 4001: closed due to an internal errors

@@ -79,7 +79,8 @@ class IBMQFactory:
         """
         # Check if an IBM Quantum Experience account is already in use.
         if self._credentials:
-            raise IBMQAccountError('An IBM Quantum Experience account is already in use for the session.')
+            raise IBMQAccountError(
+                'An IBM Quantum Experience account is already in use for the session.')
 
         # Check the version used by these credentials.
         credentials = Credentials(token, url, **kwargs)
@@ -110,7 +111,8 @@ class IBMQFactory:
             IBMQAccountCredentialsNotFound: If no account is in use for the session.
         """
         if not self._credentials:
-            raise IBMQAccountError('No IBM Quantum Experience account is in use for the session.')
+            raise IBMQAccountCredentialsNotFound(
+                'No IBM Quantum Experience account is in use for the session.')
 
         self._credentials = None
         self._providers = OrderedDict()
