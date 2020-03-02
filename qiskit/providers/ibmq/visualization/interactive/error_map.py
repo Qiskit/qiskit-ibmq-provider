@@ -59,6 +59,14 @@ def iplot_error_map(
 
     Example:
         .. jupyter-execute::
+            :hide-code:
+            :hide-output:
+
+            from qiskit.test.ibmq_mock import mock_get_backend
+            mock_get_backend('FakeVigo')
+
+
+        .. jupyter-execute::
 
            from qiskit import IBMQ
            from qiskit.providers.ibmq.visualization import iplot_error_map
