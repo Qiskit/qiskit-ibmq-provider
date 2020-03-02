@@ -45,7 +45,7 @@ def backend_widget(backend: Union[IBMQBackend, FakeBackend]) -> None:
     Args:
         backend: Display information about this backend.
     """
-    cred = backend.provider().credentials
+    cred = backend._credentials
     last_tab = vue.TabItem(children=[])
     card = vue.Card(height=600, outlined=True,
                     children=[
