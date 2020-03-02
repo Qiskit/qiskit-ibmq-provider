@@ -60,6 +60,15 @@ def iplot_gate_map(
         The gate map figure.
 
     Example:
+
+        .. jupyter-execute::
+            :hide-code:
+            :hide-output:
+
+            from qiskit.test.ibmq_mock import mock_get_backend
+            mock_get_backend('FakeVigo')
+
+
         .. jupyter-execute::
 
            from qiskit import IBMQ
