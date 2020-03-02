@@ -90,7 +90,7 @@ class IBMQFactory:
         if not version_info['new_api'] or 'api-auth' not in version_info:
             raise IBMQAccountCredentialsInvalidUrl(
                 'The URL specified ({}) is not an IBM Quantum Experience authentication '
-                'URL. Authentication URL: {}.'.format(credentials.url, QX_AUTH_URL))
+                'URL. Valid authentication URL: {}.'.format(credentials.url, QX_AUTH_URL))
 
         # Initialize the providers.
         self._initialize_providers(credentials)
@@ -196,7 +196,7 @@ class IBMQFactory:
         if url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
                 'The URL specified ({}) is not an IBM Quantum Experience authentication '
-                'URL. Authentication URL: {}.'.format(url, QX_AUTH_URL))
+                'URL. Valid authentication URL: {}.'.format(url, QX_AUTH_URL))
 
         if not token or not isinstance(token, str):
             raise IBMQAccountCredentialsInvalidToken(
@@ -260,7 +260,7 @@ class IBMQFactory:
 
         if credentials.url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
-                'Invalid IBM Q Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
+                'Invalid IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
         return {
             'token': credentials.token,

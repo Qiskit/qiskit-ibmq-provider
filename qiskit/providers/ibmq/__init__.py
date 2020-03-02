@@ -96,7 +96,7 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
         return min([b for b in backends if b.status().operational],
                    key=lambda b: b.status().pending_jobs)
     except (ValueError, TypeError):
-        raise IBMQError('Unable to find the least_busy backend from an empty list.') from None
+        raise IBMQError('Unable to find the least_busy backend from an empty list.')
     except AttributeError:
         raise IBMQError('A backend in the list does not have the `pending_jobs` '
                         'attribute in its status.')
