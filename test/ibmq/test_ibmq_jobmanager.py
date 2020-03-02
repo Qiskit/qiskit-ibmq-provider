@@ -373,22 +373,17 @@ class TestResultManager(IBMQTestCase):
         job_set = self._jm.run(circs, backend=backend)
         jobs = job_set.jobs()
         cjob = jobs[1]
-        cancelled = False
+        status = None
         for _ in range(2):
             # Try twice in case job is not in a cancellable state
             try:
                 if cjob.cancel():
-                    # TODO skip checking for status when API is fixed.
-                    time.sleep(0.5)
-                    cjob.refresh()
-                    if cjob.cancelled():
-                        cancelled = True
-                        break
+                    status = cjob.status()
             except JobError:
                 pass
 
         result_manager = job_set.results()
-        if cancelled:
+        if status is JobStatus.CANCELLED:
             with self.assertRaises(IBMQManagedResultDataNotAvailable,
                                    msg="IBMQManagedResultDataNotAvailable not "
                                        "raised for job {}".format(cjob.job_id())):
