@@ -154,7 +154,6 @@ class IBMQJob(BaseModel, BaseJob):
 
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if not self._qobj:  # type: ignore[has-type]
-            self._wait_for_completion()
             with api_to_job_error():
                 qobj = self._api.job_download_qobj(
                     self.job_id(), self._use_object_storage)
