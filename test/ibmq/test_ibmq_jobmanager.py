@@ -373,17 +373,18 @@ class TestResultManager(IBMQTestCase):
         job_set = self._jm.run(circs, backend=backend)
         jobs = job_set.jobs()
         cjob = jobs[1]
-        status = None
+        cancelled = False
         for _ in range(2):
             # Try twice in case job is not in a cancellable state
             try:
-                if cjob.cancel():
-                    status = cjob.status()
+                cancelled = cjob.cancel()
+                if cancelled:
+                    break
             except JobError:
                 pass
 
         result_manager = job_set.results()
-        if status is JobStatus.CANCELLED:
+        if cancelled:
             with self.assertRaises(IBMQManagedResultDataNotAvailable,
                                    msg="IBMQManagedResultDataNotAvailable not "
                                        "raised for job {}".format(cjob.job_id())):
