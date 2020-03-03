@@ -31,6 +31,7 @@ from qiskit.providers.jobstatus import JobStatus
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_qe_access, requires_device, requires_provider
 from ..contextmanagers import custom_envs, no_envs
+from ..http_server import SimpleServer, ServerErrorOnceHandler
 
 
 class TestAccountClient(IBMQTestCase):
@@ -236,6 +237,19 @@ class TestAccountClient(IBMQTestCase):
         self.assertTrue(exception_traceback_str)
         if self.access_token in exception_traceback_str:
             self.fail('Access token not replaced in request exception traceback.')
+
+    def test_job_submit_retry(self):
+        """Test job submit requests get retried."""
+        backend_name = 'ibmq_qasm_simulator'
+        backend = self.provider.get_backend(backend_name)
+        api = backend._api
+
+        # Send request to local server.
+        valid_data = {'id': 'fake_id', 'url': SimpleServer.URL, 'job': 'fake_job'}
+        SimpleServer(handler_class=ServerErrorOnceHandler, valid_data=valid_data).start()
+        api.client_api.session.base_url = SimpleServer.URL
+
+        api.job_submit(backend_name, {})
 
 
 class TestAccountClientJobs(IBMQTestCase):
