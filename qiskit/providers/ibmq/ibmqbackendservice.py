@@ -391,7 +391,7 @@ class IBMQBackendService(SimpleNamespace):
         except ModelValidationError as ex:
             raise IBMQBackendApiProtocolError(
                 'Unexpected return value received from the server '
-                'when retrieving job {}: {}'.format(job_id, str(ex)))
+                'when retrieving job {}: {}'.format(job_id, str(ex))) from ex
 
         return job
 

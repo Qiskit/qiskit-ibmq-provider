@@ -517,8 +517,8 @@ class IBMQJob(BaseModel, BaseJob):
             self._status, self._queue_info = self._get_status_position(
                 data.pop('_api_status'), data.pop('info_queue', None))
         except ValidationError as ex:
-            raise IBMQJobApiError('Unexpected return value received from the server '
-                                  'when refreshing job {}: {}'.format(self.job_id(), str(ex)))
+            raise IBMQJobApiError('Unexpected return value received from the server when '
+                                  'refreshing job {}: {}'.format(self.job_id(), str(ex))) from ex
         finally:
             JobResponseSchema.model_cls = saved_model_cls
 

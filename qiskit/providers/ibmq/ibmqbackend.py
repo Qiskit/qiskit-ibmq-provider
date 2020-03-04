@@ -232,7 +232,7 @@ class IBMQBackend(BaseBackend):
             job = IBMQJob.from_dict(submit_info)
         except ModelValidationError as err:
             raise IBMQBackendApiProtocolError('Unexpected return value received from the server '
-                                              'when submitting job: {}'.format(str(err)))
+                                              'when submitting job: {}'.format(str(err))) from err
         Publisher().publish("ibmq.job.start", job)
         return job
 
@@ -282,8 +282,8 @@ class IBMQBackend(BaseBackend):
         try:
             return BackendStatus.from_dict(api_status)
         except ValidationError as ex:
-            raise IBMQBackendApiProtocolError('Unexpected return value received from the server '
-                                              'when getting backend status: {}'.format(str(ex)))
+            raise IBMQBackendApiProtocolError('Unexpected return value received from the server when '
+                                              'getting backend status: {}'.format(str(ex))) from ex
 
     def defaults(self, refresh: bool = False) -> Optional[PulseDefaults]:
         """Return the pulse defaults for the backend.
@@ -349,7 +349,7 @@ class IBMQBackend(BaseBackend):
         except ValidationError as ex:
             raise IBMQBackendApiProtocolError(
                 'Unexpected return value received from the server when '
-                'querying job limit data for the backend: {}.'.format(ex))
+                'querying job limit data for the backend: {}.'.format(ex)) from ex
 
     def remaining_jobs_count(self) -> Optional[int]:
         """Return the number of remaining jobs that could be submitted to the backend.
