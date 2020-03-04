@@ -16,30 +16,8 @@
 
 import threading
 import json
+from typing import Optional
 from http.server import BaseHTTPRequestHandler, HTTPServer
-
-
-class SimpleServer:
-    """A simple test HTTP server."""
-
-    IP_ADDRESS = '127.0.0.1'
-    PORT = 8123
-    URL = "http://{}:{}".format(IP_ADDRESS, PORT)
-
-    def __init__(self, handler_class, valid_data=None):
-        """SimpleServer constructor.
-
-        Args:
-            handler_class: Request handler class.
-            valid_data: Data to be returned for a valid request.
-        """
-        setattr(handler_class, 'valid_data', valid_data)
-        httpd = HTTPServer((self.IP_ADDRESS, self.PORT), handler_class)
-        self.server = threading.Thread(target=httpd.serve_forever, daemon=True)
-
-    def start(self):
-        """Start the server."""
-        self.server.start()
 
 
 class BaseHandler(BaseHTTPRequestHandler):
@@ -59,20 +37,23 @@ class BaseHandler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        self.data_string = self.rfile.read(int(self.headers.get('Content-Length', 0)))
+        self.rfile.read(int(self.headers.get('Content-Length', 0)))
         if code == 200:
             self.wfile.write(json.dumps(self._get_response_data()).encode(encoding='utf_8'))
 
     def do_GET(self):
         """Process a GET request."""
+        # pylint: disable=invalid-name
         self._respond()
 
     def do_POST(self):
         """Process a POST request."""
+        # pylint: disable=invalid-name
         self._respond()
 
     def do_PUT(self):
         """Process a PUT request."""
+        # pylint: disable=invalid-name
         self._respond()
 
 
@@ -92,3 +73,26 @@ class ServerErrorOnceHandler(BaseHandler):
     def _get_response_data(self):
         """Return valid response data."""
         return self.valid_data
+
+
+class SimpleServer:
+    """A simple test HTTP server."""
+
+    IP_ADDRESS = '127.0.0.1'
+    PORT = 8123
+    URL = "http://{}:{}".format(IP_ADDRESS, PORT)
+
+    def __init__(self, handler_class: BaseHandler, valid_data: Optional[dict] = None):
+        """SimpleServer constructor.
+
+        Args:
+            handler_class: Request handler class.
+            valid_data: Data to be returned for a valid request.
+        """
+        setattr(handler_class, 'valid_data', valid_data)
+        httpd = HTTPServer((self.IP_ADDRESS, self.PORT), handler_class)
+        self.server = threading.Thread(target=httpd.serve_forever, daemon=True)
+
+    def start(self):
+        """Start the server."""
+        self.server.start()
