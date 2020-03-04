@@ -58,6 +58,7 @@ Exceptions
     IBMQProviderError
 """
 
+import logging
 from typing import List
 
 from .ibmqfactory import IBMQFactory
@@ -68,8 +69,14 @@ from .accountprovider import AccountProvider
 from .backendjoblimit import BackendJobLimit
 from .exceptions import *
 from .ibmqbackendservice import IBMQBackendService
+from .utils.utils import setup_logger
 
 from .version import __version__
+
+# Setup the logger for the IBM Quantum Provider package.
+logger = logging.getLogger(__name__)
+setup_logger(logger)
+
 
 IBMQ = IBMQFactory()
 """A global instance of an account manager that is used as the entry point for convenience."""

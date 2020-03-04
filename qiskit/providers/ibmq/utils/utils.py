@@ -14,9 +14,13 @@
 
 """General utility functions."""
 
+import os
 import re
 import keyword
 from typing import List, Optional, Type
+from logging import Logger
+
+from qiskit.test.utils import setup_test_logging
 
 
 def to_python_identifier(name: str) -> str:
@@ -56,3 +60,29 @@ def validate_job_tags(job_tags: Optional[List[str]], exception: Type[Exception])
     if job_tags and (not isinstance(job_tags, list) or
                      not all(isinstance(tag, str) for tag in job_tags)):
         raise exception("job_tags needs to be a list or strings.")
+
+
+def setup_logger(logger: Logger) -> None:
+    """Setup the logger for the provider modules with the appropriate level.
+
+    It involves:
+        * Use the `LOG_LEVEL` environment variable to determine the log level
+            for the provider. If it is not set, or is set to an invalid level,
+            the log level is defaulted to `INFO` within `setup_test_logging`.
+        * Use the `STREAM_LOG` environment variable to determine whether the logs
+            should be logged to the console. If it is not set, or set to an invalid
+            level, it defaults to `TRUE`. The valid options are `TRUE` and `FALSE`,
+            case insensitive.
+    """
+    log_level = os.getenv('LOG_LEVEL', '')
+    stream_log = os.getenv('STREAM_LOG', '')
+    filename = '{}.log'.format(logger.name)
+
+    if log_level:
+        # Ensure the stream logger is set to a valid value. Default to `TRUE` if
+        # not set, since log level was specified.
+        if stream_log.upper() not in ('TRUE', 'FALSE'):
+            stream_log = 'TRUE'
+        # Since log level was specified, set stream log, in case it wasn't specified.
+        os.environ['STREAM_LOG'] = stream_log
+        setup_test_logging(logger, log_level, filename)
