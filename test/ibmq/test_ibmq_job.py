@@ -215,9 +215,10 @@ class TestIBMQJob(JobTestCase):
             try:
                 if job.cancel():
                     status = job.status()
-                    self.assertTrue(status is JobStatus.CANCELLED,
-                                    'cancel() was successful for job {} but its status is {}.'
-                                    .format(job.job_id(), status))
+                    self.assertEqual(status, JobStatus.CANCELLED,
+                                     'cancel() was successful for job {} but its status is {}.'
+                                     .format(job.job_id(), status))
+                    break
             except JobError:
                 pass
 
@@ -330,10 +331,10 @@ class TestIBMQJob(JobTestCase):
             try:
                 if job_to_cancel.cancel():
                     status = job_to_cancel.status()
-                    # TODO Change the warning to assert once API is fixed
-                    if status is not JobStatus.CANCELLED:
-                        self.log.warning("cancel() was successful for job %s but its status is %s.",
-                                         job_to_cancel.job_id(), status)
+                    self.assertEqual(status, JobStatus.CANCELLED,
+                                     'cancel() was successful for job {} but its status is {}.'
+                                     .format(job_to_cancel.job_id(), status))
+                    break
             except JobError:
                 pass
 
