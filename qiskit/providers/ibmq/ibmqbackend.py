@@ -282,8 +282,9 @@ class IBMQBackend(BaseBackend):
         try:
             return BackendStatus.from_dict(api_status)
         except ValidationError as ex:
-            raise IBMQBackendApiProtocolError('Unexpected return value received from the server when '
-                                              'getting backend status: {}'.format(str(ex))) from ex
+            raise IBMQBackendApiProtocolError(
+                'Unexpected return value received from the server when '
+                'getting backend status: {}'.format(str(ex))) from ex
 
     def defaults(self, refresh: bool = False) -> Optional[PulseDefaults]:
         """Return the pulse defaults for the backend.
