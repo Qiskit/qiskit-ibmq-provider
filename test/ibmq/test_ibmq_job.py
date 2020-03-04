@@ -240,8 +240,9 @@ class TestIBMQJob(JobTestCase):
 
         retrieved_job = provider.backends.retrieve_job(job.job_id())
         self.assertEqual(job.job_id(), retrieved_job.job_id())
-        self.assertEqual(job.result().get_counts(), retrieved_job.result().get_counts())
+        self.assertEqual(retrieved_job.qobj().to_dict(), qobj.to_dict())
         self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
+        self.assertEqual(job.result().get_counts(), retrieved_job.result().get_counts())
 
     @requires_device
     def test_retrieve_job_uses_appropriate_backend(self, backend):
