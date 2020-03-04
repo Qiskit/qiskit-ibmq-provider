@@ -125,22 +125,22 @@ class IBMQFactory:
 
         Raises:
             IBMQAccountCredentialsNotFound: If no IBM Quantum Experience credentials
-                can be found on disk.
+                can be found.
             IBMQAccountMultipleCredentialsFound: If multiple IBM Quantum Experience
-                credentials are found on disk.
+                credentials are found.
             IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
-                credentials are found on disk.
+                credentials are found.
         """
         # Check for valid credentials.
         credentials_list = list(discover_credentials().values())
 
         if not credentials_list:
             raise IBMQAccountCredentialsNotFound(
-                'No IBM Quantum Experience credentials found on disk.')
+                'No IBM Quantum Experience credentials found.')
 
         if len(credentials_list) > 1:
             raise IBMQAccountMultipleCredentialsFound(
-                'Multiple IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
+                'Multiple IBM Quantum Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = credentials_list[0]
         # Explicitly check via a server call, to allow environment auth URLs
@@ -150,7 +150,7 @@ class IBMQFactory:
         # Check the URL is a valid authentication URL.
         if not version_info['new_api'] or 'api-auth' not in version_info:
             raise IBMQAccountCredentialsInvalidUrl(
-                'Invalid IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
+                'Invalid IBM Quantum Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         # Initialize the providers.
         if self._credentials:
@@ -195,8 +195,7 @@ class IBMQFactory:
         """
         if url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
-                'The URL specified ({}) is not an IBM Quantum Experience authentication '
-                'URL. Valid authentication URL: {}.'.format(url, QX_AUTH_URL))
+                'Invalid IBM Q Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         if not token or not isinstance(token, str):
             raise IBMQAccountCredentialsInvalidToken(

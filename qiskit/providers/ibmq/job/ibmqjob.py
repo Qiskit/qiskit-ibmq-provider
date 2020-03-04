@@ -759,8 +759,8 @@ class IBMQJob(BaseModel, BaseJob):
                 if queue_info._status == ApiJobStatus.PENDING_IN_QUEUE.value:
                     status = JobStatus.QUEUED
         except (KeyError, ValidationError) as ex:
-            raise IBMQJobApiError('Unexpected return value received from the server when '
-                                  'getting status for job {}: {}'.format(self.job_id(), str(ex)))
+            raise IBMQJobApiError('Unexpected return value received from the server when getting '
+                                  'status for job {}: {}'.format(self.job_id(), str(ex))) from ex
 
         if status is not JobStatus.QUEUED:
             queue_info = None
