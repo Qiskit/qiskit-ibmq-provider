@@ -707,7 +707,7 @@ class IBMQJob(BaseModel, BaseJob):
         """
         status_response = None
         # Wait for first status response.
-        while not status_response and not exit_event.is_set():
+        while not status_response and not exit_event.is_set():  # type: ignore[warn-unreachable]
             if len(status_deque) > 0:
                 status_response = status_deque.pop()
             else:
