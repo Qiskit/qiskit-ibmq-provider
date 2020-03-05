@@ -273,7 +273,7 @@ class IBMQJob(BaseModel, BaseJob):
         except ApiError as error:
             self._cancelled = False
             raise IBMQJobApiError('Unexpected error when cancelling job {}: {}'
-                                  .format(self.job_id(), str(error)))
+                                  .format(self.job_id(), str(error))) from error
 
     def status(self) -> JobStatus:
         """Query the server for the latest job status.
@@ -609,12 +609,12 @@ class IBMQJob(BaseModel, BaseJob):
                 self.job_id(), timeout=timeout, wait=wait, status_deque=status_deque)
         except UserTimeoutExceededError:
             raise IBMQJobTimeoutError(
-                'Timeout while waiting for job {}.'.format(self._job_id))
+                'Timeout while waiting for job {}.'.format(self._job_id)) from None
         except ApiError as api_err:
             logger.error('Maximum retries exceeded: '
                          'Error checking job status due to a network error.')
             raise IBMQJobApiError('Error checking job status due to a network '
-                                  'error: {}'.format(str(api_err)))
+                                  'error: {}'.format(str(api_err))) from api_err
 
         self._status, self._queue_info = self._get_status_position(
             ApiJobStatus(status_response['status']), status_response.get('infoQueue', None))
@@ -652,13 +652,13 @@ class IBMQJob(BaseModel, BaseJob):
                 if self._status is JobStatus.ERROR:
                     raise IBMQJobFailureError(
                         'Unable to retrieve result for job {}. Job has failed. '
-                        'Use job.error_message() to get more details.'.format(self.job_id()))
+                        'Use job.error_message() to get more details.'.format(self.job_id())) from err
                 if not self.kind:
                     raise IBMQJobInvalidStateError(
                         'Unable to retrieve result for job {}. Job result '
-                        'is in an unsupported format.'.format(self.job_id()))
+                        'is in an unsupported format.'.format(self.job_id())) from err
                 raise IBMQJobApiError(
-                    'Unable to retrieve result for job {}: {}'.format(self.job_id(), str(err)))
+                    'Unable to retrieve result for job {}: {}'.format(self.job_id(), str(err))) from err
             finally:
                 # In case partial results are returned or job failure, an error message is cached.
                 if result_response:
@@ -697,9 +697,9 @@ class IBMQJob(BaseModel, BaseJob):
         """
         try:
             return "{}. Error code: {}.".format(error['message'], error['code'])
-        except KeyError:
-            raise IBMQJobApiError('Failed to get error message for job {}. '
-                                  'Invalid error data received: {}'.format(self.job_id(), error))
+        except KeyError as ex:
+            raise IBMQJobApiError('Failed to get error message for job {}. Invalid error '
+                                  'data received: {}'.format(self.job_id(), error)) from ex
 
     def _status_callback(
             self,

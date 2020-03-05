@@ -326,7 +326,7 @@ class AccountClient(BaseClient):
             return self.job_get(job_id)['qObjectResult']
         except KeyError as err:
             raise ApiIBMQProtocolError(
-                'Unexpected return value received from the server: {}'.format(str(err)))
+                'Unexpected return value received from the server: {}'.format(str(err))) from err
 
     def _job_result_object_storage(self, job_id: str) -> Dict:
         """Retrieve and return the job result using object storage.
@@ -349,8 +349,8 @@ class AccountClient(BaseClient):
         try:
             _ = job_api.callback_download()
         except (RequestsApiError, ValueError) as ex:
-            logger.warning("An error occurred while sending download completion acknowledgement: "
-                           "%s", ex)
+            logger.warning('An error occurred while sending download completion acknowledgement: '
+                           '%s', ex)
         return result_response
 
     def job_get(

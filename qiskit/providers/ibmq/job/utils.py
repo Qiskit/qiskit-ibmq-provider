@@ -76,4 +76,4 @@ def api_to_job_error() -> Generator[None, None, None]:
     try:
         yield
     except ApiError as api_err:
-        raise IBMQJobApiError(str(api_err))
+        raise IBMQJobApiError(str(api_err)) from api_err

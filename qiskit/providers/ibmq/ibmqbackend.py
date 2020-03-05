@@ -214,7 +214,7 @@ class IBMQBackend(BaseBackend):
                 job_share_level=job_share_level,
                 job_tags=job_tags)
         except ApiError as ex:
-            raise IBMQBackendApiError('Error submitting job: {}'.format(str(ex)))
+            raise IBMQBackendApiError('Error submitting job: {}'.format(str(ex))) from ex
 
         # Error in the job after submission:
         # Transition to the `ERROR` final state.
