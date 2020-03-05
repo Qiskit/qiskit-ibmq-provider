@@ -18,6 +18,7 @@ import time
 import copy
 from datetime import datetime, timedelta
 from unittest import SkipTest
+from math import isclose
 
 import numpy
 from scipy.stats import chi2_contingency
@@ -116,7 +117,7 @@ class TestIBMQJob(JobTestCase):
         for i in range(num_qubits - 1):
             qc.cx(qr[i], qr[i + 1])
         qc.measure(qr, cr)
-        qobj = assemble(transpile([qc] * 10, backend=backend), backend=backend)
+        qobj = assemble(transpile([qc] * 20, backend=backend), backend=backend, shots=2048)
         num_jobs = 5
         job_array = [backend.run(qobj, validate_qobj=True) for _ in range(num_jobs)]
         timeout = 30
@@ -671,13 +672,20 @@ class TestIBMQJob(JobTestCase):
                     "queue_info not found for job {}".format(c_job_id))
             callback_info[0] = True
             if callback_info[1]:
-                self.assertAlmostEqual(time.time() - callback_info[1], wait_time, delta=0.1)
+                # Since the wait time is small, there is a chance that the job
+                # status is not yet available when the wait time is up. In that
+                # case the callback function is not invoked until the next iteration.
+                elapsed_time = time.time() - callback_info[1]
+                if not isclose(elapsed_time, wait_time, rel_tol=0.1) and \
+                        not isclose(elapsed_time, wait_time*2, rel_tol=0.1):
+                    self.fail("Callback function invoked after {}, not "
+                              "within 0.1 tolerance of {}".format(elapsed_time, wait_time))
             callback_info[1] = time.time()
 
         # The first is whether the callback function is invoked. The second
         # is last called time. They're put in a list to be mutable.
         callback_info = [False, None]
-        wait_time = 1
+        wait_time = 0.5
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj, validate_qobj=True)
@@ -694,7 +702,7 @@ class TestIBMQJob(JobTestCase):
     @requires_provider
     def test_wait_for_final_state_timeout(self, provider):
         """Test waiting for job to reach final state times out."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
+        backend = most_busy_backend(provider)
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj, validate_qobj=True)
         try:
@@ -703,6 +711,7 @@ class TestIBMQJob(JobTestCase):
             # Ensure all threads ended.
             for thread in job._executor._threads:
                 thread.join(0.1)
+            job.cancel()
 
 
 def _bell_circuit():

@@ -138,8 +138,8 @@ class Job(RestAdapterBase):
             api_response = raw_response.json()
         except JSONDecodeError as err:
             raise ApiIBMQProtocolError(
-                'Unrecognized answer from server: {}. '
-                'This could be caused by too many requests.'.format(raw_response)) from err
+                'Unrecognized answer from server: {}. This could be caused by '
+                'too many requests.'.format(raw_response.content)) from err
 
         try:
             # Validate the response.

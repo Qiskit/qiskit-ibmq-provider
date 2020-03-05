@@ -29,6 +29,7 @@ from qiskit.providers.jobstatus import JobStatus
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_provider, requires_device
+from ...utils import most_busy_backend, bell_in_qobj
 
 
 class TestWebsocketIntegration(IBMQTestCase):
@@ -142,16 +143,21 @@ class TestWebsocketIntegration(IBMQTestCase):
         with mock.patch.object(AccountClient, 'job_status',
                                side_effect=_job_status_side_effect):
             job._wait_for_completion()
-            self.assertIs(job._status, JobStatus.DONE)
+            self.assertIs(
+                job._status, JobStatus.DONE,
+                "Job {} status is {} when it should be DONE.".format(job.job_id(), job._status))
 
     def test_websockets_timeout(self):
         """Test timeout checking status of a job via websockets."""
-        qc = transpile(self.qc1, backend=self.sim_backend)
-        qobj = assemble(qc, backend=self.sim_backend, shots=2048)
-        job = self.sim_backend.run(qobj, validate_qobj=True)
+        backend = most_busy_backend(self.provider)
+        qobj = bell_in_qobj(backend, shots=backend.configuration().max_shots)
+        job = backend.run(qobj, validate_qobj=True)
 
-        with self.assertRaises(JobTimeoutError):
-            job.result(timeout=0.1)
+        try:
+            with self.assertRaises(JobTimeoutError):
+                job.result(timeout=0.1)
+        finally:
+            job.cancel()
 
     def test_websockets_multi_job(self):
         """Test checking status of multiple jobs in parallel via websockets."""
