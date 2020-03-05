@@ -669,14 +669,15 @@ class TestIBMQJob(JobTestCase):
                 self.assertIsNotNone(
                     kwargs.pop('queue_info', None),
                     "queue_info not found for job {}".format(c_job_id))
-            callback_info[0] = True
-            if callback_info[1]:
-                self.assertAlmostEqual(time.time() - callback_info[1], wait_time, delta=0.1)
-            callback_info[1] = time.time()
 
-        # The first is whether the callback function is invoked. The second
-        # is last called time. They're put in a list to be mutable.
-        callback_info = [False, None]
+            callback_info['called'] = True
+            if callback_info['last call time']:
+                self.assertAlmostEqual(
+                    time.time() - callback_info['last call time'], wait_time, delta=0.1)
+            callback_info['last call time'] = time.time()
+
+        # Put callback data in a dictionary to make it mutable.
+        callback_info = {'called': False, 'last call time': 0.0}
         wait_time = 0.5
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -685,7 +686,7 @@ class TestIBMQJob(JobTestCase):
         try:
             job.wait_for_final_state(timeout=30, wait=wait_time, callback=final_state_callback)
             self.assertTrue(job.done())
-            self.assertTrue(callback_info[0])
+            self.assertTrue(callback_info['called'])
         finally:
             # Ensure all threads ended.
             for thread in job._executor._threads:

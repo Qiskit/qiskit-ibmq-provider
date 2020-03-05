@@ -265,6 +265,10 @@ class WebsocketClient(BaseClient):
                         response = WebsocketResponseMethod.from_bytes(response_raw)
                         last_status = response.data
 
+                        # Share the new status.
+                        if status_deque is not None:
+                            status_deque.append(last_status)
+
                         # Successfully received and parsed a message, reset retry counter.
                         current_retry_attempt = 0
 
@@ -275,10 +279,6 @@ class WebsocketClient(BaseClient):
 
                         if timeout and timeout <= 0:
                             raise WebsocketTimeoutError('Timeout reached')
-
-                        # Share the new status.
-                        if status_deque is not None:
-                            status_deque.append(last_status)
 
                     except (futures.TimeoutError, asyncio.TimeoutError):
                         # Timeout during our wait.
