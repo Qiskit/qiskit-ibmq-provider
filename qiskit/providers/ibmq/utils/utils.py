@@ -16,6 +16,7 @@
 
 import os
 import re
+import logging
 import keyword
 from typing import List, Optional, Type
 from logging import Logger
@@ -64,25 +65,34 @@ def setup_logger(logger: Logger) -> None:
     """Setup the logger for the provider modules with the appropriate level.
 
     It involves:
-        * Use the `LOG_LEVEL` environment variable to determine the log level
-            for the provider. If it is not set, or is set to an invalid level,
-            the log level is defaulted to `INFO` within `setup_test_logging`.
-        * Use the `STREAM_LOG` environment variable to determine whether the logs
-            should be logged to the console. If it is not set, or set to an invalid
-            level, it defaults to `TRUE`. The valid options are `TRUE` and `FALSE`,
-            case insensitive.
+        * Use the `QISKIT_IBMQ_PROVIDER_LOG_LEVEL` environment variable to
+            determine the log level for the provider modules. If it is set, the
+            logs will be logged to the console. If it is set to an invalid level,
+            the log level defaults to `INFO`.
+        * Use the `QISKIT_IBMQ_PROVIDER_LOG_FILE` environment variable to
+            specify the filename to use for logging the logs to a file. If it is
+            not set, the logs will not be logged to a file.
     """
-    from qiskit.test.utils import setup_test_logging
-
-    log_level = os.getenv('LOG_LEVEL', '')
-    stream_log = os.getenv('STREAM_LOG', '')
-    filename = '{}.log'.format(logger.name)
+    log_level = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_LEVEL', '')
+    log_file = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_FILE', '')
 
     if log_level:
-        # Ensure the stream logger is set to a valid value. Default to `TRUE` if
-        # not set, since log level was specified.
-        if stream_log.upper() not in ('TRUE', 'FALSE'):
-            stream_log = 'TRUE'
-        # Since log level was specified, set stream log, in case it wasn't specified.
-        os.environ['STREAM_LOG'] = stream_log
-        setup_test_logging(logger, log_level, filename)
+        # Setup the log formatter.
+        log_fmt = ('{}.%(module)s.%(funcName)s:%(levelname)s:%(asctime)s:'
+                   ' %(message)s'.format(logger.name))
+        formatter = logging.Formatter(log_fmt)
+        # Set the logging level, defaulting to `INFO` if it is not a valid level.
+        level = logging.getLevelName(log_level)
+        if type(level) is not int:
+            level = logging.INFO
+        logger.setLevel(level)
+        # Setup the stream handler, for logging to console.
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
+        if log_file:
+            # Set up the file handler.
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)

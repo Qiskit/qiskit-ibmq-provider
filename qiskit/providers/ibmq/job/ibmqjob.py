@@ -271,7 +271,6 @@ class IBMQJob(BaseModel, BaseJob):
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
-            logger.debug('Error: There was an error cancelling job %s: %s.', self.job_id(), error)
             raise IBMQJobApiError('Error cancelling job: %s' % error)
 
     def status(self) -> JobStatus:

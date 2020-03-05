@@ -238,8 +238,6 @@ class RetrySession(Session):
                 # Modify the original message on the chained exceptions.
                 self._modify_chained_exception_messages(ex)
 
-            logger.debug('ERROR: Failed %s request. Endpoint: %s.\n'
-                         'Details: %s', method, url, message)
             raise RequestsApiError(message) from ex
 
         return response

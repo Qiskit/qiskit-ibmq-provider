@@ -213,14 +213,11 @@ class IBMQBackend(BaseBackend):
                 job_share_level=job_share_level,
                 job_tags=job_tags)
         except ApiError as ex:
-            logger.debug('Error: There was an error submitting the job: %s.', str(ex))
             raise IBMQBackendApiError('Error submitting job: {}'.format(str(ex)))
 
         # Error in the job after submission:
         # Transition to the `ERROR` final state.
         if 'error' in submit_info:
-            logger.debug('Error: There was an error after job '
-                         'submission: %s.', submit_info['error'])
             raise IBMQBackendError(
                 'Error submitting job: {}'.format(str(submit_info['error'])))
 
