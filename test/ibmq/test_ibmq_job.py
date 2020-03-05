@@ -677,7 +677,7 @@ class TestIBMQJob(JobTestCase):
         # The first is whether the callback function is invoked. The second
         # is last called time. They're put in a list to be mutable.
         callback_info = [False, None]
-        wait_time = 0.5
+        wait_time = 1
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj, validate_qobj=True)
