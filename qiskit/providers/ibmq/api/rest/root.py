@@ -15,6 +15,7 @@
 """Root REST adapter."""
 
 import json
+import logging
 
 from typing import Dict, List, Optional, Any
 
@@ -23,6 +24,8 @@ from qiskit.providers.ibmq.utils import json_encoder
 from .base import RestAdapterBase
 from .backend import Backend
 from .job import Job
+
+logger = logging.getLogger(__name__)
 
 
 class Api(RestAdapterBase):
@@ -147,7 +150,11 @@ class Api(RestAdapterBase):
             payload['tags'] = job_tags
 
         data = json.dumps(payload, cls=json_encoder.IQXJsonEconder)
-        return self.session.post(url, data=data).json()
+
+        response = self.session.post(url, data=data).json()
+        logger.debug('Submitting job via HTTP. Endpoint: %s', url)
+
+        return response
 
     def submit_job_object_storage(
             self,
@@ -187,7 +194,10 @@ class Api(RestAdapterBase):
         if job_tags:
             payload['tags'] = job_tags
 
-        return self.session.post(url, json=payload).json()
+        response = self.session.post(url, json=payload).json()
+        logger.debug('Submitting job via object storage. Endpoint: %s.', url)
+
+        return response
 
     def circuit(self, name: str, **kwargs: Any) -> Dict[str, Any]:
         """Execute a Circuit.

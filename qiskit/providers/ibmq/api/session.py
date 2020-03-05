@@ -15,6 +15,7 @@
 """Session customized for IBM Quantum Experience access."""
 
 import os
+import logging
 from typing import Dict, Optional, Any, Tuple, Union
 from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
@@ -31,6 +32,7 @@ STATUS_FORCELIST = (
 )
 CLIENT_APPLICATION = 'ibmqprovider/' + ibmq_provider_version
 CUSTOM_HEADER_ENV_VAR = 'QE_CUSTOM_CLIENT_APP_HEADER'
+logger = logging.getLogger(__name__)
 
 
 class PostForcelistRetry(Retry):
@@ -236,6 +238,8 @@ class RetrySession(Session):
                 # Modify the original message on the chained exceptions.
                 self._modify_chained_exception_messages(ex)
 
+            logger.debug('ERROR: Failed %s request. Endpoint: %s.\n'
+                         'Details: %s', method, url, message)
             raise RequestsApiError(message) from ex
 
         return response

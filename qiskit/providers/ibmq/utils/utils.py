@@ -20,8 +20,6 @@ import keyword
 from typing import List, Optional, Type
 from logging import Logger
 
-from qiskit.test.utils import setup_test_logging
-
 
 def to_python_identifier(name: str) -> str:
     """Convert a name to a valid Python identifier.
@@ -74,6 +72,8 @@ def setup_logger(logger: Logger) -> None:
             level, it defaults to `TRUE`. The valid options are `TRUE` and `FALSE`,
             case insensitive.
     """
+    from qiskit.test.utils import setup_test_logging
+
     log_level = os.getenv('LOG_LEVEL', '')
     stream_log = os.getenv('STREAM_LOG', '')
     filename = '{}.log'.format(logger.name)
