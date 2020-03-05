@@ -705,22 +705,25 @@ class IBMQJob(BaseModel, BaseJob):
             callback: Callback function to invoke.
             wait: Time between each callback function call.
         """
-        while not exit_event.is_set():
-            exit_event.wait(wait)
-
-            try:
+        status_response = None
+        # Wait for first status response.
+        while not status_response and not exit_event.is_set():
+            if len(status_deque) > 0:
                 status_response = status_deque.pop()
-            except IndexError:
-                continue
+            else:
+                exit_event.wait(min(wait, 0.5))
 
+        while not exit_event.is_set():
             try:
                 status, queue_info = self._get_status_position(
                     ApiJobStatus(status_response['status']), status_response.get('infoQueue', None))
+                callback(self.job_id(), status, self, queue_info=queue_info)
             except IBMQJobApiError as ex:
                 logger.warning("Unexpected error when getting job status: %s", ex)
-                continue
 
-            callback(self.job_id(), status, self, queue_info=queue_info)
+            exit_event.wait(wait)
+            if len(status_deque) > 0:
+                status_response = status_deque.pop()
 
     def _get_status_position(
             self,
