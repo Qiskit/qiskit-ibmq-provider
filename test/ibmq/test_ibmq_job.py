@@ -687,7 +687,7 @@ class TestIBMQJob(JobTestCase):
         callback_info = [False, None]
         wait_time = 0.5
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = assemble(transpile([self._qc]*20, backend=backend), backend=backend)
         job = backend.run(qobj, validate_qobj=True)
 
         try:
