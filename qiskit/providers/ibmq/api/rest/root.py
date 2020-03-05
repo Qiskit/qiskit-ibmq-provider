@@ -18,8 +18,6 @@ import json
 
 from typing import Dict, List, Optional, Any
 
-from qiskit.providers.ibmq.utils import json_encoder
-
 from .base import RestAdapterBase
 from .backend import Backend
 from .job import Job
