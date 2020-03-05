@@ -112,9 +112,9 @@ class WebsocketResponseMethod(WebsocketMessage):
         """Instantiate a message from a bytes response."""
         try:
             parsed_dict = json.loads(json_string.decode('utf8'))
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as ex:
             raise WebsocketIBMQProtocolError('Unable to parse the message received from '
-                                             'the server: {}'.format(json_string))
+                                             'the server: {}'.format(json_string)) from ex
 
         return cls(parsed_dict['type'], parsed_dict.get('data', None))
 

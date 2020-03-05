@@ -370,7 +370,7 @@ class IBMQBackendService(SimpleNamespace):
             job_info = self._provider._api.job_get(job_id)
         except ApiError as ex:
             raise IBMQBackendApiError('Failed to get job {}: {}'
-                                      .format(job_id, str(ex)))
+                                      .format(job_id, str(ex))) from ex
 
         # Recreate the backend used for this job.
         backend_name = job_info.get('backend', {}).get('name', 'unknown')
