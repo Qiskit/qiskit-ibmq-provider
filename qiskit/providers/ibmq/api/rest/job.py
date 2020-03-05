@@ -218,6 +218,6 @@ class Job(RestAdapterBase):
         """
         response = self.session.get(url, bare=True).json()
         logger.debug('Retrieved via object storage for '
-                     'job %s. Endpoint: %s.', self.job_id, url)
+                     'job %s. Object storage URL: %s.', self.job_id, url)
 
         return response
