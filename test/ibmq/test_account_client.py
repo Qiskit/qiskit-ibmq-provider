@@ -258,7 +258,7 @@ class TestAccountClient(IBMQTestCase):
                     self.assertEqual(status, JobStatus.CANCELLED,
                                      'cancel() was successful for job {} but its status is {}.'
                                      .format(job.job_id(), status))
-                break
+                    break
             except RequestsApiError as ex:
                 if 'JOB_NOT_RUNNING' in str(ex):
                     self.assertEqual(job.status(), JobStatus.DONE)
