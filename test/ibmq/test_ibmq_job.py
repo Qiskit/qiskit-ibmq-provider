@@ -695,7 +695,8 @@ class TestIBMQJob(JobTestCase):
                 # wait_time = wait
                 job = backend.run(qobj, validate_qobj=True)
                 try:
-                    job.wait_for_final_state(timeout=30, wait=wait_time, callback=final_state_callback)
+                    job.wait_for_final_state(timeout=30, wait=wait_time,
+                                             callback=final_state_callback)
                     self.assertTrue(job.done())
                     self.assertTrue(callback_info['called'], "Callback function not invoked.")
                 finally:

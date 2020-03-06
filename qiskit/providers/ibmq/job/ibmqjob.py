@@ -559,7 +559,7 @@ class IBMQJob(BaseModel, BaseJob):
                 specified timeout.
         """
         exit_event = Event()
-        status_queue = queue.Queue(maxsize=1)
+        status_queue = queue.Queue(maxsize=1)  # type: queue.Queue
         future = None
         if callback:
             future = self._executor.submit(self._status_callback,
@@ -708,7 +708,7 @@ class IBMQJob(BaseModel, BaseJob):
             wait: Time between each callback function call.
         """
         status_response = None
-        last_data = ()
+        last_data = (None, None)  # type: Tuple[Optional[JobStatus], Optional[QueueInfo]]
 
         while not exit_event.is_set():
             try:
@@ -725,7 +725,8 @@ class IBMQJob(BaseModel, BaseJob):
 
             try:
                 status, queue_info = self._get_status_position(
-                    ApiJobStatus(status_response['status']), status_response.get('infoQueue', None))
+                    ApiJobStatus(status_response['status']),
+                    status_response.get('infoQueue', None))
                 if status in JOB_FINAL_STATES:
                     return
                 if wait is None:

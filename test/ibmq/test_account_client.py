@@ -17,7 +17,7 @@
 import re
 import traceback
 from unittest import mock
-from collections import deque
+import queue
 from urllib3.connectionpool import HTTPConnectionPool
 from urllib3.exceptions import MaxRetryError
 
@@ -348,10 +348,10 @@ class TestAccountClientJobs(IBMQTestCase):
 
     def test_job_final_status_polling(self):
         """Test getting a job's final status via polling."""
-        status_deque = deque(maxlen=1)
-        response = self.client._job_final_status_polling(self.job_id, status_deque=status_deque)
+        status_queue = queue.Queue(maxsize=1)
+        response = self.client._job_final_status_polling(self.job_id, status_queue=status_queue)
         self.assertEqual(response.pop('status', None), ApiJobStatus.COMPLETED.value)
-        self.assertNotEqual(len(status_deque), 0)
+        self.assertFalse(status_queue.empty())
 
     def test_job_properties(self):
         """Test getting job properties."""
