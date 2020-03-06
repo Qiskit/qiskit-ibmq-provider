@@ -16,6 +16,14 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Added
+
+- There are three new exceptions: `VisualizationError`, `VisualizationValueError`,
+  and `VisualizationTypeError`. These are now used in the visualization modules when
+  an exception is raised. Also, `IBMQBackend.status()` now raises a 
+  `IBMQBackendApiProtocolError` exception, instead of raising a general `LookupError`, 
+  if there was an issue with validating the status.
+
 ## [0.5.0] - 2020-02-26
 
 ### Added
@@ -24,7 +32,7 @@ The format is based on [Keep a Changelog].
   backend information, have been moved 
   from `qiskit-terra` to `qiskit-ibmq-provider`. In addition, you can now 
   use `%iqx_dashboard` to get a dashboard that provides both job and 
-  backend information. (\#535) (\#541)  
+  backend information. (\#535) (\#541)
 
 ### Changed
 
