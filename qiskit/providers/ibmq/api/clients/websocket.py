@@ -23,7 +23,7 @@ from typing import Dict, Union, Generator, Optional, Any
 from concurrent import futures
 from ssl import SSLError
 import warnings
-from collections import deque
+import queue
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
@@ -193,7 +193,7 @@ class WebsocketClient(BaseClient):
             timeout: Optional[float] = None,
             retries: int = 5,
             backoff_factor: float = 0.5,
-            status_deque: Optional[deque] = None
+            status_queue: Optional[queue.Queue] = None
     ) -> Generator[Any, None, Dict[str, str]]:
         """Return the status of a job.
 
@@ -222,7 +222,7 @@ class WebsocketClient(BaseClient):
             retries: Max number of retries.
             backoff_factor: Backoff factor used to calculate the
                 time to wait between retries.
-            status_deque: Deque used to share the latest status.
+            status_queue: Queue used to share the latest status.
 
         Returns:
             The final API response for the status of the job, as a dictionary that
@@ -266,8 +266,12 @@ class WebsocketClient(BaseClient):
                         last_status = response.data
 
                         # Share the new status.
-                        if status_deque is not None:
-                            status_deque.append(last_status)
+                        if status_queue is not None:
+                            try:
+                                status_queue.get_nowait()
+                            except queue.Empty:
+                                pass
+                            status_queue.put_nowait(last_status)
 
                         # Successfully received and parsed a message, reset retry counter.
                         current_retry_attempt = 0

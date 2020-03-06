@@ -18,7 +18,7 @@ import logging
 from typing import Dict, Optional, Tuple, Any, List, Callable
 import warnings
 from datetime import datetime
-from collections import deque
+import queue
 from concurrent import futures
 from threading import Event
 
@@ -530,14 +530,16 @@ class IBMQJob(BaseModel, BaseJob):
     def wait_for_final_state(
             self,
             timeout: Optional[float] = None,
-            wait: float = 5,
+            wait: Optional[float] = None,
             callback: Callable = None
     ) -> None:
         """Wait until the job progresses to a final state such as ``DONE`` or ``ERROR``.
 
         Args:
             timeout: Seconds to wait for the job. If ``None``, wait indefinitely.
-            wait: Seconds to wait between queries.
+            wait: Seconds to wait between invoking the callback function. If ``None``,
+                the callback function is invoked only if job status or queue position
+                has changed.
             callback: Callback function invoked after each querying iteration.
                 The following positional arguments are provided to the callback function:
 
@@ -557,16 +559,16 @@ class IBMQJob(BaseModel, BaseJob):
                 specified timeout.
         """
         exit_event = Event()
-        status_deque = deque(maxlen=1)  # type: deque
+        status_queue = queue.Queue(maxsize=1)
         future = None
         if callback:
             future = self._executor.submit(self._status_callback,
-                                           status_deque=status_deque,
+                                           status_queue=status_queue,
                                            exit_event=exit_event,
                                            callback=callback,
                                            wait=wait)
         try:
-            self._wait_for_completion(timeout=timeout, wait=wait, status_deque=status_deque)
+            self._wait_for_completion(timeout=timeout, status_queue=status_queue)
         finally:
             if future:
                 exit_event.set()
@@ -577,7 +579,7 @@ class IBMQJob(BaseModel, BaseJob):
             timeout: Optional[float] = None,
             wait: float = 5,
             required_status: Tuple[JobStatus] = JOB_FINAL_STATES,
-            status_deque: Optional[deque] = None
+            status_queue: Optional[queue.Queue] = None
     ) -> bool:
         """Wait until the job progress to a final state such as ``DONE`` or ``ERROR``.
 
@@ -585,7 +587,7 @@ class IBMQJob(BaseModel, BaseJob):
             timeout: Seconds to wait for job. If ``None``, wait indefinitely.
             wait: Seconds between queries.
             required_status: The final job status required.
-            status_deque: Deque used to share the latest status.
+            status_queue: Queue used to share the latest status.
 
         Returns:
             ``True`` if the final job status matches one of the required states.
@@ -601,7 +603,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         try:
             status_response = self._api.job_final_status(
-                self.job_id(), timeout=timeout, wait=wait, status_deque=status_deque)
+                self.job_id(), timeout=timeout, wait=wait, status_queue=status_queue)
         except UserTimeoutExceededError:
             raise IBMQJobTimeoutError(
                 'Timeout while waiting for job {}'.format(self._job_id))
@@ -692,25 +694,32 @@ class IBMQJob(BaseModel, BaseJob):
 
     def _status_callback(
             self,
-            status_deque: deque,
+            status_queue: queue.Queue,
             exit_event: Event,
             callback: Callable,
-            wait: float
+            wait: Optional[float]
     ) -> None:
         """Invoke the callback function with the latest job status.
 
         Args:
-            status_deque: Deque containing the latest status.
+            status_queue: Queue containing the latest status.
             exit_event: Event used to notify this thread to quit.
             callback: Callback function to invoke.
             wait: Time between each callback function call.
         """
         status_response = None
+        last_data = ()
 
         while not exit_event.is_set():
-            exit_event.wait(wait)
-            if len(status_deque) > 0:
-                status_response = status_deque.pop()
+            try:
+                if wait is None:
+                    status_response = status_queue.get(block=True, timeout=wait)
+                else:
+                    exit_event.wait(wait)
+                    status_response = status_queue.get_nowait()
+            except queue.Empty:
+                pass
+
             if not status_response:
                 continue
 
@@ -719,6 +728,11 @@ class IBMQJob(BaseModel, BaseJob):
                     ApiJobStatus(status_response['status']), status_response.get('infoQueue', None))
                 if status in JOB_FINAL_STATES:
                     return
+                if wait is None:
+                    if (status, queue_info) == last_data:
+                        continue
+                    last_data = (status, queue_info)
+                logger.debug("Invoking callback function.")
                 callback(self.job_id(), status, self, queue_info=queue_info)
             except IBMQJobApiError as ex:
                 logger.warning("Unexpected error when getting job status: %s", ex)
