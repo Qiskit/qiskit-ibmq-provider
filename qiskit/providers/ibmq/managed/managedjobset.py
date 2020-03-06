@@ -294,10 +294,10 @@ class ManagedJobSet:
                 result = mjob.result(timeout=timeout, partial=partial)
                 if result is None or not result.success:
                     success = False
-            except IBMQJobTimeoutError:
+            except IBMQJobTimeoutError as ex:
                 raise IBMQJobManagerTimeoutError(
                     'Timeout while waiting for the results for experiments {}-{}.'.format(
-                        mjob.start_index, self._managed_jobs[-1].end_index))
+                        mjob.start_index, self._managed_jobs[-1].end_index)) from ex
 
             if timeout:
                 timeout = original_timeout - (time.time() - start_time)

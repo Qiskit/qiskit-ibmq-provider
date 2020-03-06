@@ -98,6 +98,6 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
     except (ValueError, TypeError):
         raise IBMQError('Unable to find the least_busy '
                         'backend from an empty list.') from None
-    except AttributeError:
+    except AttributeError as ex:
         raise IBMQError('A backend in the list does not have the `pending_jobs` '
-                        'attribute in its status.')
+                        'attribute in its status.') from ex
