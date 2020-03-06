@@ -67,8 +67,10 @@ def setup_logger(logger: Logger) -> None:
     It involves:
         * Use the `QISKIT_IBMQ_PROVIDER_LOG_LEVEL` environment variable to
             determine the log level for the provider modules. If it is set, the
-            logs will be logged to the console. If it is set to an invalid level,
-            the log level defaults to `INFO`.
+            logs will be logged to the console, with the specified level. If it
+            is set to an invalid level, the log level defaults to `INFO`. The
+            valid log levels are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``,
+            and ``CRITICAL`` (case-insensitive).
         * Use the `QISKIT_IBMQ_PROVIDER_LOG_FILE` environment variable to
             specify the filename to use for logging the logs to a file. If it is
             not set, the logs will not be logged to a file.
