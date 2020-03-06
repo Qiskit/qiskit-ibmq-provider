@@ -21,7 +21,7 @@ The format is based on [Keep a Changelog].
 - There are three new exceptions: `VisualizationError`, `VisualizationValueError`,
   and `VisualizationTypeError`. These are now used in the visualization modules when
   an exception is raised. Also, `IBMQBackend.status()` now raises a 
-  `IBMQBackendApiProtocolError` exception, instead of raising a general `LookupError`, 
+  `IBMQBackendApiProtocolError` exception, instead of a general `LookupError`, 
   if there was an issue with validating the status.
 
 ## [0.5.0] - 2020-02-26
