@@ -27,6 +27,6 @@ class VisualizationValueError(VisualizationError, ValueError):
     pass
 
 
-class VisualizationTypeError(VisualizationError, KeyError):
+class VisualizationTypeError(VisualizationError, TypeError):
     """Type errors raised by the visualization modules."""
     pass
