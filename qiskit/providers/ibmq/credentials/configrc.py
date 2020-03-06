@@ -56,7 +56,7 @@ def read_credentials_from_qiskitrc(
         config_parser.read(filename)
     except ParsingError as ex:
         raise InvalidCredentialsFormatError(
-            'Error parsing file {}: {}'.format(filename, str(ex)))
+            'Error parsing file {}: {}'.format(filename, str(ex))) from ex
 
     # Build the credentials dictionary.
     credentials_dict = OrderedDict()  # type: ignore[var-annotated]
@@ -171,5 +171,5 @@ def remove_credentials(
         del stored_credentials[credentials.unique_id()]
     except KeyError:
         raise CredentialsNotFoundError('The account {} does not exist in the configuration file.'
-                                       .format(credentials.unique_id()))
+                                       .format(credentials.unique_id())) from None
     write_qiskit_rc(stored_credentials, filename)
