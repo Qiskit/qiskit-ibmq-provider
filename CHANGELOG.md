@@ -22,7 +22,7 @@ The format is based on [Keep a Changelog].
   and `VisualizationTypeError`. These are now used in the visualization modules when
   an exception is raised. Also, `IBMQBackend.status()` now raises a 
   `IBMQBackendApiProtocolError` exception, instead of a general `LookupError`, 
-  if there was an issue with validating the status.
+  if there was an issue with validating the status. (\#572)
 
 ## [0.5.0] - 2020-02-26
 
