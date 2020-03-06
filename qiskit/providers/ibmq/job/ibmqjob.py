@@ -651,14 +651,15 @@ class IBMQJob(BaseModel, BaseJob):
             except (ModelValidationError, ApiError) as err:
                 if self._status is JobStatus.ERROR:
                     raise IBMQJobFailureError(
-                        'Unable to retrieve result for job {}. Job has failed. '
-                        'Use job.error_message() to get more details.'.format(self.job_id())) from err
+                        'Unable to retrieve result for job {}. Job has failed. Use '
+                        'job.error_message() to get more details.'.format(self.job_id())) from err
                 if not self.kind:
                     raise IBMQJobInvalidStateError(
                         'Unable to retrieve result for job {}. Job result '
                         'is in an unsupported format.'.format(self.job_id())) from err
                 raise IBMQJobApiError(
-                    'Unable to retrieve result for job {}: {}'.format(self.job_id(), str(err))) from err
+                    'Unable to retrieve result for '
+                    'job {}: {}'.format(self.job_id(), str(err))) from err
             finally:
                 # In case partial results are returned or job failure, an error message is cached.
                 if result_response:
