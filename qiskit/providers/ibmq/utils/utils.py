@@ -88,7 +88,7 @@ def setup_logger(logger: Logger) -> None:
     if log_level:
         # Set the logging level, defaulting to `INFO` if it is not a valid level.
         level = logging.getLevelName(log_level.upper())
-        if type(level) is not int:
+        if not isinstance(level, int):
             level = logging.INFO
         logger.setLevel(level)
 

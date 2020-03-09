@@ -14,7 +14,6 @@
 
 """Job REST adapter."""
 
-import logging
 import pprint
 import json
 from json.decoder import JSONDecodeError
@@ -28,8 +27,6 @@ from .base import RestAdapterBase
 from .validation import StatusResponseSchema
 from ..session import RetrySession
 from ..exceptions import ApiIBMQProtocolError
-
-logger = logging.getLogger(__name__)
 
 
 class Job(RestAdapterBase):
@@ -66,7 +63,6 @@ class Job(RestAdapterBase):
         url = self.get_url('self')
 
         response = self.session.get(url).json()
-        logger.debug('Retrieved job %s. Endpoint: %s', self.job_id, url)
 
         if 'calibration' in response:
             response['properties'] = response.pop('calibration')
@@ -80,12 +76,7 @@ class Job(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('callback_upload')
-
-        response = self.session.post(url).json()
-        logger.debug('Notified API after uploading the Qobj '
-                     'for job %s. Endpoint: %s', self.job_id, url)
-
-        return response
+        return self.session.post(url).json()
 
     def callback_download(self) -> Dict[str, Any]:
         """Notify the API after downloading a ``Qobj`` via object storage.
@@ -94,12 +85,7 @@ class Job(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('callback_download')
-
-        response = self.session.post(url).json()
-        logger.debug('Notified API after downloading the Qobj '
-                     'for job %s. Endpoint: %s', self.job_id, url)
-
-        return response
+        return self.session.post(url).json()
 
     def cancel(self) -> Dict[str, Any]:
         """Cancel a job.
@@ -108,11 +94,7 @@ class Job(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('cancel')
-
-        response = self.session.post(url).json()
-        logger.debug('Cancelled job %s. Endpoint: %s', self.job_id, url)
-
-        return response
+        return self.session.post(url).json()
 
     def download_url(self) -> Dict[str, Any]:
         """Return an object storage URL for downloading the ``Qobj``.
@@ -121,12 +103,7 @@ class Job(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('download_url')
-
-        response = self.session.get(url).json()
-        logger.debug('Retrieved Qobj download URL for '
-                     'job %s. Endpoint: %s.', self.job_id, url)
-
-        return response
+        return self.session.get(url).json()
 
     def properties(self) -> Dict[str, Any]:
         """Return the backend properties of a job.
@@ -144,12 +121,7 @@ class Job(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('result_url')
-
-        response = self.session.get(url).json()
-        logger.debug('Retrieved result download URL for '
-                     'job %s. Endpoint: %s.', self.job_id, url)
-
-        return response
+        return self.session.get(url).json()
 
     def status(self) -> Dict[str, Any]:
         """Return the status of a job.
@@ -184,12 +156,7 @@ class Job(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('upload_url')
-
-        response = self.session.get(url).json()
-        logger.debug('Retrieved Qobj upload URL for '
-                     'job %s. Endpoint: %s.', self.job_id, url)
-
-        return response
+        return self.session.get(url).json()
 
     def put_object_storage(self, url: str, qobj_dict: Dict[str, Any]) -> str:
         """Upload a ``Qobj`` via object storage.
@@ -203,8 +170,6 @@ class Job(RestAdapterBase):
         """
         data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEconder)
         response = self.session.put(url, data=data, bare=True)
-        logger.debug('Uploaded Qobj for job %s. Endpoint: %s.', self.job_id, url)
-
         return response.text
 
     def get_object_storage(self, url: str) -> Dict[str, Any]:
@@ -216,8 +181,4 @@ class Job(RestAdapterBase):
         Returns:
             JSON response.
         """
-        response = self.session.get(url, bare=True).json()
-        logger.debug('Retrieved via object storage for '
-                     'job %s. Object storage URL: %s.', self.job_id, url)
-
-        return response
+        return self.session.get(url, bare=True).json()
