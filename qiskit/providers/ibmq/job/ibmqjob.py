@@ -39,7 +39,8 @@ from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
 from .queueinfo import QueueInfo
 from .schema import JobResponseSchema
-from .utils import build_error_report, api_status_to_job_status, api_to_job_error
+from .utils import (build_error_report, api_status_to_job_status,
+                    api_to_job_error, get_cancel_status)
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +155,6 @@ class IBMQJob(BaseModel, BaseJob):
 
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if not self._qobj:  # type: ignore[has-type]
-            self._wait_for_completion()
             with api_to_job_error():
                 qobj = self._api.job_download_qobj(
                     self.job_id(), self._use_object_storage)
@@ -267,7 +267,7 @@ class IBMQJob(BaseModel, BaseJob):
         """
         try:
             response = self._api.job_cancel(self.job_id())
-            self._cancelled = 'error' not in response and response.get('cancelled', False)
+            self._cancelled = get_cancel_status(response)
             return self._cancelled
         except ApiError as error:
             self._cancelled = False

@@ -22,8 +22,22 @@ A Collection of Jupyter magic functions and tools
 that extend the functionality of Qiskit for the IBM
 Quantum devices.
 
+Note:
+    To use these tools locally, you'll need to install the
+    additional dependencies for the visualization functions::
+
+        pip install qiskit-ibmq-provider[visualization]
+
 Detailed information on a single backend
 ========================================
+
+.. jupyter-execute::
+    :hide-code:
+    :hide-output:
+
+    from qiskit.test.ibmq_mock import mock_get_backend
+    mock_get_backend('FakeVigo')
+
 
 .. jupyter-execute::
 

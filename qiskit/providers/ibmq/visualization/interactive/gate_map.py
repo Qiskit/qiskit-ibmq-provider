@@ -25,7 +25,7 @@ from ..device_layouts import DEVICE_LAYOUTS
 
 def iplot_gate_map(
         backend: IBMQBackend,
-        figsize: Tuple[Optional[int]] = (None, None),
+        figsize: Tuple[Optional[int], Optional[int]] = (None, None),
         label_qubits: bool = True,
         qubit_size: Optional[float] = None,
         line_width: Optional[float] = None,
@@ -60,6 +60,15 @@ def iplot_gate_map(
         The gate map figure.
 
     Example:
+
+        .. jupyter-execute::
+            :hide-code:
+            :hide-output:
+
+            from qiskit.test.ibmq_mock import mock_get_backend
+            mock_get_backend('FakeVigo')
+
+
         .. jupyter-execute::
 
            from qiskit import IBMQ
