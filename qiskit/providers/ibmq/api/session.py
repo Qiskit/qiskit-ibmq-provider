@@ -223,7 +223,7 @@ class RetrySession(Session):
             # Censor the token before logging.
             if url == '/users/loginWithToken' and 'json' in kwargs:
                 kwargs['json']['apiToken'] = '...'
-            logger.debug('Endpoint: {}. Method: {}. Request Data: {}.'.format(url, method, kwargs))
+            logger.debug('Endpoint: %s. Method: %s. Request Data: %s.', url, method, kwargs)
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
