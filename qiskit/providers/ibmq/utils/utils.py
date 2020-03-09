@@ -67,10 +67,9 @@ def setup_logger(logger: Logger) -> None:
     It involves:
         * Use the `QISKIT_IBMQ_PROVIDER_LOG_LEVEL` environment variable to
             determine the log level for the provider modules. If it is set, the
-            logs will be logged to the console, with the specified level. If it
-            is set to an invalid level, the log level defaults to `INFO`. The
-            valid log levels are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``,
-            and ``CRITICAL`` (case-insensitive).
+            provider uses the specified level. If it is set to an invalid level,
+            the log level defaults to `INFO`. The valid log levels are ``DEBUG``,
+            ``INFO``, ``WARNING``, ``ERROR``, and ``CRITICAL`` (case-insensitive).
         * Use the `QISKIT_IBMQ_PROVIDER_LOG_FILE` environment variable to
             specify the filename to use for logging the logs to a file. If it is
             not set, the logs will not be logged to a file.
@@ -78,27 +77,29 @@ def setup_logger(logger: Logger) -> None:
     log_level = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_LEVEL', '')
     log_file = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_FILE', '')
 
-    # Although the log level might not be specified, setup the formatter.
-    # This ensures a message is formatted, when logged to the console, in the
-    # case it propagates to the root logger.
-    log_fmt = ('{}.%(module)s.%(funcName)s:%(levelname)s:%(asctime)s:'
-               ' %(message)s'.format(logger.name))
-    formatter = logging.Formatter(log_fmt)
-
+    # Set the logging level, if specified.
     if log_level:
-        # Set the logging level, defaulting to `INFO` if it is not a valid level.
+        # Default to `INFO` if the specified level is not valid.
         level = logging.getLevelName(log_level.upper())
         if not isinstance(level, int):
             level = logging.INFO
         logger.setLevel(level)
 
-        if log_file:
-            # Set up the file handler.
-            file_handler = logging.FileHandler(log_file)
-            file_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
+    # Although the log level might not be specified, setup the formatter.
+    # This ensures the log message is formatted, when logged to the console, in the
+    # case it propagates to the root logger.
+    log_fmt = ('{}.%(module)s.%(funcName)s:%(levelname)s:%(asctime)s:'
+               ' %(message)s'.format(logger.name))
+    formatter = logging.Formatter(log_fmt)
 
     # Setup the stream handler, for logging to console, with the given format.
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
+
+    # Set the logging file, if specified.
+    if log_file:
+        # Setup the file handler.
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
