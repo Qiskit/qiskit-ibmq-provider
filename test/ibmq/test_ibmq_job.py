@@ -215,10 +215,10 @@ class TestIBMQJob(JobTestCase):
             try:
                 if job.cancel():
                     status = job.status()
-                    # TODO Change the warning to assert once API is fixed
-                    if status is not JobStatus.CANCELLED:
-                        self.log.warning("cancel() was successful for job %s but its status is %s.",
-                                         job.job_id(), status)
+                    self.assertEqual(status, JobStatus.CANCELLED,
+                                     'cancel() was successful for job {} but its status is {}.'
+                                     .format(job.job_id(), status))
+                    break
             except JobError:
                 pass
 
@@ -240,8 +240,9 @@ class TestIBMQJob(JobTestCase):
 
         retrieved_job = provider.backends.retrieve_job(job.job_id())
         self.assertEqual(job.job_id(), retrieved_job.job_id())
-        self.assertEqual(job.result().get_counts(), retrieved_job.result().get_counts())
+        self.assertEqual(retrieved_job.qobj().to_dict(), qobj.to_dict())
         self.assertEqual(job.qobj().to_dict(), qobj.to_dict())
+        self.assertEqual(job.result().get_counts(), retrieved_job.result().get_counts())
 
     @requires_device
     def test_retrieve_job_uses_appropriate_backend(self, backend):
@@ -331,10 +332,10 @@ class TestIBMQJob(JobTestCase):
             try:
                 if job_to_cancel.cancel():
                     status = job_to_cancel.status()
-                    # TODO Change the warning to assert once API is fixed
-                    if status is not JobStatus.CANCELLED:
-                        self.log.warning("cancel() was successful for job %s but its status is %s.",
-                                         job_to_cancel.job_id(), status)
+                    self.assertEqual(status, JobStatus.CANCELLED,
+                                     'cancel() was successful for job {} but its status is {}.'
+                                     .format(job_to_cancel.job_id(), status))
+                    break
             except JobError:
                 pass
 
@@ -676,7 +677,7 @@ class TestIBMQJob(JobTestCase):
         # The first is whether the callback function is invoked. The second
         # is last called time. They're put in a list to be mutable.
         callback_info = [False, None]
-        wait_time = 0.5
+        wait_time = 1
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj, validate_qobj=True)

@@ -28,6 +28,7 @@ from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
 from qiskit.providers.ibmq.api.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api.exceptions import ApiError, RequestsApiError
+from qiskit.providers.ibmq.job.utils import get_cancel_status
 from qiskit.providers.jobstatus import JobStatus
 
 from ..ibmqtestcase import IBMQTestCase
@@ -250,14 +251,13 @@ class TestAccountClient(IBMQTestCase):
         max_retry = 2
         for _ in range(max_retry):
             try:
-                api.job_cancel(job_id)
-                # TODO Change the warning back to assert once API is fixed
-                # self.assertEqual(job.status(), JobStatus.CANCELLED)
-                status = job.status()
-                if status is not JobStatus.CANCELLED:
-                    self.log.warning("cancel() was successful for job %s but its status is %s.",
-                                     job.job_id(), status)
-                else:
+                cancel_response = api.job_cancel(job_id)
+                is_cancelled = get_cancel_status(cancel_response)
+                if is_cancelled:
+                    status = job.status()
+                    self.assertEqual(status, JobStatus.CANCELLED,
+                                     'cancel() was successful for job {} but its status is {}.'
+                                     .format(job.job_id(), status))
                     break
             except RequestsApiError as ex:
                 if 'JOB_NOT_RUNNING' in str(ex):
