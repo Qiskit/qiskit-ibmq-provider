@@ -78,23 +78,27 @@ def setup_logger(logger: Logger) -> None:
     log_level = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_LEVEL', '')
     log_file = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_FILE', '')
 
+    # Although the log level might not be specified, setup the formatter.
+    # This ensures a message is formatted, when logged to the console, in the
+    # case it propagates to the root logger.
+    log_fmt = ('{}.%(module)s.%(funcName)s:%(levelname)s:%(asctime)s:'
+               ' %(message)s'.format(logger.name))
+    formatter = logging.Formatter(log_fmt)
+
     if log_level:
-        # Setup the log formatter.
-        log_fmt = ('{}.%(module)s.%(funcName)s:%(levelname)s:%(asctime)s:'
-                   ' %(message)s'.format(logger.name))
-        formatter = logging.Formatter(log_fmt)
         # Set the logging level, defaulting to `INFO` if it is not a valid level.
-        level = logging.getLevelName(log_level)
+        level = logging.getLevelName(log_level.upper())
         if type(level) is not int:
             level = logging.INFO
         logger.setLevel(level)
-        # Setup the stream handler, for logging to console.
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
-        logger.addHandler(stream_handler)
 
         if log_file:
             # Set up the file handler.
             file_handler = logging.FileHandler(log_file)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
+
+    # Setup the stream handler, for logging to console, with the given format.
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
