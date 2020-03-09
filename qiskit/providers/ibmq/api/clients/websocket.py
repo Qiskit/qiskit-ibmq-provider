@@ -259,8 +259,6 @@ class WebsocketClient(BaseClient):
                                 timeout = original_timeout - (time.time() - start_time)
                             else:
                                 response_raw = yield from websocket.recv()
-                        logger.debug('Received message from websocket: %s',
-                                     response_raw)
 
                         response = WebsocketResponseMethod.from_bytes(response_raw)
                         last_status = response.data

@@ -220,6 +220,7 @@ class RetrySession(Session):
         try:
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
+            logger.debug('Endpoint: {}. Method: {}. Request Data: {}.'.format(url, method, kwargs))
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
