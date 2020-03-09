@@ -39,7 +39,8 @@ from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
 from .queueinfo import QueueInfo
 from .schema import JobResponseSchema
-from .utils import build_error_report, api_status_to_job_status, api_to_job_error
+from .utils import (build_error_report, api_status_to_job_status,
+                    api_to_job_error, get_cancel_status)
 
 logger = logging.getLogger(__name__)
 
@@ -266,8 +267,7 @@ class IBMQJob(BaseModel, BaseJob):
         """
         try:
             response = self._api.job_cancel(self.job_id())
-            self._cancelled = 'error' not in response and response.get('cancelled', False)
-            logger.debug('Job %s successfully cancelled: %s.', self.job_id(), response)
+            self._cancelled = get_cancel_status(response)
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
