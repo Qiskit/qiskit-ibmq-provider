@@ -86,8 +86,8 @@ def setup_logger(logger: Logger) -> None:
         logger.setLevel(level)
 
     # Although the log level might not be specified, setup the formatter.
-    # This ensures the log message is formatted, when logged to the console, in the
-    # case it propagates to the root logger.
+    # This ensures log messages are formatted, when logged to the console, in the
+    # case they propagate to the root logger.
     log_fmt = ('{}.%(module)s.%(funcName)s:%(levelname)s:%(asctime)s:'
                ' %(message)s'.format(logger.name))
     formatter = logging.Formatter(log_fmt)
