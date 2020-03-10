@@ -19,6 +19,12 @@ Visualizations (:mod:`qiskit.providers.ibmq.visualization`)
 
 .. currentmodule:: qiskit.providers.ibmq.visualization
 
+Note:
+    To use these tools locally, you'll need to install the
+    additional dependencies for the visualization functions::
+
+        pip install qiskit-ibmq-provider[visualization]
+
 Interactive Visualizations
 ==========================
 

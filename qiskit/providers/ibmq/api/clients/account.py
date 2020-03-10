@@ -153,7 +153,6 @@ class AccountClient(BaseClient):
             self,
             backend_name: str,
             qobj_dict: Dict[str, Any],
-            use_object_storage: bool,
             job_name: Optional[str] = None,
             job_share_level: Optional[ApiJobShareLevel] = None,
             job_tags: Optional[List[str]] = None
@@ -163,57 +162,6 @@ class AccountClient(BaseClient):
         Args:
             backend_name: The name of the backend.
             qobj_dict: The ``Qobj`` to be executed, as a dictionary.
-            use_object_storage: ``True`` if object storage should be used.
-            job_name: Custom name to be assigned to the job.
-            job_share_level: Level the job should be shared at.
-            job_tags: Tags to be assigned to the job.
-
-        Returns:
-            Job data.
-        """
-        submit_info = None
-        if use_object_storage:
-            # Attempt to use object storage.
-            try:
-                submit_info = self._job_submit_object_storage(
-                    backend_name=backend_name,
-                    qobj_dict=qobj_dict,
-                    job_name=job_name,
-                    job_share_level=job_share_level,
-                    job_tags=job_tags)
-            except Exception as ex:  # pylint: disable=broad-except
-                # Fall back to submitting the Qobj via POST if object storage
-                # failed.
-                logger.info('Submitting the job via object storage failed: '
-                            'retrying via regular POST upload: %s',
-                            str(ex))
-                logger.debug('Submitting via object storage extra info:',
-                             exc_info=True)
-
-        if not submit_info:
-            # Submit Qobj via HTTP.
-            submit_info = self._job_submit_post(
-                backend_name=backend_name,
-                qobj_dict=qobj_dict,
-                job_name=job_name,
-                job_share_level=job_share_level,
-                job_tags=job_tags)
-
-        return submit_info
-
-    def _job_submit_post(
-            self,
-            backend_name: str,
-            qobj_dict: Dict[str, Any],
-            job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None,
-            job_tags: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
-        """Submit a ``Qobj`` to the backend using ``HTTP POST``.
-
-        Args:
-            backend_name: The name of the backend.
-            qobj_dict: The ``Qobj`` to be executed, as a dictionary.
             job_name: Custom name to be assigned to the job.
             job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
@@ -224,38 +172,8 @@ class AccountClient(BaseClient):
         # Check for the job share level.
         _job_share_level = job_share_level.value if job_share_level else None
 
-        return self.client_api.job_submit(
-            backend_name,
-            qobj_dict,
-            job_name,
-            job_share_level=_job_share_level,
-            job_tags=job_tags)
-
-    def _job_submit_object_storage(
-            self,
-            backend_name: str,
-            qobj_dict: Dict[str, Any],
-            job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None,
-            job_tags: Optional[List[str]] = None
-    ) -> Dict:
-        """Submit a ``Qobj`` to the backend using object storage.
-
-        Args:
-            backend_name: The name of the backend.
-            qobj_dict: The ``Qobj`` to be executed, as a dictionary.
-            job_name: Custom name to be assigned to the job.
-            job_share_level: Level the job should be shared at.
-            job_tags: Tags to be assigned to the job.
-
-        Returns:
-            Job data.
-        """
-        # Check for the job share level.
-        _job_share_level = job_share_level.value if job_share_level else None
-
-        # Get the job via object storage.
-        job_info = self.client_api.submit_job_object_storage(
+        # Create a remote job instance on the server.
+        job_info = self.client_api.create_remote_job(
             backend_name,
             job_name=job_name,
             job_share_level=_job_share_level,

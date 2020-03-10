@@ -21,8 +21,6 @@ from collections import deque
 from urllib3.connectionpool import HTTPConnectionPool
 from urllib3.exceptions import MaxRetryError
 
-from requests.exceptions import RequestException
-
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
@@ -34,6 +32,7 @@ from qiskit.providers.jobstatus import JobStatus
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_qe_access, requires_device, requires_provider
 from ..contextmanagers import custom_envs, no_envs
+from ..http_server import SimpleServer, ServerErrorOnceHandler
 
 
 class TestAccountClient(IBMQTestCase):
@@ -69,21 +68,6 @@ class TestAccountClient(IBMQTestCase):
                              self.provider.credentials.websockets_url,
                              use_websockets=True)
 
-    def test_job_submit(self):
-        """Test job_submit, running a job against a simulator."""
-        # Create a Qobj.
-        backend_name = 'ibmq_qasm_simulator'
-        backend = self.provider.get_backend(backend_name)
-        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
-        qobj = assemble(circuit, backend, shots=1)
-
-        # Run the job through the AccountClient directly.
-        api = backend._api
-        job = api.job_submit(backend_name, qobj.to_dict(), use_object_storage=False)
-
-        self.assertIn('status', job)
-        self.assertIsNotNone(job['status'])
-
     def test_job_submit_object_storage(self):
         """Test running a job against a simulator using object storage."""
         # Create a Qobj.
@@ -95,27 +79,7 @@ class TestAccountClient(IBMQTestCase):
         # Run the job through the AccountClient directly using object storage.
         api = backend._api
 
-        try:
-            job = api._job_submit_object_storage(backend_name, qobj.to_dict())
-        except RequestsApiError as ex:
-            # Get the original connection that was raised.
-            original_exception = ex.__cause__
-
-            if isinstance(original_exception, RequestException):
-                # Get the response from the original request exception.
-                error_response = original_exception.response    # pylint: disable=no-member
-                if error_response is not None and error_response.status_code == 400:
-                    try:
-                        api_code = error_response.json()['error']['code']
-
-                        # If we reach that point, it means the backend does not
-                        # support qobject storage.
-                        self.assertEqual(api_code, 'Q_OBJECT_STORAGE_IS_NOT_ALLOWED')
-                        return
-                    except (ValueError, KeyError):
-                        pass
-            raise
-
+        job = api.job_submit(backend_name, qobj.to_dict())
         job_id = job['id']
         self.assertEqual(job['kind'], 'q-object-external-storage')
 
@@ -128,24 +92,6 @@ class TestAccountClient(IBMQTestCase):
 
         self.assertEqual(qobj_downloaded, qobj.to_dict())
         self.assertEqual(result['status'], 'COMPLETED')
-
-    def test_job_submit_object_storage_fallback(self):
-        """Test job_submit fallback when object storage fails."""
-        # Create a Qobj.
-        backend_name = 'ibmq_qasm_simulator'
-        backend = self.provider.get_backend(backend_name)
-        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
-        qobj = assemble(circuit, backend, shots=1)
-
-        # Run via the AccountClient, making object storage fail.
-        api = backend._api
-        with mock.patch.object(api, '_job_submit_object_storage',
-                               side_effect=Exception()), \
-                mock.patch.object(api, '_job_submit_post') as mocked_post:
-            _ = api.job_submit(backend_name, qobj.to_dict(), use_object_storage=True)
-
-        # Assert the POST has been called.
-        self.assertEqual(mocked_post.called, True)
 
     def test_list_jobs_statuses(self):
         """Check get status jobs by user authenticated."""
@@ -284,13 +230,26 @@ class TestAccountClient(IBMQTestCase):
                     'urlopen',
                     side_effect=MaxRetryError(
                         HTTPConnectionPool('host'), 'url', reason=exception_message)):
-                _ = api.job_submit(backend.name(), qobj.to_dict(), use_object_storage=True)
+                _ = api.job_submit(backend.name(), qobj.to_dict())
         except RequestsApiError:
             exception_traceback_str = traceback.format_exc()
 
         self.assertTrue(exception_traceback_str)
         if self.access_token in exception_traceback_str:
             self.fail('Access token not replaced in request exception traceback.')
+
+    def test_job_submit_retry(self):
+        """Test job submit requests get retried."""
+        backend_name = 'ibmq_qasm_simulator'
+        backend = self.provider.get_backend(backend_name)
+        api = backend._api
+
+        # Send request to local server.
+        valid_data = {'id': 'fake_id', 'url': SimpleServer.URL, 'job': 'fake_job'}
+        SimpleServer(handler_class=ServerErrorOnceHandler, valid_data=valid_data).start()
+        api.client_api.session.base_url = SimpleServer.URL
+
+        api.job_submit(backend_name, {})
 
 
 class TestAccountClientJobs(IBMQTestCase):
@@ -311,8 +270,7 @@ class TestAccountClientJobs(IBMQTestCase):
         backend = cls.provider.get_backend(backend_name)
         cls.client = backend._api
         cls.job = cls.client.job_submit(
-            backend_name, cls._get_qobj(backend).to_dict(),
-            use_object_storage=backend.configuration().allow_object_storage)
+            backend_name, cls._get_qobj(backend).to_dict())
         cls.job_id = cls.job['id']
 
     @staticmethod
