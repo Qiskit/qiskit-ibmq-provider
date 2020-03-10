@@ -17,7 +17,6 @@
 import asyncio
 import logging
 import time
-import queue
 
 from typing import List, Dict, Any, Optional
 # Disabled unused-import because datetime is used only for type hints.
@@ -25,6 +24,7 @@ from datetime import datetime  # pylint: disable=unused-import
 
 from qiskit.providers.ibmq.apiconstants import (API_JOB_FINAL_STATES, ApiJobStatus,
                                                 ApiJobShareLevel)
+from qiskit.providers.ibmq.utils.utils import RefreshQueue
 
 from ..exceptions import (RequestsApiError, WebsocketError,
                           WebsocketTimeoutError, UserTimeoutExceededError)
@@ -385,7 +385,7 @@ class AccountClient(BaseClient):
             job_id: str,
             timeout: Optional[float] = None,
             wait: float = 5,
-            status_queue: Optional[queue.Queue] = None
+            status_queue: Optional[RefreshQueue] = None
     ) -> Dict[str, Any]:
         """Wait until the job progresses to a final state.
 
@@ -432,7 +432,7 @@ class AccountClient(BaseClient):
             self,
             job_id: str,
             timeout: Optional[float] = None,
-            status_queue: Optional[queue.Queue] = None
+            status_queue: Optional[RefreshQueue] = None
     ) -> Dict[str, Any]:
         """Return the final status of the job via websocket.
 
@@ -468,7 +468,7 @@ class AccountClient(BaseClient):
             job_id: str,
             timeout: Optional[float] = None,
             wait: float = 5,
-            status_queue: Optional[queue.Queue] = None
+            status_queue: Optional[RefreshQueue] = None
     ) -> Dict[str, Any]:
         """Return the final status of the job via polling.
 
@@ -489,11 +489,7 @@ class AccountClient(BaseClient):
         while ApiJobStatus(status_response['status']) not in API_JOB_FINAL_STATES:
             # Share the new status.
             if status_queue is not None:
-                try:
-                    status_queue.get_nowait()
-                except queue.Empty:
-                    pass
-                status_queue.put_nowait(status_response)
+                status_queue.put(status_response)
 
             elapsed_time = time.time() - start_time
             if timeout is not None and elapsed_time >= timeout:

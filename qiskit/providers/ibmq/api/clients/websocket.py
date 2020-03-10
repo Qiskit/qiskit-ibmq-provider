@@ -23,7 +23,6 @@ from typing import Dict, Union, Generator, Optional, Any
 from concurrent import futures
 from ssl import SSLError
 import warnings
-import queue
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
@@ -31,6 +30,7 @@ from websockets.client import WebSocketClientProtocol
 from websockets.exceptions import InvalidURI
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
+from qiskit.providers.ibmq.utils.utils import RefreshQueue
 from ..exceptions import (WebsocketError, WebsocketTimeoutError,
                           WebsocketIBMQProtocolError,
                           WebsocketAuthenticationError)
@@ -193,7 +193,7 @@ class WebsocketClient(BaseClient):
             timeout: Optional[float] = None,
             retries: int = 5,
             backoff_factor: float = 0.5,
-            status_queue: Optional[queue.Queue] = None
+            status_queue: Optional[RefreshQueue] = None
     ) -> Generator[Any, None, Dict[str, str]]:
         """Return the status of a job.
 
@@ -267,11 +267,7 @@ class WebsocketClient(BaseClient):
 
                         # Share the new status.
                         if status_queue is not None:
-                            try:
-                                status_queue.get_nowait()
-                            except queue.Empty:
-                                pass
-                            status_queue.put_nowait(last_status)
+                            status_queue.put(last_status)
 
                         # Successfully received and parsed a message, reset retry counter.
                         current_retry_attempt = 0
@@ -296,6 +292,8 @@ class WebsocketClient(BaseClient):
                         if ex.code == 4001:
                             message = 'Internal server error'
                         elif ex.code == 4002:
+                            if status_queue is not None:
+                                status_queue.put(last_status)
                             return last_status  # type: ignore[return-value]
                         elif ex.code == 4003:
                             attempt_retry = False  # No point in retrying.

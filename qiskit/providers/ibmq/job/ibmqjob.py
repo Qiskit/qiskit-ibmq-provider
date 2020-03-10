@@ -18,9 +18,9 @@ import logging
 from typing import Dict, Optional, Tuple, Any, List, Callable
 import warnings
 from datetime import datetime
-import queue
 from concurrent import futures
 from threading import Event
+from queue import Empty
 
 from marshmallow import ValidationError
 
@@ -35,6 +35,7 @@ from qiskit.validation import BaseModel, ModelValidationError, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
+from ..utils.utils import RefreshQueue
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
 from .queueinfo import QueueInfo
@@ -559,7 +560,7 @@ class IBMQJob(BaseModel, BaseJob):
                 specified timeout.
         """
         exit_event = Event()
-        status_queue = queue.Queue(maxsize=1)  # type: queue.Queue
+        status_queue = RefreshQueue(maxsize=1)
         future = None
         if callback:
             future = self._executor.submit(self._status_callback,
@@ -571,7 +572,9 @@ class IBMQJob(BaseModel, BaseJob):
             self._wait_for_completion(timeout=timeout, status_queue=status_queue)
         finally:
             if future:
+                # Make sure the callback thread wakes up.
                 exit_event.set()
+                status_queue.notify_all()
                 future.result()
 
     def _wait_for_completion(
@@ -579,7 +582,7 @@ class IBMQJob(BaseModel, BaseJob):
             timeout: Optional[float] = None,
             wait: float = 5,
             required_status: Tuple[JobStatus] = JOB_FINAL_STATES,
-            status_queue: Optional[queue.Queue] = None
+            status_queue: Optional[RefreshQueue] = None
     ) -> bool:
         """Wait until the job progress to a final state such as ``DONE`` or ``ERROR``.
 
@@ -615,9 +618,8 @@ class IBMQJob(BaseModel, BaseJob):
         self._status, self._queue_info = self._get_status_position(
             ApiJobStatus(status_response['status']), status_response.get('infoQueue', None))
 
-        # Get all job attributes if the job is done.
-        if self._status in JOB_FINAL_STATES:
-            self.refresh()
+        # Get all job attributes when the job is done.
+        self.refresh()
 
         return self._status in required_status
 
@@ -694,7 +696,7 @@ class IBMQJob(BaseModel, BaseJob):
 
     def _status_callback(
             self,
-            status_queue: queue.Queue,
+            status_queue: RefreshQueue,
             exit_event: Event,
             callback: Callable,
             wait: Optional[float]
@@ -705,7 +707,9 @@ class IBMQJob(BaseModel, BaseJob):
             status_queue: Queue containing the latest status.
             exit_event: Event used to notify this thread to quit.
             callback: Callback function to invoke.
-            wait: Time between each callback function call.
+            wait: Time between each callback function call. If ``None``,
+                the callback function is invoked only if job status or queue position
+                has changed.
         """
         status_response = None
         last_data = (None, None)  # type: Tuple[Optional[JobStatus], Optional[QueueInfo]]
@@ -713,11 +717,11 @@ class IBMQJob(BaseModel, BaseJob):
         while not exit_event.is_set():
             try:
                 if wait is None:
-                    status_response = status_queue.get(block=True, timeout=wait)
+                    status_response = status_queue.get(block=True)
                 else:
                     exit_event.wait(wait)
-                    status_response = status_queue.get_nowait()
-            except queue.Empty:
+                    status_response = status_queue.get(block=False)
+            except Empty:
                 pass
 
             if not status_response:
@@ -733,7 +737,6 @@ class IBMQJob(BaseModel, BaseJob):
                     if (status, queue_info) == last_data:
                         continue
                     last_data = (status, queue_info)
-                logger.debug("Invoking callback function.")
                 callback(self.job_id(), status, self, queue_info=queue_info)
             except IBMQJobApiError as ex:
                 logger.warning("Unexpected error when getting job status: %s", ex)
