@@ -732,15 +732,17 @@ class IBMQJob(BaseModel, BaseJob):
                 status, queue_info = self._get_status_position(
                     ApiJobStatus(status_response['status']),
                     status_response.get('infoQueue', None))
-                if status in JOB_FINAL_STATES:
-                    return
-                if wait is None:
-                    if (status, queue_info) == last_data:
-                        continue
-                    last_data = (status, queue_info)
-                callback(self.job_id(), status, self, queue_info=queue_info)
             except IBMQJobApiError as ex:
                 logger.warning("Unexpected error when getting job status: %s", ex)
+                continue
+
+            if status in JOB_FINAL_STATES:
+                return
+            if wait is None:
+                if (status, queue_info) == last_data:
+                    continue
+                last_data = (status, queue_info)
+            callback(self.job_id(), status, self, queue_info=queue_info)
 
     def _get_status_position(
             self,

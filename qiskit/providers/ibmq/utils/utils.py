@@ -61,7 +61,7 @@ def validate_job_tags(job_tags: Optional[List[str]], exception: Type[Exception])
 
 
 class RefreshQueue(Queue):
-    """A queue that replaces the oldest item with new when full.
+    """A queue that replaces the oldest item with the new when full.
 
     A FIFO queue with a bounded size. Once the queue is full, when new items
     are added, a corresponding number of items are discarded from the
