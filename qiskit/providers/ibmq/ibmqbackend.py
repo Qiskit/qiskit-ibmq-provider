@@ -208,7 +208,6 @@ class IBMQBackend(BaseBackend):
             submit_info = self._api.job_submit(
                 backend_name=self.name(),
                 qobj_dict=qobj_dict,
-                use_object_storage=getattr(self.configuration(), 'allow_object_storage', False),
                 job_name=job_name,
                 job_share_level=job_share_level,
                 job_tags=job_tags)
