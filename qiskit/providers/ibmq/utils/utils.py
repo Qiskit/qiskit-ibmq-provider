@@ -68,38 +68,38 @@ def setup_logger(logger: Logger) -> None:
         * Use the `QISKIT_IBMQ_PROVIDER_LOG_LEVEL` environment variable to
             determine the log level for the provider modules. If it is set, the
             provider uses the specified level. If it is set to an invalid level,
-            the log level defaults to `INFO`. The valid log levels are ``DEBUG``,
+            the log level defaults to `WARNING`. The valid log levels are ``DEBUG``,
             ``INFO``, ``WARNING``, ``ERROR``, and ``CRITICAL`` (case-insensitive).
         * Use the `QISKIT_IBMQ_PROVIDER_LOG_FILE` environment variable to
             specify the filename to use for logging the logs to a file. If it is
-            not set, the logs will not be logged to a file.
+            not set, the logs will not be logged to a file, but they will still be
+            logged to the screen.
     """
     log_level = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_LEVEL', '')
     log_file = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_FILE', '')
 
     # Set the logging level, if specified.
     if log_level:
-        # Default to `INFO` if the specified level is not valid.
+        # Default to `WARNING` if the specified level is not valid.
         level = logging.getLevelName(log_level.upper())
         if not isinstance(level, int):
-            level = logging.INFO
+            level = logging.WARNING
         logger.setLevel(level)
 
-    # Although the log level might not be specified, setup the formatter.
-    # This ensures log messages are formatted, when logged to the console, in the
-    # case they propagate to the root logger.
+    # Setup the formatter for the log messages.
     log_fmt = ('{}.%(module)s.%(funcName)s:%(levelname)s:%(asctime)s:'
                ' %(message)s'.format(logger.name))
     formatter = logging.Formatter(log_fmt)
 
-    # Setup the stream handler, for logging to console, with the given format.
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
-    logger.addHandler(stream_handler)
-
-    # Set the logging file, if specified.
+    # Log messages to a file (if specified), otherwise log to the screen (default).
     if log_file:
         # Setup the file handler.
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
+    else:
+        # Setup the stream handler, for logging to console, with the given format.
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+

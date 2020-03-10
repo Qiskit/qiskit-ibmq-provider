@@ -220,10 +220,9 @@ class RetrySession(Session):
         try:
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
-            # Censor the token before logging.
-            if url == '/users/loginWithToken' and 'json' in kwargs:
-                kwargs['json']['apiToken'] = '...'
-            logger.debug('Endpoint: %s. Method: %s. Request Data: %s.', url, method, kwargs)
+            # Only log if the endpoint is not `/users` or `/version`
+            if not url.startswith(('/users', '/version')):
+                logger.debug('Endpoint: %s. Method: %s. Request Data: %s.', url, method, kwargs)
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
