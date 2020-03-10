@@ -66,10 +66,9 @@ class TestWebsocketIntegration(IBMQTestCase):
     @requires_device
     def test_websockets_device(self, backend):
         """Test checking status of a job via websockets for a device."""
-        qc = transpile(self.qc1, backend=backend)
-        qobj = assemble(qc, backend=backend)
-
+        qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
+
         # Manually disable the non-websocket polling.
         job._api._job_final_status_polling = None
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
