@@ -14,9 +14,9 @@
 
 """Tests for the IBM Quantum Logger."""
 
-import os, errno
+import os
 import logging
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch
 
 from qiskit.providers.ibmq.utils.utils import setup_logger
 
@@ -59,38 +59,30 @@ class TestLogger(IBMQTestCase):
     def test_empty_log_level(self):
         """Test setting up a logger with an empty string log level."""
         with patch.dict('os.environ', {self.log_level_env: ''}):
-            self.assertIn(self.log_level_env, os.environ)
             setup_logger(self.logger)
             self.assertEqual(self.logger.level, logging.NOTSET,
                              'The logger level was set to {}, but it should '
                              'be {}.'.format(self.logger.level, logging.NOTSET))
-        self.assertNotIn(self.log_level_env, os.environ)
 
     def test_invalid_log_level(self):
         """Test setting up a logger with invalid log levels."""
         invalid_log_levels = ['invalid', 'debugs', 'WarNinGs']
         for invalid_log_level in invalid_log_levels:
             with patch.dict('os.environ', {self.log_level_env: invalid_log_level}):
-                self.assertIn(self.log_level_env, os.environ)
-                self.assertEqual(invalid_log_level, os.environ[self.log_level_env])
                 setup_logger(self.logger)
                 self.assertEqual(self.logger.level, logging.WARNING,
                                  'The logger level was set to {}, but it should '
                                  'be {}.'.format(self.logger.level, logging.WARNING))
-            self.assertNotIn(self.log_level_env, os.environ)
 
     def test_mixed_casing_log_level(self):
         """Test setting up a logger with valid log levels."""
         valid_log_levels = ['INFO', 'info', 'InFo']
         for valid_log_level in valid_log_levels:
             with patch.dict('os.environ', {self.log_level_env: valid_log_level}):
-                self.assertIn(self.log_level_env, os.environ)
-                self.assertEqual(valid_log_level, os.environ[self.log_level_env])
                 setup_logger(self.logger)
                 self.assertEqual(self.logger.level, logging.INFO,
                                  'The logger level was set to {}, but it should '
                                  'be {}.'.format(self.logger.level, logging.INFO))
-            self.assertNotIn(self.log_level_env, os.environ)
 
     def test_valid_log_levels(self):
         """Test setting up a logger with all valid levels using mixed casing."""
@@ -101,13 +93,10 @@ class TestLogger(IBMQTestCase):
 
         for level_name, level_value in all_valid_log_levels.items():
             with patch.dict('os.environ', {self.log_level_env: level_name}):
-                self.assertIn(self.log_level_env, os.environ)
-                self.assertEqual(level_name, os.environ[self.log_level_env])
                 setup_logger(self.logger)
                 self.assertEqual(self.logger.level, level_value,
                                  'The logger level was set to {}, but it should '
                                  'be {}.'.format(self.logger.level, level_value))
-            self.assertNotIn(self.log_level_env, os.environ)
 
     def test_log_file(self):
         """Test setting up a logger by specifying a file, along with a log level"""
@@ -116,8 +105,6 @@ class TestLogger(IBMQTestCase):
                              self.log_file_env: self.log_file}
 
         with patch.dict('os.environ', env_vars_to_patch):
-            self.assertIn(self.log_level_env, os.environ)
-            self.assertEqual(log_level_info[0], os.environ[self.log_level_env])
             setup_logger(self.logger)
             self.assertEqual(self.logger.level, log_level_info[1],
                              'The logger level was set to {}, but it should '
@@ -140,20 +127,19 @@ class TestLogger(IBMQTestCase):
             self.assertTrue(os.path.exists(file_path))
 
             # Assert the messages were logged.
-            with open(file_path) as f:
-                file_name = file_handler.name
-                content_as_str = f.read()
+            with open(file_path) as file_:
+                content_as_str = file_.read()
                 substrings_to_check = {'debug message': False, 'warning message': True,
                                        'error message': True}
                 for substring, in_file in substrings_to_check.items():
                     if in_file:
                         self.assertIn(substring, content_as_str,
-                                      'The substring "{}" was not found in the '
-                                      'file {}({}).'.format(substring, self.log_file, file_path))
+                                      'The substring "{}" was not found in the file {}({}).'
+                                      .format(substring, self.log_file, file_path))
                     else:
                         self.assertNotIn(substring, content_as_str,
-                                         'The substring "{}" was found in the '
-                                         'file {}({}).'.format('debug message', self.log_file, file_path))
+                                         'The substring "{}" was found in the file {}({}).'
+                                         .format('debug message', self.log_file, file_path))
 
             # Delete the file.
             os.remove(file_path)
