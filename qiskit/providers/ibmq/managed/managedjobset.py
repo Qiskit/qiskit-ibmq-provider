@@ -160,7 +160,7 @@ class ManagedJobSet:
         matched = pattern.match(first_job.name())
         if not matched:
             raise IBMQJobManagerInvalidStateError(
-                'Job {} is tagged for the job set {} but it does not '
+                'Job {} is tagged for the job set {} but does not '
                 'have a proper job name.'.format(first_job.job_id(), self.job_set_id()))
         self._name = matched.group(1)
         self._backend = first_job.backend()
@@ -174,7 +174,7 @@ class ManagedJobSet:
             if not matched or matched.group(1) != self._name or \
                     job.backend().name() != self._backend.name():
                 raise IBMQJobManagerInvalidStateError(
-                    'Job {} is tagged for the job set {} but it does not appear '
+                    'Job {} is tagged for the job set {} but does not appear '
                     'to belong to the set.'.format(job.job_id(), self.job_set_id()))
             jobs_dict[int(matched.group(2))] = job
 

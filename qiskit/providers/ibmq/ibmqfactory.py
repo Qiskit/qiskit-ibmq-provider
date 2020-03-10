@@ -199,7 +199,8 @@ class IBMQFactory:
 
         if not token or not isinstance(token, str):
             raise IBMQAccountCredentialsInvalidToken(
-                'Invalid IBM Quantum Experience token found: "{}" {}.'.format(token, type(token)))
+                'Invalid IBM Quantum Experience token '
+                'found: "{}" of type {}.'.format(token, type(token)))
 
         credentials = Credentials(token, url, **kwargs)
 
