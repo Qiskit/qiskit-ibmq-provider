@@ -194,11 +194,11 @@ class ManagedResults:
         (job, exp_index) = self._job_set.job(experiment)
         if job is None:
             raise IBMQManagedResultDataNotAvailable(
-                "Job for experiment {} was not successfully submitted.".format(experiment))
+                'Job for experiment {} was not successfully submitted.'.format(experiment))
 
         try:
             result = job.result()
             return result, exp_index
         except JobError as err:
             raise IBMQManagedResultDataNotAvailable(
-                "Result data for experiment {} is not available.".format(experiment)) from err
+                'Result data for experiment {} is not available.'.format(experiment)) from err
