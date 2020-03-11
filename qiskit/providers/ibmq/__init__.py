@@ -27,10 +27,11 @@ The following environment variables are used by the IBM Quantum Provider:
 
     * ``QISKIT_IBMQ_PROVIDER_LOG_LEVEL``: Specifies the log level to use, for the
       provider modules, when logging to the screen. If an invalid level is set, the
-      log level defaults to ``INFO``. The valid log levels are ``DEBUG``, ``INFO``,
+      log level defaults to ``WARNING``. The valid log levels are ``DEBUG``, ``INFO``,
       ``WARNING``, ``ERROR``, and ``CRITICAL`` (case-insensitive).
     * ``QISKIT_IBMQ_PROVIDER_LOG_FILE``: Specifies the name of the logfile to create,
-      which will contain the logs. If it is not specified, a logfile will not be created.
+      which will contain the logs. If it is not specified, a logfile will not be created,
+      but the message will still be logged to the screen.
 
 Functions
 =========
