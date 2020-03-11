@@ -131,6 +131,7 @@ class IBMQFactory:
             IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials are found.
         """
+        logger.warning('This is a message.')
         # Check for valid credentials.
         credentials_list = list(discover_credentials().values())
 

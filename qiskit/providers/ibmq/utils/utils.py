@@ -87,9 +87,12 @@ def setup_logger(logger: Logger) -> None:
         logger.setLevel(level)
 
     # Setup the formatter for the log messages.
-    log_fmt = ('{}.%(module)s.%(funcName)s:%(levelname)s:%(asctime)s:'
-               ' %(message)s'.format(logger.name))
+    log_fmt = ('%(name)s.%(module)s.%(funcName)s:%(levelname)s:%(asctime)s:'
+               ' %(message)s')
     formatter = logging.Formatter(log_fmt)
+
+    # Set propagate to `False` since handlers are to be attached.
+    logger.propagate = False
 
     # Log messages to a file (if specified), otherwise log to the screen (default).
     if log_file:
