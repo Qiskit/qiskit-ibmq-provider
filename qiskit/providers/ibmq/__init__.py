@@ -89,7 +89,6 @@ from .version import __version__
 logger = logging.getLogger(__name__)
 setup_logger(logger)
 
-
 IBMQ = IBMQFactory()
 """A global instance of an account manager that is used as the entry point for convenience."""
 

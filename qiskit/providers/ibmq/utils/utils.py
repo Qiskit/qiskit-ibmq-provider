@@ -72,8 +72,8 @@ def setup_logger(logger: Logger) -> None:
             ``INFO``, ``WARNING``, ``ERROR``, and ``CRITICAL`` (case-insensitive).
         * Use the `QISKIT_IBMQ_PROVIDER_LOG_FILE` environment variable to
             specify the filename to use for logging the logs to a file. If it is
-            not set, the logs will not be logged to a file, but they will still be
-            logged to the screen.
+            not set, the logs will not be logged to a file, but the messages will
+            still be logged to the screen.
     """
     log_level = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_LEVEL', '')
     log_file = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_FILE', '')
