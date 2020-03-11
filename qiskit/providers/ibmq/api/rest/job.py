@@ -138,15 +138,15 @@ class Job(RestAdapterBase):
             api_response = raw_response.json()
         except JSONDecodeError as err:
             raise ApiIBMQProtocolError(
-                'Unrecognized answer from server: {}. '
+                'Unrecognized return value received from the server: {}. '
                 'This could be caused by too many requests.'.format(raw_response)) from err
 
         try:
             # Validate the response.
             StatusResponseSchema().validate(api_response)
         except ValidationError as err:
-            raise ApiIBMQProtocolError('Unrecognized answer from server: \n{}'.format(
-                pprint.pformat(api_response))) from err
+            raise ApiIBMQProtocolError('Unexpected return value received from the server: '
+                                       '\n{}'.format(pprint.pformat(api_response))) from err
         return api_response
 
     def upload_url(self) -> Dict[str, Any]:

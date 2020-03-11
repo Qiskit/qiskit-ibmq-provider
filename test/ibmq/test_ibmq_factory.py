@@ -185,19 +185,19 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
         """Test saving an account with token=None. See #391"""
         with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
             self.factory.save_account(None)
-        self.assertIn('Invalid token found', str(context_manager.exception))
+        self.assertIn('Invalid IBM Quantum Experience token', str(context_manager.exception))
 
     def test_save_empty_token(self):
         """Test saving an account with token=''. See #391"""
         with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
             self.factory.save_account('')
-        self.assertIn('Invalid token found', str(context_manager.exception))
+        self.assertIn('Invalid IBM Quantum Experience token', str(context_manager.exception))
 
     def test_save_zero_token(self):
         """Test saving an account with token=0. See #391"""
         with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
             self.factory.save_account(0)
-        self.assertIn('Invalid token found', str(context_manager.exception))
+        self.assertIn('Invalid IBM Quantum Experience token', str(context_manager.exception))
 
 
 class TestIBMQFactoryProvider(IBMQTestCase):
