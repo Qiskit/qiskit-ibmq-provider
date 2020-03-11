@@ -78,14 +78,6 @@ def setup_logger(logger: Logger) -> None:
     log_level = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_LEVEL', '')
     log_file = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_FILE', '')
 
-    # Set the logging level, if specified.
-    if log_level:
-        # Default to `WARNING` if the specified level is not valid.
-        level = logging.getLevelName(log_level.upper())
-        if not isinstance(level, int):
-            level = logging.WARNING
-        logger.setLevel(level)
-
     # Setup the formatter for the log messages.
     log_fmt = ('%(name)s.%(module)s.%(funcName)s:%(levelname)s:%(asctime)s:'
                ' %(message)s')
@@ -105,3 +97,13 @@ def setup_logger(logger: Logger) -> None:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
+
+    # Set the logging level after formatting, if specified.
+    if log_level:
+        # Default to `WARNING` if the specified level is not valid.
+        level = logging.getLevelName(log_level.upper())
+        if not isinstance(level, int):
+            logger.warning('"%s" is not a valid log level. The valid log levels are: '
+                           '`DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.', log_level)
+            level = logging.WARNING
+        logger.setLevel(level)
