@@ -268,6 +268,8 @@ class IBMQJob(BaseModel, BaseJob):
         try:
             response = self._api.job_cancel(self.job_id())
             self._cancelled = get_cancel_status(response)
+            logger.debug('Job {} cancel status is "%s". Response data: %s.',
+                         self.job_id(), self._cancelled, response)
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
