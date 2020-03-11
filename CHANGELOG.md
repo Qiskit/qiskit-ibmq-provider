@@ -23,10 +23,9 @@ The format is based on [Keep a Changelog].
   an exception is raised. Also, `IBMQBackend.status()` now raises a 
   `IBMQBackendApiProtocolError` exception, instead of a general `LookupError`, 
   if there was an issue with validating the status. (\#572)
-- The IBM Quantum Provider now has a logger component named `qiskit.providers.ibmq`.
-  The logger's level may be set using the `QSIKIT_IBMQ_PROVIDER_LOG_LEVEL` 
-  environment variable. Also, logged messages may be written to a file, instead of 
-  the screen, using the `QISKIT_IBMQ_PROVIDER_LOG_FILE` environment variable. (\#579)
+- You can now set the logging level and specify a log file using the environment 
+  variables `QSIKIT_IBMQ_PROVIDER_LOG_LEVEL` and `QISKIT_IBMQ_PROVIDER_LOG_FILE`, 
+  respectively. Note that the name of the logger is `qiskit.providers.ibmq`. (\#579)
 
 ## [0.5.0] - 2020-02-26
 
