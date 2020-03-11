@@ -21,17 +21,30 @@ IBM Quantum Provider (:mod:`qiskit.providers.ibmq`)
 
 Modules representing the IBM Quantum Provider.
 
-Environment Variables
+Logging
 =====================
-The following environment variables are used by the IBM Quantum Provider:
+
+The IBM Quantum Provider uses the ``qiskit.providers.ibmq`` logger.
+
+You are able to change its level manually or via the environment variable
+``QISKIT_IBMQ_PROVIDER_LOG_LEVEL``. Likewise, you are able to specify a file
+to log the messages to with the environment variable ``QISKIT_IBMQ_PROVIDER_LOG_FILE``.
+
+To change the level manually, simply grab the logger and set its level::
+
+    import logging
+    logging.getLogger('qiskit.providers.ibmq').setLevel(logging.WARNING)
+
+Details pertaining to the environment variables used by the logger:
 
     * ``QISKIT_IBMQ_PROVIDER_LOG_LEVEL``: Specifies the log level to use, for the
-      provider modules, when logging to the screen. If an invalid level is set, the
-      log level defaults to ``WARNING``. The valid log levels are ``DEBUG``, ``INFO``,
-      ``WARNING``, ``ERROR``, and ``CRITICAL`` (case-insensitive).
-    * ``QISKIT_IBMQ_PROVIDER_LOG_FILE``: Specifies the name of the logfile to create,
-      which will contain the logs. If it is not specified, a logfile will not be created,
-      but the message will still be logged to the screen.
+      provider modules, when logging. If an invalid level is set, the log level defaults
+      to ``WARNING``. The valid log levels are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``,
+      and ``CRITICAL`` (case-insensitive). If the environment variable is not set, then
+      the parent logger's level is used, which also defaults to `WARNING`.
+    * ``QISKIT_IBMQ_PROVIDER_LOG_FILE``: Specifies the name of the logfile to use when logging.
+      If specified, the log messages will be logged to the file but not to the screen. If it
+      is not specified, the log messages will only be logged to the screen.
 
 Functions
 =========
