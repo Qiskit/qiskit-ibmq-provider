@@ -81,6 +81,7 @@ class TestAccountClient(IBMQTestCase):
 
         job = api.job_submit(backend_name, qobj.to_dict())
         job_id = job['id']
+        self.assertNotIn('shots', job)
         self.assertEqual(job['kind'], 'q-object-external-storage')
 
         # Wait for completion.
