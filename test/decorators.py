@@ -149,7 +149,7 @@ def requires_device(func):
                 simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
 
         if not _backend:
-            raise Exception("Unable to find suitable backend.")
+            raise Exception('Unable to find a suitable backend.')
 
         kwargs.update({'backend': _backend})
 
@@ -189,7 +189,7 @@ def _get_credentials():
         # Use the first available credentials.
         return list(discovered_credentials.values())[0]
 
-    raise Exception('Could not locate valid credentials.') from None
+    raise Exception('Unable to locate valid credentials.')
 
 
 def _get_custom_provider(ibmq_factory: IBMQFactory) -> Optional[AccountProvider]:

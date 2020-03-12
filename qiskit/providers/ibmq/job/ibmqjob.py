@@ -244,11 +244,13 @@ class IBMQJob(BaseModel, BaseJob):
         if not self._wait_for_completion(timeout=timeout, wait=wait,
                                          required_status=(JobStatus.DONE,)):
             if self._status is JobStatus.CANCELLED:
-                raise IBMQJobInvalidStateError('Unable to retrieve job result. Job was cancelled.')
+                raise IBMQJobInvalidStateError('Unable to retrieve result for job {}. '
+                                               'Job was cancelled.'.format(self.job_id()))
 
             if self._status is JobStatus.ERROR and not partial:
-                raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
-                                          'Use job.error_message() to get more details.')
+                raise IBMQJobFailureError(
+                    'Unable to retrieve result for job {}. Job has failed. '
+                    'Use job.error_message() to get more details.'.format(self.job_id()))
 
         return self._retrieve_result(refresh=refresh)
 
@@ -272,7 +274,8 @@ class IBMQJob(BaseModel, BaseJob):
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
-            raise IBMQJobApiError('Error cancelling job: %s' % error)
+            raise IBMQJobApiError('Unexpected error when cancelling job {}: {}'
+                                  .format(self.job_id(), str(error))) from error
 
     def status(self) -> JobStatus:
         """Query the server for the latest job status.
@@ -485,7 +488,8 @@ class IBMQJob(BaseModel, BaseJob):
             IBMQJobInvalidStateError: If the job has already been submitted.
         """
         if self.job_id() is not None:
-            raise IBMQJobInvalidStateError("We have already submitted the job!")
+            raise IBMQJobInvalidStateError(
+                'The job {} has already been submitted.'.format(self.job_id()))
 
         warnings.warn("job.submit() is deprecated. Please use "
                       "IBMQBackend.run() to submit a job.", DeprecationWarning, stacklevel=2)
@@ -515,7 +519,8 @@ class IBMQJob(BaseModel, BaseJob):
             self._status, self._queue_info = self._get_status_position(
                 data.pop('_api_status'), data.pop('info_queue', None))
         except ValidationError as ex:
-            raise IBMQJobApiError("Unexpected return value received from the server.") from ex
+            raise IBMQJobApiError('Unexpected return value received from the server when '
+                                  'refreshing job {}: {}'.format(self.job_id(), str(ex))) from ex
         finally:
             JobResponseSchema.model_cls = saved_model_cls
 
@@ -610,11 +615,12 @@ class IBMQJob(BaseModel, BaseJob):
                 self.job_id(), timeout=timeout, wait=wait, status_queue=status_queue)
         except UserTimeoutExceededError:
             raise IBMQJobTimeoutError(
-                'Timeout while waiting for job {}'.format(self._job_id))
+                'Timeout while waiting for job {}.'.format(self._job_id)) from None
         except ApiError as api_err:
-            logger.error("Maximum retries exceeded: "
-                         "Error checking job status due to a network error.")
-            raise IBMQJobApiError(str(api_err))
+            logger.error('Maximum retries exceeded: '
+                         'Error checking job status due to a network error.')
+            raise IBMQJobApiError('Error checking job status due to a network '
+                                  'error: {}'.format(str(api_err))) from api_err
 
         self._status, self._queue_info = self._get_status_position(
             ApiJobStatus(status_response['status']), status_response.get('infoQueue', None))
@@ -649,19 +655,25 @@ class IBMQJob(BaseModel, BaseJob):
                 self._result = Result.from_dict(result_response)
             except (ModelValidationError, ApiError) as err:
                 if self._status is JobStatus.ERROR:
-                    raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
-                                              'Use job.error_message() to get more details.')
+                    raise IBMQJobFailureError(
+                        'Unable to retrieve result for job {}. Job has failed. Use '
+                        'job.error_message() to get more details.'.format(self.job_id())) from err
                 if not self.kind:
-                    raise IBMQJobInvalidStateError('Job result is in an unsupported format.')
-                raise IBMQJobApiError(str(err))
+                    raise IBMQJobInvalidStateError(
+                        'Unable to retrieve result for job {}. Job result '
+                        'is in an unsupported format.'.format(self.job_id())) from err
+                raise IBMQJobApiError(
+                    'Unable to retrieve result for '
+                    'job {}: {}'.format(self.job_id(), str(err))) from err
             finally:
                 # In case partial results are returned or job failure, an error message is cached.
                 if result_response:
                     self._check_for_error_message(result_response)
 
         if self._status is JobStatus.ERROR and not self._result.results:
-            raise IBMQJobFailureError('Unable to retrieve job result. Job has failed. '
-                                      'Use job.error_message() to get more details.')
+            raise IBMQJobFailureError(
+                'Unable to retrieve result for job {}. Job has failed. '
+                'Use job.error_message() to get more details.'.format(self.job_id()))
 
         return self._result
 
@@ -691,9 +703,9 @@ class IBMQJob(BaseModel, BaseJob):
         """
         try:
             return "{}. Error code: {}.".format(error['message'], error['code'])
-        except KeyError:
-            raise IBMQJobApiError('Failed to get job error message. Invalid error data received: {}'
-                                  .format(error))
+        except KeyError as ex:
+            raise IBMQJobApiError('Failed to get error message for job {}. Invalid error '
+                                  'data received: {}'.format(self.job_id(), error)) from ex
 
     def _status_callback(
             self,
@@ -770,7 +782,8 @@ class IBMQJob(BaseModel, BaseJob):
                 if queue_info._status == ApiJobStatus.PENDING_IN_QUEUE.value:
                     status = JobStatus.QUEUED
         except (KeyError, ValidationError) as ex:
-            raise IBMQJobApiError("Unexpected return value received from the server.") from ex
+            raise IBMQJobApiError('Unexpected return value received from the server when getting '
+                                  'status for job {}: {}'.format(self.job_id(), str(ex))) from ex
 
         if status is not JobStatus.QUEUED:
             queue_info = None
