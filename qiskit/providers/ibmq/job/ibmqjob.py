@@ -533,7 +533,7 @@ class IBMQJob(BaseModel, BaseJob):
             self,
             timeout: Optional[float] = None,
             wait: Optional[float] = None,
-            callback: Callable = None
+            callback: Optional[Callable] = None
     ) -> None:
         """Wait until the job progresses to a final state such as ``DONE`` or ``ERROR``.
 

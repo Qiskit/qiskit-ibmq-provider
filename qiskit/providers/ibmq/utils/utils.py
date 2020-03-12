@@ -61,11 +61,11 @@ def validate_job_tags(job_tags: Optional[List[str]], exception: Type[Exception])
 
 
 class RefreshQueue(Queue):
-    """A queue that replaces the oldest item with the new when full.
+    """A queue that replaces the oldest item with the new item being added when full.
 
-    A FIFO queue with a bounded size. Once the queue is full, when new items
-    are added, a corresponding number of items are discarded from the
-    opposite end.
+    A FIFO queue with a bounded size. Once the queue is full, when a new item
+    is being added, the oldest item on the queue is discarded to make space for
+    the new item.
     """
 
     def __init__(self, maxsize: int):
@@ -75,7 +75,6 @@ class RefreshQueue(Queue):
             maxsize: Maximum size of the queue.
         """
         self.condition = Condition()
-        # self.queue = Queue(maxsize)
         super().__init__(maxsize=maxsize)
 
     def put(self, item: Any) -> None:  # type: ignore[override]
