@@ -15,6 +15,7 @@
 """Client for communicating with the IBM Quantum Experience API via websocket."""
 
 import asyncio
+import copy
 import json
 import logging
 import time
@@ -93,7 +94,7 @@ class WebsocketAuthenticationMessage(WebsocketMessage):
 class WebsocketResponseMethod(WebsocketMessage):
     """Container for a message received via websockets."""
 
-    def __init__(self, type_: str, data: Dict[str, str]) -> None:
+    def __init__(self, type_: str, data: Dict[str, Any]) -> None:
         """WebsocketResponseMethod constructor.
 
         Args:
@@ -103,9 +104,23 @@ class WebsocketResponseMethod(WebsocketMessage):
         super().__init__(type_)
         self.data = data
 
-    def get_data(self) -> Dict[str, str]:
+    def get_data(self) -> Dict[str, Any]:
         """Return the message data."""
         return self.data
+
+    def get_data_filtered(self) -> Dict[str, Any]:
+        """Return the message data with certain fields filtered, if they are present."""
+        data_to_filter = copy.deepcopy(self.data)
+
+        try:
+            if 'backend' in data_to_filter and 'name' in data_to_filter['backend']:
+                data_to_filter['backend']['name'] = '...'
+            if 'hubInfo' in data_to_filter:
+                data_to_filter['hubInfo'] = '...'
+        except KeyError:
+            pass
+
+        return data_to_filter
 
     @classmethod
     def from_bytes(cls, json_string: bytes) -> 'WebsocketResponseMethod':
@@ -273,10 +288,10 @@ class WebsocketClient(BaseClient):
                                 timeout = original_timeout - (time.time() - start_time)
                             else:
                                 response_raw = yield from websocket.recv()
-                        logger.debug('Received message from websocket: %s', response_raw)
 
                         response = WebsocketResponseMethod.from_bytes(response_raw)
                         last_status = response.data
+                        logger.debug('Received message from websocket: %s', response.get_data_filtered())
 
                         # Successfully received and parsed a message, reset retry counter.
                         current_retry_attempt = 0

@@ -229,7 +229,7 @@ class IBMQBackend(BaseBackend):
         })
         try:
             job = IBMQJob.from_dict(submit_info)
-            logger.debug('Job %s successfully submitted to backend %s.', job.job_id(), self.name())
+            logger.debug('Job %s was successfully submitted.', job.job_id())
         except ModelValidationError as err:
             raise IBMQBackendApiProtocolError('Unexpected return value received from the server '
                                               'when submitting job: {}'.format(str(err))) from err
