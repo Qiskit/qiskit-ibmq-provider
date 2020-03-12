@@ -52,12 +52,16 @@ class TestWebsocketIntegration(IBMQTestCase):
         self.circuit = transpile(self.qc1, backend=self.sim_backend)
         self.qobj = assemble(self.circuit, backend=self.sim_backend, shots=1)
 
+    def _job_final_status_polling(self):
+        """Replaces the actual _job_final_status_polling and fails the test."""
+        self.fail("Obtaining job status via websockets failed!")
+
     def test_websockets_simulator(self):
         """Test checking status of a job via websockets for a simulator."""
         job = self.sim_backend.run(self.qobj, validate_qobj=True)
 
         # Manually disable the non-websocket polling.
-        job._api._job_final_status_polling = None
+        job._api._job_final_status_polling = self._job_final_status_polling
         result = job.result()
 
         self.assertEqual(result.status, 'COMPLETED')
@@ -70,7 +74,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         job = backend.run(qobj, validate_qobj=True)
 
         # Manually disable the non-websocket polling.
-        job._api._job_final_status_polling = None
+        job._api._job_final_status_polling = self._job_final_status_polling
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         result = job.result()
 
@@ -83,7 +87,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         job._wait_for_completion()
 
         # Manually disable the non-websocket polling.
-        job._api._job_final_status_polling = None
+        job._api._job_final_status_polling = self._job_final_status_polling
 
         # Pretend we haven't seen the final status
         job._status = JobStatus.RUNNING
@@ -165,7 +169,7 @@ class TestWebsocketIntegration(IBMQTestCase):
             """Run a job and get its result."""
             job = self.sim_backend.run(self.qobj, validate_qobj=True)
             # Manually disable the non-websocket polling.
-            job._api._job_final_status_polling = None
+            job._api._job_final_status_polling = self._job_final_status_polling
             job._wait_for_completion()
             if job._status is not JobStatus.DONE:
                 q.put(False)
