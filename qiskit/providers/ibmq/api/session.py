@@ -275,10 +275,12 @@ class RetrySession(Session):
         Note:
             The following endpoint URLs are not logged: `/users` and `/version`.
 
-            Currently, the backend name is filtered out from the endpoint
-            URL using a regex that captures the name. Also, it is filtered
-            out from the data received from the server when placing the
-            Qobj into object storage.
+            Currently, the backend name and hub, group, project information are
+            filtered out. The backend name is filtered out from the endpoint URL,
+            using a regex to capture the name, and also from the data received by
+            the server when uploading the Qobj to object storage. Another place it
+            is filtered out from is the data received from the server when submitting
+            a job.
         """
         if not url.startswith(('/users', '/version')):
             try:

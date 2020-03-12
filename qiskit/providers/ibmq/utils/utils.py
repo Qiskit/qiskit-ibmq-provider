@@ -107,4 +107,5 @@ def setup_logger(logger: Logger) -> None:
             logger.warning('"%s" is not a valid log level. The valid log levels are: '
                            '`DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.', log_level)
             level = logging.WARNING
+        logger.debug('The logger is being set to level "%s"', level)
         logger.setLevel(level)

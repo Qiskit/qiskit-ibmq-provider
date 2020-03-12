@@ -109,16 +109,18 @@ class WebsocketResponseMethod(WebsocketMessage):
         return self.data
 
     def get_data_filtered(self) -> Dict[str, Any]:
-        """Return the message data with certain fields filtered, if they are present."""
+        """Return the message data with certain fields filtered, if they are present.
+
+        Note:
+            Currently, the backend name and hubInfo are the only parts
+            that are filtered out from the message.
+        """
         data_to_filter = copy.deepcopy(self.data)
 
-        try:
-            if 'backend' in data_to_filter and 'name' in data_to_filter['backend']:
-                data_to_filter['backend']['name'] = '...'
-            if 'hubInfo' in data_to_filter:
-                data_to_filter['hubInfo'] = '...'
-        except KeyError:
-            pass
+        if 'backend' in data_to_filter and 'name' in data_to_filter['backend']:
+            data_to_filter['backend']['name'] = '...'
+        if 'hubInfo' in data_to_filter:
+            data_to_filter['hubInfo'] = '...'
 
         return data_to_filter
 
