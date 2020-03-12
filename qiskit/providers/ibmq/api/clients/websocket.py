@@ -291,7 +291,8 @@ class WebsocketClient(BaseClient):
 
                         response = WebsocketResponseMethod.from_bytes(response_raw)
                         last_status = response.data
-                        logger.debug('Received message from websocket: %s', response.get_data_filtered())
+                        logger.debug('Received message from websocket: %s',
+                                     response.get_data_filtered())
 
                         # Successfully received and parsed a message, reset retry counter.
                         current_retry_attempt = 0

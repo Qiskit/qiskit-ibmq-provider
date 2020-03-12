@@ -15,6 +15,8 @@
 """Session customized for IBM Quantum Experience access."""
 
 import os
+import re
+import json
 import logging
 from typing import Dict, Optional, Any, Tuple, Union
 from requests import Session, RequestException, Response
@@ -33,6 +35,8 @@ STATUS_FORCELIST = (
 CLIENT_APPLICATION = 'ibmqprovider/' + ibmq_provider_version
 CUSTOM_HEADER_ENV_VAR = 'QE_CUSTOM_CLIENT_APP_HEADER'
 logger = logging.getLogger(__name__)
+# Used to match the `/devices` endpoint, capturing the device name as group(1).
+RE_DEVICES_ENDPOINT = re.compile(r'^(\/devices\/)([^\/}]{2,})(\/{1}.*)$', re.IGNORECASE)
 
 
 class PostForcelistRetry(Retry):
@@ -220,9 +224,7 @@ class RetrySession(Session):
         try:
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
-            # Only log if the endpoint is not `/users` or `/version`.
-            if not url.startswith(('/users', '/version')):
-                logger.debug('Endpoint: %s. Method: %s. Request Data: %s.', url, method, kwargs)
+            self._log_response_info(url, method, kwargs)
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
@@ -264,3 +266,32 @@ class RetrySession(Session):
                 exc_message = exc_message.replace(self.access_token, '...')
             modified_args.append(exc_message)
         exc.args = tuple(modified_args)
+
+    def _log_response_info(self, url: str, method: str, kwargs: Dict[str, Any]) -> None:
+        """Log the response data, filtering out specific information.
+
+        Note:
+            The following endpoint URLs are not logged: `/users` and `/version`.
+
+            Currently, the backend name is filtered out from the endpoint
+            URL using a regex that captures the name. Also, it is filtered
+            out from the data received from the server when placing the
+            Qobj into object storage.
+        """
+        if not url.startswith(('/users', '/version')):
+            try:
+                # Replace the device name in the URL with `...` if it matches.
+                filtered_url = re.sub(RE_DEVICES_ENDPOINT, '\\1...\\3', url)
+
+                # Replace backend_name with `...` in the data received when uploading Qobj.
+                if method == 'PUT' and 'data' in kwargs and isinstance(kwargs['data'], str):
+                    data = json.loads(kwargs['data'])
+                    if 'header' in data and 'backend_name' in data['header']:
+                        data['header']['backend_name'] = '...'
+                    kwargs['data'] = json.dumps(data)
+
+                logger.debug('Endpoint: %s. Method: %s. Request Data: %s.',
+                             filtered_url, method, kwargs)
+            except Exception as ex:  # pylint: disable=broad-except
+                # Catch general exception so as not to disturb the program if filtering fails.
+                logger.info('Filtering failed when logging request information: %s', str(ex))
