@@ -220,7 +220,7 @@ class RetrySession(Session):
         try:
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
-            # Only log if the endpoint is not `/users` or `/version`
+            # Only log if the endpoint is not `/users` or `/version`.
             if not url.startswith(('/users', '/version')):
                 logger.debug('Endpoint: %s. Method: %s. Request Data: %s.', url, method, kwargs)
         except RequestException as ex:

@@ -42,9 +42,9 @@ Details pertaining to the environment variables used by the logger:
       to ``WARNING``. The valid log levels are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``,
       and ``CRITICAL`` (case-insensitive). If the environment variable is not set, then
       the parent logger's level is used, which also defaults to `WARNING`.
-    * ``QISKIT_IBMQ_PROVIDER_LOG_FILE``: Specifies the name of the logfile to use when logging.
-      If specified, the log messages will be logged to the file but not to the screen. If it
-      is not specified, the log messages will only be logged to the screen.
+    * ``QISKIT_IBMQ_PROVIDER_LOG_FILE``: Specifies the name of the logfile to use when logging
+      messages. If specified, the log messages will be logged to the file but not to the screen.
+      If it is not specified, the log messages will only be logged to the screen.
 
 Functions
 =========

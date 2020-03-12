@@ -129,17 +129,17 @@ class TestLogger(IBMQTestCase):
                 logger.critical('This is a critical message that should be logged in the file.')
 
                 # Assert the file exists.
-                self.assertTrue(os.path.exists(temp_log_file.name),
-                                'The file {} does not exist.'.format(temp_log_file.name))
+                log_file_name = os.environ[QISKIT_IBMQ_PROVIDER_LOG_FILE]
+                self.assertTrue(os.path.exists(log_file_name),
+                                'The file {} does not exist.'.format(log_file_name))
 
                 # Assert the messages were logged.
                 with open(temp_log_file.name) as file_:
                     content_as_str = file_.read()
-                    print(content_as_str)
-                    substrings_to_check = {'warning message': False, 'error message': True,
-                                           'critical message': True}
 
                     # Check whether the appropriate substrings are in the file.
+                    substrings_to_check = {'warning message': False, 'error message': True,
+                                           'critical message': True}
                     for substring, in_file in substrings_to_check.items():
                         if in_file:
                             self.assertIn(substring, content_as_str,
