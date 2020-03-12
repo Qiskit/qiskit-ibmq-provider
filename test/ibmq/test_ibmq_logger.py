@@ -76,7 +76,7 @@ class TestLogger(IBMQTestCase):
         for invalid_log_level in invalid_log_levels:
             with self.subTest(invalid_log_level=invalid_log_level):
                 with mock.patch.dict('os.environ',
-                                {QISKIT_IBMQ_PROVIDER_LOG_LEVEL: invalid_log_level}):
+                                     {QISKIT_IBMQ_PROVIDER_LOG_LEVEL: invalid_log_level}):
                     setup_logger(logger)
                     self.assertEqual(logger.level, default_level_invalid,
                                      'The logger level was set to {}, but it should '
