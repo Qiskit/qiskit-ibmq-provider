@@ -35,10 +35,11 @@ STATUS_FORCELIST = (
 CLIENT_APPLICATION = 'ibmqprovider/' + ibmq_provider_version
 CUSTOM_HEADER_ENV_VAR = 'QE_CUSTOM_CLIENT_APP_HEADER'
 logger = logging.getLogger(__name__)
-# Used to match the `/devices` endpoint, capturing the device name as group(1).
-# The number of letters for group(1) must be greater than 1, so it does not match
+# Regex used to match the `/devices` endpoint, capturing the device name as group(2).
+# The number of letters for group(2) must be greater than 1, so it does not match
 # the `/devices/v/1` endpoint.
-RE_DEVICES_ENDPOINT = re.compile(r'^(\/devices\/)([^\/}]{2,})(\/{1}.*)$', re.IGNORECASE)
+# Capture groups: (/devices/)(<device_name>)(</optional rest of the url>)
+RE_DEVICES_ENDPOINT = re.compile(r'^(/devices/)([^/}]{2,})(.*)$', re.IGNORECASE)
 
 
 class PostForcelistRetry(Retry):
