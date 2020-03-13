@@ -15,6 +15,7 @@
 """Test for the Websocket client."""
 
 import asyncio
+from contextlib import suppress
 import warnings
 
 import websockets
@@ -78,7 +79,8 @@ class TestWebsocketClientMock(IBMQTestCase):
         for task in pending:
             task.cancel()
             try:
-                loop.run_until_complete(task)
+                with suppress(asyncio.CancelledError):
+                    loop.run_until_complete(task)
             except Exception as err:  # pylint: disable=broad-except
                 cls.log.info("An error %s occurred canceling task %s. Stack is %s",
                              str(err), str(task), str(task.get_stack()))
