@@ -287,7 +287,6 @@ class IBMQJob(BaseModel, BaseJob):
         Returns:
             ``True`` if the job name was updated successfully, else ``False``.
         """
-        # TODO: Validate the name.
         job_attribute_to_update_info = {'name': name}
 
         with api_to_job_error():
