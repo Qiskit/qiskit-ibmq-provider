@@ -141,11 +141,12 @@ class TestLogger(IBMQTestCase):
                     substrings_to_check = {'warning message': False, 'error message': True,
                                            'critical message': True}
                     for substring, in_file in substrings_to_check.items():
-                        if in_file:
-                            self.assertIn(substring, content_as_str,
-                                          'The substring "{}" was not found in the file {}.'
-                                          .format(substring, temp_log_file.name))
-                        else:
-                            self.assertNotIn(substring, content_as_str,
-                                             'The substring "{}" was found in the file {}.'
-                                             .format('debug message', temp_log_file.name))
+                        with self.subTest(substring=substring):
+                            if in_file:
+                                self.assertIn(substring, content_as_str,
+                                              'The substring "{}" was not found in the file {}.'
+                                              .format(substring, temp_log_file.name))
+                            else:
+                                self.assertNotIn(substring, content_as_str,
+                                                 'The substring "{}" was found in the file {}.'
+                                                 .format('debug message', temp_log_file.name))
