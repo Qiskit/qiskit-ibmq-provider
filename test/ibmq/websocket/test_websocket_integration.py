@@ -52,8 +52,9 @@ class TestWebsocketIntegration(IBMQTestCase):
         self.circuit = transpile(self.qc1, backend=self.sim_backend)
         self.qobj = assemble(self.circuit, backend=self.sim_backend, shots=1)
 
-    def _job_final_status_polling(self):
+    def _job_final_status_polling(self, *args, **kwargs):
         """Replaces the actual _job_final_status_polling and fails the test."""
+        # pylint: disable=unused-argument
         self.fail("Obtaining job status via websockets failed!")
 
     def test_websockets_simulator(self):
