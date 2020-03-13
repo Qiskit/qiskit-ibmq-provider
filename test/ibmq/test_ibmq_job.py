@@ -699,9 +699,7 @@ class TestIBMQJob(JobTestCase):
                     job.wait_for_final_state(timeout=30, wait=wait_time,
                                              callback=final_state_callback)
                     self.assertTrue(job.status() in JOB_FINAL_STATES)
-                    if not callback_info['called']:
-                        # TODO change log to assert once API is changed (1742).
-                        self.log.warning("Callback function not invoked.")
+                    self.assertTrue(callback_info['called'])
                 finally:
                     # Ensure all threads ended.
                     for thread in job._executor._threads:
