@@ -139,6 +139,8 @@ class IBMQJob(BaseModel, BaseJob):
         # Properties used for caching.
         self._cancelled = False
         self._job_error_msg = None  # type: Optional[str]
+        self._name = kwargs.pop('_name', None)
+        self._tags = kwargs.pop('_tags', None)
 
     def qobj(self) -> Optional[Qobj]:
         """Return the Qobj for this job.
@@ -286,11 +288,20 @@ class IBMQJob(BaseModel, BaseJob):
             ``True`` if the job name was updated successfully, else ``False``.
         """
         # TODO: Validate the name.
+        job_attribute_to_update_info = {'name': name}
+
         with api_to_job_error():
-            job_attribute_to_update_info = {'name': name}
             response = self._api.job_update(self.job_id(), job_attribute_to_update_info)
-            updated_name = response.get('name', None)
-            return name == updated_name
+
+        # Get the name from the response and check if the update was successful.
+        updated_name = response.get('name', None)
+        update_successful = (name == updated_name)
+
+        # Cache the new name if update was successful.
+        if update_successful:
+            self._name = updated_name
+
+        return update_successful
 
     def update_tags(self, tags: List[str]) -> bool:
         """Update the job tags.
@@ -303,11 +314,20 @@ class IBMQJob(BaseModel, BaseJob):
 
         """
         # TODO: Validate the tags. Also, make sure they are not used by IBMQJobManager for the job.
+        job_attribute_to_update_info = {'tags': tags}
+
         with api_to_job_error():
-            job_attribute_to_update_info = {'tags': tags}
             response = self._api.job_update(self.job_id(), job_attribute_to_update_info)
-            updated_tags = response.get('tags', None)
-            return tags == updated_tags
+
+        # Get the tags from the response and check if the update was successful.
+        updated_tags = response.get('tags', None)
+        update_successful = (tags == updated_tags)
+
+        # Cache the new tags if update was successful.
+        if update_successful:
+            self._tags = updated_tags
+
+        return update_successful
 
     def status(self) -> JobStatus:
         """Query the server for the latest job status.
