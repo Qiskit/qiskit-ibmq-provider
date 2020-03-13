@@ -269,7 +269,7 @@ class RetrySession(Session):
             modified_args.append(exc_message)
         exc.args = tuple(modified_args)
 
-    def _log_response_info(self, url: str, method: str, kwargs: Dict[str, Any]) -> None:
+    def _log_response_info(self, url: str, method: str, request_data: Dict[str, Any]) -> None:
         """Log the response data, filtering out specific information.
 
         Note:
@@ -288,18 +288,20 @@ class RetrySession(Session):
                 filtered_url = re.sub(RE_DEVICES_ENDPOINT, '\\1...\\3', url)
 
                 # Replace backend_name with `...` in the data received when uploading Qobj.
-                if method == 'PUT' and 'data' in kwargs and isinstance(kwargs['data'], str):
-                    data = json.loads(kwargs['data'])
+                if (method == 'PUT' and 'data' in request_data
+                        and isinstance(request_data['data'], str)):
+                    # Get the object storage request data and filter it.
+                    data = json.loads(request_data['data'])
                     if 'header' in data and 'backend_name' in data['header']:
                         data['header']['backend_name'] = '...'
-                    kwargs['data'] = json.dumps(data)
+                    request_data['data'] = json.dumps(data)
 
                 # Replace the backend name with `...` in the data received when submitting a job.
-                if url == '/Jobs' and method == 'POST' and 'json' in kwargs:
-                    kwargs['json']['backend']['name'] = '...'
+                if url == '/Jobs' and method == 'POST' and 'json' in request_data:
+                    request_data['json']['backend']['name'] = '...'
 
                 logger.debug('Endpoint: %s. Method: %s. Request Data: %s.',
-                             filtered_url, method, kwargs)
+                             filtered_url, method, request_data)
             except Exception as ex:  # pylint: disable=broad-except
                 # Catch general exception so as not to disturb the program if filtering fails.
                 logger.info('Filtering failed when logging request information: %s', str(ex))
