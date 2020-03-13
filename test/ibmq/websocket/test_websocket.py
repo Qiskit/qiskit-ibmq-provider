@@ -82,8 +82,8 @@ class TestWebsocketClientMock(IBMQTestCase):
                 with suppress(asyncio.CancelledError):
                     loop.run_until_complete(task)
             except Exception as err:  # pylint: disable=broad-except
-                cls.log.info("An error %s occurred canceling task %s. Stack is %s",
-                             str(err), str(task), str(task.get_stack()))
+                cls.log.error("An error %s occurred canceling task %s. Traceback:", str(err), str(task))
+                task.print_stack()
 
     def test_job_final_status(self):
         """Test retrieving a job already in final status."""
