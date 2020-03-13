@@ -443,3 +443,24 @@ class AccountClient(BaseClient):
             Job cancellation response.
         """
         return self.client_api.job(job_id).cancel()
+
+    def job_update(
+            self,
+            job_id: str,
+            job_attribute_info: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Update the given job attribute.
+
+        Note:
+            The current editable job attributes are ``name`` and ``tags``.
+
+        Args:
+            job_id: The ID of the job to update.
+            job_attribute_info: A dictionary containing the name of the attribute to
+                update and the new value it should be updated to.
+
+        Returns:
+            A dictionary containing the name of the updated attribute and its corresponding
+            value.
+        """
+        return self.client_api.job(job_id).put(job_attribute_info)

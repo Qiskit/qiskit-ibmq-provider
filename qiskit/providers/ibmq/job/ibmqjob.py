@@ -276,6 +276,39 @@ class IBMQJob(BaseModel, BaseJob):
             raise IBMQJobApiError('Unexpected error when cancelling job {}: {}'
                                   .format(self.job_id(), str(error))) from error
 
+    def update_name(self, name: str) -> bool:
+        """Update the job name.
+
+        Args:
+            name: The new name for the job.
+
+        Returns:
+            ``True`` if the job name was updated successfully, else ``False``.
+        """
+        # TODO: Validate the name.
+        with api_to_job_error():
+            job_attribute_to_update_info = {'name': name}
+            response = self._api.job_update(self.job_id(), job_attribute_to_update_info)
+            updated_name = response.get('name', None)
+            return name == updated_name
+
+    def update_tags(self, tags: List[str]) -> bool:
+        """Update the job tags.
+
+        Args:
+            tags: The new tags for the job.
+
+        Returns:
+            ``True`` if the job tags were updated successfully, else ``False``.
+
+        """
+        # TODO: Validate the tags. Also, make sure they are not used by IBMQJobManager for the job.
+        with api_to_job_error():
+            job_attribute_to_update_info = {'tags': tags}
+            response = self._api.job_update(self.job_id(), job_attribute_to_update_info)
+            updated_tags = response.get('tags', None)
+            return tags == updated_tags
+
     def status(self) -> JobStatus:
         """Query the server for the latest job status.
 

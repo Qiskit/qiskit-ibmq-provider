@@ -18,7 +18,7 @@ import pprint
 import json
 from json.decoder import JSONDecodeError
 
-from typing import Dict, Any
+from typing import Union, Dict, List, Any
 from marshmallow.exceptions import ValidationError
 
 from qiskit.providers.ibmq.utils import json_encoder
@@ -68,6 +68,30 @@ class Job(RestAdapterBase):
             response['properties'] = response.pop('calibration')
 
         return response
+
+    def put(
+            self,
+            job_attribute_info: Dict[str, Union[str, List[str]]]
+    ) -> Dict[str, Any]:
+        """Edit the attribute specified for the job.
+
+        Args:
+            job_attribute_info: A dictionary containing the name of the attribute to
+                update and the new value it should be updated to.
+
+        Returns:
+            JSON response containing the name of the updated attribute and its
+            corresponding value.
+        """
+        url = self.get_url('self')
+
+        data = {}
+        if 'name' in job_attribute_info:
+            data['name'] = job_attribute_info['name']
+        elif 'tags' in job_attribute_info:
+            data['tags'] = job_attribute_info['tags']
+
+        return self.session.put(url, data=json.dumps(data)).json()
 
     def callback_upload(self) -> Dict[str, Any]:
         """Notify the API after uploading a ``Qobj`` via object storage.
