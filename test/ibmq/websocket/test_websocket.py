@@ -68,7 +68,8 @@ class TestWebsocketClientMock(IBMQTestCase):
 
         # Close the mock server.
         loop = asyncio.get_event_loop()
-        loop.stop()
+        cls.server.close()
+        loop.run_until_complete(cls.server.wait_closed())
 
         with warnings.catch_warnings():
             # Suppress websockets deprecation warning
