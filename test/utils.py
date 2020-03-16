@@ -18,8 +18,11 @@ from qiskit import QuantumCircuit
 from qiskit.qobj import Qobj
 from qiskit.compiler import assemble, transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
+from qiskit.providers.exceptions import JobError
+from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.job import IBMQJob
 
 
 def most_busy_backend(provider: AccountProvider) -> IBMQBackend:
@@ -71,3 +74,30 @@ def bell_in_qobj(backend: IBMQBackend, shots: int = 1024) -> Qobj:
     """
     return assemble(transpile(ReferenceCircuits.bell(), backend=backend),
                     backend=backend, shots=shots)
+
+
+def cancel_job(job: IBMQJob, verify: bool = False) -> bool:
+    """Cancel a job.
+
+    Args:
+        job: Job to cancel.
+        verify: Verify job status.
+
+    Returns:
+        Whether job has been cancelled.
+    """
+    cancelled = False
+    for _ in range(2):
+        # Try twice in case job is not in a cancellable state
+        try:
+            if job.cancel():
+                if verify:
+                    status = job.status()
+                    assert status is JobStatus.CANCELLED, \
+                        'cancel() was successful for job {} but its ' \
+                        'status is {}.'.format(job.job_id(), status)
+                break
+        except JobError:
+            pass
+
+    return cancelled

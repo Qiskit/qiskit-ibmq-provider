@@ -29,7 +29,7 @@ from qiskit.providers.jobstatus import JobStatus
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_provider, requires_device
-from ...utils import most_busy_backend, bell_in_qobj
+from ...utils import most_busy_backend, bell_in_qobj, cancel_job
 
 
 class TestWebsocketIntegration(IBMQTestCase):
@@ -161,7 +161,7 @@ class TestWebsocketIntegration(IBMQTestCase):
             with self.assertRaises(JobTimeoutError):
                 job.result(timeout=0.1)
         finally:
-            job.cancel()
+            cancel_job(job)
 
     def test_websockets_multi_job(self):
         """Test checking status of multiple jobs in parallel via websockets."""

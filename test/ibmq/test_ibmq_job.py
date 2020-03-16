@@ -29,8 +29,7 @@ from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATE
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.job.utils import api_status_to_job_status
-from qiskit.providers.ibmq.job.exceptions import (IBMQJobInvalidStateError,
-                                                  JobError, IBMQJobTimeoutError)
+from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, IBMQJobTimeoutError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test import slow_test
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -39,7 +38,7 @@ from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_device, requires_qe_access)
-from ..utils import most_busy_backend, get_large_circuit, bell_in_qobj
+from ..utils import most_busy_backend, get_large_circuit, bell_in_qobj, cancel_job
 
 
 class TestIBMQJob(JobTestCase):
@@ -210,18 +209,7 @@ class TestIBMQJob(JobTestCase):
         backend = most_busy_backend(provider)
         qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
-
-        for _ in range(2):
-            # Try twice in case job is not in a cancellable state
-            try:
-                if job.cancel():
-                    status = job.status()
-                    self.assertEqual(status, JobStatus.CANCELLED,
-                                     'cancel() was successful for job {} but its status is {}.'
-                                     .format(job.job_id(), status))
-                    break
-            except JobError:
-                pass
+        cancel_job(job, True)
 
     @requires_provider
     def test_retrieve_jobs(self, provider):
@@ -281,10 +269,7 @@ class TestIBMQJob(JobTestCase):
 
         # Cleanup
         for job in [job_1, job_2]:
-            try:
-                job.cancel()
-            except JobError:
-                pass
+            cancel_job(job)
 
     @requires_provider
     def test_retrieve_job_error(self, provider):
@@ -325,17 +310,7 @@ class TestIBMQJob(JobTestCase):
         qobj = bell_in_qobj(backend=backend)
         # Submit a job, then cancel it.
         job_to_cancel = backend.run(qobj, validate_qobj=True)
-        for _ in range(2):
-            # Try twice in case job is not in a cancellable state
-            try:
-                if job_to_cancel.cancel():
-                    status = job_to_cancel.status()
-                    self.assertEqual(status, JobStatus.CANCELLED,
-                                     'cancel() was successful for job {} but its status is {}.'
-                                     .format(job_to_cancel.job_id(), status))
-                    break
-            except JobError:
-                pass
+        cancel_job(job_to_cancel, True)
 
         # Submit a job that will fail.
         qobj.config.shots = 10000  # Modify the number of shots to be an invalid amount.
@@ -389,10 +364,7 @@ class TestIBMQJob(JobTestCase):
                             .format(active_job.job_id(), active_job._status, active_job_statuses))
 
         # Cancel job so it doesn't consume more resources.
-        try:
-            job.cancel()
-        except JobError:
-            pass
+        cancel_job(job)
 
     @requires_provider
     def test_retrieve_jobs_queued(self, provider):
@@ -424,10 +396,7 @@ class TestIBMQJob(JobTestCase):
         #                             JobStatus.QUEUED))
 
         # Cancel job so it doesn't consume more resources.
-        try:
-            job.cancel()
-        except JobError:
-            pass
+        cancel_job(job)
 
     @requires_provider
     def test_retrieve_jobs_start_datetime(self, provider):
@@ -715,4 +684,4 @@ class TestIBMQJob(JobTestCase):
             # Ensure all threads ended.
             for thread in job._executor._threads:
                 thread.join(0.1)
-            job.cancel()
+            cancel_job(job)
