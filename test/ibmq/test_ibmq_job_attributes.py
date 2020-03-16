@@ -110,8 +110,8 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
     @requires_provider
-    def test_update_job_name_exisiting_name(self, provider):
-        """Test updating the name of a job that had a previous name."""
+    def test_job_name_update(self, provider):
+        """Test updating the name of a job."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 
@@ -131,44 +131,6 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertTrue(update_successful,
                         'Updating the name for job {} from "{}" to "{}" '
                         'was unsuccessful.'.format(job_id, old_job_name, new_job_name))
-
-        # Check retrieving the job by its new name using partial matching.
-        job_name_partial = new_job_name[8:]
-        retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
-                                                job_name=job_name_partial)
-        self.assertGreaterEqual(len(retrieved_jobs), 1)
-        retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
-        self.assertIn(job_id, retrieved_job_ids)
-
-        # Check retrieving the job by its new name using regular expressions.
-        job_name_regex = '^{}$'.format(new_job_name)
-        retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
-                                                job_name=job_name_regex)
-        self.assertEqual(len(retrieved_jobs), 1)
-        self.assertEqual(job_id, retrieved_jobs[0].job_id())
-
-    @requires_provider
-    def test_update_job_name_nonexisting_name(self, provider):
-        """Test updating the name of a job that had no previous name."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
-        job = backend.run(qobj, validate_qobj=True)
-        job_id = job.job_id()
-        # TODO No need to wait for job to run once api is fixed
-        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
-            time.sleep(0.5)
-
-        # Update the job name.
-        new_job_name = '{}_new'.format(str(time.time()).replace('.', ''))
-        update_successful = job.update_name(new_job_name)
-        self.assertTrue(update_successful,
-                        'Updating the name for job {}, which had no previous name '
-                        'was unsuccessful.'.format(job_id))
-        # Check that the new name was cached.
-        self.assertEqual(job.name(), new_job_name,
-                         'The name for job {} is "{}", but it should be "{}"'
-                         .format(job_id, job.name(), new_job_name))
 
         # Check retrieving the job by its new name using partial matching.
         job_name_partial = new_job_name[8:]

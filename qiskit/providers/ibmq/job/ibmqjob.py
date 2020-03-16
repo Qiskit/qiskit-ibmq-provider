@@ -14,6 +14,7 @@
 
 """IBM Quantum Experience job."""
 
+import re
 import logging
 from typing import Dict, Optional, Tuple, Any, List, Callable
 import warnings
@@ -35,6 +36,7 @@ from qiskit.validation import BaseModel, ModelValidationError, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
+from ..utils import validate_job_tags
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
 from .queueinfo import QueueInfo
@@ -140,7 +142,7 @@ class IBMQJob(BaseModel, BaseJob):
         self._cancelled = False
         self._job_error_msg = None  # type: Optional[str]
         self._name = kwargs.pop('_name', None)
-        self._tags = kwargs.pop('_tags', None)
+        self._tags = kwargs.pop('_tags', [])
 
     def qobj(self) -> Optional[Qobj]:
         """Return the Qobj for this job.
@@ -279,16 +281,21 @@ class IBMQJob(BaseModel, BaseJob):
                                   .format(self.job_id(), str(error))) from error
 
     def update_name(self, name: str) -> bool:
-        """Update the job name.
+        """Update the job name associated with this job.
 
         Args:
             name: The new name for the job.
 
         Returns:
             ``True`` if the job name was updated successfully, else ``False``.
-        """
-        job_attribute_to_update_info = {'name': name}
 
+        Raises:
+            IBMQJobInvalidStateError: If the input job name is not a string.
+        """
+        if not isinstance(name, str):
+            raise IBMQJobInvalidStateError('job_name needs to be a string.')
+
+        job_attribute_to_update_info = {'name': name}
         with api_to_job_error():
             response = self._api.job_update(self.job_id(), job_attribute_to_update_info)
 
@@ -302,25 +309,43 @@ class IBMQJob(BaseModel, BaseJob):
 
         return update_successful
 
-    def update_tags(self, tags: List[str]) -> bool:
-        """Update the job tags.
+    def update_tags(self, tags: List[str], overwrite: bool = False) -> bool:
+        """Update the job tags associated with this job.
+
+        Note: Job tags used by a job set could not be overwritten or changed.
 
         Args:
             tags: The new tags for the job.
+            overwrite: if ``True`` the tags will be added to the already existing tags,
+                else the tags will overwrite the existing tags with those specified by
+                `tags`.
 
         Returns:
             ``True`` if the job tags were updated successfully, else ``False``.
 
         """
-        # TODO: Validate the tags. Also, make sure they are not used by IBMQJobManager for the job.
-        job_attribute_to_update_info = {'tags': tags}
+        validate_job_tags(tags, IBMQJobInvalidStateError)
+        # Regex used to match tags used by a job set.
+        re_job_set_id_long = re.compile(r'^(ibmq_jobset_)([0-9a-f]{32})(-{1})(\d+)(_{1})$')
 
+        # Convert tags list to set, removing duplicates if present.
+        tags_to_update = set(tags)
+        if overwrite:
+            # Keep tags that match (those used by a job set).
+            for tag in self._tags:
+                if re.match(re_job_set_id_long, tag):
+                    tags_to_update.add(tag)
+        else:
+            tags_to_update.update(self._tags)
+
+        job_attribute_to_update_info = {'tags': list(tags_to_update)}
         with api_to_job_error():
             response = self._api.job_update(self.job_id(), job_attribute_to_update_info)
 
         # Get the tags from the response and check if the update was successful.
         updated_tags = response.get('tags', None)
-        update_successful = (tags == updated_tags)
+        updated_tags_set = set(updated_tags) if updated_tags else None
+        update_successful = (set(tags_to_update) == updated_tags_set)
 
         # Cache the new tags if update was successful.
         if update_successful:
