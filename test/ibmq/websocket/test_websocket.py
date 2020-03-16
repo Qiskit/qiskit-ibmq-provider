@@ -68,7 +68,8 @@ class TestWebsocketClientMock(IBMQTestCase):
 
         # Close the mock server.
         loop = asyncio.get_event_loop()
-        loop.stop()
+        cls.server.close()
+        loop.run_until_complete(cls.server.wait_closed())
 
         with warnings.catch_warnings():
             # Suppress websockets deprecation warning
@@ -77,8 +78,13 @@ class TestWebsocketClientMock(IBMQTestCase):
             pending = asyncio.Task.all_tasks()
         for task in pending:
             task.cancel()
-            with suppress(asyncio.CancelledError):
-                loop.run_until_complete(task)
+            try:
+                with suppress(asyncio.CancelledError):
+                    loop.run_until_complete(task)
+            except Exception as err:  # pylint: disable=broad-except
+                cls.log.error("An error %s occurred canceling task %s. "
+                              "Traceback:", str(err), str(task))
+                task.print_stack()
 
     def test_job_final_status(self):
         """Test retrieving a job already in final status."""
