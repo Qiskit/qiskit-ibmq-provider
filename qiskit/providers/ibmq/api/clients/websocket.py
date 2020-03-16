@@ -23,7 +23,6 @@ from typing import Dict, Union, Generator, Optional, Any
 from concurrent import futures
 from ssl import SSLError
 import warnings
-from collections import deque
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
@@ -31,6 +30,7 @@ from websockets.client import WebSocketClientProtocol
 from websockets.exceptions import InvalidURI
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
+from qiskit.providers.ibmq.utils.utils import RefreshQueue
 from ..exceptions import (WebsocketError, WebsocketTimeoutError,
                           WebsocketIBMQProtocolError,
                           WebsocketAuthenticationError)
@@ -195,7 +195,7 @@ class WebsocketClient(BaseClient):
             timeout: Optional[float] = None,
             retries: int = 5,
             backoff_factor: float = 0.5,
-            status_deque: Optional[deque] = None
+            status_queue: Optional[RefreshQueue] = None
     ) -> Generator[Any, None, Dict[str, str]]:
         """Return the status of a job.
 
@@ -224,7 +224,7 @@ class WebsocketClient(BaseClient):
             retries: Max number of retries.
             backoff_factor: Backoff factor used to calculate the
                 time to wait between retries.
-            status_deque: Deque used to share the latest status.
+            status_queue: Queue used to share the latest status.
 
         Returns:
             The final API response for the status of the job, as a dictionary that
@@ -267,6 +267,10 @@ class WebsocketClient(BaseClient):
                         response = WebsocketResponseMethod.from_bytes(response_raw)
                         last_status = response.data
 
+                        # Share the new status.
+                        if status_queue is not None:
+                            status_queue.put(last_status)
+
                         # Successfully received and parsed a message, reset retry counter.
                         current_retry_attempt = 0
 
@@ -277,10 +281,6 @@ class WebsocketClient(BaseClient):
 
                         if timeout and timeout <= 0:
                             raise WebsocketTimeoutError('Timeout reached while getting job status.')
-
-                        # Share the new status.
-                        if status_deque is not None:
-                            status_deque.append(last_status)
 
                     except (futures.TimeoutError, asyncio.TimeoutError):
                         # Timeout during our wait.
@@ -295,6 +295,8 @@ class WebsocketClient(BaseClient):
                         if ex.code == 4001:
                             message = 'Internal server error'
                         elif ex.code == 4002:
+                            if status_queue is not None:
+                                status_queue.put(last_status)
                             return last_status  # type: ignore[return-value]
                         elif ex.code == 4003:
                             attempt_retry = False  # No point in retrying.
