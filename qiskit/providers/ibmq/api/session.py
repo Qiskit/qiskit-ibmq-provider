@@ -270,17 +270,19 @@ class RetrySession(Session):
         exc.args = tuple(modified_args)
 
     def _log_request_info(self, url: str, method: str, request_data: Dict[str, Any]) -> None:
-        """Log the response data, filtering out specific information.
+        """Log the request data, filtering out specific information.
 
         Note:
             The following endpoint URLs are not logged: `/users` and `/version`.
 
             Currently, the backend name and hub, group, project information are
             filtered out. The backend name is filtered out from the endpoint URL,
-            using a regex to capture the name, and also from the data received by
-            the server when uploading the Qobj to object storage. Another place it
-            is filtered out from is the data received from the server when submitting
-            a job.
+            using a regex to capture the name, and also from the data sent to the server
+            when uploading a Qobj to object storage. Another place it is filtered out from
+            is the data sent to the server when submitting a job.
+
+            The request data for POST requests is ignored for all endpoints, except `/Jobs`,
+            because it is not useful information.
         """
         if not url.startswith(('/users', '/version')):
             try:
@@ -291,9 +293,14 @@ class RetrySession(Session):
                 if method == 'PUT' and 'data' in request_data:
                     request_data['data'] = '...'
 
-                # Replace the backend name with `...` in the data received when submitting a job.
-                if url == '/Jobs' and method == 'POST' and 'json' in request_data:
-                    request_data['json']['backend']['name'] = '...'
+                if method == 'POST':
+                    # Log request data when submitting a job.
+                    if url == '/Jobs' and 'json' in request_data:
+                        # Replace backend name with `...` in data sent when submitting job.
+                        request_data['json']['backend']['name'] = '...'
+                    else:
+                        # Request data for POSTs, other than job submission, are not worth logging.
+                        request_data = {}
 
                 logger.debug('Endpoint: %s. Method: %s. Request Data: %s.',
                              filtered_url, method, request_data)
