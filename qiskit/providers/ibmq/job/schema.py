@@ -36,6 +36,7 @@ FIELDS_MAP = {
     'error': '_error',
     'name': '_name',
     'timePerStep': '_time_per_step',
+    'shots': '_api_shots',
     'tags': '_tags'
 }
 
