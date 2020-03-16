@@ -121,8 +121,13 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
             does not have the ``pending_jobs`` attribute in its status.
     """
     try:
-        return min([b for b in backends if b.status().operational],
-                   key=lambda b: b.status().pending_jobs)
+        backends_to_filter = {}
+        for backend in backends:
+            backend_status = backend.status()
+            if backend_status.operational:
+                backends_to_filter[backend] = backend_status
+
+        return min(backends_to_filter.keys(), key=lambda b: backends_to_filter[b].pending_jobs)
     except (ValueError, TypeError):
         raise IBMQError('Unable to find the least_busy '
                         'backend from an empty list.') from None
