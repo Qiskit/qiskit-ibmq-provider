@@ -293,8 +293,9 @@ class WebsocketClient(BaseClient):
 
                         response = WebsocketResponseMethod.from_bytes(response_raw)
                         last_status = response.data
-                        logger.debug('Received message from websocket: %s',
-                                     response.get_data_filtered())
+                        if logger.level is logging.DEBUG:
+                            logger.debug('Received message from websocket: %s',
+                                         response.get_data_filtered())
 
                         # Share the new status.
                         if status_queue is not None:

@@ -26,25 +26,22 @@ Logging
 
 The IBM Quantum Provider uses the ``qiskit.providers.ibmq`` logger.
 
-You are able to change its level manually or via the environment variable
-``QISKIT_IBMQ_PROVIDER_LOG_LEVEL``. Likewise, you are able to specify a file
-to log the messages to with the environment variable ``QISKIT_IBMQ_PROVIDER_LOG_FILE``.
+Two environment variables can be used to control the logging:
 
-To change the level manually, simply grab the logger and set its level::
+    * ``QISKIT_IBMQ_PROVIDER_LOG_LEVEL``: Specifies the log level to use, for the
+      ibmq-provider modules. If an invalid level is set, the log level defaults to ``WARNING``.
+      The valid log levels are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, and ``CRITICAL``
+      (case-insensitive). If the environment variable is not set, then the parent logger's level
+      is used, which also defaults to ``WARNING``.
+    * ``QISKIT_IBMQ_PROVIDER_LOG_FILE``: Specifies the name of the log file to use. If specified,
+      messages will be logged to the file only. Otherwise messages will be logged to the standard
+      error (usually the screen).
+
+For more advanced use, you can modify the logger itself. For example, to manually set the level
+to ``WARNING``::
 
     import logging
     logging.getLogger('qiskit.providers.ibmq').setLevel(logging.WARNING)
-
-Details pertaining to the environment variables used by the logger:
-
-    * ``QISKIT_IBMQ_PROVIDER_LOG_LEVEL``: Specifies the log level to use, for the
-      provider modules, when logging. If an invalid level is set, the log level defaults
-      to ``WARNING``. The valid log levels are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``,
-      and ``CRITICAL`` (case-insensitive). If the environment variable is not set, then
-      the parent logger's level is used, which also defaults to `WARNING`.
-    * ``QISKIT_IBMQ_PROVIDER_LOG_FILE``: Specifies the name of the logfile to use when logging
-      messages. If specified, the log messages will be logged to the file but not to the screen.
-      If it is not specified, the log messages will only be logged to the screen.
 
 Functions
 =========

@@ -103,18 +103,18 @@ class TestLogger(IBMQTestCase):
     def test_log_file(self):
         """Test setting up a logger by specifying a file and log level."""
         logger = logging.getLogger(self.id())
-        log_level_warning = ('ERROR', logging.ERROR)
+        log_level_error = ('ERROR', logging.ERROR)
 
         with NamedTemporaryFile() as temp_log_file:
             # Set the environment variables, including the temp file name.
-            env_vars_to_patch = {QISKIT_IBMQ_PROVIDER_LOG_LEVEL: log_level_warning[0],
+            env_vars_to_patch = {QISKIT_IBMQ_PROVIDER_LOG_LEVEL: log_level_error[0],
                                  QISKIT_IBMQ_PROVIDER_LOG_FILE: temp_log_file.name}
             with mock.patch.dict('os.environ', env_vars_to_patch):
                 setup_logger(logger)
 
-                self.assertEqual(logger.level, log_level_warning[1],
+                self.assertEqual(logger.level, log_level_error[1],
                                  'The logger level was set to {}, but it should '
-                                 'be {}.'.format(logger.level, log_level_warning[1]))
+                                 'be {}.'.format(logger.level, log_level_error[1]))
 
                 # Assert the file handler was created.
                 self.assertTrue(logger.handlers,

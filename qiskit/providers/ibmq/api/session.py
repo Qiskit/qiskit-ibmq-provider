@@ -16,7 +16,6 @@
 
 import os
 import re
-import json
 import logging
 from typing import Dict, Optional, Any, Tuple, Union
 from requests import Session, RequestException, Response
@@ -227,7 +226,7 @@ class RetrySession(Session):
         try:
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
-            self._log_response_info(url, method, kwargs)
+            self._log_request_info(url, method, kwargs)
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
@@ -270,7 +269,7 @@ class RetrySession(Session):
             modified_args.append(exc_message)
         exc.args = tuple(modified_args)
 
-    def _log_response_info(self, url: str, method: str, request_data: Dict[str, Any]) -> None:
+    def _log_request_info(self, url: str, method: str, request_data: Dict[str, Any]) -> None:
         """Log the response data, filtering out specific information.
 
         Note:
@@ -288,14 +287,9 @@ class RetrySession(Session):
                 # Replace the device name in the URL with `...` if it matches.
                 filtered_url = re.sub(RE_DEVICES_ENDPOINT, '\\1...\\3', url)
 
-                # Replace backend_name with `...` in the data received when uploading Qobj.
-                if (method == 'PUT' and 'data' in request_data
-                        and isinstance(request_data['data'], str)):
-                    # Get the object storage request data and filter it.
-                    data = json.loads(request_data['data'])
-                    if 'header' in data and 'backend_name' in data['header']:
-                        data['header']['backend_name'] = '...'
-                    request_data['data'] = json.dumps(data)
+                # Filter out the Qobj data when uploading it via object storage.
+                if method == 'PUT' and 'data' in request_data:
+                    request_data['data'] = '...'
 
                 # Replace the backend name with `...` in the data received when submitting a job.
                 if url == '/Jobs' and method == 'POST' and 'json' in request_data:
