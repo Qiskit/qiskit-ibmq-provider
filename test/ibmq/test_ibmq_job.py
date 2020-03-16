@@ -38,7 +38,7 @@ from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_device, requires_qe_access)
-from ..utils import most_busy_backend
+from ..utils import most_busy_backend, get_large_circuit
 
 
 class TestIBMQJob(JobTestCase):
@@ -665,31 +665,45 @@ class TestIBMQJob(JobTestCase):
             self.assertNotIn(c_status, JOB_FINAL_STATES)
             self.assertEqual(c_job.job_id(), job.job_id())
             self.assertIn('queue_info', kwargs)
+
+            queue_info = kwargs.pop('queue_info', None)
             if c_status is JobStatus.QUEUED:
                 self.assertIsNotNone(
-                    kwargs.pop('queue_info', None),
-                    "queue_info not found for job {}".format(c_job_id))
-            callback_info[0] = True
-            if callback_info[1]:
-                self.assertAlmostEqual(time.time() - callback_info[1], wait_time, delta=0.1)
-            callback_info[1] = time.time()
+                    queue_info, "queue_info not found for job {}".format(c_job_id))
+            callback_info['called'] = True
 
-        # The first is whether the callback function is invoked. The second
-        # is last called time. They're put in a list to be mutable.
-        callback_info = [False, None]
-        wait_time = 1
+            if wait_time is None:
+                # Look for status change.
+                data = {'status': c_status, 'queue_info': queue_info}
+                self.assertNotEqual(data, callback_info['last data'])
+                callback_info['last data'] = data
+            else:
+                # Check called within wait time.
+                if callback_info['last call time'] and job._status not in JOB_FINAL_STATES:
+                    self.assertAlmostEqual(
+                        time.time() - callback_info['last call time'], wait_time, delta=0.1)
+                callback_info['last call time'] = time.time()
+
+        # Put callback data in a dictionary to make it mutable.
+        callback_info = {'called': False, 'last call time': 0.0, 'last data': {}}
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj, validate_qobj=True)
+        qc = get_large_circuit(backend)
+        qobj = assemble(transpile(qc, backend=backend), backend=backend)
 
-        try:
-            job.wait_for_final_state(timeout=30, wait=wait_time, callback=final_state_callback)
-            self.assertTrue(job.done())
-            self.assertTrue(callback_info[0])
-        finally:
-            # Ensure all threads ended.
-            for thread in job._executor._threads:
-                thread.join(0.1)
+        wait_args = [0.5, None]
+        for wait_time in wait_args:
+            with self.subTest(wait_time=wait_time):
+                callback_info = {'called': False, 'last call time': 0.0, 'last data': {}}
+                job = backend.run(qobj, validate_qobj=True)
+                try:
+                    job.wait_for_final_state(timeout=30, wait=wait_time,
+                                             callback=final_state_callback)
+                    self.assertTrue(job.status() in JOB_FINAL_STATES)
+                    self.assertTrue(callback_info['called'])
+                finally:
+                    # Ensure all threads ended.
+                    for thread in job._executor._threads:
+                        thread.join(0.1)
 
     @requires_provider
     def test_wait_for_final_state_timeout(self, provider):

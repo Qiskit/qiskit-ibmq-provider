@@ -14,6 +14,9 @@
 
 """General utility functions for testing."""
 
+from qiskit import QuantumCircuit
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+
 
 def most_busy_backend(provider):
     """Return the most busy backend for the provider given.
@@ -31,3 +34,22 @@ def most_busy_backend(provider):
     backends = provider.backends(simulator=False, operational=True)
     return max([b for b in backends if b.configuration().n_qubits >= 5],
                key=lambda b: b.status().pending_jobs)
+
+
+def get_large_circuit(backend: IBMQBackend) -> QuantumCircuit:
+    """Return a slightly larger circuit that would run a bit longer.
+
+    Args:
+        backend: Backend on which the circuit will run.
+
+    Returns:
+        A larger circuit.
+    """
+    n_qubits = min(backend.configuration().n_qubits, 20)
+    circuit = QuantumCircuit(n_qubits, n_qubits)
+    for n in range(n_qubits-1):
+        circuit.h(n)
+        circuit.cx(n, n+1)
+    circuit.measure(list(range(n_qubits)), list(range(n_qubits)))
+
+    return circuit

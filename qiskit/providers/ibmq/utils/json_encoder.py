@@ -19,6 +19,8 @@
 import json
 from typing import Any
 
+from qiskit.circuit.parameterexpression import ParameterExpression
+
 
 class IQXJsonEconder(json.JSONEncoder):
     """A json encoder for qobj"""
@@ -30,4 +32,6 @@ class IQXJsonEconder(json.JSONEncoder):
         # Use Qobj complex json format:
         if isinstance(o, complex):
             return (o.real, o.imag)
+        if isinstance(o, ParameterExpression):
+            return float(o)
         return json.JSONEncoder.default(self, o)

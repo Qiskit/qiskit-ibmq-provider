@@ -16,7 +16,9 @@
 
 import re
 import keyword
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Any
+from threading import Condition
+from queue import Queue
 
 
 def to_python_identifier(name: str) -> str:
@@ -56,3 +58,64 @@ def validate_job_tags(job_tags: Optional[List[str]], exception: Type[Exception])
     if job_tags and (not isinstance(job_tags, list) or
                      not all(isinstance(tag, str) for tag in job_tags)):
         raise exception("job_tags needs to be a list or strings.")
+
+
+class RefreshQueue(Queue):
+    """A queue that replaces the oldest item with the new item being added when full.
+
+    A FIFO queue with a bounded size. Once the queue is full, when a new item
+    is being added, the oldest item on the queue is discarded to make space for
+    the new item.
+    """
+
+    def __init__(self, maxsize: int):
+        """RefreshQueue constructor.
+
+        Args:
+            maxsize: Maximum size of the queue.
+        """
+        self.condition = Condition()
+        super().__init__(maxsize=maxsize)
+
+    def put(self, item: Any) -> None:  # type: ignore[override]
+        """Put `item` into the queue.
+
+        If the queue is full, the oldest item is replaced by `item`.
+
+        Args:
+            item: Item to put into the queue.
+        """
+        # pylint: disable=arguments-differ
+
+        with self.condition:
+            if self.full():
+                super().get(block=False)
+            super().put(item, block=False)
+            self.condition.notify()
+
+    def get(self, block: bool = True, timeout: Optional[float] = None) -> Any:
+        """Remove and return an item from the queue.
+
+        Args:
+            block: If ``True``, block if necessary until an item is available.
+            timeout: Block at most `timeout` seconds before raising the
+                ``queue.Empty`` exception if no item was available. If
+                ``None``, block indefinitely until an item is available.
+
+        Returns:
+            An item from the queue.
+
+        Raises:
+            queue.Empty: If `block` is ``False`` and no item is available, or
+                if `block` is ``True`` and no item is available before `timeout`
+                is reached.
+        """
+        with self.condition:
+            if block and self.empty():
+                self.condition.wait(timeout)
+            return super().get(block=False)
+
+    def notify_all(self) -> None:
+        """Wake up all threads waiting for items on the queued."""
+        with self.condition:
+            self.condition.notifyAll()
