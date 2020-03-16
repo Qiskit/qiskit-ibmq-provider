@@ -489,7 +489,7 @@ class IBMQBackend(BaseBackend):
                                    'job does not belong to backend {}.'
                                    .format(job_id, self.name()))
 
-        return self._provider.backends.retrieve_job(job_id)
+        return job
 
     def __repr__(self) -> str:
         credentials_info = ''
