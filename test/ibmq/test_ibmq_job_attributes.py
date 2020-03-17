@@ -361,6 +361,15 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertRaises(IBMQBackendValueError, backend.run, qobj, job_tags={'foo'})
         self.assertRaises(IBMQBackendValueError, backend.jobs, job_tags=[1, 2, 3])
 
+    @requires_provider
+    def test_run_mode(self, provider):
+        """Test job run mode."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj, validate_qobj=True)
+        self.assertEqual(job.run_mode(), "fairshare", "Job {} run mode is {}".format(
+            job.job_id(), job.run_mode()))
+
 
 def _bell_circuit():
     """Return a bell state circuit."""

@@ -136,6 +136,8 @@ class IBMQJob(BaseModel, BaseJob):
         self._queue_info = None     # type: Optional[QueueInfo]
         self._status, self._queue_info = self._get_status_position(
             _api_status, kwargs.pop('info_queue', None))
+        if self._run_mode is None:
+            self._run_mode = "fairshare"  # Default to fair share.
 
         # Properties used for caching.
         self._cancelled = False
@@ -475,6 +477,14 @@ class IBMQJob(BaseModel, BaseJob):
         if not self._time_per_step or self._status not in JOB_FINAL_STATES:
             self.refresh()
         return self._time_per_step
+
+    def run_mode(self):
+        """Return the scheduling mode the job runs in.
+
+        Returns:
+            The scheduling mode the job runs in.
+        """
+        return self._run_mode
 
     def submit(self) -> None:
         """Submit this job to an IBM Quantum Experience backend.
