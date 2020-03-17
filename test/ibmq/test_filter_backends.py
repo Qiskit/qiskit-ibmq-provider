@@ -69,5 +69,5 @@ class TestBackendFilters(IBMQTestCase):
     def test_filter_least_busy(self, provider):
         """Test filtering by least busy function."""
         backends = provider.backends()
-        filtered_backends = least_busy(backends)
-        self.assertTrue(filtered_backends)
+        least_busy_backend = least_busy(backends)
+        self.assertTrue(least_busy_backend)
