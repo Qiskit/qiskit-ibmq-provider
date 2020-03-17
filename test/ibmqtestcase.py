@@ -14,11 +14,31 @@
 
 """Custom TestCase for IBMQProvider."""
 
+import os
+import logging
+from unittest import mock
+
 from qiskit.test import QiskitTestCase
+
+# Name of the ibmq provider modules logger.
+IBMQ_PROVIDER_LOGGER_NAME = 'qiskit.providers.ibmq'
 
 
 class IBMQTestCase(QiskitTestCase):
     """Custom TestCase for use with the IBMQProvider."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if os.getenv('LOG_LEVEL'):
+            logger_ibmq_provider = logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME)
+            if logger_ibmq_provider.level is logging.NOTSET:
+                try:
+                    logger_ibmq_provider.setLevel(cls.log.level)
+                except Exception as ex:
+                    logger_ibmq_provider.warning(
+                        'Error while trying to set the level for the "%s" logger to %s. %s.',
+                        IBMQ_PROVIDER_LOGGER_NAME, os.getenv('LOG_LEVEL'), str(ex))
 
     def tearDown(self):
         # Reset the default providers, as in practice they acts as a singleton
