@@ -280,21 +280,27 @@ class RetrySession(Session):
 
         Note:
             The string ``...`` is used to denote information that has been filtered out
-            from the request, within the url and request data.
+            from the request, within the url and request data. Currently, the backend name
+            is filtered out from endpoint URLs, using a regex to capture the name, and from
+            the data sent to the server when submitting a job.
 
-            The following endpoint URLs are not logged in order to reduce noise: ``/users``
-            and ``/version``. Likewise, the request data is only logged for the following
-            URLs, since they contain useful information: ``/Jobs`` (POST),
-            ``/Jobs/status`` (GET), and ``/devices/<device_name>/properties`` (GET).
+            The request data is only logged for the following URLs, since they contain useful
+            information: ``/Jobs`` (POST), ``/Jobs/status`` (GET),
+            and ``/devices/<device_name>/properties`` (GET).
 
-            Currently, the backend name is filtered out from endpoint URLs, using a regex
-            to capture the name, and from the data sent to the server when submitting a job.
+        Args:
+            url: URL for the new request.
+            bare: Whether the input `url` is modified.
+            method: Method for the new request (e.g. ``POST``)
+            request_data:Additional arguments for the request.
+
+        Raises:
+            Exception: If there was an error logging the request information.
         """
         # Replace the device name in the URL with `...` if it matches, otherwise leave it as is.
         filtered_url = re.sub(RE_DEVICES_ENDPOINT, '\\1...\\3', url)
 
-        if (not filtered_url.startswith(('/users', '/version'))
-                and filtered_url not in ('/devices/.../queue/status', '/devices/v/1')):
+        if self._is_worth_logging(filtered_url):
             try:
                 method = method.upper()
 
@@ -315,3 +321,26 @@ class RetrySession(Session):
             except Exception as ex:  # pylint: disable=broad-except
                 # Catch general exception so as not to disturb the program if filtering fails.
                 logger.info('Filtering failed when logging request information: %s', str(ex))
+
+    def _is_worth_logging(self, endpoint_url: str) -> bool:
+        """Returns whether the endpoint URL should be logged.
+
+        The checks in place help filter out logs that would add noise and no helpful information.
+
+        Note:
+            The following endpoint URLs are not logged: ``/devices/v/1`` and
+            ``/devices/<device_name>/queue/status``. Likewise, the endpoint URLs that start
+            with ``/users`` and ``/version`` are not logged.
+
+        Args:
+            endpoint_url: The endpoint URL to log.
+
+        Returns:
+            Whether the endpoint URL should be logged.
+        """
+        if endpoint_url.startswith(('/users', '/version')):
+            return False
+        if endpoint_url in ('/devices/.../queue/status', '/devices/v/1'):
+            return False
+
+        return True
