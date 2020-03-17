@@ -136,8 +136,6 @@ class IBMQJob(BaseModel, BaseJob):
         self._queue_info = None     # type: Optional[QueueInfo]
         self._status, self._queue_info = self._get_status_position(
             _api_status, kwargs.pop('info_queue', None))
-        if self._run_mode is None:
-            self._run_mode = "fairshare"  # Default to fair share.
 
         # Properties used for caching.
         self._cancelled = False
@@ -478,12 +476,25 @@ class IBMQJob(BaseModel, BaseJob):
             self.refresh()
         return self._time_per_step
 
-    def run_mode(self):
-        """Return the scheduling mode the job runs in.
+    def scheduling_mode(self) -> Optional[str]:
+        """Return the scheduling mode the job is in.
+
+        The scheduling mode indicates how the job is scheduled to run. For example,
+        `fairshare` indicates the job is scheduled using a fairshare algorithm.
+
+        This information is only available if the job status is RUNNING or DONE.
 
         Returns:
-            The scheduling mode the job runs in.
+            The scheduling mode the job is in or ``None`` if the information
+            is not available.
         """
+        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
+        if self._run_mode is None:
+            if self._status not in JOB_FINAL_STATES:
+                self.refresh()
+            if self._status in [JobStatus.RUNNING, JobStatus.DONE] and self._run_mode is None:
+                self._run_mode = "fairshare"  # type: Optional[str]
+
         return self._run_mode
 
     def submit(self) -> None:
