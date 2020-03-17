@@ -297,13 +297,13 @@ class RetrySession(Session):
                 and filtered_url not in ('/devices/.../queue/status', '/devices/v/1')):
             try:
                 method = method.upper()
-                log_message = 'Endpoint: %s. Method: %s. Request Data: %s.'
 
                 if filtered_url in ('/Jobs/status', '/devices/.../properties', '/Jobs'):
                     if filtered_url == '/Jobs' and 'json' in request_data:
                         # Replace backend name in job submission request.
                         request_data['json']['backend']['name'] = '...'
-                    logger.debug(log_message, filtered_url, method, request_data)
+                    logger.debug('Endpoint: %s. Method: %s. Request Data: %s.',
+                                 filtered_url, method, request_data)
                 else:
                     if bare:
                         if method == 'PUT':
@@ -311,7 +311,7 @@ class RetrySession(Session):
                         elif method == 'GET':
                             logger.debug('Downloading Qobj from object storage.')
                     else:
-                        logger.debug(log_message, filtered_url, method, '...')
+                        logger.debug('Endpoint: %s. Method: %s.', filtered_url, method)
             except Exception as ex:  # pylint: disable=broad-except
                 # Catch general exception so as not to disturb the program if filtering fails.
                 logger.info('Filtering failed when logging request information: %s', str(ex))
