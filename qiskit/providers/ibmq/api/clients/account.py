@@ -18,7 +18,7 @@ import asyncio
 import logging
 import time
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 # Disabled unused-import because datetime is used only for type hints.
 from datetime import datetime  # pylint: disable=unused-import
 
@@ -447,7 +447,8 @@ class AccountClient(BaseClient):
     def job_update(
             self,
             job_id: str,
-            job_attribute_info: Dict[str, Any]
+            attr_name: str,
+            attr_value: Union[str, List[str]]
     ) -> Dict[str, Any]:
         """Update the given job attribute with a new value.
 
@@ -456,12 +457,10 @@ class AccountClient(BaseClient):
 
         Args:
             job_id: The ID of the job to update.
-            job_attribute_info: A dictionary containing the name of the attribute to
-                update, as a key, and the new value the attribute should be updated to,
-                as the value.
-
+            attr_name: The name of the attribute to update.
+            attr_value: The new value for the attribute to update.
         Returns:
             A dictionary containing the name of the updated attribute and its corresponding
             value.
         """
-        return self.client_api.job(job_id).put(job_attribute_info)
+        return self.client_api.job(job_id).put({attr_name: attr_value})
