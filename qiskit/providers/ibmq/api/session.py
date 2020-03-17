@@ -226,7 +226,7 @@ class RetrySession(Session):
         try:
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
-            self._log_request_info(url, bare, method, kwargs)
+            self._log_request_info(url, method, kwargs)
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
@@ -272,7 +272,6 @@ class RetrySession(Session):
     def _log_request_info(
             self,
             url: str,
-            bare: bool,
             method: str,
             request_data: Dict[str, Any]
     ) -> None:
@@ -290,7 +289,6 @@ class RetrySession(Session):
 
         Args:
             url: URL for the new request.
-            bare: Whether the input `url` is modified.
             method: Method for the new request (e.g. ``POST``)
             request_data:Additional arguments for the request.
 
@@ -311,13 +309,7 @@ class RetrySession(Session):
                     logger.debug('Endpoint: %s. Method: %s. Request Data: %s.',
                                  filtered_url, method, request_data)
                 else:
-                    if bare:
-                        if method == 'PUT':
-                            logger.debug('Uploading Qobj to object storage.')
-                        elif method == 'GET':
-                            logger.debug('Downloading Qobj from object storage.')
-                    else:
-                        logger.debug('Endpoint: %s. Method: %s.', filtered_url, method)
+                    logger.debug('Endpoint: %s. Method: %s.', filtered_url, method)
             except Exception as ex:  # pylint: disable=broad-except
                 # Catch general exception so as not to disturb the program if filtering fails.
                 logger.info('Filtering failed when logging request information: %s', str(ex))
@@ -325,22 +317,25 @@ class RetrySession(Session):
     def _is_worth_logging(self, endpoint_url: str) -> bool:
         """Returns whether the endpoint URL should be logged.
 
-        The checks in place help filter out logs that would add noise and no helpful information.
+        The checks in place help filter out endpoint URL logs that would add noise
+        and no helpful information.
 
         Note:
             The following endpoint URLs are not logged: ``/devices/v/1`` and
             ``/devices/<device_name>/queue/status``. Likewise, the endpoint URLs that start
-            with ``/users`` and ``/version`` are not logged.
+            with ``/users`` or ``/version``, or contain 'objectstorage', are not logged.
 
         Args:
-            endpoint_url: The endpoint URL to log.
+            endpoint_url: The endpoint URL that will be logged.
 
         Returns:
             Whether the endpoint URL should be logged.
         """
+        if endpoint_url in ('/devices/.../queue/status', '/devices/v/1'):
+            return False
         if endpoint_url.startswith(('/users', '/version')):
             return False
-        if endpoint_url in ('/devices/.../queue/status', '/devices/v/1'):
+        if 'objectstorage' in endpoint_url:
             return False
 
         return True

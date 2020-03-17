@@ -19,8 +19,7 @@ import logging
 
 from qiskit.test import QiskitTestCase
 
-# Name of the ibmq provider modules logger.
-IBMQ_PROVIDER_LOGGER_NAME = 'qiskit.providers.ibmq'
+from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
 
 
 class IBMQTestCase(QiskitTestCase):

@@ -102,6 +102,14 @@ setup_logger(logger)
 IBMQ = IBMQFactory()
 """A global instance of an account manager that is used as the entry point for convenience."""
 
+# Constants used by the IBM Quantum logger.
+IBMQ_PROVIDER_LOGGER_NAME = 'qiskit.providers.ibmq'
+"""The name of the IBM Quantum logger."""
+QISKIT_IBMQ_PROVIDER_LOG_LEVEL = 'QISKIT_IBMQ_PROVIDER_LOG_LEVEL'
+"""The environment variable name that is used to set the level for the IBM Quantum logger."""
+QISKIT_IBMQ_PROVIDER_LOG_FILE = 'QISKIT_IBMQ_PROVIDER_LOG_FILE'
+"""The environment variable name that is used to set the file for the IBM Quantum logger."""
+
 
 def least_busy(backends: List[BaseBackend]) -> BaseBackend:
     """Return the least busy backend from a list.
@@ -121,13 +129,8 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
             does not have the ``pending_jobs`` attribute in its status.
     """
     try:
-        backends_to_filter = {}
-        for backend in backends:
-            backend_status = backend.status()
-            if backend_status.operational:
-                backends_to_filter[backend] = backend_status
-
-        return min(backends_to_filter.keys(), key=lambda b: backends_to_filter[b].pending_jobs)
+        return min([b for b in backends if b.status().operational],
+                   key=lambda b: b.status().pending_jobs)
     except (ValueError, TypeError):
         raise IBMQError('Unable to find the least_busy '
                         'backend from an empty list.') from None
