@@ -90,7 +90,8 @@ def cancel_job(job: IBMQJob, verify: bool = False) -> bool:
     for _ in range(2):
         # Try twice in case job is not in a cancellable state
         try:
-            if job.cancel():
+            cancelled = job.cancel()
+            if cancelled:
                 if verify:
                     status = job.status()
                     assert status is JobStatus.CANCELLED, \
