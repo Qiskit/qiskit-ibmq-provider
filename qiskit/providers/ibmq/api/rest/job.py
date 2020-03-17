@@ -172,8 +172,8 @@ class Job(RestAdapterBase):
             Text response, which is empty if the request was successful.
         """
         data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEconder)
-        response = self.session.put(url, data=data, bare=True)
         logger.debug('Uploading Qobj to object storage.')
+        response = self.session.put(url, data=data, bare=True)
         return response.text
 
     def get_object_storage(self, url: str) -> Dict[str, Any]:
@@ -185,6 +185,6 @@ class Job(RestAdapterBase):
         Returns:
             JSON response.
         """
-        response = self.session.get(url, bare=True).json()
         logger.debug('Downloading Qobj from object storage.')
+        response = self.session.get(url, bare=True).json()
         return response
