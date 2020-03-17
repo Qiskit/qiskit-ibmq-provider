@@ -275,32 +275,41 @@ class RetrySession(Session):
         Note:
             The following endpoint URLs are not logged: `/users` and `/version`.
 
+            The string ``...`` is used to denote information that has been filtered out
+            from the request, within the url and request data.
+
             Currently, the backend name and hub, group, project information are
             filtered out. The backend name is filtered out from the endpoint URL,
-            using a regex to capture the name, and also from the data sent to the server
-            when uploading a Qobj to object storage. Another place it is filtered out from
+            using a regex to capture the name. Another place it is filtered out from
             is the data sent to the server when submitting a job.
 
-            The request data for POST requests is ignored for all endpoints, except `/Jobs`,
-            because it is not useful information.
+            The request data for GET requests, other than ``/Jobs/status`` and
+            ``/devices/<device_name>/properties``, is not worth logging. Likewise, the request
+            data for POST requests is filtered for all endpoints, except ``/Jobs``, since it
+            does not provide useful information.
         """
         if not url.startswith(('/users', '/version')):
             try:
                 # Replace the device name in the URL with `...` if it matches.
                 filtered_url = re.sub(RE_DEVICES_ENDPOINT, '\\1...\\3', url)
 
-                # Filter out the Qobj data when uploading it via object storage.
-                if method == 'PUT' and 'data' in request_data:
-                    request_data['data'] = '...'
+                if method.upper() == 'GET':
+                    if filtered_url not in ('/Jobs/status', '/devices/.../properties'):
+                        # Request data for GETs, other than retrieving jobs and device
+                        # properties, are not worth logging.
+                        request_data = '...'  # type: ignore[assignment]
 
-                if method == 'POST':
-                    # Log request data when submitting a job.
+                if method.upper() == 'POST':
                     if url == '/Jobs' and 'json' in request_data:
                         # Replace backend name with `...` in data sent when submitting job.
                         request_data['json']['backend']['name'] = '...'
                     else:
-                        # Request data for POSTs, other than job submission, are not worth logging.
-                        request_data = {}
+                        # Request data for POSTs, other than job submission, is not worth logging.
+                        request_data = '...'  # type: ignore[assignment]
+
+                # Filter out the Qobj data when uploading it via object storage.
+                if method.upper() == 'PUT' and 'data' in request_data:
+                    request_data['data'] = '...'
 
                 logger.debug('Endpoint: %s. Method: %s. Request Data: %s.',
                              filtered_url, method, request_data)
