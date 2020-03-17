@@ -293,7 +293,7 @@ class WebsocketClient(BaseClient):
 
                         response = WebsocketResponseMethod.from_bytes(response_raw)
                         last_status = response.data
-                        if logger.level is logging.DEBUG:
+                        if logger.getEffectiveLevel() is logging.DEBUG:
                             logger.debug('Received message from websocket: %s',
                                          response.get_data_filtered())
 
