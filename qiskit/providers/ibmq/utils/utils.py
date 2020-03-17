@@ -82,8 +82,7 @@ def setup_logger(logger: Logger) -> None:
     log_file = os.getenv('QISKIT_IBMQ_PROVIDER_LOG_FILE', '')
 
     # Setup the formatter for the log messages.
-    log_fmt = ('%(name)s.%(module)s.%(funcName)s:%(levelname)s:%(asctime)s:'
-               ' %(message)s')
+    log_fmt = '%(module)s.%(funcName)s:%(levelname)s:%(asctime)s: %(message)s'
     formatter = logging.Formatter(log_fmt)
 
     # Set propagate to `False` since handlers are to be attached.

@@ -226,7 +226,7 @@ class RetrySession(Session):
         try:
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
-            self._log_request_info(url, method, kwargs)
+            self._log_request_info(url, bare, method, kwargs)
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
@@ -269,50 +269,49 @@ class RetrySession(Session):
             modified_args.append(exc_message)
         exc.args = tuple(modified_args)
 
-    def _log_request_info(self, url: str, method: str, request_data: Dict[str, Any]) -> None:
+    def _log_request_info(
+            self,
+            url: str,
+            bare: bool,
+            method: str,
+            request_data: Dict[str, Any]
+    ) -> None:
         """Log the request data, filtering out specific information.
 
         Note:
-            The following endpoint URLs are not logged: `/users` and `/version`.
-
             The string ``...`` is used to denote information that has been filtered out
             from the request, within the url and request data.
 
-            Currently, the backend name and hub, group, project information are
-            filtered out. The backend name is filtered out from the endpoint URL,
-            using a regex to capture the name. Another place it is filtered out from
-            is the data sent to the server when submitting a job.
+            The following endpoint URLs are not logged in order to reduce noise: ``/users``
+            and ``/version``. Likewise, the request data is only logged for the following
+            URLs, since they contain useful information: ``/Jobs`` (POST),
+            ``/Jobs/status`` (GET), and ``/devices/<device_name>/properties`` (GET).
 
-            The request data for GET requests, other than ``/Jobs/status`` and
-            ``/devices/<device_name>/properties``, is not worth logging. Likewise, the request
-            data for POST requests is filtered for all endpoints, except ``/Jobs``, since it
-            does not provide useful information.
+            Currently, the backend name is filtered out from endpoint URLs, using a regex
+            to capture the name, and from the data sent to the server when submitting a job.
         """
-        if not url.startswith(('/users', '/version')):
+        # Replace the device name in the URL with `...` if it matches, otherwise leave it as is.
+        filtered_url = re.sub(RE_DEVICES_ENDPOINT, '\\1...\\3', url)
+
+        if (not filtered_url.startswith(('/users', '/version'))
+                and filtered_url not in ('/devices/.../queue/status', '/devices/v/1')):
             try:
-                # Replace the device name in the URL with `...` if it matches.
-                filtered_url = re.sub(RE_DEVICES_ENDPOINT, '\\1...\\3', url)
+                method = method.upper()
+                log_message = 'Endpoint: %s. Method: %s. Request Data: %s.'
 
-                if method.upper() == 'GET':
-                    if filtered_url not in ('/Jobs/status', '/devices/.../properties'):
-                        # Request data for GETs, other than retrieving jobs and device
-                        # properties, are not worth logging.
-                        request_data = '...'  # type: ignore[assignment]
-
-                if method.upper() == 'POST':
-                    if url == '/Jobs' and 'json' in request_data:
-                        # Replace backend name with `...` in data sent when submitting job.
+                if filtered_url in ('/Jobs/status', '/devices/.../properties', '/Jobs'):
+                    if filtered_url == '/Jobs' and 'json' in request_data:
+                        # Replace backend name in job submission request.
                         request_data['json']['backend']['name'] = '...'
+                    logger.debug(log_message, filtered_url, method, request_data)
+                else:
+                    if bare:
+                        if method == 'PUT':
+                            logger.debug('Uploading Qobj to object storage.')
+                        elif method == 'GET':
+                            logger.debug('Downloading Qobj from object storage.')
                     else:
-                        # Request data for POSTs, other than job submission, is not worth logging.
-                        request_data = '...'  # type: ignore[assignment]
-
-                # Filter out the Qobj data when uploading it via object storage.
-                if method.upper() == 'PUT' and 'data' in request_data:
-                    request_data['data'] = '...'
-
-                logger.debug('Endpoint: %s. Method: %s. Request Data: %s.',
-                             filtered_url, method, request_data)
+                        logger.debug(log_message, filtered_url, method, '...')
             except Exception as ex:  # pylint: disable=broad-except
                 # Catch general exception so as not to disturb the program if filtering fails.
                 logger.info('Filtering failed when logging request information: %s', str(ex))
