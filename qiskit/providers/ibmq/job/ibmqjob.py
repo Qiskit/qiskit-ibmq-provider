@@ -296,8 +296,6 @@ class IBMQJob(BaseModel, BaseJob):
 
         Raises:
             IBMQJobInvalidStateError: If the input job name is not a string.
-
-        Raises:
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
         """
@@ -353,6 +351,7 @@ class IBMQJob(BaseModel, BaseJob):
             ``True`` if modifying the job tags was successful, else ``False``.
 
         Raises:
+            IBMQJobInvalidStateError: If the input job tags are invalid.
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
         """
@@ -418,6 +417,7 @@ class IBMQJob(BaseModel, BaseJob):
             ``True`` if removing the tags was successful, else ``False``.
 
         Raises:
+            IBMQJobInvalidStateError: If the input job tags are invalid.
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
         """
