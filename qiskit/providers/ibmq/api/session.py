@@ -15,6 +15,8 @@
 """Session customized for IBM Quantum Experience access."""
 
 import os
+import re
+import logging
 from typing import Dict, Optional, Any, Tuple, Union
 from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
@@ -31,6 +33,12 @@ STATUS_FORCELIST = (
 )
 CLIENT_APPLICATION = 'ibmqprovider/' + ibmq_provider_version
 CUSTOM_HEADER_ENV_VAR = 'QE_CUSTOM_CLIENT_APP_HEADER'
+logger = logging.getLogger(__name__)
+# Regex used to match the `/devices` endpoint, capturing the device name as group(2).
+# The number of letters for group(2) must be greater than 1, so it does not match
+# the `/devices/v/1` endpoint.
+# Capture groups: (/devices/)(<device_name>)(</optional rest of the url>)
+RE_DEVICES_ENDPOINT = re.compile(r'^(/devices/)([^/}]{2,})(.*)$', re.IGNORECASE)
 
 
 class PostForcelistRetry(Retry):
@@ -218,6 +226,7 @@ class RetrySession(Session):
         try:
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
+            self._log_request_info(url, method, kwargs)
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
@@ -259,3 +268,74 @@ class RetrySession(Session):
                 exc_message = exc_message.replace(self.access_token, '...')
             modified_args.append(exc_message)
         exc.args = tuple(modified_args)
+
+    def _log_request_info(
+            self,
+            url: str,
+            method: str,
+            request_data: Dict[str, Any]
+    ) -> None:
+        """Log the request data, filtering out specific information.
+
+        Note:
+            The string ``...`` is used to denote information that has been filtered out
+            from the request, within the url and request data. Currently, the backend name
+            is filtered out from endpoint URLs, using a regex to capture the name, and from
+            the data sent to the server when submitting a job.
+
+            The request data is only logged for the following URLs, since they contain useful
+            information: ``/Jobs`` (POST), ``/Jobs/status`` (GET),
+            and ``/devices/<device_name>/properties`` (GET).
+
+        Args:
+            url: URL for the new request.
+            method: Method for the new request (e.g. ``POST``)
+            request_data:Additional arguments for the request.
+
+        Raises:
+            Exception: If there was an error logging the request information.
+        """
+        # Replace the device name in the URL with `...` if it matches, otherwise leave it as is.
+        filtered_url = re.sub(RE_DEVICES_ENDPOINT, '\\1...\\3', url)
+
+        if self._is_worth_logging(filtered_url):
+            try:
+                method = method.upper()
+
+                if filtered_url in ('/Jobs/status', '/devices/.../properties', '/Jobs'):
+                    if filtered_url == '/Jobs' and 'json' in request_data:
+                        # Replace backend name in job submission request.
+                        request_data['json']['backend']['name'] = '...'
+                    logger.debug('Endpoint: %s. Method: %s. Request Data: %s.',
+                                 filtered_url, method, request_data)
+                else:
+                    logger.debug('Endpoint: %s. Method: %s.', filtered_url, method)
+            except Exception as ex:  # pylint: disable=broad-except
+                # Catch general exception so as not to disturb the program if filtering fails.
+                logger.info('Filtering failed when logging request information: %s', str(ex))
+
+    def _is_worth_logging(self, endpoint_url: str) -> bool:
+        """Returns whether the endpoint URL should be logged.
+
+        The checks in place help filter out endpoint URL logs that would add noise
+        and no helpful information.
+
+        Note:
+            The following endpoint URLs are not logged: ``/devices/v/1`` and
+            ``/devices/<device_name>/queue/status``. Likewise, the endpoint URLs that start
+            with ``/users`` or ``/version``, or contain 'objectstorage', are not logged.
+
+        Args:
+            endpoint_url: The endpoint URL that will be logged.
+
+        Returns:
+            Whether the endpoint URL should be logged.
+        """
+        if endpoint_url in ('/devices/.../queue/status', '/devices/v/1'):
+            return False
+        if endpoint_url.startswith(('/users', '/version')):
+            return False
+        if 'objectstorage' in endpoint_url:
+            return False
+
+        return True

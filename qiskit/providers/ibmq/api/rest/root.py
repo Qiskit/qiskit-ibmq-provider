@@ -110,7 +110,6 @@ class Api(RestAdapterBase):
     def create_remote_job(
             self,
             backend_name: str,
-            shots: int = 1,
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None
@@ -119,7 +118,6 @@ class Api(RestAdapterBase):
 
         Args:
             backend_name: The name of the backend.
-            shots: Number of shots.
             job_name: Custom name to be assigned to the job.
             job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
@@ -129,10 +127,8 @@ class Api(RestAdapterBase):
         """
         url = self.get_url('jobs')
 
-        # TODO: "shots" is currently required by the API.
         payload = {
             'backend': {'name': backend_name},
-            'shots': shots,
             'allowObjectStorage': True
         }
 

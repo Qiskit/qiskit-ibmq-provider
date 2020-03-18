@@ -22,14 +22,14 @@ import uuid
 from qiskit.test import slow_test
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
+from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, requires_device
-from ..utils import most_busy_backend
+from ..utils import most_busy_backend, cancel_job
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -67,10 +67,7 @@ class TestIBMQJobAttributes(JobTestCase):
             self.simple_job_callback(job_id, job_status, cjob, **kwargs)
             if job_status is JobStatus.RUNNING:
                 job_properties[0] = cjob.properties()
-                try:
-                    cjob.cancel()  # Cancel to go to final state.
-                except JobError:
-                    pass
+                cancel_job(cjob)
 
         job_properties = [None]
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -314,10 +311,7 @@ class TestIBMQJobAttributes(JobTestCase):
             self.log.warning("Unable to retrieve queue information")
 
         # Cancel job so it doesn't consume more resources.
-        try:
-            job.cancel()
-        except JobError:
-            pass
+        cancel_job(job)
 
     @requires_provider
     def test_invalid_job_share_level(self, provider):

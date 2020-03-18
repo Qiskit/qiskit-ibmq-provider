@@ -14,6 +14,7 @@
 
 """Job REST adapter."""
 
+import logging
 import pprint
 import json
 from json.decoder import JSONDecodeError
@@ -27,6 +28,8 @@ from .base import RestAdapterBase
 from .validation import StatusResponseSchema
 from ..session import RetrySession
 from ..exceptions import ApiIBMQProtocolError
+
+logger = logging.getLogger(__name__)
 
 
 class Job(RestAdapterBase):
@@ -162,8 +165,8 @@ class Job(RestAdapterBase):
             api_response = raw_response.json()
         except JSONDecodeError as err:
             raise ApiIBMQProtocolError(
-                'Unrecognized return value received from the server: {}. '
-                'This could be caused by too many requests.'.format(raw_response)) from err
+                'Unrecognized return value received from the server: {}. This could be caused'
+                ' by too many requests.'.format(raw_response.content)) from err
 
         try:
             # Validate the response.
@@ -193,6 +196,7 @@ class Job(RestAdapterBase):
             Text response, which is empty if the request was successful.
         """
         data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEconder)
+        logger.debug('Uploading Qobj to object storage.')
         response = self.session.put(url, data=data, bare=True)
         return response.text
 
@@ -205,4 +209,6 @@ class Job(RestAdapterBase):
         Returns:
             JSON response.
         """
-        return self.session.get(url, bare=True).json()
+        logger.debug('Downloading Qobj from object storage.')
+        response = self.session.get(url, bare=True).json()
+        return response
