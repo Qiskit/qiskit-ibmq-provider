@@ -69,7 +69,7 @@ class Job(RestAdapterBase):
 
         return response
 
-    def put(
+    def update_attribute(
             self,
             job_attribute_info: Dict[str, Union[str, List[str]]]
     ) -> Dict[str, Any]:

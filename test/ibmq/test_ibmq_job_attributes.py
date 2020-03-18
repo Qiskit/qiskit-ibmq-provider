@@ -110,8 +110,8 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
     @requires_provider
-    def test_job_name_update(self, provider):
-        """Test updating the name of a job."""
+    def test_job_name_change(self, provider):
+        """Test changing the name associated with a job."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 
@@ -120,12 +120,12 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj, job_name=initial_job_name, validate_qobj=True)
         job_id = job.job_id()
 
-        # TODO No need to wait for job to run once api is fixed
         while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
             time.sleep(0.5)
         rjob = provider.backends.retrieve_job(job_id)
         self.assertEqual(rjob.name(), initial_job_name)
 
+        # TODO: Is there a better structure than this?
         new_names_to_test = [
             '',
             '{}_new'.format(str(time.time()).replace('.', ''))

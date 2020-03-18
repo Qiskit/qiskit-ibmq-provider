@@ -444,7 +444,7 @@ class AccountClient(BaseClient):
         """
         return self.client_api.job(job_id).cancel()
 
-    def job_update(
+    def job_update_attribute(
             self,
             job_id: str,
             attr_name: str,
@@ -463,4 +463,4 @@ class AccountClient(BaseClient):
             A dictionary containing the name of the updated attribute and its corresponding
             value.
         """
-        return self.client_api.job(job_id).put({attr_name: attr_value})
+        return self.client_api.job(job_id).update_attribute({attr_name: attr_value})

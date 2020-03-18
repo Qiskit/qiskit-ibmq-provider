@@ -305,7 +305,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
     @requires_provider
     def test_job_tags_update_not_overwrite(self, provider):
-        """Test updating the tags of jobs in a job set, not overwriting existing tags."""
+        """Test modifying tags from a job, of a job set, not overwriting existing tags."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         initial_job_tags = [uuid.uuid4().hex]
@@ -320,6 +320,7 @@ class TestIBMQJobManager(IBMQTestCase):
                   for status in job_set.statuses()):
             time.sleep(0.5)
 
+        # TODO: Is there a better structure than this?
         # List of new tags to use, for overwriting the existing tags.
         timestamp = str(time.time()).replace('.', '')
         new_tags_to_overwrite = [
@@ -327,36 +328,34 @@ class TestIBMQJobManager(IBMQTestCase):
             ['{}_new_tag_{}'.format(timestamp, i) for i in range(2)]
         ]
 
+        # Only test updating one job.
+        job = job_set.jobs()[0]
+        job_id = job.job_id()
+
         # Overwrite the tags for a job in the job set.
         for new_tags in new_tags_to_overwrite:
-            job = job_set.jobs()[0]  # Only test updating one job.
-            job_id = job.job_id()
-
-            # The list of final tags the job should be associated with after updating.
-            final_tags = job.tags() + new_tags
-            # The list of final tags with the job set long id included.
-            final_tags_with_job_set_long_id = final_tags + [job_set._id_long]
+            tags_after_appending = job.tags() + new_tags
 
             with self.subTest(new_tags=new_tags):
-                update_successful = job.update_tags(new_tags, overwrite=False)
+                update_successful = job.modify_tags(new_tags, overwrite=False)
                 self.assertTrue(update_successful,
                                 'Updating the tags for job {} was unsuccessful.'
                                 'The tags are {}, but they should be {}.'
-                                .format(job_id, job.tags(), final_tags_with_job_set_long_id))
+                                .format(job_id, job.tags(), tags_after_appending))
 
                 # Ensure the job's tags match the updated tags and contain the job set long id.
-                self.assertEqual(set(job.tags()), set(final_tags_with_job_set_long_id),
+                self.assertEqual(set(job.tags()), set(tags_after_appending),
                                  'The tags for job {} are {}, but they should be {}'
-                                 .format(job_id, job.tags(), final_tags_with_job_set_long_id))
+                                 .format(job_id, job.tags(), tags_after_appending))
 
                 # Ensure the job is retrieved with the new tags it is associated with.
-                retrieved_jobs = provider.backends.jobs(job_tags=final_tags)
+                retrieved_jobs = provider.backends.jobs(job_tags=tags_after_appending)
                 retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
                 self.assertIn(job_id, retrieved_job_ids)
 
     @requires_provider
     def test_job_tags_update_overwrite(self, provider):
-        """Test updating the tags of a job in a job set, overwriting its existing tags."""
+        """Test modifying tags from a job, of a job set, overwriting existing tags."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         initial_job_tags = [uuid.uuid4().hex]
@@ -371,6 +370,7 @@ class TestIBMQJobManager(IBMQTestCase):
                   for status in job_set.statuses()):
             time.sleep(0.5)
 
+        # TODO: Is there a better structure than this?
         # List of new tags to use, for overwriting the existing tags.
         timestamp = str(time.time()).replace('.', '')
         new_tags_to_overwrite = [
@@ -378,26 +378,25 @@ class TestIBMQJobManager(IBMQTestCase):
             ['{}_new_tag_{}'.format(timestamp, i) for i in range(2)]
         ]
 
+        # Only test updating one job.
+        job = job_set.jobs()[0]
+        job_id = job.job_id()
+
         # Overwrite the tags for a job in the job set.
         for new_tags in new_tags_to_overwrite:
-            # Only test updating one job.
-            job = job_set.jobs()[0]
-            job_id = job.job_id()
-            # The tags used to overwrite, including the job set long id.
-            new_tags_with_job_set_long_id = new_tags + [job_set._id_long]
+            new_tags_with_id_long = new_tags + [job_set._id_long]
 
             with self.subTest(new_tags=new_tags):
-
-                update_successful = job.update_tags(new_tags_with_job_set_long_id, overwrite=True)
+                update_successful = job.modify_tags(new_tags, overwrite=True)
                 self.assertTrue(update_successful,
                                 'Updating the tags for job {} was unsuccessful.'
                                 'The tags are {}, but they should be {}.'
-                                .format(job_id, job.tags(), new_tags_with_job_set_long_id))
+                                .format(job_id, job.tags(), new_tags_with_id_long))
 
                 # Ensure the job's tags match the new tags and contain the job set long id.
-                self.assertEqual(set(job.tags()), set(new_tags_with_job_set_long_id),
+                self.assertEqual(set(job.tags()), set(new_tags_with_id_long),
                                  'The tags for job {} are {}, but they should be {}'
-                                 .format(job_id, job.tags(), new_tags_with_job_set_long_id))
+                                 .format(job_id, job.tags(), new_tags_with_id_long))
 
                 # Ensure the job is retrieved with the new tags it is associated with.
                 retrieved_jobs = provider.backends.jobs(job_tags=new_tags)
@@ -406,7 +405,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
     @requires_provider
     def test_job_tags_remove(self, provider):
-        """Test removing tags from the jobs in a job set"""
+        """Test removing tags from a job that is part of a job set."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         initial_job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
@@ -425,29 +424,31 @@ class TestIBMQJobManager(IBMQTestCase):
         job = job_set.jobs()[0]
         job_id = job.job_id()
 
-        # The list of tags to remove from the job.
-        tags_to_remove = initial_job_tags[:2]
-        # The list of final tags the job should be associated with after removal.
-        final_tags = list(set(initial_job_tags) - set(tags_to_remove))
-        # The list of final tags with the job set long id included.
-        final_tags_with_long_id = final_tags + [job_set._id_long]
+        tags_to_remove_list = [
+            [],
+            initial_job_tags[:2],  # Will be used to remove the first two tags of initial_job_tags.
+            ['phantom_tag', 'ghost_tag', initial_job_tags[-1]]  # Get the last initial tag.
+        ]
 
-        # Remove the tags from the job.
-        update_successful = job.remove_tags(tags_to_remove)
-        self.assertTrue(update_successful,
-                        'Updating the tags for job {} was unsuccessful.'
-                        'The tags are {}, but they should be {}.'
-                        .format(job_id, job.tags(), final_tags_with_long_id))
+        for tags_to_remove in tags_to_remove_list:
+            with self.subTest(tags_to_remove=tags_to_remove):
+                tags_after_removal = list(set(job.tags()) - set(tags_to_remove))
 
-        # Ensure the specified tags were removed but the job set id was not.
-        self.assertEqual(set(job.tags()), set(final_tags_with_long_id),
-                         'The tags for job {} are {}, but they should be {}'
-                         .format(job_id, job.tags(), final_tags_with_long_id))
+                update_successful = job.remove_tags(tags_to_remove)
+                self.assertTrue(update_successful,
+                                'Updating the tags for job {} was unsuccessful.'
+                                'The tags are {}, but they should be {}.'
+                                .format(job_id, job.tags(), tags_after_removal))
 
-        # Ensure the job is retrieved with its final tags.
-        retrieved_jobs = provider.backends.jobs(job_tags=final_tags)
-        retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
-        self.assertIn(job_id, retrieved_job_ids)
+                # Ensure the specified tags were removed but the job set id was not.
+                self.assertEqual(set(job.tags()), set(tags_after_removal),
+                                 'The tags for job {} are {}, but they should be {}'
+                                 .format(job_id, job.tags(), tags_after_removal))
+
+                # Ensure the job is retrieved with its final tags.
+                retrieved_jobs = provider.backends.jobs(job_tags=tags_after_removal)
+                retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
+                self.assertIn(job_id, retrieved_job_ids)
 
 
 class TestResultManager(IBMQTestCase):
