@@ -125,16 +125,14 @@ class TestIBMQJobAttributes(JobTestCase):
         rjob = provider.backends.retrieve_job(job_id)
         self.assertEqual(rjob.name(), initial_job_name)
 
-        # TODO: Is there a better structure than this?
         new_names_to_test = [
-            '',
-            '{}_new'.format(str(time.time()).replace('.', ''))
+            '',  # empty string as name.
+            '{}_new'.format(str(time.time()).replace('.', ''))  # non-empty name.
         ]
-
         for new_name in new_names_to_test:
             with self.subTest(new_name=new_name):
                 # Update the job name.
-                update_successful = job.update_name(new_name)
+                update_successful = job.change_name(new_name)
                 self.assertTrue(update_successful,
                                 'Updating the name for job {} from "{}" to "{}" '
                                 'was unsuccessful.'.format(job_id, job.name(), new_name))

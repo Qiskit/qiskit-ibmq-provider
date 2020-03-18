@@ -320,20 +320,16 @@ class TestIBMQJobManager(IBMQTestCase):
                   for status in job_set.statuses()):
             time.sleep(0.5)
 
-        # TODO: Is there a better structure than this?
-        # List of new tags to use, for overwriting the existing tags.
-        timestamp = str(time.time()).replace('.', '')
-        new_tags_to_overwrite = [
-            [],
-            ['{}_new_tag_{}'.format(timestamp, i) for i in range(2)]
-        ]
-
-        # Only test updating one job.
+        # Only test adding tags to one job, from the job set.
         job = job_set.jobs()[0]
         job_id = job.job_id()
 
-        # Overwrite the tags for a job in the job set.
-        for new_tags in new_tags_to_overwrite:
+        timestamp = str(time.time()).replace('.', '')
+        new_tags_to_add = [
+            [],  # empty tags.
+            ['{}_new_tag_{}'.format(timestamp, i) for i in range(2)]  # non-empty unique tags.
+        ]
+        for new_tags in new_tags_to_add:
             tags_after_appending = job.tags() + new_tags
 
             with self.subTest(new_tags=new_tags):
@@ -370,18 +366,15 @@ class TestIBMQJobManager(IBMQTestCase):
                   for status in job_set.statuses()):
             time.sleep(0.5)
 
-        # TODO: Is there a better structure than this?
-        # List of new tags to use, for overwriting the existing tags.
-        timestamp = str(time.time()).replace('.', '')
-        new_tags_to_overwrite = [
-            [],
-            ['{}_new_tag_{}'.format(timestamp, i) for i in range(2)]
-        ]
-
-        # Only test updating one job.
+        # Only test overwriting the tags of one job, from the job set.
         job = job_set.jobs()[0]
         job_id = job.job_id()
 
+        timestamp = str(time.time()).replace('.', '')
+        new_tags_to_overwrite = [
+            [],  # empty tags.
+            ['{}_new_tag_{}'.format(timestamp, i) for i in range(2)]  # non-empty unique tags.
+        ]
         # Overwrite the tags for a job in the job set.
         for new_tags in new_tags_to_overwrite:
             new_tags_with_id_long = new_tags + [job_set._id_long]
@@ -420,7 +413,7 @@ class TestIBMQJobManager(IBMQTestCase):
                   for status in job_set.statuses()):
             time.sleep(0.5)
 
-        # Only test removing the tags of one job from the job set.
+        # Only test removing the tags of one job, from the job set.
         job = job_set.jobs()[0]
         job_id = job.job_id()
 
@@ -429,7 +422,6 @@ class TestIBMQJobManager(IBMQTestCase):
             initial_job_tags[:2],  # Will be used to remove the first two tags of initial_job_tags.
             ['phantom_tag', 'ghost_tag', initial_job_tags[-1]]  # Get the last initial tag.
         ]
-
         for tags_to_remove in tags_to_remove_list:
             with self.subTest(tags_to_remove=tags_to_remove):
                 tags_after_removal = list(set(job.tags()) - set(tags_to_remove))

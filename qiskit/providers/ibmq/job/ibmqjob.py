@@ -46,7 +46,6 @@ from .utils import (build_error_report, api_status_to_job_status,
 
 logger = logging.getLogger(__name__)
 
-# TODO Circular import if included in job.__init__.py
 # Regex used to match tags associated with a job set.
 RE_JOB_SET_ID_LONG = re.compile(r'^(ibmq_jobset_)([0-9a-f]{32})(-{1})(\d+)(_{1})$')
 
@@ -295,6 +294,10 @@ class IBMQJob(BaseModel, BaseJob):
 
         Raises:
             IBMQJobInvalidStateError: If the input job name is not a string.
+
+        Raises:
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
         """
         if not isinstance(name, str):
             raise IBMQJobInvalidStateError(
@@ -341,11 +344,15 @@ class IBMQJob(BaseModel, BaseJob):
         Args:
             tags: The new tags to add or `overwrite` for this job.
             overwrite: If ``False`` the specified `tags` are added to the
-                job's already existing tags. If ``True``, the `tags`` overwrite
+                job's already existing tags. If ``True``, the `tags` overwrite
                 and replace the tags that are currently associated with this job.
 
         Returns:
             ``True`` if modifying the job tags was successful, else ``False``.
+
+        Raises:
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
         """
         validate_job_tags(tags, IBMQJobInvalidStateError)
 
@@ -383,10 +390,10 @@ class IBMQJob(BaseModel, BaseJob):
             If an attempt is made to remove one of these tags, the removal for that
             tag will be ignored.
 
-        This method plays it safe when removing tags that not currently associated this
+        This method plays it safe when removing tags that are not associated with this
         job by ignoring them. As a result, this method will return ``True`` when no
         tags are removed, or not all tags are removed, if they are not actually associated
-        with this job.
+        with this job. The following examples give a better indication of these cases.
 
         An example of removing tags that are not associated with the job::
 
@@ -407,6 +414,10 @@ class IBMQJob(BaseModel, BaseJob):
 
         Returns:
             ``True`` if removing the tags was successful, else ``False``.
+
+        Raises:
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
         """
         validate_job_tags(tags, IBMQJobInvalidStateError)
 

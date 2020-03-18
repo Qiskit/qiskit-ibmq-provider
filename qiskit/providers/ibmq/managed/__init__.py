@@ -43,7 +43,6 @@ Exceptions
    IBMQJobManagerUnknownJobSet
 """
 
-import re
 from .ibmqjobmanager import IBMQJobManager
 from .managedjobset import ManagedJobSet
 from .managedjob import ManagedJob
