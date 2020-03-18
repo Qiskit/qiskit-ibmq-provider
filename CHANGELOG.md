@@ -23,6 +23,9 @@ The format is based on [Keep a Changelog].
   an exception is raised. Also, `IBMQBackend.status()` now raises a 
   `IBMQBackendApiProtocolError` exception, instead of a general `LookupError`, 
   if there was an issue with validating the status. (\#572)
+- You can now set the logging level and specify a log file using the environment 
+  variables `QSIKIT_IBMQ_PROVIDER_LOG_LEVEL` and `QISKIT_IBMQ_PROVIDER_LOG_FILE`, 
+  respectively. Note that the name of the logger is `qiskit.providers.ibmq`. (\#579)
 
 ## [0.5.0] - 2020-02-26
 

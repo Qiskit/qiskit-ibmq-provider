@@ -229,6 +229,7 @@ class IBMQBackend(BaseBackend):
         })
         try:
             job = IBMQJob.from_dict(submit_info)
+            logger.debug('Job %s was successfully submitted.', job.job_id())
         except ModelValidationError as err:
             raise IBMQBackendApiProtocolError('Unexpected return value received from the server '
                                               'when submitting job: {}'.format(str(err))) from err
@@ -488,7 +489,7 @@ class IBMQBackend(BaseBackend):
                                    'job does not belong to backend {}.'
                                    .format(job_id, self.name()))
 
-        return self._provider.backends.retrieve_job(job_id)
+        return job
 
     def __repr__(self) -> str:
         credentials_info = ''
