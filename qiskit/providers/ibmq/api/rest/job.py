@@ -76,11 +76,11 @@ class Job(RestAdapterBase):
             self,
             job_attribute_info: Dict[str, Union[str, List[str]]]
     ) -> Dict[str, Any]:
-        """Edit the attribute specified for the job.
+        """Edit the specified attribute for the job.
 
         Args:
             job_attribute_info: A dictionary containing the name of the attribute to
-                update and the new value it should be updated to.
+                update and the new value it should be associated with.
 
         Returns:
             JSON response containing the name of the updated attribute and its

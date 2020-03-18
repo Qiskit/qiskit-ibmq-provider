@@ -320,7 +320,7 @@ class IBMQJob(BaseModel, BaseJob):
         return update_successful
 
     def modify_tags(self, tags: List[str], overwrite: bool = False) -> bool:
-        """Modify the tags currently associated with this job.
+        """Modify the tags associated with this job.
 
         Note:
             If a job was submitted through an
@@ -347,7 +347,7 @@ class IBMQJob(BaseModel, BaseJob):
             tags: The new tags to add or `overwrite` for this job.
             overwrite: If ``False`` the specified `tags` are added to the
                 job's already existing tags. If ``True``, the `tags` overwrite
-                and replace the tags that are currently associated with this job.
+                and replace the tags currently associated with this job.
 
         Returns:
             ``True`` if modifying the job tags was successful, else ``False``.
@@ -381,7 +381,7 @@ class IBMQJob(BaseModel, BaseJob):
         return update_successful
 
     def remove_tags(self, tags: List[str]) -> bool:
-        """Remove the specified tags from the tags currently associated with this job.
+        """Remove the specified tags from the tags associated with this job.
 
         Note:
             If a job was submitted through an
@@ -392,10 +392,11 @@ class IBMQJob(BaseModel, BaseJob):
             If an attempt is made to remove one of these tags, the removal for that
             tag will be ignored.
 
-        This method plays it safe when removing tags that are not associated with this
-        job by ignoring them. As a result, this method will return ``True`` when no
-        tags are removed, or not all tags are removed, if they are not actually associated
-        with this job. The following examples give a better indication of these cases.
+        This method plays it safe when attempting to remove tags that are not found in the
+        job's existing tags by ignoring them. As a result, this method will return ``True``
+        when no tags are removed, or not all tags are removed, if they are not actually
+        associated with this job. The following examples give a better indication of these
+        cases.
 
         An example of removing tags that are not associated with the job::
 
@@ -411,8 +412,7 @@ class IBMQJob(BaseModel, BaseJob):
             tags_after_removal = job.tags()  # tags are: ['tag1', 'tag2']
 
         Args:
-            tags: The tags to remove from the list of tags currently associated
-                with this job.
+            tags: The `tags` to remove from the tags currently associated with this job.
 
         Returns:
             ``True`` if removing the tags was successful, else ``False``.

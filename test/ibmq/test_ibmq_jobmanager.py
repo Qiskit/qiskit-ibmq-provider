@@ -304,8 +304,8 @@ class TestIBMQJobManager(IBMQTestCase):
         self.assertEqual(job_set.tags(), job_tags)
 
     @requires_provider
-    def test_job_tags_update_not_overwrite(self, provider):
-        """Test modifying tags from a job, of a job set, not overwriting existing tags."""
+    def test_job_tags_modify_not_overwrite(self, provider):
+        """Test modifying tags from a job, of a job set, not overwriting its existing tags."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         initial_job_tags = [uuid.uuid4().hex]
@@ -339,10 +339,15 @@ class TestIBMQJobManager(IBMQTestCase):
                                 'The tags are {}, but they should be {}.'
                                 .format(job_id, job.tags(), tags_after_appending))
 
-                # Ensure the job's tags match the updated tags and contain the job set long id.
+                # Ensure the job's tags match the updated tags.
                 self.assertEqual(set(job.tags()), set(tags_after_appending),
                                  'The tags for job {} are {}, but they should be {}'
                                  .format(job_id, job.tags(), tags_after_appending))
+
+                # Ensure the job set long id is in the new tags.
+                self.assertIn(job_set._id_long, job.tags(),
+                              'The job {} with tags {} does not contain the job set '
+                              'long id "{}".'.format(job_id, job.tags(), job_set._id_long))
 
                 # Ensure the job is retrieved with the new tags it is associated with.
                 retrieved_jobs = provider.backends.jobs(job_tags=tags_after_appending)
@@ -350,8 +355,8 @@ class TestIBMQJobManager(IBMQTestCase):
                 self.assertIn(job_id, retrieved_job_ids)
 
     @requires_provider
-    def test_job_tags_update_overwrite(self, provider):
-        """Test modifying tags from a job, of a job set, overwriting existing tags."""
+    def test_job_tags_modify_overwrite(self, provider):
+        """Test modifying tags from a job, of a job set, overwriting its existing tags."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         initial_job_tags = [uuid.uuid4().hex]
@@ -390,6 +395,11 @@ class TestIBMQJobManager(IBMQTestCase):
                 self.assertEqual(set(job.tags()), set(new_tags_with_id_long),
                                  'The tags for job {} are {}, but they should be {}'
                                  .format(job_id, job.tags(), new_tags_with_id_long))
+
+                # Ensure the job set long id is in the new tags.
+                self.assertIn(job_set._id_long, job.tags(),
+                              'The job {} with tags {} does not contain the job set '
+                              'long id "{}".'.format(job_id, job.tags(), job_set._id_long))
 
                 # Ensure the job is retrieved with the new tags it is associated with.
                 retrieved_jobs = provider.backends.jobs(job_tags=new_tags)
@@ -436,6 +446,11 @@ class TestIBMQJobManager(IBMQTestCase):
                 self.assertEqual(set(job.tags()), set(tags_after_removal),
                                  'The tags for job {} are {}, but they should be {}'
                                  .format(job_id, job.tags(), tags_after_removal))
+
+                # Ensure the job set long id is in the new tags.
+                self.assertIn(job_set._id_long, job.tags(),
+                              'The job {} with tags {} does not contain the job set '
+                              'long id "{}".'.format(job_id, job.tags(), job_set._id_long))
 
                 # Ensure the job is retrieved with its final tags.
                 retrieved_jobs = provider.backends.jobs(job_tags=tags_after_removal)

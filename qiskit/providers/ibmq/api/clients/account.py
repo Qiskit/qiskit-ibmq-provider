@@ -450,17 +450,19 @@ class AccountClient(BaseClient):
             attr_name: str,
             attr_value: Union[str, List[str]]
     ) -> Dict[str, Any]:
-        """Update the given job attribute with a new value.
+        """Update the specified job attribute with the given value.
 
         Note:
-            The current editable job attributes are ``name`` and ``tags``.
+            The current job attributes that could be edited are ``name``
+            and ``tags``.
 
         Args:
             job_id: The ID of the job to update.
             attr_name: The name of the attribute to update.
-            attr_value: The new value for the attribute to update.
+            attr_value: The new value to associate the job attribute with.
+
         Returns:
-            A dictionary containing the name of the updated attribute and its corresponding
-            value.
+            A dictionary containing the name of the updated attribute and the value
+            it is associated with.
         """
         return self.client_api.job(job_id).update_attribute({attr_name: attr_value})
