@@ -29,16 +29,16 @@ from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATE
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.job.utils import api_status_to_job_status
-from qiskit.providers.ibmq.job.exceptions import (IBMQJobInvalidStateError,
-                                                  JobError, IBMQJobTimeoutError)
+from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, IBMQJobTimeoutError
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test import slow_test
+from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.compiler import assemble, transpile
 from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_device, requires_qe_access)
-from ..utils import most_busy_backend, get_large_circuit
+from ..utils import most_busy_backend, get_large_circuit, bell_in_qobj, cancel_job
 
 
 class TestIBMQJob(JobTestCase):
@@ -47,7 +47,7 @@ class TestIBMQJob(JobTestCase):
     def setUp(self):
         """Initial test setup."""
         super().setUp()
-        self._qc = _bell_circuit()
+        self._qc = ReferenceCircuits.bell()
 
     @requires_provider
     def test_run_simulator(self, provider):
@@ -89,7 +89,7 @@ class TestIBMQJob(JobTestCase):
     @requires_device
     def test_run_device(self, backend):
         """Test running in a real device."""
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend, shots=8192)
+        qobj = bell_in_qobj(backend=backend, shots=8192)
         shots = qobj.config.shots
         job = backend.run(qobj, validate_qobj=True)
 
@@ -116,7 +116,7 @@ class TestIBMQJob(JobTestCase):
         for i in range(num_qubits - 1):
             qc.cx(qr[i], qr[i + 1])
         qc.measure(qr, cr)
-        qobj = assemble(transpile([qc] * 10, backend=backend), backend=backend)
+        qobj = assemble(transpile([qc] * 20, backend=backend), backend=backend, shots=2048)
         num_jobs = 5
         job_array = [backend.run(qobj, validate_qobj=True) for _ in range(num_jobs)]
         timeout = 30
@@ -207,20 +207,9 @@ class TestIBMQJob(JobTestCase):
         """Test job cancellation."""
         # Find the most busy backend
         backend = most_busy_backend(provider)
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
-
-        for _ in range(2):
-            # Try twice in case job is not in a cancellable state
-            try:
-                if job.cancel():
-                    status = job.status()
-                    self.assertEqual(status, JobStatus.CANCELLED,
-                                     'cancel() was successful for job {} but its status is {}.'
-                                     .format(job.job_id(), status))
-                    break
-            except JobError:
-                pass
+        cancel_job(job, True)
 
     @requires_provider
     def test_retrieve_jobs(self, provider):
@@ -234,8 +223,7 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_job(self, provider):
         """Test retrieving a single job."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
 
         retrieved_job = provider.backends.retrieve_job(job.job_id())
@@ -257,12 +245,10 @@ class TestIBMQJob(JobTestCase):
         if not backend_2:
             raise SkipTest('Skipping test that requires multiple backends')
 
-        qobj_1 = assemble(
-            transpile(self._qc, backend=backend_1), backend=backend_1)
+        qobj_1 = bell_in_qobj(backend=backend_1)
         job_1 = backend_1.run(qobj_1, validate_qobj=True)
 
-        qobj_2 = assemble(
-            transpile(self._qc, backend=backend_2), backend=backend_2)
+        qobj_2 = bell_in_qobj(backend=backend_2)
         job_2 = backend_2.run(qobj_2, validate_qobj=True)
 
         # test a retrieved job's backend is the same as the queried backend
@@ -283,10 +269,7 @@ class TestIBMQJob(JobTestCase):
 
         # Cleanup
         for job in [job_1, job_2]:
-            try:
-                job.cancel()
-            except JobError:
-                pass
+            cancel_job(job)
 
     @requires_provider
     def test_retrieve_job_error(self, provider):
@@ -324,20 +307,10 @@ class TestIBMQJob(JobTestCase):
              'db_filter': {'or': [{'status': 'CANCELLED'}]}}
         ]
 
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend=backend)
         # Submit a job, then cancel it.
         job_to_cancel = backend.run(qobj, validate_qobj=True)
-        for _ in range(2):
-            # Try twice in case job is not in a cancellable state
-            try:
-                if job_to_cancel.cancel():
-                    status = job_to_cancel.status()
-                    self.assertEqual(status, JobStatus.CANCELLED,
-                                     'cancel() was successful for job {} but its status is {}.'
-                                     .format(job_to_cancel.job_id(), status))
-                    break
-            except JobError:
-                pass
+        cancel_job(job_to_cancel, True)
 
         # Submit a job that will fail.
         qobj.config.shots = 10000  # Modify the number of shots to be an invalid amount.
@@ -373,7 +346,7 @@ class TestIBMQJob(JobTestCase):
         active_job_statuses = {api_status_to_job_status(status) for status in ApiJobStatus
                                if status not in API_JOB_FINAL_STATES}
 
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
 
         active_jobs = backend.active_jobs()
@@ -391,16 +364,13 @@ class TestIBMQJob(JobTestCase):
                             .format(active_job.job_id(), active_job._status, active_job_statuses))
 
         # Cancel job so it doesn't consume more resources.
-        try:
-            job.cancel()
-        except JobError:
-            pass
+        cancel_job(job)
 
     @requires_provider
     def test_retrieve_jobs_queued(self, provider):
         """Test retrieving jobs that are queued."""
         backend = most_busy_backend(provider)
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
 
         # Wait for the job to queue, run, or reach a final state.
@@ -426,10 +396,7 @@ class TestIBMQJob(JobTestCase):
         #                             JobStatus.QUEUED))
 
         # Cancel job so it doesn't consume more resources.
-        try:
-            job.cancel()
-        except JobError:
-            pass
+        cancel_job(job)
 
     @requires_provider
     def test_retrieve_jobs_start_datetime(self, provider):
@@ -569,7 +536,7 @@ class TestIBMQJob(JobTestCase):
         """Test submitting a job twice."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend=backend)
         # backend.run() will automatically call job.submit()
         job = backend.run(qobj, validate_qobj=True)
         with self.assertRaises(IBMQJobInvalidStateError):
@@ -621,7 +588,7 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_from_retired_backend(self, provider):
         """Test retrieving a job from a retired backend."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
 
         del provider._backends['ibmq_qasm_simulator']
@@ -637,7 +604,7 @@ class TestIBMQJob(JobTestCase):
     def test_refresh_job_result(self, provider):
         """Test re-retrieving job result via refresh."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
         result = job.result()
 
@@ -708,8 +675,8 @@ class TestIBMQJob(JobTestCase):
     @requires_provider
     def test_wait_for_final_state_timeout(self, provider):
         """Test waiting for job to reach final state times out."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        backend = most_busy_backend(provider)
+        qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
         try:
             self.assertRaises(IBMQJobTimeoutError, job.wait_for_final_state, timeout=0.1)
@@ -717,14 +684,4 @@ class TestIBMQJob(JobTestCase):
             # Ensure all threads ended.
             for thread in job._executor._threads:
                 thread.join(0.1)
-
-
-def _bell_circuit():
-    """Return a bell state circuit."""
-    qr = QuantumRegister(2, 'q')
-    cr = ClassicalRegister(2, 'c')
-    qc = QuantumCircuit(qr, cr)
-    qc.h(qr[0])
-    qc.cx(qr[0], qr[1])
-    qc.measure(qr, cr)
-    return qc
+            cancel_job(job)

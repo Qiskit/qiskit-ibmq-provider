@@ -37,7 +37,7 @@ except ImportError:
     from pproxy import __version__ as pproxy_version
 
 ADDRESS = '127.0.0.1'
-PORT = 8080
+PORT = 8085
 VALID_PROXIES = {'https': 'http://{}:{}'.format(ADDRESS, PORT)}
 INVALID_PORT_PROXIES = {'https': 'http://{}:{}'.format(ADDRESS, '6666')}
 INVALID_ADDRESS_PROXIES = {'https': 'http://{}:{}'.format('invalid', PORT)}
