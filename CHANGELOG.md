@@ -26,6 +26,10 @@ The format is based on [Keep a Changelog].
 - You can now set the logging level and specify a log file using the environment 
   variables `QSIKIT_IBMQ_PROVIDER_LOG_LEVEL` and `QISKIT_IBMQ_PROVIDER_LOG_FILE`, 
   respectively. Note that the name of the logger is `qiskit.providers.ibmq`. (\#579)
+- `IBMQJob` now has three new methods: `change_name()`, `modify_tags()`, and 
+  `remove_tags()`. The methods are used to change the name of a job, modify the 
+  existing tags of a job, and remove specific tags associated with a job, 
+  respectively. (\#590)
 
 ## [0.5.0] - 2020-02-26
 
