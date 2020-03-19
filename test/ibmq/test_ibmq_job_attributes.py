@@ -365,6 +365,10 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(job.scheduling_mode(), "fairshare", "Job {} scheduling mode is {}".format(
             job.job_id(), job.scheduling_mode()))
 
+        rjob = backend.retrieve_job(job.job_id())
+        self.assertEqual(rjob.scheduling_mode(), "fairshare", "Job {} scheduling mode is {}".format(
+            rjob.job_id(), rjob.scheduling_mode()))
+
 
 def _bell_circuit():
     """Return a bell state circuit."""

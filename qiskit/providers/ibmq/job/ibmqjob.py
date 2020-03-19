@@ -482,9 +482,9 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the scheduling mode the job is in.
 
         The scheduling mode indicates how the job is scheduled to run. For example,
-        `fairshare` indicates the job is scheduled using a fairshare algorithm.
+        ``fairshare`` indicates the job is scheduled using a fairshare algorithm.
 
-        This information is only available if the job status is RUNNING or DONE.
+        This information is only available if the job status is ``RUNNING`` or ``DONE``.
 
         Returns:
             The scheduling mode the job is in or ``None`` if the information
@@ -492,8 +492,7 @@ class IBMQJob(BaseModel, BaseJob):
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if self._run_mode is None:
-            if self._status not in JOB_FINAL_STATES:
-                self.refresh()
+            self.refresh()
             if self._status in [JobStatus.RUNNING, JobStatus.DONE] and self._run_mode is None:
                 self._run_mode = "fairshare"  # type: Optional[str]
 
