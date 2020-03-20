@@ -478,6 +478,26 @@ class IBMQJob(BaseModel, BaseJob):
             self.refresh()
         return self._time_per_step
 
+    def scheduling_mode(self) -> Optional[str]:
+        """Return the scheduling mode the job is in.
+
+        The scheduling mode indicates how the job is scheduled to run. For example,
+        ``fairshare`` indicates the job is scheduled using a fairshare algorithm.
+
+        This information is only available if the job status is ``RUNNING`` or ``DONE``.
+
+        Returns:
+            The scheduling mode the job is in or ``None`` if the information
+            is not available.
+        """
+        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
+        if self._run_mode is None:
+            self.refresh()
+            if self._status in [JobStatus.RUNNING, JobStatus.DONE] and self._run_mode is None:
+                self._run_mode = "fairshare"  # type: Optional[str]
+
+        return self._run_mode
+
     def submit(self) -> None:
         """Submit this job to an IBM Quantum Experience backend.
 

@@ -26,6 +26,8 @@ The format is based on [Keep a Changelog].
 - You can now set the logging level and specify a log file using the environment 
   variables `QSIKIT_IBMQ_PROVIDER_LOG_LEVEL` and `QISKIT_IBMQ_PROVIDER_LOG_FILE`, 
   respectively. Note that the name of the logger is `qiskit.providers.ibmq`. (\#579)
+- `IBMQJob` now has a new method `scheduling_mode()` that returns the scheduling
+  mode the job is in. (\#593)
 
 ## [0.5.0] - 2020-02-26
 
