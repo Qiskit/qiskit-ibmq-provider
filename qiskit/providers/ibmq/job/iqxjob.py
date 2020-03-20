@@ -68,7 +68,7 @@ class IQXJob(BaseModel, BaseJob):
             job_status = job.status()  # Query the backend server for job status.
             if job_status is JobStatus.RUNNING:
                 print("The job is still running")
-        except IBMQJobApiError as ex:
+        except IQXJobApiError as ex:
             print("Something wrong happened!: {}".format(ex))
 
     Note:
@@ -487,7 +487,7 @@ class IQXJob(BaseModel, BaseJob):
             to submit a job.
 
         Raises:
-            IBMQJobInvalidStateError: If the job has already been submitted.
+            IQXJobInvalidStateError: If the job has already been submitted.
         """
         if self.job_id() is not None:
             raise IQXJobInvalidStateError(
