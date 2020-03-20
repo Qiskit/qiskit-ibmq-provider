@@ -24,9 +24,9 @@ from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 
 from .api.clients import AccountClient
-from .ibmqbackend import IBMQBackend, IBMQSimulator
+from .iqxbackend import IQXBackend, IQXSimulator
 from .credentials import Credentials
-from .ibmqbackendservice import IBMQBackendService
+from .iqxbackendservice import IQXBackendService
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +38,14 @@ class AccountProvider(BaseProvider):
     backends available to this account.
 
     You can access a provider by enabling an account with the
-    :meth:`IBMQ.enable_account()<IBMQFactory.enable_account>` method, which
+    :meth:`IQX.enable_account()<IQXFactory.enable_account>` method, which
     returns the default provider you have access to::
 
-        from qiskit import IBMQ
-        provider = IBMQ.enable_account(<INSERT_IBM_QUANTUM_EXPERIENCE_TOKEN>)
+        from qiskit import IQX
+        provider = IQX.enable_account(<INSERT_IBM_QUANTUM_EXPERIENCE_TOKEN>)
 
     To select a different provider, use the
-    :meth:`IBMQ.get_provider()<IBMQFactory.get_provider>` method and specify the hub,
+    :meth:`IQX.get_provider()<IQXFactory.get_provider>` method and specify the hub,
     group, or project name of the desired provider.
 
     The :meth:`backends()` method returns all the backends available to this account::
@@ -91,17 +91,17 @@ class AccountProvider(BaseProvider):
 
         # Initialize the internal list of backends.
         self._backends = self._discover_remote_backends()
-        self.backends = IBMQBackendService(self)  # type: ignore[assignment]
+        self.backends = IQXBackendService(self)  # type: ignore[assignment]
 
-    def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
+    def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IQXBackend]:
         """Return all backends accessible via this provider, subject to optional filtering."""
         # pylint: disable=method-hidden
         # This method is only for faking the subclassing of `BaseProvider`, as
         # `.backends()` is an abstract method. Upon initialization, it is
-        # replaced by a `IBMQBackendService` instance.
+        # replaced by a `IQXBackendService` instance.
         pass
 
-    def _discover_remote_backends(self, timeout: Optional[float] = None) -> Dict[str, IBMQBackend]:
+    def _discover_remote_backends(self, timeout: Optional[float] = None) -> Dict[str, IQXBackend]:
         """Return the remote backends available for this provider.
 
         Args:
@@ -125,7 +125,7 @@ class AccountProvider(BaseProvider):
                     config = PulseBackendConfiguration.from_dict(raw_config)
                 else:
                     config = QasmBackendConfiguration.from_dict(raw_config)
-                backend_cls = IBMQSimulator if config.simulator else IBMQBackend
+                backend_cls = IQXSimulator if config.simulator else IQXBackend
                 ret[config.backend_name] = backend_cls(
                     configuration=config,
                     provider=self,
@@ -151,5 +151,5 @@ class AccountProvider(BaseProvider):
         credentials_info = "hub='{}', group='{}', project='{}'".format(
             self.credentials.hub, self.credentials.group, self.credentials.project)
 
-        return "<{} for IBMQ({})>".format(
+        return "<{} for IQX({})>".format(
             self.__class__.__name__, credentials_info)

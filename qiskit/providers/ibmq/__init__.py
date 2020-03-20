@@ -57,40 +57,40 @@ Classes
 
     AccountProvider
     BackendJobLimit
-    IBMQBackend
-    IBMQBackendService
-    IBMQFactory
+    IQXBackend
+    IQXBackendService
+    IQXFactory
 
 Exceptions
 ==========
 .. autosummary::
     :toctree: ../stubs/
 
-    IBMQError
-    IBMQAccountError
-    IBMQAccountCredentialsNotFound
-    IBMQAccountCredentialsInvalidFormat
-    IBMQAccountCredentialsInvalidToken
-    IBMQAccountCredentialsInvalidUrl
-    IBMQAccountMultipleCredentialsFound
-    IBMQBackendError
-    IBMQBackendApiError
-    IBMQBackendApiProtocolError
-    IBMQBackendValueError
-    IBMQProviderError
+    IQXError
+    IQXAccountError
+    IQXAccountCredentialsNotFound
+    IQXAccountCredentialsInvalidFormat
+    IQXAccountCredentialsInvalidToken
+    IQXAccountCredentialsInvalidUrl
+    IQXAccountMultipleCredentialsFound
+    IQXBackendError
+    IQXBackendApiError
+    IQXBackendApiProtocolError
+    IQXBackendValueError
+    IQXProviderError
 """
 
 import logging
 from typing import List
 
-from .ibmqfactory import IBMQFactory
-from .ibmqbackend import IBMQBackend, BaseBackend
-from .job import IBMQJob
-from .managed import IBMQJobManager
+from .iqxfactory import IQXFactory
+from .iqxbackend import IQXBackend, BaseBackend
+from .job import IQXJob
+from .managed import IQXJobManager
 from .accountprovider import AccountProvider
 from .backendjoblimit import BackendJobLimit
 from .exceptions import *
-from .ibmqbackendservice import IBMQBackendService
+from .iqxbackendservice import IQXBackendService
 from .utils.utils import setup_logger
 
 from .version import __version__
@@ -99,15 +99,15 @@ from .version import __version__
 logger = logging.getLogger(__name__)
 setup_logger(logger)
 
-IBMQ = IBMQFactory()
+IQX = IQXFactory()
 """A global instance of an account manager that is used as the entry point for convenience."""
 
 # Constants used by the IBM Quantum logger.
-IBMQ_PROVIDER_LOGGER_NAME = 'qiskit.providers.ibmq'
+IQX_PROVIDER_LOGGER_NAME = 'qiskit.providers.ibmq'
 """The name of the IBM Quantum logger."""
-QISKIT_IBMQ_PROVIDER_LOG_LEVEL = 'QISKIT_IBMQ_PROVIDER_LOG_LEVEL'
+QISKIT_IQX_PROVIDER_LOG_LEVEL = 'QISKIT_IQX_PROVIDER_LOG_LEVEL'
 """The environment variable name that is used to set the level for the IBM Quantum logger."""
-QISKIT_IBMQ_PROVIDER_LOG_FILE = 'QISKIT_IBMQ_PROVIDER_LOG_FILE'
+QISKIT_IQX_PROVIDER_LOG_FILE = 'QISKIT_IQX_PROVIDER_LOG_FILE'
 """The environment variable name that is used to set the file for the IBM Quantum logger."""
 
 
@@ -125,15 +125,15 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
         The backend with the fewest number of pending jobs.
 
     Raises:
-        IBMQError: If the backends list is empty or if a backend in the list
+        IQXError: If the backends list is empty or if a backend in the list
             does not have the ``pending_jobs`` attribute in its status.
     """
     try:
         return min([b for b in backends if b.status().operational],
                    key=lambda b: b.status().pending_jobs)
     except (ValueError, TypeError):
-        raise IBMQError('Unable to find the least_busy '
-                        'backend from an empty list.') from None
+        raise IQXError('Unable to find the least_busy '
+                       'backend from an empty list.') from None
     except AttributeError as ex:
-        raise IBMQError('A backend in the list does not have the `pending_jobs` '
-                        'attribute in its status.') from ex
+        raise IQXError('A backend in the list does not have the `pending_jobs` '
+                       'attribute in its status.') from ex

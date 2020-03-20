@@ -19,13 +19,13 @@ import logging
 from tempfile import NamedTemporaryFile
 from unittest import skipIf, mock
 
-from qiskit.providers.ibmq import (QISKIT_IBMQ_PROVIDER_LOG_LEVEL, QISKIT_IBMQ_PROVIDER_LOG_FILE)
+from qiskit.providers.ibmq import (QISKIT_IQX_PROVIDER_LOG_LEVEL, QISKIT_IQX_PROVIDER_LOG_FILE)
 from qiskit.providers.ibmq.utils.utils import setup_logger
 
-from ..ibmqtestcase import IBMQTestCase
+from ..ibmqtestcase import IQXTestCase
 
 
-class TestLogger(IBMQTestCase):
+class TestLogger(IQXTestCase):
     """Tests related to logger setup via ``setup_logger()``."""
 
     def test_no_log_level(self):
@@ -38,8 +38,8 @@ class TestLogger(IBMQTestCase):
         default_level_not_set = logging.NOTSET
 
         with mock.patch.dict('os.environ'):
-            if QISKIT_IBMQ_PROVIDER_LOG_LEVEL in os.environ:
-                del os.environ[QISKIT_IBMQ_PROVIDER_LOG_LEVEL]
+            if QISKIT_IQX_PROVIDER_LOG_LEVEL in os.environ:
+                del os.environ[QISKIT_IQX_PROVIDER_LOG_LEVEL]
             setup_logger(logger)
             self.assertEqual(logger.level, default_level_not_set,
                              'The logger level was set to {}, but it should '
@@ -54,7 +54,7 @@ class TestLogger(IBMQTestCase):
         logger = logging.getLogger(self.id())
         default_level_not_set = logging.NOTSET
 
-        with mock.patch.dict('os.environ', {QISKIT_IBMQ_PROVIDER_LOG_LEVEL: ''}):
+        with mock.patch.dict('os.environ', {QISKIT_IQX_PROVIDER_LOG_LEVEL: ''}):
             setup_logger(logger)
             self.assertEqual(logger.level, default_level_not_set,
                              'The logger level was set to {}, but it should '
@@ -73,7 +73,7 @@ class TestLogger(IBMQTestCase):
         for invalid_log_level in invalid_log_levels:
             with self.subTest(invalid_log_level=invalid_log_level):
                 with mock.patch.dict('os.environ',
-                                     {QISKIT_IBMQ_PROVIDER_LOG_LEVEL: invalid_log_level}):
+                                     {QISKIT_IQX_PROVIDER_LOG_LEVEL: invalid_log_level}):
                     setup_logger(logger)
                     self.assertEqual(logger.level, default_level_invalid,
                                      'The logger level was set to {}, but it should '
@@ -89,7 +89,7 @@ class TestLogger(IBMQTestCase):
 
         for level_name, level_value in all_valid_log_levels.items():
             with self.subTest(level_name=level_name):
-                with mock.patch.dict('os.environ', {QISKIT_IBMQ_PROVIDER_LOG_LEVEL: level_name}):
+                with mock.patch.dict('os.environ', {QISKIT_IQX_PROVIDER_LOG_LEVEL: level_name}):
                     setup_logger(logger)
                     self.assertEqual(logger.level, level_value,
                                      'The logger level was set to {}, but it should '
@@ -104,8 +104,8 @@ class TestLogger(IBMQTestCase):
 
         with NamedTemporaryFile() as temp_log_file:
             # Set the environment variables, including the temp file name.
-            env_vars_to_patch = {QISKIT_IBMQ_PROVIDER_LOG_LEVEL: log_level_error[0],
-                                 QISKIT_IBMQ_PROVIDER_LOG_FILE: temp_log_file.name}
+            env_vars_to_patch = {QISKIT_IQX_PROVIDER_LOG_LEVEL: log_level_error[0],
+                                 QISKIT_IQX_PROVIDER_LOG_FILE: temp_log_file.name}
             with mock.patch.dict('os.environ', env_vars_to_patch):
                 setup_logger(logger)
 
@@ -126,7 +126,7 @@ class TestLogger(IBMQTestCase):
                 logger.critical('This is a critical message that should be logged in the file.')
 
                 # Assert the file exists.
-                log_file_name = os.environ[QISKIT_IBMQ_PROVIDER_LOG_FILE]
+                log_file_name = os.environ[QISKIT_IQX_PROVIDER_LOG_FILE]
                 self.assertTrue(os.path.exists(log_file_name),
                                 'The file {} does not exist.'.format(log_file_name))
 

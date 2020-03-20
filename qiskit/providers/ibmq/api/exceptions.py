@@ -14,10 +14,10 @@
 
 """Exceptions related to the IBM Quantum Experience API."""
 
-from ..exceptions import IBMQError
+from ..exceptions import IQXError
 
 
-class ApiError(IBMQError):
+class ApiError(IQXError):
     """Generic IBM Quantum Experience API error."""
     pass
 

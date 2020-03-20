@@ -19,17 +19,17 @@ from datetime import datetime
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
-from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator, IBMQBackend
+from qiskit.providers.ibmq.iqxbackend import IQXSimulator, IQXBackend
 from qiskit.qobj import QobjHeader
 from qiskit.test import providers, slow_test
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.models.backendproperties import BackendProperties
 
 from ..decorators import requires_provider, requires_device
-from ..ibmqtestcase import IBMQTestCase
+from ..ibmqtestcase import IQXTestCase
 
 
-class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
+class TestAccountProvider(IQXTestCase, providers.ProviderTestCase):
     """Tests for the AccountProvider class."""
 
     provider_cls = AccountProvider
@@ -65,7 +65,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
         remotes = self.provider.backends(simulator=True)
         for backend in remotes:
             with self.subTest(backend=backend):
-                self.assertIsInstance(backend, IBMQSimulator)
+                self.assertIsInstance(backend, IQXSimulator)
 
     def test_remote_backend_status(self):
         """Test backend_status."""
@@ -173,6 +173,6 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
     def test_provider_backends(self):
         """Test provider_backends have correct attributes."""
         provider_backends = {back for back in dir(self.provider.backends)
-                             if isinstance(getattr(self.provider.backends, back), IBMQBackend)}
+                             if isinstance(getattr(self.provider.backends, back), IQXBackend)}
         backends = {back.name().lower() for back in self.provider._backends.values()}
         self.assertEqual(provider_backends, backends)

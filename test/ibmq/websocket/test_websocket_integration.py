@@ -27,12 +27,12 @@ from qiskit.providers.ibmq.api.clients.websocket import (
 from qiskit.providers.ibmq.api.clients import AccountClient
 from qiskit.providers.jobstatus import JobStatus
 
-from ...ibmqtestcase import IBMQTestCase
+from ...ibmqtestcase import IQXTestCase
 from ...decorators import requires_provider, requires_device
 from ...utils import most_busy_backend, bell_in_qobj, cancel_job
 
 
-class TestWebsocketIntegration(IBMQTestCase):
+class TestWebsocketIntegration(IQXTestCase):
     """Websocket integration tests."""
 
     @requires_provider

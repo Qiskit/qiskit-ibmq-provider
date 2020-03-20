@@ -19,31 +19,31 @@ import logging
 
 from qiskit.test import QiskitTestCase
 
-from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
+from qiskit.providers.ibmq import IQX_PROVIDER_LOGGER_NAME
 
 
-class IBMQTestCase(QiskitTestCase):
+class IQXTestCase(QiskitTestCase):
     """Custom TestCase for use with the IBMQProvider."""
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         if os.getenv('LOG_LEVEL'):
-            logger_ibmq_provider = logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME)
+            logger_ibmq_provider = logging.getLogger(IQX_PROVIDER_LOGGER_NAME)
             if logger_ibmq_provider.level is logging.NOTSET:
                 try:
                     logger_ibmq_provider.setLevel(cls.log.level)
                 except Exception as ex:  # pylint: disable=broad-except
                     logger_ibmq_provider.warning(
                         'Error while trying to set the level for the "%s" logger to %s. %s.',
-                        IBMQ_PROVIDER_LOGGER_NAME, os.getenv('LOG_LEVEL'), str(ex))
+                        IQX_PROVIDER_LOGGER_NAME, os.getenv('LOG_LEVEL'), str(ex))
 
     def tearDown(self):
         # Reset the default providers, as in practice they acts as a singleton
         # due to importing the wrapper from qiskit.
-        from qiskit.providers.ibmq import IBMQ
-        IBMQ._providers.clear()
-        IBMQ._credentials = None
+        from qiskit.providers.ibmq import IQX
+        IQX._providers.clear()
+        IQX._credentials = None
 
         from qiskit.providers.basicaer import BasicAer
         BasicAer._backends = BasicAer._verify_backends()

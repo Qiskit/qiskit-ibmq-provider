@@ -27,15 +27,15 @@ from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-impo
 
 from .api.exceptions import ApiError
 from .apiconstants import ApiJobStatus
-from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackendApiProtocolError)
-from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
-from .job import IBMQJob
+from .exceptions import (IQXBackendValueError, IQXBackendApiError, IQXBackendApiProtocolError)
+from .iqxbackend import IQXBackend, IQXRetiredBackend
+from .job import IQXJob
 from .utils import to_python_identifier, validate_job_tags
 
 logger = logging.getLogger(__name__)
 
 
-class IBMQBackendService(SimpleNamespace):
+class IQXBackendService(SimpleNamespace):
     """Backend namespace for an IBM Quantum Experience account provider.
 
     Represent a namespace that provides backend related services for the IBM
@@ -83,10 +83,10 @@ class IBMQBackendService(SimpleNamespace):
     def __call__(
             self,
             name: Optional[str] = None,
-            filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
+            filters: Optional[Callable[[List[IQXBackend]], bool]] = None,
             timeout: Optional[float] = None,
             **kwargs: Any
-    ) -> List[IBMQBackend]:
+    ) -> List[IQXBackend]:
         """Return all backends accessible via this provider, subject to optional filtering.
 
         Args:
@@ -128,7 +128,7 @@ class IBMQBackendService(SimpleNamespace):
             job_tags: Optional[List[str]] = None,
             job_tags_operator: Optional[str] = "OR",
             db_filter: Optional[Dict[str, Any]] = None
-    ) -> List[IBMQJob]:
+    ) -> List[IQXJob]:
         """Return a list of jobs, subject to optional filtering.
 
         Retrieve jobs that match the given filters and paginate the results
@@ -176,10 +176,10 @@ class IBMQBackendService(SimpleNamespace):
                   job_list = backend.jobs(limit=5, db_filter=filter)
 
         Returns:
-            A list of ``IBMQJob`` instances.
+            A list of ``IQXJob`` instances.
 
         Raises:
-            IBMQBackendValueError: If a keyword value is not recognized.
+            IQXBackendValueError: If a keyword value is not recognized.
         """
         # Build the filter for the query.
         api_filter = {}  # type: Dict[str, Any]
@@ -204,7 +204,7 @@ class IBMQBackendService(SimpleNamespace):
             api_filter['creationDate'] = {'lte': end_datetime.isoformat()}
 
         if job_tags:
-            validate_job_tags(job_tags, IBMQBackendValueError)
+            validate_job_tags(job_tags, IQXBackendValueError)
             job_tags_operator = job_tags_operator.upper()
             if job_tags_operator == "OR":
                 api_filter['tags'] = {'inq': job_tags}
@@ -214,7 +214,7 @@ class IBMQBackendService(SimpleNamespace):
                     and_tags.append({'tags': tag})
                 api_filter['and'] = and_tags
             else:
-                raise IBMQBackendValueError(
+                raise IQXBackendValueError(
                     '"{}" is not a valid job_tags_operator value. '
                     'Valid values are "AND" and "OR"'.format(job_tags_operator))
 
@@ -262,17 +262,17 @@ class IBMQBackendService(SimpleNamespace):
             try:
                 backend = self._provider.get_backend(backend_name)
             except QiskitBackendNotFoundError:
-                backend = IBMQRetiredBackend.from_name(backend_name,
-                                                       self._provider,
-                                                       self._provider.credentials,
-                                                       self._provider._api)
+                backend = IQXRetiredBackend.from_name(backend_name,
+                                                      self._provider,
+                                                      self._provider.credentials,
+                                                      self._provider._api)
 
             job_info.update({
                 '_backend': backend,
                 'api': self._provider._api,
             })
             try:
-                job = IBMQJob.from_dict(job_info)
+                job = IQXJob.from_dict(job_info)
             except ModelValidationError:
                 logger.warning('Discarding job "%s" because it contains invalid data.', job_id)
                 continue
@@ -292,7 +292,7 @@ class IBMQBackendService(SimpleNamespace):
             a given status or list of statuses.
 
         Raises:
-            IBMQBackendError: If a status value is not recognized.
+            IQXBackendError: If a status value is not recognized.
         """
         _final_status_filter = None
         if isinstance(status_arg, list):
@@ -314,13 +314,13 @@ class IBMQBackendService(SimpleNamespace):
             that match a given status.
 
         Raises:
-            IBMQBackendValueError: If the status value is not recognized.
+            IQXBackendValueError: If the status value is not recognized.
         """
         if isinstance(status, str):
             try:
                 status = JobStatus[status.upper()]
             except KeyError:
-                raise IBMQBackendValueError(
+                raise IQXBackendValueError(
                     '"{}" is not a valid status value. Valid values are {}'.format(
                         status, ", ".join(job_status.name for job_status in JobStatus))) \
                     from None
@@ -345,13 +345,13 @@ class IBMQBackendService(SimpleNamespace):
         elif status == JobStatus.ERROR:
             _status_filter = {'status': {'regexp': '^ERROR'}}  # type: ignore[assignment]
         else:
-            raise IBMQBackendValueError(
+            raise IQXBackendValueError(
                 '"{}" is not a valid status value. Valid values are {}'.format(
                     status, ", ".join(job_status.name for job_status in JobStatus)))
 
         return _status_filter
 
-    def retrieve_job(self, job_id: str) -> IBMQJob:
+    def retrieve_job(self, job_id: str) -> IQXJob:
         """Return a single job.
 
         Args:
@@ -361,35 +361,35 @@ class IBMQBackendService(SimpleNamespace):
             The job with the given id.
 
         Raises:
-            IBMQBackendApiError: If an unexpected error occurred when retrieving
+            IQXBackendApiError: If an unexpected error occurred when retrieving
                 the job.
-            IBMQBackendApiProtocolError: If unexpected return value received
+            IQXBackendApiProtocolError: If unexpected return value received
                  from the server.
         """
         try:
             job_info = self._provider._api.job_get(job_id)
         except ApiError as ex:
-            raise IBMQBackendApiError('Failed to get job {}: {}'
-                                      .format(job_id, str(ex))) from ex
+            raise IQXBackendApiError('Failed to get job {}: {}'
+                                     .format(job_id, str(ex))) from ex
 
         # Recreate the backend used for this job.
         backend_name = job_info.get('backend', {}).get('name', 'unknown')
         try:
             backend = self._provider.get_backend(backend_name)
         except QiskitBackendNotFoundError:
-            backend = IBMQRetiredBackend.from_name(backend_name,
-                                                   self._provider,
-                                                   self._provider.credentials,
-                                                   self._provider._api)
+            backend = IQXRetiredBackend.from_name(backend_name,
+                                                  self._provider,
+                                                  self._provider.credentials,
+                                                  self._provider._api)
 
         job_info.update({
             '_backend': backend,
             'api': self._provider._api
         })
         try:
-            job = IBMQJob.from_dict(job_info)
+            job = IQXJob.from_dict(job_info)
         except ModelValidationError as ex:
-            raise IBMQBackendApiProtocolError(
+            raise IQXBackendApiProtocolError(
                 'Unexpected return value received from the server '
                 'when retrieving job {}: {}'.format(job_id, str(ex))) from ex
 

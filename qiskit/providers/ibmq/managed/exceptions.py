@@ -14,34 +14,34 @@
 
 """Exception for the Job Manager modules."""
 
-from ..exceptions import IBMQError
+from ..exceptions import IQXError
 
 
-class IBMQJobManagerError(IBMQError):
+class IQXJobManagerError(IQXError):
     """Base class for errors raise by the Job Manager."""
     pass
 
 
-class IBMQJobManagerInvalidStateError(IBMQJobManagerError):
+class IQXJobManagerInvalidStateError(IQXJobManagerError):
     """Errors raised when an operation is invoked in an invalid state."""
     pass
 
 
-class IBMQJobManagerTimeoutError(IBMQJobManagerError):
+class IQXJobManagerTimeoutError(IQXJobManagerError):
     """Errors raised when a Job Manager operation times out."""
     pass
 
 
-class IBMQJobManagerJobNotFound(IBMQJobManagerError):
+class IQXJobManagerJobNotFound(IQXJobManagerError):
     """Errors raised when a job cannot be found."""
     pass
 
 
-class IBMQManagedResultDataNotAvailable(IBMQJobManagerError):
+class IQXManagedResultDataNotAvailable(IQXJobManagerError):
     """Errors raised when result data is not available."""
     pass
 
 
-class IBMQJobManagerUnknownJobSet(IBMQJobManagerError):
+class IQXJobManagerUnknownJobSet(IQXJobManagerError):
     """Errors raised when the job set ID is unknown."""
     pass

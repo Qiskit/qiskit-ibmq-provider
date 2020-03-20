@@ -21,11 +21,11 @@ from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.exceptions import JobError
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.accountprovider import AccountProvider
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
-from qiskit.providers.ibmq.job import IBMQJob
+from qiskit.providers.ibmq.iqxbackend import IQXBackend
+from qiskit.providers.ibmq.job import IQXJob
 
 
-def most_busy_backend(provider: AccountProvider) -> IBMQBackend:
+def most_busy_backend(provider: AccountProvider) -> IQXBackend:
     """Return the most busy backend for the provider given.
 
     Return the most busy available backend for those that
@@ -43,7 +43,7 @@ def most_busy_backend(provider: AccountProvider) -> IBMQBackend:
                key=lambda b: b.status().pending_jobs)
 
 
-def get_large_circuit(backend: IBMQBackend) -> QuantumCircuit:
+def get_large_circuit(backend: IQXBackend) -> QuantumCircuit:
     """Return a slightly larger circuit that would run a bit longer.
 
     Args:
@@ -62,7 +62,7 @@ def get_large_circuit(backend: IBMQBackend) -> QuantumCircuit:
     return circuit
 
 
-def bell_in_qobj(backend: IBMQBackend, shots: int = 1024) -> Qobj:
+def bell_in_qobj(backend: IQXBackend, shots: int = 1024) -> Qobj:
     """Return a bell circuit in Qobj format.
 
     Args:
@@ -76,7 +76,7 @@ def bell_in_qobj(backend: IBMQBackend, shots: int = 1024) -> Qobj:
                     backend=backend, shots=shots)
 
 
-def cancel_job(job: IBMQJob, verify: bool = False) -> bool:
+def cancel_job(job: IQXJob, verify: bool = False) -> bool:
     """Cancel a job.
 
     Args:

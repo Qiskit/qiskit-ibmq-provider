@@ -33,7 +33,7 @@ from typing import Optional
 
 from qiskit.test.testing_options import get_test_options
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
+from qiskit.providers.ibmq.iqxfactory import IQXFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
 from qiskit.providers.ibmq.accountprovider import AccountProvider
@@ -90,7 +90,7 @@ def requires_provider(func):
     @wraps(func)
     @requires_qe_access
     def _wrapper(*args, **kwargs):
-        ibmq_factory = IBMQFactory()
+        ibmq_factory = IQXFactory()
         qe_token = kwargs.pop('qe_token')
         qe_url = kwargs.pop('qe_url')
         provider = ibmq_factory.enable_account(qe_token, qe_url)
@@ -125,7 +125,7 @@ def requires_device(func):
     @requires_qe_access
     def _wrapper(obj, *args, **kwargs):
 
-        ibmq_factory = IBMQFactory()
+        ibmq_factory = IQXFactory()
         qe_token = kwargs.pop('qe_token')
         qe_url = kwargs.pop('qe_url')
         provider = ibmq_factory.enable_account(qe_token, qe_url)
@@ -192,7 +192,7 @@ def _get_credentials():
     raise Exception('Unable to locate valid credentials.')
 
 
-def _get_custom_provider(ibmq_factory: IBMQFactory) -> Optional[AccountProvider]:
+def _get_custom_provider(ibmq_factory: IQXFactory) -> Optional[AccountProvider]:
     """Find the provider for the specific hub/group/project, if any.
 
     Args:

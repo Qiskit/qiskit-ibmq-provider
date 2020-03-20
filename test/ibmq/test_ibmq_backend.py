@@ -16,13 +16,13 @@
 
 from inspect import getfullargspec
 
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
-from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
+from qiskit.providers.ibmq.iqxbackend import IQXBackend
+from qiskit.providers.ibmq.iqxbackendservice import IQXBackendService
 
-from ..ibmqtestcase import IBMQTestCase
+from ..ibmqtestcase import IQXTestCase
 
 
-class TestIBMQBackend(IBMQTestCase):
+class TestIBMQBackend(IQXTestCase):
     """Test ibmqbackend module."""
 
     def test_backend_jobs_signature(self):
@@ -36,10 +36,10 @@ class TestIBMQBackend(IBMQTestCase):
 
         # Retrieve parameter lists for both classes.
         backend_jobs_params = set(
-            getattr(getfullargspec(IBMQBackend.jobs), 'args', [])
+            getattr(getfullargspec(IQXBackend.jobs), 'args', [])
         )
         backend_service_jobs_params = set(
-            getattr(getfullargspec(IBMQBackendService.jobs), 'args', [])
+            getattr(getfullargspec(IQXBackendService.jobs), 'args', [])
         )
 
         # Ensure parameter lists not empty

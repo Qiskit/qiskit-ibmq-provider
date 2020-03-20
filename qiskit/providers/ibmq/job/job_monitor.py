@@ -20,11 +20,11 @@ import time
 import datetime
 from typing import TextIO, Optional
 
-from .ibmqjob import IBMQJob
+from .iqxjob import IQXJob
 from ..utils.converters import seconds_to_duration
 
 
-def _text_checker(job: IBMQJob,
+def _text_checker(job: IQXJob,
                   interval: float,
                   _interval_set: bool = False,
                   output: TextIO = sys.stdout) -> None:
@@ -107,10 +107,10 @@ def _text_checker(job: IBMQJob,
     print('', file=output)
 
 
-def job_monitor(job: IBMQJob,
+def job_monitor(job: IQXJob,
                 interval: Optional[float] = None,
                 output: TextIO = sys.stdout) -> None:
-    """Monitor the status of an ``IBMQJob`` instance.
+    """Monitor the status of an ``IQXJob`` instance.
 
     Args:
         job: Job to monitor.

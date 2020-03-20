@@ -29,13 +29,13 @@ from qiskit.providers.ibmq.job.utils import get_cancel_status
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.utils.utils import RefreshQueue
 
-from ..ibmqtestcase import IBMQTestCase
+from ..ibmqtestcase import IQXTestCase
 from ..decorators import requires_qe_access, requires_device, requires_provider
 from ..contextmanagers import custom_envs, no_envs
 from ..http_server import SimpleServer, ServerErrorOnceHandler
 
 
-class TestAccountClient(IBMQTestCase):
+class TestAccountClient(IQXTestCase):
     """Tests for AccountClient."""
 
     def setUp(self):
@@ -253,7 +253,7 @@ class TestAccountClient(IBMQTestCase):
         api.job_submit(backend_name, {})
 
 
-class TestAccountClientJobs(IBMQTestCase):
+class TestAccountClientJobs(IQXTestCase):
     """Tests for AccountClient methods related to jobs.
 
     This TestCase submits a Job during class invocation, available at
@@ -342,7 +342,7 @@ class TestAccountClientJobs(IBMQTestCase):
         self.assertEqual(jobs_raw[0]['id'], self.job_id)
 
 
-class TestAuthClient(IBMQTestCase):
+class TestAuthClient(IQXTestCase):
     """Tests for the AuthClient."""
 
     @requires_qe_access

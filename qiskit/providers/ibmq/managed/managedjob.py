@@ -19,15 +19,15 @@ import logging
 from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor
 
-from qiskit.providers.ibmq import IBMQBackend
+from qiskit.providers.ibmq import IQXBackend
 from qiskit.qobj import Qobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobError
 from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 
-from ..job.ibmqjob import IBMQJob
-from ..job.exceptions import IBMQJobTimeoutError
+from ..job.iqxjob import IQXJob
+from ..job.exceptions import IQXJobTimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class ManagedJob:
             self,
             start_index: int,
             experiments_count: int,
-            job: Optional[IBMQJob] = None
+            job: Optional[IQXJob] = None
     ):
         """ManagedJob constructor.
 
@@ -60,7 +60,7 @@ class ManagedJob:
             self,
             qobj: Qobj,
             job_name: str,
-            backend: IBMQBackend,
+            backend: IQXBackend,
             executor: ThreadPoolExecutor,
             job_share_level: ApiJobShareLevel,
             job_tags: Optional[List[str]] = None
@@ -85,7 +85,7 @@ class ManagedJob:
             self,
             qobj: Qobj,
             job_name: str,
-            backend: IBMQBackend,
+            backend: IQXBackend,
             job_share_level: ApiJobShareLevel,
             job_tags: Optional[List[str]] = None
     ) -> None:
@@ -99,7 +99,7 @@ class ManagedJob:
             job_tags: Tags to be assigned to the job.
 
         Returns:
-            IBMQJob instance for the job.
+            IQXJob instance for the job.
         """
         try:
             self.job = backend.run(
@@ -149,14 +149,14 @@ class ManagedJob:
             Job result or ``None`` if result could not be retrieved.
 
         Raises:
-            IBMQJobTimeoutError: If the job does not return results before a
+            IQXJobTimeoutError: If the job does not return results before a
                 specified timeout.
         """
         result = None
         if self.job is not None:
             try:
                 result = self.job.result(timeout=timeout, partial=partial)
-            except IBMQJobTimeoutError:
+            except IQXJobTimeoutError:
                 raise
             except JobError as err:
                 warnings.warn(

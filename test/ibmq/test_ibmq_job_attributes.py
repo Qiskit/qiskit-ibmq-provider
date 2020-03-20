@@ -22,9 +22,9 @@ import uuid
 from qiskit.test import slow_test
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
+from qiskit.providers.ibmq.job.exceptions import IQXJobFailureError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
-from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
+from qiskit.providers.ibmq.exceptions import IQXBackendValueError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
@@ -143,7 +143,7 @@ class TestIBMQJobAttributes(JobTestCase):
 
         job = backend.run(qobj, validate_qobj=True)
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
-        with self.assertRaises(IBMQJobFailureError):
+        with self.assertRaises(IQXJobFailureError):
             job.result(partial=False)
 
         message = job.error_message()
@@ -165,7 +165,7 @@ class TestIBMQJobAttributes(JobTestCase):
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
         job = backend.run(qobj, validate_qobj=True)
-        with self.assertRaises(IBMQJobFailureError):
+        with self.assertRaises(IQXJobFailureError):
             job.result()
 
         message = job.error_message()
@@ -180,7 +180,7 @@ class TestIBMQJobAttributes(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend), shots=10000)
         job = backend.run(qobj, validate_qobj=True)
-        with self.assertRaises(IBMQJobFailureError):
+        with self.assertRaises(IQXJobFailureError):
             job.result()
 
         message = job.error_message()
@@ -274,7 +274,7 @@ class TestIBMQJobAttributes(JobTestCase):
         """Test setting a non existent share level for a job."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        with self.assertRaises(IBMQBackendValueError) as context_manager:
+        with self.assertRaises(IQXBackendValueError) as context_manager:
             backend.run(qobj, job_share_level='invalid_job_share_level',
                         validate_qobj=True)
         self.assertIn('not a valid job share', context_manager.exception.message)
@@ -352,8 +352,8 @@ class TestIBMQJobAttributes(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
 
-        self.assertRaises(IBMQBackendValueError, backend.run, qobj, job_tags={'foo'})
-        self.assertRaises(IBMQBackendValueError, backend.jobs, job_tags=[1, 2, 3])
+        self.assertRaises(IQXBackendValueError, backend.run, qobj, job_tags={'foo'})
+        self.assertRaises(IQXBackendValueError, backend.jobs, job_tags=[1, 2, 3])
 
 
 def _bell_circuit():

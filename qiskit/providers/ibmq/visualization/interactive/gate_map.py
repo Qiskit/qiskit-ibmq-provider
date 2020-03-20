@@ -17,14 +17,14 @@
 from typing import Tuple, Union, Optional, List
 
 import plotly.graph_objects as go
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.iqxbackend import IQXBackend
 
 from .plotly_wrapper import PlotlyWidget, PlotlyFigure
 from ..device_layouts import DEVICE_LAYOUTS
 
 
 def iplot_gate_map(
-        backend: IBMQBackend,
+        backend: IQXBackend,
         figsize: Tuple[Optional[int], Optional[int]] = (None, None),
         label_qubits: bool = True,
         qubit_size: Optional[float] = None,

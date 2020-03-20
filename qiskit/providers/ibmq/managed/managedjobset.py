@@ -33,11 +33,11 @@ from qiskit.providers.ibmq.accountprovider import AccountProvider
 from .managedjob import ManagedJob
 from .managedresults import ManagedResults
 from .utils import requires_submit, format_status_counts, format_job_details
-from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
-                         IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet)
-from ..job import IBMQJob
-from ..job.exceptions import IBMQJobTimeoutError
-from ..ibmqbackend import IBMQBackend
+from .exceptions import (IQXJobManagerInvalidStateError, IQXJobManagerTimeoutError,
+                         IQXJobManagerJobNotFound, IQXJobManagerUnknownJobSet)
+from ..job import IQXJob
+from ..job.exceptions import IQXJobTimeoutError
+from ..iqxbackend import IQXBackend
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class ManagedJobSet:
     def run(
             self,
             experiment_list: Union[List[List[QuantumCircuit]], List[List[Schedule]]],
-            backend: IBMQBackend,
+            backend: IQXBackend,
             executor: ThreadPoolExecutor,
             job_share_level: ApiJobShareLevel,
             job_tags: Optional[List[str]] = None,
@@ -101,10 +101,10 @@ class ManagedJobSet:
                 for details on these arguments.
 
         Raises:
-            IBMQJobManagerInvalidStateError: If the jobs were already submitted.
+            IQXJobManagerInvalidStateError: If the jobs were already submitted.
         """
         if self._managed_jobs:
-            raise IBMQJobManagerInvalidStateError(
+            raise IQXJobManagerInvalidStateError(
                 'The jobs for this managed job set have already been submitted.')
 
         self._backend = backend
@@ -130,8 +130,8 @@ class ManagedJobSet:
                 Otherwise return the cached value.
 
         Raises:
-            IBMQJobManagerUnknownJobSet: If the job set cannot be found.
-            IBMQJobManagerInvalidStateError: If jobs for this job set are
+            IQXJobManagerUnknownJobSet: If the job set cannot be found.
+            IQXJobManagerInvalidStateError: If jobs for this job set are
                 found but have unexpected attributes.
         """
         if not refresh and self._managed_jobs:
@@ -150,7 +150,7 @@ class ManagedJobSet:
                 break
 
         if not jobs:
-            raise IBMQJobManagerUnknownJobSet(
+            raise IQXJobManagerUnknownJobSet(
                 '{} is not a known job set within the provider {}.'.format(
                     self.job_set_id(), provider))
 
@@ -159,7 +159,7 @@ class ManagedJobSet:
         pattern = re.compile(r'(.*)_([0-9])+_$')
         matched = pattern.match(first_job.name())
         if not matched:
-            raise IBMQJobManagerInvalidStateError(
+            raise IQXJobManagerInvalidStateError(
                 'Job {} is tagged for the job set {} but does not '
                 'have a proper job name.'.format(first_job.job_id(), self.job_set_id()))
         self._name = matched.group(1)
@@ -173,7 +173,7 @@ class ManagedJobSet:
             matched = pattern.match(job.name()) if job.name() else None
             if not matched or matched.group(1) != self._name or \
                     job.backend().name() != self._backend.name():
-                raise IBMQJobManagerInvalidStateError(
+                raise IQXJobManagerInvalidStateError(
                     'Job {} is tagged for the job set {} but does not appear '
                     'to belong to the set.'.format(job.job_id(), self.job_set_id()))
             jobs_dict[int(matched.group(2))] = job
@@ -181,7 +181,7 @@ class ManagedJobSet:
         sorted_indexes = sorted(jobs_dict)
         # Verify we got all jobs.
         if sorted_indexes != list(range(len(sorted_indexes))):
-            raise IBMQJobManagerInvalidStateError(
+            raise IQXJobManagerInvalidStateError(
                 'Unable to retrieve all jobs for job set {}.'.format(self.job_set_id()))
 
         self._managed_jobs = []
@@ -278,7 +278,7 @@ class ManagedJobSet:
             for individual experiments.
 
         Raises:
-            IBMQJobManagerTimeoutError: if unable to retrieve all job results before the
+            IQXJobManagerTimeoutError: if unable to retrieve all job results before the
                 specified timeout.
         """
         if self._managed_results is not None:
@@ -294,15 +294,15 @@ class ManagedJobSet:
                 result = mjob.result(timeout=timeout, partial=partial)
                 if result is None or not result.success:
                     success = False
-            except IBMQJobTimeoutError as ex:
-                raise IBMQJobManagerTimeoutError(
+            except IQXJobTimeoutError as ex:
+                raise IQXJobManagerTimeoutError(
                     'Timeout while waiting for the results for experiments {}-{}.'.format(
                         mjob.start_index, self._managed_jobs[-1].end_index)) from ex
 
             if timeout:
                 timeout = original_timeout - (time.time() - start_time)
                 if timeout <= 0:
-                    raise IBMQJobManagerTimeoutError(
+                    raise IQXJobManagerTimeoutError(
                         'Timeout while waiting for the results for experiments {}-{}.'.format(
                             mjob.start_index, self._managed_jobs[-1].end_index))
 
@@ -343,7 +343,7 @@ class ManagedJobSet:
             mjob.cancel()
 
     @requires_submit
-    def jobs(self) -> List[Union[IBMQJob, None]]:
+    def jobs(self) -> List[Union[IQXJob, None]]:
         """Return jobs in this job set.
 
         Returns:
@@ -357,11 +357,11 @@ class ManagedJobSet:
     def job(
             self,
             experiment: Union[str, QuantumCircuit, Schedule, int]
-    ) -> Tuple[Optional[IBMQJob], int]:
+    ) -> Tuple[Optional[IQXJob], int]:
         """Retrieve the job used to submit the specified experiment and its index.
 
-        For example, if :class:`IBMQJobManager` is used to submit 1000 experiments,
-        and :class:`IBMQJobManager` divides them into 2 jobs: job 1
+        For example, if :class:`IQXJobManager` is used to submit 1000 experiments,
+        and :class:`IQXJobManager` divides them into 2 jobs: job 1
         has experiments 0-499, and job 2 has experiments 500-999. In this
         case ``job_set.job(501)`` will return ``(job2, 1)``.
 
@@ -379,7 +379,7 @@ class ManagedJobSet:
             the job submit failed, and the experiment index.
 
         Raises:
-            IBMQJobManagerJobNotFound: If the job for the experiment could not
+            IQXJobManagerJobNotFound: If the job for the experiment could not
                 be found.
         """
         if isinstance(experiment, int):
@@ -394,7 +394,7 @@ class ManagedJobSet:
                     if hasattr(exp.header, 'name') and exp.header.name == experiment:
                         return job, i
 
-        raise IBMQJobManagerJobNotFound(
+        raise IQXJobManagerJobNotFound(
             'Unable to find the job for experiment {}.'.format(experiment))
 
     @requires_submit

@@ -19,11 +19,11 @@ from qiskit.result import Result
 from qiskit.execute import execute
 from qiskit.compiler import assemble, transpile
 
-from ..ibmqtestcase import IBMQTestCase
+from ..ibmqtestcase import IQXTestCase
 from ..decorators import requires_provider, requires_device
 
 
-class TestIBMQIntegration(IBMQTestCase):
+class TestIBMQIntegration(IQXTestCase):
     """Integration tests."""
 
     seed = 42

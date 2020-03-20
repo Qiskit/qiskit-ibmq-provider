@@ -36,16 +36,16 @@ from .api.clients import AccountClient
 from .api.exceptions import ApiError
 from .backendjoblimit import BackendJobLimit
 from .credentials import Credentials
-from .exceptions import (IBMQBackendError, IBMQBackendValueError,
-                         IBMQBackendApiError, IBMQBackendApiProtocolError)
-from .job import IBMQJob
+from .exceptions import (IQXBackendError, IQXBackendValueError,
+                         IQXBackendApiError, IQXBackendApiProtocolError)
+from .job import IQXJob
 from .utils import update_qobj_config, validate_job_tags
 
 logger = logging.getLogger(__name__)
 
 
-class IBMQBackend(BaseBackend):
-    """Backend class interfacing with an IBM Quantum Experience device.
+class IQXBackend(BaseBackend):
+    """Backend class interfacing with an IBM Quantum Cloud device.
 
     You can run experiments on a backend using the :meth:`run()` method after
     assembling them into the :class:`Qobj<qiskit.qobj.Qobj>` format. The
@@ -53,10 +53,10 @@ class IBMQBackend(BaseBackend):
     instance that represents the submitted job. Each job has a unique job ID, which
     can later be used to retrieve the job. An example of this flow::
 
-        from qiskit import IBMQ, assemble, transpile
+        from qiskit import IQX, assemble, transpile
         from qiskit.circuit.random import random_circuit
 
-        provider = IBMQ.load_account()
+        provider = IQX.load_account()
         backend = provider.backends.ibmq_vigo
         qx = random_circuit(n_qubits=5, depth=4)
         qobj = assemble(transpile(qx, backend=backend), backend=backend)
@@ -64,7 +64,7 @@ class IBMQBackend(BaseBackend):
         retrieved_job = backend.retrieve_job(job.job_id())
 
     Note:
-        You should not instantiate the ``IBMQBackend`` class directly. Instead, use
+        You should not instantiate the ``IQXBackend`` class directly. Instead, use
         the methods provided by an :class:`AccountProvider` instance to retrieve and handle
         backends.
 
@@ -119,7 +119,7 @@ class IBMQBackend(BaseBackend):
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
             validate_qobj: bool = False
-    ) -> IBMQJob:
+    ) -> IQXJob:
         """Run a Qobj asynchronously.
 
         Args:
@@ -148,11 +148,11 @@ class IBMQBackend(BaseBackend):
 
         Raises:
             SchemaValidationError: If the job validation fails.
-            IBMQBackendApiError: If an unexpected error occurred while submitting
+            IQXBackendApiError: If an unexpected error occurred while submitting
                 the job.
-            IBMQBackendApiProtocolError: If an unexpected value received from
+            IQXBackendApiProtocolError: If an unexpected value received from
                  the server.
-            IBMQBackendValueError: If an input parameter value is not valid.
+            IQXBackendValueError: If an input parameter value is not valid.
         """
         # pylint: disable=arguments-differ
         if job_share_level:
@@ -160,14 +160,14 @@ class IBMQBackend(BaseBackend):
                 api_job_share_level = ApiJobShareLevel(job_share_level.lower())
             except ValueError:
                 valid_job_share_levels_str = ', '.join(level.value for level in ApiJobShareLevel)
-                raise IBMQBackendValueError(
+                raise IQXBackendValueError(
                     '"{}" is not a valid job share level. '
                     'Valid job share levels are: {}.'
                     .format(job_share_level, valid_job_share_levels_str)) from None
         else:
             api_job_share_level = ApiJobShareLevel.NONE
 
-        validate_job_tags(job_tags, IBMQBackendValueError)
+        validate_job_tags(job_tags, IQXBackendValueError)
         if validate_qobj:
             validate_qobj_against_schema(qobj)
         return self._submit_job(qobj, job_name, api_job_share_level, job_tags)
@@ -178,7 +178,7 @@ class IBMQBackend(BaseBackend):
             job_name: Optional[str] = None,
             job_share_level: Optional[ApiJobShareLevel] = None,
             job_tags: Optional[List[str]] = None
-    ) -> IBMQJob:
+    ) -> IQXJob:
         """Submit the Qobj to the backend.
 
         Args:
@@ -197,11 +197,11 @@ class IBMQBackend(BaseBackend):
             ibmq.job.start: The job has started.
 
         Raises:
-            IBMQBackendApiError: If an unexpected error occurred while submitting
+            IQXBackendApiError: If an unexpected error occurred while submitting
                 the job.
-            IBMQBackendError: If an unexpected error occurred after submitting
+            IQXBackendError: If an unexpected error occurred after submitting
                 the job.
-            IBMQBackendApiProtocolError: If an unexpected value is received from
+            IQXBackendApiProtocolError: If an unexpected value is received from
                  the server.
         """
         try:
@@ -213,12 +213,12 @@ class IBMQBackend(BaseBackend):
                 job_share_level=job_share_level,
                 job_tags=job_tags)
         except ApiError as ex:
-            raise IBMQBackendApiError('Error submitting job: {}'.format(str(ex))) from ex
+            raise IQXBackendApiError('Error submitting job: {}'.format(str(ex))) from ex
 
         # Error in the job after submission:
         # Transition to the `ERROR` final state.
         if 'error' in submit_info:
-            raise IBMQBackendError(
+            raise IQXBackendError(
                 'Error submitting job: {}'.format(str(submit_info['error'])))
 
         # Submission success.
@@ -228,11 +228,11 @@ class IBMQBackend(BaseBackend):
             'qObject': qobj
         })
         try:
-            job = IBMQJob.from_dict(submit_info)
+            job = IQXJob.from_dict(submit_info)
             logger.debug('Job %s was successfully submitted.', job.job_id())
         except ModelValidationError as err:
-            raise IBMQBackendApiProtocolError('Unexpected return value received from the server '
-                                              'when submitting job: {}'.format(str(err))) from err
+            raise IQXBackendApiProtocolError('Unexpected return value received from the server '
+                                             'when submitting job: {}'.format(str(err))) from err
         Publisher().publish("ibmq.job.start", job)
         return job
 
@@ -275,14 +275,14 @@ class IBMQBackend(BaseBackend):
             The status of the backend.
 
         Raises:
-            IBMQBackendApiProtocolError: If the status for the backend cannot be formatted properly.
+            IQXBackendApiProtocolError: If the status for the backend cannot be formatted properly.
         """
         api_status = self._api.backend_status(self.name())
 
         try:
             return BackendStatus.from_dict(api_status)
         except ValidationError as ex:
-            raise IBMQBackendApiProtocolError(
+            raise IQXBackendApiProtocolError(
                 'Unexpected return value received from the server when '
                 'getting backend status: {}'.format(str(ex))) from ex
 
@@ -337,7 +337,7 @@ class IBMQBackend(BaseBackend):
             The job limit for the backend, with this provider.
 
         Raises:
-            IBMQBackendApiProtocolError: If an unexpected value is received from the server.
+            IQXBackendApiProtocolError: If an unexpected value is received from the server.
         """
         api_job_limit = self._api.backend_job_limit(self.name())
 
@@ -348,7 +348,7 @@ class IBMQBackend(BaseBackend):
                 job_limit.maximum_jobs = None
             return job_limit
         except ValidationError as ex:
-            raise IBMQBackendApiProtocolError(
+            raise IQXBackendApiProtocolError(
                 'Unexpected return value received from the server when '
                 'querying job limit data for the backend: {}.'.format(ex)) from ex
 
@@ -370,7 +370,7 @@ class IBMQBackend(BaseBackend):
             this provider, before the maximum limit on active jobs is reached.
 
         Raises:
-            IBMQBackendApiProtocolError: If an unexpected value is received from the server.
+            IQXBackendApiProtocolError: If an unexpected value is received from the server.
         """
         job_limit = self.job_limit()
 
@@ -390,7 +390,7 @@ class IBMQBackend(BaseBackend):
             job_tags: Optional[List[str]] = None,
             job_tags_operator: Optional[str] = "OR",
             db_filter: Optional[Dict[str, Any]] = None
-    ) -> List[IBMQJob]:
+    ) -> List[IQXJob]:
         """Return the jobs submitted to this backend, subject to optional filtering.
 
         Retrieve jobs submitted to this backend that match the given filters
@@ -438,13 +438,13 @@ class IBMQBackend(BaseBackend):
             A list of jobs that match the criteria.
 
         Raises:
-            IBMQBackendValueError: If a keyword value is not recognized.
+            IQXBackendValueError: If a keyword value is not recognized.
         """
         return self._provider.backends.jobs(
             limit, skip, self.name(), status,
             job_name, start_datetime, end_datetime, job_tags, job_tags_operator, db_filter)
 
-    def active_jobs(self, limit: int = 10) -> List[IBMQJob]:
+    def active_jobs(self, limit: int = 10) -> List[IQXJob]:
         """Return the unfinished jobs submitted to this backend.
 
         Return the jobs submitted to this backend, with this provider, that are
@@ -465,7 +465,7 @@ class IBMQBackend(BaseBackend):
 
         return self.jobs(status=active_job_states, limit=limit)
 
-    def retrieve_job(self, job_id: str) -> IBMQJob:
+    def retrieve_job(self, job_id: str) -> IQXJob:
         """Return a single job submitted to this backend.
 
         Args:
@@ -475,7 +475,7 @@ class IBMQBackend(BaseBackend):
             The job with the given ID.
 
         Raises:
-            IBMQBackendError: If job retrieval failed.
+            IQXBackendError: If job retrieval failed.
         """
         job = self._provider.backends.retrieve_job(job_id)
         job_backend = job.backend()
@@ -485,9 +485,9 @@ class IBMQBackend(BaseBackend):
                           'The query was made on backend {}, '
                           'but the job actually belongs to backend {}.'
                           .format(job_id, self.name(), job_backend.name()))
-            raise IBMQBackendError('Failed to get job {}: '
-                                   'job does not belong to backend {}.'
-                                   .format(job_id, self.name()))
+            raise IQXBackendError('Failed to get job {}: '
+                                  'job does not belong to backend {}.'
+                                  .format(job_id, self.name()))
 
         return job
 
@@ -500,7 +500,7 @@ class IBMQBackend(BaseBackend):
             self.__class__.__name__, self.name(), credentials_info)
 
 
-class IBMQSimulator(IBMQBackend):
+class IQXSimulator(IQXBackend):
     """Backend class interfacing with an IBM Quantum Experience simulator."""
 
     def properties(
@@ -520,7 +520,7 @@ class IBMQSimulator(IBMQBackend):
             validate_qobj: bool = False,
             backend_options: Optional[Dict] = None,
             noise_model: Any = None
-    ) -> IBMQJob:
+    ) -> IQXJob:
         """Run a Qobj asynchronously.
 
         Args:
@@ -542,11 +542,11 @@ class IBMQSimulator(IBMQBackend):
         """
         # pylint: disable=arguments-differ
         qobj = update_qobj_config(qobj, backend_options, noise_model)
-        return super(IBMQSimulator, self).run(qobj, job_name, job_share_level, job_tags,
-                                              validate_qobj)
+        return super(IQXSimulator, self).run(qobj, job_name, job_share_level, job_tags,
+                                             validate_qobj)
 
 
-class IBMQRetiredBackend(IBMQBackend):
+class IQXRetiredBackend(IQXBackend):
     """Backend class interfacing with an IBM Quantum Experience device no longer available."""
 
     def __init__(
@@ -609,7 +609,7 @@ class IBMQRetiredBackend(IBMQBackend):
             validate_qobj: bool = False
     ) -> None:
         """Run a Qobj."""
-        raise IBMQBackendError('This backend ({}) is no longer available.'.format(self.name()))
+        raise IQXBackendError('This backend ({}) is no longer available.'.format(self.name()))
 
     @classmethod
     def from_name(

@@ -12,14 +12,14 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBMQJob model tests."""
+"""IQXJob model tests."""
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.validation import ModelValidationError
 from qiskit.validation.jsonschema import SchemaValidationError
 
-from qiskit.providers.ibmq import IBMQJob
+from qiskit.providers.ibmq import IQXJob
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider
@@ -44,7 +44,7 @@ class TestIBMQJobModel(JobTestCase):
         """Test creating a job with bad job schema."""
         bad_job_info = {'id': 'TEST_ID'}
         with self.assertRaises(ModelValidationError):
-            IBMQJob.from_dict(bad_job_info)
+            IQXJob.from_dict(bad_job_info)
 
     @requires_provider
     def test_invalid_qobj(self, provider):
@@ -59,7 +59,7 @@ class TestIBMQJobModel(JobTestCase):
 
     def test_valid_job(self):
         """Test the model can be created from a response."""
-        job = IBMQJob.from_dict(VALID_JOB_RESPONSE)
+        job = IQXJob.from_dict(VALID_JOB_RESPONSE)
 
         # Check for a required attribute with correct name.
         self.assertNotIn('creationDate', job)
@@ -69,7 +69,7 @@ class TestIBMQJobModel(JobTestCase):
         """Test undefined response fields appear in the model."""
         response = VALID_JOB_RESPONSE.copy()
         response['newField'] = {'foo': 2}
-        job = IBMQJob.from_dict(response)
+        job = IQXJob.from_dict(response)
 
         # Check the field appears as an attribute in the model.
         self.assertIn('new_field', job)
@@ -80,7 +80,7 @@ class TestIBMQJobModel(JobTestCase):
         response = VALID_JOB_RESPONSE.copy()
         response['kind'] = 'invalid'
         with self.assertRaises(ModelValidationError):
-            IBMQJob.from_dict(response)
+            IQXJob.from_dict(response)
 
 
 def _bell_circuit():

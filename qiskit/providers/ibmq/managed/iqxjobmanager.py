@@ -24,15 +24,15 @@ from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 from qiskit.providers.ibmq.utils import validate_job_tags
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 
-from .exceptions import IBMQJobManagerInvalidStateError
+from .exceptions import IQXJobManagerInvalidStateError
 from .utils import format_job_details, format_status_counts
 from .managedjobset import ManagedJobSet
-from ..ibmqbackend import IBMQBackend
+from ..iqxbackend import IQXBackend
 
 logger = logging.getLogger(__name__)
 
 
-class IBMQJobManager:
+class IQXJobManager:
     """Job Manager for IBM Quantum Experience.
 
     The Job Manager is a higher level mechanism for handling
@@ -44,7 +44,7 @@ class IBMQJobManager:
     You can use the :meth:`run()` method to submit multiple experiments
     with the Job Manager::
 
-        from qiskit.providers.ibmq.managed import IBMQJobManager
+        from qiskit.providers.ibmq.managed import IQXJobManager
         from qiskit.circuit.random import random_circuit
 
         # Build a thousand circuits.
@@ -53,7 +53,7 @@ class IBMQJobManager:
             circs.append(random_circuit(n_qubits=5, depth=4))
 
         # Use Job Manager to break the circuits into multiple jobs.
-        job_manager = IBMQJobManager()
+        job_manager = IQXJobManager()
         job_set_foo = job_manager.run(circs, backend=backend, name='foo')
 
     The :meth:`run()` method returns a :class:`ManagedJobSet` instance, which
@@ -75,14 +75,14 @@ class IBMQJobManager:
     """
 
     def __init__(self) -> None:
-        """IBMQJobManager constructor."""
+        """IQXJobManager constructor."""
         self._job_sets = []  # type: List[ManagedJobSet]
         self._executor = futures.ThreadPoolExecutor()
 
     def run(
             self,
             experiments: Union[List[QuantumCircuit], List[Schedule]],
-            backend: IBMQBackend,
+            backend: IQXBackend,
             name: Optional[str] = None,
             max_experiments_per_job: Optional[int] = None,
             job_share_level: Optional[str] = None,
@@ -129,11 +129,11 @@ class IBMQJobManager:
             the experiments.
 
         Raises:
-            IBMQJobManagerInvalidStateError: If an input parameter value is not valid.
+            IQXJobManagerInvalidStateError: If an input parameter value is not valid.
         """
         if (any(isinstance(exp, Schedule) for exp in experiments) and
                 not backend.configuration().open_pulse):
-            raise IBMQJobManagerInvalidStateError(
+            raise IQXJobManagerInvalidStateError(
                 'Pulse schedules found, but the backend does not support pulse schedules.')
 
         # Validate job share level
@@ -142,13 +142,13 @@ class IBMQJobManager:
                 api_job_share_level = ApiJobShareLevel(job_share_level.lower())
             except ValueError:
                 valid_job_share_levels_str = ', '.join(level.value for level in ApiJobShareLevel)
-                raise IBMQJobManagerInvalidStateError(
+                raise IQXJobManagerInvalidStateError(
                     '"{}" is not a valid job share level. Valid job share levels are: {}'.format(
                         job_share_level, valid_job_share_levels_str)) from None
         else:
             api_job_share_level = ApiJobShareLevel.NONE
 
-        validate_job_tags(job_tags, IBMQJobManagerInvalidStateError)
+        validate_job_tags(job_tags, IQXJobManagerInvalidStateError)
 
         experiment_list = self._split_experiments(
             experiments, backend=backend, max_experiments_per_job=max_experiments_per_job)
@@ -163,7 +163,7 @@ class IBMQJobManager:
     def _split_experiments(
             self,
             experiments: Union[List[QuantumCircuit], List[Schedule]],
-            backend: IBMQBackend,
+            backend: IQXBackend,
             max_experiments_per_job: Optional[int] = None
     ) -> List[Union[List[QuantumCircuit], List[Schedule]]]:
         """Split a list of experiments into sub-lists.
@@ -245,8 +245,8 @@ class IBMQJobManager:
             Retrieved job set.
 
         Raises:
-            IBMQJobManagerUnknownJobSet: If the job set cannot be found.
-            IBMQJobManagerInvalidStateError: If jobs for this job set are
+            IQXJobManagerUnknownJobSet: If the job set cannot be found.
+            IQXJobManagerInvalidStateError: If jobs for this job set are
                 found but have unexpected attributes.
         """
         for index, mjs in enumerate(self._job_sets):

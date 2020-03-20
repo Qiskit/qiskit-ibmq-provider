@@ -23,28 +23,28 @@ import uuid
 from qiskit import QuantumCircuit
 from qiskit.result import Result
 
-from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
+from qiskit.providers.ibmq.managed.iqxjobmanager import IQXJobManager
 from qiskit.providers.ibmq.managed.managedresults import ManagedResults
 from qiskit.providers.ibmq.managed.exceptions import (
-    IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
+    IQXJobManagerJobNotFound, IQXManagedResultDataNotAvailable, IQXJobManagerInvalidStateError)
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
-from qiskit.providers.ibmq.exceptions import IBMQBackendError
+from qiskit.providers.ibmq.iqxbackend import IQXBackend
+from qiskit.providers.ibmq.exceptions import IQXBackendError
 from qiskit.compiler import transpile, assemble
 
-from ..ibmqtestcase import IBMQTestCase
+from ..ibmqtestcase import IQXTestCase
 from ..decorators import requires_provider
 from ..fake_account_client import BaseFakeAccountClient
 from ..utils import cancel_job
 
 
-class TestIBMQJobManager(IBMQTestCase):
+class TestIBMQJobManager(IQXTestCase):
     """Tests for IBMQJobManager."""
 
     def setUp(self):
         """Initial test setup."""
         self._qc = _bell_circuit()
-        self._jm = IBMQJobManager()
+        self._jm = IQXJobManager()
 
     @requires_provider
     def test_split_circuits(self, provider):
@@ -168,8 +168,8 @@ class TestIBMQJobManager(IBMQTestCase):
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        with mock.patch.object(IBMQBackend, 'run',
-                               side_effect=[IBMQBackendError("Kaboom!"), mock.DEFAULT]):
+        with mock.patch.object(IQXBackend, 'run',
+                               side_effect=[IQXBackendError("Kaboom!"), mock.DEFAULT]):
             job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
         self.assertIsNone(job_set.jobs()[0])
         self.assertIsNotNone(job_set.jobs()[1])
@@ -230,7 +230,7 @@ class TestIBMQJobManager(IBMQTestCase):
                 while JobStatus.INITIALIZING in job_set.statuses():
                     time.sleep(1)
 
-                rjob_set = IBMQJobManager().retrieve_job_set(
+                rjob_set = IQXJobManager().retrieve_job_set(
                     job_set_id=job_set.job_set_id(), provider=provider)
                 self.assertEqual({job.job_id() for job in job_set.jobs()},
                                  {rjob.job_id() for rjob in rjob_set.jobs()},
@@ -275,7 +275,7 @@ class TestIBMQJobManager(IBMQTestCase):
         for _ in range(2):
             circs.append(self._qc)
 
-        self.assertRaises(IBMQJobManagerInvalidStateError, self._jm.run,
+        self.assertRaises(IQXJobManagerInvalidStateError, self._jm.run,
                           circs, backend=backend, job_share_level="invalid_job_share_level")
 
     @requires_provider
@@ -304,13 +304,13 @@ class TestIBMQJobManager(IBMQTestCase):
         self.assertEqual(job_set.tags(), job_tags)
 
 
-class TestResultManager(IBMQTestCase):
+class TestResultManager(IQXTestCase):
     """Tests for ResultManager."""
 
     def setUp(self):
         """Initial test setup."""
         self._qc = _bell_circuit()
-        self._jm = IBMQJobManager()
+        self._jm = IQXJobManager()
 
     @requires_provider
     def test_index_by_number(self, provider):
@@ -358,7 +358,7 @@ class TestResultManager(IBMQTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         job_set = self._jm.run([self._qc], backend=backend)
         result_manager = job_set.results()
-        with self.assertRaises(IBMQJobManagerJobNotFound):
+        with self.assertRaises(IQXJobManagerJobNotFound):
             result_manager.get_counts(1)
 
     @requires_provider
@@ -377,7 +377,7 @@ class TestResultManager(IBMQTestCase):
 
         result_manager = job_set.results()
         if cancelled:
-            with self.assertRaises(IBMQManagedResultDataNotAvailable,
+            with self.assertRaises(IQXManagedResultDataNotAvailable,
                                    msg="IBMQManagedResultDataNotAvailable not "
                                        "raised for job {}".format(cjob.job_id())):
                 result_manager.get_counts(max_circs)

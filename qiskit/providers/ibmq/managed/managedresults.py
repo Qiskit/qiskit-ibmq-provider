@@ -23,7 +23,7 @@ from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 
 from qiskit.providers.ibmq.managed import managedjobset  # pylint: disable=unused-import
-from .exceptions import IBMQManagedResultDataNotAvailable
+from .exceptions import IQXManagedResultDataNotAvailable
 from ..job.exceptions import JobError
 
 
@@ -73,8 +73,8 @@ class ManagedResults:
             information on return data.
 
         Raises:
-            IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
-            IBMQJobManagerJobNotFound: If the job for the experiment could not
+            IQXManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
+            IQXJobManagerJobNotFound: If the job for the experiment could not
                 be found.
         """
         result, exp_index = self._get_result(experiment)
@@ -96,8 +96,8 @@ class ManagedResults:
             for information on return data.
 
         Raises:
-            IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
-            IBMQJobManagerJobNotFound: If the job for the experiment could not
+            IQXManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
+            IQXJobManagerJobNotFound: If the job for the experiment could not
                 be found.
         """
         result, exp_index = self._get_result(experiment)
@@ -117,8 +117,8 @@ class ManagedResults:
             for information on return data.
 
         Raises:
-            IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
-            IBMQJobManagerJobNotFound: If the job for the experiment could not
+            IQXManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
+            IQXJobManagerJobNotFound: If the job for the experiment could not
                 be found.
         """
         result, exp_index = self._get_result(experiment)
@@ -141,8 +141,8 @@ class ManagedResults:
             for information on return data.
 
         Raises:
-            IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
-            IBMQJobManagerJobNotFound: If the job for the experiment could not
+            IQXManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
+            IQXJobManagerJobNotFound: If the job for the experiment could not
                 be found.
         """
         result, exp_index = self._get_result(experiment)
@@ -165,8 +165,8 @@ class ManagedResults:
             for information on return data.
 
         Raises:
-            IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
-            IBMQJobManagerJobNotFound: If the job for the experiment could not
+            IQXManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
+            IQXJobManagerJobNotFound: If the job for the experiment could not
                 be found.
         """
         result, exp_index = self._get_result(experiment)
@@ -186,19 +186,19 @@ class ManagedResults:
                 the experiment index within the job.
 
         Raises:
-            IBMQManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
-            IBMQJobManagerJobNotFound: If the job for the experiment could not
+            IQXManagedResultDataNotAvailable: If data for the experiment could not be retrieved.
+            IQXJobManagerJobNotFound: If the job for the experiment could not
                 be found.
         """
 
         (job, exp_index) = self._job_set.job(experiment)
         if job is None:
-            raise IBMQManagedResultDataNotAvailable(
+            raise IQXManagedResultDataNotAvailable(
                 'Job for experiment {} was not successfully submitted.'.format(experiment))
 
         try:
             result = job.result()
             return result, exp_index
         except JobError as err:
-            raise IBMQManagedResultDataNotAvailable(
+            raise IQXManagedResultDataNotAvailable(
                 'Result data for experiment {} is not available.'.format(experiment)) from err

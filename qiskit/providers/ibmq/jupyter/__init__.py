@@ -41,11 +41,11 @@ Detailed information on a single backend
 
 .. jupyter-execute::
 
-    from qiskit import IBMQ
+    from qiskit import IQX
     import qiskit.providers.ibmq.jupyter
 
-    IBMQ.load_account()
-    provider = IBMQ.get_provider(hub='ibm-q')
+    IQX.load_account()
+    provider = IQX.get_provider(hub='ibm-q')
     backend = provider.get_backend('ibmq_vigo')
     backend
 
@@ -55,7 +55,7 @@ IBM Quantum Experience (IQX) dashboard
 
 .. jupyter-execute::
 
-    from qiskit import IBMQ
+    from qiskit import IQX
     import qiskit.providers.ibmq.jupyter
 
     %iqx_dashboard
@@ -68,7 +68,7 @@ if ('ipykernel' in sys.modules) and ('spyder' not in sys.modules):
     from IPython import get_ipython          # pylint: disable=import-error
     from .dashboard.dashboard import IQXDashboardMagic
     from qiskit.test.mock import FakeBackend
-    from ..ibmqbackend import IBMQBackend
+    from ..iqxbackend import IQXBackend
     from .backend_info import backend_widget
 
     _IP = get_ipython()
@@ -76,5 +76,5 @@ if ('ipykernel' in sys.modules) and ('spyder' not in sys.modules):
         _IP.register_magics(IQXDashboardMagic)
         HTML_FORMATTER = _IP.display_formatter.formatters['text/html']
         # Make backend_widget the html repr for IBM Quantum backends
-        HTML_FORMATTER.for_type(IBMQBackend, backend_widget)
+        HTML_FORMATTER.for_type(IQXBackend, backend_widget)
         HTML_FORMATTER.for_type(FakeBackend, backend_widget)

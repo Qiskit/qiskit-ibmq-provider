@@ -22,7 +22,7 @@ import numpy as np
 import matplotlib as mpl
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.iqxbackend import IQXBackend
 
 from .plotly_wrapper import PlotlyWidget, PlotlyFigure
 from ..device_layouts import DEVICE_LAYOUTS
@@ -32,7 +32,7 @@ from ..exceptions import VisualizationValueError, VisualizationTypeError
 
 
 def iplot_error_map(
-        backend: IBMQBackend,
+        backend: IQXBackend,
         figsize: Tuple[int] = (800, 500),
         show_title: bool = True,
         remove_badcal_edges: bool = True,

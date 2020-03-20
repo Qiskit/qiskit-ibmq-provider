@@ -16,11 +16,11 @@
 
 from qiskit.providers.ibmq import least_busy
 
-from ..ibmqtestcase import IBMQTestCase
+from ..ibmqtestcase import IQXTestCase
 from ..decorators import requires_provider, requires_device
 
 
-class TestBackendFilters(IBMQTestCase):
+class TestBackendFilters(IQXTestCase):
     """Qiskit Backend Filtering Tests."""
 
     @requires_device

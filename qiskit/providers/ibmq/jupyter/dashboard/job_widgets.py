@@ -19,7 +19,7 @@ from datetime import datetime
 
 import ipywidgets as widgets
 
-from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+from qiskit.providers.ibmq.job.iqxjob import IQXJob
 from qiskit.providers.ibmq.utils.converters import utc_to_local
 
 
@@ -77,7 +77,7 @@ def make_labels() -> widgets.HBox:
 
 
 def create_job_widget(watcher: 'IQXDashboard',
-                      job: IBMQJob,
+                      job: IQXJob,
                       backend: str,
                       status: str = '',
                       queue_pos: Optional[int] = None,

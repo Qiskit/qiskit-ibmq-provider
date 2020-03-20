@@ -22,12 +22,12 @@ import sys
 
 from requests.exceptions import ProxyError
 
-from qiskit.providers.ibmq import IBMQFactory
+from qiskit.providers.ibmq import IQXFactory
 from qiskit.providers.ibmq.api.clients import (AuthClient,
                                                VersionClient)
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from qiskit.providers.ibmq.credentials import Credentials
-from ..ibmqtestcase import IBMQTestCase
+from ..ibmqtestcase import IQXTestCase
 from ..decorators import requires_qe_access
 
 # Fallback mechanism. Version variable is stored under __doc__ in new pproxy versions
@@ -46,7 +46,7 @@ INVALID_ADDRESS_PROXIES = {'https': 'http://{}:{}'.format('invalid', PORT)}
 @skipIf((sys.version_info > (3, 5) and pproxy_version == '1.2.2') or
         (sys.version_info == (3, 5) and pproxy_version > '1.2.2'),
         'pproxy version is not supported')
-class TestProxies(IBMQTestCase):
+class TestProxies(IQXTestCase):
     """Tests for proxy capabilities."""
 
     def setUp(self):
@@ -72,7 +72,7 @@ class TestProxies(IBMQTestCase):
     @requires_qe_access
     def test_proxies_factory(self, qe_token, qe_url):
         """Should reach the proxy using factory.enable_account."""
-        factory = IBMQFactory()
+        factory = IQXFactory()
         provider = factory.enable_account(qe_token, qe_url,
                                           proxies={'urls': VALID_PROXIES})
 

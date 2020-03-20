@@ -17,11 +17,11 @@
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 
-from ..ibmqtestcase import IBMQTestCase
+from ..ibmqtestcase import IQXTestCase
 from ..decorators import requires_provider
 
 
-class TestIbmqQasmSimulator(IBMQTestCase):
+class TestIbmqQasmSimulator(IQXTestCase):
     """Test IBM Quantum QASM Simulator."""
 
     @requires_provider

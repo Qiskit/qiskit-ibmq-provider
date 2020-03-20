@@ -23,10 +23,10 @@ from IPython.display import display, Javascript
 from IPython.core.magic import line_magic, Magics, magics_class
 from qiskit.tools.events.pubsub import Subscriber
 from qiskit.exceptions import QiskitError
-from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
-from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+from qiskit.providers.ibmq.job.exceptions import IQXJobApiError
+from qiskit.providers.ibmq.job.iqxjob import IQXJob
 
-from ... import IBMQ
+from ... import IQX
 from .job_widgets import (make_clear_button,
                           make_labels, create_job_widget)
 from .backend_widget import make_backend_widget
@@ -110,7 +110,7 @@ class IQXDashboard(Subscriber):
         """Get all the backends accessible with this account."""
 
         ibmq_backends = {}
-        for pro in IBMQ.providers():
+        for pro in IQX.providers():
             pro_name = "{hub}/{group}/{project}".format(hub=pro.credentials.hub,
                                                         group=pro.credentials.group,
                                                         project=pro.credentials.project)
@@ -218,7 +218,7 @@ class IQXDashboard(Subscriber):
             try:
                 self.jobs[ind].job.cancel()
                 status = self.jobs[ind].job.status()
-            except IBMQJobApiError:
+            except IQXJobApiError:
                 pass
             else:
                 self.update_single_job((self.jobs[ind].job_id,
@@ -243,7 +243,7 @@ class IQXDashboard(Subscriber):
     def _init_subscriber(self) -> None:
         """Initializes a subscriber that listens to job start events."""
 
-        def _add_job(job: IBMQJob) -> None:
+        def _add_job(job: IQXJob) -> None:
             """Callback function when a job start event is received.
 
             When a job starts, this function creates a job widget and adds
@@ -333,15 +333,15 @@ class IQXDashboardMagic(Magics):
     def iqx_dashboard(self, line='', cell=None) -> None:
         """A Jupyter magic function to enable the dashboard."""
         # pylint: disable=unused-argument
-        pro = IBMQ.providers()
+        pro = IQX.providers()
         if not pro:
             try:
-                IBMQ.load_account()
+                IQX.load_account()
             except Exception:
                 raise QiskitError(
                     "Could not load IBM Quantum Experience account from the local file.")
             else:
-                pro = IBMQ.providers()
+                pro = IQX.providers()
                 if not pro:
                     raise QiskitError(
                         "No providers found.  Must load your IBM Quantum Experience account.")

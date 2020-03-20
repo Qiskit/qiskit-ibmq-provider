@@ -19,11 +19,11 @@ from unittest import skipIf
 
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
-from qiskit.providers.ibmq.exceptions import (IBMQAccountError, IBMQAccountCredentialsInvalidUrl,
-                                              IBMQAccountCredentialsInvalidToken)
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory, QX_AUTH_URL
+from qiskit.providers.ibmq.exceptions import (IQXAccountError, IQXAccountCredentialsInvalidUrl,
+                                              IQXAccountCredentialsInvalidToken)
+from qiskit.providers.ibmq.iqxfactory import IQXFactory, QX_AUTH_URL
 
-from ..ibmqtestcase import IBMQTestCase
+from ..ibmqtestcase import IQXTestCase
 from ..decorators import requires_qe_access
 from ..contextmanagers import (custom_qiskitrc, no_file, no_envs,
                                CREDENTIAL_ENV_VARS)
@@ -33,13 +33,13 @@ AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 API1_URL = 'https://quantumexperience.ng.bluemix.net/api'
 
 
-class TestIBMQFactoryEnableAccount(IBMQTestCase):
+class TestIBMQFactoryEnableAccount(IQXTestCase):
     """Tests for IBMQFactory ``enable_account()``."""
 
     @requires_qe_access
     def test_auth_url(self, qe_token, qe_url):
         """Test login into an auth account."""
-        ibmq = IBMQFactory()
+        ibmq = IQXFactory()
         provider = ibmq.enable_account(qe_token, qe_url)
         self.assertIsInstance(provider, AccountProvider)
 
@@ -48,8 +48,8 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         qe_token = 'invalid'
         qe_url = API1_URL
 
-        with self.assertRaises(IBMQAccountCredentialsInvalidUrl) as context_manager:
-            ibmq = IBMQFactory()
+        with self.assertRaises(IQXAccountCredentialsInvalidUrl) as context_manager:
+            ibmq = IQXFactory()
             ibmq.enable_account(qe_token, qe_url)
 
         self.assertIn('authentication URL', str(context_manager.exception))
@@ -59,8 +59,8 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         qe_token = 'invalid'
         qe_url = API_URL
 
-        with self.assertRaises(IBMQAccountCredentialsInvalidUrl) as context_manager:
-            ibmq = IBMQFactory()
+        with self.assertRaises(IQXAccountCredentialsInvalidUrl) as context_manager:
+            ibmq = IQXFactory()
             ibmq.enable_account(qe_token, qe_url)
 
         self.assertIn('authentication URL', str(context_manager.exception))
@@ -70,8 +70,8 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         qe_token = 'invalid'
         qe_url = API_URL + '/Hubs/X/Groups/Y/Projects/Z'
 
-        with self.assertRaises(IBMQAccountCredentialsInvalidUrl) as context_manager:
-            ibmq = IBMQFactory()
+        with self.assertRaises(IQXAccountCredentialsInvalidUrl) as context_manager:
+            ibmq = IQXFactory()
             ibmq.enable_account(qe_token, qe_url)
 
         self.assertIn('authentication URL', str(context_manager.exception))
@@ -79,10 +79,10 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
     @requires_qe_access
     def test_enable_twice(self, qe_token, qe_url):
         """Test login into an already logged-in account."""
-        ibmq = IBMQFactory()
+        ibmq = IQXFactory()
         ibmq.enable_account(qe_token, qe_url)
 
-        with self.assertRaises(IBMQAccountError) as context_manager:
+        with self.assertRaises(IQXAccountError) as context_manager:
             ibmq.enable_account(qe_token, qe_url)
 
         self.assertIn('already', str(context_manager.exception))
@@ -90,10 +90,10 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
     @requires_qe_access
     def test_enable_twice_invalid(self, qe_token, qe_url):
         """Test login into an invalid account during an already logged-in account."""
-        ibmq = IBMQFactory()
+        ibmq = IQXFactory()
         ibmq.enable_account(qe_token, qe_url)
 
-        with self.assertRaises(IBMQAccountError) as context_manager:
+        with self.assertRaises(IQXAccountError) as context_manager:
             qe_token_api1 = 'invalid'
             qe_url_api1 = API1_URL
             ibmq.enable_account(qe_token_api1, qe_url_api1)
@@ -109,14 +109,14 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
                 'https': 'https://user:password@127.0.0.1:5678'
             }
         }
-        ibmq = IBMQFactory()
+        ibmq = IQXFactory()
         with self.assertRaises(RequestsApiError) as context_manager:
             ibmq.enable_account(qe_token, qe_url, proxies=proxies)
         self.assertIn('ProxyError', str(context_manager.exception))
 
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
-class TestIBMQFactoryAccounts(IBMQTestCase):
+class TestIBMQFactoryAccounts(IQXTestCase):
     """Tests for account handling."""
 
     @classmethod
@@ -129,7 +129,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
         super().setUp()
 
         # Reference for saving accounts.
-        self.factory = IBMQFactory()
+        self.factory = IQXFactory()
 
     def test_save_account(self):
         """Test saving an account."""
@@ -183,24 +183,24 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
     def test_save_none_token(self):
         """Test saving an account with token=None. See #391"""
-        with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
+        with self.assertRaises(IQXAccountCredentialsInvalidToken) as context_manager:
             self.factory.save_account(None)
         self.assertIn('Invalid IBM Quantum Experience token', str(context_manager.exception))
 
     def test_save_empty_token(self):
         """Test saving an account with token=''. See #391"""
-        with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
+        with self.assertRaises(IQXAccountCredentialsInvalidToken) as context_manager:
             self.factory.save_account('')
         self.assertIn('Invalid IBM Quantum Experience token', str(context_manager.exception))
 
     def test_save_zero_token(self):
         """Test saving an account with token=0. See #391"""
-        with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
+        with self.assertRaises(IQXAccountCredentialsInvalidToken) as context_manager:
             self.factory.save_account(0)
         self.assertIn('Invalid IBM Quantum Experience token', str(context_manager.exception))
 
 
-class TestIBMQFactoryProvider(IBMQTestCase):
+class TestIBMQFactoryProvider(IQXTestCase):
     """Tests for IBMQFactory provider related methods."""
 
     @requires_qe_access
@@ -212,7 +212,7 @@ class TestIBMQFactoryProvider(IBMQTestCase):
         """Initial test setup."""
         super().setUp()
 
-        self.ibmq = IBMQFactory()
+        self.ibmq = IQXFactory()
         self.provider = self._get_provider()
         self.credentials = self.provider.credentials
 

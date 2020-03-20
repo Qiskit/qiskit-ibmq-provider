@@ -21,7 +21,7 @@ from qiskit.providers.jobstatus import JobStatus
 
 from ..apiconstants import ApiJobStatus
 from ..api.exceptions import ApiError
-from .exceptions import IBMQJobApiError
+from .exceptions import IQXJobApiError
 
 
 API_TO_JOB_STATUS = {
@@ -89,4 +89,4 @@ def api_to_job_error() -> Generator[None, None, None]:
     try:
         yield
     except ApiError as api_err:
-        raise IBMQJobApiError(str(api_err)) from api_err
+        raise IQXJobApiError(str(api_err)) from api_err

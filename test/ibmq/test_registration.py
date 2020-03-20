@@ -24,15 +24,15 @@ from unittest import skipIf
 from unittest.mock import patch
 from requests_ntlm import HttpNtlmAuth
 
-from qiskit.providers.ibmq import IBMQ, IBMQFactory
+from qiskit.providers.ibmq import IQX, IQXFactory
 from qiskit.providers.ibmq.credentials import (
     Credentials, discover_credentials, qconfig,
     read_credentials_from_qiskitrc, store_credentials)
 from qiskit.providers.ibmq.credentials.updater import (
     update_credentials, QE2_AUTH_URL, QE2_URL, QE_URL)
-from qiskit.providers.ibmq.exceptions import IBMQAccountError
+from qiskit.providers.ibmq.exceptions import IQXAccountError
 
-from ..ibmqtestcase import IBMQTestCase
+from ..ibmqtestcase import IQXTestCase
 from ..contextmanagers import custom_envs, no_envs, custom_qiskitrc, no_file, CREDENTIAL_ENV_VARS
 
 
@@ -48,14 +48,14 @@ PROXIES = {
 
 # TODO: NamedTemporaryFiles do not support name in Windows
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
-class TestCredentials(IBMQTestCase):
+class TestCredentials(IQXTestCase):
     """Tests for the credential modules."""
 
     def test_autoregister_no_credentials(self):
         """Test ``register()`` with no credentials available."""
         with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
-            with self.assertRaises(IBMQAccountError) as context_manager:
-                IBMQ.load_account()
+            with self.assertRaises(IQXAccountError) as context_manager:
+                IQX.load_account()
 
         self.assertIn('No IBM Quantum Experience credentials found', str(context_manager.exception))
 
@@ -64,7 +64,7 @@ class TestCredentials(IBMQTestCase):
         credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
         credentials2 = Credentials('QISKITRC_TOKEN_2', url=QE2_AUTH_URL)
 
-        factory = IBMQFactory()
+        factory = IQXFactory()
 
         with custom_qiskitrc():
             store_credentials(credentials)
@@ -116,7 +116,7 @@ class TestCredentials(IBMQTestCase):
         self.assertEqual(list(credentials.values())[0].token, 'QCONFIG_TOKEN')
 
 
-class TestCredentialsKwargs(IBMQTestCase):
+class TestCredentialsKwargs(IQXTestCase):
     """Test for ``Credentials.connection_parameters()``."""
 
     def test_no_proxy_params(self):
@@ -202,7 +202,7 @@ class TestCredentialsKwargs(IBMQTestCase):
 
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
-class TestIBMQAccountUpdater(IBMQTestCase):
+class TestIBMQAccountUpdater(IQXTestCase):
     """Tests for the ``update_credentials()`` helper."""
 
     def setUp(self):
@@ -344,11 +344,11 @@ def _mocked_initialize_provider(self, credentials: Credentials):
 
 @contextmanager
 def mock_ibmq_provider():
-    """Mock the initialization of ``IBMQFactory``, so it does not query the API."""
-    patcher = patch.object(IBMQFactory, '_initialize_providers',
+    """Mock the initialization of ``IQXFactory``, so it does not query the API."""
+    patcher = patch.object(IQXFactory, '_initialize_providers',
                            side_effect=_mocked_initialize_provider,
                            autospec=True)
-    patcher2 = patch.object(IBMQFactory, '_check_api_version',
+    patcher2 = patch.object(IQXFactory, '_check_api_version',
                             return_value={'new_api': True, 'api-auth': '0.1'})
     patcher.start()
     patcher2.start()

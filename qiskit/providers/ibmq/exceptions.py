@@ -17,61 +17,61 @@
 from qiskit.exceptions import QiskitError
 
 
-class IBMQError(QiskitError):
+class IQXError(QiskitError):
     """Base class for errors raised by the provider modules."""
     pass
 
 
-class IBMQAccountError(IBMQError):
+class IQXAccountError(IQXError):
     """Base class for errors raised by account management."""
     pass
 
 
-class IBMQAccountCredentialsNotFound(IBMQAccountError):
+class IQXAccountCredentialsNotFound(IQXAccountError):
     """Errors raised when credentials are not found."""
     pass
 
 
-class IBMQAccountCredentialsInvalidFormat(IBMQAccountError):
+class IQXAccountCredentialsInvalidFormat(IQXAccountError):
     """Errors raised when the credentials format is invalid."""
     pass
 
 
-class IBMQAccountCredentialsInvalidToken(IBMQAccountError):
+class IQXAccountCredentialsInvalidToken(IQXAccountError):
     """Errors raised when an IBM Quantum Experience token is invalid."""
     pass
 
 
-class IBMQAccountCredentialsInvalidUrl(IBMQAccountError):
+class IQXAccountCredentialsInvalidUrl(IQXAccountError):
     """Errors raised when an IBM Quantum Experience URL is invalid."""
     pass
 
 
-class IBMQAccountMultipleCredentialsFound(IBMQAccountError):
+class IQXAccountMultipleCredentialsFound(IQXAccountError):
     """Errors raised when multiple credentials are found."""
     pass
 
 
-class IBMQProviderError(IBMQAccountError):
+class IQXProviderError(IQXAccountError):
     """Errors related to provider handling."""
     pass
 
 
-class IBMQBackendError(IBMQError):
+class IQXBackendError(IQXError):
     """Base class for errors raised by the backend modules."""
     pass
 
 
-class IBMQBackendApiError(IBMQBackendError):
+class IQXBackendApiError(IQXBackendError):
     """Errors that occur unexpectedly when querying the server."""
     pass
 
 
-class IBMQBackendApiProtocolError(IBMQBackendApiError):
+class IQXBackendApiProtocolError(IQXBackendApiError):
     """Errors raised when an unexpected value is received from the server."""
     pass
 
 
-class IBMQBackendValueError(IBMQBackendError, ValueError):
+class IQXBackendValueError(IQXBackendError, ValueError):
     """Value errors raised by the backend modules."""
     pass

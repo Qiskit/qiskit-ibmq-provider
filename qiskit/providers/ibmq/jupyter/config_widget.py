@@ -20,10 +20,10 @@ from typing import Union
 import ipywidgets as wid
 from qiskit.test.mock.fake_backend import FakeBackend
 from qiskit.providers.ibmq.visualization.interactive import iplot_gate_map
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.iqxbackend import IQXBackend
 
 
-def config_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.GridBox:
+def config_tab(backend: Union[IQXBackend, FakeBackend]) -> wid.GridBox:
     """The backend configuration widget.
 
     Args:

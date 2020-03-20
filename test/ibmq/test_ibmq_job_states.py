@@ -24,12 +24,12 @@ from unittest import mock
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
 from qiskit.test.mock import FakeQobj
 from qiskit.providers import JobTimeoutError
-from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError, IBMQJobInvalidStateError
+from qiskit.providers.ibmq.job.exceptions import IQXJobApiError, IQXJobInvalidStateError
 from qiskit.providers.ibmq.api.exceptions import (ApiError, UserTimeoutExceededError,
                                                   ApiIBMQProtocolError)
-from qiskit.providers.ibmq.exceptions import IBMQBackendError
+from qiskit.providers.ibmq.exceptions import IQXBackendError
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.iqxbackend import IQXBackend
 
 from ..jobtestcase import JobTestCase
 
@@ -124,7 +124,7 @@ class TestIBMQJobStates(JobTestCase):
     def test_unrecognized_status(self):
         """Test unrecognized job state."""
         job = self.run_with_api(UnknownStatusAPI())
-        with self.assertRaises(IBMQJobApiError):
+        with self.assertRaises(IQXJobApiError):
             self.wait_for_initialization(job)
 
     def test_done_status(self):
@@ -245,7 +245,7 @@ class TestIBMQJobStates(JobTestCase):
 
     def test_status_flow_for_unable_to_run_valid_qobj(self):
         """Test API error while running a job."""
-        with self.assertRaises(IBMQBackendError):
+        with self.assertRaises(IQXBackendError):
             self.run_with_api(UnavailableRunAPI())
 
     def test_api_throws_temporarily_but_job_is_finished(self):
@@ -253,13 +253,13 @@ class TestIBMQJobStates(JobTestCase):
         job = self.run_with_api(ThrowingNonJobRelatedErrorAPI(errors_before_success=2))
 
         # First time we query the server...
-        with self.assertRaises(IBMQJobApiError):
+        with self.assertRaises(IQXJobApiError):
             # The error happens inside wait_for_initialization, the first time
             # it calls to status() after INITIALIZING.
             self.wait_for_initialization(job)
 
         # Also an explicit second time...
-        with self.assertRaises(IBMQJobApiError):
+        with self.assertRaises(IQXJobApiError):
             job.status()
 
         # Now the API gets fixed and doesn't throw anymore.
@@ -284,7 +284,7 @@ class TestIBMQJobStates(JobTestCase):
         self.wait_for_initialization(job)
         job.cancel()
         self._current_api.progress()
-        with self.assertRaises(IBMQJobInvalidStateError):
+        with self.assertRaises(IQXJobInvalidStateError):
             _ = job.result()
             self.assertEqual(job.status(), JobStatus.CANCELLED)
 
@@ -292,7 +292,7 @@ class TestIBMQJobStates(JobTestCase):
         """Test getting results for a failed job."""
         job = self.run_with_api(ThrowingGetJobAPI())
         self.wait_for_initialization(job)
-        with self.assertRaises(IBMQJobApiError):
+        with self.assertRaises(IQXJobApiError):
             job.result()
 
     def test_completed_result(self):
@@ -324,7 +324,7 @@ class TestIBMQJobStates(JobTestCase):
         with ThreadPoolExecutor() as executor:
             executor.submit(_auto_progress_api, self._current_api)
 
-        with self.assertRaises(IBMQJobInvalidStateError):
+        with self.assertRaises(IQXJobInvalidStateError):
             job.result()
 
         self.assertEqual(job.status(), JobStatus.CANCELLED)
@@ -337,7 +337,7 @@ class TestIBMQJobStates(JobTestCase):
         with ThreadPoolExecutor() as executor:
             executor.submit(_auto_progress_api, self._current_api)
 
-        with self.assertRaises(IBMQJobApiError):
+        with self.assertRaises(IQXJobApiError):
             job.result()
 
     def test_never_complete_result_with_timeout(self):
@@ -376,13 +376,13 @@ class TestIBMQJobStates(JobTestCase):
     def test_no_kind_job(self):
         """Test a job without the kind field."""
         job = self.run_with_api(NoKindJobAPI())
-        with self.assertRaises(IBMQJobInvalidStateError):
+        with self.assertRaises(IQXJobInvalidStateError):
             job.result()
         self.assertIsNone(job.qobj())
 
     def run_with_api(self, api):
         """Creates a new ``IBMQJob`` running with the provided API object."""
-        backend = IBMQBackend(mock.Mock(), mock.Mock(), mock.Mock(), api=api)
+        backend = IQXBackend(mock.Mock(), mock.Mock(), mock.Mock(), api=api)
         self._current_api = api
         self._current_qjob = backend.run(qobj=FakeQobj(), validate_qobj=True)
         self._current_qjob.refresh = mock.Mock()

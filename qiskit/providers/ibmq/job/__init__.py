@@ -27,7 +27,7 @@ Classes
 .. autosummary::
     :toctree: ../stubs/
 
-    IBMQJob
+    IQXJob
     QueueInfo
 
 Functions
@@ -43,15 +43,15 @@ Exception
 .. autosummary::
     :toctree: ../stubs/
 
-    IBMQJobError
-    IBMQJobApiError
-    IBMQJobFailureError
-    IBMQJobInvalidStateError
-    IBMQJobTimeoutError
+    IQXJobError
+    IQXJobApiError
+    IQXJobFailureError
+    IQXJobInvalidStateError
+    IQXJobTimeoutError
 """
 
-from .ibmqjob import IBMQJob
+from .iqxjob import IQXJob
 from .queueinfo import QueueInfo
-from .exceptions import (IBMQJobError, IBMQJobApiError, IBMQJobFailureError,
-                         IBMQJobInvalidStateError, IBMQJobTimeoutError)
+from .exceptions import (IQXJobError, IQXJobApiError, IQXJobFailureError,
+                         IQXJobInvalidStateError, IQXJobTimeoutError)
 from .job_monitor import job_monitor

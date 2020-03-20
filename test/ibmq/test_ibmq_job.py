@@ -26,11 +26,11 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
-from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
-from qiskit.providers.ibmq.exceptions import IBMQBackendError
+from qiskit.providers.ibmq.iqxbackend import IQXRetiredBackend
+from qiskit.providers.ibmq.exceptions import IQXBackendError
 from qiskit.providers.ibmq.job.utils import api_status_to_job_status
-from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, IBMQJobTimeoutError
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
+from qiskit.providers.ibmq.job.exceptions import IQXJobInvalidStateError, IQXJobTimeoutError
+from qiskit.providers.ibmq.iqxfactory import IQXFactory
 from qiskit.test import slow_test
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.compiler import assemble, transpile
@@ -259,11 +259,11 @@ class TestIBMQJob(JobTestCase):
 
         # test retrieve requests for jobs that exist on other backends throw errors
         with self.assertWarns(Warning) as context_manager:
-            self.assertRaises(IBMQBackendError,
+            self.assertRaises(IQXBackendError,
                               backend_1.retrieve_job, job_2.job_id())
         self.assertIn('belongs to', str(context_manager.warning))
         with self.assertWarns(Warning) as context_manager:
-            self.assertRaises(IBMQBackendError,
+            self.assertRaises(IQXBackendError,
                               backend_2.retrieve_job, job_1.job_id())
         self.assertIn('belongs to', str(context_manager.warning))
 
@@ -274,7 +274,7 @@ class TestIBMQJob(JobTestCase):
     @requires_provider
     def test_retrieve_job_error(self, provider):
         """Test retrieving an invalid job."""
-        self.assertRaises(IBMQBackendError, provider.backends.retrieve_job, 'BAD_JOB_ID')
+        self.assertRaises(IQXBackendError, provider.backends.retrieve_job, 'BAD_JOB_ID')
 
     @requires_provider
     def test_retrieve_jobs_status(self, provider):
@@ -417,7 +417,7 @@ class TestIBMQJob(JobTestCase):
     @requires_qe_access
     def test_retrieve_jobs_end_datetime(self, qe_token, qe_url):
         """Test retrieving jobs created before a specified datetime."""
-        ibmq_factory = IBMQFactory()
+        ibmq_factory = IQXFactory()
         provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = provider.get_backend('ibmq_qasm_simulator')
         past_month = datetime.now() - timedelta(days=30)
@@ -435,7 +435,7 @@ class TestIBMQJob(JobTestCase):
     @requires_qe_access
     def test_retrieve_jobs_between_datetimes(self, qe_token, qe_url):
         """Test retrieving jobs created between two specified datetimes."""
-        ibmq_factory = IBMQFactory()
+        ibmq_factory = IQXFactory()
         provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
@@ -458,7 +458,7 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_jobs_between_datetimes_not_overriden(self, qe_token, qe_url):
         """Test retrieving jobs created between two specified datetimes
         and ensure `db_filter` does not override datetime arguments."""
-        ibmq_factory = IBMQFactory()
+        ibmq_factory = IQXFactory()
         provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
@@ -539,7 +539,7 @@ class TestIBMQJob(JobTestCase):
         qobj = bell_in_qobj(backend=backend)
         # backend.run() will automatically call job.submit()
         job = backend.run(qobj, validate_qobj=True)
-        with self.assertRaises(IBMQJobInvalidStateError):
+        with self.assertRaises(IQXJobInvalidStateError):
             job.submit()
 
     @requires_provider
@@ -593,11 +593,11 @@ class TestIBMQJob(JobTestCase):
 
         del provider._backends['ibmq_qasm_simulator']
         new_job = provider.backends.retrieve_job(job.job_id())
-        self.assertTrue(isinstance(new_job.backend(), IBMQRetiredBackend))
+        self.assertTrue(isinstance(new_job.backend(), IQXRetiredBackend))
         self.assertNotEqual(new_job.backend().name(), 'unknown')
 
         new_job2 = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
-        self.assertTrue(isinstance(new_job2.backend(), IBMQRetiredBackend))
+        self.assertTrue(isinstance(new_job2.backend(), IQXRetiredBackend))
         self.assertNotEqual(new_job2.backend().name(), 'unknown')
 
     @requires_provider
@@ -679,7 +679,7 @@ class TestIBMQJob(JobTestCase):
         qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
         try:
-            self.assertRaises(IBMQJobTimeoutError, job.wait_for_final_state, timeout=0.1)
+            self.assertRaises(IQXJobTimeoutError, job.wait_for_final_state, timeout=0.1)
         finally:
             # Ensure all threads ended.
             for thread in job._executor._threads:

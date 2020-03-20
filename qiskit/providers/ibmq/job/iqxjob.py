@@ -36,8 +36,8 @@ from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..utils.utils import RefreshQueue
-from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
-                         IBMQJobTimeoutError, IBMQJobInvalidStateError)
+from .exceptions import (IQXJobApiError, IQXJobFailureError,
+                         IQXJobTimeoutError, IQXJobInvalidStateError)
 from .queueinfo import QueueInfo
 from .schema import JobResponseSchema
 from .utils import (build_error_report, api_status_to_job_status,
@@ -47,12 +47,12 @@ logger = logging.getLogger(__name__)
 
 
 @bind_schema(JobResponseSchema)
-class IBMQJob(BaseModel, BaseJob):
+class IQXJob(BaseModel, BaseJob):
     """Representation of a job that executes on an IBM Quantum Experience backend.
 
-    The job may be executed on a simulator or a real device. A new ``IBMQJob``
+    The job may be executed on a simulator or a real device. A new ``IQXJob``
     instance is returned when you call
-    :meth:`IBMQBackend.run()<qiskit.providers.ibmq.ibmqbackend.IBMQBackend.run()>`
+    :meth:`IQXBackend.run()<qiskit.providers.ibmq.ibmqbackend.IQXBackend.run()>`
     to submit a job to a particular backend.
 
     If the job is successfully submitted, you can inspect the job's status by
@@ -75,7 +75,7 @@ class IBMQJob(BaseModel, BaseJob):
         An error may occur when querying the remote server to get job information.
         The most common errors are temporary network failures
         and server errors, in which case an
-        :class:`~qiskit.providers.ibmq.job.IBMQJobApiError`
+        :class:`~qiskit.providers.ibmq.job.IQXJobApiError`
         is raised. These errors usually clear quickly, so retrying the operation is
         likely to succeed.
 
@@ -91,7 +91,7 @@ class IBMQJob(BaseModel, BaseJob):
         except JobError as ex:
             print("Something wrong happened!: {}".format(ex))
 
-    Job information retrieved from the server is attached to the ``IBMQJob``
+    Job information retrieved from the server is attached to the ``IQXJob``
     instance as attributes. Given that Qiskit and the server can be updated
     independently, some of these attributes might be deprecated or experimental.
     Supported attributes can be retrieved via methods. For example, you
@@ -148,7 +148,7 @@ class IBMQJob(BaseModel, BaseJob):
             The Qobj for this job, or ``None`` if the job does not have a Qobj.
 
         Raises:
-            IBMQJobApiError: If an unexpected error occurred when retrieving
+            IQXJobApiError: If an unexpected error occurred when retrieving
                 job information from the server.
         """
         if not self.kind:
@@ -171,7 +171,7 @@ class IBMQJob(BaseModel, BaseJob):
             properties are not available.
 
         Raises:
-            IBMQJobApiError: If an unexpected error occurred when communicating
+            IQXJobApiError: If an unexpected error occurred when communicating
                 with the server.
         """
         with api_to_job_error():
@@ -196,7 +196,7 @@ class IBMQJob(BaseModel, BaseJob):
             second attempt to query the server for the same job will fail,
             since the job has already been "consumed".
 
-            The first call to this method in an ``IBMQJob`` instance will
+            The first call to this method in an ``IQXJob`` instance will
             query the server and consume any available job results. Subsequent
             calls to that instance's ``result()`` will also return the results, since
             they are cached. However, attempting to retrieve the results again in
@@ -233,9 +233,9 @@ class IBMQJob(BaseModel, BaseJob):
             Job result.
 
         Raises:
-            IBMQJobInvalidStateError: If the job was cancelled.
-            IBMQJobFailureError: If the job failed.
-            IBMQJobApiError: If an unexpected error occurred when communicating
+            IQXJobInvalidStateError: If the job was cancelled.
+            IQXJobFailureError: If the job failed.
+            IQXJobApiError: If an unexpected error occurred when communicating
                 with the server.
         """
         # pylint: disable=arguments-differ
@@ -244,11 +244,11 @@ class IBMQJob(BaseModel, BaseJob):
         if not self._wait_for_completion(timeout=timeout, wait=wait,
                                          required_status=(JobStatus.DONE,)):
             if self._status is JobStatus.CANCELLED:
-                raise IBMQJobInvalidStateError('Unable to retrieve result for job {}. '
-                                               'Job was cancelled.'.format(self.job_id()))
+                raise IQXJobInvalidStateError('Unable to retrieve result for job {}. '
+                                              'Job was cancelled.'.format(self.job_id()))
 
             if self._status is JobStatus.ERROR and not partial:
-                raise IBMQJobFailureError(
+                raise IQXJobFailureError(
                     'Unable to retrieve result for job {}. Job has failed. '
                     'Use job.error_message() to get more details.'.format(self.job_id()))
 
@@ -265,7 +265,7 @@ class IBMQJob(BaseModel, BaseJob):
             ``True`` if the job is cancelled, else ``False``.
 
         Raises:
-            IBMQJobApiError: If an unexpected error occurred when communicating
+            IQXJobApiError: If an unexpected error occurred when communicating
                 with the server.
         """
         try:
@@ -276,8 +276,8 @@ class IBMQJob(BaseModel, BaseJob):
             return self._cancelled
         except ApiError as error:
             self._cancelled = False
-            raise IBMQJobApiError('Unexpected error when cancelling job {}: {}'
-                                  .format(self.job_id(), str(error))) from error
+            raise IQXJobApiError('Unexpected error when cancelling job {}: {}'
+                                 .format(self.job_id(), str(error))) from error
 
     def status(self) -> JobStatus:
         """Query the server for the latest job status.
@@ -296,7 +296,7 @@ class IBMQJob(BaseModel, BaseJob):
             The status of the job.
 
         Raises:
-            IBMQJobApiError: If an unexpected error occurred when communicating
+            IQXJobApiError: If an unexpected error occurred when communicating
                 with the server.
         """
         if self._status in JOB_FINAL_STATES:
@@ -362,7 +362,7 @@ class IBMQJob(BaseModel, BaseJob):
             # First try getting error messages from the result.
             try:
                 self._retrieve_result()
-            except IBMQJobFailureError:
+            except IQXJobFailureError:
                 pass
 
         if not self._job_error_msg:
@@ -490,7 +490,7 @@ class IBMQJob(BaseModel, BaseJob):
             IBMQJobInvalidStateError: If the job has already been submitted.
         """
         if self.job_id() is not None:
-            raise IBMQJobInvalidStateError(
+            raise IQXJobInvalidStateError(
                 'The job {} has already been submitted.'.format(self.job_id()))
 
         warnings.warn("job.submit() is deprecated. Please use "
@@ -503,7 +503,7 @@ class IBMQJob(BaseModel, BaseJob):
         information becomes available.
 
         Raises:
-            IBMQJobApiError: If an unexpected error occurred when communicating
+            IQXJobApiError: If an unexpected error occurred when communicating
                 with the server.
         """
         with api_to_job_error():
@@ -521,8 +521,8 @@ class IBMQJob(BaseModel, BaseJob):
             self._status, self._queue_info = self._get_status_position(
                 data.pop('_api_status'), data.pop('info_queue', None))
         except ValidationError as ex:
-            raise IBMQJobApiError('Unexpected return value received from the server when '
-                                  'refreshing job {}: {}'.format(self.job_id(), str(ex))) from ex
+            raise IQXJobApiError('Unexpected return value received from the server when '
+                                 'refreshing job {}: {}'.format(self.job_id(), str(ex))) from ex
         finally:
             JobResponseSchema.model_cls = saved_model_cls
 
@@ -532,7 +532,7 @@ class IBMQJob(BaseModel, BaseJob):
         Note:
             This is an inherited but unsupported method and may not work properly.
         """
-        warnings.warn("IBMQJob.to_dict() is not supported and may not work properly.",
+        warnings.warn("IQXJob.to_dict() is not supported and may not work properly.",
                       stacklevel=2)
         return BaseModel.to_dict(self)
 
@@ -564,7 +564,7 @@ class IBMQJob(BaseModel, BaseJob):
                       :class:`QueueInfo` instance to a dictionary, if desired.
 
         Raises:
-            IBMQJobTimeoutError: if the job does not reach a final state before the
+            IQXJobTimeoutError: if the job does not reach a final state before the
                 specified timeout.
         """
         exit_event = Event()
@@ -604,9 +604,9 @@ class IBMQJob(BaseModel, BaseJob):
             ``True`` if the final job status matches one of the required states.
 
         Raises:
-            IBMQJobTimeoutError: if the job does not return results before a
+            IQXJobTimeoutError: if the job does not return results before a
                 specified timeout.
-            IBMQJobApiError: if there was an error getting the job status
+            IQXJobApiError: if there was an error getting the job status
                 due to a network issue.
         """
         if self._status in JOB_FINAL_STATES:
@@ -616,13 +616,13 @@ class IBMQJob(BaseModel, BaseJob):
             status_response = self._api.job_final_status(
                 self.job_id(), timeout=timeout, wait=wait, status_queue=status_queue)
         except UserTimeoutExceededError:
-            raise IBMQJobTimeoutError(
+            raise IQXJobTimeoutError(
                 'Timeout while waiting for job {}.'.format(self._job_id)) from None
         except ApiError as api_err:
             logger.error('Maximum retries exceeded: '
                          'Error checking job status due to a network error.')
-            raise IBMQJobApiError('Error checking job status due to a network '
-                                  'error: {}'.format(str(api_err))) from api_err
+            raise IQXJobApiError('Error checking job status due to a network '
+                                 'error: {}'.format(str(api_err))) from api_err
 
         self._status, self._queue_info = self._get_status_position(
             ApiJobStatus(status_response['status']), status_response.get('infoQueue', None))
@@ -643,11 +643,11 @@ class IBMQJob(BaseModel, BaseJob):
             The job result.
 
         Raises:
-            IBMQJobApiError: If an unexpected error occurred when communicating
+            IQXJobApiError: If an unexpected error occurred when communicating
                 with the server.
-            IBMQJobFailureError: If the job failed and partial result could not
+            IQXJobFailureError: If the job failed and partial result could not
                 be retrieved.
-            IBMQJobInvalidStateError: If result is in an unsupported format.
+            IQXJobInvalidStateError: If result is in an unsupported format.
         """
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         result_response = None
@@ -657,14 +657,14 @@ class IBMQJob(BaseModel, BaseJob):
                 self._result = Result.from_dict(result_response)
             except (ModelValidationError, ApiError) as err:
                 if self._status is JobStatus.ERROR:
-                    raise IBMQJobFailureError(
+                    raise IQXJobFailureError(
                         'Unable to retrieve result for job {}. Job has failed. Use '
                         'job.error_message() to get more details.'.format(self.job_id())) from err
                 if not self.kind:
-                    raise IBMQJobInvalidStateError(
+                    raise IQXJobInvalidStateError(
                         'Unable to retrieve result for job {}. Job result '
                         'is in an unsupported format.'.format(self.job_id())) from err
-                raise IBMQJobApiError(
+                raise IQXJobApiError(
                     'Unable to retrieve result for '
                     'job {}: {}'.format(self.job_id(), str(err))) from err
             finally:
@@ -673,7 +673,7 @@ class IBMQJob(BaseModel, BaseJob):
                     self._check_for_error_message(result_response)
 
         if self._status is JobStatus.ERROR and not self._result.results:
-            raise IBMQJobFailureError(
+            raise IQXJobFailureError(
                 'Unable to retrieve result for job {}. Job has failed. '
                 'Use job.error_message() to get more details.'.format(self.job_id()))
 
@@ -701,13 +701,13 @@ class IBMQJob(BaseModel, BaseJob):
             A formatted error message.
 
         Raises:
-            IBMQJobApiError: If invalid data received from the server.
+            IQXJobApiError: If invalid data received from the server.
         """
         try:
             return "{}. Error code: {}.".format(error['message'], error['code'])
         except KeyError as ex:
-            raise IBMQJobApiError('Failed to get error message for job {}. Invalid error '
-                                  'data received: {}'.format(self.job_id(), error)) from ex
+            raise IQXJobApiError('Failed to get error message for job {}. Invalid error '
+                                 'data received: {}'.format(self.job_id(), error)) from ex
 
     def _status_callback(
             self,
@@ -746,7 +746,7 @@ class IBMQJob(BaseModel, BaseJob):
                 status, queue_info = self._get_status_position(
                     ApiJobStatus(status_response['status']),
                     status_response.get('infoQueue', None))
-            except IBMQJobApiError as ex:
+            except IQXJobApiError as ex:
                 logger.warning("Unexpected error when getting job status: %s", ex)
                 continue
 
@@ -773,7 +773,7 @@ class IBMQJob(BaseModel, BaseJob):
             A tuple of job status and queue information (``None`` if not available).
 
         Raises:
-             IBMQJobApiError: if unexpected return value received from the server.
+             IQXJobApiError: if unexpected return value received from the server.
         """
         queue_info = None
         try:
@@ -784,8 +784,8 @@ class IBMQJob(BaseModel, BaseJob):
                 if queue_info._status == ApiJobStatus.PENDING_IN_QUEUE.value:
                     status = JobStatus.QUEUED
         except (KeyError, ValidationError) as ex:
-            raise IBMQJobApiError('Unexpected return value received from the server when getting '
-                                  'status for job {}: {}'.format(self.job_id(), str(ex))) from ex
+            raise IQXJobApiError('Unexpected return value received from the server when getting '
+                                 'status for job {}: {}'.format(self.job_id(), str(ex))) from ex
 
         if status is not JobStatus.QUEUED:
             queue_info = None

@@ -19,12 +19,12 @@ import time
 import threading
 
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
+from qiskit.providers.ibmq.job.iqxjob import IQXJob
 
 from ...utils.converters import utc_to_local
 
 
-def _job_monitor(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> None:
+def _job_monitor(job: IQXJob, status: JobStatus, watcher: 'IQXDashboard') -> None:
     """Monitor the status of an ``IBMQJob`` instance.
 
     Args:
@@ -36,7 +36,7 @@ def _job_monitor(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> No
     thread.start()
 
 
-def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> None:
+def _job_checker(job: IQXJob, status: JobStatus, watcher: 'IQXDashboard') -> None:
     """A simple job status checker.
 
     Args:

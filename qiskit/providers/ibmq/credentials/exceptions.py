@@ -14,10 +14,10 @@
 
 """Exception for the ``Credentials`` module."""
 
-from ..exceptions import IBMQError
+from ..exceptions import IQXError
 
 
-class CredentialsError(IBMQError):
+class CredentialsError(IQXError):
     """Base class for errors raised during credential management."""
     pass
 

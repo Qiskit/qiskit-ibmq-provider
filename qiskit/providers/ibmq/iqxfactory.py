@@ -25,9 +25,9 @@ from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    remove_credentials,
                                    store_credentials)
 from .credentials.updater import update_credentials
-from .exceptions import (IBMQAccountError, IBMQProviderError,
-                         IBMQAccountCredentialsNotFound, IBMQAccountCredentialsInvalidUrl,
-                         IBMQAccountCredentialsInvalidToken, IBMQAccountMultipleCredentialsFound)
+from .exceptions import (IQXAccountError, IQXProviderError,
+                         IQXAccountCredentialsNotFound, IQXAccountCredentialsInvalidUrl,
+                         IQXAccountCredentialsInvalidToken, IQXAccountMultipleCredentialsFound)
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +37,11 @@ UPDATE_ACCOUNT_TEXT = "Please update your accounts and programs by following the
                       "updating-to-the-new-ibm-q-experience "
 
 
-class IBMQFactory:
+class IQXFactory:
     """Factory and account manager for IBM Quantum Experience."""
 
     def __init__(self) -> None:
-        """IBMQFactory constructor."""
+        """IQXFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
 
@@ -72,14 +72,14 @@ class IBMQFactory:
             The provider for the default open access project.
 
         Raises:
-            IBMQAccountError: If an IBM Quantum Experience account is already in
+            IQXAccountError: If an IBM Quantum Experience account is already in
                 use for the session.
-            IBMQAccountCredentialsInvalidUrl: If the URL specified is not
+            IQXAccountCredentialsInvalidUrl: If the URL specified is not
                 a valid IBM Quantum Experience authentication URL.
         """
         # Check if an IBM Quantum Experience account is already in use.
         if self._credentials:
-            raise IBMQAccountError(
+            raise IQXAccountError(
                 'An IBM Quantum Experience account is already in use for the session.')
 
         # Check the version used by these credentials.
@@ -88,7 +88,7 @@ class IBMQFactory:
 
         # Check the URL is a valid authentication URL.
         if not version_info['new_api'] or 'api-auth' not in version_info:
-            raise IBMQAccountCredentialsInvalidUrl(
+            raise IQXAccountCredentialsInvalidUrl(
                 'The URL specified ({}) is not an IBM Quantum Experience authentication '
                 'URL. Valid authentication URL: {}.'.format(credentials.url, QX_AUTH_URL))
 
@@ -108,10 +108,10 @@ class IBMQFactory:
         """Disable the account currently in use for the session.
 
         Raises:
-            IBMQAccountCredentialsNotFound: If no account is in use for the session.
+            IQXAccountCredentialsNotFound: If no account is in use for the session.
         """
         if not self._credentials:
-            raise IBMQAccountCredentialsNotFound(
+            raise IQXAccountCredentialsNotFound(
                 'No IBM Quantum Experience account is in use for the session.')
 
         self._credentials = None
@@ -124,22 +124,22 @@ class IBMQFactory:
             The provider for the default open access project.
 
         Raises:
-            IBMQAccountCredentialsNotFound: If no IBM Quantum Experience credentials
+            IQXAccountCredentialsNotFound: If no IBM Quantum Experience credentials
                 can be found.
-            IBMQAccountMultipleCredentialsFound: If multiple IBM Quantum Experience
+            IQXAccountMultipleCredentialsFound: If multiple IBM Quantum Experience
                 credentials are found.
-            IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
+            IQXAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials are found.
         """
         # Check for valid credentials.
         credentials_list = list(discover_credentials().values())
 
         if not credentials_list:
-            raise IBMQAccountCredentialsNotFound(
+            raise IQXAccountCredentialsNotFound(
                 'No IBM Quantum Experience credentials found.')
 
         if len(credentials_list) > 1:
-            raise IBMQAccountMultipleCredentialsFound(
+            raise IQXAccountMultipleCredentialsFound(
                 'Multiple IBM Quantum Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = credentials_list[0]
@@ -149,7 +149,7 @@ class IBMQFactory:
 
         # Check the URL is a valid authentication URL.
         if not version_info['new_api'] or 'api-auth' not in version_info:
-            raise IBMQAccountCredentialsInvalidUrl(
+            raise IQXAccountCredentialsInvalidUrl(
                 'Invalid IBM Quantum Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         # Initialize the providers.
@@ -188,17 +188,17 @@ class IBMQFactory:
                 * verify (bool): If False, ignores SSL certificates errors
 
         Raises:
-            IBMQAccountCredentialsInvalidUrl: If the URL is not a valid
+            IQXAccountCredentialsInvalidUrl: If the URL is not a valid
                 IBM Quantum Experience authentication URL.
-            IBMQAccountCredentialsInvalidToken: If the token is not a valid
+            IQXAccountCredentialsInvalidToken: If the token is not a valid
                 IBM Quantum Experience token.
         """
         if url != QX_AUTH_URL:
-            raise IBMQAccountCredentialsInvalidUrl(
+            raise IQXAccountCredentialsInvalidUrl(
                 'Invalid IBM Q Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
 
         if not token or not isinstance(token, str):
-            raise IBMQAccountCredentialsInvalidToken(
+            raise IQXAccountCredentialsInvalidToken(
                 'Invalid IBM Quantum Experience token '
                 'found: "{}" of type {}.'.format(token, type(token)))
 
@@ -211,26 +211,26 @@ class IBMQFactory:
         """Delete the saved account from disk.
 
         Raises:
-            IBMQAccountCredentialsNotFound: If no valid IBM Quantum Experience
+            IQXAccountCredentialsNotFound: If no valid IBM Quantum Experience
                 credentials can be found on disk.
-            IBMQAccountMultipleCredentialsFound: If multiple IBM Quantum Experience
+            IQXAccountMultipleCredentialsFound: If multiple IBM Quantum Experience
                 credentials are found on disk.
-            IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
+            IQXAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials are found on disk.
         """
         stored_credentials = read_credentials_from_qiskitrc()
         if not stored_credentials:
-            raise IBMQAccountCredentialsNotFound(
+            raise IQXAccountCredentialsNotFound(
                 'No IBM Quantum Experience credentials found on disk.')
 
         if len(stored_credentials) != 1:
-            raise IBMQAccountMultipleCredentialsFound(
+            raise IQXAccountMultipleCredentialsFound(
                 'Multiple IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = list(stored_credentials.values())[0]
 
         if credentials.url != QX_AUTH_URL:
-            raise IBMQAccountCredentialsInvalidUrl(
+            raise IQXAccountCredentialsInvalidUrl(
                 'Invalid IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
         remove_credentials(credentials)
@@ -243,9 +243,9 @@ class IBMQFactory:
             A dictionary with information about the account stored on disk.
 
         Raises:
-            IBMQAccountMultipleCredentialsFound: If multiple IBM Quantum Experience
+            IQXAccountMultipleCredentialsFound: If multiple IBM Quantum Experience
                 credentials are found on disk.
-            IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
+            IQXAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials are found on disk.
         """
         stored_credentials = read_credentials_from_qiskitrc()
@@ -253,13 +253,13 @@ class IBMQFactory:
             return {}
 
         if len(stored_credentials) > 1:
-            raise IBMQAccountMultipleCredentialsFound(
+            raise IQXAccountMultipleCredentialsFound(
                 'Multiple IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
         credentials = list(stored_credentials.values())[0]
 
         if credentials.url != QX_AUTH_URL:
-            raise IBMQAccountCredentialsInvalidUrl(
+            raise IQXAccountCredentialsInvalidUrl(
                 'Invalid IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
         return {
@@ -345,15 +345,15 @@ class IBMQFactory:
             A provider that matches the specified criteria.
 
         Raises:
-            IBMQProviderError: If no provider matches the specified criteria,
+            IQXProviderError: If no provider matches the specified criteria,
                 or more than one provider matches the specified criteria.
         """
         providers = self.providers(hub, group, project)
 
         if not providers:
-            raise IBMQProviderError('No provider matches the criteria.')
+            raise IQXProviderError('No provider matches the criteria.')
         if len(providers) > 1:
-            raise IBMQProviderError('More than one provider matches the criteria.')
+            raise IQXProviderError('More than one provider matches the criteria.')
 
         return providers[0]
 
