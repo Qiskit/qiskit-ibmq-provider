@@ -44,7 +44,14 @@ logger = logging.getLogger(__name__)
 # `asyncio` by design does not allow event loops to be nested. Jupyter (really
 # tornado) has its own event loop already so we need to patch it.
 # Patch asyncio to allow nested use of `loop.run_until_complete()`.
-nest_asyncio.apply()
+# Before applying the patch, check if an event loop is available otherwise
+# create one and set it active
+try:
+    loop = asyncio.get_running_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+nest_asyncio.apply(loop)
 
 # TODO Replace coroutine with async def once Python 3.5 is dropped.
 # Also can upgrade to websocket 8 to avoid other deprecation warning.
