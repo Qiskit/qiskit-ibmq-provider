@@ -72,7 +72,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job_properties = [None]
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj, validate_qobj=True)
-        job.wait_for_final_state(wait=30, callback=_job_callback)
+        job.wait_for_final_state(wait=None, callback=_job_callback)
         self.assertIsNotNone(job_properties[0])
 
     @requires_provider
