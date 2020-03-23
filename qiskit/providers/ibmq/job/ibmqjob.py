@@ -329,25 +329,26 @@ class IBMQJob(BaseModel, BaseJob):
         Note:
             * Some tags, such as those starting with ``ibmq_jobset``, are used
               internally by `ibmq-provider` and therefore cannot be modified.
-            * If the job doesn't have a specified tag, it will be ignored.
+            * When removing tags, if the job does not have a specified tag, it
+              will be ignored.
 
         Args:
-            replacement_tags: The tags that will replace those currently
-                associated with the job.
-            additional_tags: The tags that will be added to those currently
-                associated with this job.
-            removal_tags: The tags that will be removed from those currently
-                associated with this job.
+            replacement_tags: The specified tags that should replace the current
+                job tags.
+            additional_tags: The additional tags that should be added to the current
+                job tags.
+            removal_tags: The specified tags that should be removed from the current
+                job tags.
 
         Returns:
-            The tags associated with this job after updating.
+            The new tags associated with this job.
 
         Raises:
             IBMQJobInvalidStateError: If the input job tags are invalid.
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
             IBMQJobUpdateError: If an unexpected error occurred when updating
-                the job name.
+                the job tags.
         """
         ibmq_jobset_prefix = 'ibmq_jobset_'
 
@@ -381,19 +382,16 @@ class IBMQJob(BaseModel, BaseJob):
             replacement_tags: List[str],
             jobset_prefix: str
     ) -> Set[str]:
-        """Return the tags to associate with this job after replacing the current tags.
-
-        Returns the list of tags to associate with this job after replacing
-        the current tags with those specified by `replacement_tags`.
+        """Return the updated tags for this job after replacing the current tags.
 
         Args:
-            replacement_tags: The tags that will replace those currently
-                associated with this job.
+            replacement_tags: The specified tags that will replace the current
+                job tags.
             jobset_prefix: The tag prefix which denotes a job is associated with a
                 job set.
 
         Returns:
-            The tags to associate with the job after replacement.
+            The tags to associate with this job after replacing the current tags.
 
         Raises:
             IBMQJobInvalidStateError: If the input job name is not a string.
@@ -408,16 +406,15 @@ class IBMQJob(BaseModel, BaseJob):
         return tags_after_replace
 
     def _add_tags(self, tags_to_update: Set[str], additional_tags: List[str]) -> Set[str]:
-        """Return the tags to associate with this job after adding the specified tags to
-        the current tags.
+        """Return the updated tags for this job after adding the specified tags.
 
         Args:
             tags_to_update: The tags that will be associated with this job.
-            additional_tags: The tags that should be added to those that will be
-                associated with this job.
+            additional_tags: The specified tags that will be added to the current
+                job tags.
 
         Returns:
-            The tags to associate with the job after addition.
+            The tags to associate with this job after adding the specified tags.
 
         Raises:
             IBMQJobInvalidStateError: If the input job name is not a string.
@@ -436,25 +433,22 @@ class IBMQJob(BaseModel, BaseJob):
             removal_tags: List[str],
             jobset_prefix: str
     ) -> Set[str]:
-        """Return the tags to associate with the job after removing the specified tags
-        from the current tags.
+        """Return the updated tags for this job after removing the specified tags.
 
         Args:
             tags_to_update: The tags that will be associated with this job.
-            removal_tags: The tags that should be removed from those that will be
-                associated with this job.
+            removal_tags: The tags that will be removed from the current job tags.
             jobset_prefix: The tag prefix which denotes a job is associated with a
                 job set.
 
         Returns:
-            The tags to associate with the job after removal.
+            The tags to associate with this job after removing the specified tags.
 
         Raises:
             IBMQJobInvalidStateError: If the input job name is not a string.
         """
         validate_job_tags(removal_tags, IBMQJobInvalidStateError)
 
-        # Remove the tags not associated with a job set.
         tags_after_remove = set(tags_to_update)
         for tag in removal_tags:
             if tag.startswith(jobset_prefix):
