@@ -70,10 +70,23 @@ def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
     return API_TO_JOB_STATUS[api_status]
 
 
+def get_cancel_status(cancel_response: Dict[str, Any]) -> bool:
+    """Return whether the cancel response represents a successful job cancel.
+
+    Args:
+        cancel_response: The response received from the server after
+            cancelling a job.
+
+    Returns:
+        Whether the job cancel is successful.
+    """
+    return 'error' not in cancel_response and cancel_response.get('cancelled', False)
+
+
 @contextmanager
 def api_to_job_error() -> Generator[None, None, None]:
     """Convert an ``ApiError`` to an ``IBMQJobApiError``."""
     try:
         yield
     except ApiError as api_err:
-        raise IBMQJobApiError(str(api_err))
+        raise IBMQJobApiError(str(api_err)) from api_err

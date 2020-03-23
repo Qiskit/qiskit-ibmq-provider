@@ -15,6 +15,7 @@
 """Client for communicating with the IBM Quantum Experience API via websocket."""
 
 import asyncio
+import copy
 import json
 import logging
 import time
@@ -23,7 +24,6 @@ from typing import Dict, Union, Generator, Optional, Any
 from concurrent import futures
 from ssl import SSLError
 import warnings
-from collections import deque
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
@@ -31,6 +31,7 @@ from websockets.client import WebSocketClientProtocol
 from websockets.exceptions import InvalidURI
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
+from qiskit.providers.ibmq.utils.utils import RefreshQueue
 from ..exceptions import (WebsocketError, WebsocketTimeoutError,
                           WebsocketIBMQProtocolError,
                           WebsocketAuthenticationError)
@@ -93,7 +94,7 @@ class WebsocketAuthenticationMessage(WebsocketMessage):
 class WebsocketResponseMethod(WebsocketMessage):
     """Container for a message received via websockets."""
 
-    def __init__(self, type_: str, data: Dict[str, str]) -> None:
+    def __init__(self, type_: str, data: Dict[str, Any]) -> None:
         """WebsocketResponseMethod constructor.
 
         Args:
@@ -103,9 +104,25 @@ class WebsocketResponseMethod(WebsocketMessage):
         super().__init__(type_)
         self.data = data
 
-    def get_data(self) -> Dict[str, str]:
+    def get_data(self) -> Dict[str, Any]:
         """Return the message data."""
         return self.data
+
+    def get_data_filtered(self) -> Dict[str, Any]:
+        """Return the message data with certain fields filtered, if they are present.
+
+        Note:
+            Currently, the backend name and hubInfo are the only parts
+            that are filtered out from the message.
+        """
+        data_to_filter = copy.deepcopy(self.data)
+
+        if 'backend' in data_to_filter and 'name' in data_to_filter['backend']:
+            data_to_filter['backend']['name'] = '...'
+        if 'hubInfo' in data_to_filter:
+            data_to_filter['hubInfo'] = '...'
+
+        return data_to_filter
 
     @classmethod
     def from_bytes(cls, json_string: bytes) -> 'WebsocketResponseMethod':
@@ -113,7 +130,12 @@ class WebsocketResponseMethod(WebsocketMessage):
         try:
             parsed_dict = json.loads(json_string.decode('utf8'))
         except (ValueError, AttributeError) as ex:
-            raise WebsocketIBMQProtocolError('Unable to parse message') from ex
+            exception_to_raise = WebsocketIBMQProtocolError(
+                'Unable to parse the message received from the server: {}'.format(json_string))
+
+            logger.info('An exception occurred. Raising "%s" from "%s"',
+                        repr(exception_to_raise), repr(ex))
+            raise exception_to_raise from ex
 
         return cls(parsed_dict['type'], parsed_dict.get('data', None))
 
@@ -162,7 +184,11 @@ class WebsocketClient(BaseClient):
 
         # pylint: disable=broad-except
         except Exception as ex:
-            raise WebsocketError('Could not connect to server') from ex
+            exception_to_raise = WebsocketError('Failed to connect to the server.')
+
+            logger.info('An exception occurred. Raising "%s" from "%s"',
+                        repr(exception_to_raise), repr(ex))
+            raise exception_to_raise from ex
 
         try:
             # Authenticate against the server.
@@ -178,11 +204,16 @@ class WebsocketClient(BaseClient):
             auth_response = WebsocketResponseMethod.from_bytes(auth_response_raw)
 
             if auth_response.type_ != 'authenticated':
-                raise WebsocketIBMQProtocolError(auth_response.as_json())
+                raise WebsocketIBMQProtocolError('Failed to authenticate against the server: {}'
+                                                 .format(auth_response.as_json()))
         except ConnectionClosed as ex:
             yield from websocket.close()
-            raise WebsocketAuthenticationError(
-                'Error during websocket authentication') from ex
+            exception_to_raise = WebsocketAuthenticationError(
+                'Unexpected error occurred when authenticating against the server.')
+
+            logger.info('An exception occurred. Raising "%s" from "%s"',
+                        repr(exception_to_raise), repr(ex))
+            raise exception_to_raise from ex
 
         return websocket
 
@@ -193,7 +224,7 @@ class WebsocketClient(BaseClient):
             timeout: Optional[float] = None,
             retries: int = 5,
             backoff_factor: float = 0.5,
-            status_deque: Optional[deque] = None
+            status_queue: Optional[RefreshQueue] = None
     ) -> Generator[Any, None, Dict[str, str]]:
         """Return the status of a job.
 
@@ -222,7 +253,7 @@ class WebsocketClient(BaseClient):
             retries: Max number of retries.
             backoff_factor: Backoff factor used to calculate the
                 time to wait between retries.
-            status_deque: Deque used to share the latest status.
+            status_queue: Queue used to share the latest status.
 
         Returns:
             The final API response for the status of the job, as a dictionary that
@@ -259,11 +290,16 @@ class WebsocketClient(BaseClient):
                                 timeout = original_timeout - (time.time() - start_time)
                             else:
                                 response_raw = yield from websocket.recv()
-                        logger.debug('Received message from websocket: %s',
-                                     response_raw)
 
                         response = WebsocketResponseMethod.from_bytes(response_raw)
                         last_status = response.data
+                        if logger.getEffectiveLevel() is logging.DEBUG:
+                            logger.debug('Received message from websocket: %s',
+                                         response.get_data_filtered())
+
+                        # Share the new status.
+                        if status_queue is not None:
+                            status_queue.put(last_status)
 
                         # Successfully received and parsed a message, reset retry counter.
                         current_retry_attempt = 0
@@ -274,15 +310,12 @@ class WebsocketClient(BaseClient):
                             return last_status
 
                         if timeout and timeout <= 0:
-                            raise WebsocketTimeoutError('Timeout reached')
-
-                        # Share the new status.
-                        if status_deque is not None:
-                            status_deque.append(last_status)
+                            raise WebsocketTimeoutError('Timeout reached while getting job status.')
 
                     except (futures.TimeoutError, asyncio.TimeoutError):
                         # Timeout during our wait.
-                        raise WebsocketTimeoutError('Timeout reached') from None
+                        raise WebsocketTimeoutError(
+                            'Timeout reached while getting job status.') from None
                     except ConnectionClosed as ex:
                         # From the API:
                         # 4001: closed due to an internal errors
@@ -292,34 +325,41 @@ class WebsocketClient(BaseClient):
                         if ex.code == 4001:
                             message = 'Internal server error'
                         elif ex.code == 4002:
+                            if status_queue is not None:
+                                status_queue.put(last_status)
                             return last_status  # type: ignore[return-value]
                         elif ex.code == 4003:
                             attempt_retry = False  # No point in retrying.
                             message = 'Job id not found'
 
-                        raise WebsocketError('Connection with websocket closed '
-                                             'unexpectedly: {}(status_code={})'
-                                             .format(message, ex.code)) from ex
+                        exception_to_raise = WebsocketError(
+                            'Connection with websocket closed unexpectedly: '
+                            '{}(status_code={})'.format(message, ex.code))
+
+                        logger.info('An exception occurred. Raising "%s" from "%s"',
+                                    repr(exception_to_raise), repr(ex))
+                        raise exception_to_raise from ex
 
             except WebsocketError as ex:
-                logger.debug('A websocket error occurred when getting the job status: %s', ex)
+                logger.info('A websocket error occurred while getting job status: %s', str(ex))
 
                 # Specific `WebsocketError` exceptions that are not worth retrying.
                 if isinstance(ex, (WebsocketTimeoutError, WebsocketIBMQProtocolError)):
-                    logger.debug('The websocket error that occurred could not be retried: %s', ex)
+                    logger.info('The websocket error that occurred could not '
+                                'be retried: %s', str(ex))
                     raise ex
 
                 # Check whether the websocket error should be retried.
                 current_retry_attempt = current_retry_attempt + 1
                 if (current_retry_attempt > retries) or (not attempt_retry):
-                    logger.debug('Max retries exceeded: Failed to establish a websocket '
-                                 'connection due to a network error.')
+                    logger.info('Max retries exceeded: Failed to establish a websocket '
+                                'connection due to a network error.')
                     raise ex
 
                 # Sleep, and then `continue` with retrying.
                 backoff_time = self._backoff_time(backoff_factor, current_retry_attempt)
-                logger.debug('Retrying get_job_status via websocket after %s seconds: '
-                             'Attempt #%s', backoff_time, current_retry_attempt)
+                logger.info('Retrying get_job_status via websocket after %s seconds: '
+                            'Attempt #%s', backoff_time, current_retry_attempt)
                 yield from asyncio.sleep(backoff_time)  # Block asyncio loop for given backoff time.
 
                 continue  # Continues next iteration after `finally` block.
@@ -335,7 +375,7 @@ class WebsocketClient(BaseClient):
         exception_message = 'Max retries exceeded: Failed to establish a websocket ' \
                             'connection due to a network error.'
 
-        logger.debug(exception_message)
+        logger.info(exception_message)
         raise WebsocketError(exception_message)
 
     def _backoff_time(self, backoff_factor: float, current_retry_attempt: int) -> float:

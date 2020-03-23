@@ -30,6 +30,14 @@ Classes
     IBMQJob
     QueueInfo
 
+Functions
+=========
+
+.. autosummary::
+    :toctree: ../stubs/
+
+    job_monitor
+
 Exception
 =========
 .. autosummary::
@@ -46,3 +54,4 @@ from .ibmqjob import IBMQJob
 from .queueinfo import QueueInfo
 from .exceptions import (IBMQJobError, IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobInvalidStateError, IBMQJobTimeoutError)
+from .job_monitor import job_monitor

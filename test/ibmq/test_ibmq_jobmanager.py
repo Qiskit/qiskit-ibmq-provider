@@ -30,7 +30,6 @@ from qiskit.providers.ibmq.managed import managedjob
 from qiskit.providers.ibmq.managed.exceptions import (
     IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers import JobError
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.compiler import transpile, assemble
@@ -38,6 +37,7 @@ from qiskit.compiler import transpile, assemble
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
 from ..fake_account_client import BaseFakeAccountClient, CancelableFakeJob
+from ..utils import cancel_job
 
 
 class TestIBMQJobManager(IBMQTestCase):
@@ -409,19 +409,7 @@ class TestResultManager(IBMQTestCase):
         job_set = self._jm.run(circs, backend=backend)
         jobs = job_set.jobs()
         cjob = jobs[1]
-        cancelled = False
-        for _ in range(2):
-            # Try twice in case job is not in a cancellable state
-            try:
-                if cjob.cancel():
-                    # TODO skip checking for status when API is fixed.
-                    time.sleep(0.5)
-                    cjob.refresh()
-                    if cjob.cancelled():
-                        cancelled = True
-                        break
-            except JobError:
-                pass
+        cancelled = cancel_job(cjob)
 
         result_manager = job_set.results()
         if cancelled:

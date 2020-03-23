@@ -134,16 +134,17 @@ class IBMQJobManager:
         if (any(isinstance(exp, Schedule) for exp in experiments) and
                 not backend.configuration().open_pulse):
             raise IBMQJobManagerInvalidStateError(
-                "Pulse schedules found, but the backend does not support pulse schedules.")
+                'Pulse schedules found, but the backend does not support pulse schedules.')
 
         # Validate job share level
         if job_share_level:
             try:
                 api_job_share_level = ApiJobShareLevel(job_share_level.lower())
             except ValueError:
+                valid_job_share_levels_str = ', '.join(level.value for level in ApiJobShareLevel)
                 raise IBMQJobManagerInvalidStateError(
                     '"{}" is not a valid job share level. Valid job share levels are: {}'.format(
-                        job_share_level, ', '.join(level.value for level in ApiJobShareLevel)))
+                        job_share_level, valid_job_share_levels_str)) from None
         else:
             api_job_share_level = ApiJobShareLevel.NONE
 

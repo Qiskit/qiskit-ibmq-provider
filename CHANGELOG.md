@@ -16,6 +16,19 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Added
+
+- There are three new exceptions: `VisualizationError`, `VisualizationValueError`,
+  and `VisualizationTypeError`. These are now used in the visualization modules when
+  an exception is raised. Also, `IBMQBackend.status()` now raises a 
+  `IBMQBackendApiProtocolError` exception, instead of a general `LookupError`, 
+  if there was an issue with validating the status. (\#572)
+- You can now set the logging level and specify a log file using the environment 
+  variables `QSIKIT_IBMQ_PROVIDER_LOG_LEVEL` and `QISKIT_IBMQ_PROVIDER_LOG_FILE`, 
+  respectively. Note that the name of the logger is `qiskit.providers.ibmq`. (\#579)
+- `IBMQJob` now has a new method `scheduling_mode()` that returns the scheduling
+  mode the job is in. (\#593)
+
 ### Changed
 
 - `IBMQBackend.jobs()` now accepts a new boolean parameter `descending`,
@@ -32,7 +45,7 @@ The format is based on [Keep a Changelog].
   backend information, have been moved 
   from `qiskit-terra` to `qiskit-ibmq-provider`. In addition, you can now 
   use `%iqx_dashboard` to get a dashboard that provides both job and 
-  backend information. (\#535) (\#541)  
+  backend information. (\#535) (\#541)
 
 ### Changed
 

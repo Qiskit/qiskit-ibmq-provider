@@ -29,6 +29,7 @@ from qiskit.providers.jobstatus import JobStatus
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_provider, requires_device
+from ...utils import most_busy_backend, bell_in_qobj, cancel_job
 
 
 class TestWebsocketIntegration(IBMQTestCase):
@@ -51,12 +52,17 @@ class TestWebsocketIntegration(IBMQTestCase):
         self.circuit = transpile(self.qc1, backend=self.sim_backend)
         self.qobj = assemble(self.circuit, backend=self.sim_backend, shots=1)
 
+    def _job_final_status_polling(self, *args, **kwargs):
+        """Replaces the actual _job_final_status_polling and fails the test."""
+        # pylint: disable=unused-argument
+        self.fail("Obtaining job status via websockets failed!")
+
     def test_websockets_simulator(self):
         """Test checking status of a job via websockets for a simulator."""
         job = self.sim_backend.run(self.qobj, validate_qobj=True)
 
         # Manually disable the non-websocket polling.
-        job._api._job_final_status_polling = None
+        job._api._job_final_status_polling = self._job_final_status_polling
         result = job.result()
 
         self.assertEqual(result.status, 'COMPLETED')
@@ -65,12 +71,11 @@ class TestWebsocketIntegration(IBMQTestCase):
     @requires_device
     def test_websockets_device(self, backend):
         """Test checking status of a job via websockets for a device."""
-        qc = transpile(self.qc1, backend=backend)
-        qobj = assemble(qc, backend=backend)
-
+        qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
+
         # Manually disable the non-websocket polling.
-        job._api._job_final_status_polling = None
+        job._api._job_final_status_polling = self._job_final_status_polling
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         result = job.result()
 
@@ -83,7 +88,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         job._wait_for_completion()
 
         # Manually disable the non-websocket polling.
-        job._api._job_final_status_polling = None
+        job._api._job_final_status_polling = self._job_final_status_polling
 
         # Pretend we haven't seen the final status
         job._status = JobStatus.RUNNING
@@ -142,16 +147,21 @@ class TestWebsocketIntegration(IBMQTestCase):
         with mock.patch.object(AccountClient, 'job_status',
                                side_effect=_job_status_side_effect):
             job._wait_for_completion()
-            self.assertIs(job._status, JobStatus.DONE)
+            self.assertIs(
+                job._status, JobStatus.DONE,
+                "Job {} status is {} when it should be DONE.".format(job.job_id(), job._status))
 
     def test_websockets_timeout(self):
         """Test timeout checking status of a job via websockets."""
-        qc = transpile(self.qc1, backend=self.sim_backend)
-        qobj = assemble(qc, backend=self.sim_backend, shots=2048)
-        job = self.sim_backend.run(qobj, validate_qobj=True)
+        backend = most_busy_backend(self.provider)
+        qobj = bell_in_qobj(backend, shots=backend.configuration().max_shots)
+        job = backend.run(qobj, validate_qobj=True)
 
-        with self.assertRaises(JobTimeoutError):
-            job.result(timeout=0.1)
+        try:
+            with self.assertRaises(JobTimeoutError):
+                job.result(timeout=0.1)
+        finally:
+            cancel_job(job)
 
     def test_websockets_multi_job(self):
         """Test checking status of multiple jobs in parallel via websockets."""
@@ -160,7 +170,7 @@ class TestWebsocketIntegration(IBMQTestCase):
             """Run a job and get its result."""
             job = self.sim_backend.run(self.qobj, validate_qobj=True)
             # Manually disable the non-websocket polling.
-            job._api._job_final_status_polling = None
+            job._api._job_final_status_polling = self._job_final_status_polling
             job._wait_for_completion()
             if job._status is not JobStatus.DONE:
                 q.put(False)

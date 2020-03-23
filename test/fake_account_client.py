@@ -119,7 +119,7 @@ class BaseFakeJob:
     def result(self):
         """Return job result."""
         if not self._result:
-            raise RequestsApiError("Result is not available")
+            raise RequestsApiError('Result is not available')
         return self._result
 
     def status(self):
@@ -187,7 +187,7 @@ class BaseFakeAccountClient:
     def job_result(self, job_id, *_args, **_kwargs):
         """Return a random job result."""
         if job_id in self._results_retrieved:
-            raise ValueError("Result already retrieved for job {}!".format(job_id))
+            raise ValueError('Result already retrieved for job {}!'.format(job_id))
         self._results_retrieved.add(job_id)
         return self._get_job(job_id).result()
 
@@ -228,7 +228,7 @@ class BaseFakeAccountClient:
     def _get_job(self, job_id):
         """Return job if found."""
         if job_id not in self._jobs:
-            raise RequestsApiError('Job not found., Error code: 3250.')
+            raise RequestsApiError('Job not found. Error code: 3250.')
         return self._jobs[job_id]
 
 
@@ -237,4 +237,4 @@ class JobSubmitFailClient(BaseFakeAccountClient):
 
     def job_submit(self, *_args, **_kwargs):  # pylint: disable=arguments-differ
         """Failing job submit."""
-        raise RequestsApiError("Job submit failed!")
+        raise RequestsApiError('Job submit failed!')

@@ -326,7 +326,7 @@ class IBMQBackendService(SimpleNamespace):
                 status = JobStatus[status.upper()]
             except KeyError:
                 raise IBMQBackendValueError(
-                    '{} is not a valid status value. Valid values are {}'.format(
+                    '"{}" is not a valid status value. Valid values are {}'.format(
                         status, ", ".join(job_status.name for job_status in JobStatus))) \
                     from None
 
@@ -351,7 +351,7 @@ class IBMQBackendService(SimpleNamespace):
             _status_filter = {'status': {'regexp': '^ERROR'}}  # type: ignore[assignment]
         else:
             raise IBMQBackendValueError(
-                '{} is not a valid status value. Valid values are {}'.format(
+                '"{}" is not a valid status value. Valid values are {}'.format(
                     status, ", ".join(job_status.name for job_status in JobStatus)))
 
         return _status_filter
@@ -374,8 +374,8 @@ class IBMQBackendService(SimpleNamespace):
         try:
             job_info = self._provider._api.job_get(job_id)
         except ApiError as ex:
-            raise IBMQBackendApiError('Failed to get job "{}": {}'
-                                      .format(job_id, str(ex)))
+            raise IBMQBackendApiError('Failed to get job {}: {}'
+                                      .format(job_id, str(ex))) from ex
 
         # Recreate the backend used for this job.
         backend_name = job_info.get('backend', {}).get('name', 'unknown')
@@ -395,7 +395,8 @@ class IBMQBackendService(SimpleNamespace):
             job = IBMQJob.from_dict(job_info)
         except ModelValidationError as ex:
             raise IBMQBackendApiProtocolError(
-                'Failed to get job "{}". Invalid job data received: {}'.format(job_id, str(ex)))
+                'Unexpected return value received from the server '
+                'when retrieving job {}: {}'.format(job_id, str(ex))) from ex
 
         return job
 

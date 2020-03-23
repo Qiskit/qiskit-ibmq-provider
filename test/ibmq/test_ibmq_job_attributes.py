@@ -22,14 +22,14 @@ import uuid
 from qiskit.test import slow_test
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError, JobError
+from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, requires_device
-from ..utils import most_busy_backend
+from ..utils import most_busy_backend, cancel_job
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -67,10 +67,7 @@ class TestIBMQJobAttributes(JobTestCase):
             self.simple_job_callback(job_id, job_status, cjob, **kwargs)
             if job_status is JobStatus.RUNNING:
                 job_properties[0] = cjob.properties()
-                try:
-                    cjob.cancel()  # Cancel to go to final state.
-                except JobError:
-                    pass
+                cancel_job(cjob)
 
         job_properties = [None]
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -270,10 +267,7 @@ class TestIBMQJobAttributes(JobTestCase):
             self.log.warning("Unable to retrieve queue information")
 
         # Cancel job so it doesn't consume more resources.
-        try:
-            job.cancel()
-        except JobError:
-            pass
+        cancel_job(job)
 
     @requires_provider
     def test_invalid_job_share_level(self, provider):
@@ -360,6 +354,20 @@ class TestIBMQJobAttributes(JobTestCase):
 
         self.assertRaises(IBMQBackendValueError, backend.run, qobj, job_tags={'foo'})
         self.assertRaises(IBMQBackendValueError, backend.jobs, job_tags=[1, 2, 3])
+
+    @requires_provider
+    def test_run_mode(self, provider):
+        """Test job run mode."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj, validate_qobj=True)
+        job.wait_for_final_state()
+        self.assertEqual(job.scheduling_mode(), "fairshare", "Job {} scheduling mode is {}".format(
+            job.job_id(), job.scheduling_mode()))
+
+        rjob = backend.retrieve_job(job.job_id())
+        self.assertEqual(rjob.scheduling_mode(), "fairshare", "Job {} scheduling mode is {}".format(
+            rjob.job_id(), rjob.scheduling_mode()))
 
 
 def _bell_circuit():

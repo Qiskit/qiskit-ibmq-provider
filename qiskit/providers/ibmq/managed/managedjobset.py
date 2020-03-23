@@ -105,7 +105,8 @@ class ManagedJobSet:
             IBMQJobManagerInvalidStateError: If the jobs were already submitted.
         """
         if self._managed_jobs:
-            raise IBMQJobManagerInvalidStateError("Jobs were already submitted.")
+            raise IBMQJobManagerInvalidStateError(
+                'The jobs for this managed job set have already been submitted.')
 
         self._backend = backend
         if job_tags:
@@ -153,7 +154,7 @@ class ManagedJobSet:
 
         if not jobs:
             raise IBMQJobManagerUnknownJobSet(
-                "{} is not a known job set within the provider {}.".format(
+                '{} is not a known job set within the provider {}.'.format(
                     self.job_set_id(), provider))
 
         # Extract common information from the first job.
@@ -162,8 +163,8 @@ class ManagedJobSet:
         matched = pattern.match(first_job.name())
         if not matched:
             raise IBMQJobManagerInvalidStateError(
-                "Job {} is tagged for the job set {} but does not have a proper job name.".format(
-                    first_job.job_id(), self.job_set_id()))
+                'Job {} is tagged for the job set {} but does not '
+                'have a proper job name.'.format(first_job.job_id(), self.job_set_id()))
         self._name = matched.group(1)
         self._backend = first_job.backend()
         self._tags = first_job.tags()
@@ -176,15 +177,15 @@ class ManagedJobSet:
             if not matched or matched.group(1) != self._name or \
                     job.backend().name() != self._backend.name():
                 raise IBMQJobManagerInvalidStateError(
-                    "Job {} is tagged for the job set {} but does not appear "
-                    "to belong to the set".format(job.job_id(), self.job_set_id()))
+                    'Job {} is tagged for the job set {} but does not appear '
+                    'to belong to the set.'.format(job.job_id(), self.job_set_id()))
             jobs_dict[int(matched.group(2))] = job
 
         sorted_indexes = sorted(jobs_dict)
         # Verify we got all jobs.
         if sorted_indexes != list(range(len(sorted_indexes))):
             raise IBMQJobManagerInvalidStateError(
-                "Unable to retrieve all jobs for job set {}".format(self.job_set_id()))
+                'Unable to retrieve all jobs for job set {}.'.format(self.job_set_id()))
 
         self._managed_jobs = []
         experiment_index = 0
@@ -296,16 +297,16 @@ class ManagedJobSet:
                 result = mjob.result(timeout=timeout, partial=partial)
                 if result is None or not result.success:
                     success = False
-            except IBMQJobTimeoutError:
+            except IBMQJobTimeoutError as ex:
                 raise IBMQJobManagerTimeoutError(
-                    "Timeout waiting for results for experiments {}-{}.".format(
-                        mjob.start_index, self._managed_jobs[-1].end_index))
+                    'Timeout while waiting for the results for experiments {}-{}.'.format(
+                        mjob.start_index, self._managed_jobs[-1].end_index)) from ex
 
             if timeout:
                 timeout = original_timeout - (time.time() - start_time)
                 if timeout <= 0:
                     raise IBMQJobManagerTimeoutError(
-                        "Timeout waiting for results for experiments {}-{}.".format(
+                        'Timeout while waiting for the results for experiments {}-{}.'.format(
                             mjob.start_index, self._managed_jobs[-1].end_index))
 
         self._managed_results = ManagedResults(self, self._backend.name(), success)
@@ -396,8 +397,8 @@ class ManagedJobSet:
                     if hasattr(exp.header, 'name') and exp.header.name == experiment:
                         return job, i
 
-        raise IBMQJobManagerJobNotFound("Unable to find the job for experiment {}".format(
-            experiment))
+        raise IBMQJobManagerJobNotFound(
+            'Unable to find the job for experiment {}.'.format(experiment))
 
     @requires_submit
     def qobjs(self) -> List[Qobj]:
