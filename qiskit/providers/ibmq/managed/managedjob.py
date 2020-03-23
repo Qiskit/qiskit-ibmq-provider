@@ -122,7 +122,8 @@ class ManagedJob:
                         if oldest_running:
                             oldest_running = oldest_running[0]
                             logger.warning("Job limit reached, waiting for job %s to finish "
-                                           "before submitting the next one.", oldest_running.job_id())
+                                           "before submitting the next one.",
+                                           oldest_running.job_id())
                             oldest_running.wait_for_final_state(timeout=300)
                     else:
                         raise
