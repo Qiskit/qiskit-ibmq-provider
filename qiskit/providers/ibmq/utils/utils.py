@@ -124,6 +124,9 @@ def filter_data(data: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Filtered data.
     """
+    if not isinstance(data, dict):
+        return data
+
     data_to_filter = copy.deepcopy(data)
     keys_to_filter = [('backend', 'name'), 'hubInfo', 'backend.name']
     _filter_value(data_to_filter, keys_to_filter)  # type: ignore[[arg-type]]
@@ -140,9 +143,6 @@ def _filter_value(data: Dict[str, Any], filter_keys: List[Union[str, Tuple[str, 
             keys, such as ``{'backend': {'name': ...}}`` and must have a length
             of 2.
     """
-    if not isinstance(data, dict):
-        return
-
     for key, value in data.items():
         for filter_key in filter_keys:
             if isinstance(filter_key, str) and key == filter_key:

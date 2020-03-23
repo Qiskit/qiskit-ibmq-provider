@@ -109,7 +109,7 @@ class Api(RestAdapterBase):
             query['where'] = extra_filter
 
         if logger.getEffectiveLevel() is logging.DEBUG:
-            logger.debug("Endpoint: %s. Method: GET. Request Data: %s",
+            logger.debug("Endpoint: %s. Method: GET. Request Data: {'filter': %s}",
                          url, filter_data(query))
 
         return self.session.get(
