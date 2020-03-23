@@ -53,7 +53,7 @@ Detailed information on a single backend
 IBM Quantum Experience (IQX) dashboard
 ======================================
 
-.. jupyter-execute::
+.. code-block:: python
 
     from qiskit import IBMQ
     import qiskit.providers.ibmq.jupyter
