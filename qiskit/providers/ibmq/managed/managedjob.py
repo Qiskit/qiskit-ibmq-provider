@@ -116,14 +116,13 @@ class ManagedJob:
                         job_tags=job_tags)
                 except IBMQBackendApiError as api_err:
                     if 'Error code: 3458' in str(api_err):
-                        logger.warning("Job limit reached, waiting for jobs to finish "
-                                       "before submitting the next one.")
                         final_states = [state.value for state in API_JOB_FINAL_STATES]
                         oldest_running = backend.jobs(limit=1, descending=False,
                                                       db_filter={"status": {"nin": final_states}})
                         if oldest_running:
                             oldest_running = oldest_running[0]
-                            logger.info("Waiting for job %s to finish", oldest_running.job_id())
+                            logger.warning("Job limit reached, waiting for job %s to finish "
+                                           "before submitting the next one.", oldest_running.job_id())
                             oldest_running.wait_for_final_state(timeout=300)
                     else:
                         raise
