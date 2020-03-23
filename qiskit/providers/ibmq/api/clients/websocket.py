@@ -47,11 +47,11 @@ logger = logging.getLogger(__name__)
 # Before applying the patch, check if an event loop is available otherwise
 # create one and set it active
 try:
-    loop = asyncio.get_running_loop()
+    LOOP = asyncio.get_event_loop()
 except RuntimeError:
-    loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-nest_asyncio.apply(loop)
+    LOOP = asyncio.new_event_loop()
+asyncio.set_event_loop(LOOP)
+nest_asyncio.apply(LOOP)
 
 # TODO Replace coroutine with async def once Python 3.5 is dropped.
 # Also can upgrade to websocket 8 to avoid other deprecation warning.
