@@ -14,9 +14,8 @@
 
 """IBM Quantum Experience job."""
 
-import re
 import logging
-from typing import Dict, Optional, Tuple, Any, List, Callable
+from typing import Dict, Set, Optional, Tuple, Any, List, Callable
 import warnings
 from datetime import datetime
 from concurrent import futures
@@ -38,16 +37,14 @@ from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..utils.utils import RefreshQueue, validate_job_tags
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
-                         IBMQJobTimeoutError, IBMQJobInvalidStateError)
+                         IBMQJobTimeoutError, IBMQJobInvalidStateError,
+                         IBMQJobUpdateError)
 from .queueinfo import QueueInfo
 from .schema import JobResponseSchema
 from .utils import (build_error_report, api_status_to_job_status,
                     api_to_job_error, get_cancel_status)
 
 logger = logging.getLogger(__name__)
-
-# Regex used to match tags associated with a job set.
-RE_JOB_SET_ID_LONG = re.compile(r'^(ibmq_jobset_)([0-9a-f]{32})(-{1})(\d+)(_{1})$')
 
 
 @bind_schema(JobResponseSchema)
@@ -285,19 +282,21 @@ class IBMQJob(BaseModel, BaseJob):
             raise IBMQJobApiError('Unexpected error when cancelling job {}: {}'
                                   .format(self.job_id(), str(error))) from error
 
-    def change_name(self, name: str) -> bool:
-        """Change the name associated with this job.
+    def update_name(self, name: str) -> str:
+        """Update the name associated with this job.
 
         Args:
             name: The new `name` for this job.
 
         Returns:
-            ``True`` if changing the job name was successful, else ``False``.
+            The new name associated with this job.
 
         Raises:
             IBMQJobInvalidStateError: If the input job name is not a string.
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
+            IBMQJobUpdateError: If an unexpected error occurred when updating
+                the job name.
         """
         if not isinstance(name, str):
             raise IBMQJobInvalidStateError(
@@ -310,132 +309,56 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Get the name from the response and check if the update was successful.
         updated_name = response.get('name', None)
-        update_successful = (name == updated_name)
+        if (updated_name is None) or (name != updated_name):
+            raise IBMQJobUpdateError('An error occurred when updating the name '
+                                     'for job {}. Please, try again.'.format(self.job_id()))
 
-        if update_successful:
-            self._name = updated_name  # Cache updated name if successful.
+        # Cache updated name.
+        self._name = updated_name
 
-        return update_successful
+        return self._name
 
-    def modify_tags(self, tags: List[str], overwrite: bool = False) -> bool:
-        """Modify the tags associated with this job.
+    def update_tags(
+            self,
+            replacement_tags: Optional[List[str]] = None,
+            additional_tags: Optional[List[str]] = None,
+            removal_tags: Optional[List[str]] = None
+    ) -> List[str]:
+        """Update the tags associated with this job.
 
         Note:
-            If a job was submitted through an
-            :class:`IBMQJobManager<qiskit.providers.ibmq.managed.IBMQJobManager>`
-            instance, then the job will contain a tag with the prefix ``ibmq_jobset_``.
-            These tags are necessary to retrieve a job within a
-            :class:`ManagedJobSet<qiskit.providers.ibmq.managed.ManagedJobSet>`.
-            As a result, tags that contain this prefix will not be overwritten
-            or changed.
-
-        An example of the behavior when using ``overwrite=False``::
-
-            current_job_tags = job.tags()  # Tags are: ['tag1', 'tag2']
-            job.modify_tags(['tag3'], overwrite=False)
-            new_job_tags = job.tags()  # Tags are: ['tag1', 'tag2', 'tag3']
-
-        An example of the behavior when using ``overwrite=True``::
-
-            current_job_tags = job.tags()  # Tags are: ['tag1', 'tag2']
-            job.modify_tags(['tag3'], overwrite=True)
-            new_job_tags = job.tags()  # Tags are: ['tag3']
+            * Some tags, such as those starting with ``ibmq_jobset``, are used
+              internally by `ibmq-provider` and therefore cannot be modified.
+            * If the job doesn't have a specified tag, it will be ignored.
 
         Args:
-            tags: The new tags to add or `overwrite` for this job.
-            overwrite: If ``False`` the specified `tags` are added to the
-                job's already existing tags. If ``True``, the `tags` overwrite
-                and replace the tags currently associated with this job.
+            replacement_tags: The tags that will replace those currently
+                associated with the job.
+            additional_tags: The tags that will be added to those currently
+                associated with this job.
+            removal_tags: The tags that will be removed from those currently
+                associated with this job.
 
         Returns:
-            ``True`` if modifying the job tags was successful, else ``False``.
+            The tags associated with this job after updating.
 
         Raises:
             IBMQJobInvalidStateError: If the input job tags are invalid.
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
+            IBMQJobUpdateError: If an unexpected error occurred when updating
+                the job name.
         """
-        validate_job_tags(tags, IBMQJobInvalidStateError)
-
-        tags_to_update = set(tags)
-        if overwrite:
-            # Add the tags associated with a job set.
-            tags_to_update.update(
-                filter(lambda tag: re.match(RE_JOB_SET_ID_LONG, tag), self._tags))
-        else:
-            tags_to_update.update(self._tags)
-
-        with api_to_job_error():
-            response = self._api.job_update_attribute(
-                job_id=self.job_id(), attr_name='tags', attr_value=list(tags_to_update))
-
-        # Get the tags from the response and check if the update was successful.
-        updated_tags = response.get('tags', None)
-        updated_tags_set = set(updated_tags) if updated_tags else None
-        update_successful = (tags_to_update == updated_tags_set)
-
-        if update_successful:
-            self._tags = updated_tags  # Cache updated tags if successful.
-
-        return update_successful
-
-    def remove_tags(self, tags: List[str]) -> bool:
-        """Remove the specified tags from the tags associated with this job.
-
-        Note:
-            If a job was submitted through an
-            :class:`IBMQJobManager<qiskit.providers.ibmq.managed.IBMQJobManager>`
-            instance, then the job will contain a tag with the prefix ``ibmq_jobset_``.
-            These tags are necessary to retrieve a job within a
-            :class:`ManagedJobSet<qiskit.providers.ibmq.managed.ManagedJobSet>`.
-            If an attempt is made to remove one of these tags, the removal for that
-            tag will be ignored.
-
-        This method plays it safe when attempting to remove tags that are not found in the
-        job's existing tags by ignoring them. As a result, this method will return ``True``
-        when no tags are removed, or not all tags are removed, if they are not actually
-        associated with this job. The following examples give a better indication of these
-        cases.
-
-        An example of removing tags that are not associated with the job::
-
-            current_tags = job.tags()  # tags are: ['tag1', 'tag2', 'tag3']
-            removal_success = job.remove_tags(['phantom_tag', 'ghost_tag'])  # Returns True
-            tags_after_removal = job.tags()  # tags are: ['tag1', 'tag2', 'tag3']
-
-        An example of removing tags, where some tags are associated with the job
-        and others are not::
-
-            current_tags = job.tags()  # tags are: ['tag1', 'tag2', 'tag3']
-            removal_success = job.remove_tags(['phantom_tag', 'ghost_tag', 'tag3'])  # Returns True
-            tags_after_removal = job.tags()  # tags are: ['tag1', 'tag2']
-
-        Args:
-            tags: The `tags` to remove from the tags currently associated with this job.
-
-        Returns:
-            ``True`` if removing the tags was successful, else ``False``.
-
-        Raises:
-            IBMQJobInvalidStateError: If the input job tags are invalid.
-            IBMQJobApiError: If an unexpected error occurred when communicating
-                with the server.
-        """
-        validate_job_tags(tags, IBMQJobInvalidStateError)
+        ibmq_jobset_prefix = 'ibmq_jobset_'
 
         tags_to_update = set(self._tags)
-        for tag in tags:
-            if re.match(RE_JOB_SET_ID_LONG, tag):
-                logger.warning('The tag "%s" for job %s will not be removed, because '
-                               'it is associated with a job set.', tag, self.job_id())
-                continue
-            if tag not in tags_to_update:
-                logger.warning('The tag "%s" for job %s will not be removed, because '
-                               'it was not found in the tags currently associated '
-                               'with the job %s', tag, self.job_id(), self.tags())
-                continue
-
-            tags_to_update.remove(tag)
+        if isinstance(replacement_tags, list):  # `replacement_tags` could be an empty list.
+            tags_to_update = self._replace_tags(replacement_tags, ibmq_jobset_prefix)
+        if additional_tags:
+            tags_to_update = self._add_tags(tags_to_update, additional_tags)
+        if removal_tags:
+            tags_to_update = self._remove_tags(
+                tags_to_update, removal_tags, ibmq_jobset_prefix)
 
         with api_to_job_error():
             response = self._api.job_update_attribute(
@@ -443,14 +366,109 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Get the tags from the response and check if the update was successful.
         updated_tags = response.get('tags', None)
-        updated_tags_set = set(updated_tags) if updated_tags else None
-        update_successful = (tags_to_update == updated_tags_set)
+        if (updated_tags is None) or (set(updated_tags) != tags_to_update):
+            raise IBMQJobUpdateError('An error occurred when updating the name '
+                                     'for job {}. Please, try again.'
+                                     .format(self.job_id()))
 
-        # Cache the new tags if update was successful.
-        if update_successful:
-            self._tags = updated_tags  # Cache updated tags if successful.
+        # Cache the updated tags.
+        self._tags = updated_tags
 
-        return update_successful
+        return self._tags
+
+    def _replace_tags(
+            self,
+            replacement_tags: List[str],
+            jobset_prefix: str
+    ) -> Set[str]:
+        """Return the tags to associate with this job after replacing the current tags.
+
+        Returns the list of tags to associate with this job after replacing
+        the current tags with those specified by `replacement_tags`.
+
+        Args:
+            replacement_tags: The tags that will replace those currently
+                associated with this job.
+            jobset_prefix: The tag prefix which denotes a job is associated with a
+                job set.
+
+        Returns:
+            The tags to associate with the job after replacement.
+
+        Raises:
+            IBMQJobInvalidStateError: If the input job name is not a string.
+        """
+        validate_job_tags(replacement_tags, IBMQJobInvalidStateError)
+
+        # Replace the tags and re-add those associated with a job set.
+        tags_after_replace = set(replacement_tags)
+        tags_after_replace.update(
+            filter(lambda tag: tag.startswith(jobset_prefix), self._tags))
+
+        return tags_after_replace
+
+    def _add_tags(self, tags_to_update: Set[str], additional_tags: List[str]) -> Set[str]:
+        """Return the tags to associate with this job after adding the specified tags to
+        the current tags.
+
+        Args:
+            tags_to_update: The tags that will be associated with this job.
+            additional_tags: The tags that should be added to those that will be
+                associated with this job.
+
+        Returns:
+            The tags to associate with the job after addition.
+
+        Raises:
+            IBMQJobInvalidStateError: If the input job name is not a string.
+        """
+        validate_job_tags(additional_tags, IBMQJobInvalidStateError)
+
+        # Add the original and new tags.
+        tags_after_add = set(tags_to_update)
+        tags_after_add.update(additional_tags)
+
+        return tags_after_add
+
+    def _remove_tags(
+            self,
+            tags_to_update: Set[str],
+            removal_tags: List[str],
+            jobset_prefix: str
+    ) -> Set[str]:
+        """Return the tags to associate with the job after removing the specified tags
+        from the current tags.
+
+        Args:
+            tags_to_update: The tags that will be associated with this job.
+            removal_tags: The tags that should be removed from those that will be
+                associated with this job.
+            jobset_prefix: The tag prefix which denotes a job is associated with a
+                job set.
+
+        Returns:
+            The tags to associate with the job after removal.
+
+        Raises:
+            IBMQJobInvalidStateError: If the input job name is not a string.
+        """
+        validate_job_tags(removal_tags, IBMQJobInvalidStateError)
+
+        # Remove the tags not associated with a job set.
+        tags_after_remove = set(tags_to_update)
+        for tag in removal_tags:
+            if tag.startswith(jobset_prefix):
+                logger.warning('The tag "%s" for job %s will not be removed, because '
+                               'it is used internally by the ibmq-provider.', tag, self.job_id())
+                continue
+            if tag in tags_after_remove:
+                tags_after_remove.remove(tag)
+            else:
+                logger.warning('The tag "%s" for job %s will not be removed, because it was '
+                               'not found in the job tags to update %s',
+                               tag, self.job_id(), tags_to_update)
+
+        return tags_after_remove
 
     def status(self) -> JobStatus:
         """Query the server for the latest job status.

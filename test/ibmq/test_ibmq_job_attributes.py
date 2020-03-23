@@ -14,6 +14,7 @@
 
 """Test IBMQJob attributes."""
 
+import logging
 import time
 from unittest import mock
 import re
@@ -22,6 +23,7 @@ import uuid
 from qiskit.test import slow_test
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
+from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
@@ -107,7 +109,7 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
     @requires_provider
-    def test_job_name_change(self, provider):
+    def test_job_name_update(self, provider):
         """Test changing the name associated with a job."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
@@ -128,27 +130,11 @@ class TestIBMQJobAttributes(JobTestCase):
         ]
         for new_name in new_names_to_test:
             with self.subTest(new_name=new_name):
-                # Update the job name.
-                update_successful = job.change_name(new_name)
-                self.assertTrue(update_successful,
-                                'Updating the name for job {} from "{}" to "{}" '
-                                'was unsuccessful.'.format(job_id, job.name(), new_name))
-
-                # Check retrieving the job by its new name using partial matching.
-                job_name_partial = new_name[8:]
-                retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
-                                                        job_name=job_name_partial)
-                self.assertGreaterEqual(len(retrieved_jobs), 1)
-                retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
-                self.assertIn(job_id, retrieved_job_ids)
-
-                if new_name:
-                    # Check retrieving the job by its new name using regular expressions.
-                    job_name_regex = '^{}$'.format(new_name)
-                    retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
-                                                            job_name=job_name_regex)
-                    self.assertEqual(len(retrieved_jobs), 1)
-                    self.assertEqual(job_id, retrieved_jobs[0].job_id())
+                _ = job.update_name(new_name)  # Update the job name.
+                job.refresh()
+                self.assertEqual(job.name(), new_name,
+                                 'Updating the name for job {} from "{}" to "{}" '
+                                 'was unsuccessful.'.format(job_id, job.name(), new_name))
 
     @requires_provider
     def test_duplicate_job_name(self, provider):
@@ -389,6 +375,104 @@ class TestIBMQJobAttributes(JobTestCase):
                                  "Expected job {}, got {}".format(job.job_id(), rjobs))
                 self.assertEqual(rjobs[0].job_id(), job.job_id())
                 self.assertEqual(set(rjobs[0].tags()), set(job_tags))
+
+    @requires_provider
+    def test_job_tags_replace(self, provider):
+        """Test updating job tags by replacing a job's existing tags."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        initial_job_tags = [uuid.uuid4().hex]
+        job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
+        job_id = job.job_id()
+
+        # TODO No need to wait for job to run once api is fixed
+        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+            time.sleep(0.5)
+
+        timestamp = str(time.time()).replace('.', '')
+        tags_to_replace_subtests = [
+            [],  # empty tags.
+            ['{}_new_tag_{}'.format(timestamp, i) for i in range(2)]  # non-empty unique tags.
+        ]
+        for tags_to_replace in tags_to_replace_subtests:
+            with self.subTest(new_tag=tags_to_replace):
+                _ = job.update_tags(replacement_tags=tags_to_replace)  # Update the job tags.
+                job.refresh()
+                self.assertEqual(set(job.tags()), set(tags_to_replace),
+                                 'Updating the tags for job {} was unsuccessful.'
+                                 'The tags are {}, but they should be {}.'
+                                 .format(job_id, job.tags(), tags_to_replace))
+
+    @requires_provider
+    def test_job_tags_add(self, provider):
+        """Test updating job tags by adding to a job's existing tags."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        initial_job_tags = [uuid.uuid4().hex]
+        job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
+        job_id = job.job_id()
+
+        # TODO No need to wait for job to run once api is fixed
+        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+            time.sleep(0.5)
+
+        tags_to_add_subtests = [
+            [],  # empty tags.
+            ['{}_new_tag_{}'.format(uuid.uuid4().hex, i) for i in range(2)]  # unique tags.
+        ]
+        for tags_to_add in tags_to_add_subtests:
+            tags_after_add = job.tags() + tags_to_add
+            with self.subTest(new_tag=tags_to_add):
+                _ = job.update_tags(additional_tags=tags_to_add)  # Update the job tags.
+                job.refresh()
+                self.assertEqual(set(job.tags()), set(tags_after_add),
+                                 'Updating the tags for job {} was unsuccessful.'
+                                 'The tags are {}, but they should be {}.'
+                                 .format(job_id, job.tags(), tags_after_add))
+
+    @requires_provider
+    def test_job_tags_remove(self, provider):
+        """Test updating job tags by remving from a job's existing tags."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        initial_job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
+        job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
+        job_id = job.job_id()
+
+        # TODO No need to wait for job to run once api is fixed
+        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+            time.sleep(0.5)
+
+        ibmq_provider_logger = logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME)
+        tags_to_remove_subtests = [
+            [],
+            initial_job_tags[:2],  # Will be used to remove the first two tags of initial_job_tags.
+            ['phantom_tag', 'ghost_tag', initial_job_tags[-1]]  # Get the last initial tag.
+        ]
+        for tags_to_remove in tags_to_remove_subtests:
+            tags_after_removal_set = set(job.tags()) - set(tags_to_remove)
+            with self.subTest(new_tag=tags_to_remove):
+                # Assert the appropriate messages were logged.
+                if 'phantom_tag' in tags_to_remove:
+                    # Update the job tags, while capturing the log output.
+                    with self.assertLogs(logger=ibmq_provider_logger,
+                                         level='WARNING') as log_records:
+                        _ = job.update_tags(removal_tags=tags_to_remove)  # Update the job tags.
+                    # Two warnings should have been issued, for `phantom_tag` and `ghost_tag`.
+                    self.assertEqual(len(log_records.output), 2)
+                    self.assertIn('not found in the job tags to update', log_records.output[0])
+                else:
+                    _ = job.update_tags(removal_tags=tags_to_remove)  # Update the job tags.
+
+                # Refresh the job and check that the tags were updated correctly.
+                job.refresh()
+                self.assertEqual(set(job.tags()), tags_after_removal_set,
+                                 'Updating the tags for job {} was unsuccessful.'
+                                 'The tags are {}, but they should be {}.'
+                                 .format(job_id, job.tags(), list(tags_after_removal_set)))
 
     @requires_provider
     def test_invalid_job_tags(self, provider):

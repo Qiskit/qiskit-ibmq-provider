@@ -415,6 +415,17 @@ class ManagedJobSet:
         """
         return self._name
 
+    def update_name(self, name: str) -> str:
+        """Update the name of this job set."""
+        for i, job in enumerate(self.jobs()):
+            if job:
+                _ = job.update_name("{}_{}_".format(name, i))
+
+        # Cache the updated job set name.
+        self._name = name
+
+        return self._name
+
     def job_set_id(self) -> str:
         """Return the ID of this job set.
 
@@ -440,3 +451,22 @@ class ManagedJobSet:
             Tags assigned to this job set.
         """
         return self._tags
+
+    def update_tags(
+            self,
+            replacement_tags: List[str] = None,
+            additional_tags: List[str] = None,
+            removal_tags: List[str] = None
+    ) -> List[str]:
+        """Update the tags assigned to this job set."""
+        updated_tags = []  # type: List[str]
+        for job in self.jobs():
+            if job:
+                updated_tags = job.update_tags(replacement_tags=replacement_tags,
+                                               additional_tags=additional_tags,
+                                               removal_tags=removal_tags)
+
+        # Cache the updated job set tags.
+        self._tags = updated_tags
+
+        return updated_tags
