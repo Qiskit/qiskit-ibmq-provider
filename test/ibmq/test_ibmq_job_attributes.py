@@ -396,7 +396,7 @@ class TestIBMQJobAttributes(JobTestCase):
             ['{}_new_tag_{}'.format(timestamp, i) for i in range(2)]  # non-empty unique tags.
         ]
         for tags_to_replace in tags_to_replace_subtests:
-            with self.subTest(new_tag=tags_to_replace):
+            with self.subTest(tags_to_replace=tags_to_replace):
                 _ = job.update_tags(replacement_tags=tags_to_replace)  # Update the job tags.
                 job.refresh()
                 self.assertEqual(set(job.tags()), set(tags_to_replace),
@@ -424,7 +424,7 @@ class TestIBMQJobAttributes(JobTestCase):
         ]
         for tags_to_add in tags_to_add_subtests:
             tags_after_add = job.tags() + tags_to_add
-            with self.subTest(new_tag=tags_to_add):
+            with self.subTest(tags_to_add=tags_to_add):
                 _ = job.update_tags(additional_tags=tags_to_add)  # Update the job tags.
                 job.refresh()
                 self.assertEqual(set(job.tags()), set(tags_after_add),
@@ -454,7 +454,7 @@ class TestIBMQJobAttributes(JobTestCase):
         ]
         for tags_to_remove in tags_to_remove_subtests:
             tags_after_removal_set = set(job.tags()) - set(tags_to_remove)
-            with self.subTest(new_tag=tags_to_remove):
+            with self.subTest(tags_to_remove=tags_to_remove):
                 # Assert the appropriate messages were logged.
                 if 'phantom_tag' in tags_to_remove:
                     # Update the job tags, while capturing the log output.
