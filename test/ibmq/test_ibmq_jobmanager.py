@@ -372,7 +372,7 @@ class TestIBMQJobManager(IBMQTestCase):
                 self.assertEqual(set(job.tags()), set(replacement_tags_with_id_long),
                                  'Updating the tags for job {} was unsuccessful.'
                                  'The tags are {}, but they should be {}.'
-                                 .format(job_id, job.tags(), replacement_tags))
+                                 .format(job_id, job.tags(), replacement_tags_with_id_long))
 
     @requires_provider
     def test_job_tags_remove(self, provider):
