@@ -173,8 +173,8 @@ class TestIBMQJobManager(IBMQTestCase):
         with mock.patch.object(IBMQBackend, 'run',
                                side_effect=[IBMQBackendError("Kaboom!"), mock.DEFAULT]):
             job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-        self.assertIsNone(job_set.jobs()[0])
-        self.assertIsNotNone(job_set.jobs()[1])
+        self.assertTrue(any(job is None for job in job_set.jobs()))
+        self.assertTrue(any(job is not None for job in job_set.jobs()))
 
         # Make sure results() and statuses() don't fail
         job_set.results()
