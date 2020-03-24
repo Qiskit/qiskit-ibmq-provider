@@ -28,10 +28,9 @@ The format is based on [Keep a Changelog].
   respectively. Note that the name of the logger is `qiskit.providers.ibmq`. (\#579)
 - `IBMQJob` now has a new method `scheduling_mode()` that returns the scheduling
   mode the job is in. (\#593)
-- `IBMQJob` now has three new methods: `change_name()`, `modify_tags()`, and 
-  `remove_tags()`. The methods are used to change the name of a job, modify the 
-  existing tags of a job, and remove specific tags associated with a job, 
-  respectively. (\#590)
+- `IBMQJob` now has two new methods `update_name()` and `update_tags()`. The methods
+  are used to change the name of a job and modify its existing tags, respectively. 
+  (\#590)
 
 ### Changed
 
