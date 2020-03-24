@@ -29,8 +29,7 @@ The format is based on [Keep a Changelog].
 - `IBMQJob` now has a new method `scheduling_mode()` that returns the scheduling
   mode the job is in. (\#593)
 - `IBMQJob` now has two new methods `update_name()` and `update_tags()`. The methods
-  are used to change the name of a job and modify its existing tags, respectively. 
-  (\#590)
+  are used to change a job's name and tags, respectively. (\#590)
 
 ### Changed
 

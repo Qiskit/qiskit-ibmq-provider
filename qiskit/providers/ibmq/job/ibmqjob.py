@@ -394,7 +394,7 @@ class IBMQJob(BaseModel, BaseJob):
             The tags to associate with this job after replacing the current tags.
 
         Raises:
-            IBMQJobInvalidStateError: If the input job name is not a string.
+            IBMQJobInvalidStateError: If the input job tags are invalid.
         """
         validate_job_tags(replacement_tags, IBMQJobInvalidStateError)
 
@@ -417,7 +417,7 @@ class IBMQJob(BaseModel, BaseJob):
             The tags to associate with this job after adding the specified tags.
 
         Raises:
-            IBMQJobInvalidStateError: If the input job name is not a string.
+            IBMQJobInvalidStateError: If the input job tags are invalid.
         """
         validate_job_tags(additional_tags, IBMQJobInvalidStateError)
 
@@ -445,7 +445,7 @@ class IBMQJob(BaseModel, BaseJob):
             The tags to associate with this job after removing the specified tags.
 
         Raises:
-            IBMQJobInvalidStateError: If the input job name is not a string.
+            IBMQJobInvalidStateError: If the input job tags are invalid.
         """
         validate_job_tags(removal_tags, IBMQJobInvalidStateError)
 
