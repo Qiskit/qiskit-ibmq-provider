@@ -314,21 +314,21 @@ class TestIBMQJobManager(IBMQTestCase):
             job_limit=job_limit, job_class=CancelableFakeJob)
         provider._api = backend._api
 
-        circs = []
-        for _ in range(job_limit+2):
-            circs.append(self._qc)
-        circs = transpile(circs, backend=backend)
-
+        circs = transpile([self._qc]*(job_limit+2), backend=backend)
         job_set = None
         try:
             with self.assertLogs(managedjob.logger, 'WARNING'):
                 job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-                # Wait for the first 5 jobs to be submitted.
-                wait([mjob.future for mjob in job_set.managed_jobs()[:job_limit]], timeout=5)
                 time.sleep(1)
 
-            # Make sure the next future is still running.
-            self.assertTrue(job_set.managed_jobs()[job_limit].future.running())
+            # There should be 5 done and 2 running futures.
+            running_futures = [mjob.future for mjob in job_set.managed_jobs()
+                               if mjob.future.running()]
+            max_wait = 6
+            while len(running_futures) > 2 and max_wait > 0:
+                running_futures = [f for f in running_futures if f.running()]
+                time.sleep(0.5)
+            self.assertEqual(len(running_futures), 2)
 
             for mjob in job_set.managed_jobs():
                 if mjob.job is not None:
@@ -336,8 +336,13 @@ class TestIBMQJobManager(IBMQTestCase):
             self.assertEqual(len(job_set.jobs()), job_limit+2)
             self.assertTrue(all(job_set.jobs()))
         finally:
-            if job_set:
-                job_set.cancel()
+            # Cancel all submitted jobs first.
+            for mjob in job_set.managed_jobs():
+                if mjob.job is not None:
+                    mjob.cancel()
+                elif job_set._job_submit_lock.locked():
+                    job_set._job_submit_lock.release()
+            wait([mjob.future for mjob in job_set.managed_jobs()], timeout=5)
 
 
 class TestResultManager(IBMQTestCase):
