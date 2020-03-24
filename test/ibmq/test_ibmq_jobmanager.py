@@ -30,7 +30,7 @@ from qiskit.providers.ibmq.managed import managedjob
 from qiskit.providers.ibmq.managed.exceptions import (
     IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.compiler import transpile, assemble
 
@@ -170,7 +170,7 @@ class TestIBMQJobManager(IBMQTestCase):
         circs = []
         for _ in range(2):
             circs.append(self._qc)
-        with mock.patch.object(IBMQBackend, 'run',
+        with mock.patch.object(IBMQSimulator, 'run',
                                side_effect=[IBMQBackendError("Kaboom!"), mock.DEFAULT]):
             job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
         self.assertTrue(any(job is None for job in job_set.jobs()))
