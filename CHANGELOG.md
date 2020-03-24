@@ -28,6 +28,8 @@ The format is based on [Keep a Changelog].
   respectively. Note that the name of the logger is `qiskit.providers.ibmq`. (\#579)
 - `IBMQJob` now has a new method `scheduling_mode()` that returns the scheduling
   mode the job is in. (\#593)
+- IQX-related tutorials that used to be in `qiskit-iqx-tutorials` are now in 
+  `qiskit-ibmq-provider`. (\#603)
 
 ### Changed
 
