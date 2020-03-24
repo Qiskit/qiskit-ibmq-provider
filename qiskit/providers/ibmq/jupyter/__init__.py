@@ -38,6 +38,14 @@ Detailed information on a single backend
     from qiskit.test.ibmq_mock import mock_get_backend
     mock_get_backend('FakeVigo')
 
+    # TODO Remove after terra 0.13 is released.
+    from unittest.mock import MagicMock
+    from qiskit import IBMQ
+    backend = IBMQ.get_provider().get_backend()
+    backend._credentials = MagicMock(token='123456', url='https://',
+        hub='hub', group='group', project='project')
+    backend.configuration().max_experiments = 75
+    backend.jobs = MagicMock(return_value=[])
 
 .. jupyter-execute::
 
