@@ -14,7 +14,6 @@
 
 """Tests for the tutorials, copied from ``qiskit-iqx-tutorials``."""
 
-
 from unittest import skipIf
 import os
 import glob
@@ -23,7 +22,6 @@ import warnings
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 
-from qiskit.test import slow_test
 from qiskit.test.decorators import TEST_OPTIONS
 from qiskit.providers.ibmq.utils.utils import to_python_identifier
 
