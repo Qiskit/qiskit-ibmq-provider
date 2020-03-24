@@ -21,6 +21,7 @@ import time
 import logging
 import uuid
 import re
+import threading
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
@@ -110,6 +111,8 @@ class ManagedJobSet:
         self._backend = backend
         if job_tags:
             self._tags = job_tags.copy()
+
+        job_submit_lock = threading.Lock()  # Used to synchronize job submit.
         exp_index = 0
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)
@@ -117,7 +120,7 @@ class ManagedJobSet:
             mjob = ManagedJob(experiments_count=len(experiments), start_index=exp_index)
             mjob.submit(qobj=qobj, job_name=job_name, backend=backend,
                         executor=executor, job_share_level=job_share_level,
-                        job_tags=self._tags+[self._id_long])
+                        job_tags=self._tags+[self._id_long], submit_lock=job_submit_lock)
             self._managed_jobs.append(mjob)
             exp_index += len(experiments)
 
