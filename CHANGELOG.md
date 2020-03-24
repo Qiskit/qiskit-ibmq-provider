@@ -33,6 +33,14 @@ The format is based on [Keep a Changelog].
   existing tags of a job, and remove specific tags associated with a job, 
   respectively. (\#590)
 
+### Changed
+
+- `IBMQBackend.jobs()` now accepts a new boolean parameter `descending`,
+  which can be used to indicate whether the jobs should be returned in
+  descending or ascending order. (\#533) 
+- `IBMQJobManager` now looks at the job limit and waits for old jobs
+  to finish before submitting new ones if the limit has been reached. (\#533)
+
 ## [0.5.0] - 2020-02-26
 
 ### Added
