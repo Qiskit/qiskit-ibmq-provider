@@ -127,6 +127,7 @@ class IBMQBackendService(SimpleNamespace):
             end_datetime: Optional[datetime] = None,
             job_tags: Optional[List[str]] = None,
             job_tags_operator: Optional[str] = "OR",
+            descending: bool = True,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return a list of jobs, subject to optional filtering.
@@ -161,6 +162,9 @@ class IBMQBackendService(SimpleNamespace):
                       specified in ``job_tags`` to be included.
                     * If "OR" is specified, then a job only needs to have any
                       of the tags specified in ``job_tags`` to be included.
+            descending: If ``True``, return the jobs in descending order of the job
+                creation date (i.e. newest first) until the limit is reached.
+                If ``False``, return in ascending order.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter.
@@ -238,7 +242,8 @@ class IBMQBackendService(SimpleNamespace):
 
         while True:
             job_page = self._provider._api.list_jobs_statuses(
-                limit=current_page_limit, skip=skip, extra_filter=api_filter)
+                limit=current_page_limit, skip=skip, descending=descending,
+                extra_filter=api_filter)
             job_responses += job_page
             skip = skip + len(job_page)
 
