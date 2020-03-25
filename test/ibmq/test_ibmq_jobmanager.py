@@ -19,12 +19,14 @@ import time
 from unittest import mock
 from inspect import getfullargspec, isfunction
 import uuid
+from concurrent.futures import wait
 
 from qiskit import QuantumCircuit
 from qiskit.result import Result
 
 from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
 from qiskit.providers.ibmq.managed.managedresults import ManagedResults
+from qiskit.providers.ibmq.managed import managedjob
 from qiskit.providers.ibmq.managed.exceptions import (
     IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
@@ -35,7 +37,7 @@ from qiskit.test.reference_circuits import ReferenceCircuits
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
-from ..fake_account_client import BaseFakeAccountClient
+from ..fake_account_client import BaseFakeAccountClient, CancelableFakeJob
 from ..utils import cancel_job
 
 
@@ -278,6 +280,40 @@ class TestIBMQJobManager(IBMQTestCase):
                          {rjob.job_id() for rjob in rjobs},
                          "Unexpected jobs retrieved. Job tag used was {}".format(job_tags))
         self.assertEqual(job_set.tags(), job_tags)
+
+    @requires_provider
+    def test_job_limit(self, provider):
+        """Test reaching job limit."""
+        job_limit = 5
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient(
+            job_limit=job_limit, job_class=CancelableFakeJob)
+        provider._api = backend._api
+
+        circs = []
+        for _ in range(job_limit+2):
+            circs.append(self._qc)
+        circs = transpile(circs, backend=backend)
+
+        job_set = None
+        try:
+            with self.assertLogs(managedjob.logger, 'WARNING'):
+                job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+                # Wait for the first 5 jobs to be submitted.
+                wait([mjob.future for mjob in job_set.managed_jobs()[:job_limit]], timeout=5)
+                time.sleep(1)
+
+            # Make sure the next future is still running.
+            self.assertTrue(job_set.managed_jobs()[job_limit].future.running())
+
+            for mjob in job_set.managed_jobs():
+                if mjob.job is not None:
+                    mjob.cancel()
+            self.assertEqual(len(job_set.jobs()), job_limit+2)
+            self.assertTrue(all(job_set.jobs()))
+        finally:
+            if job_set:
+                job_set.cancel()
 
 
 class TestResultManager(IBMQTestCase):

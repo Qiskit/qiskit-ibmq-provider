@@ -29,6 +29,14 @@ The format is based on [Keep a Changelog].
 - `IBMQJob` now has a new method `scheduling_mode()` that returns the scheduling
   mode the job is in. (\#593)
 
+### Changed
+
+- `IBMQBackend.jobs()` now accepts a new boolean parameter `descending`,
+  which can be used to indicate whether the jobs should be returned in
+  descending or ascending order. (\#533) 
+- `IBMQJobManager` now looks at the job limit and waits for old jobs
+  to finish before submitting new ones if the limit has been reached. (\#533)
+
 ## [0.5.0] - 2020-02-26
 
 ### Added

@@ -86,6 +86,7 @@ class Api(RestAdapterBase):
             self,
             limit: int = 10,
             skip: int = 0,
+            descending: bool = True,
             extra_filter: Dict[str, Any] = None
     ) -> List[Dict[str, Any]]:
         """Return a list of job information.
@@ -93,6 +94,7 @@ class Api(RestAdapterBase):
         Args:
             limit: Maximum number of items to return.
             skip: Offset for the items to return.
+            descending: Whether the jobs should be in descending order.
             extra_filter: Additional filtering passed to the query.
 
         Returns:
@@ -100,8 +102,10 @@ class Api(RestAdapterBase):
         """
         url = self.get_url('jobs_status')
 
+        order = 'DESC' if descending else 'ASC'
+
         query = {
-            'order': 'creationDate DESC',
+            'order': 'creationDate ' + order,
             'limit': limit,
             'skip': skip,
         }
