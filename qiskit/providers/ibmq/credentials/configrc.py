@@ -19,7 +19,7 @@ import os
 from ast import literal_eval
 from collections import OrderedDict
 from configparser import ConfigParser, ParsingError
-from typing import Dict, Optional, Any
+from typing import Dict, Tuple, Optional, Any
 
 from .credentials import Credentials, HubGroupProject
 from .exceptions import InvalidCredentialsFormatError, CredentialsNotFoundError
@@ -62,6 +62,7 @@ def read_credentials_from_qiskitrc(
     credentials_dict = OrderedDict()  # type: ignore[var-annotated]
     for name in config_parser.sections():
         single_credentials = dict(config_parser.items(name))
+
         # Individually convert keys to their right types.
         # TODO: consider generalizing, moving to json configuration or a more
         # robust alternative.
@@ -71,10 +72,42 @@ def read_credentials_from_qiskitrc(
         if 'verify' in single_credentials.keys():
             single_credentials['verify'] = bool(  # type: ignore[assignment]
                 single_credentials['verify'])
+        if 'default_provider' in single_credentials.keys():
+            single_credentials.update(
+                _get_default_provider_entry(single_credentials['default_provider']))
+            # Delete `default_provider`, since it's not used by the `Credentials` constructor.
+            del single_credentials['default_provider']
+
         new_credentials = Credentials(**single_credentials)  # type: ignore[arg-type]
+
         credentials_dict[new_credentials.unique_id()] = new_credentials
 
     return credentials_dict
+
+
+def _get_default_provider_entry(default_hgp):
+    """Return the default hub/group/project to use for a `Credentials` instance.
+
+    TODO: Update docstring.
+    Args:
+        default_hgp: A string in the form of "<hub_name>/<group_name>/<project_name>",
+            read from the configuration file, which indicates the default provider to use
+            for a `Credentials` instance.
+            TODO: Link this "Credentials" with the place it's defined.
+
+    Returns:
+        A dictionary of the form {'hub': <hub_name>, 'group': <group_name>, 'project': <project_name>}.
+        If the `default_hgp` is in the correct format, the fields inside the dictionary are given by
+        `default_hgp`. Otherwise, the fields in the dictionary will be `None`.
+    """
+    hgp = default_hgp.split('/')
+    if len(hgp) == 3:
+        return {'hub': hgp[0], 'group': hgp[1], 'project': hgp[2]}
+    else:
+        logger.warning('The specified default provider "%s" is invalid. Use the '
+                       '"<hub_name>/<group_name>/<project_name>" format to specify '
+                       'a default provider. The specified default will not be used.')
+        return {'hub': None, 'group': None, 'project': None}
 
 
 def write_qiskit_rc(
@@ -89,11 +122,28 @@ def write_qiskit_rc(
         filename: Full path to the configuration file. If ``None``, the default
             location is used (``$HOME/.qiskit/qiskitrc``).
     """
-    def _credentials_object_to_dict(obj: Credentials) -> Dict[str, Any]:
+    def _credentials_object_to_dict(credentials_obj: Credentials) -> Dict[str, Any]:
         """Convert a ``Credential`` object to a dictionary."""
-        return {key: getattr(obj, key) for key in
-                ['token', 'url', 'proxies', 'verify']
-                if getattr(obj, key)}
+        # TODO: Handle the simple keys.
+        credentials_dict = {key: getattr(credentials_obj, key)
+                            for key in ['token', 'proxies', 'verify']
+                            if getattr(credentials_obj, key)}
+
+        # Save the `base_url` in the account, not the hgp `url`.
+        if getattr(credentials_obj, 'base_url'):
+            credentials_dict['url'] = getattr(credentials_obj, 'base_url')
+
+        # TODO: Handle the default provider.
+        hgp_entry = {
+            'hub': credentials_obj.hub,
+            'group': credentials_obj.group,
+            'project': credentials_obj.project
+        }
+
+        if all(hgp_entry.values()):
+            credentials_dict['default_provider'] = '/'.join(hgp_entry.values())
+
+        return credentials_dict
 
     def _section_name(credentials_: Credentials) -> str:
         """Return a string suitable for use as a unique section name."""
@@ -144,7 +194,8 @@ def store_credentials(
                        'Set overwrite=True to overwrite.')
         return
 
-    # Append and write the credentials to file.
+    # Clear `stored_credentials` and write the new credentials to file.
+    stored_credentials.clear()
     stored_credentials[credentials.unique_id()] = credentials
     write_qiskit_rc(stored_credentials, filename)
 

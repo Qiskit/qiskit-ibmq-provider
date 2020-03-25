@@ -67,6 +67,9 @@ class IBMQFactory:
 
                 * proxies (dict): proxy configuration.
                 * verify (bool): verify the server's TLS certificate.
+                * hgp (dict): Default provider to enable for the session.
+                  Format: ``{'hub': <hub_name>, 'group': <group_name>,
+                  'project`: <project_name}``
 
         Returns:
             The provider for the default open access project.
@@ -183,9 +186,13 @@ class IBMQFactory:
             token: IBM Quantum Experience token.
             url: URL for the IBM Quantum Experience authentication server.
             overwrite: Overwrite existing credentials.
+            default_hgp: TODO
             **kwargs:
                 * proxies (dict): Proxy configuration for the server.
-                * verify (bool): If False, ignores SSL certificates errors
+                * verify (bool): If False, ignores SSL certificates errors.
+                * hgp (dict): Default provider to save for the account.
+                  Format: ``{'hub': <hub_name>, 'group': <group_name>,
+                  'project`: <project_name}``
 
         Raises:
             IBMQAccountCredentialsInvalidUrl: If the URL is not a valid
@@ -201,6 +208,10 @@ class IBMQFactory:
             raise IBMQAccountCredentialsInvalidToken(
                 'Invalid IBM Quantum Experience token '
                 'found: "{}" of type {}.'.format(token, type(token)))
+
+        if default_hgp:
+            # Add the specified default provider to the credentials to save.
+            kwargs.update({'hub': default_hgp.hub, 'group': default_hgp.group, 'project': default_hgp.project})
 
         credentials = Credentials(token, url, **kwargs)
 
@@ -229,7 +240,7 @@ class IBMQFactory:
 
         credentials = list(stored_credentials.values())[0]
 
-        if credentials.url != QX_AUTH_URL:
+        if credentials.base_url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
                 'Invalid IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
@@ -258,13 +269,13 @@ class IBMQFactory:
 
         credentials = list(stored_credentials.values())[0]
 
-        if credentials.url != QX_AUTH_URL:
+        if credentials.base_url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
                 'Invalid IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
         return {
             'token': credentials.token,
-            'url': credentials.url
+            'url': credentials.base_url
         }
 
     def active_account(self) -> Optional[Dict[str, str]]:
@@ -280,7 +291,7 @@ class IBMQFactory:
 
         return {
             'token': self._credentials.token,
-            'url': self._credentials.url,
+            'url': self._credentials.base_url,
         }
 
     @staticmethod
@@ -380,9 +391,9 @@ class IBMQFactory:
                                  credentials.base_url,
                                  **credentials.connection_parameters())
         service_urls = auth_client.current_service_urls()
-        user_hubs = auth_client.user_hubs()
 
-        self._credentials = credentials
+        user_hubs = auth_client.user_hubs(credentials)
+
         for hub_info in user_hubs:
             # Build credentials.
             provider_credentials = Credentials(
@@ -402,3 +413,9 @@ class IBMQFactory:
                 # Catch-all for errors instantiating the provider.
                 logger.warning('Unable to instantiate provider for %s: %s',
                                hub_info, ex)
+
+        # Set credentials after initializing the providers, to assure they are valid.
+        if self._providers:
+            # Index doesn't work, change it. How to index credentials in ordered dict.
+            self._credentials = list(self._providers.values())[0].credentials
+            # self._credentials = self._providers[0].credentials

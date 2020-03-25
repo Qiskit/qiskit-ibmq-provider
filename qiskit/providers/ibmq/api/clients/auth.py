@@ -14,14 +14,18 @@
 
 """Client for accessing IBM Quantum Experience authentication services."""
 
+import logging
 from typing import Dict, List, Optional, Any
 from requests.exceptions import RequestException
 
+from qiskit.providers.ibmq.credentials import Credentials
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
 from ..rest import Api, Auth
 from ..session import RetrySession
 
 from .base import BaseClient
+
+logger = logging.getLogger(__name__)
 
 
 class AuthClient(BaseClient):
@@ -109,11 +113,22 @@ class AuthClient(BaseClient):
         response = self.client_auth.user_info()
         return response['urls']
 
-    def user_hubs(self) -> List[Dict[str, str]]:
+    def user_hubs(self, credentials: Credentials) -> List[Dict[str, str]]:
         """Retrieve the hub/group/project sets available to the user.
 
-        The first entry in the list will be the default set, as indicated by
-        the ``isDefault`` field from the API.
+        TODO: Update docstring.
+        The first entry in the list will be the default set. If `default_hgp`
+        is found as an entry in the user hubs, it will be set as the default.
+        Otherwise, the default hub/group/project is indicated by the ``isDefault``
+        field from the API.
+
+        Args:
+            credentials:
+
+            default_hgp: The default hub/group/project to use as a dictionary in the
+                form {'hub': <hub_name>, 'group': <group_name>, 'project': <project_name>}.
+                If the values in the dictionary are `None`, it means no default provider
+                was specified in the configuration file.
 
         Returns:
             A list of dictionaries with the hub, group, and project values keyed by
@@ -121,8 +136,15 @@ class AuthClient(BaseClient):
         """
         response = self.client_api.hubs()
 
+        # The default hub/group/project to use as a dictionary, specified within the credentials.
+        default_hgp_entry = {
+            'hub': credentials.hub,
+            'group': credentials.group,
+            'project': credentials.project
+        }
+
         hubs = []  # type: ignore[var-annotated]
-        for hub in response:
+        for i, hub in enumerate(response):
             hub_name = hub['name']
             for group_name, group in hub['groups'].items():
                 for project_name, project in group['projects'].items():
@@ -135,6 +157,17 @@ class AuthClient(BaseClient):
                         hubs.insert(0, entry)
                     else:
                         hubs.append(entry)
+
+        # If `default_hgp` is specified and found, move it to the front.
+        if all(default_hgp_entry.values()):
+            try:
+                default_hgp_index = hubs.index(default_hgp_entry)
+                hubs[0], hubs[default_hgp_index] = hubs[default_hgp_index], hubs[0]
+            except ValueError:
+                logger.warning('The specified hub/group/project "%s" was not found in '
+                               'the hubs you have access to %s. The default hub/group/project '
+                               'you have access to "%s" will be used.',
+                               default_hgp_entry, hubs, hubs[0])
 
         return hubs
 
