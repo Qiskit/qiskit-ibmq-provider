@@ -235,6 +235,14 @@ class BaseFakeAccountClient:
 class JobSubmitFailClient(BaseFakeAccountClient):
     """Fake AccountClient used to fail a job submit."""
 
+    def __init__(self, max_fail_count=-1):
+        """JobSubmitFailClient constructor."""
+        self._fail_count = max_fail_count
+        super().__init__()
+
     def job_submit(self, *_args, **_kwargs):  # pylint: disable=arguments-differ
         """Failing job submit."""
-        raise RequestsApiError('Job submit failed!')
+        if self._fail_count > 0:
+            self._fail_count -= 1
+            raise RequestsApiError('Job submit failed!')
+        return super().job_submit(*_args, **_kwargs)
