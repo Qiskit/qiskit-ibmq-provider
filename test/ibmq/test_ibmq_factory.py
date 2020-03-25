@@ -161,7 +161,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
             self.factory.load_account()
 
         self.assertEqual(self.factory._credentials.token, qe_token)
-        self.assertEqual(self.factory._credentials.url, qe_url)
+        self.assertEqual(self.factory._credentials.base_url, qe_url)
 
     @requires_qe_access
     def test_disable_account(self, qe_token, qe_url):

@@ -67,7 +67,7 @@ def requires_qe_access(func):
         credentials = _get_credentials()
         obj.using_ibmq_credentials = credentials.is_ibmq()
         kwargs.update({'qe_token': credentials.token,
-                       'qe_url': credentials.url})
+                       'qe_url': credentials.base_url})
 
         return func(obj, *args, **kwargs)
 

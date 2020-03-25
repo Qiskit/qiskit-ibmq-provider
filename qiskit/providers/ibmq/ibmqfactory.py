@@ -209,10 +209,6 @@ class IBMQFactory:
                 'Invalid IBM Quantum Experience token '
                 'found: "{}" of type {}.'.format(token, type(token)))
 
-        if default_hgp:
-            # Add the specified default provider to the credentials to save.
-            kwargs.update({'hub': default_hgp.hub, 'group': default_hgp.group, 'project': default_hgp.project})
-
         credentials = Credentials(token, url, **kwargs)
 
         store_credentials(credentials, overwrite=overwrite)
@@ -394,6 +390,7 @@ class IBMQFactory:
 
         user_hubs = auth_client.user_hubs(credentials)
 
+        self._credentials = credentials
         for hub_info in user_hubs:
             # Build credentials.
             provider_credentials = Credentials(
@@ -414,8 +411,9 @@ class IBMQFactory:
                 logger.warning('Unable to instantiate provider for %s: %s',
                                hub_info, ex)
 
-        # Set credentials after initializing the providers, to assure they are valid.
+        # Re-set credentials after initializing the providers, to assure they are valid.
         if self._providers:
-            # Index doesn't work, change it. How to index credentials in ordered dict.
-            self._credentials = list(self._providers.values())[0].credentials
-            # self._credentials = self._providers[0].credentials
+            default_provider_credentials = list(self._providers.values())[0].credentials
+            self._credentials.hub = default_provider_credentials.hub
+            self._credentials.group = default_provider_credentials.group
+            self._credentials.project = default_provider_credentials.project
