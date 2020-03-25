@@ -5,7 +5,6 @@
 
 trigger:
 - master
-- build_docs
 - stable
 
 jobs:
@@ -69,7 +68,8 @@ jobs:
         QE_URL: $(QE_URL)
 - job: 'Docs'
   pool: {vmImage: 'ubuntu-16.04'}
-  condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+#  condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+  condition: eq(variables['Build.Reason'], 'PullRequest')
   strategy:
     matrix:
       Python37:
