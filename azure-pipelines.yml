@@ -5,6 +5,7 @@
 
 trigger:
 - master
+- build_docs
 - stable
 
 jobs:
