@@ -64,6 +64,7 @@ def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
         seconds = int(seconds)
     return days, hours, minutes, seconds, millisec
 
+
 def start_duration(est_start_time: datetime.datetime) -> str:
     """Compute the duration till starting a job
     from the estimated start time.
