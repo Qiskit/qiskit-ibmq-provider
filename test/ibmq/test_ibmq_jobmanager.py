@@ -16,7 +16,6 @@
 
 import copy
 import time
-from unittest import mock
 from inspect import getfullargspec, isfunction
 import uuid
 from concurrent.futures import wait
@@ -30,13 +29,11 @@ from qiskit.providers.ibmq.managed import managedjob
 from qiskit.providers.ibmq.managed.exceptions import (
     IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator
-from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.compiler import transpile, assemble
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
-from ..fake_account_client import BaseFakeAccountClient, CancelableFakeJob
+from ..fake_account_client import BaseFakeAccountClient, CancelableFakeJob, JobSubmitFailClient
 from ..utils import cancel_job
 
 
@@ -165,14 +162,9 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_async_submit_exception(self, provider):
         """Test asynchronous job submit failed."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        backend._api = BaseFakeAccountClient()
+        backend._api = JobSubmitFailClient(max_fail_count=1)
 
-        circs = []
-        for _ in range(2):
-            circs.append(self._qc)
-        with mock.patch.object(IBMQSimulator, 'run',
-                               side_effect=[IBMQBackendError("Kaboom!"), mock.DEFAULT]):
-            job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        job_set = self._jm.run([self._qc]*2, backend=backend, max_experiments_per_job=1)
         self.assertTrue(any(job is None for job in job_set.jobs()))
         self.assertTrue(any(job is not None for job in job_set.jobs()))
 
