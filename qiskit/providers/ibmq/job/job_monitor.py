@@ -17,11 +17,10 @@
 
 import sys
 import time
-import datetime
 from typing import TextIO, Optional
 
 from .ibmqjob import IBMQJob
-from ..utils.converters import seconds_to_duration
+from ..utils.converters import start_duration
 
 
 def _text_checker(job: IBMQJob,
@@ -53,27 +52,10 @@ def _text_checker(job: IBMQJob,
         if status.name == 'QUEUED':
             queue_info = job.queue_info()
 
-            time_str = ''
             if queue_info:
                 if queue_info.estimated_start_time:
                     est_time = queue_info.estimated_start_time
-                    time_delta = est_time.replace(tzinfo=None) - datetime.datetime.utcnow()
-                    time_tuple = seconds_to_duration(time_delta.total_seconds())
-                    # The returned tuple contains the duration in terms of
-                    # days, hours, minutes, seconds, and milliseconds.
-
-                    if time_tuple[0]:
-                        time_str += '{} days'.format(time_tuple[0])
-                        time_str += ' {} hours'.format(time_tuple[1])
-                    elif time_tuple[1]:
-                        time_str += '{} hours'.format(time_tuple[1])
-                        time_str += ' {} minutes'.format(time_tuple[2])
-                    elif time_tuple[2]:
-                        time_str += '{} minutes'.format(time_tuple[2])
-                        time_str += ' {} seconds'.format(time_tuple[3])
-                    elif time_tuple[3]:
-                        time_str += '{} seconds'.format(time_tuple[3])
-
+                    time_str = start_duration(est_time)
                     prev_time_str = time_str
 
             else:
