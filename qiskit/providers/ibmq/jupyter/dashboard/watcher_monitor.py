@@ -60,7 +60,7 @@ def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> No
                 if queue_pos != prev_queue_pos:
                     queue_info = job.queue_info()
                     if queue_info and queue_info.estimated_start_time:
-                        est_time = start_duration(est_time)
+                        est_time = start_duration(queue_info.estimated_start_time)
                         prev_est_time = est_time
                     else:
                         est_time = prev_est_time

@@ -81,13 +81,13 @@ def start_duration(est_start_time: datetime.datetime) -> str:
     time_str = ''
     if time_tuple[0]:
         time_str += '{} days'.format(time_tuple[0])
-        time_str += ' {} hours'.format(time_tuple[1])
+        time_str += ' {} hrs'.format(time_tuple[1])
     elif time_tuple[1]:
-        time_str += '{} hours'.format(time_tuple[1])
-        time_str += ' {} minutes'.format(time_tuple[2])
+        time_str += '{} hrs'.format(time_tuple[1])
+        time_str += ' {} min'.format(time_tuple[2])
     elif time_tuple[2]:
-        time_str += '{} minutes'.format(time_tuple[2])
-        time_str += ' {} seconds'.format(time_tuple[3])
+        time_str += '{} min'.format(time_tuple[2])
+        time_str += ' {} sec'.format(time_tuple[3])
     elif time_tuple[3]:
-        time_str += '{} seconds'.format(time_tuple[3])
+        time_str += '{} sec'.format(time_tuple[3])
     return time_str
