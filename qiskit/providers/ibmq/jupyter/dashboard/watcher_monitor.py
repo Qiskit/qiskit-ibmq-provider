@@ -76,7 +76,13 @@ def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> No
                     prev_queue_pos = queue_pos
 
             elif status.name != prev_status_name:
-                update_info = (job.job_id(), status.name, 0, status.value)
+                msg = status.name
+                if msg == 'RUNNING':
+                    job_mode = job.scheduling_mode()
+                    if job_mode:
+                        msg += ' [{}]'.format(job_mode[0].upper())
+
+                update_info = (job.job_id(), msg, 0, status.value)
 
                 watcher.update_single_job(update_info)
                 interval = 2

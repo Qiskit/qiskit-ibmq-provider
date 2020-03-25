@@ -73,7 +73,13 @@ def _text_checker(job: IBMQJob,
             if not _interval_set:
                 interval = 2
 
-        if status.name == 'ERROR':
+        if status.name == 'RUNNING':
+            msg = 'RUNNING'
+            job_mode = job.scheduling_mode()
+            if job_mode:
+                msg += ' - {}'.format(job_mode)
+
+        elif status.name == 'ERROR':
             msg = 'ERROR - {}'.format(job.error_message())
 
         # Adjust length of message so there are no artifacts
