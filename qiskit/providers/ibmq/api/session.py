@@ -225,9 +225,9 @@ class RetrySession(Session):
             kwargs.update({'timeout': self._timeout})
 
         try:
+            self._log_request_info(url, method, kwargs)
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
-            self._log_request_info(url, method, kwargs)
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
