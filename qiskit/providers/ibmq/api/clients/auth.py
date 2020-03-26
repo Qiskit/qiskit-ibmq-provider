@@ -164,10 +164,12 @@ class AuthClient(BaseClient):
                 default_hgp_index = hubs.index(default_hgp_entry)
                 hubs[0], hubs[default_hgp_index] = hubs[default_hgp_index], hubs[0]
             except ValueError:
+                provider_as_str = '/'.join(default_hgp_entry.get(v)
+                                           for v in ['hub', 'group', 'project'])
                 logger.warning('The specified hub/group/project "%s" was not found in '
                                'the hubs you have access to %s. The default hub/group/project '
                                'you have access to "%s" will be used.',
-                               default_hgp_entry, hubs, hubs[0])
+                               provider_as_str, str(hubs), str(hubs[0]))
 
         return hubs
 

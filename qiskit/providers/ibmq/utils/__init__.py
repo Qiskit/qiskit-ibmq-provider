@@ -48,4 +48,4 @@ Misc Functions
 
 from .converters import utc_to_local, seconds_to_duration
 from .qobj_utils import update_qobj_config
-from .utils import to_python_identifier, validate_job_tags
+from .utils import to_python_identifier, validate_job_tags, get_default_provider_entry
