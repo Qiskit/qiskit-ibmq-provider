@@ -21,7 +21,7 @@ import threading
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 
-from ...utils.converters import utc_to_local
+from ...utils.converters import start_duration
 
 
 def _job_monitor(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> None:
@@ -48,7 +48,7 @@ def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> No
     prev_queue_pos = None
     interval = 2
     exception_count = 0
-
+    prev_est_time = ''
     while status.name not in ['DONE', 'CANCELLED', 'ERROR']:
         time.sleep(interval)
         try:
@@ -60,10 +60,10 @@ def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> No
                 if queue_pos != prev_queue_pos:
                     queue_info = job.queue_info()
                     if queue_info and queue_info.estimated_start_time:
-                        est_time = utc_to_local(queue_info.estimated_start_time
-                                                ).strftime("%H:%M %Z (%m/%d)")
+                        est_time = start_duration(queue_info.estimated_start_time)
+                        prev_est_time = est_time
                     else:
-                        est_time = 0
+                        est_time = prev_est_time
 
                     update_info = (job.job_id(), status.name+' ({})'.format(queue_pos),
                                    est_time, status.value)
@@ -76,7 +76,13 @@ def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> No
                     prev_queue_pos = queue_pos
 
             elif status.name != prev_status_name:
-                update_info = (job.job_id(), status.name, 0, status.value)
+                msg = status.name
+                if msg == 'RUNNING':
+                    job_mode = job.scheduling_mode()
+                    if job_mode:
+                        msg += ' [{}]'.format(job_mode[0].upper())
+
+                update_info = (job.job_id(), msg, 0, status.value)
 
                 watcher.update_single_job(update_info)
                 interval = 2
