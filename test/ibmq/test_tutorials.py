@@ -25,7 +25,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 from qiskit.test.decorators import TEST_OPTIONS
 from qiskit.providers.ibmq.utils.utils import to_python_identifier
 
-from ..ibmqtestcase import IBMQTestCase
+from test.ibmqtestcase import IBMQTestCase
 
 TUTORIAL_PATH = 'docs/tutorials/**/*.ipynb'
 
