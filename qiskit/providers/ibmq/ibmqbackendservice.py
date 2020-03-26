@@ -30,7 +30,7 @@ from .apiconstants import ApiJobStatus
 from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackendApiProtocolError)
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
-from .utils import to_python_identifier, validate_job_tags
+from .utils.utils import to_python_identifier, validate_job_tags, filter_data
 
 logger = logging.getLogger(__name__)
 
@@ -244,6 +244,9 @@ class IBMQBackendService(SimpleNamespace):
             job_page = self._provider._api.list_jobs_statuses(
                 limit=current_page_limit, skip=skip, descending=descending,
                 extra_filter=api_filter)
+            if logger.getEffectiveLevel() is logging.DEBUG:
+                filtered_data = [filter_data(job) for job in job_page]
+                logger.debug("jobs() response data is %s", filtered_data)
             job_responses += job_page
             skip = skip + len(job_page)
 
