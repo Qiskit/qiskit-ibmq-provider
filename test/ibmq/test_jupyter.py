@@ -76,8 +76,14 @@ class TestBackendInfo(IBMQTestCase):
 
     def test_jobs_tab(self):
         """Test jobs tab."""
+        def _limit_jobs(**kwargs):
+            kwargs['limit'] = 5
+            return original_backend_jobs(**kwargs)
+
         for backend in self.backends:
             with self.subTest(backend=backend):
+                original_backend_jobs = backend.jobs
+                backend.jobs = _limit_jobs
                 jobs_tab(backend)
 
 
