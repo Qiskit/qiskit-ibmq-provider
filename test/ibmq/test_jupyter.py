@@ -24,6 +24,7 @@ from qiskit.providers.ibmq.visualization.interactive.error_map import iplot_erro
 from qiskit.providers.ibmq.jupyter.dashboard.backend_widget import make_backend_widget
 from qiskit.providers.ibmq.jupyter.dashboard.dashboard import BackendWithProviders
 from qiskit.providers.ibmq.jupyter.dashboard.job_widgets import create_job_widget
+from qiskit.providers.ibmq.jupyter.dashboard.watcher_monitor import _job_monitor
 
 from ..decorators import requires_provider
 from ..utils import bell_in_qobj
@@ -105,6 +106,13 @@ class TestIQXDashboard(IBMQTestCase):
         qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj)
         create_job_widget(mock.MagicMock(), job, backend=backend.name(), status=job.status().value)
+
+    def test_watcher_monitor(self):
+        """Test job watcher."""
+        backend = self.provider.get_backend('ibmq_qasm_simulator')
+        qobj = bell_in_qobj(backend=backend)
+        job = backend.run(qobj)
+        _job_monitor(job=job, status=job.status(), watcher=mock.MagicMock())
 
 
 def _get_backends(provider):
