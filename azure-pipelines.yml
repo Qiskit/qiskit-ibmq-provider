@@ -90,3 +90,8 @@ jobs:
     - bash: |
         tox -edocs
       displayName: 'Run Docs build'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish docs'
+      inputs:
+        pathtoPublish: 'docs/_build/html'
+        artifactName: 'html_docs'
