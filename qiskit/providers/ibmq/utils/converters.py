@@ -63,3 +63,32 @@ def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
     else:
         seconds = int(seconds)
     return days, hours, minutes, seconds, millisec
+
+
+def start_duration(est_start_time: datetime.datetime) -> str:
+    """Compute the duration till starting a job
+    from the estimated start time.
+
+    Args:
+        est_start_time: Estimated start time.
+
+    Returns:
+        String giving estimated duration
+    """
+    time_delta = est_start_time.replace(tzinfo=None) - datetime.datetime.utcnow()
+    time_tuple = seconds_to_duration(time_delta.total_seconds())
+    # The returned tuple contains the duration in terms of
+    # days, hours, minutes, seconds, and milliseconds.
+    time_str = ''
+    if time_tuple[0]:
+        time_str += '{} days'.format(time_tuple[0])
+        time_str += ' {} hrs'.format(time_tuple[1])
+    elif time_tuple[1]:
+        time_str += '{} hrs'.format(time_tuple[1])
+        time_str += ' {} min'.format(time_tuple[2])
+    elif time_tuple[2]:
+        time_str += '{} min'.format(time_tuple[2])
+        time_str += ' {} sec'.format(time_tuple[3])
+    elif time_tuple[3]:
+        time_str += '{} sec'.format(time_tuple[3])
+    return time_str

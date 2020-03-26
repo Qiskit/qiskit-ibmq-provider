@@ -49,7 +49,7 @@ def update_backend_info(device_list: wid.VBox,
                     color = '#000000'
                     if stat_msg == 'active':
                         color = '#34bc6e'
-                    if stat_msg in ['maintenance', 'internal']:
+                    if stat_msg in ['maintenance', 'internal', 'dedicated']:
                         color = '#FFB000'
 
                     # Grab the particular status widget of interest
