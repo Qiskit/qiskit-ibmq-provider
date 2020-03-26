@@ -26,6 +26,18 @@ The format is based on [Keep a Changelog].
 - You can now set the logging level and specify a log file using the environment 
   variables `QSIKIT_IBMQ_PROVIDER_LOG_LEVEL` and `QISKIT_IBMQ_PROVIDER_LOG_FILE`, 
   respectively. Note that the name of the logger is `qiskit.providers.ibmq`. (\#579)
+- `IBMQJob` now has a new method `scheduling_mode()` that returns the scheduling
+  mode the job is in. (\#593)
+- IQX-related tutorials that used to be in `qiskit-iqx-tutorials` are now in 
+  `qiskit-ibmq-provider`. (\#603)
+
+### Changed
+
+- `IBMQBackend.jobs()` now accepts a new boolean parameter `descending`,
+  which can be used to indicate whether the jobs should be returned in
+  descending or ascending order. (\#533) 
+- `IBMQJobManager` now looks at the job limit and waits for old jobs
+  to finish before submitting new ones if the limit has been reached. (\#533)
 
 ## [0.5.0] - 2020-02-26
 

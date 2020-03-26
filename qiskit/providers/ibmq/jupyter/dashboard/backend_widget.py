@@ -18,9 +18,10 @@ import ipywidgets as wid
 
 from ...visualization.interactive import iplot_gate_map
 from .provider_buttons import provider_buttons
+from .utils import BackendWithProviders
 
 
-def make_backend_widget(backend_item: 'BackendWithProviders') -> wid.HBox:
+def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
     """ Construct a backend widget for a given device.
 
     Args:
