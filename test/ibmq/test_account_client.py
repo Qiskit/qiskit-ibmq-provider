@@ -58,6 +58,7 @@ class TestAccountClient(IBMQTestCase):
     def setUpClass(cls, provider):
         """Initial class level setup."""
         # pylint: disable=arguments-differ
+        super().setUpClass()
         cls.provider = provider
         cls.access_token = cls.provider._api.client_api.session.access_token
 
@@ -264,6 +265,7 @@ class TestAccountClientJobs(IBMQTestCase):
     @requires_provider
     def setUpClass(cls, provider):
         # pylint: disable=arguments-differ
+        super().setUpClass()
         cls.provider = provider
         cls.access_token = cls.provider._api.client_api.session.access_token
 

@@ -72,7 +72,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job_properties = [None]
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj, validate_qobj=True)
-        job.wait_for_final_state(wait=30, callback=_job_callback)
+        job.wait_for_final_state(wait=None, callback=_job_callback)
         self.assertIsNotNone(job_properties[0])
 
     @requires_provider
@@ -354,6 +354,20 @@ class TestIBMQJobAttributes(JobTestCase):
 
         self.assertRaises(IBMQBackendValueError, backend.run, qobj, job_tags={'foo'})
         self.assertRaises(IBMQBackendValueError, backend.jobs, job_tags=[1, 2, 3])
+
+    @requires_provider
+    def test_run_mode(self, provider):
+        """Test job run mode."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj, validate_qobj=True)
+        job.wait_for_final_state()
+        self.assertEqual(job.scheduling_mode(), "fairshare", "Job {} scheduling mode is {}".format(
+            job.job_id(), job.scheduling_mode()))
+
+        rjob = backend.retrieve_job(job.job_id())
+        self.assertEqual(rjob.scheduling_mode(), "fairshare", "Job {} scheduling mode is {}".format(
+            rjob.job_id(), rjob.scheduling_mode()))
 
 
 def _bell_circuit():

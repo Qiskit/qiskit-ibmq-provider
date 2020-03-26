@@ -108,7 +108,6 @@ class TestIBMQJob(JobTestCase):
         """Test running multiple jobs in a simulator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
 
-        self.log.info('submitting to backend %s', backend.name())
         num_qubits = 16
         qr = QuantumRegister(num_qubits, 'qr')
         cr = ClassicalRegister(num_qubits, 'cr')
@@ -156,7 +155,6 @@ class TestIBMQJob(JobTestCase):
     @requires_device
     def test_run_multiple_device(self, backend):
         """Test running multiple jobs in a real device."""
-        self.log.info('submitting to backend %s', backend.name())
         num_qubits = 5
         qr = QuantumRegister(num_qubits, 'qr')
         cr = ClassicalRegister(num_qubits, 'cr')
@@ -284,7 +282,7 @@ class TestIBMQJob(JobTestCase):
         status_args = [JobStatus.DONE, 'DONE', [JobStatus.DONE], ['DONE']]
         for arg in status_args:
             with self.subTest(arg=arg):
-                backend_jobs = backend.jobs(limit=10, skip=0, status=arg)
+                backend_jobs = backend.jobs(limit=5, skip=0, status=arg)
                 self.assertTrue(backend_jobs)
 
                 for job in backend_jobs:
@@ -315,8 +313,7 @@ class TestIBMQJob(JobTestCase):
         # Submit a job that will fail.
         qobj.config.shots = 10000  # Modify the number of shots to be an invalid amount.
         job_to_fail = backend.run(qobj, validate_qobj=True)
-        while job_to_fail.status() not in JOB_FINAL_STATES:
-            time.sleep(0.5)
+        job_to_fail.wait_for_final_state()
 
         for status_filter in status_filters:
             with self.subTest(status_filter=status_filter):
@@ -530,6 +527,20 @@ class TestIBMQJob(JobTestCase):
             self.assertTrue(job.creation_date() < date_today_str,
                             '{}) job.creation_date: {}, date_today: {}'
                             .format(i, job.creation_date(), date_today_str))
+
+    @requires_provider
+    def test_retrieve_jobs_order(self, provider):
+        """Test retrieving jobs with different orders."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj=qobj)
+        job.wait_for_final_state()
+
+        newest_jobs = backend.jobs(limit=10, status=JobStatus.DONE, descending=True)
+        self.assertIn(job.job_id(), [rjob.job_id() for rjob in newest_jobs])
+
+        oldest_jobs = backend.jobs(limit=10, status=JobStatus.DONE, descending=False)
+        self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in oldest_jobs])
 
     @requires_provider
     def test_double_submit_fails(self, provider):
