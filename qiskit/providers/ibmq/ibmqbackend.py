@@ -159,10 +159,11 @@ class IBMQBackend(BaseBackend):
             try:
                 api_job_share_level = ApiJobShareLevel(job_share_level.lower())
             except ValueError:
+                valid_job_share_levels_str = ', '.join(level.value for level in ApiJobShareLevel)
                 raise IBMQBackendValueError(
                     '"{}" is not a valid job share level. '
-                    'Valid job share levels are: {}'
-                    .format(job_share_level, ', '.join(level.value for level in ApiJobShareLevel)))
+                    'Valid job share levels are: {}.'
+                    .format(job_share_level, valid_job_share_levels_str)) from None
         else:
             api_job_share_level = ApiJobShareLevel.NONE
 
@@ -208,12 +209,11 @@ class IBMQBackend(BaseBackend):
             submit_info = self._api.job_submit(
                 backend_name=self.name(),
                 qobj_dict=qobj_dict,
-                use_object_storage=getattr(self.configuration(), 'allow_object_storage', False),
                 job_name=job_name,
                 job_share_level=job_share_level,
                 job_tags=job_tags)
         except ApiError as ex:
-            raise IBMQBackendApiError('Error submitting job: {}'.format(str(ex)))
+            raise IBMQBackendApiError('Error submitting job: {}'.format(str(ex))) from ex
 
         # Error in the job after submission:
         # Transition to the `ERROR` final state.
@@ -229,9 +229,10 @@ class IBMQBackend(BaseBackend):
         })
         try:
             job = IBMQJob.from_dict(submit_info)
+            logger.debug('Job %s was successfully submitted.', job.job_id())
         except ModelValidationError as err:
-            raise IBMQBackendApiProtocolError('Unexpected return value from the server '
-                                              'when submitting job: {}'.format(str(err)))
+            raise IBMQBackendApiProtocolError('Unexpected return value received from the server '
+                                              'when submitting job: {}'.format(str(err))) from err
         Publisher().publish("ibmq.job.start", job)
         return job
 
@@ -274,16 +275,16 @@ class IBMQBackend(BaseBackend):
             The status of the backend.
 
         Raises:
-            LookupError: If status for the backend can't be found.
-            IBMQBackendError: If the status for the backend cannot be formatted properly.
+            IBMQBackendApiProtocolError: If the status for the backend cannot be formatted properly.
         """
         api_status = self._api.backend_status(self.name())
 
         try:
             return BackendStatus.from_dict(api_status)
         except ValidationError as ex:
-            raise LookupError(
-                "Couldn't get backend status: {0}".format(ex))
+            raise IBMQBackendApiProtocolError(
+                'Unexpected return value received from the server when '
+                'getting backend status: {}'.format(str(ex))) from ex
 
     def defaults(self, refresh: bool = False) -> Optional[PulseDefaults]:
         """Return the pulse defaults for the backend.
@@ -348,8 +349,8 @@ class IBMQBackend(BaseBackend):
             return job_limit
         except ValidationError as ex:
             raise IBMQBackendApiProtocolError(
-                'Unexpected return value from the server when '
-                'querying job limit data for the backend: {}.'.format(ex))
+                'Unexpected return value received from the server when '
+                'querying job limit data for the backend: {}.'.format(ex)) from ex
 
     def remaining_jobs_count(self) -> Optional[int]:
         """Return the number of remaining jobs that could be submitted to the backend.
@@ -388,6 +389,7 @@ class IBMQBackend(BaseBackend):
             end_datetime: Optional[python_datetime] = None,
             job_tags: Optional[List[str]] = None,
             job_tags_operator: Optional[str] = "OR",
+            descending: bool = True,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return the jobs submitted to this backend, subject to optional filtering.
@@ -419,6 +421,8 @@ class IBMQBackend(BaseBackend):
                       specified in ``job_tags`` to be included.
                     * If "OR" is specified, then a job only needs to have any
                       of the tags specified in ``job_tags`` to be included.
+            descending: If ``True``, return the jobs in descending order of the job
+                creation date (newest first). If ``False``, return in ascending order.
             db_filter: A `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -441,7 +445,8 @@ class IBMQBackend(BaseBackend):
         """
         return self._provider.backends.jobs(
             limit, skip, self.name(), status,
-            job_name, start_datetime, end_datetime, job_tags, job_tags_operator, db_filter)
+            job_name, start_datetime, end_datetime, job_tags, job_tags_operator,
+            descending, db_filter)
 
     def active_jobs(self, limit: int = 10) -> List[IBMQJob]:
         """Return the unfinished jobs submitted to this backend.
@@ -480,15 +485,15 @@ class IBMQBackend(BaseBackend):
         job_backend = job.backend()
 
         if self.name() != job_backend.name():
-            warnings.warn('Job "{}" belongs to another backend than the one queried. '
-                          'The query was made on backend "{}", '
-                          'but the job actually belongs to backend "{}".'
+            warnings.warn('Job {} belongs to another backend than the one queried. '
+                          'The query was made on backend {}, '
+                          'but the job actually belongs to backend {}.'
                           .format(job_id, self.name(), job_backend.name()))
-            raise IBMQBackendError('Failed to get job "{}": '
-                                   'job does not belong to backend "{}".'
+            raise IBMQBackendError('Failed to get job {}: '
+                                   'job does not belong to backend {}.'
                                    .format(job_id, self.name()))
 
-        return self._provider.backends.retrieve_job(job_id)
+        return job
 
     def __repr__(self) -> str:
         credentials_info = ''
@@ -608,7 +613,7 @@ class IBMQRetiredBackend(IBMQBackend):
             validate_qobj: bool = False
     ) -> None:
         """Run a Qobj."""
-        raise IBMQBackendError('This backend is no longer available.')
+        raise IBMQBackendError('This backend ({}) is no longer available.'.format(self.name()))
 
     @classmethod
     def from_name(

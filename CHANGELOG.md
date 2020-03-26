@@ -16,6 +16,31 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+## [0.6.0] - 2020-03-26
+
+### Added
+
+- There are three new exceptions: `VisualizationError`, `VisualizationValueError`,
+  and `VisualizationTypeError`. These are now used in the visualization modules when
+  an exception is raised. Also, `IBMQBackend.status()` now raises a 
+  `IBMQBackendApiProtocolError` exception, instead of a general `LookupError`, 
+  if there was an issue with validating the status. (\#572)
+- You can now set the logging level and specify a log file using the environment 
+  variables `QSIKIT_IBMQ_PROVIDER_LOG_LEVEL` and `QISKIT_IBMQ_PROVIDER_LOG_FILE`, 
+  respectively. Note that the name of the logger is `qiskit.providers.ibmq`. (\#579)
+- `IBMQJob` now has a new method `scheduling_mode()` that returns the scheduling
+  mode the job is in. (\#593)
+- IQX-related tutorials that used to be in `qiskit-iqx-tutorials` are now in 
+  `qiskit-ibmq-provider`. (\#603)
+
+### Changed
+
+- `IBMQBackend.jobs()` now accepts a new boolean parameter `descending`,
+  which can be used to indicate whether the jobs should be returned in
+  descending or ascending order. (\#533) 
+- `IBMQJobManager` now looks at the job limit and waits for old jobs
+  to finish before submitting new ones if the limit has been reached. (\#533)
+
 ## [0.5.0] - 2020-02-26
 
 ### Added
@@ -24,7 +49,7 @@ The format is based on [Keep a Changelog].
   backend information, have been moved 
   from `qiskit-terra` to `qiskit-ibmq-provider`. In addition, you can now 
   use `%iqx_dashboard` to get a dashboard that provides both job and 
-  backend information. (\#535) (\#541)  
+  backend information. (\#535) (\#541)
 
 ### Changed
 
@@ -340,8 +365,9 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.5.0...HEAD
-[0.4.6]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.6...0.5.0
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.5.0...0.6.0
+[0.5.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.6...0.5.0
 [0.4.6]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.5...0.4.6
 [0.4.5]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.4...0.4.5
 [0.4.4]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...0.4.4

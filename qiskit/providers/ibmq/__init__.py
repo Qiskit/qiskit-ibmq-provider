@@ -21,6 +21,28 @@ IBM Quantum Provider (:mod:`qiskit.providers.ibmq`)
 
 Modules representing the IBM Quantum Provider.
 
+Logging
+=====================
+
+The IBM Quantum Provider uses the ``qiskit.providers.ibmq`` logger.
+
+Two environment variables can be used to control the logging:
+
+    * ``QISKIT_IBMQ_PROVIDER_LOG_LEVEL``: Specifies the log level to use, for the
+      ibmq-provider modules. If an invalid level is set, the log level defaults to ``WARNING``.
+      The valid log levels are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, and ``CRITICAL``
+      (case-insensitive). If the environment variable is not set, then the parent logger's level
+      is used, which also defaults to ``WARNING``.
+    * ``QISKIT_IBMQ_PROVIDER_LOG_FILE``: Specifies the name of the log file to use. If specified,
+      messages will be logged to the file only. Otherwise messages will be logged to the standard
+      error (usually the screen).
+
+For more advanced use, you can modify the logger itself. For example, to manually set the level
+to ``WARNING``::
+
+    import logging
+    logging.getLogger('qiskit.providers.ibmq').setLevel(logging.WARNING)
+
 Functions
 =========
 .. autosummary::
@@ -58,6 +80,7 @@ Exceptions
     IBMQProviderError
 """
 
+import logging
 from typing import List
 
 from .ibmqfactory import IBMQFactory
@@ -68,11 +91,24 @@ from .accountprovider import AccountProvider
 from .backendjoblimit import BackendJobLimit
 from .exceptions import *
 from .ibmqbackendservice import IBMQBackendService
+from .utils.utils import setup_logger
 
 from .version import __version__
 
+# Setup the logger for the IBM Quantum Provider package.
+logger = logging.getLogger(__name__)
+setup_logger(logger)
+
 IBMQ = IBMQFactory()
 """A global instance of an account manager that is used as the entry point for convenience."""
+
+# Constants used by the IBM Quantum logger.
+IBMQ_PROVIDER_LOGGER_NAME = 'qiskit.providers.ibmq'
+"""The name of the IBM Quantum logger."""
+QISKIT_IBMQ_PROVIDER_LOG_LEVEL = 'QISKIT_IBMQ_PROVIDER_LOG_LEVEL'
+"""The environment variable name that is used to set the level for the IBM Quantum logger."""
+QISKIT_IBMQ_PROVIDER_LOG_FILE = 'QISKIT_IBMQ_PROVIDER_LOG_FILE'
+"""The environment variable name that is used to set the file for the IBM Quantum logger."""
 
 
 def least_busy(backends: List[BaseBackend]) -> BaseBackend:
@@ -89,15 +125,15 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
         The backend with the fewest number of pending jobs.
 
     Raises:
-        QiskitError: If the backends list is empty.
-        AttributeError: If a backend in the list does not have the ``pending_jobs``
-            attribute in its status.
+        IBMQError: If the backends list is empty or if a backend in the list
+            does not have the ``pending_jobs`` attribute in its status.
     """
     try:
         return min([b for b in backends if b.status().operational],
                    key=lambda b: b.status().pending_jobs)
     except (ValueError, TypeError):
-        raise QiskitError('Can only find least_busy backend from a non-empty list.')
-    except AttributeError:
-        raise QiskitError('A backend in the list does not have the `pending_jobs` '
-                          'attribute in its status.')
+        raise IBMQError('Unable to find the least_busy '
+                        'backend from an empty list.') from None
+    except AttributeError as ex:
+        raise IBMQError('A backend in the list does not have the `pending_jobs` '
+                        'attribute in its status.') from ex

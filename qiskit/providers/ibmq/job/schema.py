@@ -37,7 +37,8 @@ FIELDS_MAP = {
     'name': '_name',
     'timePerStep': '_time_per_step',
     'shots': '_api_shots',
-    'tags': '_tags'
+    'tags': '_tags',
+    'runMode': '_run_mode'
 }
 
 
@@ -93,6 +94,7 @@ class JobResponseSchema(BaseSchema):
     _qobj = Raw(missing=None)
     _error = Nested(JobResponseErrorSchema, missing=None)
     _tags = List(String, missing=[])
+    _run_mode = String(missing=None)
 
     # Optional properties
     _backend_info = Nested(JobResponseBackendSchema)

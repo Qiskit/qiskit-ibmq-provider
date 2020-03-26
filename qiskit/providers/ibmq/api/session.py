@@ -15,12 +15,15 @@
 """Session customized for IBM Quantum Experience access."""
 
 import os
+import re
+import logging
 from typing import Dict, Optional, Any, Tuple, Union
 from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
 from urllib3.util.retry import Retry
 
+from qiskit.providers.ibmq.utils.utils import filter_data
 from .exceptions import RequestsApiError
 from ..version import __version__ as ibmq_provider_version
 
@@ -31,6 +34,12 @@ STATUS_FORCELIST = (
 )
 CLIENT_APPLICATION = 'ibmqprovider/' + ibmq_provider_version
 CUSTOM_HEADER_ENV_VAR = 'QE_CUSTOM_CLIENT_APP_HEADER'
+logger = logging.getLogger(__name__)
+# Regex used to match the `/devices` endpoint, capturing the device name as group(2).
+# The number of letters for group(2) must be greater than 1, so it does not match
+# the `/devices/v/1` endpoint.
+# Capture groups: (/devices/)(<device_name>)(</optional rest of the url>)
+RE_DEVICES_ENDPOINT = re.compile(r'^(/devices/)([^/}]{2,})(.*)$', re.IGNORECASE)
 
 
 class PostForcelistRetry(Retry):
@@ -216,6 +225,7 @@ class RetrySession(Session):
             kwargs.update({'timeout': self._timeout})
 
         try:
+            self._log_request_info(url, method, kwargs)
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
         except RequestException as ex:
@@ -259,3 +269,66 @@ class RetrySession(Session):
                 exc_message = exc_message.replace(self.access_token, '...')
             modified_args.append(exc_message)
         exc.args = tuple(modified_args)
+
+    def _log_request_info(
+            self,
+            url: str,
+            method: str,
+            request_data: Dict[str, Any]
+    ) -> None:
+        """Log the request data, filtering out specific information.
+
+        Note:
+            The string ``...`` is used to denote information that has been filtered out
+            from the request, within the url and request data. Currently, the backend name
+            is filtered out from endpoint URLs, using a regex to capture the name, and from
+            the data sent to the server when submitting a job.
+
+            The request data is only logged for the following URLs, since they contain useful
+            information: ``/Jobs`` (POST), ``/Jobs/status`` (GET),
+            and ``/devices/<device_name>/properties`` (GET).
+
+        Args:
+            url: URL for the new request.
+            method: Method for the new request (e.g. ``POST``)
+            request_data:Additional arguments for the request.
+
+        Raises:
+            Exception: If there was an error logging the request information.
+        """
+        # Replace the device name in the URL with `...` if it matches, otherwise leave it as is.
+        filtered_url = re.sub(RE_DEVICES_ENDPOINT, '\\1...\\3', url)
+
+        if self._is_worth_logging(filtered_url):
+            try:
+                if logger.getEffectiveLevel() is logging.DEBUG:
+                    request_data_to_log = ""
+                    if filtered_url in ('/devices/.../properties', '/Jobs'):
+                        # Log filtered request data for these endpoints.
+                        request_data_to_log = 'Request Data: {}.'.format(filter_data(request_data))
+                    logger.debug('Endpoint: %s. Method: %s. %s',
+                                 filtered_url, method.upper(), request_data_to_log)
+            except Exception as ex:  # pylint: disable=broad-except
+                # Catch general exception so as not to disturb the program if filtering fails.
+                logger.info('Filtering failed when logging request information: %s', str(ex))
+
+    def _is_worth_logging(self, endpoint_url: str) -> bool:
+        """Returns whether the endpoint URL should be logged.
+
+        The checks in place help filter out endpoint URL logs that would add noise
+        and no helpful information.
+
+        Args:
+            endpoint_url: The endpoint URL that will be logged.
+
+        Returns:
+            Whether the endpoint URL should be logged.
+        """
+        if endpoint_url in ('/devices/.../queue/status', '/devices/v/1', '/Jobs/status'):
+            return False
+        if endpoint_url.startswith(('/users', '/version')):
+            return False
+        if 'objectstorage' in endpoint_url:
+            return False
+
+        return True

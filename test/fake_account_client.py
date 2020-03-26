@@ -65,8 +65,8 @@ class BaseFakeJob:
         ApiJobStatus.COMPLETED
     ]
 
-    def __init__(self, executor, job_id, qobj, backend_name,
-                 job_tags=None, share_level=None):
+    def __init__(self, executor, job_id, qobj, backend_name, job_tags=None,
+                 share_level=None, job_name=None):
         """Initialize a fake job."""
         self._job_id = job_id
         self._status = ApiJobStatus.CREATING
@@ -76,6 +76,7 @@ class BaseFakeJob:
         self._backend_name = backend_name
         self._share_level = share_level
         self._job_tags = job_tags
+        self._job_name = job_name
 
     def _auto_progress(self):
         """Automatically update job status."""
@@ -118,12 +119,16 @@ class BaseFakeJob:
     def result(self):
         """Return job result."""
         if not self._result:
-            raise RequestsApiError("Result is not available")
+            raise RequestsApiError('Result is not available')
         return self._result
 
     def status(self):
         """Return job status."""
         return self._status
+
+    def name(self):
+        """Return job name."""
+        return self._job_name
 
 
 class CancelableFakeJob(BaseFakeJob):
@@ -150,22 +155,28 @@ class BaseFakeAccountClient:
     def list_jobs_statuses(self, limit, skip, *_args, **_kwargs):
         """Return a list of statuses of jobs."""
         job_data = []
-        for job in self._jobs[skip:skip+limit]:
+        for job in list(self._jobs.values())[skip:skip+limit]:
             job_data.append(job.data())
         return job_data
 
-    def job_submit(self, backend_name, qobj_dict, job_share_level, job_tags, *_args, **_kwargs):
+    def job_submit(self, backend_name, qobj_dict, job_name, job_share_level,
+                   job_tags, *_args, **_kwargs):
         """Submit a Qobj to a device."""
         if self._job_limit != -1 and self._unfinished_jobs() >= self._job_limit:
             raise RequestsApiError(
-                '400 Client Error: Bad Request for url: <url>.  User reached '
-                'the maximum limits of concurrent jobs, Error code: 3458.')
+                '400 Client Error: Bad Request for url: <url>.  Reached '
+                'maximum number of concurrent jobs, Error code: 3458.')
 
         new_job_id = uuid.uuid4().hex
         job_share_level = job_share_level or ApiJobShareLevel.NONE
-        new_job = self._job_class(executor=self._executor, job_id=new_job_id,
-                                  qobj=qobj_dict, backend_name=backend_name,
-                                  share_level=job_share_level.value, job_tags=job_tags)
+        new_job = self._job_class(
+            executor=self._executor,
+            job_id=new_job_id,
+            qobj=qobj_dict,
+            backend_name=backend_name,
+            share_level=job_share_level.value,
+            job_tags=job_tags,
+            job_name=job_name)
         self._jobs[new_job_id] = new_job
         return new_job.data()
 
@@ -176,7 +187,7 @@ class BaseFakeAccountClient:
     def job_result(self, job_id, *_args, **_kwargs):
         """Return a random job result."""
         if job_id in self._results_retrieved:
-            raise ValueError("Result already retrieved for job {}!".format(job_id))
+            raise ValueError('Result already retrieved for job {}!'.format(job_id))
         self._results_retrieved.add(job_id)
         return self._get_job(job_id).result()
 
@@ -217,13 +228,21 @@ class BaseFakeAccountClient:
     def _get_job(self, job_id):
         """Return job if found."""
         if job_id not in self._jobs:
-            raise RequestsApiError('Job not found., Error code: 3250.')
+            raise RequestsApiError('Job not found. Error code: 3250.')
         return self._jobs[job_id]
 
 
 class JobSubmitFailClient(BaseFakeAccountClient):
     """Fake AccountClient used to fail a job submit."""
 
+    def __init__(self, max_fail_count=-1):
+        """JobSubmitFailClient constructor."""
+        self._fail_count = max_fail_count
+        super().__init__()
+
     def job_submit(self, *_args, **_kwargs):  # pylint: disable=arguments-differ
         """Failing job submit."""
-        raise RequestsApiError("Job submit failed!")
+        if self._fail_count > 0:
+            self._fail_count -= 1
+            raise RequestsApiError('Job submit failed!')
+        return super().job_submit(*_args, **_kwargs)

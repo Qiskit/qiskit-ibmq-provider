@@ -30,7 +30,7 @@ from .apiconstants import ApiJobStatus
 from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackendApiProtocolError)
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
-from .utils import to_python_identifier, validate_job_tags
+from .utils.utils import to_python_identifier, validate_job_tags, filter_data
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +127,7 @@ class IBMQBackendService(SimpleNamespace):
             end_datetime: Optional[datetime] = None,
             job_tags: Optional[List[str]] = None,
             job_tags_operator: Optional[str] = "OR",
+            descending: bool = True,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return a list of jobs, subject to optional filtering.
@@ -161,6 +162,9 @@ class IBMQBackendService(SimpleNamespace):
                       specified in ``job_tags`` to be included.
                     * If "OR" is specified, then a job only needs to have any
                       of the tags specified in ``job_tags`` to be included.
+            descending: If ``True``, return the jobs in descending order of the job
+                creation date (i.e. newest first) until the limit is reached.
+                If ``False``, return in ascending order.
             db_filter: `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter.
@@ -238,7 +242,11 @@ class IBMQBackendService(SimpleNamespace):
 
         while True:
             job_page = self._provider._api.list_jobs_statuses(
-                limit=current_page_limit, skip=skip, extra_filter=api_filter)
+                limit=current_page_limit, skip=skip, descending=descending,
+                extra_filter=api_filter)
+            if logger.getEffectiveLevel() is logging.DEBUG:
+                filtered_data = [filter_data(job) for job in job_page]
+                logger.debug("jobs() response data is %s", filtered_data)
             job_responses += job_page
             skip = skip + len(job_page)
 
@@ -321,7 +329,7 @@ class IBMQBackendService(SimpleNamespace):
                 status = JobStatus[status.upper()]
             except KeyError:
                 raise IBMQBackendValueError(
-                    '{} is not a valid status value. Valid values are {}'.format(
+                    '"{}" is not a valid status value. Valid values are {}'.format(
                         status, ", ".join(job_status.name for job_status in JobStatus))) \
                     from None
 
@@ -346,7 +354,7 @@ class IBMQBackendService(SimpleNamespace):
             _status_filter = {'status': {'regexp': '^ERROR'}}  # type: ignore[assignment]
         else:
             raise IBMQBackendValueError(
-                '{} is not a valid status value. Valid values are {}'.format(
+                '"{}" is not a valid status value. Valid values are {}'.format(
                     status, ", ".join(job_status.name for job_status in JobStatus)))
 
         return _status_filter
@@ -369,8 +377,8 @@ class IBMQBackendService(SimpleNamespace):
         try:
             job_info = self._provider._api.job_get(job_id)
         except ApiError as ex:
-            raise IBMQBackendApiError('Failed to get job "{}": {}'
-                                      .format(job_id, str(ex)))
+            raise IBMQBackendApiError('Failed to get job {}: {}'
+                                      .format(job_id, str(ex))) from ex
 
         # Recreate the backend used for this job.
         backend_name = job_info.get('backend', {}).get('name', 'unknown')
@@ -390,7 +398,8 @@ class IBMQBackendService(SimpleNamespace):
             job = IBMQJob.from_dict(job_info)
         except ModelValidationError as ex:
             raise IBMQBackendApiProtocolError(
-                'Failed to get job "{}". Invalid job data received: {}'.format(job_id, str(ex)))
+                'Unexpected return value received from the server '
+                'when retrieving job {}: {}'.format(job_id, str(ex))) from ex
 
         return job
 
