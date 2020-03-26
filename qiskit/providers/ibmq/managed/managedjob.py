@@ -105,7 +105,9 @@ class ManagedJob:
             job_tags: Tags to be assigned to the job.
         """
         # pylint: disable=missing-raises-doc
+        logger.debug("Job %s waiting for submit lock.", job_name)
         submit_lock.acquire()
+        logger.debug("Job %s got the submit lock.", job_name)
         try:
             while self.job is None:
                 try:
@@ -133,6 +135,7 @@ class ManagedJob:
             self.submit_error = err
         finally:
             submit_lock.release()
+            logger.debug("Job %s released the submit lock.", job_name)
 
     def status(self) -> Optional[JobStatus]:
         """Query the server for job status.

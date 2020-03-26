@@ -16,7 +16,6 @@
 
 import copy
 import time
-from unittest import mock
 from inspect import getfullargspec, isfunction
 import uuid
 from concurrent.futures import wait
@@ -30,13 +29,11 @@ from qiskit.providers.ibmq.managed import managedjob
 from qiskit.providers.ibmq.managed.exceptions import (
     IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
-from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.compiler import transpile, assemble
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
-from ..fake_account_client import BaseFakeAccountClient, CancelableFakeJob
+from ..fake_account_client import BaseFakeAccountClient, CancelableFakeJob, JobSubmitFailClient
 from ..utils import cancel_job
 
 
@@ -165,16 +162,11 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_async_submit_exception(self, provider):
         """Test asynchronous job submit failed."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        backend._api = BaseFakeAccountClient()
+        backend._api = JobSubmitFailClient(max_fail_count=1)
 
-        circs = []
-        for _ in range(2):
-            circs.append(self._qc)
-        with mock.patch.object(IBMQBackend, 'run',
-                               side_effect=[IBMQBackendError("Kaboom!"), mock.DEFAULT]):
-            job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-        self.assertIsNone(job_set.jobs()[0])
-        self.assertIsNotNone(job_set.jobs()[1])
+        job_set = self._jm.run([self._qc]*2, backend=backend, max_experiments_per_job=1)
+        self.assertTrue(any(job is None for job in job_set.jobs()))
+        self.assertTrue(any(job is not None for job in job_set.jobs()))
 
         # Make sure results() and statuses() don't fail
         job_set.results()
@@ -314,21 +306,21 @@ class TestIBMQJobManager(IBMQTestCase):
             job_limit=job_limit, job_class=CancelableFakeJob)
         provider._api = backend._api
 
-        circs = []
-        for _ in range(job_limit+2):
-            circs.append(self._qc)
-        circs = transpile(circs, backend=backend)
-
+        circs = transpile([self._qc]*(job_limit+2), backend=backend)
         job_set = None
         try:
             with self.assertLogs(managedjob.logger, 'WARNING'):
                 job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-                # Wait for the first 5 jobs to be submitted.
-                wait([mjob.future for mjob in job_set.managed_jobs()[:job_limit]], timeout=5)
                 time.sleep(1)
 
-            # Make sure the next future is still running.
-            self.assertTrue(job_set.managed_jobs()[job_limit].future.running())
+            # There should be 5 done and 2 running futures.
+            running_futures = [mjob.future for mjob in job_set.managed_jobs()
+                               if mjob.future.running()]
+            max_wait = 6
+            while len(running_futures) > 2 and max_wait > 0:
+                running_futures = [f for f in running_futures if f.running()]
+                time.sleep(0.5)
+            self.assertEqual(len(running_futures), 2)
 
             for mjob in job_set.managed_jobs():
                 if mjob.job is not None:
@@ -336,8 +328,13 @@ class TestIBMQJobManager(IBMQTestCase):
             self.assertEqual(len(job_set.jobs()), job_limit+2)
             self.assertTrue(all(job_set.jobs()))
         finally:
-            if job_set:
-                job_set.cancel()
+            # Cancel all submitted jobs first.
+            for mjob in job_set.managed_jobs():
+                if mjob.job is not None:
+                    mjob.cancel()
+                elif job_set._job_submit_lock.locked():
+                    job_set._job_submit_lock.release()
+            wait([mjob.future for mjob in job_set.managed_jobs()], timeout=5)
 
 
 class TestResultManager(IBMQTestCase):
