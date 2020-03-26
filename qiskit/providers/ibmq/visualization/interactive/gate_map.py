@@ -106,13 +106,9 @@ def iplot_gate_map(
             return PlotlyWidget(fig)
         return PlotlyFigure(fig)
 
-    x_max = max([d[1] for d in grid_data])
-    y_max = max([d[0] for d in grid_data])
-    max_dim = max(x_max, y_max)
-
     offset = 0
     if cmap:
-        if y_max / max_dim < 0.33:
+        if n_qubits in [14, 15, 16]:
             offset = 1
             if qubit_size is None:
                 qubit_size = 24
@@ -122,6 +118,15 @@ def iplot_gate_map(
                 line_width = 4
             if figsize == (None, None):
                 figsize = (400, 200)
+        elif n_qubits == 27:
+            if qubit_size is None:
+                qubit_size = 24
+            if font_size is None:
+                font_size = 10
+            if line_width is None:
+                line_width = 4
+            if figsize == (None, None):
+                figsize = (400, 300)
         else:
             if qubit_size is None:
                 qubit_size = 32

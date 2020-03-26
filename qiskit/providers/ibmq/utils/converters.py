@@ -17,7 +17,8 @@
 from typing import Union, Tuple
 import datetime
 from math import ceil
-import dateutil
+import dateutil.parser
+from dateutil import tz
 
 
 def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
@@ -35,10 +36,9 @@ def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
     if isinstance(utc_dt, str):
         utc_dt = dateutil.parser.parse(utc_dt)
     if not isinstance(utc_dt, datetime.datetime):
-        TypeError('Input is not string or datetime.')
+        raise TypeError('Input is not string or datetime.')
     utc_dt = utc_dt.replace(tzinfo=datetime.timezone.utc)  # type: ignore[arg-type]
-    local_tz = datetime.datetime.now().astimezone().tzinfo
-    local_dt = utc_dt.astimezone(local_tz)  # type: ignore[attr-defined]
+    local_dt = utc_dt.astimezone(tz.tzlocal())  # type: ignore[attr-defined]
     return local_dt
 
 
@@ -63,3 +63,32 @@ def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
     else:
         seconds = int(seconds)
     return days, hours, minutes, seconds, millisec
+
+
+def start_duration(est_start_time: datetime.datetime) -> str:
+    """Compute the duration till starting a job
+    from the estimated start time.
+
+    Args:
+        est_start_time: Estimated start time.
+
+    Returns:
+        String giving estimated duration
+    """
+    time_delta = est_start_time.replace(tzinfo=None) - datetime.datetime.utcnow()
+    time_tuple = seconds_to_duration(time_delta.total_seconds())
+    # The returned tuple contains the duration in terms of
+    # days, hours, minutes, seconds, and milliseconds.
+    time_str = ''
+    if time_tuple[0]:
+        time_str += '{} days'.format(time_tuple[0])
+        time_str += ' {} hrs'.format(time_tuple[1])
+    elif time_tuple[1]:
+        time_str += '{} hrs'.format(time_tuple[1])
+        time_str += ' {} min'.format(time_tuple[2])
+    elif time_tuple[2]:
+        time_str += '{} min'.format(time_tuple[2])
+        time_str += ' {} sec'.format(time_tuple[3])
+    elif time_tuple[3]:
+        time_str += '{} sec'.format(time_tuple[3])
+    return time_str

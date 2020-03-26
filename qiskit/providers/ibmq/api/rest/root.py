@@ -15,12 +15,16 @@
 """Root REST adapter."""
 
 import json
-
+import logging
 from typing import Dict, List, Optional, Any
+
+from qiskit.providers.ibmq.utils.utils import filter_data
 
 from .base import RestAdapterBase
 from .backend import Backend
 from .job import Job
+
+logger = logging.getLogger(__name__)
 
 
 class Api(RestAdapterBase):
@@ -107,6 +111,10 @@ class Api(RestAdapterBase):
         }
         if extra_filter:
             query['where'] = extra_filter
+
+        if logger.getEffectiveLevel() is logging.DEBUG:
+            logger.debug("Endpoint: %s. Method: GET. Request Data: {'filter': %s}",
+                         url, filter_data(query))
 
         return self.session.get(
             url, params={'filter': json.dumps(query)}).json()

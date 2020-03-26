@@ -18,9 +18,10 @@ import ipywidgets as wid
 
 from ...visualization.interactive import iplot_gate_map
 from .provider_buttons import provider_buttons
+from .utils import BackendWithProviders
 
 
-def make_backend_widget(backend_item: 'BackendWithProviders') -> wid.HBox:
+def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
     """ Construct a backend widget for a given device.
 
     Args:
@@ -99,7 +100,7 @@ def make_backend_widget(backend_item: 'BackendWithProviders') -> wid.HBox:
     if n_qubits < 10:
         qubit_size = 18
         line_width = 4
-    if n_qubits > 27:
+    if n_qubits >= 27:
         qubit_size = 12
         line_width = 3
     if n_qubits > 50:
