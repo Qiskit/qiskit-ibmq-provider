@@ -16,7 +16,6 @@
 
 import threading
 from typing import List, Tuple, Dict, Any, Optional
-from collections import namedtuple
 
 import ipywidgets as wid
 from IPython.display import display, Javascript
@@ -32,10 +31,7 @@ from .job_widgets import (make_clear_button,
 from .backend_widget import make_backend_widget
 from .backend_update import update_backend_info
 from .watcher_monitor import _job_monitor
-
-
-BackendWithProviders = namedtuple('BackendWithProviders', ['backend', 'providers'])
-"""Named tuple used to pass a backend and its providers."""
+from .utils import BackendWithProviders
 
 
 class AccordionWithThread(wid.Accordion):

@@ -22,7 +22,7 @@ from qiskit.providers.ibmq.jupyter.gates_widget import gates_tab
 from qiskit.providers.ibmq.jupyter.jobs_widget import jobs_tab
 from qiskit.providers.ibmq.visualization.interactive.error_map import iplot_error_map
 from qiskit.providers.ibmq.jupyter.dashboard.backend_widget import make_backend_widget
-from qiskit.providers.ibmq.jupyter.dashboard.dashboard import BackendWithProviders
+from qiskit.providers.ibmq.jupyter.dashboard.utils import BackendWithProviders
 from qiskit.providers.ibmq.jupyter.dashboard.job_widgets import create_job_widget
 from qiskit.providers.ibmq.jupyter.dashboard.watcher_monitor import _job_monitor
 
@@ -113,6 +113,7 @@ class TestIQXDashboard(IBMQTestCase):
         qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj)
         _job_monitor(job=job, status=job.status(), watcher=mock.MagicMock())
+        job.wait_for_final_state()
 
 
 def _get_backends(provider):
