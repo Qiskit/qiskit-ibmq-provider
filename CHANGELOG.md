@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+## [0.6.0] - 2020-03-26
+
 ### Added
 
 - There are three new exceptions: `VisualizationError`, `VisualizationValueError`,
@@ -363,8 +365,9 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.5.0...HEAD
-[0.4.6]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.6...0.5.0
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.5.0...0.6.0
+[0.5.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.6...0.5.0
 [0.4.6]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.5...0.4.6
 [0.4.5]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.4...0.4.5
 [0.4.4]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.3...0.4.4
