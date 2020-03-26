@@ -99,7 +99,7 @@ def make_backend_widget(backend_item: 'BackendWithProviders') -> wid.HBox:
     if n_qubits < 10:
         qubit_size = 18
         line_width = 4
-    if n_qubits > 27:
+    if n_qubits >= 27:
         qubit_size = 12
         line_width = 3
     if n_qubits > 50:
