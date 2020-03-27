@@ -177,8 +177,8 @@ class AuthClient(BaseClient):
         """
         # The provider, as a dictionary, specified within `credentials`.
         specified_hgp_entry = {'hub': credentials.hub,
-                             'group': credentials.group,
-                             'project': credentials.project}
+                               'group': credentials.group,
+                               'project': credentials.project}
 
         if all(specified_hgp_entry.values()):
             try:
