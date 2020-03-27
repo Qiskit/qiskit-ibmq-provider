@@ -118,6 +118,7 @@ def write_qiskit_rc(
 
         if all(hgp_dict.values()):
             provider_to_save_as_str = get_provider_as_str(hgp_dict)
+            # Add the provider that will be saved to disk.
             credentials_dict['default_provider'] = provider_to_save_as_str
 
         return credentials_dict

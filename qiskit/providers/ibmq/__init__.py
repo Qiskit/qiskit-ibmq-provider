@@ -29,9 +29,9 @@ will be returned by :meth:`IBMQFactory.load_account()<IBMQFactory.load_account>`
 To save a provider to disk, use
 :meth:`IBMQFactory.save_account()<IBMQFactory.save_account>` and set the ``hgb``
 parameter with the provider you would like to save. Use the following format
-when specifying a provider ``<hub_name>/<group_name>/<project_name>``.
+when specifying a provider to save ``<hub_name>/<group_name>/<project_name>``.
 
-An example of saving a provider specified by ``my_hub/my_group/my_project``::
+An example of saving the ``my_hub/my_group/my_project`` provider to disk::
 
     from qiskit import IBMQ
     IBMQ.save_account('<your_token>', hgp='my_hub/my_group/my_project')
