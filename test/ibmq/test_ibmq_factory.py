@@ -14,12 +14,10 @@
 
 """Tests for the IBMQFactory class."""
 
-import logging
 import os
 from unittest import skipIf
 from configparser import ConfigParser, ParsingError
 
-from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from qiskit.providers.ibmq.exceptions import (IBMQAccountError, IBMQAccountCredentialsInvalidUrl,
@@ -141,12 +139,8 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         for invalid_hgp_entry in invalid_hgp_entries:
             with self.subTest(invalid_hgp_entry=invalid_hgp_entry):
                 with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
-                    ibmq_provider_logger = logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME)
-                    with self.assertLogs(ibmq_provider_logger, logging.WARNING) as log_records:
-                        current_session_provider = ibmq.enable_account(
-                            qe_token, url=qe_url, hgp=invalid_hgp_entry)
-                    self.assertIn('default open access project provider will be used',
-                                  log_records.output[0])
+                    current_session_provider = ibmq.enable_account(
+                        qe_token, url=qe_url, hgp=invalid_hgp_entry)
                     self.assertEqual(default_provider, current_session_provider)
                     ibmq.disable_account()
 
@@ -203,12 +197,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
         for invalid_hgp_entry in invalid_hgp_entries:
             with self.subTest(invalid_hgp_entry=invalid_hgp_entry):
                 with custom_qiskitrc() as custom_qiskitrc_cm:
-                    ibmq_provider_logger = logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME)
-                    with self.assertLogs(ibmq_provider_logger, logging.WARNING) as log_records:
-                        self.factory.save_account(self.token, url=AUTH_URL,
-                                                  hgp=invalid_hgp_entry)
-                        self.assertIn('default open access project provider will be used',
-                                      log_records.output[0])
+                    self.factory.save_account(self.token, url=AUTH_URL, hgp=invalid_hgp_entry)
 
                     # Ensure the `default_provider` name was not written to the config file.
                     config_parser = ConfigParser()
@@ -278,10 +267,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
         with custom_qiskitrc():
             self.factory.save_account(qe_token, url=AUTH_URL, hgp=invalid_hgp)
             stored_cred = self.factory.stored_account()
-            ibmq_provider_logger = logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME)
-            with self.assertLogs(ibmq_provider_logger, logging.WARNING) as log_records:
-                current_session_provider = self.factory.load_account()
-            self.assertIn('not found in the hubs you have access to', log_records.output[0])
+            current_session_provider = self.factory.load_account()
             self.assertEqual(default_provider, current_session_provider)
 
         self.assertEqual(stored_cred['token'], qe_token)
