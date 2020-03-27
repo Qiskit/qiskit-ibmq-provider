@@ -189,4 +189,6 @@ class TestWebsocketIntegration(IBMQTestCase):
         for job_thread in job_threads:
             job_thread.join()
 
-        self.assertTrue(result_q.empty(), result_q.get_nowait())
+        if not result_q.empty():
+            message = result_q.get_nowait()
+            self.fail(message)
