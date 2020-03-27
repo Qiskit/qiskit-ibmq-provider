@@ -25,10 +25,10 @@ from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    remove_credentials,
                                    store_credentials)
 from .credentials.updater import update_credentials
+from .credentials.utils import get_provider_as_dict
 from .exceptions import (IBMQAccountError, IBMQProviderError,
                          IBMQAccountCredentialsNotFound, IBMQAccountCredentialsInvalidUrl,
                          IBMQAccountCredentialsInvalidToken, IBMQAccountMultipleCredentialsFound)
-from .utils import get_default_provider_entry
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class IBMQFactory:
             self,
             token: str,
             url: str = QX_AUTH_URL,
-            default_hgp: Dict[str, str] = None,
+            hgp: str = None,
             **kwargs: Any
     ) -> Optional[AccountProvider]:
         """Authenticate against IBM Quantum Experience for use during the session.
@@ -65,16 +65,16 @@ class IBMQFactory:
         Args:
             token: IBM Quantum Experience token.
             url: URL for the IBM Quantum Experience authentication server.
-            default_hgp: The default provider to use for this session.
-                Format: "<hub_name>/<group_name>/<project_name>"
+            hgp: If specified, this provider will be returned. If not specified,
+                the provider for the default open access project will be returned.
+                Format: "<hub_name>/<group_name>/<project_name>".
             **kwargs: Additional settings for the connection:
 
                 * proxies (dict): proxy configuration.
                 * verify (bool): verify the server's TLS certificate.
 
         Returns:
-            # TODO: Update.
-            The provider for the default open access project.
+            A provider for the account, as specified by `hgp`.
 
         Raises:
             IBMQAccountError: If an IBM Quantum Experience account is already in
@@ -87,10 +87,10 @@ class IBMQFactory:
             raise IBMQAccountError(
                 'An IBM Quantum Experience account is already in use for the session.')
 
-        # Set the hub/group/project info.
-        if default_hgp:
-            default_hgp_entry = get_default_provider_entry(default_hgp)
-            kwargs.update(default_hgp_entry)
+        if hgp:
+            # Set the hub/group/project info.
+            hgp_dict = get_provider_as_dict(hgp)
+            kwargs.update(hgp_dict)
 
         # Check the version used by these credentials.
         credentials = Credentials(token, url, **kwargs)
@@ -184,7 +184,7 @@ class IBMQFactory:
     def save_account(
             token: str,
             url: str = QX_AUTH_URL,
-            default_hgp: Dict[str, str] = None,
+            hgp: str = None,
             overwrite: bool = False,
             **kwargs: Any
     ) -> None:
@@ -194,8 +194,8 @@ class IBMQFactory:
             token: IBM Quantum Experience token.
             url: URL for the IBM Quantum Experience authentication server.
             overwrite: Overwrite existing credentials.
-            default_hgp: The default provider to use for this session.
-                Format: "<hub_name>/<group_name>/<project_name>"
+            hgp: If specified, this provider will be saved to disk, as the default,
+                for the account. Format: "<hub_name>/<group_name>/<project_name>".
             **kwargs:
                 * proxies (dict): Proxy configuration for the server.
                 * verify (bool): If False, ignores SSL certificates errors
@@ -215,10 +215,10 @@ class IBMQFactory:
                 'Invalid IBM Quantum Experience token '
                 'found: "{}" of type {}.'.format(token, type(token)))
 
-        # Set the hub/group/project info.
-        if default_hgp:
-            default_hgp_entry = get_default_provider_entry(default_hgp)
-            kwargs.update(default_hgp_entry)
+        if hgp:
+            # Set the hub/group/project info.
+            hgp_dict = get_provider_as_dict(hgp)
+            kwargs.update(hgp_dict)
 
         credentials = Credentials(token, url, **kwargs)
 
@@ -280,11 +280,6 @@ class IBMQFactory:
             raise IBMQAccountCredentialsInvalidUrl(
                 'Invalid IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
-        # TODO: Should the default be returned?
-        # if credentials.hub and credentials.group and credentials.project:
-        #     provider_str = credentials.hub + '/' + credentials.group + '/' + credentials.project
-        #     stored_account.update({'default_provider': provider_str})
-
         return {
             'token': credentials.token,
             'url': credentials.base_url
@@ -301,7 +296,6 @@ class IBMQFactory:
             # of the classic active_accounts() method.
             return None
 
-        # TODO: Should the default provider be returned here?
         return {
             'token': self._credentials.token,
             'url': self._credentials.base_url,

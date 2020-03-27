@@ -21,7 +21,7 @@ from collections import OrderedDict
 from configparser import ConfigParser, ParsingError
 from typing import Dict, Tuple, Optional, Any
 
-from ..utils import get_default_provider_entry
+from .utils import get_provider_as_dict, get_provider_as_str
 from .credentials import Credentials, HubGroupProject
 from .exceptions import InvalidCredentialsFormatError, CredentialsNotFoundError
 
@@ -75,7 +75,7 @@ def read_credentials_from_qiskitrc(
                 single_credentials['verify'])
         if 'default_provider' in single_credentials.keys():
             single_credentials.update(
-                get_default_provider_entry(single_credentials['default_provider']))
+                get_provider_as_dict(single_credentials['default_provider']))
             # Delete `default_provider`, since it's not used by the `Credentials` constructor.
             del single_credentials['default_provider']
 
@@ -100,25 +100,26 @@ def write_qiskit_rc(
     """
     def _credentials_object_to_dict(credentials_obj: Credentials) -> Dict[str, Any]:
         """Convert a ``Credential`` object to a dictionary."""
-        # TODO: Handle the simple keys.
+        # Handle the simple keys.
         credentials_dict = {key: getattr(credentials_obj, key)
                             for key in ['token', 'proxies', 'verify']
                             if getattr(credentials_obj, key)}
 
-        # Save the `base_url` in the account, not the hgp `url`.
+        # If a hgp is specified in `credentials_obj`, the `url` was modified to include hgp.
+        # As a result, save `base_url` to the account, rather than `url`.
         if getattr(credentials_obj, 'base_url'):
             credentials_dict['url'] = getattr(credentials_obj, 'base_url')
 
-        # TODO: Handle the default provider.
-        hgp_entry = {
+        # Convert the hub/group/project to a dict, for easier handling.
+        hgp_dict = {
             'hub': credentials_obj.hub,
             'group': credentials_obj.group,
             'project': credentials_obj.project
         }
 
-        if all(hgp_entry.values()):
-            provider_str = '/'.join(hgp_entry.get(v) for v in ['hub', 'group', 'project'])
-            credentials_dict['default_provider'] = provider_str
+        if all(hgp_dict.values()):
+            provider_as_str = get_provider_as_str(hgp_dict)
+            credentials_dict['default_provider'] = provider_as_str
 
         return credentials_dict
 

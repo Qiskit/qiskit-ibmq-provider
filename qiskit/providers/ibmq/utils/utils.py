@@ -14,15 +14,13 @@
 
 """General utility functions."""
 
+import logging
 import os
 import re
-import logging
 import keyword
 from typing import List, Optional, Type, Any
 from threading import Condition
 from queue import Queue
-
-logger = logging.getLogger(__name__)
 
 
 def to_python_identifier(name: str) -> str:
@@ -111,32 +109,6 @@ def setup_logger(logger: logging.Logger) -> None:
             level = logging.WARNING
         logger.debug('The logger is being set to level "%s"', level)
         logger.setLevel(level)
-
-
-def get_default_provider_entry(default_hgp):
-    """Return the default hub/group/project to use for a `Credentials` instance.
-
-    TODO: Update docstring.
-    Args:
-        default_hgp: A string in the form of "<hub_name>/<group_name>/<project_name>",
-            read from the configuration file, which indicates the default provider to use
-            for a `Credentials` instance.
-            TODO: Link this "Credentials" with the place it's defined.
-
-    Returns:
-        A dictionary of the form {'hub': <hub_name>, 'group': <group_name>, 'project': <project_name>}.
-        If the `default_hgp` is in the correct format, the fields inside the dictionary are given by
-        `default_hgp`. Otherwise, the fields in the dictionary will be `None`.
-    """
-    hgp = default_hgp.split('/')
-    if len(hgp) == 3 and all(v for v in hgp):
-        return {'hub': hgp[0], 'group': hgp[1], 'project': hgp[2]}
-    else:
-        logger.warning('The specified default provider "%s" is invalid. Use the '
-                       '"<hub_name>/<group_name>/<project_name>" format to specify '
-                       'a default provider. The specified default provider will not be used.',
-                       default_hgp)
-        return {'hub': None, 'group': None, 'project': None}
 
 
 class RefreshQueue(Queue):
