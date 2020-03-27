@@ -126,20 +126,18 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         non_default_provider = get_provider(ibmq, qe_token, qe_url, default=False)
 
         with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
-            provider_to_save_str = get_provider_as_str(non_default_provider.credentials)
-            saved_provider = ibmq.enable_account(
-                qe_token, url=qe_url, hgp=provider_to_save_str)
-
+            provider_to_enable_str = get_provider_as_str(non_default_provider.credentials)
+            saved_provider = ibmq.enable_account(qe_token, url=qe_url, hgp=provider_to_enable_str)
             self.assertEqual(non_default_provider, saved_provider)
 
     @requires_qe_access
     def test_enable_default_provider_invalid(self, qe_token, qe_url):
-        """Test enabling an account with a invalid specified provider."""
+        """Test enabling an account with a specified provider in an invalid format."""
         ibmq = IBMQFactory()
         default_provider = get_provider(ibmq, qe_token, qe_url)  # Get the default provider.
-
         invalid_hgp_entries = ['default_hub-default_group-default_project',
                                'default_hub/default_group/']
+
         for invalid_hgp_entry in invalid_hgp_entries:
             with self.subTest(invalid_hgp_entry=invalid_hgp_entry):
                 with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
@@ -147,7 +145,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
                     with self.assertLogs(ibmq_provider_logger, logging.WARNING) as log_records:
                         current_session_provider = ibmq.enable_account(
                             qe_token, url=qe_url, hgp=invalid_hgp_entry)
-                    self.assertIn('specified default provider will not be used',
+                    self.assertIn('default open access project provider will be used',
                                   log_records.output[0])
                     self.assertEqual(default_provider, current_session_provider)
                     ibmq.disable_account()
@@ -184,7 +182,6 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
         with custom_qiskitrc() as custom_qiskitrc_cm:
             self.factory.save_account(self.token, url=AUTH_URL, hgp=default_hgp_to_save)
-            stored_cred = self.factory.stored_account()
 
             # Ensure the `default_provider` name was written to the config file.
             config_parser = ConfigParser()
@@ -198,11 +195,8 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
                 self.assertIn('default_provider', single_credentials)
                 self.assertEqual(single_credentials['default_provider'], default_hgp_to_save)
 
-        self.assertEqual(stored_cred['token'], self.token)
-        self.assertEqual(stored_cred['url'], AUTH_URL)
-
     def test_save_account_specified_provider_invalid(self):
-        """Test saving an account with an invalid specified provider."""
+        """Test saving an account with a specified provider in an invalid format."""
         invalid_hgp_entries = ['default_hub-default_group-default_project',
                                'default_hub/default_group/']
         for invalid_hgp_entry in invalid_hgp_entries:
@@ -212,11 +206,10 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
                     with self.assertLogs(ibmq_provider_logger, logging.WARNING) as log_records:
                         self.factory.save_account(self.token, url=AUTH_URL,
                                                   hgp=invalid_hgp_entry)
-                        self.assertIn('specified default provider will not be used',
+                        self.assertIn('default open access project provider will be used',
                                       log_records.output[0])
-                    stored_cred = self.factory.stored_account()
 
-                    # Ensure the `default_provider` was not written to the config file.
+                    # Ensure the `default_provider` name was not written to the config file.
                     config_parser = ConfigParser()
                     try:
                         config_parser.read(custom_qiskitrc_cm.tmp_file.name)
@@ -227,9 +220,6 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
                     for name in config_parser.sections():
                         single_credentials = dict(config_parser.items(name))
                         self.assertNotIn('default_provider', single_credentials)
-
-                self.assertEqual(stored_cred['token'], self.token)
-                self.assertEqual(stored_cred['url'], AUTH_URL)
 
     def test_delete_account(self):
         """Test deleting an account."""
@@ -275,7 +265,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
     @requires_qe_access
     def test_load_account_saved_provider_invalid(self, qe_token, qe_url):
-        """Test loading an account that contains an invalid saved provider."""
+        """Test loading an account that contains an saved provider in an invalid format."""
         if qe_url != QX_AUTH_URL:
             # .save_account() expects an auth production URL.
             self.skipTest('Test requires production auth URL')

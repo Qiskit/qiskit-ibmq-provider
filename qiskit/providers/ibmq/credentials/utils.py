@@ -39,15 +39,15 @@ def get_provider_as_dict(hgp: str) -> Dict[str, Union[str, None]]:
     if len(hgp_items) == 3 and all(v for v in hgp_items):
         return {'hub': hgp_items[0], 'group': hgp_items[1], 'project': hgp_items[2]}
     else:
-        logger.warning('The specified default provider "%s" is invalid. Use the '
-                       '"<hub_name>/<group_name>/<project_name>" format to specify '
-                       'a default provider. The specified default provider will not be used.',
+        logger.warning('The specified provider "%s" is invalid. Use the '
+                       '"<hub_name>/<group_name>/<project_name>" format.'
+                       'The default open access project provider will be used.',
                        hgp)
         return {'hub': None, 'group': None, 'project': None}
 
 
 def get_provider_as_str(provider_info: Union[Dict[str, str], Credentials]) -> str:
-    """Convert a provider, specified withing `Credentials` or a dictionary, to a string.
+    """Convert a provider, specified within `Credentials` or a dictionary, to a string.
 
     Args:
         provider_info: A `Credentials` object or dictionary, which contains the

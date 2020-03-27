@@ -100,15 +100,14 @@ def write_qiskit_rc(
     """
     def _credentials_object_to_dict(credentials_obj: Credentials) -> Dict[str, Any]:
         """Convert a ``Credential`` object to a dictionary."""
-        # Handle the simple keys.
+        # Handle the keys/values that do not need special handling or conversion.
         credentials_dict = {key: getattr(credentials_obj, key)
                             for key in ['token', 'proxies', 'verify']
                             if getattr(credentials_obj, key)}
 
         # If a hgp is specified in `credentials_obj`, the `url` was modified to include hgp.
         # As a result, save `base_url` to the account, rather than `url`.
-        if getattr(credentials_obj, 'base_url'):
-            credentials_dict['url'] = getattr(credentials_obj, 'base_url')
+        credentials_dict['url'] = getattr(credentials_obj, 'base_url')
 
         # Convert the hub/group/project to a dict, for easier handling.
         hgp_dict = {
@@ -118,8 +117,8 @@ def write_qiskit_rc(
         }
 
         if all(hgp_dict.values()):
-            provider_as_str = get_provider_as_str(hgp_dict)
-            credentials_dict['default_provider'] = provider_as_str
+            provider_to_save_as_str = get_provider_as_str(hgp_dict)
+            credentials_dict['default_provider'] = provider_to_save_as_str
 
         return credentials_dict
 
@@ -172,8 +171,7 @@ def store_credentials(
                        'Set overwrite=True to overwrite.')
         return
 
-    # Clear `stored_credentials` and write the new credentials to file.
-    stored_credentials.clear()
+    # Append and write the credentials to file.
     stored_credentials[credentials.unique_id()] = credentials
     write_qiskit_rc(stored_credentials, filename)
 

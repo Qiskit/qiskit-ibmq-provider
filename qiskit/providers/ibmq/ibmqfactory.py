@@ -65,8 +65,9 @@ class IBMQFactory:
         Args:
             token: IBM Quantum Experience token.
             url: URL for the IBM Quantum Experience authentication server.
-            hgp: If specified, this provider will be returned. If not specified,
-                the provider for the default open access project will be returned.
+            hgp: If specified, this provider will be returned. If `hgp` is not specified, is
+                in an invalid format, or is not found as a provider for the account, then the
+                default open access project provider will be returned.
                 Format: "<hub_name>/<group_name>/<project_name>".
             **kwargs: Additional settings for the connection:
 
@@ -88,7 +89,7 @@ class IBMQFactory:
                 'An IBM Quantum Experience account is already in use for the session.')
 
         if hgp:
-            # Set the hub/group/project info.
+            # Set the hub/group/project info for the `credentials`.
             hgp_dict = get_provider_as_dict(hgp)
             kwargs.update(hgp_dict)
 
@@ -216,7 +217,7 @@ class IBMQFactory:
                 'found: "{}" of type {}.'.format(token, type(token)))
 
         if hgp:
-            # Set the hub/group/project info.
+            # Set the hub/group/project info for the `credentials`.
             hgp_dict = get_provider_as_dict(hgp)
             kwargs.update(hgp_dict)
 

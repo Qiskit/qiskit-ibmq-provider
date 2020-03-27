@@ -124,7 +124,7 @@ class AuthClient(BaseClient):
         field from the API, will be set.
 
         Args:
-            credentials: The `Credentials` used to determine if a specific provider
+            credentials: If specified, the `Credentials` used to determine if a specific provider
                 should be set as the default.
 
         Returns:
@@ -149,14 +149,14 @@ class AuthClient(BaseClient):
                         hubs.append(entry)
 
         if credentials:
-            # The default provider to use, as a dictionary, specified within `credentials`.
+            # The default provider to set, as a dictionary, specified within `credentials`.
             default_hgp_entry = {
                 'hub': credentials.hub,
                 'group': credentials.group,
                 'project': credentials.project
             }
 
-            # If `default_hgp` is specified and found, move it to the front.
+            # If `default_hgp_entry` is found, move it to the front.
             if all(default_hgp_entry.values()):
                 try:
                     default_hgp_index = hubs.index(default_hgp_entry)

@@ -111,7 +111,7 @@ def get_provider(
         qe_url: str,
         default: bool = True
 ) -> AccountProvider:
-    """Return a provider from the account.
+    """Return a provider for the account.
 
     Args:
         ibmq_factory: An `IBMQFactory` instance.
