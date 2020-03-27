@@ -171,9 +171,10 @@ class TestWebsocketIntegration(IBMQTestCase):
             job = self.sim_backend.run(self.qobj, validate_qobj=True)
             # Manually disable the non-websocket polling.
             job._api._job_final_status_polling = self._job_final_status_polling
-            job._wait_for_completion()
+            # job._wait_for_completion()
             if job._status is not JobStatus.DONE:
-                q.put(False)
+                q.put("Job {} status should be DONE but is {}".format(
+                    job.job_id(), job._status.name))
 
         max_threads = 2
         result_q = Queue()
@@ -188,4 +189,4 @@ class TestWebsocketIntegration(IBMQTestCase):
         for job_thread in job_threads:
             job_thread.join()
 
-        self.assertTrue(result_q.empty())
+        self.assertTrue(result_q.empty(), result_q.get_nowait())
