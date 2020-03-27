@@ -72,7 +72,7 @@ def discover_credentials(
         A dictionary of found credentials, if any, in the
         ``{credentials_unique_id: Credentials}`` format.
     """
-    credentials_dict = OrderedDict()  # type: Dict[HubGroupProject, Credentials]
+    credentials = OrderedDict()  # type: Dict[HubGroupProject, Credentials]
 
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.
@@ -86,13 +86,13 @@ def discover_credentials(
     # Attempt to read the credentials from the different sources.
     for display_name, (reader_function, kwargs) in readers.items():
         try:
-            credentials_dict = reader_function(**kwargs)
+            credentials = reader_function(**kwargs)
             logger.info('Using credentials from %s', display_name)
-            if credentials_dict:
+            if credentials:
                 break
         except CredentialsError as ex:
             logger.warning(
                 'Automatic discovery of %s credentials failed: %s',
                 display_name, str(ex))
 
-    return credentials_dict
+    return credentials
