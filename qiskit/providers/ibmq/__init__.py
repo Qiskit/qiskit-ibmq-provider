@@ -27,7 +27,7 @@ Saving a Provider
 For convenience, you are able to save a default provider to disk, which
 will be returned by :meth:`IBMQFactory.load_account()<IBMQFactory.load_account>`.
 To save a provider to disk, use
-:meth:`IBMQFactory.save_account()<IBMQFactory.save_account>` and set the ``hgb``
+:meth:`IBMQFactory.save_account()<IBMQFactory.save_account>` and set the ``hgp``
 parameter with the provider you would like to save. Use the following format
 when specifying a provider to save ``<hub_name>/<group_name>/<project_name>``.
 

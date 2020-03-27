@@ -122,7 +122,7 @@ class AuthClient(BaseClient):
         and `project` fields, an attempt will be made to set it as the default.
         However, if the specified provider cannot be found as an entry in the
         user hubs, the default one, indicated by the ``isDefault`` field from
-        the API, will be set.
+        the API, will remain the default.
 
         Args:
             credentials: The `Credentials` used to determine if a specific provider
@@ -149,12 +149,12 @@ class AuthClient(BaseClient):
                     else:
                         hubs.append(entry)
 
-        # Check to see if a default hub/group/project should be set as the default provider,
-        # as specified by `hub`, `group`, `project` attributes of `credentials`.
-        default_hgp_index = self._get_default_hgp_index(credentials, hubs)
-        if isinstance(default_hgp_index, int):
+        # Check to see if the hub/group/project, specified by the `hub`, `group`,
+        # `project` fields of `credentials`, should be set as the default provider.
+        specified_hgp_index = self._get_default_hgp_index(credentials, hubs)
+        if isinstance(specified_hgp_index, int):
             # Move the default hub/group/project to the front.
-            hubs[0], hubs[default_hgp_index] = hubs[default_hgp_index], hubs[0]
+            hubs[0], hubs[specified_hgp_index] = hubs[specified_hgp_index], hubs[0]
 
         return hubs
 
@@ -175,18 +175,18 @@ class AuthClient(BaseClient):
             The index of the hub/group/project, specified by `credentials`, in `user_hubs`,
             else ``None``.
         """
-        # The default provider, as a dictionary, specified within `credentials`.
-        default_hgp_entry = {'hub': credentials.hub,
+        # The provider, as a dictionary, specified within `credentials`.
+        specified_hgp_entry = {'hub': credentials.hub,
                              'group': credentials.group,
                              'project': credentials.project}
 
-        if all(default_hgp_entry.values()):
+        if all(specified_hgp_entry.values()):
             try:
-                # If `default_hgp_entry` is found, return its index in the list.
-                return user_hubs.index(default_hgp_entry)
+                # If `specified_hgp_entry` is found, return its index in the list.
+                return user_hubs.index(specified_hgp_entry)
             except ValueError:
-                # `default_hgp_entry` was not found.
-                provider_as_str = get_provider_as_str(default_hgp_entry)
+                # `specified_hgp_entry` was not found.
+                provider_as_str = get_provider_as_str(specified_hgp_entry)
                 logger.warning('The specified hub/group/project "%s" was not found in '
                                'the hubs you have access to %s. The default hub/group/project '
                                'you have access to "%s" will be used.',
