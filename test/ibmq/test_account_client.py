@@ -23,6 +23,7 @@ from urllib3.exceptions import MaxRetryError
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
+from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api.exceptions import ApiError, RequestsApiError
 from qiskit.providers.ibmq.job.utils import get_cancel_status
@@ -393,7 +394,8 @@ class TestAuthClient(IBMQTestCase):
     def test_user_hubs(self, qe_token, qe_url):
         """Check the user hubs of the QX API."""
         api = AuthClient(qe_token, qe_url)
-        user_hubs = api.user_hubs()
+        credentials = Credentials(qe_token, qe_url)
+        user_hubs = api.user_hubs(credentials)
         self.assertIsNotNone(user_hubs)
         for user_hub in user_hubs:
             with self.subTest(user_hub=user_hub):

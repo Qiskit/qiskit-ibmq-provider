@@ -114,17 +114,18 @@ class AuthClient(BaseClient):
         response = self.client_auth.user_info()
         return response['urls']
 
-    def user_hubs(self, credentials: Optional[Credentials] = None) -> List[Dict[str, str]]:
+    def user_hubs(self, credentials: Credentials) -> List[Dict[str, str]]:
         """Retrieve the hub/group/project sets available to the user.
 
         The first entry in the list will be the default provider that is set.
-        If `credentials` specifies a provider, given by its `hub`, `group`, and `project` fields,
-        an attempt will be made to set it as the default. However, if the specified provider cannot
-        be found as an entry in the user hubs, the default one, indicated by the ``isDefault``
-        field from the API, will be set.
+        If `credentials` specifies a provider, given by its `hub`, `group`,
+        and `project` fields, an attempt will be made to set it as the default.
+        However, if the specified provider cannot be found as an entry in the
+        user hubs, the default one, indicated by the ``isDefault`` field from
+        the API, will be set.
 
         Args:
-            credentials: If specified, the `Credentials` used to determine if a specific provider
+            credentials: The `Credentials` used to determine if a specific provider
                 should be set as the default.
 
         Returns:
@@ -148,25 +149,24 @@ class AuthClient(BaseClient):
                     else:
                         hubs.append(entry)
 
-        if credentials:
-            # The default provider to set, as a dictionary, specified within `credentials`.
-            default_hgp_entry = {
-                'hub': credentials.hub,
-                'group': credentials.group,
-                'project': credentials.project
-            }
+        # The default provider to set, as a dictionary, specified within `credentials`.
+        default_hgp_entry = {
+            'hub': credentials.hub,
+            'group': credentials.group,
+            'project': credentials.project
+        }
 
-            # If `default_hgp_entry` is found, move it to the front.
-            if all(default_hgp_entry.values()):
-                try:
-                    default_hgp_index = hubs.index(default_hgp_entry)
-                    hubs[0], hubs[default_hgp_index] = hubs[default_hgp_index], hubs[0]
-                except ValueError:
-                    provider_as_str = get_provider_as_str(default_hgp_entry)
-                    logger.warning('The specified hub/group/project "%s" was not found in '
-                                   'the hubs you have access to %s. The default hub/group/project '
-                                   'you have access to "%s" will be used.',
-                                   provider_as_str, str(hubs), str(hubs[0]))
+        # If `default_hgp_entry` is found, move it to the front.
+        if all(default_hgp_entry.values()):
+            try:
+                default_hgp_index = hubs.index(default_hgp_entry)
+                hubs[0], hubs[default_hgp_index] = hubs[default_hgp_index], hubs[0]
+            except ValueError:
+                provider_as_str = get_provider_as_str(default_hgp_entry)
+                logger.warning('The specified hub/group/project "%s" was not found in '
+                               'the hubs you have access to %s. The default hub/group/project '
+                               'you have access to "%s" will be used.',
+                               provider_as_str, str(hubs), str(hubs[0]))
 
         return hubs
 
