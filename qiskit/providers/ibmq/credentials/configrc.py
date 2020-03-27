@@ -171,7 +171,9 @@ def store_credentials(
                        'Set overwrite=True to overwrite.')
         return
 
-    # Append and write the credentials to file.
+    # Clear `stored_credentials` to disallow saving multiple credentials to disk,
+    # and write the new `credentials` to file.
+    stored_credentials.clear()
     stored_credentials[credentials.unique_id()] = credentials
     write_qiskit_rc(stored_credentials, filename)
 
