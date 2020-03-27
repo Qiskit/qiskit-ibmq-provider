@@ -51,6 +51,26 @@ class PostForcelistRetry(Retry):
     the IBM Quantum Experience API guarantees that retrying on specific 5xx errors is safe.
     """
 
+    def increment(  # type: ignore[no-untyped-def]
+            self,
+            method=None,
+            url=None,
+            response=None,
+            error=None,
+            _pool=None,
+            _stacktrace=None,
+    ):
+        """Overwrites parent class increment method for logging."""
+        if logger.getEffectiveLevel() is logging.DEBUG:
+            status = data = None
+            if response:
+                status = response.status
+                data = response.data
+            logger.debug("Retrying method=%s, url=%s, status=%s, error=%s, data=%s",
+                         method, url, status, error, data)
+        return super().increment(method=method, url=url, response=response,
+                                 error=error, _pool=_pool, _stacktrace=_stacktrace)
+
     def is_retry(
             self,
             method: str,
