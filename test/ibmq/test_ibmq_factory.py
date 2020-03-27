@@ -131,7 +131,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
             self.assertEqual(non_default_provider, saved_provider)
 
     @requires_qe_access
-    def test_enable_default_provider_invalid(self, qe_token, qe_url):
+    def test_enable_specified_provider_invalid(self, qe_token, qe_url):
         """Test enabling an account with a specified provider in an invalid format."""
         ibmq = IBMQFactory()
         default_provider = get_provider(ibmq, qe_token, qe_url)  # Get the default provider.

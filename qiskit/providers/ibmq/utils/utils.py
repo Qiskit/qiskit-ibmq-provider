@@ -14,9 +14,9 @@
 
 """General utility functions."""
 
-import logging
 import os
 import re
+import logging
 import keyword
 import copy
 from typing import List, Optional, Type, Any, Dict, Union, Tuple
