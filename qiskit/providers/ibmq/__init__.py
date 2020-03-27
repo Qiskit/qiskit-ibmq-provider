@@ -31,6 +31,12 @@ To save a provider to disk, use
 parameter with the provider you would like to save. Use the following format
 when specifying a provider to save ``<hub_name>/<group_name>/<project_name>``.
 
+Note:
+    In the case a provider is specified but not found for your account,
+    :meth:`IBMQFactory.load_account()<IBMQFactory.load_account>` and
+    :meth:`IBMQFactory.enable_account()<IBMQFactory.enable_account>` will return
+    the default open access project provider.
+
 An example of saving the ``my_hub/my_group/my_project`` provider to disk::
 
     from qiskit import IBMQ
