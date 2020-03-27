@@ -158,6 +158,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
     @classmethod
     def setUpClass(cls):
         """Initial class setup."""
+        super().setUpClass()
         cls.token = 'API_TOKEN'
 
     def setUp(self):
