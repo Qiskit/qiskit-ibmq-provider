@@ -40,7 +40,7 @@ Exceptions
 """
 
 from collections import OrderedDict
-from typing import MutableMapping, Dict, Optional, Any
+from typing import Dict, Optional, Any
 import logging
 
 from .credentials import Credentials, HubGroupProject
@@ -81,7 +81,7 @@ def discover_credentials(
         ('environment variables', (read_credentials_from_environ, {})),
         ('qiskitrc', (read_credentials_from_qiskitrc,
                       {'filename': qiskitrc_filename}))
-    ])  # type: MutableMapping[str, Any]
+    ])  # type: Dict[str, Any]
 
     # Attempt to read the credentials from the different sources.
     for display_name, (reader_function, kwargs) in readers.items():
