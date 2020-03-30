@@ -36,6 +36,7 @@ stage_generic: &stage_generic
     - pip install cython
     - pip install -U -c constraints.txt -r requirements.txt
     - pip install -U -c constraints.txt -r requirements-dev.txt
+    - pip install -c constraints.txt -e .
   script:
     # Run the tests.
     - make test
@@ -166,12 +167,11 @@ jobs:
     # GNU/Linux, Python 3.6
     - stage: slow tests
       <<: *stage_linux
-      if: type = cron
+      if: branch = install-code
       python: 3.6
       env:
         - QISKIT_TESTS=run_slow
       script:
-        - pip install -U .
         # effectively increases timeout to 1h.
         - travis_wait 60 make test
     - if: tag IS present
