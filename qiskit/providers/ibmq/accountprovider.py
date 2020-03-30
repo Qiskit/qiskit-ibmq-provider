@@ -141,7 +141,7 @@ class AccountProvider(BaseProvider):
 
         return ret
 
-    def __eq__(  # type: ignore[overide]
+    def __eq__(  # type: ignore[override]
             self,
             other: 'AccountProvider'
     ) -> bool:
