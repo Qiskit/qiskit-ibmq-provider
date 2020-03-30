@@ -81,7 +81,7 @@ def discover_credentials(
         ('environment variables', (read_credentials_from_environ, {})),
         ('qiskitrc', (read_credentials_from_qiskitrc,
                       {'filename': qiskitrc_filename}))
-    ])  # type: Dict[str, Any]
+    ])  # type: OrderedDict[str, Any]
 
     # Attempt to read the credentials from the different sources.
     for display_name, (reader_function, kwargs) in readers.items():
