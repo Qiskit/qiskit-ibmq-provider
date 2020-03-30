@@ -171,6 +171,7 @@ jobs:
       env:
         - QISKIT_TESTS=run_slow
       script:
+        - pip install -U .
         # effectively increases timeout to 1h.
         - travis_wait 60 make test
     - if: tag IS present
