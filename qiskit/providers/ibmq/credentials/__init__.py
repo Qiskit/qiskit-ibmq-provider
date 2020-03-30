@@ -72,7 +72,7 @@ def discover_credentials(
         A dictionary of found credentials, if any, in the
         ``{credentials_unique_id: Credentials}`` format.
     """
-    credentials = OrderedDict()  # type: Dict[HubGroupProject, Credentials]
+    credentials = OrderedDict()  # type: OrderedDict[HubGroupProject, Credentials]
 
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.
