@@ -30,7 +30,6 @@ class IBMQTestCase(QiskitTestCase):
         super().setUpClass()
         if os.getenv('LOG_LEVEL'):
             cls._set_logging_level(logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME))
-            cls._set_logging_level(logging.getLogger('urllib3.util.retry'))
 
     def tearDown(self):
         # Reset the default providers, as in practice they acts as a singleton
