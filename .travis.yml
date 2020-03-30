@@ -167,7 +167,7 @@ jobs:
     # GNU/Linux, Python 3.6
     - stage: slow tests
       <<: *stage_linux
-      if: branch = install-code
+      if: type = cron
       python: 3.6
       env:
         - QISKIT_TESTS=run_slow
