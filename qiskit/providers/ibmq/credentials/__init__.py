@@ -40,7 +40,7 @@ Exceptions
 """
 
 from collections import OrderedDict
-from typing import Dict, Optional
+from typing import Dict, Tuple, Optional
 import logging
 
 from .credentials import Credentials, HubGroupProject
@@ -54,7 +54,7 @@ logger = logging.getLogger(__name__)
 
 def discover_credentials(
         qiskitrc_filename: Optional[str] = None
-) -> Dict[HubGroupProject, Credentials]:
+) -> Tuple[Dict[Tuple[str, str, str], Credentials], str]:
     """Automatically discover credentials for IBM Quantum Experience.
 
     This method looks for credentials in the following places in order and
@@ -69,8 +69,10 @@ def discover_credentials(
             file. If ``None``, ``$HOME/.qiskitrc/qiskitrc`` is used.
 
     Returns:
-        A dictionary of found credentials, if any, in the
-        ``{credentials_unique_id: Credentials}`` format.
+        A tuple containing the found credentials, if any, and the default
+        provider stored, if specified. The format for the found credentials is
+        ``{credentials_unique_id: Credentials}``, whereas the format for the
+        default provider is ``<hub_name>/<group_name>/<project_name>``.
     """
     credentials = OrderedDict()  # type: ignore[var-annotated]
 
@@ -83,10 +85,17 @@ def discover_credentials(
                       {'filename': qiskitrc_filename}))
     ])
 
+    # The default provider stored in the `qiskitrc` file.
+    stored_provider = None
     # Attempt to read the credentials from the different sources.
     for display_name, (reader_function, kwargs) in readers.items():
         try:
-            credentials = reader_function(**kwargs)  # type: ignore[arg-type]
+            stored_account_info = reader_function(**kwargs)  # type: ignore[arg-type]
+            if display_name == 'qiskitrc':
+                # Read from `qiskitrc`, which has a stored provider.
+                credentials, stored_provider = stored_account_info
+            else:
+                credentials = stored_account_info
             logger.info('Using credentials from %s', display_name)
             if credentials:
                 break
@@ -95,4 +104,4 @@ def discover_credentials(
                 'Automatic discovery of %s credentials failed: %s',
                 display_name, str(ex))
 
-    return credentials
+    return credentials, stored_provider

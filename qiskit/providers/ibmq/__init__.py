@@ -21,36 +21,6 @@ IBM Quantum Provider (:mod:`qiskit.providers.ibmq`)
 
 Modules representing the IBM Quantum Provider.
 
-Saving a Provider
-=====================
-
-For convenience, you are able to save a default provider to disk, which
-will be returned by :meth:`IBMQFactory.load_account()<IBMQFactory.load_account>`.
-To save a provider to disk, use
-:meth:`IBMQFactory.save_account()<IBMQFactory.save_account>` and set the ``hgp``
-parameter with the provider you would like to save. Use the following format
-when specifying a provider to save ``<hub_name>/<group_name>/<project_name>``.
-
-Note:
-    In the case a provider is specified but not found for your account,
-    :meth:`IBMQFactory.load_account()<IBMQFactory.load_account>` and
-    :meth:`IBMQFactory.enable_account()<IBMQFactory.enable_account>` will return
-    the default open access project provider.
-
-An example of saving the ``my_hub/my_group/my_project`` provider to disk::
-
-    from qiskit import IBMQ
-    IBMQ.save_account('<your_token>', hgp='my_hub/my_group/my_project')
-    # Loads the provider for `my_hub/my_group/my_project`.
-    my_default_provider = IBMQ.load_account()
-
-Similarly, you are able to enable an account with a default provider::
-
-    from qiskit import IBMQ
-    # Loads the provider for `my_hub/my_group/my_project`.
-    my_default_provider = IBMQ.enable_account('<your_token>', hgp='my_hub/my_group/my_project')
-
-
 Logging
 =====================
 

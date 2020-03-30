@@ -82,7 +82,7 @@ class Credentials:
     def __eq__(self, other: object) -> bool:
         return self.__dict__ == other.__dict__
 
-    def unique_id(self) -> HubGroupProject:
+    def unique_id(self) -> tuple:
         """Return a value that uniquely identifies these credentials.
 
         By convention, two credentials that have the same hub, group,
@@ -91,7 +91,7 @@ class Credentials:
         Returns:
             The (hub, group, project) tuple.
         """
-        return HubGroupProject(self.hub, self.group, self.project)
+        return HubGroupProject(self.hub, self.group, self.project).to_tuple()
 
     def connection_parameters(self) -> Dict[str, Any]:
         """Construct connection related parameters.

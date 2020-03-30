@@ -394,8 +394,7 @@ class TestAuthClient(IBMQTestCase):
     def test_user_hubs(self, qe_token, qe_url):
         """Check the user hubs of the QX API."""
         api = AuthClient(qe_token, qe_url)
-        credentials = Credentials(qe_token, qe_url)
-        user_hubs = api.user_hubs(credentials)
+        user_hubs = api.user_hubs()
         self.assertIsNotNone(user_hubs)
         for user_hub in user_hubs:
             with self.subTest(user_hub=user_hub):

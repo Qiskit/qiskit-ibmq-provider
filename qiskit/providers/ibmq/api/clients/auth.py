@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Any
 from requests.exceptions import RequestException
 
 from qiskit.providers.ibmq.credentials import Credentials
-from qiskit.providers.ibmq.credentials.utils import get_provider_as_str
+
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
 from ..rest import Api, Auth
 from ..session import RetrySession
@@ -114,19 +114,11 @@ class AuthClient(BaseClient):
         response = self.client_auth.user_info()
         return response['urls']
 
-    def user_hubs(self, credentials: Credentials) -> List[Dict[str, str]]:
+    def user_hubs(self) -> List[Dict[str, str]]:
         """Retrieve the hub/group/project sets available to the user.
 
-        The first entry in the list will be the default provider that is set.
-        If `credentials` specifies a provider, given by its `hub`, `group`,
-        and `project` fields, an attempt will be made to set it as the default.
-        However, if the specified provider cannot be found as an entry in the
-        user hubs, the default one, indicated by the ``isDefault`` field from
-        the API, will remain the default.
-
-        Args:
-            credentials: The `Credentials` used to determine if a specific provider
-                should be set as the default.
+        The first entry in the list will be the default set, as indicated by
+        the ``isDefault`` field from the API.
 
         Returns:
             A list of dictionaries with the hub, group, and project values keyed by
@@ -149,49 +141,7 @@ class AuthClient(BaseClient):
                     else:
                         hubs.append(entry)
 
-        # Check to see if the hub/group/project, specified by the `hub`, `group`,
-        # `project` fields of `credentials`, should be set as the default provider.
-        specified_hgp_index = self._get_default_hgp_index(credentials, hubs)
-        if isinstance(specified_hgp_index, int):
-            # Move the default hub/group/project to the front.
-            hubs[0], hubs[specified_hgp_index] = hubs[specified_hgp_index], hubs[0]
-
         return hubs
-
-    def _get_default_hgp_index(
-            self,
-            credentials: Credentials,
-            user_hubs: List[Dict[str, str]]
-    ) -> Optional[int]:
-        """Returns the index of the hub/group/project, specified by `credentials`, in `user_hubs`.
-
-        Args:
-            credentials: The `Credentials` containing the hub/group/project information of
-                the provider to set as the default.
-            user_hubs: A list of dictionaries with the hub, group, and project values keyed
-                by ``hub``, ``group``, and ``project``, respectively.
-
-        Returns:
-            The index of the hub/group/project, specified by `credentials`, in `user_hubs`,
-            else ``None``.
-        """
-        # The provider, as a dictionary, specified within `credentials`.
-        specified_hgp_entry = {'hub': credentials.hub,
-                               'group': credentials.group,
-                               'project': credentials.project}
-
-        if all(specified_hgp_entry.values()):
-            try:
-                # If `specified_hgp_entry` is found, return its index in the list.
-                return user_hubs.index(specified_hgp_entry)
-            except ValueError:
-                # `specified_hgp_entry` was not found.
-                provider_as_str = get_provider_as_str(specified_hgp_entry)
-                logger.warning('The specified hub/group/project "%s" was not found in '
-                               'the hubs you have access to %s. The default hub/group/project '
-                               'you have access to "%s" will be used.',
-                               provider_as_str, str(user_hubs), str(user_hubs[0]))
-        return None
 
     # Miscellaneous public functions.
 

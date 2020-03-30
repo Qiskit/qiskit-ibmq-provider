@@ -21,8 +21,7 @@ from collections import OrderedDict
 from configparser import ConfigParser, ParsingError
 from typing import Dict, Tuple, Optional, Any
 
-from .utils import get_provider_as_dict, get_provider_as_str
-from .credentials import Credentials, HubGroupProject
+from .credentials import Credentials
 from .exceptions import InvalidCredentialsFormatError, CredentialsNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -34,7 +33,7 @@ DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
 
 def read_credentials_from_qiskitrc(
         filename: Optional[str] = None
-) -> Dict[HubGroupProject, Credentials]:
+) -> Tuple[Dict[Tuple[str, str, str], Credentials], str]:
     """Read a configuration file and return a dictionary with its contents.
 
     Args:
@@ -42,9 +41,10 @@ def read_credentials_from_qiskitrc(
             location is used (``$HOME/.qiskit/qiskitrc``).
 
     Returns:
-        A dictionary with the contents of the configuration file, in the
-        ``{credential_unique_id: Credentials}`` format. The dictionary is
-        empty if the input file does not exist.
+        A tuple containing a dictionary of the credentials found in the configuration
+        file and the default provider stored. The dictionary is empty if the input file
+        does not exist. Likewise, the default provider is ``None`` if it is not found in
+        the configuration file.
 
     Raises:
         InvalidCredentialsFormatError: If the file cannot be parsed. Note
@@ -61,6 +61,7 @@ def read_credentials_from_qiskitrc(
 
     # Build the credentials dictionary.
     credentials_dict = OrderedDict()  # type: ignore[var-annotated]
+    default_provider = None
     for name in config_parser.sections():
         single_credentials = dict(config_parser.items(name))
 
@@ -74,8 +75,7 @@ def read_credentials_from_qiskitrc(
             single_credentials['verify'] = bool(  # type: ignore[assignment]
                 single_credentials['verify'])
         if 'default_provider' in single_credentials.keys():
-            single_credentials.update(
-                get_provider_as_dict(single_credentials['default_provider']))
+            default_provider = single_credentials['default_provider']
             # Delete `default_provider`, since it's not used by the `Credentials` constructor.
             del single_credentials['default_provider']
 
@@ -83,11 +83,12 @@ def read_credentials_from_qiskitrc(
 
         credentials_dict[new_credentials.unique_id()] = new_credentials
 
-    return credentials_dict
+    return credentials_dict, default_provider
 
 
 def write_qiskit_rc(
-        credentials: Dict[HubGroupProject, Credentials],
+        credentials: Dict[Tuple[str, str, str], Credentials],
+        default_provider: str = None,
         filename: Optional[str] = None
 ) -> None:
     """Write credentials to the configuration file.
@@ -95,31 +96,23 @@ def write_qiskit_rc(
     Args:
         credentials: Dictionary with the credentials, in the
             ``{credentials_unique_id: Credentials}`` format.
+        default_provider: If specified, the provider to store in the configuration
+            file, in the ``<hub_name>/<group_name>/<project_name>`` format.
         filename: Full path to the configuration file. If ``None``, the default
             location is used (``$HOME/.qiskit/qiskitrc``).
     """
-    def _credentials_object_to_dict(credentials_obj: Credentials) -> Dict[str, Any]:
+    def _credentials_object_to_dict(
+            credentials_obj: Credentials,
+            default_provider_to_store: str
+    ) -> Dict[str, Any]:
         """Convert a ``Credential`` object to a dictionary."""
-        # Handle the keys/values that do not need special handling or conversion.
-        credentials_dict = {key: getattr(credentials_obj, key)
-                            for key in ['token', 'proxies', 'verify']
+        credentials_dict = {key: getattr(credentials_obj, key) for key in
+                            ['token', 'url', 'proxies', 'verify']
                             if getattr(credentials_obj, key)}
 
-        # If a hgp is specified in `credentials_obj`, the `url` was modified to include hgp.
-        # As a result, save `base_url` to the account, rather than `url`.
-        credentials_dict['url'] = getattr(credentials_obj, 'base_url')
-
-        # Convert the hub/group/project to a dict, for easier handling.
-        hgp_dict = {
-            'hub': credentials_obj.hub,
-            'group': credentials_obj.group,
-            'project': credentials_obj.project
-        }
-
-        if all(hgp_dict.values()):
-            provider_to_save_as_str = get_provider_as_str(hgp_dict)
-            # Add the provider that will be saved to disk.
-            credentials_dict['default_provider'] = provider_to_save_as_str
+        # Save the default provider to disk, if specified.
+        if default_provider_to_store:
+            credentials_dict['default_provider'] = default_provider_to_store
 
         return credentials_dict
 
@@ -137,8 +130,8 @@ def write_qiskit_rc(
 
     unrolled_credentials = {
         _section_name(credentials_object):
-            _credentials_object_to_dict(credentials_object)
-        for _, credentials_object in credentials.items()
+            _credentials_object_to_dict(credentials_object, default_provider)
+        for hub, credentials_object in credentials.items()
     }
 
     # Write the configuration file.
@@ -150,6 +143,7 @@ def write_qiskit_rc(
 
 def store_credentials(
         credentials: Credentials,
+        default_provider: str = None,
         overwrite: bool = False,
         filename: Optional[str] = None
 ) -> None:
@@ -157,13 +151,15 @@ def store_credentials(
 
     Args:
         credentials: Credentials to save.
+        default_provider: If specified, the provider to store in the configuration
+            file, in the ``<hub_name>/<group_name>/<project_name>`` format.
         overwrite: ``True`` if any existing credentials are to be overwritten.
         filename: Full path to the configuration file. If ``None``, the default
             location is used (``$HOME/.qiskit/qiskitrc``).
     """
     # Read the current providers stored in the configuration file.
     filename = filename or DEFAULT_QISKITRC_FILE
-    stored_credentials = read_credentials_from_qiskitrc(filename)
+    stored_credentials, _ = read_credentials_from_qiskitrc(filename)
 
     # Check if duplicated credentials are already stored. By convention,
     # we assume (hub, group, project) is always unique.
@@ -172,11 +168,9 @@ def store_credentials(
                        'Set overwrite=True to overwrite.')
         return
 
-    # Clear `stored_credentials` to disallow saving multiple credentials to disk,
-    # and write the new `credentials` to file.
-    stored_credentials.clear()
+    # Append and write the credentials to file.
     stored_credentials[credentials.unique_id()] = credentials
-    write_qiskit_rc(stored_credentials, filename)
+    write_qiskit_rc(stored_credentials, default_provider, filename)
 
 
 def remove_credentials(
@@ -195,7 +189,7 @@ def remove_credentials(
             configuration file.
     """
     # Set the name of the Provider from the class.
-    stored_credentials = read_credentials_from_qiskitrc(filename)
+    stored_credentials, stored_provider = read_credentials_from_qiskitrc(filename)
 
     try:
         del stored_credentials[credentials.unique_id()]

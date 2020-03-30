@@ -14,7 +14,57 @@
 
 """Model for representing a hub/group/project tuple."""
 
-from collections import namedtuple
+from typing import Tuple
 
-HubGroupProject = namedtuple('HubGroupProject',
-                             ['hub', 'group', 'project'])
+
+class HubGroupProject:
+    """Class for representing a hub/group/project.."""
+
+    def __init__(self, hub, group, project) -> None:
+        """HubGroupProject constructor."""
+        self.hub = hub
+        self.group = group
+        self.project = project
+
+    @classmethod
+    def from_str(cls, hgp: str) -> 'HubGroupProject':
+        """Instantiates a ``HubGroupProject`` instance from a string.
+
+        Note:
+            The format for the string is ``<hub_name>/<group_name>/<project_name>``.
+
+        Returns:
+            A ``HubGroupProject`` instance.
+        """
+        hub, group, project = hgp.split('/')
+        return cls(hub, group, project)
+
+    @classmethod
+    def from_credentials(cls, credentials_obj: 'Credentials') -> 'HubGroupProject':
+        """Instantiates a ``HubGroupProject`` instance from ``Credentials``.
+
+        Returns:
+            A ``HubGroupProject`` instance.
+        """
+        hub, group, project = [getattr(credentials_obj, key)
+                               for key in ['hub', 'group', 'project']]
+        return cls(hub, group, project)
+
+    def to_tuple(self) -> Tuple[str, str, str]:
+        """Returns ``HubGroupProject`` as a tuple.
+
+        Returns:
+            A tuple representation of the hub/group/project.
+        """
+        return self.hub, self.group, self.project
+
+    def to_stored_format(self) -> str:
+        """Returns ``HubGroupProject`` as a string, used to store to disk.
+
+        Note:
+            The format of the string returned is ``<hub_name>/<group_name>/<project_name>``.
+
+        Returns:
+             A string representation of the hub/group/project, used to store to disk.
+        """
+        return '/'.join([self.hub, self.group, self.project])

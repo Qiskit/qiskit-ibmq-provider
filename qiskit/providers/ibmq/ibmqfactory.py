@@ -12,10 +12,32 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Factory and Account manager for IBM Quantum Experience."""
+"""Factory and Account manager for IBM Quantum Experience.
+
+Saving an Account
+=================
+
+When saving an account to disk, you should specify a default provider, in the
+format ``<hub_name>/<group_name>/<project_name>``. This provider will be used
+when loading your account via
+:meth:`IBMQFactory.load_account()<IBMQFactory.load_account>`.
+
+An example of saving the ``my_hub/my_group/my_project`` provider to disk::
+
+    from qiskit import IBMQ
+    IBMQ.save_account('<your_token>', hgp='my_hub/my_group/my_project')
+    # Loads the provider for `my_hub/my_group/my_project`.
+    my_default_provider = IBMQ.load_account()
+
+Similarly, you are able to enable an account with a default provider::
+
+    from qiskit import IBMQ
+    # Loads the provider for `my_hub/my_group/my_project`.
+    my_default_provider = IBMQ.enable_account('<your_token>', hgp='my_hub/my_group/my_project')
+"""
 
 import logging
-from typing import Dict, List, Union, Optional, Any
+from typing import Dict, List, Tuple, Union, Optional, Any
 from collections import OrderedDict
 
 from .accountprovider import AccountProvider
@@ -25,7 +47,6 @@ from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    remove_credentials,
                                    store_credentials)
 from .credentials.updater import update_credentials
-from .credentials.utils import get_provider_as_dict
 from .exceptions import (IBMQAccountError, IBMQProviderError,
                          IBMQAccountCredentialsNotFound, IBMQAccountCredentialsInvalidUrl,
                          IBMQAccountCredentialsInvalidToken, IBMQAccountMultipleCredentialsFound)
@@ -44,7 +65,7 @@ class IBMQFactory:
     def __init__(self) -> None:
         """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
-        self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
+        self._providers = OrderedDict()  # type: Dict[Tuple[str, str, str], AccountProvider]
 
     # Account management functions.
 
@@ -52,7 +73,9 @@ class IBMQFactory:
             self,
             token: str,
             url: str = QX_AUTH_URL,
-            hgp: str = None,
+            hub: str = None,
+            group: str = None,
+            project: str = None,
             **kwargs: Any
     ) -> Optional[AccountProvider]:
         """Authenticate against IBM Quantum Experience for use during the session.
@@ -65,10 +88,9 @@ class IBMQFactory:
         Args:
             token: IBM Quantum Experience token.
             url: URL for the IBM Quantum Experience authentication server.
-            hgp: If specified, this provider will be returned. If `hgp` is not specified, is
-                in an invalid format, or is not found as a provider for the account, then the
-                default open access project provider will be returned.
-                Format: "<hub_name>/<group_name>/<project_name>".
+            hub: Name of the hub to filter for.
+            group: Name of the group to filter for.
+            project: Name of the project to filter for.
             **kwargs: Additional settings for the connection:
 
                 * proxies (dict): proxy configuration.
@@ -87,11 +109,6 @@ class IBMQFactory:
         if self._credentials:
             raise IBMQAccountError(
                 'An IBM Quantum Experience account is already in use for the session.')
-
-        if hgp:
-            # Set the hub/group/project info for the `credentials`.
-            hgp_dict = get_provider_as_dict(hgp)
-            kwargs.update(hgp_dict)
 
         # Check the version used by these credentials.
         credentials = Credentials(token, url, **kwargs)
@@ -113,7 +130,13 @@ class IBMQFactory:
                            'account.')
             return None
 
-        return providers[0]
+        default_provider = providers[0]
+
+        # Only filter if at least one is set.
+        if hub or group or project:
+            default_provider = self.get_provider(hub=hub, group=group, project=project)
+
+        return default_provider
 
     def disable_account(self) -> None:
         """Disable the account currently in use for the session.
@@ -141,9 +164,12 @@ class IBMQFactory:
                 credentials are found.
             IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials are found.
+            IBMQAccountError: If the default provider stored on disk is in an invalid
+                format.
         """
         # Check for valid credentials.
-        credentials_list = list(discover_credentials().values())
+        stored_credentials, stored_provider = discover_credentials()
+        credentials_list = list(stored_credentials.values())
 
         if not credentials_list:
             raise IBMQAccountCredentialsNotFound(
@@ -179,13 +205,44 @@ class IBMQFactory:
                            'account.')
             return None
 
-        return providers[0]
+        default_provider = providers[0]
+
+        # Get the provider stored for the account, if specified.
+        if stored_provider:
+            default_provider = self._get_provider_from_str(stored_provider)
+
+        return default_provider
+
+    def _get_provider_from_str(self, hgp_str: str) -> AccountProvider:
+        """Return the provider matching the string representation of the hub/group/project.
+
+        Args:
+            hgp_str: The hub, group, project to search for, in the format
+            ``<hub_name>/<group_name>/<project_name>``
+
+        Returns:
+             The provider matching the hub/group/project specified.
+
+        Raises:
+            IBMQAccountError: If the default provider stored on disk is in an invalid
+                format.
+        """
+        try:
+            hgp = HubGroupProject.from_str(hgp_str)
+        except ValueError:
+            raise IBMQAccountError('The default provider stored on disk "%s" is in an '
+                                   'invalid format. Use the '
+                                   '"<hub_name>/<group_name>/<project_name>" format to'
+                                   'specify a provider.') from None
+        return self.get_provider(hub=hgp.hub, group=hgp.group, project=hgp.project)
 
     @staticmethod
     def save_account(
             token: str,
+            hub: str,
+            group: str,
+            project: str,
             url: str = QX_AUTH_URL,
-            hgp: str = None,
             overwrite: bool = False,
             **kwargs: Any
     ) -> None:
@@ -195,8 +252,9 @@ class IBMQFactory:
             token: IBM Quantum Experience token.
             url: URL for the IBM Quantum Experience authentication server.
             overwrite: Overwrite existing credentials.
-            hgp: If specified, this provider will be saved to disk, as the default,
-                for the account. Format: "<hub_name>/<group_name>/<project_name>".
+            hub: Name of the hub for the default provider to store on disk
+            group: Name of the group for the default provider to store on disk
+            project: Name of the project for the default provider to store on disk
             **kwargs:
                 * proxies (dict): Proxy configuration for the server.
                 * verify (bool): If False, ignores SSL certificates errors
@@ -216,14 +274,12 @@ class IBMQFactory:
                 'Invalid IBM Quantum Experience token '
                 'found: "{}" of type {}.'.format(token, type(token)))
 
-        if hgp:
-            # Set the hub/group/project info for the `credentials`.
-            hgp_dict = get_provider_as_dict(hgp)
-            kwargs.update(hgp_dict)
-
         credentials = Credentials(token, url, **kwargs)
+        hgp = HubGroupProject(hub=hub, group=group, project=project)
 
-        store_credentials(credentials, overwrite=overwrite)
+        store_credentials(credentials,
+                          default_provider=hgp.to_stored_format(),
+                          overwrite=overwrite)
 
     @staticmethod
     def delete_account() -> None:
@@ -237,7 +293,7 @@ class IBMQFactory:
             IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials are found on disk.
         """
-        stored_credentials = read_credentials_from_qiskitrc()
+        stored_credentials, stored_provider = read_credentials_from_qiskitrc()
         if not stored_credentials:
             raise IBMQAccountCredentialsNotFound(
                 'No IBM Quantum Experience credentials found on disk.')
@@ -267,7 +323,7 @@ class IBMQFactory:
             IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials are found on disk.
         """
-        stored_credentials = read_credentials_from_qiskitrc()
+        stored_credentials, _ = read_credentials_from_qiskitrc()
         if not stored_credentials:
             return {}
 
@@ -336,11 +392,11 @@ class IBMQFactory:
         filters = []
 
         if hub:
-            filters.append(lambda hgp: hgp.hub == hub)
+            filters.append(lambda hgp: hgp[0] == hub)
         if group:
-            filters.append(lambda hgp: hgp.group == group)
+            filters.append(lambda hgp: hgp[1] == group)
         if project:
-            filters.append(lambda hgp: hgp.project == project)
+            filters.append(lambda hgp: hgp[2] == project)
 
         providers = [provider for key, provider in self._providers.items()
                      if all(f(key) for f in filters)]  # type: ignore[arg-type]
@@ -370,9 +426,13 @@ class IBMQFactory:
         providers = self.providers(hub, group, project)
 
         if not providers:
-            raise IBMQProviderError('No provider matches the criteria.')
+            raise IBMQProviderError('No provider matches the specified criteria: '
+                                    'hub = {}, group = {}, project = {}'
+                                    .format(hub, group, project))
         if len(providers) > 1:
-            raise IBMQProviderError('More than one provider matches the criteria.')
+            raise IBMQProviderError('More than one provider matches the specified criteria.'
+                                    'hub = {}, group = {}, project = {}'
+                                    .format(hub, group, project))
 
         return providers[0]
 
@@ -399,7 +459,7 @@ class IBMQFactory:
                                  credentials.base_url,
                                  **credentials.connection_parameters())
         service_urls = auth_client.current_service_urls()
-        user_hubs = auth_client.user_hubs(credentials)
+        user_hubs = auth_client.user_hubs()
 
         self._credentials = credentials
         for hub_info in user_hubs:
