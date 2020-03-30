@@ -129,7 +129,7 @@ def filter_data(data: Dict[str, Any]) -> Dict[str, Any]:
 
     data_to_filter = copy.deepcopy(data)
     keys_to_filter = [('backend', 'name'), 'hubInfo', 'backend.name']
-    _filter_value(data_to_filter, keys_to_filter)  # type: ignore[[arg-type]]
+    _filter_value(data_to_filter, keys_to_filter)  # type: ignore[arg-type]
     return data_to_filter
 
 

@@ -99,8 +99,8 @@ def format_job_details(
         report.append("  experiments: {}-{}".format(mjob.start_index, mjob.end_index))
         report.append("    job index: {}".format(i))
         if (mjob.job is None) and mjob.future \
-                and (not mjob.future.done()):  # type: ignore[warn-unreachable]
-            report.append("    status: {}".format(  # type: ignore[warn-unreachable]
+                and (not mjob.future.done()):  # type: ignore[unreachable]
+            report.append("    status: {}".format(  # type: ignore[unreachable]
                 JobStatus.INITIALIZING.value))
             continue
         if mjob.submit_error is not None:

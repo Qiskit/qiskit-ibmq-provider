@@ -1,4 +1,4 @@
-mypy==0.720
+mypy
 pycodestyle
 pylint>=2.4
 pylintfileheader>=0.0.2
