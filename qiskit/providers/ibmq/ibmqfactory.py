@@ -399,7 +399,7 @@ class IBMQFactory:
         Returns:
             A list of providers that match the specified criteria.
         """
-        filters = []  # type: List[Callable[[HubGroupProject], bool]]
+        filters = []  # type: List[Callable[[Tuple[str, str, str]], bool]]
 
         if hub:
             filters.append(lambda hgp: hgp[0] == hub)

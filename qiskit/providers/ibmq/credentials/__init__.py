@@ -54,7 +54,7 @@ logger = logging.getLogger(__name__)
 
 def discover_credentials(
         qiskitrc_filename: Optional[str] = None
-) -> Tuple[Dict[Tuple[str, str, str], Credentials], str]:
+) -> Tuple[OrderedDict[Tuple[str, str, str], Credentials], str]:
     """Automatically discover credentials for IBM Quantum Experience.
 
     This method looks for credentials in the following places in order and
@@ -74,7 +74,7 @@ def discover_credentials(
         ``{credentials_unique_id: Credentials}``, whereas the format for the
         default provider is ``<hub_name>/<group_name>/<project_name>``.
     """
-    credentials = OrderedDict()  # type: OrderedDict[HubGroupProject, Credentials]
+    credentials = OrderedDict()  # type: OrderedDict[Tuple[str, str, str], Credentials]
 
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.
