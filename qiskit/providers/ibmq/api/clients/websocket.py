@@ -24,6 +24,7 @@ from typing import Dict, Union, Generator, Optional, Any
 from concurrent import futures
 from ssl import SSLError
 import warnings
+import atexit
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
@@ -45,12 +46,11 @@ logger = logging.getLogger(__name__)
 # tornado) has its own event loop already so we need to patch it.
 # Patch asyncio to allow nested use of `loop.run_until_complete()`.
 # Before applying the patch, check if an event loop is available otherwise
-# create one and set it active
+# create one and set it active, also register cleanup for end
 try:
     LOOP = asyncio.get_event_loop()
 except RuntimeError:
     LOOP = asyncio.new_event_loop()
-asyncio.set_event_loop(LOOP)
 nest_asyncio.apply(LOOP)
 
 # TODO Replace coroutine with async def once Python 3.5 is dropped.
