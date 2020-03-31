@@ -18,8 +18,6 @@ import logging
 from typing import Dict, List, Optional, Any
 from requests.exceptions import RequestException
 
-from qiskit.providers.ibmq.credentials import Credentials
-
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
 from ..rest import Api, Auth
 from ..session import RetrySession

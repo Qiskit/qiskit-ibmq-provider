@@ -54,7 +54,7 @@ logger = logging.getLogger(__name__)
 
 def discover_credentials(
         qiskitrc_filename: Optional[str] = None
-) -> Tuple[OrderedDict[Tuple[str, str, str], Credentials], str]:
+) -> Tuple[Dict[Tuple[str, str, str], Credentials], str]:
     """Automatically discover credentials for IBM Quantum Experience.
 
     This method looks for credentials in the following places in order and
