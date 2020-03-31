@@ -114,7 +114,7 @@ class WebsocketResponseMethod(WebsocketMessage):
             parsed_dict = json.loads(json_string.decode('utf8'))
         except (ValueError, AttributeError) as ex:
             exception_to_raise = WebsocketIBMQProtocolError(
-                'Unable to parse the message received from the server: {}'.format(json_string))
+                'Unable to parse the message received from the server: {!r}'.format(json_string))
 
             logger.info('An exception occurred. Raising "%s" from "%s"',
                         repr(exception_to_raise), repr(ex))

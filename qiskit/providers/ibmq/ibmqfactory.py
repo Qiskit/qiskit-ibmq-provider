@@ -37,7 +37,7 @@ Similarly, you are able to enable an account with a default provider::
 """
 
 import logging
-from typing import Dict, List, Tuple, Union, Optional, Any
+from typing import Dict, List, Tuple, Union, Callable, Optional, Any
 from collections import OrderedDict
 
 from .accountprovider import AccountProvider
@@ -399,7 +399,7 @@ class IBMQFactory:
         Returns:
             A list of providers that match the specified criteria.
         """
-        filters = []
+        filters = []  # type: List[Callable[[HubGroupProject], bool]]
 
         if hub:
             filters.append(lambda hgp: hgp[0] == hub)
@@ -409,7 +409,7 @@ class IBMQFactory:
             filters.append(lambda hgp: hgp[2] == project)
 
         providers = [provider for key, provider in self._providers.items()
-                     if all(f(key) for f in filters)]  # type: ignore[arg-type]
+                     if all(f(key) for f in filters)]
 
         return providers
 

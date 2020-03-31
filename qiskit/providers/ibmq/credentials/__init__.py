@@ -40,7 +40,7 @@ Exceptions
 """
 
 from collections import OrderedDict
-from typing import Dict, Tuple, Optional
+from typing import Dict, Optional, Tuple, Any
 import logging
 
 from .credentials import Credentials, HubGroupProject
@@ -74,7 +74,7 @@ def discover_credentials(
         ``{credentials_unique_id: Credentials}``, whereas the format for the
         default provider is ``<hub_name>/<group_name>/<project_name>``.
     """
-    credentials = OrderedDict()  # type: ignore[var-annotated]
+    credentials = OrderedDict()  # type: OrderedDict[HubGroupProject, Credentials]
 
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.
@@ -83,7 +83,7 @@ def discover_credentials(
         ('environment variables', (read_credentials_from_environ, {})),
         ('qiskitrc', (read_credentials_from_qiskitrc,
                       {'filename': qiskitrc_filename}))
-    ])
+    ])  # type: OrderedDict[str, Any]
 
     # The default provider stored in the `qiskitrc` file.
     stored_provider = None
