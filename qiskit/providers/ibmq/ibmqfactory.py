@@ -164,8 +164,7 @@ class IBMQFactory:
                 credentials are found.
             IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials are found.
-            IBMQAccountError: If the default provider stored on disk is in an invalid
-                format.
+            IBMQAccountError: If the default provider stored on disk could not be found.
         """
         # Check for valid credentials.
         stored_credentials, stored_provider = discover_credentials()
@@ -228,8 +227,7 @@ class IBMQFactory:
              The provider matching the hub/group/project specified.
 
         Raises:
-            IBMQAccountError: If the default provider stored on disk is in an invalid
-                format or could not be found.
+            IBMQAccountError: If the default provider stored on disk is in an invalid format.
         """
         try:
             hgp = HubGroupProject.from_str(hgp_str)

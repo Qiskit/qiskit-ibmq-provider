@@ -89,7 +89,7 @@ def read_credentials_from_qiskitrc(
 
 def write_qiskit_rc(
         credentials: Dict[HubGroupProject, Credentials],
-        default_provider: str = None,
+        default_provider: Optional[str] = None,
         filename: Optional[str] = None
 ) -> None:
     """Write credentials to the configuration file.
@@ -104,7 +104,7 @@ def write_qiskit_rc(
     """
     def _credentials_object_to_dict(
             credentials_obj: Credentials,
-            default_provider_to_store: str
+            default_provider_to_store: Optional[str]
     ) -> Dict[str, Any]:
         """Convert a ``Credential`` object to a dictionary."""
         credentials_dict = {key: getattr(credentials_obj, key) for key in
@@ -144,7 +144,7 @@ def write_qiskit_rc(
 
 def store_credentials(
         credentials: Credentials,
-        default_provider: str = None,
+        default_provider: Optional[str] = None,
         overwrite: bool = False,
         filename: Optional[str] = None
 ) -> None:
