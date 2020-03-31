@@ -124,12 +124,13 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         """Test enabling an account with a specified provider."""
         ibmq = IBMQFactory()
         non_default_provider = get_provider(ibmq, qe_token, qe_url, default=False)
-
         with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             hgp = HubGroupProject.from_credentials(non_default_provider.credentials)
-            saved_provider = ibmq.enable_account(token=qe_token, url=qe_url,
-                                                 hub=hgp.hub, group=hgp.group, project=hgp.project)
-            self.assertEqual(non_default_provider, saved_provider)
+            enabled_provider = ibmq.enable_account(token=qe_token, url=qe_url,
+                                                   hub=hgp.hub,
+                                                   group=hgp.group,
+                                                   project=hgp.project)
+            self.assertEqual(non_default_provider, enabled_provider)
 
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
@@ -189,13 +190,12 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
                                 HubGroupProject('', '', ''),
                                 HubGroupProject('', 'default_group', 'default_project')]
         for hgp in invalid_hgps_to_save:
-            with self.subTest(hgp=hgp):
-                with custom_qiskitrc():
-                    with self.assertRaises(IBMQAccountValueError) as context_manager:
-                        self.factory.save_account(token=self.token, url=AUTH_URL,
-                                                  hub=hgp.hub, group=hgp.group, project=hgp.project)
-                    self.assertIn('The hub, group, project fields must all be specified',
-                                  str(context_manager.exception))
+            with self.subTest(hgp=hgp), custom_qiskitrc():
+                with self.assertRaises(IBMQAccountValueError) as context_manager:
+                    self.factory.save_account(token=self.token, url=AUTH_URL,
+                                              hub=hgp.hub, group=hgp.group, project=hgp.project)
+                self.assertIn('The hub, group, project fields must all be specified',
+                              str(context_manager.exception))
 
     @requires_qe_access
     def test_delete_account(self, qe_token, qe_url):

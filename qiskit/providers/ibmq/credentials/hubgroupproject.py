@@ -16,7 +16,7 @@
 
 from collections import namedtuple
 
-from .exceptions import HubGroupProjectValueError, InvalidFormatHubGroupProjectError
+from .exceptions import HubGroupProjectInvalidStateError
 
 HubGroupProjectTuple = namedtuple('HubGroupProjectTuple',
                                   ['hub', 'group', 'project'])
@@ -44,7 +44,7 @@ class HubGroupProject:
             The format for the string is ``<hub_name>/<group_name>/<project_name>``.
 
         Raises:
-            HubGroupProjectValueError: If the specified string, used for conversion, is
+            HubGroupProjectInvalidStateError: If the specified string, used for conversion, is
                 in an invalid format.
 
         Returns:
@@ -53,13 +53,13 @@ class HubGroupProject:
         try:
             hub, group, project = hgp.split('/')
             if (not hub) or (not group) or (not project):
-                raise HubGroupProjectValueError(
+                raise HubGroupProjectInvalidStateError(
                     'The hub/group/project specified "{}" is in an invalid format. '
                     'Every field must be specified: hub = "{}", group = "{}", project = "{}".'
                     .format(hgp, hub, group, project))
         except ValueError:
             # Not enough, or too many, values were provided
-            raise HubGroupProjectValueError(
+            raise HubGroupProjectInvalidStateError(
                 'The hub/group/project specified "{}" is in an invalid format. '
                 'Use the "<hub_name>/<group_name>/<project_name>" format.'
                 .format(hgp))
@@ -95,7 +95,7 @@ class HubGroupProject:
             The format of the string returned is ``<hub_name>/<group_name>/<project_name>``.
 
         Raises:
-            InvalidFormatHubGroupProjectError: If the ``HubGroupProject`` cannot be
+            HubGroupProjectInvalidStateError: If the ``HubGroupProject`` cannot be
                 represented as a string to store on disk (i.e. the hub, group, project
                 fields are empty strings or ``None``).
 
@@ -103,7 +103,7 @@ class HubGroupProject:
              A string representation of the hub/group/project, used to store to disk.
         """
         if (not self.hub) or (not self.group) or (not self.project):
-            raise InvalidFormatHubGroupProjectError(
+            raise HubGroupProjectInvalidStateError(
                 'The hub/group/project cannot be stored because it is in an invalid format. '
                 'Every field must be specified: hub = "{}", group = "{}", project = "{}".')
         return '/'.join([self.hub, self.group, self.project])

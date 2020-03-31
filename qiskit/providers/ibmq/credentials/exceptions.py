@@ -37,11 +37,6 @@ class HubGroupProjectError(IBMQError):
     pass
 
 
-class InvalidFormatHubGroupProjectError(IBMQError):
-    """Errors raised when a HubGroupProject is in an invalid format."""
-    pass
-
-
-class HubGroupProjectValueError(IBMQError, ValueError):
-    """Value errors raised by the HubGroupProject module."""
+class HubGroupProjectInvalidStateError(IBMQError):
+    """Errors raised when a HubGroupProject is in an invalid state for an operation."""
     pass

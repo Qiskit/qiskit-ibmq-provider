@@ -43,9 +43,9 @@ def read_credentials_from_qiskitrc(
 
     Returns:
         A tuple containing the found credentials, if any, and the default
-        provider stored, if specified. The format for the found credentials is
-        ``{credentials_unique_id: Credentials}``, whereas the format for the
-        default provider is ``<hub_name>/<group_name>/<project_name>``.
+        provider stored, if specified in the configuration file. The format
+        for the found credentials is ``{credentials_unique_id: Credentials}``,
+        whereas the format for the default provider is ``<hub_name>/<group_name>/<project_name>``.
 
     Raises:
         InvalidCredentialsFormatError: If the file cannot be parsed. Note

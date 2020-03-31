@@ -47,7 +47,7 @@ from .credentials.hubgroupproject import HubGroupProject, HubGroupProjectTuple
 from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    remove_credentials,
                                    store_credentials)
-from .credentials.exceptions import HubGroupProjectValueError
+from .credentials.exceptions import HubGroupProjectInvalidStateError
 from .credentials.updater import update_credentials
 from .exceptions import (IBMQAccountError, IBMQAccountValueError, IBMQProviderError,
                          IBMQAccountCredentialsNotFound, IBMQAccountCredentialsInvalidUrl,
@@ -213,7 +213,11 @@ class IBMQFactory:
 
         # Get the provider stored for the account, if specified.
         if stored_provider:
-            default_provider = self._get_provider_from_str(stored_provider)
+            try:
+                default_provider = self._get_provider_from_str(stored_provider)
+            except IBMQProviderError as ex:
+                raise IBMQAccountError('The default provider (hub/group/project) stored on '
+                                       'disk "{}" could not be found.') from ex
 
         return default_provider
 
@@ -229,15 +233,16 @@ class IBMQFactory:
 
         Raises:
             IBMQAccountError: If the default provider stored on disk is in an invalid
-                format.
+                format or could not be found.
         """
         try:
             hgp = HubGroupProject.from_str(hgp_str)
-        except HubGroupProjectValueError as ex:
+        except HubGroupProjectInvalidStateError as ex:
             raise IBMQAccountError('The default provider (hub/group/project) stored on '
                                    'disk "{}" is in an invalid format. Use the '
                                    '"<hub_name>/<group_name>/<project_name>" format to'
                                    'specify a provider.') from ex
+
         return self.get_provider(hub=hgp.hub, group=hgp.group, project=hgp.project)
 
     @staticmethod

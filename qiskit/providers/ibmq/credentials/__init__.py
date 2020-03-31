@@ -71,9 +71,10 @@ def discover_credentials(
 
     Returns:
         A tuple containing the found credentials, if any, and the default
-        provider stored, if specified. The format for the found credentials is
-        ``{credentials_unique_id: Credentials}``, whereas the format for the
-        default provider is ``<hub_name>/<group_name>/<project_name>``.
+        provider stored, if specified in the configuration file. The format
+        for the found credentials is ``{credentials_unique_id: Credentials}``,
+        whereas the format for the default provider is
+        ``<hub_name>/<group_name>/<project_name>``.
     """
     credentials = OrderedDict()  # type: OrderedDict[HubGroupProjectTuple, Credentials]
 
@@ -93,7 +94,7 @@ def discover_credentials(
         try:
             stored_account_info = reader_function(**kwargs)  # type: ignore[arg-type]
             if display_name == 'qiskitrc':
-                # Read from `qiskitrc`, which has a stored provider.
+                # Read from `qiskitrc`, which may have a stored provider.
                 credentials, stored_provider = stored_account_info
             else:
                 credentials = stored_account_info
