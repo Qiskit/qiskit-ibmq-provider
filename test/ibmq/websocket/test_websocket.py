@@ -50,11 +50,13 @@ class TestWebsocketClient(IBMQTestCase):
 
     def test_asyncio_threading(self):
         """Test asyncio when importing webserver in new thread"""
+        import sys
+        import importlib
         import threading
 
         def _import_websocket():
             try:
-                import qiskit.providers.ibmq.api.clients.websocket
+                importlib.reload(sys.modules["qiskit.providers.ibmq.api.clients.websocket"])
             except RuntimeError:
                 self.fail("Importing websocket in new thread failed due to asyncio!")
 
