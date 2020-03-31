@@ -55,7 +55,7 @@ class HubGroupProject:
                     'Every field must be specified: hub = "{}", group = "{}", project = "{}".'
                     .format(hgp, hub, group, project))
         except ValueError:
-            # Not enough values were provided.
+            # Not enough, or too many, values were provided
             raise HubGroupProjectValueError(
                 'The hub/group/project specified "{}" is in an invalid format. '
                 'Use the "<hub_name>/<group_name>/<project_name>" format.'

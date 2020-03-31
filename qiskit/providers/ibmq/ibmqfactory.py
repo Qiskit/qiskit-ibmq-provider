@@ -283,7 +283,8 @@ class IBMQFactory:
         # hub, group, project are required.
         if (not hub) or (not group) or (not project):
             raise IBMQAccountValueError('The hub, group, project fields must all be specified: '
-                                        'hub = "{}", group = "{}", project = "{}".')
+                                        'hub = "{}", group = "{}", project = "{}"'
+                                        .format(hub, group, project))
         default_provider_to_store = HubGroupProject(hub, group, project).to_stored_format()
 
         store_credentials(credentials,
@@ -490,11 +491,3 @@ class IBMQFactory:
                 # Catch-all for errors instantiating the provider.
                 logger.warning('Unable to instantiate provider for %s: %s',
                                hub_info, ex)
-
-        # Set the hub/group/project information after initializing the providers,
-        # to assure they are valid.
-        if self._providers:
-            default_provider_credentials = list(self._providers.values())[0].credentials
-            self._credentials.hub = default_provider_credentials.hub
-            self._credentials.group = default_provider_credentials.group
-            self._credentials.project = default_provider_credentials.project

@@ -20,7 +20,8 @@ from configparser import ConfigParser, ParsingError
 
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
-from qiskit.providers.ibmq.exceptions import (IBMQAccountError, IBMQAccountCredentialsInvalidUrl,
+from qiskit.providers.ibmq.exceptions import (IBMQAccountError, IBMQAccountValueError,
+                                              IBMQAccountCredentialsInvalidUrl,
                                               IBMQAccountCredentialsInvalidToken,
                                               IBMQProviderError)
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory, QX_AUTH_URL
@@ -182,6 +183,20 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
                 self.assertIn('default_provider', single_credentials)
                 self.assertEqual(single_credentials['default_provider'], default_hgp_to_save)
 
+    def test_save_account_invalid_specified_provider(self):
+        """Test saving an account with an invalid specified provider."""
+        invalid_hgps_to_save = [HubGroupProject(None, None, None),
+                                HubGroupProject('', '', ''),
+                                HubGroupProject('', 'default_group', 'default_project')]
+        for hgp in invalid_hgps_to_save:
+            with self.subTest(hgp=hgp):
+                with custom_qiskitrc():
+                    with self.assertRaises(IBMQAccountValueError) as context_manager:
+                        self.factory.save_account(token=self.token, url=AUTH_URL,
+                                                  hub=hgp.hub, group=hgp.group, project=hgp.project)
+                    self.assertIn('The hub, group, project fields must all be specified',
+                                  str(context_manager.exception))
+
     @requires_qe_access
     def test_delete_account(self, qe_token, qe_url):
         """Test deleting an account."""
@@ -235,7 +250,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
     @requires_qe_access
     def test_load_account_saved_provider_invalid(self, qe_token, qe_url):
-        """Test loading an account that contains an saved provider in an invalid format."""
+        """Test loading an account that contains an invalid saved provider."""
         if qe_url != QX_AUTH_URL:
             # .save_account() expects an auth production URL.
             self.skipTest('Test requires production auth URL')
