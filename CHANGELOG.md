@@ -19,10 +19,9 @@ The format is based on [Keep a Changelog].
 ### Changed
 
 - `IBMQFactory.save_account()` and `IBMQFactory.enable_account()` now accept
-  an optional parameter `hgp` which allows specifying a default provider to 
-  save to disk or use, respectively.
+  three new parameters `hub`, `group`, `project`, which allow specifying a 
+  default provider to save to disk or use, respectively. (\#611)
   
-
 ## [0.6.0] - 2020-03-26
 
 ### Added
