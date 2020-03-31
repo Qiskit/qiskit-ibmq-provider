@@ -37,12 +37,13 @@ Similarly, you are able to enable an account with a default provider::
 """
 
 import logging
-from typing import Dict, List, Tuple, Union, Callable, Optional, Any
+from typing import Dict, List, Union, Callable, Optional, Any
 from collections import OrderedDict
 
 from .accountprovider import AccountProvider
 from .api.clients import AuthClient, VersionClient
-from .credentials import Credentials, HubGroupProject, discover_credentials
+from .credentials import Credentials, discover_credentials
+from .credentials.hubgroupproject import HubGroupProject, HubGroupProjectTuple
 from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    remove_credentials,
                                    store_credentials)
@@ -66,7 +67,7 @@ class IBMQFactory:
     def __init__(self) -> None:
         """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
-        self._providers = OrderedDict()  # type: Dict[Tuple[str, str, str], AccountProvider]
+        self._providers = OrderedDict()  # type: Dict[HubGroupProjectTuple, AccountProvider]
 
     # Account management functions.
 
@@ -399,14 +400,14 @@ class IBMQFactory:
         Returns:
             A list of providers that match the specified criteria.
         """
-        filters = []  # type: List[Callable[[Tuple[str, str, str]], bool]]
+        filters = []  # type: List[Callable[[HubGroupProjectTuple], bool]]
 
         if hub:
-            filters.append(lambda hgp: hgp[0] == hub)
+            filters.append(lambda hgp: hgp.hub == hub)
         if group:
-            filters.append(lambda hgp: hgp[1] == group)
+            filters.append(lambda hgp: hgp.group == group)
         if project:
-            filters.append(lambda hgp: hgp[2] == project)
+            filters.append(lambda hgp: hgp.project == project)
 
         providers = [provider for key, provider in self._providers.items()
                      if all(f(key) for f in filters)]

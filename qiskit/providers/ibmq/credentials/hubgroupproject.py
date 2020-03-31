@@ -14,9 +14,12 @@
 
 """Model for representing a hub/group/project tuple."""
 
-from typing import Tuple, Optional
+from collections import namedtuple
 
 from .exceptions import HubGroupProjectValueError, InvalidFormatHubGroupProjectError
+
+HubGroupProjectTuple = namedtuple('HubGroupProjectTuple',
+                                  ['hub', 'group', 'project'])
 
 
 class HubGroupProject:
@@ -77,13 +80,13 @@ class HubGroupProject:
                                for key in ['hub', 'group', 'project']]
         return cls(hub, group, project)
 
-    def to_tuple(self) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    def to_tuple(self) -> HubGroupProjectTuple:
         """Returns ``HubGroupProject`` as a tuple.
 
         Returns:
             A tuple representation of the hub/group/project.
         """
-        return self.hub, self.group, self.project
+        return HubGroupProjectTuple(self.hub, self.group, self.project)
 
     def to_stored_format(self) -> str:
         """Returns ``HubGroupProject`` as a string, used to store to disk.

@@ -22,6 +22,7 @@ from configparser import ConfigParser, ParsingError
 from typing import Dict, Tuple, Optional, Any
 
 from .credentials import Credentials
+from .hubgroupproject import HubGroupProjectTuple
 from .exceptions import InvalidCredentialsFormatError, CredentialsNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
 
 def read_credentials_from_qiskitrc(
         filename: Optional[str] = None
-) -> Tuple[Dict[Tuple[str, str, str], Credentials], str]:
+) -> Tuple[Dict[HubGroupProjectTuple, Credentials], str]:
     """Read a configuration file and return a dictionary with its contents.
 
     Args:
@@ -41,10 +42,10 @@ def read_credentials_from_qiskitrc(
             location is used (``$HOME/.qiskit/qiskitrc``).
 
     Returns:
-        A tuple containing a dictionary of the credentials found in the configuration
-        file and the default provider stored. The dictionary is empty if the input file
-        does not exist. Likewise, the default provider is ``None`` if it is not found in
-        the configuration file.
+        A tuple containing the found credentials, if any, and the default
+        provider stored, if specified. The format for the found credentials is
+        ``{credentials_unique_id: Credentials}``, whereas the format for the
+        default provider is ``<hub_name>/<group_name>/<project_name>``.
 
     Raises:
         InvalidCredentialsFormatError: If the file cannot be parsed. Note
@@ -87,7 +88,7 @@ def read_credentials_from_qiskitrc(
 
 
 def write_qiskit_rc(
-        credentials: Dict[Tuple[str, str, str], Credentials],
+        credentials: Dict[HubGroupProjectTuple, Credentials],
         default_provider: str = None,
         filename: Optional[str] = None
 ) -> None:

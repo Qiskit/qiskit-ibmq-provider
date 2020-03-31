@@ -20,7 +20,7 @@ import warnings
 from typing import Dict, Tuple, Optional, Any
 from requests_ntlm import HttpNtlmAuth
 
-from .hubgroupproject import HubGroupProject
+from .hubgroupproject import HubGroupProject, HubGroupProjectTuple
 
 
 REGEX_IBMQ_HUBS = (
@@ -82,7 +82,7 @@ class Credentials:
     def __eq__(self, other: object) -> bool:
         return self.__dict__ == other.__dict__
 
-    def unique_id(self) -> Tuple[str, str, str]:
+    def unique_id(self) -> HubGroupProjectTuple:
         """Return a value that uniquely identifies these credentials.
 
         By convention, two credentials that have the same hub, group,
