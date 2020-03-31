@@ -12,29 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Factory and Account manager for IBM Quantum Experience.
-
-Saving an Account
-=================
-
-When saving an account to disk, you should specify a default provider, in the
-format ``<hub_name>/<group_name>/<project_name>``. This provider will be used
-when loading your account via
-:meth:`IBMQFactory.load_account()<IBMQFactory.load_account>`.
-
-An example of saving the ``my_hub/my_group/my_project`` provider to disk::
-
-    from qiskit import IBMQ
-    IBMQ.save_account('<your_token>', hgp='my_hub/my_group/my_project')
-    # Loads the provider for `my_hub/my_group/my_project`.
-    my_default_provider = IBMQ.load_account()
-
-Similarly, you are able to enable an account with a default provider::
-
-    from qiskit import IBMQ
-    # Loads the provider for `my_hub/my_group/my_project`.
-    my_default_provider = IBMQ.enable_account('<your_token>', hgp='my_hub/my_group/my_project')
-"""
+"""Factory and Account manager for IBM Quantum Experience."""
 
 import logging
 from typing import Dict, List, Union, Callable, Optional, Any
@@ -62,7 +40,25 @@ UPDATE_ACCOUNT_TEXT = "Please update your accounts and programs by following the
 
 
 class IBMQFactory:
-    """Factory and account manager for IBM Quantum Experience."""
+    """Factory and account manager for IBM Quantum Experience.
+
+    When saving an account, via :meth:`save_account`, you should specify a default
+    provider to use for the account. This provider will be used when loading your
+    account via :meth:`load_account`.
+
+    For example::
+
+        from qiskit import IBMQ
+        IBMQ.save_account('<your_token>', hub=<my_hub>, group=<my_group>, project=<my_project>)
+        # Loads the provider with hub=<my_hub>, group=<my_group>, project=<my_project>
+        my_default_provider = IBMQ.load_account()
+
+    Similarly, you are able to enable an account with a default provider::
+
+        from qiskit import IBMQ
+        # Loads the provider with hub=<my_hub>, group=<my_group>, project=<my_project>
+        IBMQ.enable_account('<your_token>', hub=<my_hub>, group=<my_group>, project=<my_project>)
+    """
 
     def __init__(self) -> None:
         """IBMQFactory constructor."""
