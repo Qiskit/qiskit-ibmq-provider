@@ -20,7 +20,7 @@ import warnings
 from typing import Dict, Tuple, Optional, Any
 from requests_ntlm import HttpNtlmAuth
 
-from .hubgroupproject import HubGroupProject, HubGroupProjectTuple
+from .hubgroupproject import HubGroupProject
 
 
 REGEX_IBMQ_HUBS = (
@@ -82,16 +82,16 @@ class Credentials:
     def __eq__(self, other: object) -> bool:
         return self.__dict__ == other.__dict__
 
-    def unique_id(self) -> HubGroupProjectTuple:
+    def unique_id(self) -> HubGroupProject:
         """Return a value that uniquely identifies these credentials.
 
         By convention, two credentials that have the same hub, group,
         and project are considered equivalent.
 
         Returns:
-            The (hub, group, project) tuple.
+            A ``HubGroupProject`` instance.
         """
-        return HubGroupProject(self.hub, self.group, self.project).to_tuple()
+        return HubGroupProject(self.hub, self.group, self.project)
 
     def connection_parameters(self) -> Dict[str, Any]:
         """Construct connection related parameters.

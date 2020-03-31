@@ -21,7 +21,7 @@ from collections import OrderedDict
 from .accountprovider import AccountProvider
 from .api.clients import AuthClient, VersionClient
 from .credentials import Credentials, discover_credentials
-from .credentials.hubgroupproject import HubGroupProject, HubGroupProjectTuple
+from .credentials.hubgroupproject import HubGroupProject
 from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    remove_credentials,
                                    store_credentials)
@@ -63,7 +63,7 @@ class IBMQFactory:
     def __init__(self) -> None:
         """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
-        self._providers = OrderedDict()  # type: Dict[HubGroupProjectTuple, AccountProvider]
+        self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
 
     # Account management functions.
 
@@ -401,7 +401,7 @@ class IBMQFactory:
         Returns:
             A list of providers that match the specified criteria.
         """
-        filters = []  # type: List[Callable[[HubGroupProjectTuple], bool]]
+        filters = []  # type: List[Callable[[HubGroupProject], bool]]
 
         if hub:
             filters.append(lambda hgp: hgp.hub == hub)

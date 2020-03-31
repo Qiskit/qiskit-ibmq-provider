@@ -20,14 +20,14 @@ from typing import Dict, Tuple
 from importlib.util import module_from_spec, spec_from_file_location
 
 from .credentials import Credentials
-from .hubgroupproject import HubGroupProjectTuple
+from .hubgroupproject import HubGroupProject
 from .exceptions import InvalidCredentialsFormatError
 
 DEFAULT_QCONFIG_FILE = 'Qconfig.py'
 QE_URL = 'https://quantumexperience.ng.bluemix.net/api'
 
 
-def read_credentials_from_qconfig() -> Dict[HubGroupProjectTuple, Credentials]:
+def read_credentials_from_qconfig() -> Dict[HubGroupProject, Credentials]:
     """Read the ``QConfig.py`` file and return its credentials.
 
     Returns:

@@ -19,7 +19,7 @@ from collections import OrderedDict
 from typing import Dict, Tuple
 
 from .credentials import Credentials
-from .hubgroupproject import HubGroupProjectTuple
+from .hubgroupproject import HubGroupProject
 
 VARIABLES_MAP = {
     'QE_TOKEN': 'token',
@@ -31,7 +31,7 @@ VARIABLES_MAP = {
 """Dictionary that maps `ENV_VARIABLE_NAME` to credential parameter."""
 
 
-def read_credentials_from_environ() -> Dict[HubGroupProjectTuple, Credentials]:
+def read_credentials_from_environ() -> Dict[HubGroupProject, Credentials]:
     """Extract credentials from the environment variables.
 
     Returns:

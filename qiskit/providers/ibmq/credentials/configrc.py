@@ -22,7 +22,7 @@ from configparser import ConfigParser, ParsingError
 from typing import Dict, Tuple, Optional, Any
 
 from .credentials import Credentials
-from .hubgroupproject import HubGroupProjectTuple
+from .hubgroupproject import HubGroupProject
 from .exceptions import InvalidCredentialsFormatError, CredentialsNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
 
 def read_credentials_from_qiskitrc(
         filename: Optional[str] = None
-) -> Tuple[Dict[HubGroupProjectTuple, Credentials], str]:
+) -> Tuple[Dict[HubGroupProject, Credentials], str]:
     """Read a configuration file and return a dictionary with its contents.
 
     Args:
@@ -88,7 +88,7 @@ def read_credentials_from_qiskitrc(
 
 
 def write_qiskit_rc(
-        credentials: Dict[HubGroupProjectTuple, Credentials],
+        credentials: Dict[HubGroupProject, Credentials],
         default_provider: str = None,
         filename: Optional[str] = None
 ) -> None:
@@ -122,7 +122,7 @@ def write_qiskit_rc(
         base_name = 'ibmq'
         if credentials_.is_ibmq():
             base_name = '{}_{}_{}_{}'.format(base_name,
-                                             *credentials_.unique_id())
+                                             *credentials_.unique_id().to_tuple())
         return base_name
 
     filename = filename or DEFAULT_QISKITRC_FILE

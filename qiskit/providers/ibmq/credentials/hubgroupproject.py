@@ -14,12 +14,9 @@
 
 """Model for representing a hub/group/project tuple."""
 
-from collections import namedtuple
+from typing import Tuple, Optional
 
 from .exceptions import HubGroupProjectInvalidStateError
-
-HubGroupProjectTuple = namedtuple('HubGroupProjectTuple',
-                                  ['hub', 'group', 'project'])
 
 
 class HubGroupProject:
@@ -80,14 +77,6 @@ class HubGroupProject:
                                for key in ['hub', 'group', 'project']]
         return cls(hub, group, project)
 
-    def to_tuple(self) -> HubGroupProjectTuple:
-        """Returns ``HubGroupProject`` as a tuple.
-
-        Returns:
-            A tuple representation of the hub/group/project.
-        """
-        return HubGroupProjectTuple(self.hub, self.group, self.project)
-
     def to_stored_format(self) -> str:
         """Returns ``HubGroupProject`` as a string, used to store to disk.
 
@@ -107,3 +96,15 @@ class HubGroupProject:
                 'The hub/group/project cannot be stored because it is in an invalid format. '
                 'Every field must be specified: hub = "{}", group = "{}", project = "{}".')
         return '/'.join([self.hub, self.group, self.project])
+
+    def to_tuple(self) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        """Returns ``HubGroupProject`` as a tuple."""
+        return self.hub, self.group, self.project
+
+    def __eq__(self, other: 'HubGroupProject') -> bool:  # type: ignore
+        """Two instances are equal if they define the same hub, group, project."""
+        return (self.hub, self.group, self.project) == (other.hub, other.group, other.project)
+
+    def __hash__(self) -> int:
+        """Returns a hash for an instance."""
+        return hash((self.hub, self.group, self.project))

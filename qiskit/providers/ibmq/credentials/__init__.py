@@ -44,7 +44,7 @@ from typing import Dict, Optional, Tuple, Any
 import logging
 
 from .credentials import Credentials
-from .hubgroupproject import HubGroupProject, HubGroupProjectTuple
+from .hubgroupproject import HubGroupProject
 from .exceptions import CredentialsError, InvalidCredentialsFormatError, CredentialsNotFoundError
 from .configrc import read_credentials_from_qiskitrc, store_credentials
 from .environ import read_credentials_from_environ
@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 
 def discover_credentials(
         qiskitrc_filename: Optional[str] = None
-) -> Tuple[Dict[HubGroupProjectTuple, Credentials], str]:
+) -> Tuple[Dict[HubGroupProject, Credentials], str]:
     """Automatically discover credentials for IBM Quantum Experience.
 
     This method looks for credentials in the following places in order and
@@ -76,7 +76,7 @@ def discover_credentials(
         whereas the format for the default provider is
         ``<hub_name>/<group_name>/<project_name>``.
     """
-    credentials = OrderedDict()  # type: OrderedDict[HubGroupProjectTuple, Credentials]
+    credentials = OrderedDict()  # type: OrderedDict[HubGroupProject, Credentials]
 
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.
