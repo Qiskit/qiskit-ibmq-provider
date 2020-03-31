@@ -131,7 +131,7 @@ def write_qiskit_rc(
     unrolled_credentials = {
         _section_name(credentials_object):
             _credentials_object_to_dict(credentials_object, default_provider)
-        for hub, credentials_object in credentials.items()
+        for _, credentials_object in credentials.items()
     }
 
     # Write the configuration file.
@@ -189,7 +189,7 @@ def remove_credentials(
             configuration file.
     """
     # Set the name of the Provider from the class.
-    stored_credentials, stored_provider = read_credentials_from_qiskitrc(filename)
+    stored_credentials, _ = read_credentials_from_qiskitrc(filename)
 
     try:
         del stored_credentials[credentials.unique_id()]

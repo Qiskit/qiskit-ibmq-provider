@@ -82,7 +82,7 @@ class Credentials:
     def __eq__(self, other: object) -> bool:
         return self.__dict__ == other.__dict__
 
-    def unique_id(self) -> tuple:
+    def unique_id(self) -> Tuple[str, str, str]:
         """Return a value that uniquely identifies these credentials.
 
         By convention, two credentials that have the same hub, group,

@@ -211,7 +211,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
             self.factory.load_account()
 
         self.assertEqual(self.factory._credentials.token, qe_token)
-        self.assertEqual(self.factory._credentials.base_url, qe_url)
+        self.assertEqual(self.factory._credentials.url, qe_url)
 
     @requires_qe_access
     def test_load_account_saved_provider(self, qe_token, qe_url):
@@ -231,7 +231,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
             self.assertEqual(saved_provider, non_default_provider)
 
         self.assertEqual(self.factory._credentials.token, qe_token)
-        self.assertEqual(self.factory._credentials.base_url, qe_url)
+        self.assertEqual(self.factory._credentials.url, qe_url)
 
     @requires_qe_access
     def test_load_account_saved_provider_invalid(self, qe_token, qe_url):

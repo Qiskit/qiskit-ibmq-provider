@@ -46,8 +46,9 @@ from .credentials import Credentials, HubGroupProject, discover_credentials
 from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    remove_credentials,
                                    store_credentials)
+from .credentials.exceptions import HubGroupProjectValueError
 from .credentials.updater import update_credentials
-from .exceptions import (IBMQAccountError, IBMQProviderError,
+from .exceptions import (IBMQAccountError, IBMQAccountValueError, IBMQProviderError,
                          IBMQAccountCredentialsNotFound, IBMQAccountCredentialsInvalidUrl,
                          IBMQAccountCredentialsInvalidToken, IBMQAccountMultipleCredentialsFound)
 
@@ -97,7 +98,8 @@ class IBMQFactory:
                 * verify (bool): verify the server's TLS certificate.
 
         Returns:
-            A provider for the account, as specified by `hgp`.
+            The provider for the default open access project, or a default provider,
+            if specified by `hub`, `group`, `project`.
 
         Raises:
             IBMQAccountError: If an IBM Quantum Experience account is already in
@@ -155,7 +157,8 @@ class IBMQFactory:
         """Authenticate against IBM Quantum Experience from stored credentials.
 
         Returns:
-            The provider for the default open access project.
+            The provider for the default open access project, or a default provider,
+            if specified in the configuration file.
 
         Raises:
             IBMQAccountCredentialsNotFound: If no IBM Quantum Experience credentials
@@ -229,11 +232,11 @@ class IBMQFactory:
         """
         try:
             hgp = HubGroupProject.from_str(hgp_str)
-        except ValueError:
-            raise IBMQAccountError('The default provider stored on disk "%s" is in an '
-                                   'invalid format. Use the '
+        except HubGroupProjectValueError as ex:
+            raise IBMQAccountError('The default provider (hub/group/project) stored on '
+                                   'disk "{}" is in an invalid format. Use the '
                                    '"<hub_name>/<group_name>/<project_name>" format to'
-                                   'specify a provider.') from None
+                                   'specify a provider.') from ex
         return self.get_provider(hub=hgp.hub, group=hgp.group, project=hgp.project)
 
     @staticmethod
@@ -260,10 +263,11 @@ class IBMQFactory:
                 * verify (bool): If False, ignores SSL certificates errors
 
         Raises:
-            IBMQAccountCredentialsInvalidUrl: If the URL is not a valid
+            IBMQAccountCredentialsInvalidUrl: If the `url` is not a valid
                 IBM Quantum Experience authentication URL.
-            IBMQAccountCredentialsInvalidToken: If the token is not a valid
+            IBMQAccountCredentialsInvalidToken: If the `token` is not a valid
                 IBM Quantum Experience token.
+            IBMQAccountValueError: If `hub`, `group`, or `project` is not specified.
         """
         if url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
@@ -275,10 +279,15 @@ class IBMQFactory:
                 'found: "{}" of type {}.'.format(token, type(token)))
 
         credentials = Credentials(token, url, **kwargs)
-        hgp = HubGroupProject(hub=hub, group=group, project=project)
+
+        # hub, group, project are required.
+        if (not hub) or (not group) or (not project):
+            raise IBMQAccountValueError('The hub, group, project fields must all be specified: '
+                                        'hub = "{}", group = "{}", project = "{}".')
+        default_provider_to_store = HubGroupProject(hub, group, project).to_stored_format()
 
         store_credentials(credentials,
-                          default_provider=hgp.to_stored_format(),
+                          default_provider=default_provider_to_store,
                           overwrite=overwrite)
 
     @staticmethod
@@ -293,7 +302,7 @@ class IBMQFactory:
             IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials are found on disk.
         """
-        stored_credentials, stored_provider = read_credentials_from_qiskitrc()
+        stored_credentials, _ = read_credentials_from_qiskitrc()
         if not stored_credentials:
             raise IBMQAccountCredentialsNotFound(
                 'No IBM Quantum Experience credentials found on disk.')
@@ -304,7 +313,7 @@ class IBMQFactory:
 
         credentials = list(stored_credentials.values())[0]
 
-        if credentials.base_url != QX_AUTH_URL:
+        if credentials.url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
                 'Invalid IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
@@ -333,13 +342,13 @@ class IBMQFactory:
 
         credentials = list(stored_credentials.values())[0]
 
-        if credentials.base_url != QX_AUTH_URL:
+        if credentials.url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
                 'Invalid IBM Quantum Experience credentials found on disk. ' + UPDATE_ACCOUNT_TEXT)
 
         return {
             'token': credentials.token,
-            'url': credentials.base_url
+            'url': credentials.url
         }
 
     def active_account(self) -> Optional[Dict[str, str]]:
@@ -355,7 +364,7 @@ class IBMQFactory:
 
         return {
             'token': self._credentials.token,
-            'url': self._credentials.base_url,
+            'url': self._credentials.url,
         }
 
     @staticmethod

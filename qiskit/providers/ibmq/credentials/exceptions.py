@@ -30,3 +30,18 @@ class InvalidCredentialsFormatError(CredentialsError):
 class CredentialsNotFoundError(CredentialsError):
     """Errors raised when the credentials are not found."""
     pass
+
+
+class HubGroupProjectError(IBMQError):
+    """Base class for errors raised by the HubGroupProject module."""
+    pass
+
+
+class InvalidFormatHubGroupProjectError(IBMQError):
+    """Errors raised when a HubGroupProject is in an invalid format."""
+    pass
+
+
+class HubGroupProjectValueError(IBMQError, ValueError):
+    """Value errors raised by the HubGroupProject module."""
+    pass
