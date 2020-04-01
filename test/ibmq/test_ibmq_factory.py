@@ -22,8 +22,7 @@ from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from qiskit.providers.ibmq.exceptions import (IBMQAccountError, IBMQAccountValueError,
                                               IBMQAccountCredentialsInvalidUrl,
-                                              IBMQAccountCredentialsInvalidToken,
-                                              IBMQProviderError)
+                                              IBMQAccountCredentialsInvalidToken)
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory, QX_AUTH_URL
 from qiskit.providers.ibmq.credentials.hubgroupproject import HubGroupProject
 
