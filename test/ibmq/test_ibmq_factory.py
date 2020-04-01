@@ -118,6 +118,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
             ibmq.enable_account(qe_token, qe_url, proxies=proxies)
         self.assertIn('ProxyError', str(context_manager.exception))
 
+    @skipIf(os.name == 'nt', 'Test not supported in Windows')
     @requires_qe_access
     def test_enable_specified_provider(self, qe_token, qe_url):
         """Test enabling an account with a specified provider."""
