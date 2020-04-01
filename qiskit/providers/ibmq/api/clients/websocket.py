@@ -24,7 +24,6 @@ from typing import Dict, Union, Generator, Optional, Any
 from concurrent import futures
 from ssl import SSLError
 import warnings
-import atexit
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
@@ -52,7 +51,6 @@ try:
 except RuntimeError:
     LOOP = asyncio.new_event_loop()
 nest_asyncio.apply(LOOP)
-
 # TODO Replace coroutine with async def once Python 3.5 is dropped.
 # Also can upgrade to websocket 8 to avoid other deprecation warning.
 warnings.filterwarnings("ignore", category=DeprecationWarning,

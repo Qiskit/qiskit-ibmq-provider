@@ -17,6 +17,10 @@
 import asyncio
 from contextlib import suppress
 import warnings
+import sys
+import importlib
+import threading
+
 
 import websockets
 
@@ -50,9 +54,6 @@ class TestWebsocketClient(IBMQTestCase):
 
     def test_asyncio_threading(self):
         """Test asyncio when importing webserver in new thread"""
-        import sys
-        import importlib
-        import threading
 
         def _import_websocket():
             try:
