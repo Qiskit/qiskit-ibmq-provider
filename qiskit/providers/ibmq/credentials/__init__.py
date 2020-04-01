@@ -40,7 +40,7 @@ Exceptions
 """
 
 from collections import OrderedDict
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 import logging
 
 from .credentials import Credentials, HubGroupProject
@@ -72,7 +72,7 @@ def discover_credentials(
         A dictionary of found credentials, if any, in the
         ``{credentials_unique_id: Credentials}`` format.
     """
-    credentials = OrderedDict()  # type: ignore[var-annotated]
+    credentials = OrderedDict()  # type: OrderedDict[HubGroupProject, Credentials]
 
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.
@@ -81,12 +81,12 @@ def discover_credentials(
         ('environment variables', (read_credentials_from_environ, {})),
         ('qiskitrc', (read_credentials_from_qiskitrc,
                       {'filename': qiskitrc_filename}))
-    ])
+    ])  # type: OrderedDict[str, Any]
 
     # Attempt to read the credentials from the different sources.
     for display_name, (reader_function, kwargs) in readers.items():
         try:
-            credentials = reader_function(**kwargs)  # type: ignore[arg-type]
+            credentials = reader_function(**kwargs)
             logger.info('Using credentials from %s', display_name)
             if credentials:
                 break

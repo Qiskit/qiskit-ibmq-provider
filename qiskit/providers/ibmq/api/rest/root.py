@@ -15,12 +15,16 @@
 """Root REST adapter."""
 
 import json
-
+import logging
 from typing import Dict, List, Optional, Any
+
+from qiskit.providers.ibmq.utils.utils import filter_data
 
 from .base import RestAdapterBase
 from .backend import Backend
 from .job import Job
+
+logger = logging.getLogger(__name__)
 
 
 class Api(RestAdapterBase):
@@ -82,6 +86,7 @@ class Api(RestAdapterBase):
             self,
             limit: int = 10,
             skip: int = 0,
+            descending: bool = True,
             extra_filter: Dict[str, Any] = None
     ) -> List[Dict[str, Any]]:
         """Return a list of job information.
@@ -89,6 +94,7 @@ class Api(RestAdapterBase):
         Args:
             limit: Maximum number of items to return.
             skip: Offset for the items to return.
+            descending: Whether the jobs should be in descending order.
             extra_filter: Additional filtering passed to the query.
 
         Returns:
@@ -96,13 +102,19 @@ class Api(RestAdapterBase):
         """
         url = self.get_url('jobs_status')
 
+        order = 'DESC' if descending else 'ASC'
+
         query = {
-            'order': 'creationDate DESC',
+            'order': 'creationDate ' + order,
             'limit': limit,
             'skip': skip,
         }
         if extra_filter:
             query['where'] = extra_filter
+
+        if logger.getEffectiveLevel() is logging.DEBUG:
+            logger.debug("Endpoint: %s. Method: GET. Request Data: {'filter': %s}",
+                         url, filter_data(query))
 
         return self.session.get(
             url, params={'filter': json.dumps(query)}).json()

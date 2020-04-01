@@ -1,4 +1,4 @@
-mypy==0.720
+mypy
 pycodestyle
 pylint>=2.4
 pylintfileheader>=0.0.2
@@ -14,8 +14,11 @@ matplotlib>=2.1
 jupyter
 plotly>=4.4
 ipyvuetify>=1.1
+ipython>=5.0.0
 seaborn>=0.9.0
 pyperclip>=1.7
 jupyter-sphinx
 reno>=2.11.0
-
+scipy>=1.0
+nbformat>=4.4.0
+nbconvert>=5.3.1

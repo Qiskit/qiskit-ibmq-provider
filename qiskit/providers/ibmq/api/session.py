@@ -23,6 +23,7 @@ from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
 from urllib3.util.retry import Retry
 
+from qiskit.providers.ibmq.utils.utils import filter_data
 from .exceptions import RequestsApiError
 from ..version import __version__ as ibmq_provider_version
 
@@ -49,6 +50,26 @@ class PostForcelistRetry(Retry):
     requests are recommended not to be retried due to not being idempotent,
     the IBM Quantum Experience API guarantees that retrying on specific 5xx errors is safe.
     """
+
+    def increment(  # type: ignore[no-untyped-def]
+            self,
+            method=None,
+            url=None,
+            response=None,
+            error=None,
+            _pool=None,
+            _stacktrace=None,
+    ):
+        """Overwrites parent class increment method for logging."""
+        if logger.getEffectiveLevel() is logging.DEBUG:
+            status = data = None
+            if response:
+                status = response.status
+                data = response.data
+            logger.debug("Retrying method=%s, url=%s, status=%s, error=%s, data=%s",
+                         method, url, status, error, data)
+        return super().increment(method=method, url=url, response=response,
+                                 error=error, _pool=_pool, _stacktrace=_stacktrace)
 
     def is_retry(
             self,
@@ -224,9 +245,9 @@ class RetrySession(Session):
             kwargs.update({'timeout': self._timeout})
 
         try:
+            self._log_request_info(url, method, kwargs)
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()
-            self._log_request_info(url, method, kwargs)
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
@@ -300,16 +321,13 @@ class RetrySession(Session):
 
         if self._is_worth_logging(filtered_url):
             try:
-                method = method.upper()
-
-                if filtered_url in ('/Jobs/status', '/devices/.../properties', '/Jobs'):
-                    if filtered_url == '/Jobs' and 'json' in request_data:
-                        # Replace backend name in job submission request.
-                        request_data['json']['backend']['name'] = '...'
-                    logger.debug('Endpoint: %s. Method: %s. Request Data: %s.',
-                                 filtered_url, method, request_data)
-                else:
-                    logger.debug('Endpoint: %s. Method: %s.', filtered_url, method)
+                if logger.getEffectiveLevel() is logging.DEBUG:
+                    request_data_to_log = ""
+                    if filtered_url in ('/devices/.../properties', '/Jobs'):
+                        # Log filtered request data for these endpoints.
+                        request_data_to_log = 'Request Data: {}.'.format(filter_data(request_data))
+                    logger.debug('Endpoint: %s. Method: %s. %s',
+                                 filtered_url, method.upper(), request_data_to_log)
             except Exception as ex:  # pylint: disable=broad-except
                 # Catch general exception so as not to disturb the program if filtering fails.
                 logger.info('Filtering failed when logging request information: %s', str(ex))
@@ -320,18 +338,13 @@ class RetrySession(Session):
         The checks in place help filter out endpoint URL logs that would add noise
         and no helpful information.
 
-        Note:
-            The following endpoint URLs are not logged: ``/devices/v/1`` and
-            ``/devices/<device_name>/queue/status``. Likewise, the endpoint URLs that start
-            with ``/users`` or ``/version``, or contain 'objectstorage', are not logged.
-
         Args:
             endpoint_url: The endpoint URL that will be logged.
 
         Returns:
             Whether the endpoint URL should be logged.
         """
-        if endpoint_url in ('/devices/.../queue/status', '/devices/v/1'):
+        if endpoint_url in ('/devices/.../queue/status', '/devices/v/1', '/Jobs/status'):
             return False
         if endpoint_url.startswith(('/users', '/version')):
             return False

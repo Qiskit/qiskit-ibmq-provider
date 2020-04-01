@@ -16,25 +16,25 @@
 
 import copy
 import time
-from unittest import mock
 from inspect import getfullargspec, isfunction
 import uuid
+from concurrent.futures import wait
 
 from qiskit import QuantumCircuit
 from qiskit.result import Result
 
 from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
 from qiskit.providers.ibmq.managed.managedresults import ManagedResults
+from qiskit.providers.ibmq.managed import managedjob
 from qiskit.providers.ibmq.managed.exceptions import (
     IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
-from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.compiler import transpile, assemble
+from qiskit.test.reference_circuits import ReferenceCircuits
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
-from ..fake_account_client import BaseFakeAccountClient
+from ..fake_account_client import BaseFakeAccountClient, CancelableFakeJob, JobSubmitFailClient
 from ..utils import cancel_job
 
 
@@ -43,7 +43,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
     def setUp(self):
         """Initial test setup."""
-        self._qc = _bell_circuit()
+        self._qc = ReferenceCircuits.bell()
         self._jm = IBMQJobManager()
 
     @requires_provider
@@ -83,10 +83,7 @@ class TestIBMQJobManager(IBMQTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         backend._api = BaseFakeAccountClient()
 
-        circs = []
-        for _ in range(2):
-            circs.append(self._qc)
-        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        job_set = self._jm.run([self._qc]*2, backend=backend, max_experiments_per_job=1)
         self.assertTrue(len(job_set.jobs()), 2)
 
     @requires_provider
@@ -95,10 +92,7 @@ class TestIBMQJobManager(IBMQTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         backend._api = BaseFakeAccountClient()
 
-        circs = []
-        for _ in range(2):
-            circs.append(self._qc)
-        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        job_set = self._jm.run([self._qc]*2, backend=backend, max_experiments_per_job=1)
         jobs = job_set.jobs()
         report = self._jm.report()
         for job in jobs:
@@ -110,10 +104,7 @@ class TestIBMQJobManager(IBMQTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         backend._api = BaseFakeAccountClient()
 
-        circs = []
-        for _ in range(2):
-            circs.append(self._qc)
-        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+        job_set = self._jm.run([self._qc]*2, backend=backend, max_experiments_per_job=1)
         jobs = job_set.jobs()
         jobs[1]._job_id = 'BAD_ID'
         statuses = job_set.statuses()
@@ -148,10 +139,7 @@ class TestIBMQJobManager(IBMQTestCase):
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
         job = backend.run(qobj, validate_qobj=True)
 
-        circs = []
-        for _ in range(4):
-            circs.append(self._qc)
-        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=2)
+        job_set = self._jm.run([self._qc]*4, backend=backend, max_experiments_per_job=2)
         job_set.results()
         job_set.managed_jobs()[1].job = job
 
@@ -163,16 +151,11 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_async_submit_exception(self, provider):
         """Test asynchronous job submit failed."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        backend._api = BaseFakeAccountClient()
+        backend._api = JobSubmitFailClient(max_fail_count=1)
 
-        circs = []
-        for _ in range(2):
-            circs.append(self._qc)
-        with mock.patch.object(IBMQBackend, 'run',
-                               side_effect=[IBMQBackendError("Kaboom!"), mock.DEFAULT]):
-            job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
-        self.assertIsNone(job_set.jobs()[0])
-        self.assertIsNotNone(job_set.jobs()[1])
+        job_set = self._jm.run([self._qc]*2, backend=backend, max_experiments_per_job=1)
+        self.assertTrue(any(job is None for job in job_set.jobs()))
+        self.assertTrue(any(job is not None for job in job_set.jobs()))
 
         # Make sure results() and statuses() don't fail
         job_set.results()
@@ -202,8 +185,7 @@ class TestIBMQJobManager(IBMQTestCase):
         backend._api = BaseFakeAccountClient()
         name = str(time.time()).replace('.', '')
 
-        self._jm.run([self._qc], backend=backend, max_experiments_per_job=1)
-        job_set = self._jm.run([self._qc, self._qc], backend=backend,
+        job_set = self._jm.run([self._qc]*2, backend=backend,
                                name=name, max_experiments_per_job=1)
         rjob_set = self._jm.job_sets(name=name)[0]
         self.assertEqual(job_set, rjob_set)
@@ -257,10 +239,7 @@ class TestIBMQJobManager(IBMQTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         backend._api = BaseFakeAccountClient()
 
-        circs = []
-        for _ in range(2):
-            circs.append(self._qc)
-        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1,
+        job_set = self._jm.run([self._qc]*2, backend=backend, max_experiments_per_job=1,
                                job_share_level="project")
         for job in job_set.jobs():
             job.refresh()
@@ -271,23 +250,17 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_invalid_job_share_level(self, provider):
         """Test setting a non existent share level for managed jobs."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        circs = []
-        for _ in range(2):
-            circs.append(self._qc)
 
         self.assertRaises(IBMQJobManagerInvalidStateError, self._jm.run,
-                          circs, backend=backend, job_share_level="invalid_job_share_level")
+                          [self._qc]*2, backend=backend, job_share_level="invalid_job_share_level")
 
     @requires_provider
     def test_job_tags(self, provider):
         """Test job tags for managed jobs."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        circs = []
-        for _ in range(2):
-            circs.append(self._qc)
 
         job_tags = [uuid.uuid4().hex]
-        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1,
+        job_set = self._jm.run([self._qc]*2, backend=backend, max_experiments_per_job=1,
                                job_tags=job_tags)
         # Wait for jobs to be submitted.
         while JobStatus.INITIALIZING in job_set.statuses():
@@ -303,13 +276,52 @@ class TestIBMQJobManager(IBMQTestCase):
                          "Unexpected jobs retrieved. Job tag used was {}".format(job_tags))
         self.assertEqual(job_set.tags(), job_tags)
 
+    @requires_provider
+    def test_job_limit(self, provider):
+        """Test reaching job limit."""
+        job_limit = 5
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient(
+            job_limit=job_limit, job_class=CancelableFakeJob)
+        provider._api = backend._api
+
+        circs = transpile([self._qc]*(job_limit+2), backend=backend)
+        job_set = None
+        try:
+            with self.assertLogs(managedjob.logger, 'WARNING'):
+                job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=1)
+                time.sleep(1)
+
+            # There should be 5 done and 2 running futures.
+            running_futures = [mjob.future for mjob in job_set.managed_jobs()
+                               if mjob.future.running()]
+            max_wait = 6
+            while len(running_futures) > 2 and max_wait > 0:
+                running_futures = [f for f in running_futures if f.running()]
+                time.sleep(0.5)
+            self.assertEqual(len(running_futures), 2)
+
+            for mjob in job_set.managed_jobs():
+                if mjob.job is not None:
+                    mjob.cancel()
+            self.assertEqual(len(job_set.jobs()), job_limit+2)
+            self.assertTrue(all(job_set.jobs()))
+        finally:
+            # Cancel all submitted jobs first.
+            for mjob in job_set.managed_jobs():
+                if mjob.job is not None:
+                    mjob.cancel()
+                elif job_set._job_submit_lock.locked():
+                    job_set._job_submit_lock.release()
+            wait([mjob.future for mjob in job_set.managed_jobs()], timeout=5)
+
 
 class TestResultManager(IBMQTestCase):
     """Tests for ResultManager."""
 
     def setUp(self):
         """Initial test setup."""
-        self._qc = _bell_circuit()
+        self._qc = ReferenceCircuits.bell()
         self._jm = IBMQJobManager()
 
     @requires_provider
@@ -317,10 +329,8 @@ class TestResultManager(IBMQTestCase):
         """Test indexing results by number."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         max_per_job = 5
-        circs = []
-        for _ in range(max_per_job*2):
-            circs.append(self._qc)
-        job_set = self._jm.run(circs, backend=backend, max_experiments_per_job=max_per_job)
+        job_set = self._jm.run([self._qc]*max_per_job*2, backend=backend,
+                               max_experiments_per_job=max_per_job)
         result_manager = job_set.results()
         jobs = job_set.jobs()
 
@@ -428,12 +438,3 @@ class TestResultManager(IBMQTestCase):
             if isfunction(method) and not name.startswith('_'):
                 cls_methods[name] = method
         return cls_methods
-
-
-def _bell_circuit():
-    """Return a bell state circuit."""
-    qc = QuantumCircuit(2, 2)
-    qc.h(0)
-    qc.cx(0, 1)
-    qc.measure([0, 1], [0, 1])
-    return qc

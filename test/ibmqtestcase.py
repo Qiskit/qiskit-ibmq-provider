@@ -29,14 +29,7 @@ class IBMQTestCase(QiskitTestCase):
     def setUpClass(cls):
         super().setUpClass()
         if os.getenv('LOG_LEVEL'):
-            logger_ibmq_provider = logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME)
-            if logger_ibmq_provider.level is logging.NOTSET:
-                try:
-                    logger_ibmq_provider.setLevel(cls.log.level)
-                except Exception as ex:  # pylint: disable=broad-except
-                    logger_ibmq_provider.warning(
-                        'Error while trying to set the level for the "%s" logger to %s. %s.',
-                        IBMQ_PROVIDER_LOGGER_NAME, os.getenv('LOG_LEVEL'), str(ex))
+            cls._set_logging_level(logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME))
 
     def tearDown(self):
         # Reset the default providers, as in practice they acts as a singleton
@@ -54,3 +47,21 @@ class IBMQTestCase(QiskitTestCase):
         # pylint: disable=unused-argument
         queue_info = kwargs.get('queue_info', 'unknown')
         cls.log.info("Job %s status is %s, queue_info is %s", job_id, job_status, queue_info)
+
+    @classmethod
+    def _set_logging_level(cls, logger: logging.Logger) -> None:
+        """Set logging level for the input logger.
+
+        Args:
+            logger: Logger whose level is to be set.
+        """
+        if logger.level is logging.NOTSET:
+            try:
+                logger.setLevel(cls.log.level)
+            except Exception as ex:  # pylint: disable=broad-except
+                logger.warning(
+                    'Error while trying to set the level for the "%s" logger to %s. %s.',
+                    logger, os.getenv('LOG_LEVEL'), str(ex))
+        if not any(isinstance(handler, logging.StreamHandler) for handler in logger.handlers):
+            logger.addHandler(logging.StreamHandler())
+            logger.propagate = False

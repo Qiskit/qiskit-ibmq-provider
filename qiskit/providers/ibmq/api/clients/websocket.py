@@ -15,7 +15,6 @@
 """Client for communicating with the IBM Quantum Experience API via websocket."""
 
 import asyncio
-import copy
 import json
 import logging
 import time
@@ -31,7 +30,7 @@ from websockets.client import WebSocketClientProtocol
 from websockets.exceptions import InvalidURI
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
-from qiskit.providers.ibmq.utils.utils import RefreshQueue
+from qiskit.providers.ibmq.utils.utils import RefreshQueue, filter_data
 from ..exceptions import (WebsocketError, WebsocketTimeoutError,
                           WebsocketIBMQProtocolError,
                           WebsocketAuthenticationError)
@@ -113,22 +112,6 @@ class WebsocketResponseMethod(WebsocketMessage):
         """Return the message data."""
         return self.data
 
-    def get_data_filtered(self) -> Dict[str, Any]:
-        """Return the message data with certain fields filtered, if they are present.
-
-        Note:
-            Currently, the backend name and hubInfo are the only parts
-            that are filtered out from the message.
-        """
-        data_to_filter = copy.deepcopy(self.data)
-
-        if 'backend' in data_to_filter and 'name' in data_to_filter['backend']:
-            data_to_filter['backend']['name'] = '...'
-        if 'hubInfo' in data_to_filter:
-            data_to_filter['hubInfo'] = '...'
-
-        return data_to_filter
-
     @classmethod
     def from_bytes(cls, json_string: bytes) -> 'WebsocketResponseMethod':
         """Instantiate a message from a bytes response."""
@@ -136,7 +119,7 @@ class WebsocketResponseMethod(WebsocketMessage):
             parsed_dict = json.loads(json_string.decode('utf8'))
         except (ValueError, AttributeError) as ex:
             exception_to_raise = WebsocketIBMQProtocolError(
-                'Unable to parse the message received from the server: {}'.format(json_string))
+                'Unable to parse the message received from the server: {!r}'.format(json_string))
 
             logger.info('An exception occurred. Raising "%s" from "%s"',
                         repr(exception_to_raise), repr(ex))
@@ -300,7 +283,7 @@ class WebsocketClient(BaseClient):
                         last_status = response.data
                         if logger.getEffectiveLevel() is logging.DEBUG:
                             logger.debug('Received message from websocket: %s',
-                                         response.get_data_filtered())
+                                         filter_data(response.get_data()))
 
                         # Share the new status.
                         if status_queue is not None:

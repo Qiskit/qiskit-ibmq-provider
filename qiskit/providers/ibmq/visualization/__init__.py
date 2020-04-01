@@ -35,4 +35,4 @@ Interactive Visualizations
    iplot_error_map
 """
 
-from .interactive import *
+from .interactive import iplot_error_map, iplot_gate_map
