@@ -262,9 +262,9 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
             self.factory.save_account(token=qe_token, url=AUTH_URL,
                                       hub=hgp.hub, group=hgp.group, project=hgp.project)
             stored_cred = self.factory.stored_account()
-            with self.assertRaises(IBMQProviderError) as context_manager:
+            with self.assertRaises(IBMQAccountError) as context_manager:
                 self.factory.load_account()
-            self.assertIn('No provider matches the specified criteria',
+            self.assertIn('The default provider (hub/group/project) stored on',
                           str(context_manager.exception))
 
         self.assertEqual(stored_cred['token'], qe_token)

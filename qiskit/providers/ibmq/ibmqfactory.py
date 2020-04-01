@@ -212,7 +212,8 @@ class IBMQFactory:
                 default_provider = self._get_provider_from_str(stored_provider)
             except IBMQProviderError as ex:
                 raise IBMQAccountError('The default provider (hub/group/project) stored on '
-                                       'disk "{}" could not be found.') from ex
+                                       'disk "{}" could not be found.'
+                                       .format(stored_provider)) from ex
 
         return default_provider
 
