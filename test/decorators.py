@@ -74,6 +74,41 @@ def requires_qe_access(func):
     return _wrapper
 
 
+def requires_providers(func):
+    """Decorator that signals the test uses the online API, via the public/premium providers.
+
+    This decorator delegates into the `requires_qe_access` decorator, but
+    instead of the credentials it appends the `public_provider` and `premium_provider`
+    arguments to the decorated function.
+
+    Args:
+        func (callable): Test function to be decorated.
+
+    Returns:
+        callable: The decorated function.
+    """
+    @wraps(func)
+    @requires_qe_access
+    def _wrapper(*args, **kwargs):
+        ibmq_factory = IBMQFactory()
+        qe_token = kwargs.pop('qe_token')
+        qe_url = kwargs.pop('qe_url')
+
+        # Get the public provider.
+        public_provider = ibmq_factory.enable_account(qe_token, qe_url)
+        # Get the premium provider.
+        premium_provider = _get_custom_provider(ibmq_factory)
+
+        if (not public_provider) or (not premium_provider):
+            raise SkipTest('Requires both a public and premium provider.')
+
+        kwargs.update({'providers': [public_provider, premium_provider]})
+
+        return func(*args, **kwargs)
+
+    return _wrapper
+
+
 def requires_provider(func):
     """Decorator that signals the test uses the online API, via a provider.
 
