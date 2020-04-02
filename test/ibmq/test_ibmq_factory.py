@@ -152,7 +152,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
     def test_save_account(self):
         """Test saving an account."""
         with custom_qiskitrc():
-            self.factory.save_account(token=self.token, url=AUTH_URL)
+            self.factory.save_account(self.token, url=AUTH_URL)
             stored_cred = self.factory.stored_account()
 
         self.assertEqual(stored_cred['token'], self.token)
@@ -179,8 +179,8 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
                 self.assertIn('default_provider', single_credentials)
                 self.assertEqual(single_credentials['default_provider'], default_hgp_to_save)
 
-    def test_save_account_invalid_specified_provider(self):
-        """Test saving an account with an invalid specified provider."""
+    def test_save_account_specified_provider_invalid(self):
+        """Test saving an account without specifying all the hub/group/project fields."""
         invalid_hgps_to_save = [HubGroupProject('', 'default_group', ''),
                                 HubGroupProject('default_hub', None, 'default_project')]
         for invalid_hgp in invalid_hgps_to_save:
@@ -196,7 +196,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
     def test_delete_account(self):
         """Test deleting an account."""
         with custom_qiskitrc():
-            self.factory.save_account(token=self.token, url=AUTH_URL)
+            self.factory.save_account(self.token, url=AUTH_URL)
             self.factory.delete_account()
             stored_cred = self.factory.stored_account()
 
@@ -210,7 +210,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
             self.skipTest('Test requires production auth URL')
 
         with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
-            self.factory.save_account(token=qe_token, url=qe_url)
+            self.factory.save_account(qe_token, url=qe_url)
             self.factory.load_account()
 
         self.assertEqual(self.factory._credentials.token, qe_token)
@@ -258,7 +258,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
     @requires_qe_access
     def test_load_account_saved_provider_invalid_format(self, qe_token, qe_url):
         """Test loading an account that contains a saved provider in an invalid format."""
-        # Format {'test_case': 'error message that should be raised'}
+        # Format {'test_case_input': 'error message from raised exception'}
         invalid_hgps = {
             'hub_group_project': 'Use the "<hub_name>/<group_name>/<project_name>" format',
             'default_hub//default_project': 'Every field must be specified',
