@@ -25,7 +25,6 @@ from .credentials.hubgroupproject import HubGroupProject
 from .credentials.configrc import (read_credentials_from_qiskitrc,
                                    remove_credentials,
                                    store_credentials)
-from .credentials.exceptions import HubGroupProjectInvalidStateError
 from .credentials.updater import update_credentials
 from .exceptions import (IBMQAccountError, IBMQAccountValueError, IBMQProviderError,
                          IBMQAccountCredentialsNotFound, IBMQAccountCredentialsInvalidUrl,
@@ -71,9 +70,9 @@ class IBMQFactory:
             self,
             token: str,
             url: str = QX_AUTH_URL,
-            hub: str = None,
-            group: str = None,
-            project: str = None,
+            hub: Optional[str] = None,
+            group: Optional[str] = None,
+            project: Optional[str] = None,
             **kwargs: Any
     ) -> Optional[AccountProvider]:
         """Authenticate against IBM Quantum Experience for use during the session.
@@ -83,12 +82,15 @@ class IBMQFactory:
             the legacy Quantum Experience and Qconsole (also known as the
             IBM Quantum Experience v1) credentials is no longer supported.
 
+            If using a default provider, all three parameters `hub`, `group`, `project`
+            must be specified.
+
         Args:
             token: IBM Quantum Experience token.
             url: URL for the IBM Quantum Experience authentication server.
-            hub: Name of the hub to filter for.
-            group: Name of the group to filter for.
-            project: Name of the project to filter for.
+            hub: Name of the hub to use.
+            group: Name of the group to use.
+            project: Name of the project to use.
             **kwargs: Additional settings for the connection:
 
                 * proxies (dict): proxy configuration.
@@ -101,6 +103,8 @@ class IBMQFactory:
         Raises:
             IBMQAccountError: If an IBM Quantum Experience account is already in
                 use for the session.
+            IBMQAccountValueError: If only one or two parameters from `hub`, `group`,
+                `project` are specified.
             IBMQAccountCredentialsInvalidUrl: If the URL specified is not
                 a valid IBM Quantum Experience authentication URL.
         """
@@ -129,11 +133,25 @@ class IBMQFactory:
                            'account.')
             return None
 
+        # The provider for the default open access project.
         default_provider = providers[0]
 
-        # Only filter if at least one is set.
-        if hub or group or project:
-            default_provider = self.get_provider(hub=hub, group=group, project=project)
+        # If any `hub`, `group`, or `project` is specified, make sure all parameters are set.
+        if any([hub, group, project]) and not all([hub, group, project]):
+            raise IBMQAccountValueError('The hub, group, project parameters must all be '
+                                        'specified when using a default provider: '
+                                        'hub = "{}", group = "{}", project = "{}"'
+                                        .format(hub, group, project))
+
+        # Attempt to get the provider, if hub, group, project are all specified.
+        if all([hub, group, project]):
+            try:
+                default_provider = self.get_provider(hub=hub, group=group, project=project)
+            except IBMQProviderError as ex:
+                raise IBMQAccountError('The specified default provider (hub/group/project) '
+                                       'to use could not be found:'
+                                       'hub = "{}", group = "{}", project = "{}"'
+                                       .format(hub, group, project)) from ex
 
         return default_provider
 
@@ -167,7 +185,7 @@ class IBMQFactory:
             IBMQAccountError: If the default provider stored on disk could not be found.
         """
         # Check for valid credentials.
-        stored_credentials, stored_provider = discover_credentials()
+        stored_credentials, stored_provider_hgp = discover_credentials()
         credentials_list = list(stored_credentials.values())
 
         if not credentials_list:
@@ -204,61 +222,45 @@ class IBMQFactory:
                            'account.')
             return None
 
+        # The provider for the default open access project.
         default_provider = providers[0]
 
-        # Get the provider stored for the account, if specified.
-        if stored_provider:
+        # Attempt to get the provider stored for the account, if specified.
+        if stored_provider_hgp:
+            hub, group, project = stored_provider_hgp.to_tuple()
             try:
-                default_provider = self._get_provider_from_str(stored_provider)
+                default_provider = self.get_provider(hub=hub, group=group, project=project)
             except IBMQProviderError as ex:
                 raise IBMQAccountError('The default provider (hub/group/project) stored on '
-                                       'disk "{}" could not be found.'
-                                       .format(stored_provider)) from ex
+                                       'disk could not be found: '
+                                       'hub = "{}", group = "{}", project = "{}"'
+                                       .format(hub, group, project)) from ex
 
         return default_provider
-
-    def _get_provider_from_str(self, hgp_str: str) -> AccountProvider:
-        """Return the provider matching the string representation of the hub/group/project.
-
-        Args:
-            hgp_str: The hub, group, project to search for, in the format
-            ``<hub_name>/<group_name>/<project_name>``
-
-        Returns:
-             The provider matching the hub/group/project specified.
-
-        Raises:
-            IBMQAccountError: If the default provider stored on disk is in an invalid format.
-        """
-        try:
-            hgp = HubGroupProject.from_str(hgp_str)
-        except HubGroupProjectInvalidStateError as ex:
-            raise IBMQAccountError('The default provider (hub/group/project) stored on '
-                                   'disk "{}" is in an invalid format. Use the '
-                                   '"<hub_name>/<group_name>/<project_name>" format to'
-                                   'specify a provider.') from ex
-
-        return self.get_provider(hub=hgp.hub, group=hgp.group, project=hgp.project)
 
     @staticmethod
     def save_account(
             token: str,
-            hub: str,
-            group: str,
-            project: str,
             url: str = QX_AUTH_URL,
+            hub: Optional[str] = None,
+            group: Optional[str] = None,
+            project: Optional[str] = None,
             overwrite: bool = False,
             **kwargs: Any
     ) -> None:
         """Save the account to disk for future use.
 
+        Note:
+            If storing a default provider to disk, all three parameters
+            `hub`, `group`, `project` must be specified.
+
         Args:
             token: IBM Quantum Experience token.
             url: URL for the IBM Quantum Experience authentication server.
+            hub: Name of the hub for the default provider to store on disk.
+            group: Name of the group for the default provider to store on disk.
+            project: Name of the project for the default provider to store on disk.
             overwrite: Overwrite existing credentials.
-            hub: Name of the hub for the default provider to store on disk
-            group: Name of the group for the default provider to store on disk
-            project: Name of the project for the default provider to store on disk
             **kwargs:
                 * proxies (dict): Proxy configuration for the server.
                 * verify (bool): If False, ignores SSL certificates errors
@@ -268,7 +270,8 @@ class IBMQFactory:
                 IBM Quantum Experience authentication URL.
             IBMQAccountCredentialsInvalidToken: If the `token` is not a valid
                 IBM Quantum Experience token.
-            IBMQAccountValueError: If `hub`, `group`, or `project` is not specified.
+            IBMQAccountValueError: If only one or two parameters from `hub`, `group`,
+                `project` are specified.
         """
         if url != QX_AUTH_URL:
             raise IBMQAccountCredentialsInvalidUrl(
@@ -281,12 +284,15 @@ class IBMQFactory:
 
         credentials = Credentials(token, url, **kwargs)
 
-        # hub, group, project are required.
-        if (not hub) or (not group) or (not project):
-            raise IBMQAccountValueError('The hub, group, project fields must all be specified: '
+        # If any `hub`, `group`, or `project` is specified, make sure all parameters are set.
+        if any([hub, group, project]) and not all([hub, group, project]):
+            raise IBMQAccountValueError('The hub, group, and project parameters must all be '
+                                        'specified when storing a default provider to disk: '
                                         'hub = "{}", group = "{}", project = "{}"'
                                         .format(hub, group, project))
-        default_provider_to_store = HubGroupProject(hub, group, project).to_stored_format()
+
+        default_provider_to_store = HubGroupProject(hub, group, project).to_stored_format() \
+            if all([hub, group, project]) else None
 
         store_credentials(credentials,
                           default_provider=default_provider_to_store,

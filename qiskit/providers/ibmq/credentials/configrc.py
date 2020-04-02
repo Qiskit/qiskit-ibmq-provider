@@ -34,7 +34,7 @@ DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
 
 def read_credentials_from_qiskitrc(
         filename: Optional[str] = None
-) -> Tuple[Dict[HubGroupProject, Credentials], str]:
+) -> Tuple[Dict[HubGroupProject, Credentials], HubGroupProject]:
     """Read a configuration file and return a dictionary with its contents.
 
     Args:
@@ -45,7 +45,7 @@ def read_credentials_from_qiskitrc(
         A tuple containing the found credentials, if any, and the default
         provider stored, if specified in the configuration file. The format
         for the found credentials is ``{credentials_unique_id: Credentials}``,
-        whereas the format for the default provider is ``<hub_name>/<group_name>/<project_name>``.
+        whereas the default provider is represented as a `HubGroupProject` instance.
 
     Raises:
         InvalidCredentialsFormatError: If the file cannot be parsed. Note
@@ -62,7 +62,7 @@ def read_credentials_from_qiskitrc(
 
     # Build the credentials dictionary.
     credentials_dict = OrderedDict()  # type: ignore[var-annotated]
-    default_provider = None
+    default_provider_hgp = None
     for name in config_parser.sections():
         single_credentials = dict(config_parser.items(name))
 
@@ -76,7 +76,9 @@ def read_credentials_from_qiskitrc(
             single_credentials['verify'] = bool(  # type: ignore[assignment]
                 single_credentials['verify'])
         if 'default_provider' in single_credentials.keys():
-            default_provider = single_credentials['default_provider']
+            default_provider_hgp = HubGroupProject.from_stored_format(
+                single_credentials['default_provider'])
+
             # Delete `default_provider`, since it's not used by the `Credentials` constructor.
             del single_credentials['default_provider']
 
@@ -84,7 +86,7 @@ def read_credentials_from_qiskitrc(
 
         credentials_dict[new_credentials.unique_id()] = new_credentials
 
-    return credentials_dict, default_provider
+    return credentials_dict, default_provider_hgp
 
 
 def write_qiskit_rc(

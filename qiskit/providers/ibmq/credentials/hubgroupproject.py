@@ -34,7 +34,7 @@ class HubGroupProject:
         self.project = project
 
     @classmethod
-    def from_str(cls, hgp: str) -> 'HubGroupProject':
+    def from_stored_format(cls, hgp: str) -> 'HubGroupProject':
         """Instantiates a ``HubGroupProject`` instance from a string.
 
         Note:
@@ -51,13 +51,13 @@ class HubGroupProject:
             hub, group, project = hgp.split('/')
             if (not hub) or (not group) or (not project):
                 raise HubGroupProjectInvalidStateError(
-                    'The hub/group/project specified "{}" is in an invalid format. '
+                    'The hub/group/project "{}" is in an invalid format. '
                     'Every field must be specified: hub = "{}", group = "{}", project = "{}".'
                     .format(hgp, hub, group, project))
         except ValueError:
             # Not enough, or too many, values were provided
             raise HubGroupProjectInvalidStateError(
-                'The hub/group/project specified "{}" is in an invalid format. '
+                'The hub/group/project "{}" is in an invalid format. '
                 'Use the "<hub_name>/<group_name>/<project_name>" format.'
                 .format(hgp))
 
