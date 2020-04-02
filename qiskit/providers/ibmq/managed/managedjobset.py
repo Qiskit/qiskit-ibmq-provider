@@ -401,7 +401,7 @@ class ManagedJobSet:
             'Unable to find the job for experiment {}.'.format(experiment))
 
     @requires_submit
-    def qobjs(self) -> List[QasmQobj, PulseQobj]:
+    def qobjs(self) -> List[Union[QasmQobj, PulseQobj]]:
         """Return the Qobjs for the jobs in this set.
 
         Returns:
