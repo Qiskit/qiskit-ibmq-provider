@@ -125,12 +125,11 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         """Test enabling an account with a specified provider."""
         ibmq = IBMQFactory()
         non_default_provider = get_provider(ibmq, qe_token, qe_url, default=False)
-        with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
-            enabled_provider = ibmq.enable_account(token=qe_token, url=qe_url,
-                                                   hub=non_default_provider.credentials.hub,
-                                                   group=non_default_provider.credentials.group,
-                                                   project=non_default_provider.credentials.project)
-            self.assertEqual(non_default_provider, enabled_provider)
+        enabled_provider = ibmq.enable_account(token=qe_token, url=qe_url,
+                                               hub=non_default_provider.credentials.hub,
+                                               group=non_default_provider.credentials.group,
+                                               project=non_default_provider.credentials.project)
+        self.assertEqual(non_default_provider, enabled_provider)
 
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
@@ -240,7 +239,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
     @requires_qe_access
     def test_load_account_saved_provider_invalid_hgp(self, qe_token, qe_url):
-        """Test loading an account that contains a saved provider that could not be found."""
+        """Test loading an account that contains a saved provider that does not exist."""
         if qe_url != QX_AUTH_URL:
             # .save_account() expects an auth production URL.
             self.skipTest('Test requires production auth URL')
@@ -251,14 +250,10 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
             hgp = HubGroupProject.from_stored_format(invalid_hgp_to_store)
             self.factory.save_account(token=qe_token, url=AUTH_URL,
                                       hub=hgp.hub, group=hgp.group, project=hgp.project)
-            stored_cred = self.factory.stored_account()
             with self.assertRaises(IBMQAccountError) as context_manager:
                 self.factory.load_account()
             self.assertIn('The default provider (hub/group/project) stored on',
                           str(context_manager.exception))
-
-        self.assertEqual(stored_cred['token'], qe_token)
-        self.assertEqual(stored_cred['url'], AUTH_URL)
 
     @requires_qe_access
     def test_load_account_saved_provider_invalid_format(self, qe_token, qe_url):
@@ -302,32 +297,15 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
         self.assertEqual(active_account['token'], qe_token)
         self.assertEqual(active_account['url'], qe_url)
 
-    def test_save_none_token(self):
-        """Test saving an account with token=None. See #391"""
-        with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
-            default_provider_to_store = 'default_hub/default_group/default_project'
-            hgp = HubGroupProject.from_stored_format(default_provider_to_store)
-            self.factory.save_account(token=None,
-                                      hub=hgp.hub, group=hgp.group, project=hgp.project)
-        self.assertIn('Invalid IBM Quantum Experience token', str(context_manager.exception))
-
-    def test_save_empty_token(self):
-        """Test saving an account with token=''. See #391"""
-        with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
-            default_provider_to_store = 'default_hub/default_group/default_project'
-            hgp = HubGroupProject.from_stored_format(default_provider_to_store)
-            self.factory.save_account(token='',
-                                      hub=hgp.hub, group=hgp.group, project=hgp.project)
-        self.assertIn('Invalid IBM Quantum Experience token', str(context_manager.exception))
-
-    def test_save_zero_token(self):
-        """Test saving an account with token=0. See #391"""
-        with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
-            default_provider_to_store = 'default_hub/default_group/default_project'
-            hgp = HubGroupProject.from_stored_format(default_provider_to_store)
-            self.factory.save_account(token=0,
-                                      hub=hgp.hub, group=hgp.group, project=hgp.project)
-        self.assertIn('Invalid IBM Quantum Experience token', str(context_manager.exception))
+    def test_save_token_invalid(self):
+        """Test saving an account with invalid tokens. See #391."""
+        invalid_tokens = [None, '', 0]
+        for invalid_token in invalid_tokens:
+            with self.subTest(invalid_token=invalid_token):
+                with self.assertRaises(IBMQAccountCredentialsInvalidToken) as context_manager:
+                    self.factory.save_account(token=invalid_token)
+                self.assertIn('Invalid IBM Quantum Experience token',
+                              str(context_manager.exception))
 
 
 class TestIBMQFactoryProvider(IBMQTestCase):

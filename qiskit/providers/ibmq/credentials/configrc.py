@@ -51,6 +51,8 @@ def read_credentials_from_qiskitrc(
         InvalidCredentialsFormatError: If the file cannot be parsed. Note
             that this exception is not raised if the input file
             does not exist, and an empty dictionary is returned instead.
+        InvalidCredentialsFormatError: If the default provider stored on
+            disk could not be parsed.
     """
     filename = filename or DEFAULT_QISKITRC_FILE
     config_parser = ConfigParser()

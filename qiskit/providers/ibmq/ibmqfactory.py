@@ -42,8 +42,8 @@ class IBMQFactory:
     """Factory and account manager for IBM Quantum Experience.
 
     If you have access to different providers, you are able to optionally store
-    a specific one in your configuration file. This provider will be default one
-    returned when loading your account via :meth:`load_account`.
+    a default one in your configuration file. This provider will be returned when
+    loading your account via :meth:`load_account`.
 
     To store a default provider, you must specify the ``hub``, ``group``, and
     ``project`` parameters when saving your account via :meth:`save_account`.
@@ -146,12 +146,12 @@ class IBMQFactory:
                                         'hub = "{}", group = "{}", project = "{}"'
                                         .format(hub, group, project))
 
-        # Attempt to get the provider, if hub, group, project are all specified.
+        # If `hub`, `group`, `project` are all specified, attempt to get the corresponding provider.
         if all([hub, group, project]):
             try:
                 default_provider = self.get_provider(hub=hub, group=group, project=project)
             except IBMQProviderError as ex:
-                raise IBMQAccountError('The specified default provider (hub/group/project) '
+                raise IBMQAccountError('The default provider (hub/group/project) '
                                        'to use could not be found:'
                                        'hub = "{}", group = "{}", project = "{}"'
                                        .format(hub, group, project)) from ex
@@ -186,6 +186,8 @@ class IBMQFactory:
             IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials are found.
             IBMQAccountError: If the default provider stored on disk could not be found.
+            HubGroupProjectInvalidStateError: If the default provider stored on disk could
+                not be parsed.
         """
         # Check for valid credentials.
         stored_credentials, stored_provider_hgp = discover_credentials()
@@ -228,7 +230,7 @@ class IBMQFactory:
         # The provider for the default open access project.
         default_provider = providers[0]
 
-        # Attempt to get the provider stored for the account, if specified.
+        # If specified, attempt to get the provider stored for the account.
         if stored_provider_hgp:
             hub, group, project = stored_provider_hgp.to_tuple()
             try:
@@ -294,6 +296,7 @@ class IBMQFactory:
                                         'hub = "{}", group = "{}", project = "{}"'
                                         .format(hub, group, project))
 
+        # If specified, get the provider to store.
         default_provider_to_store = HubGroupProject(hub, group, project).to_stored_format() \
             if all([hub, group, project]) else None
 
