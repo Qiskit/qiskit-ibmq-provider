@@ -126,8 +126,8 @@ class TestIBMQJobManager(IBMQTestCase):
         job_set.results()
         for i, qobj in enumerate(job_set.qobjs()):
             rjob = provider.backends.retrieve_job(jobs[i].job_id())
-            self.maxDiff = None  # Print all diff.
-            self.assertDictEqual(qobj.__dict__, rjob.qobj().__dict__)
+            self.maxDiff = None  # pylint: disable=invalid-name
+            self.assertDictEqual(qobj.to_dict(), rjob.qobj().to_dict())
 
     @requires_provider
     def test_error_message(self, provider):
