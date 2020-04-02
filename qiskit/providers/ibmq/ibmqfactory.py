@@ -41,18 +41,21 @@ UPDATE_ACCOUNT_TEXT = "Please update your accounts and programs by following the
 class IBMQFactory:
     """Factory and account manager for IBM Quantum Experience.
 
-    When saving an account, via :meth:`save_account`, you should specify a default
-    provider to use for the account. This provider will be used when loading your
-    account via :meth:`load_account`.
+    If you have access to different providers, you are able to optionally store
+    a specific one in your configuration file. This provider will be default one
+    returned when loading your account via :meth:`load_account`.
+
+    To store a default provider, you must specify the ``hub``, ``group``, and
+    ``project`` parameters when saving your account via :meth:`save_account`.
 
     For example::
 
         from qiskit import IBMQ
-        IBMQ.save_account('<your_token>', hub=<my_hub>, group=<my_group>, project=<my_project>)
-        # Loads the provider with hub=<my_hub>, group=<my_group>, project=<my_project>
+        IBMQ.save_account('<YOUR_TOKEN>', hub=<MY_HUB>, group=<MY_GROUP>, project=<MY_PROJECT>)
+        # Loads the provider with hub=<MY_HUB>, group=<MY_GROUP>, project=<MY_PROJECT>
         my_default_provider = IBMQ.load_account()
 
-    Similarly, you are able to enable an account with a default provider::
+    Similarly, you could enable an account with a default provider via :meth:`enable_account`::
 
         from qiskit import IBMQ
         # Loads the provider with hub=<my_hub>, group=<my_group>, project=<my_project>
@@ -97,8 +100,8 @@ class IBMQFactory:
                 * verify (bool): verify the server's TLS certificate.
 
         Returns:
-            The provider for the default open access project, or a default provider,
-            if specified by `hub`, `group`, `project`.
+            If `hub`, `group`, and `project` are specified, the corresponding provider
+            is returned. Otherwise the provider for the open access project is returned.
 
         Raises:
             IBMQAccountError: If an IBM Quantum Experience account is already in
@@ -172,8 +175,8 @@ class IBMQFactory:
         """Authenticate against IBM Quantum Experience from stored credentials.
 
         Returns:
-            The provider for the default open access project, or a default provider,
-            if specified in the configuration file.
+            If the configuration file specifies a provider, it is returned.
+            Otherwise the provider for the open access project is returned.
 
         Raises:
             IBMQAccountCredentialsNotFound: If no IBM Quantum Experience credentials
