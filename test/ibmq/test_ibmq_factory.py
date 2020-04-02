@@ -257,7 +257,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
         # Hub, group, project in correct format but does not exists.
         invalid_hgp_to_store = 'invalid_hub/invalid_group/invalid_project'
-        with custom_qiskitrc():
+        with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             hgp = HubGroupProject.from_str(invalid_hgp_to_store)
             self.factory.save_account(token=qe_token, url=AUTH_URL,
                                       hub=hgp.hub, group=hgp.group, project=hgp.project)
