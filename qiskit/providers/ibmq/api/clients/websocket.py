@@ -308,6 +308,7 @@ class WebsocketClient(BaseClient):
                         if ex.code == 4001:
                             message = 'Internal server error'
                         elif ex.code == 4002:
+                            logger.debug("Websocket connection closed with code 4002: %s", str(ex))
                             if status_queue is not None:
                                 status_queue.put(last_status)
                             return last_status  # type: ignore[return-value]
