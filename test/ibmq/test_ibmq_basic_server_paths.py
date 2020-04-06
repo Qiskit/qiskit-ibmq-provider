@@ -36,7 +36,6 @@ class TestIBMQBasicServerPaths(IBMQTestCase):
     def test_job_submission(self):
         """Test submitting a job."""
         for provider in self.providers:
-            print(provider)
             with self.subTest(provider=provider):
                 backend = least_busy(provider.backends())
                 circuit = transpile(self._qc, backend, seed_transpiler=self.seed)
