@@ -120,7 +120,9 @@ class TestBasicServerPaths(IBMQTestCase):
             for backend in provider.backends():
                 provider_backend = {'provider': provider, 'backend': backend}
                 with self.subTest(provider_backend=provider_backend):
-                    self.assertTrue(backend.status())
+                    status = backend.status()
+                    self.assertTrue(status)
+                    self.assertTrue(status.operational)
                     job_limit = backend.job_limit()
                     if desc == 'public_provider':
                         self.assertEqual(job_limit.maximum_jobs, 5)
