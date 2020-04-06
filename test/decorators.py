@@ -99,8 +99,7 @@ def requires_providers(func):
         # Get the premium provider.
         premium_provider = _get_custom_provider(ibmq_factory)
 
-        if ((not public_provider) or (not premium_provider)
-                or (public_provider == premium_provider)):
+        if premium_provider is None:
             raise SkipTest('Requires both a public and premium provider.')
 
         kwargs.update({

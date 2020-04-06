@@ -85,7 +85,7 @@ class TestBasicServerPaths(IBMQTestCase):
                 provider_job = {'provider': provider, 'job': job_id}
                 job_backend_name = job.backend().name()
                 with self.subTest(provider_job=provider_job):
-                    self.assertEqual(job.backend().name(), backend_name,
+                    self.assertEqual(job_backend_name, backend_name,
                                      'Job {} backend name should be "{}", but it is "{}".'
                                      .format(job_id, job_backend_name, backend_name))
                     self.assertEqual(job.status(), JobStatus.ERROR,
