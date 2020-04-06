@@ -65,7 +65,7 @@ class TestBasicServerPaths(IBMQTestCase):
                 job = backend.run(qobj, validate_qobj=True)
 
                 self.assertTrue(job.status())
-                self.assertTrue(job.properties())
+                self.assertIsNotNone(job.properties())
                 cancel_job(job, verify=True)
 
     def test_retrieving_jobs(self):
