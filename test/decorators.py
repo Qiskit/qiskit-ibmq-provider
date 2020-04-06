@@ -75,11 +75,11 @@ def requires_qe_access(func):
 
 
 def requires_providers(func):
-    """Decorator that signals the test uses the online API, via the public/premium providers.
+    """Decorator that signals the test uses the online API, via a public and premium provider.
 
     This decorator delegates into the `requires_qe_access` decorator, but
-    instead of the credentials it appends the `public_provider` and `premium_provider`
-    arguments to the decorated function.
+    instead of the credentials it appends a dictionary, containing the open access project
+    `public_provider` and a `premium_provider`, to the decorated function.
 
     Args:
         func (callable): Test function to be decorated.
@@ -103,7 +103,10 @@ def requires_providers(func):
                 or (public_provider == premium_provider)):
             raise SkipTest('Requires both a public and premium provider.')
 
-        kwargs.update({'providers': [public_provider, premium_provider]})
+        kwargs.update({
+            'providers': {'public_provider': public_provider,
+                          'premium_provider': premium_provider}
+        })
 
         return func(*args, **kwargs)
 
