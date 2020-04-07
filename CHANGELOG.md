@@ -41,6 +41,12 @@ The format is based on [Keep a Changelog].
 - `IBMQJobManager` now looks at the job limit and waits for old jobs
   to finish before submitting new ones if the limit has been reached. (\#533)
 
+### Fixed
+
+- Fixed an issue where `nest_asyncio.apply()` may raise an exception
+  if there is no asyncio loop due to threading. (\#595)
+
+
 ## [0.5.0] - 2020-02-26
 
 ### Added

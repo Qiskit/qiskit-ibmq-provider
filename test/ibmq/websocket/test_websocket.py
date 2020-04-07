@@ -17,6 +17,10 @@
 import asyncio
 from contextlib import suppress
 import warnings
+import sys
+import importlib
+import threading
+
 
 import websockets
 
@@ -25,7 +29,6 @@ from qiskit.providers.ibmq.api.exceptions import (
 from qiskit.providers.ibmq.api.clients.websocket import WebsocketClient
 
 from ...ibmqtestcase import IBMQTestCase
-
 
 from .websocket_server import (
     TOKEN_JOB_COMPLETED, TOKEN_JOB_TRANSITION, TOKEN_WRONG_FORMAT,
@@ -48,6 +51,19 @@ class TestWebsocketClient(IBMQTestCase):
         with self.assertRaises(WebsocketError):
             asyncio.get_event_loop().run_until_complete(
                 client.get_job_status('job_id'))
+
+    def test_asyncio_threading(self):
+        """Test asyncio when importing webserver in new thread"""
+
+        def _import_websocket():
+            try:
+                importlib.reload(sys.modules["qiskit.providers.ibmq.api.clients.websocket"])
+            except RuntimeError:
+                self.fail("Importing websocket in new thread failed due to asyncio!")
+
+        thread = threading.Thread(target=_import_websocket)
+        thread.start()
+        thread.join()
 
 
 class TestWebsocketClientMock(IBMQTestCase):
