@@ -33,10 +33,10 @@ class CredentialsNotFoundError(CredentialsError):
 
 
 class HubGroupProjectError(IBMQError):
-    """Base class for errors raised by the HubGroupProject module."""
+    """Base class for errors raised by the hubgroupproject module."""
     pass
 
 
-class HubGroupProjectInvalidStateError(IBMQError):
+class HubGroupProjectInvalidStateError(HubGroupProjectError):
     """Errors raised when a HubGroupProject is in an invalid state for an operation."""
     pass

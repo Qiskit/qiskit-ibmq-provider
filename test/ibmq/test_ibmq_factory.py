@@ -252,7 +252,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
                                       hub=hgp.hub, group=hgp.group, project=hgp.project)
             with self.assertRaises(IBMQAccountError) as context_manager:
                 self.factory.load_account()
-            self.assertIn('The default provider (hub/group/project) stored on',
+            self.assertIn('(hub/group/project) stored on disk could not be found',
                           str(context_manager.exception))
 
     @requires_qe_access

@@ -14,7 +14,6 @@
 
 """Client for accessing IBM Quantum Experience authentication services."""
 
-import logging
 from typing import Dict, List, Optional, Any
 from requests.exceptions import RequestException
 
@@ -23,8 +22,6 @@ from ..rest import Api, Auth
 from ..session import RetrySession
 
 from .base import BaseClient
-
-logger = logging.getLogger(__name__)
 
 
 class AuthClient(BaseClient):

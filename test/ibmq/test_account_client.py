@@ -23,7 +23,6 @@ from urllib3.exceptions import MaxRetryError
 from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
-from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api.exceptions import ApiError, RequestsApiError
 from qiskit.providers.ibmq.job.utils import get_cancel_status

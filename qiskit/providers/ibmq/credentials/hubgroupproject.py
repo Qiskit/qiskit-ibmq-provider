@@ -39,6 +39,7 @@ class HubGroupProject:
 
         Note:
             The format for the string is ``<hub_name>/<group_name>/<project_name>``.
+            It is saved inside the configuration file to specify a default provider.
 
         Raises:
             HubGroupProjectInvalidStateError: If the specified string, used for conversion, is
@@ -55,7 +56,7 @@ class HubGroupProject:
                     'Every field must be specified: hub = "{}", group = "{}", project = "{}".'
                     .format(hgp, hub, group, project))
         except ValueError:
-            # Not enough, or too many, values were provided
+            # Not enough, or too many, values were provided.
             raise HubGroupProjectInvalidStateError(
                 'The hub/group/project "{}" is in an invalid format. '
                 'Use the "<hub_name>/<group_name>/<project_name>" format.'
@@ -78,15 +79,16 @@ class HubGroupProject:
         return cls(hub, group, project)
 
     def to_stored_format(self) -> str:
-        """Returns ``HubGroupProject`` as a string, used to store to disk.
+        """Returns ``HubGroupProject`` as a string.
 
         Note:
             The format of the string returned is ``<hub_name>/<group_name>/<project_name>``.
+            It is used to save a default provider in the configuration file.
 
         Raises:
             HubGroupProjectInvalidStateError: If the ``HubGroupProject`` cannot be
-                represented as a string to store on disk (i.e. the hub, group, project
-                fields are empty strings or ``None``).
+                represented as a string to store on disk (i.e. Some of the hub, group,
+                project fields are empty strings or ``None``).
 
         Returns:
              A string representation of the hub/group/project, used to store to disk.

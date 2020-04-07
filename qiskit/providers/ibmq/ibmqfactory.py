@@ -65,9 +65,6 @@ class IBMQFactory:
             the legacy Quantum Experience and Qconsole (also known as the
             IBM Quantum Experience v1) credentials is no longer supported.
 
-            If using a default provider, all three parameters `hub`, `group`, `project`
-            must be specified.
-
         Args:
             token: IBM Quantum Experience token.
             url: URL for the IBM Quantum Experience authentication server.
@@ -86,10 +83,10 @@ class IBMQFactory:
         Raises:
             IBMQAccountError: If an IBM Quantum Experience account is already in
                 use for the session.
-            IBMQAccountValueError: If only one or two parameters from `hub`, `group`,
-                `project` are specified.
             IBMQAccountCredentialsInvalidUrl: If the URL specified is not
                 a valid IBM Quantum Experience authentication URL.
+            IBMQProviderError: If no provider matches the specified criteria,
+                or more than one provider matches the specified criteria.
         """
         # Check if an IBM Quantum Experience account is already in use.
         if self._credentials:
