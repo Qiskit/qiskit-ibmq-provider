@@ -24,7 +24,6 @@ from qiskit.providers.ibmq.exceptions import (IBMQAccountError, IBMQAccountValue
                                               IBMQAccountCredentialsInvalidUrl,
                                               IBMQAccountCredentialsInvalidToken)
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory, QX_AUTH_URL
-from qiskit.providers.ibmq.credentials.exceptions import InvalidCredentialsFormatError
 from qiskit.providers.ibmq.credentials.hubgroupproject import HubGroupProject
 
 from ..ibmqtestcase import IBMQTestCase
@@ -275,7 +274,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
                     with open(temp_qiskitrc.tmp_file.name, 'a') as _file:
                         _file.write('default_provider = {}'.format(invalid_hgp))
                     # Ensure an error is raised if the stored provider is in an invalid format.
-                    with self.assertRaises(InvalidCredentialsFormatError) as context_manager:
+                    with self.assertRaises(IBMQAccountError) as context_manager:
                         self.factory.load_account()
                     self.assertIn(error_message, str(context_manager.exception))
 
