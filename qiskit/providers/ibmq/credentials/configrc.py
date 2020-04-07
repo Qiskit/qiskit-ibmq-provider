@@ -51,7 +51,7 @@ def read_credentials_from_qiskitrc(
         InvalidCredentialsFormatError: If the file cannot be parsed. Note
             that this exception is not raised if the input file
             does not exist, and an empty dictionary is returned instead.
-        InvalidCredentialsFormatError: If the default provider stored on
+        HubGroupProjectInvalidStateError: If the default provider stored on
             disk could not be parsed.
     """
     filename = filename or DEFAULT_QISKITRC_FILE
@@ -93,7 +93,7 @@ def read_credentials_from_qiskitrc(
 
 def write_qiskit_rc(
         credentials: Dict[HubGroupProject, Credentials],
-        default_provider: Optional[str] = None,
+        default_provider: Optional[HubGroupProject] = None,
         filename: Optional[str] = None
 ) -> None:
     """Write credentials to the configuration file.
@@ -102,13 +102,13 @@ def write_qiskit_rc(
         credentials: Dictionary with the credentials, in the
             ``{credentials_unique_id: Credentials}`` format.
         default_provider: If specified, the provider to store in the configuration
-            file, in the ``<hub_name>/<group_name>/<project_name>`` format.
+            file, represented as a ``HubGroupProject`` instance.
         filename: Full path to the configuration file. If ``None``, the default
             location is used (``$HOME/.qiskit/qiskitrc``).
     """
     def _credentials_object_to_dict(
             credentials_obj: Credentials,
-            default_provider_to_store: Optional[str]
+            default_provider_to_store: Optional[HubGroupProject]
     ) -> Dict[str, Any]:
         """Convert a ``Credential`` object to a dictionary."""
         credentials_dict = {key: getattr(credentials_obj, key) for key in
@@ -117,7 +117,7 @@ def write_qiskit_rc(
 
         # Save the default provider to disk, if specified.
         if default_provider_to_store:
-            credentials_dict['default_provider'] = default_provider_to_store
+            credentials_dict['default_provider'] = default_provider_to_store.to_stored_format()
 
         return credentials_dict
 
@@ -148,7 +148,7 @@ def write_qiskit_rc(
 
 def store_credentials(
         credentials: Credentials,
-        default_provider: Optional[str] = None,
+        default_provider: Optional[HubGroupProject] = None,
         overwrite: bool = False,
         filename: Optional[str] = None
 ) -> None:
@@ -157,7 +157,7 @@ def store_credentials(
     Args:
         credentials: Credentials to save.
         default_provider: If specified, the provider to store in the configuration
-            file, in the ``<hub_name>/<group_name>/<project_name>`` format.
+            file, represented as a ``HubGroupProject`` instance.
         overwrite: ``True`` if any existing credentials are to be overwritten.
         filename: Full path to the configuration file. If ``None``, the default
             location is used (``$HOME/.qiskit/qiskitrc``).

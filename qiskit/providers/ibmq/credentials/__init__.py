@@ -71,7 +71,7 @@ def discover_credentials(
             file. If ``None``, ``$HOME/.qiskitrc/qiskitrc`` is used.
 
     Raises:
-        InvalidCredentialsFormatError: If the default provider stored on
+        HubGroupProjectInvalidStateError: If the default provider stored on
             disk could not be parsed.
 
     Returns:
@@ -109,9 +109,5 @@ def discover_credentials(
             logger.warning(
                 'Automatic discovery of %s credentials failed: %s',
                 display_name, str(ex))
-        except HubGroupProjectInvalidStateError as ex:
-            raise InvalidCredentialsFormatError(
-                'The default provider (hub/group/project) stored on disk could not '
-                'be parsed: {}'.format(str(ex))) from ex
 
     return credentials, stored_provider_hgp
