@@ -28,8 +28,9 @@ from .credentials.configrc import (read_credentials_from_qiskitrc,
 from .credentials.exceptions import HubGroupProjectInvalidStateError
 from .credentials.updater import update_credentials
 from .exceptions import (IBMQAccountError, IBMQAccountValueError, IBMQProviderError,
-                         IBMQAccountCredentialsNotFound, IBMQAccountCredentialsInvalidUrl,
-                         IBMQAccountCredentialsInvalidToken, IBMQAccountMultipleCredentialsFound)
+                         IBMQAccountCredentialsInvalidFormat, IBMQAccountCredentialsNotFound,
+                         IBMQAccountCredentialsInvalidUrl, IBMQAccountCredentialsInvalidToken,
+                         IBMQAccountMultipleCredentialsFound)
 
 logger = logging.getLogger(__name__)
 
@@ -143,20 +144,22 @@ class IBMQFactory:
             Otherwise the provider for the open access project is returned.
 
         Raises:
+            IBMQAccountCredentialsInvalidFormat: If the default provider stored on
+                disk could not be parsed.
             IBMQAccountCredentialsNotFound: If no IBM Quantum Experience credentials
                 can be found.
             IBMQAccountMultipleCredentialsFound: If multiple IBM Quantum Experience
                 credentials are found.
             IBMQAccountCredentialsInvalidUrl: If invalid IBM Quantum Experience
                 credentials are found.
-            IBMQAccountError: If the default provider stored on disk could not
-                be parsed or found.
+            IBMQProviderError: If the default provider stored on disk could not
+                be found.
         """
         # Check for valid credentials.
         try:
             stored_credentials, stored_provider_hgp = discover_credentials()
         except HubGroupProjectInvalidStateError as ex:
-            raise IBMQAccountError(
+            raise IBMQAccountCredentialsInvalidFormat(
                 'The default provider (hub/group/project) stored on disk could not '
                 'be parsed: {}'.format(str(ex))) from ex
 
@@ -204,12 +207,12 @@ class IBMQFactory:
             try:
                 default_provider = self.get_provider(hub=hub, group=group, project=project)
             except IBMQProviderError as ex:
-                raise IBMQAccountError('The default provider (hub/group/project) stored on '
-                                       'disk could not be found: {}.'
-                                       'To overwrite the default provider stored on disk, use '
-                                       'the save_account(overwrite=True) method and specify the '
-                                       'default provider you would like to save.'
-                                       .format(str(ex))) from ex
+                raise IBMQProviderError('The default provider (hub/group/project) stored on '
+                                        'disk could not be found: {}.'
+                                        'To overwrite the default provider stored on disk, use '
+                                        'the save_account(overwrite=True) method and specify the '
+                                        'default provider you would like to save.'
+                                        .format(str(ex))) from None
 
         return default_provider
 
