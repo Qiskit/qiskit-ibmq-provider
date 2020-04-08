@@ -14,7 +14,6 @@
 
 """Test IBMQJob attributes."""
 
-import logging
 import time
 from unittest import mock
 import re
@@ -23,7 +22,6 @@ import uuid
 from qiskit.test import slow_test
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
@@ -404,7 +402,6 @@ class TestIBMQJobAttributes(JobTestCase):
                                  'Updating the tags for job {} was unsuccessful.'
                                  'The tags are {}, but they should be {}.'
                                  .format(job_id, job.tags(), tags_to_replace))
-                time.sleep(1)  # Cached results may be returned, wait before refresh.
 
     @requires_provider
     def test_job_tags_add(self, provider):
@@ -433,7 +430,6 @@ class TestIBMQJobAttributes(JobTestCase):
                                  'Updating the tags for job {} was unsuccessful.'
                                  'The tags are {}, but they should be {}.'
                                  .format(job_id, job.tags(), tags_after_add))
-                time.sleep(1)  # Cached results may be returned, wait before updating again.
 
     @requires_provider
     def test_job_tags_remove(self, provider):
@@ -449,7 +445,6 @@ class TestIBMQJobAttributes(JobTestCase):
         while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
             time.sleep(0.5)
 
-        ibmq_provider_logger = logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME)
         tags_to_remove_subtests = [
             [],
             initial_job_tags[:2],  # Will be used to remove the first two tags of initial_job_tags.
@@ -458,25 +453,13 @@ class TestIBMQJobAttributes(JobTestCase):
         for tags_to_remove in tags_to_remove_subtests:
             tags_after_removal_set = set(job.tags()) - set(tags_to_remove)
             with self.subTest(tags_to_remove=tags_to_remove):
-                # Assert the appropriate messages were logged.
-                if 'phantom_tag' in tags_to_remove:
-                    # Update the job tags, while capturing the log output.
-                    with self.assertLogs(logger=ibmq_provider_logger,
-                                         level='WARNING') as log_records:
-                        _ = job.update_tags(removal_tags=tags_to_remove)  # Update the job tags.
-                    # Two warnings should have been issued, for `phantom_tag` and `ghost_tag`.
-                    self.assertEqual(len(log_records.output), 2)
-                    self.assertIn('not found in the job tags to update', log_records.output[0])
-                else:
-                    _ = job.update_tags(removal_tags=tags_to_remove)  # Update the job tags.
-
+                _ = job.update_tags(removal_tags=tags_to_remove)  # Update the job tags.
                 # Refresh the job and check that the tags were updated correctly.
                 job.refresh()
                 self.assertEqual(set(job.tags()), tags_after_removal_set,
                                  'Updating the tags for job {} was unsuccessful.'
                                  'The tags are {}, but they should be {}.'
                                  .format(job_id, job.tags(), list(tags_after_removal_set)))
-                time.sleep(1)  # Cached results may be returned, wait before refresh.
 
     @requires_provider
     def test_invalid_job_tags(self, provider):

@@ -370,7 +370,7 @@ class TestIBMQJobManager(IBMQTestCase):
         # Refresh the jobs, check job set id is still present, and assert a log warning
         # was issued for the attempt to remove the job set id from the job's tags.
         job_set.retrieve_jobs(provider, refresh=True)
-        for i, job in enumerate(job_set.jobs()):
+        for job in job_set.jobs():
             job_id = job.job_id()
             with self.subTest(job_id=job_id):
                 self.assertIn(job_set._id_long, job.tags(),

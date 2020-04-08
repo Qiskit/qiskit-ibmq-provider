@@ -80,7 +80,8 @@ class Job(RestAdapterBase):
 
         Args:
             job_attribute_info: A dictionary containing the name of the attribute to
-                update and the new value it should be associated with.
+                update and the new value it should be associated with. The format is
+                {`attribute_name_to_update`: `new_attribute_value`}.
 
         Returns:
             JSON response containing the name of the updated attribute and its

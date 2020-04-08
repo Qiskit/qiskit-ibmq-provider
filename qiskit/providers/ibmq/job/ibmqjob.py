@@ -310,8 +310,8 @@ class IBMQJob(BaseModel, BaseJob):
         # Get the name from the response and check if the update was successful.
         updated_name = response.get('name', None)
         if (updated_name is None) or (name != updated_name):
-            raise IBMQJobUpdateError('An error occurred when updating the name '
-                                     'for job {}. Please, try again.'.format(self.job_id()))
+            raise IBMQJobUpdateError('An unexpected error occurred when updating the name '
+                                     'for job {}.'.format(self.job_id()))
 
         # Cache updated name.
         self._name = updated_name
@@ -333,12 +333,12 @@ class IBMQJob(BaseModel, BaseJob):
               will be ignored.
 
         Args:
-            replacement_tags: The specified tags that should replace the current
-                job tags.
-            additional_tags: The additional tags that should be added to the current
-                job tags.
-            removal_tags: The specified tags that should be removed from the current
-                job tags.
+            replacement_tags: The tags that should replace the current tags
+                associated with this job.
+            additional_tags: The new tags that should be added to the current tags
+                associated with this job.
+            removal_tags: The tags that should be removed from the current tags
+                associated with this job.
 
         Returns:
             The new tags associated with this job.
@@ -350,6 +350,10 @@ class IBMQJob(BaseModel, BaseJob):
             IBMQJobUpdateError: If an unexpected error occurred when updating
                 the job tags.
         """
+        if (replacement_tags is None) and (additional_tags is None) and (removal_tags is None):
+            return self._tags
+
+        # Tags prefix that denotes a job belongs to a jobset.
         ibmq_jobset_prefix = 'ibmq_jobset_'
 
         tags_to_update = set(self._tags)
@@ -358,8 +362,7 @@ class IBMQJob(BaseModel, BaseJob):
         if additional_tags:
             tags_to_update = self._add_tags(tags_to_update, additional_tags)
         if removal_tags:
-            tags_to_update = self._remove_tags(
-                tags_to_update, removal_tags, ibmq_jobset_prefix)
+            tags_to_update = self._remove_tags(tags_to_update, removal_tags, ibmq_jobset_prefix)
 
         with api_to_job_error():
             response = self._api.job_update_attribute(
@@ -368,9 +371,8 @@ class IBMQJob(BaseModel, BaseJob):
         # Get the tags from the response and check if the update was successful.
         updated_tags = response.get('tags', None)
         if (updated_tags is None) or (set(updated_tags) != tags_to_update):
-            raise IBMQJobUpdateError('An error occurred when updating the tags '
-                                     'for job {}. Please, try again.'
-                                     .format(self.job_id()))
+            raise IBMQJobUpdateError('An unexpected error occurred when updating the tags '
+                                     'for job {}.'.format(self.job_id()))
 
         # Cache the updated tags.
         self._tags = updated_tags
@@ -385,10 +387,10 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the updated tags for this job after replacing the current tags.
 
         Args:
-            replacement_tags: The specified tags that will replace the current
-                job tags.
-            jobset_prefix: The tag prefix which denotes a job is associated with a
-                job set.
+            replacement_tags: The tags that should replace the current tags
+                associated with this job.
+            jobset_prefix: The tag prefix which denotes that a job is associated
+                with a job set.
 
         Returns:
             The tags to associate with this job after replacing the current tags.
@@ -406,15 +408,16 @@ class IBMQJob(BaseModel, BaseJob):
         return tags_after_replace
 
     def _add_tags(self, tags_to_update: Set[str], additional_tags: List[str]) -> Set[str]:
-        """Return the updated tags for this job after adding the specified tags.
+        """Return the updated tags for this job after adding the specified additional tags.
 
         Args:
-            tags_to_update: The tags that will be associated with this job.
-            additional_tags: The specified tags that will be added to the current
-                job tags.
+            tags_to_update: The tags that are to be associated with this job.
+            additional_tags: The new tags that should be added to the current tags
+                associated with this job.
 
         Returns:
-            The tags to associate with this job after adding the specified tags.
+            The tags that are to be associated with this job after adding the
+            specified tags.
 
         Raises:
             IBMQJobInvalidStateError: If the input job tags are invalid.
@@ -436,10 +439,11 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the updated tags for this job after removing the specified tags.
 
         Args:
-            tags_to_update: The tags that will be associated with this job.
-            removal_tags: The tags that will be removed from the current job tags.
-            jobset_prefix: The tag prefix which denotes a job is associated with a
-                job set.
+            tags_to_update: The tags that are to be associated with this job.
+            removal_tags: The tags that should be removed from the current tags
+                associated with this job.
+            jobset_prefix: The tag prefix which denotes that a job is associated with
+                a job set.
 
         Returns:
             The tags to associate with this job after removing the specified tags.

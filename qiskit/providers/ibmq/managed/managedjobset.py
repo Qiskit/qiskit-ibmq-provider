@@ -37,7 +37,7 @@ from .utils import requires_submit, format_status_counts, format_job_details
 from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
                          IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet)
 from ..job import IBMQJob
-from ..job.exceptions import IBMQJobTimeoutError
+from ..job.exceptions import IBMQJobTimeoutError, IBMQJobUpdateError
 from ..ibmqbackend import IBMQBackend
 
 logger = logging.getLogger(__name__)
@@ -419,10 +419,20 @@ class ManagedJobSet:
         return self._name
 
     def update_name(self, name: str) -> str:
-        """Update the name of this job set."""
+        """Update the name of this job set.
+
+        Args:
+            name: The new `name` for this job set.
+
+        Returns:
+            The new name associated with this job set.
+        """
         for i, job in enumerate(self.jobs()):
             if job:
-                _ = job.update_name("{}_{}_".format(name, i))
+                try:
+                    _ = job.update_name("{}_{}_".format(name, i))
+                except IBMQJobUpdateError as ex:
+                    logger.warning('%s', str(ex))
 
         # Cache the updated job set name.
         self._name = name
@@ -461,15 +471,38 @@ class ManagedJobSet:
             additional_tags: List[str] = None,
             removal_tags: List[str] = None
     ) -> List[str]:
-        """Update the tags assigned to this job set."""
+        """Update the tags assigned to this job set.
+
+        Note:
+            * Some tags, such as those starting with ``ibmq_jobset``, are used
+              internally by `ibmq-provider` and therefore cannot be modified.
+            * When removing tags, if the job does not have a specified tag, it
+              will be ignored.
+
+        Args:
+            replacement_tags: The tags that should replace the current tags
+                associated with this job set.
+            additional_tags: The new tags that should be added to the current tags
+                associated with this job set.
+            removal_tags: The tags that should be removed from the current tags
+                associated with this job set.
+
+        Returns:
+            The new tags associated with this job set.
+        """
         updated_tags = []  # type: List[str]
         for job in self.jobs():
             if job:
-                updated_tags = job.update_tags(replacement_tags=replacement_tags,
-                                               additional_tags=additional_tags,
-                                               removal_tags=removal_tags)
+                try:
+                    updated_tags = job.update_tags(replacement_tags=replacement_tags,
+                                                   additional_tags=additional_tags,
+                                                   removal_tags=removal_tags)
+                    if not self._tags:
+                        # Cache the updated job set tags and remove the long id.
+                        self._tags = updated_tags
+                        self._tags.remove(self._id_long)
 
-        # Cache the updated job set tags.
-        self._tags = updated_tags
+                except IBMQJobUpdateError as ex:
+                    logger.warning('%s', str(ex))
 
         return updated_tags
