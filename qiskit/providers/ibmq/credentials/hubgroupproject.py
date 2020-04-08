@@ -95,8 +95,9 @@ class HubGroupProject:
         """
         if (not self.hub) or (not self.group) or (not self.project):
             raise HubGroupProjectInvalidStateError(
-                'The hub/group/project cannot be stored because it is in an invalid format. '
-                'Every field must be specified: hub = "{}", group = "{}", project = "{}".')
+                'The hub/group/project cannot be represented in the stored format. '
+                'Every field must be specified: hub = "{}", group = "{}", project = "{}".'
+                .format(self.hub, self.group, self.project))
         return '/'.join([self.hub, self.group, self.project])
 
     def to_tuple(self) -> Tuple[Optional[str], Optional[str], Optional[str]]:
