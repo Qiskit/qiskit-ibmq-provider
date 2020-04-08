@@ -15,7 +15,6 @@
 """Tests for the IBMQJobManager."""
 
 import copy
-import logging
 import time
 from inspect import getfullargspec, isfunction
 import uuid
@@ -30,7 +29,6 @@ from qiskit.providers.ibmq.managed import managedjob
 from qiskit.providers.ibmq.managed.exceptions import (
     IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
 from qiskit.compiler import transpile, assemble
 from qiskit.test.reference_circuits import ReferenceCircuits
 
@@ -340,9 +338,6 @@ class TestIBMQJobManager(IBMQTestCase):
         # Update the tags
         _ = job_set.update_tags(replacement_tags=replacement_tags)
 
-        # TODO: This might need to be removed.
-        time.sleep(1)  # Cached results may be returned, wait before refresh.
-
         # Refresh the jobs and check that the tags were updated correctly.
         job_set.retrieve_jobs(provider, refresh=True)
         for job in job_set.jobs():
@@ -369,14 +364,8 @@ class TestIBMQJobManager(IBMQTestCase):
                   for status in job_set.statuses()):
             time.sleep(0.5)
 
-        ibmq_provider_logger = logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME)
-
-        # Update the job tags, while capturing the log output.
-        with self.assertLogs(logger=ibmq_provider_logger, level='WARNING') as log_records:
-            _ = job_set.update_tags(removal_tags=[job_set._id_long])
-
-        # TODO: This might need to be removed.
-        time.sleep(1)  # Cached results may be returned, wait before refresh.
+        # Update the job tags
+        _ = job_set.update_tags(removal_tags=[job_set._id_long])
 
         # Refresh the jobs, check job set id is still present, and assert a log warning
         # was issued for the attempt to remove the job set id from the job's tags.
@@ -387,8 +376,6 @@ class TestIBMQJobManager(IBMQTestCase):
                 self.assertIn(job_set._id_long, job.tags(),
                               'The job {} with tags {} does not contain the job set '
                               'long id "{}".'.format(job_id, job.tags(), job_set._id_long))
-                # Assert the message of one log record output.
-                self.assertIn('used internally by the ibmq-provider.', log_records.output[i])
 
 
 class TestResultManager(IBMQTestCase):

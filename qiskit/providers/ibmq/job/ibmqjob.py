@@ -368,7 +368,7 @@ class IBMQJob(BaseModel, BaseJob):
         # Get the tags from the response and check if the update was successful.
         updated_tags = response.get('tags', None)
         if (updated_tags is None) or (set(updated_tags) != tags_to_update):
-            raise IBMQJobUpdateError('An error occurred when updating the name '
+            raise IBMQJobUpdateError('An error occurred when updating the tags '
                                      'for job {}. Please, try again.'
                                      .format(self.job_id()))
 
