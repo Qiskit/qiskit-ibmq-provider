@@ -135,6 +135,7 @@ class TestIBMQJobAttributes(JobTestCase):
                 self.assertEqual(job.name(), new_name,
                                  'Updating the name for job {} from "{}" to "{}" '
                                  'was unsuccessful.'.format(job_id, job.name(), new_name))
+                time.sleep(1)  # Cached results may be returned, wait before updating again.
 
     @requires_provider
     def test_duplicate_job_name(self, provider):
@@ -403,6 +404,7 @@ class TestIBMQJobAttributes(JobTestCase):
                                  'Updating the tags for job {} was unsuccessful.'
                                  'The tags are {}, but they should be {}.'
                                  .format(job_id, job.tags(), tags_to_replace))
+                time.sleep(1)  # Cached results may be returned, wait before refresh.
 
     @requires_provider
     def test_job_tags_add(self, provider):
@@ -431,6 +433,7 @@ class TestIBMQJobAttributes(JobTestCase):
                                  'Updating the tags for job {} was unsuccessful.'
                                  'The tags are {}, but they should be {}.'
                                  .format(job_id, job.tags(), tags_after_add))
+                time.sleep(1)  # Cached results may be returned, wait before updating again.
 
     @requires_provider
     def test_job_tags_remove(self, provider):
@@ -473,6 +476,7 @@ class TestIBMQJobAttributes(JobTestCase):
                                  'Updating the tags for job {} was unsuccessful.'
                                  'The tags are {}, but they should be {}.'
                                  .format(job_id, job.tags(), list(tags_after_removal_set)))
+                time.sleep(1)  # Cached results may be returned, wait before refresh.
 
     @requires_provider
     def test_invalid_job_tags(self, provider):
