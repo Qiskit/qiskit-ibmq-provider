@@ -515,7 +515,7 @@ class ManagedJobSet:
             raise IBMQJobManagerValueError(
                 'The tags cannot be updated since none of the parameters are specified.')
 
-        updated_tags = []
+        updated_tags = []  # type: List[str]
         for job in self.jobs():
             if job:
                 try:
