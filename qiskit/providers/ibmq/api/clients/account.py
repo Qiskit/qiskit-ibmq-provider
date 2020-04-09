@@ -464,7 +464,7 @@ class AccountClient(BaseClient):
             attr_value: The new value to associate the job attribute with.
 
         Returns:
-            A dictionary containing the name of the updated attribute and the value
+            A dictionary containing the name of the updated attribute and the new value
             it is associated with.
         """
         return self.client_api.job(job_id).update_attribute({attr_name: attr_value})

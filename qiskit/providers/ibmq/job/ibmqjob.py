@@ -38,7 +38,7 @@ from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..utils.utils import RefreshQueue, validate_job_tags
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError,
-                         IBMQJobUpdateError)
+                         IBMQJobUpdateError, IBMQJobValueError)
 from .queueinfo import QueueInfo
 from .schema import JobResponseSchema
 from .utils import (build_error_report, api_status_to_job_status,
@@ -295,11 +295,12 @@ class IBMQJob(BaseModel, BaseJob):
             IBMQJobInvalidStateError: If the input job name is not a string.
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
+            IBMQJobValueError: If the input job name is not a string.
             IBMQJobUpdateError: If an unexpected error occurred when updating
                 the job name.
         """
         if not isinstance(name, str):
-            raise IBMQJobInvalidStateError(
+            raise IBMQJobValueError(
                 '"{}" of type "{}" is not a valid job name. '
                 'The job name needs to be a string.'.format(name, type(str)))
 
@@ -310,8 +311,9 @@ class IBMQJob(BaseModel, BaseJob):
         # Get the name from the response and check if the update was successful.
         updated_name = response.get('name', None)
         if (updated_name is None) or (name != updated_name):
-            raise IBMQJobUpdateError('An unexpected error occurred when updating the name '
-                                     'for job {}.'.format(self.job_id()))
+            raise IBMQJobUpdateError('An unexpected error occurred when updating the '
+                                     'name for job {}: The name was not updated for '
+                                     'the job.'.format(self.job_id()))
 
         # Cache updated name.
         self._name = updated_name
@@ -347,11 +349,13 @@ class IBMQJob(BaseModel, BaseJob):
             IBMQJobInvalidStateError: If the input job tags are invalid.
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
+            IBMQJobValueError: If none of the input parameters are specified.
             IBMQJobUpdateError: If an unexpected error occurred when updating
                 the job tags.
         """
         if (replacement_tags is None) and (additional_tags is None) and (removal_tags is None):
-            return self._tags
+            raise IBMQJobValueError(
+                'The tags cannot be updated since none of the parameters are specified.')
 
         # Tags prefix that denotes a job belongs to a jobset.
         ibmq_jobset_prefix = 'ibmq_jobset_'
@@ -371,8 +375,9 @@ class IBMQJob(BaseModel, BaseJob):
         # Get the tags from the response and check if the update was successful.
         updated_tags = response.get('tags', None)
         if (updated_tags is None) or (set(updated_tags) != tags_to_update):
-            raise IBMQJobUpdateError('An unexpected error occurred when updating the tags '
-                                     'for job {}.'.format(self.job_id()))
+            raise IBMQJobUpdateError('An unexpected error occurred when updating the '
+                                     'tags for job {}: The tags were not updated for '
+                                     'the job.'.format(self.job_id()))
 
         # Cache the updated tags.
         self._tags = updated_tags
@@ -408,7 +413,7 @@ class IBMQJob(BaseModel, BaseJob):
         return tags_after_replace
 
     def _add_tags(self, tags_to_update: Set[str], additional_tags: List[str]) -> Set[str]:
-        """Return the updated tags for this job after adding the specified additional tags.
+        """Return the updated tags for this job after adding the specified tags.
 
         Args:
             tags_to_update: The tags that are to be associated with this job.

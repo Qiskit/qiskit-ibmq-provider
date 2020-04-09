@@ -35,7 +35,8 @@ from .managedjob import ManagedJob
 from .managedresults import ManagedResults
 from .utils import requires_submit, format_status_counts, format_job_details
 from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
-                         IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet)
+                         IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet,
+                         IBMQJobManagerValueError)
 from ..job import IBMQJob
 from ..job.exceptions import IBMQJobTimeoutError, IBMQJobUpdateError
 from ..ibmqbackend import IBMQBackend
@@ -426,15 +427,30 @@ class ManagedJobSet:
 
         Returns:
             The new name associated with this job set.
+
+        Raises:
+            IBMQJobManagerValueError: If the input job name is not a string.
+            IBMQJobManagerInvalidStateError: If there was an error with updating the names
+                for the jobs in the job set.
         """
+        if not isinstance(name, str):
+            raise IBMQJobManagerValueError(
+                '"{}" of type "{}" is not a valid job name. '
+                'The job name needs to be a string.'.format(name, type(str)))
+
         for i, job in enumerate(self.jobs()):
             if job:
                 try:
                     _ = job.update_name("{}_{}_".format(name, i))
                 except IBMQJobUpdateError as ex:
-                    logger.warning('%s', str(ex))
+                    raise IBMQJobManagerInvalidStateError(
+                        "An error occurred when updating the name for this job set: {}"
+                        "As a result, some of the jobs in this set may not have been "
+                        "updated. Please try updating the job set's name again "
+                        "to update the tags for all jobs in this set."
+                        .format(str(ex))) from ex
 
-        # Cache the updated job set name.
+        # If the update is successful for all jobs, cache the updated job set name.
         self._name = name
 
         return self._name
@@ -489,20 +505,36 @@ class ManagedJobSet:
 
         Returns:
             The new tags associated with this job set.
+
+        Raises:
+            IBMQJobManagerValueError: If none of the input parameters are specified.
+            IBMQJobManagerInvalidStateError: If there was an error with updating the tags
+                for the jobs in the job set.
         """
-        updated_tags = []  # type: List[str]
+        if (replacement_tags is None) and (additional_tags is None) and (removal_tags is None):
+            raise IBMQJobManagerValueError(
+                'The tags cannot be updated since none of the parameters are specified.')
+
+        updated_tags = []
         for job in self.jobs():
             if job:
                 try:
                     updated_tags = job.update_tags(replacement_tags=replacement_tags,
                                                    additional_tags=additional_tags,
                                                    removal_tags=removal_tags)
-                    if not self._tags:
-                        # Cache the updated job set tags and remove the long id.
-                        self._tags = updated_tags
-                        self._tags.remove(self._id_long)
 
                 except IBMQJobUpdateError as ex:
-                    logger.warning('%s', str(ex))
 
-        return updated_tags
+                    raise IBMQJobManagerInvalidStateError(
+                        "An error occurred when updating the tags for this job set: {}"
+                        "As a result, some of the jobs in this set may not have been "
+                        "updated. Please try updating the job set's tags again "
+                        "to update the tags for all jobs in this set."
+                        .format(str(ex))) from ex
+
+        # If the update is successful for all jobs, cache the updated job
+        # set tags and remove the long id.
+        self._tags = updated_tags
+        self._tags.remove(self._id_long)
+
+        return self._tags

@@ -16,6 +16,12 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Added
+
+- `IBMQJob` and `ManagedJobSet` both have two new methods `update_name()` and 
+  `update_tags()`. They are used to change the name and tags of a job or job set, 
+  respectively. (\#590)
+
 ## [0.6.0] - 2020-03-26
 
 ### Added
@@ -32,8 +38,6 @@ The format is based on [Keep a Changelog].
   mode the job is in. (\#593)
 - IQX-related tutorials that used to be in `qiskit-iqx-tutorials` are now in 
   `qiskit-ibmq-provider`. (\#603)
-- `IBMQJob` now has two new methods `update_name()` and `update_tags()`. The methods
-  are used to change a job's name and tags, respectively. (\#590)
 
 ### Changed
 

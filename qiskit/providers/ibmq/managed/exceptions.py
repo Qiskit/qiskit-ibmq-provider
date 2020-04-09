@@ -22,6 +22,11 @@ class IBMQJobManagerError(IBMQError):
     pass
 
 
+class IBMQJobManagerValueError(IBMQError):
+    """Value errors raised by the Job manager."""
+    pass
+
+
 class IBMQJobManagerInvalidStateError(IBMQJobManagerError):
     """Errors raised when an operation is invoked in an invalid state."""
     pass
