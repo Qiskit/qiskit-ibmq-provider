@@ -85,6 +85,7 @@ class custom_qiskitrc(ContextDecorator):
     def __enter__(self):
         # Temporarily modify the default location of the qiskitrc file.
         configrc.DEFAULT_QISKITRC_FILE = self.tmp_file.name
+        return self
 
     def __exit__(self, *exc):
         # Delete the temporary file and restore the default location.

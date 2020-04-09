@@ -22,7 +22,6 @@ import copy
 from typing import List, Optional, Type, Any, Dict, Union, Tuple
 from threading import Condition
 from queue import Queue
-from logging import Logger
 
 
 def to_python_identifier(name: str) -> str:
@@ -64,7 +63,7 @@ def validate_job_tags(job_tags: Optional[List[str]], exception: Type[Exception])
         raise exception("job_tags needs to be a list or strings.")
 
 
-def setup_logger(logger: Logger) -> None:
+def setup_logger(logger: logging.Logger) -> None:
     """Setup the logger for the provider modules with the appropriate level.
 
     It involves:
