@@ -440,7 +440,7 @@ class TestIBMQJobAttributes(JobTestCase):
                 self.assertEqual(set(job.tags()), set(tags_after_add),
                                  'Updating the tags for job {} was unsuccessful.'
                                  'The tags are {}, but they should be {}.'
-                                 .format(job_id, job.tags(), tags_after_add))
+                                 .format(job_id, job.tags(), list(tags_after_add)))
 
     @requires_provider
     def test_job_tags_remove(self, provider):

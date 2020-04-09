@@ -364,18 +364,21 @@ class TestIBMQJobManager(IBMQTestCase):
                   for status in job_set.statuses()):
             time.sleep(0.5)
 
-        # Update the job tags
-        _ = job_set.update_tags(removal_tags=[job_set._id_long])
+        initial_job_tags_with_id_long = initial_job_tags + [job_set._id_long]
 
-        # Refresh the jobs, check job set id is still present, and assert a log warning
-        # was issued for the attempt to remove the job set id from the job's tags.
+        # Update the job tags
+        _ = job_set.update_tags(removal_tags=initial_job_tags_with_id_long)
+
+        # Refresh the jobs, and check that the job set long id is still present
+        # after updating.
         job_set.retrieve_jobs(provider, refresh=True)
         for job in job_set.jobs():
             job_id = job.job_id()
             with self.subTest(job_id=job_id):
-                self.assertIn(job_set._id_long, job.tags(),
-                              'The job {} with tags {} does not contain the job set '
-                              'long id "{}".'.format(job_id, job.tags(), job_set._id_long))
+                self.assertEqual(job.tags(), [job_set._id_long],
+                                 'Updating the tags for job {} was unsuccessful.'
+                                 'The tags are {}, but they should be {}.'
+                                 .format(job_id, job.tags(), [job_set._id_long]))
 
 
 class TestResultManager(IBMQTestCase):
