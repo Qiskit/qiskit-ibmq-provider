@@ -22,6 +22,12 @@ The format is based on [Keep a Changelog].
   `update_tags()`. They are used to change the name and tags of a job or job set, 
   respectively. (\#590)
 
+### Changed
+
+- `IBMQFactory.save_account()` and `IBMQFactory.enable_account()` now accept
+  the optional parameters `hub`, `group`, `project`, which allow specifying a 
+  default provider to save to disk or use, respectively. (\#611)
+
 ## [0.6.0] - 2020-03-26
 
 ### Added
@@ -46,6 +52,12 @@ The format is based on [Keep a Changelog].
   descending or ascending order. (\#533) 
 - `IBMQJobManager` now looks at the job limit and waits for old jobs
   to finish before submitting new ones if the limit has been reached. (\#533)
+
+### Fixed
+
+- Fixed an issue where `nest_asyncio.apply()` may raise an exception
+  if there is no asyncio loop due to threading. (\#595)
+
 
 ## [0.5.0] - 2020-02-26
 

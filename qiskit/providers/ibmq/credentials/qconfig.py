@@ -16,10 +16,11 @@
 
 import os
 from collections import OrderedDict
-from typing import Dict
+from typing import Dict, Tuple
 from importlib.util import module_from_spec, spec_from_file_location
 
-from .credentials import Credentials, HubGroupProject
+from .credentials import Credentials
+from .hubgroupproject import HubGroupProject
 from .exceptions import InvalidCredentialsFormatError
 
 DEFAULT_QCONFIG_FILE = 'Qconfig.py'

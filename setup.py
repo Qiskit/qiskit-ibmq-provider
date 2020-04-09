@@ -22,7 +22,11 @@ REQUIREMENTS = [
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
     "websockets>=7,<8",
-    "arrow>=0.15.5"
+    "arrow>=0.15.5",
+    "marshmallow>=3,<4",
+    "numpy>=1.13",
+    "urllib3>=1.21.1",
+    "python-dateutil>=2.8.0"
 ]
 
 # Handle version.
@@ -83,5 +87,6 @@ setup(
     zip_safe=False,
     extras_require={'visualization': ['matplotlib>=2.1', 'ipywidgets>=7.3.0',
                                       "seaborn>=0.9.0", "plotly>=4.4",
-                                      "ipyvuetify>=1.1", "pyperclip>=1.7"]},
+                                      "ipyvuetify>=1.1", "pyperclip>=1.7",
+                                      "ipython>=5.0.0"]},
 )

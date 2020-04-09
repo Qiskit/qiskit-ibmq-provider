@@ -43,8 +43,13 @@ logger = logging.getLogger(__name__)
 # `asyncio` by design does not allow event loops to be nested. Jupyter (really
 # tornado) has its own event loop already so we need to patch it.
 # Patch asyncio to allow nested use of `loop.run_until_complete()`.
-nest_asyncio.apply()
-
+# Before applying the patch, check if an event loop is available otherwise
+# create one and set it active, also register cleanup for end
+try:
+    LOOP = asyncio.get_event_loop()
+except RuntimeError:
+    LOOP = asyncio.new_event_loop()
+nest_asyncio.apply(LOOP)
 # TODO Replace coroutine with async def once Python 3.5 is dropped.
 # Also can upgrade to websocket 8 to avoid other deprecation warning.
 warnings.filterwarnings("ignore", category=DeprecationWarning,
@@ -114,7 +119,7 @@ class WebsocketResponseMethod(WebsocketMessage):
             parsed_dict = json.loads(json_string.decode('utf8'))
         except (ValueError, AttributeError) as ex:
             exception_to_raise = WebsocketIBMQProtocolError(
-                'Unable to parse the message received from the server: {}'.format(json_string))
+                'Unable to parse the message received from the server: {!r}'.format(json_string))
 
             logger.info('An exception occurred. Raising "%s" from "%s"',
                         repr(exception_to_raise), repr(ex))
@@ -308,6 +313,7 @@ class WebsocketClient(BaseClient):
                         if ex.code == 4001:
                             message = 'Internal server error'
                         elif ex.code == 4002:
+                            logger.debug("Websocket connection closed with code 4002: %s", str(ex))
                             if status_queue is not None:
                                 status_queue.put(last_status)
                             return last_status  # type: ignore[return-value]
