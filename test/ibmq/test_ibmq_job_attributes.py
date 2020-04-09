@@ -129,11 +129,13 @@ class TestIBMQJobAttributes(JobTestCase):
         for new_name in new_names_to_test:
             with self.subTest(new_name=new_name):
                 _ = job.update_name(new_name)  # Update the job name.
+                # Cached results may be returned if updating too quickly.
+                # Wait before updating again.
+                time.sleep(1)
                 job.refresh()
                 self.assertEqual(job.name(), new_name,
                                  'Updating the name for job {} from "{}" to "{}" '
                                  'was unsuccessful.'.format(job_id, job.name(), new_name))
-                time.sleep(1)  # Cached results may be returned, wait before updating again.
 
     @requires_provider
     def test_duplicate_job_name(self, provider):
@@ -397,6 +399,9 @@ class TestIBMQJobAttributes(JobTestCase):
         for tags_to_replace in tags_to_replace_subtests:
             with self.subTest(tags_to_replace=tags_to_replace):
                 _ = job.update_tags(replacement_tags=tags_to_replace)  # Update the job tags.
+                # Cached results may be returned if updating the same job too quickly.
+                # Wait before updating again.
+                time.sleep(1)
                 job.refresh()
                 self.assertEqual(set(job.tags()), set(tags_to_replace),
                                  'Updating the tags for job {} was unsuccessful.'
@@ -425,6 +430,9 @@ class TestIBMQJobAttributes(JobTestCase):
             tags_after_add = job.tags() + tags_to_add
             with self.subTest(tags_to_add=tags_to_add):
                 _ = job.update_tags(additional_tags=tags_to_add)  # Update the job tags.
+                # Cached results may be returned if updating the same job too quickly.
+                # Wait before updating again.
+                time.sleep(1)
                 job.refresh()
                 self.assertEqual(set(job.tags()), set(tags_after_add),
                                  'Updating the tags for job {} was unsuccessful.'
@@ -454,7 +462,9 @@ class TestIBMQJobAttributes(JobTestCase):
             tags_after_removal_set = set(job.tags()) - set(tags_to_remove)
             with self.subTest(tags_to_remove=tags_to_remove):
                 _ = job.update_tags(removal_tags=tags_to_remove)  # Update the job tags.
-                # Refresh the job and check that the tags were updated correctly.
+                # Cached results may be returned if updating the same job too quickly.
+                # Wait before updating again.
+                time.sleep(1)
                 job.refresh()
                 self.assertEqual(set(job.tags()), tags_after_removal_set,
                                  'Updating the tags for job {} was unsuccessful.'

@@ -292,7 +292,6 @@ class IBMQJob(BaseModel, BaseJob):
             The new name associated with this job.
 
         Raises:
-            IBMQJobInvalidStateError: If the input job name is not a string.
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
             IBMQJobValueError: If the input job name is not a string.
@@ -346,7 +345,6 @@ class IBMQJob(BaseModel, BaseJob):
             The new tags associated with this job.
 
         Raises:
-            IBMQJobInvalidStateError: If the input job tags are invalid.
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
             IBMQJobValueError: If none of the input parameters are specified.

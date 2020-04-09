@@ -447,7 +447,7 @@ class ManagedJobSet:
                         "An error occurred when updating the name for this job set: {}"
                         "As a result, some of the jobs in this set may not have been "
                         "updated. Please try updating the job set's name again "
-                        "to update the tags for all jobs in this set."
+                        "to update the name for all jobs in this set."
                         .format(str(ex))) from ex
 
         # If the update is successful for all jobs, cache the updated job set name.
@@ -524,7 +524,6 @@ class ManagedJobSet:
                                                    removal_tags=removal_tags)
 
                 except IBMQJobUpdateError as ex:
-
                     raise IBMQJobManagerInvalidStateError(
                         "An error occurred when updating the tags for this job set: {}"
                         "As a result, some of the jobs in this set may not have been "
