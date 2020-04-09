@@ -94,13 +94,13 @@ def requires_providers(func):
         qe_token = kwargs.pop('qe_token')
         qe_url = kwargs.pop('qe_url')
 
-        # Get the public provider.
+        # Get the open access project public provider.
         public_provider = ibmq_factory.enable_account(qe_token, qe_url)
-        # Get the premium provider.
+        # Get a premium provider.
         premium_provider = _get_custom_provider(ibmq_factory)
 
         if premium_provider is None:
-            raise SkipTest('Requires both a public and premium provider.')
+            raise SkipTest('Requires both the public provider and a premium provider.')
 
         kwargs.update({
             'providers': {'public_provider': public_provider,
