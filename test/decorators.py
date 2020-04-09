@@ -165,8 +165,8 @@ def _get_credentials():
         Credentials: set of credentials
 
     Raises:
-        Exception: when the credential could not be set and they are needed
-            for that set of options
+        Exception: When the credential could not be set and they are needed
+            for that set of options.
     """
     if os.getenv('USE_STAGING_CREDENTIALS', ''):
         # Special case: instead of using the standard credentials mechanism,
@@ -175,7 +175,7 @@ def _get_credentials():
         return Credentials(os.getenv('QE_STAGING_TOKEN'), os.getenv('QE_STAGING_URL'))
 
     # Attempt to read the standard credentials.
-    discovered_credentials = discover_credentials()
+    discovered_credentials, _ = discover_credentials()
 
     if discovered_credentials:
         # Decide which credentials to use for testing.

@@ -48,7 +48,8 @@ def update_credentials(force: bool = False) -> Optional[Credentials]:
         update. Otherwise ``None``.
     """
     # Get the list of stored credentials.
-    credentials_list = list(read_credentials_from_qiskitrc().values())
+    stored_credentials, _ = read_credentials_from_qiskitrc()
+    credentials_list = list(stored_credentials.values())
 
     new_credentials = []
     hub_lines = []
