@@ -38,7 +38,7 @@ from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..utils.utils import RefreshQueue, validate_job_tags
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError,
-                         IBMQJobUpdateError, IBMQJobValueError)
+                         IBMQJobUpdateError)
 from .queueinfo import QueueInfo
 from .schema import JobResponseSchema
 from .utils import (build_error_report, api_status_to_job_status,
@@ -294,12 +294,12 @@ class IBMQJob(BaseModel, BaseJob):
         Raises:
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
-            IBMQJobValueError: If the input job name is not a string.
+            IBMQJobInvalidStateError: If the input job name is not a string.
             IBMQJobUpdateError: If an unexpected error occurred when updating
                 the job name.
         """
         if not isinstance(name, str):
-            raise IBMQJobValueError(
+            raise IBMQJobInvalidStateError(
                 '"{}" of type "{}" is not a valid job name. '
                 'The job name needs to be a string.'.format(name, type(str)))
 
@@ -347,12 +347,12 @@ class IBMQJob(BaseModel, BaseJob):
         Raises:
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
-            IBMQJobValueError: If none of the input parameters are specified.
+            IBMQJobInvalidStateError: If none of the input parameters are specified.
             IBMQJobUpdateError: If an unexpected error occurred when updating
                 the job tags.
         """
         if (replacement_tags is None) and (additional_tags is None) and (removal_tags is None):
-            raise IBMQJobValueError(
+            raise IBMQJobInvalidStateError(
                 'The tags cannot be updated since none of the parameters are specified.')
 
         # Tags prefix that denotes a job belongs to a jobset.
@@ -387,7 +387,7 @@ class IBMQJob(BaseModel, BaseJob):
             replacement_tags: List[str],
             jobset_prefix: str
     ) -> Set[str]:
-        """Return the updated tags for this job after replacing the current tags.
+        """Return the tags to update for this job after replacing the current tags.
 
         Args:
             replacement_tags: The tags that should replace the current tags
@@ -411,7 +411,7 @@ class IBMQJob(BaseModel, BaseJob):
         return tags_after_replace
 
     def _add_tags(self, tags_to_update: Set[str], additional_tags: List[str]) -> Set[str]:
-        """Return the updated tags for this job after adding the specified tags.
+        """Return the tags to update for this job after adding the specified tags.
 
         Args:
             tags_to_update: The tags that are to be associated with this job.
@@ -439,7 +439,7 @@ class IBMQJob(BaseModel, BaseJob):
             removal_tags: List[str],
             jobset_prefix: str
     ) -> Set[str]:
-        """Return the updated tags for this job after removing the specified tags.
+        """Return the tags to update for this job after removing the specified tags.
 
         Args:
             tags_to_update: The tags that are to be associated with this job.

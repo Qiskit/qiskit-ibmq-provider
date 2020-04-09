@@ -24,11 +24,6 @@ class IBMQJobError(JobError, IBMQError):
     pass
 
 
-class IBMQJobValueError(IBMQJobError, ValueError):
-    """Value errors raised by the job modules."""
-    pass
-
-
 class IBMQJobApiError(IBMQJobError):
     """Errors that occur unexpectedly when querying the server."""
     pass

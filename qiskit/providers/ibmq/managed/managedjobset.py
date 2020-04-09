@@ -36,7 +36,7 @@ from .managedresults import ManagedResults
 from .utils import requires_submit, format_status_counts, format_job_details
 from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
                          IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet,
-                         IBMQJobManagerValueError, IBMQJobManagerUpdateError)
+                         IBMQJobManagerUpdateError)
 from ..job import IBMQJob
 from ..job.exceptions import IBMQJobTimeoutError, IBMQJobUpdateError
 from ..ibmqbackend import IBMQBackend
@@ -429,12 +429,12 @@ class ManagedJobSet:
             The new name associated with this job set.
 
         Raises:
-            IBMQJobManagerValueError: If the input job name is not a string.
+            IBMQJobManagerInvalidStateError: If the input job name is not a string.
             IBMQJobManagerUpdateError: If there was an error with updating the names
                 for the jobs in the job set.
         """
         if not isinstance(name, str):
-            raise IBMQJobManagerValueError(
+            raise IBMQJobManagerInvalidStateError(
                 '"{}" of type "{}" is not a valid job name. '
                 'The job name needs to be a string.'.format(name, type(str)))
 
@@ -507,12 +507,12 @@ class ManagedJobSet:
             The new tags associated with this job set.
 
         Raises:
-            IBMQJobManagerValueError: If none of the input parameters are specified.
+            IBMQJobManagerInvalidStateError: If none of the input parameters are specified.
             IBMQJobManagerUpdateError: If there was an error with updating the tags
                 for the jobs in the job set.
         """
         if (replacement_tags is None) and (additional_tags is None) and (removal_tags is None):
-            raise IBMQJobManagerValueError(
+            raise IBMQJobManagerInvalidStateError(
                 'The tags cannot be updated since none of the parameters are specified.')
 
         updated_tags = []  # type: List[str]

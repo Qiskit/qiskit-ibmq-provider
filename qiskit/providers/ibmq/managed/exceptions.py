@@ -22,11 +22,6 @@ class IBMQJobManagerError(IBMQError):
     pass
 
 
-class IBMQJobManagerValueError(IBMQError):
-    """Value errors raised by the Job Manager."""
-    pass
-
-
 class IBMQJobManagerUpdateError(IBMQJobManagerError):
     """Errors that occur unexpectedly when updating Job Manager attributes."""
     pass
