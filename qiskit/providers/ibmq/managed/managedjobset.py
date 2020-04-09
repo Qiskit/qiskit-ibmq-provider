@@ -36,7 +36,7 @@ from .managedresults import ManagedResults
 from .utils import requires_submit, format_status_counts, format_job_details
 from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
                          IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet,
-                         IBMQJobManagerValueError)
+                         IBMQJobManagerValueError, IBMQJobManagerUpdateError)
 from ..job import IBMQJob
 from ..job.exceptions import IBMQJobTimeoutError, IBMQJobUpdateError
 from ..ibmqbackend import IBMQBackend
@@ -430,7 +430,7 @@ class ManagedJobSet:
 
         Raises:
             IBMQJobManagerValueError: If the input job name is not a string.
-            IBMQJobManagerInvalidStateError: If there was an error with updating the names
+            IBMQJobManagerUpdateError: If there was an error with updating the names
                 for the jobs in the job set.
         """
         if not isinstance(name, str):
@@ -443,7 +443,7 @@ class ManagedJobSet:
                 try:
                     _ = job.update_name("{}_{}_".format(name, i))
                 except IBMQJobUpdateError as ex:
-                    raise IBMQJobManagerInvalidStateError(
+                    raise IBMQJobManagerUpdateError(
                         "An error occurred when updating the name for this job set: {}"
                         "As a result, some of the jobs in this set may not have been "
                         "updated. Please try updating the job set's name again "
@@ -508,7 +508,7 @@ class ManagedJobSet:
 
         Raises:
             IBMQJobManagerValueError: If none of the input parameters are specified.
-            IBMQJobManagerInvalidStateError: If there was an error with updating the tags
+            IBMQJobManagerUpdateError: If there was an error with updating the tags
                 for the jobs in the job set.
         """
         if (replacement_tags is None) and (additional_tags is None) and (removal_tags is None):
@@ -522,9 +522,8 @@ class ManagedJobSet:
                     updated_tags = job.update_tags(replacement_tags=replacement_tags,
                                                    additional_tags=additional_tags,
                                                    removal_tags=removal_tags)
-
                 except IBMQJobUpdateError as ex:
-                    raise IBMQJobManagerInvalidStateError(
+                    raise IBMQJobManagerUpdateError(
                         "An error occurred when updating the tags for this job set: {}"
                         "As a result, some of the jobs in this set may not have been "
                         "updated. Please try updating the job set's tags again "
