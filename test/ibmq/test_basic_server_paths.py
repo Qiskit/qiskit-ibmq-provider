@@ -16,15 +16,13 @@
 
 import time
 
-from qiskit.compiler import assemble, transpile
 from qiskit.test import slow_test
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
-from qiskit.test.reference_circuits import ReferenceCircuits
 
 from qiskit.providers.ibmq import least_busy
 from ..decorators import requires_providers
 from ..ibmqtestcase import IBMQTestCase
-from ..utils import cancel_job
+from ..utils import cancel_job, bell_in_qobj
 
 
 class TestBasicServerPaths(IBMQTestCase):
@@ -36,8 +34,6 @@ class TestBasicServerPaths(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.providers = providers  # Dict[str, AccountProvider]
-        cls._qc = ReferenceCircuits.bell()
-        cls.seed = 73846087
 
     @slow_test
     def test_job_submission(self):
@@ -47,8 +43,7 @@ class TestBasicServerPaths(IBMQTestCase):
                 simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
             provider_backend = {'provider': provider, 'backend': backend}
             with self.subTest(provider_backend=provider_backend):
-                circuit = transpile(self._qc, backend, seed_transpiler=self.seed)
-                qobj = assemble(circuit, backend, shots=1)
+                qobj = bell_in_qobj(backend)
                 job = backend.run(qobj, validate_qobj=True)
 
                 # Fetch the results.
@@ -67,8 +62,7 @@ class TestBasicServerPaths(IBMQTestCase):
                 filters=lambda b: b.configuration().n_qubits >= 5)[0]
             provider_backend = {'provider': provider, 'backend': backend}
             with self.subTest(provider_backend=provider_backend):
-                circuit = transpile(self._qc, backend, seed_transpiler=self.seed)
-                qobj = assemble(circuit, backend, shots=1)
+                qobj = bell_in_qobj(backend)
                 job = backend.run(qobj, validate_qobj=True)
 
                 self.assertIsNotNone(job.properties())
@@ -82,7 +76,7 @@ class TestBasicServerPaths(IBMQTestCase):
         for _desc, provider in self.providers.items():
             with self.subTest(provider=provider):
                 backend = provider.get_backend(backend_name)
-                qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+                qobj = bell_in_qobj(backend)
 
                 job = backend.run(qobj, validate_qobj=True)
                 job_id = job.job_id()
