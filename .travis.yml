@@ -39,6 +39,7 @@ stage_generic: &stage_generic
     - pip install -c constraints.txt -e .
   script:
     # Run the tests.
+    - python --version
     - make test
 
 stage_linux: &stage_linux
@@ -50,7 +51,6 @@ stage_linux: &stage_linux
 stage_osx: &stage_osx
   <<: *stage_generic
   os: osx
-  osx_image: xcode9.2
   language: generic
   cache:
     pip: true
