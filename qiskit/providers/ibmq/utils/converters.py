@@ -45,7 +45,7 @@ def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
 
 
 def datetime_to_str(date_time: datetime.datetime) -> str:
-    """Convert a datetime object to a string representation.
+    """Convert a datetime object to a formatted string representation.
 
     Args:
         date_time: Input `datetime` object.
@@ -57,7 +57,7 @@ def datetime_to_str(date_time: datetime.datetime) -> str:
 
 
 def str_to_datetime(date_time: str) -> datetime.datetime:
-    """Convert a string to a datetime object.
+    """Convert a formatted string representing a date time to a datetime object.
 
     Args:
         date_time: Input string to convert into a datetime object.
