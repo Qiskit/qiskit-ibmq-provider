@@ -14,8 +14,11 @@
 
 """Tests that hit all the basic server endpoints using both a public and premium provider."""
 
+import time
+
 from qiskit.compiler import assemble, transpile
 from qiskit.test import slow_test
+from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.test.reference_circuits import ReferenceCircuits
 
 from qiskit.providers.ibmq import least_busy
@@ -60,7 +63,8 @@ class TestBasicServerPaths(IBMQTestCase):
         """Test the backend properties and status of a job."""
         for _desc, provider in self.providers.items():
             backend = provider.backends(
-                simulator=False, filters=lambda b: b.configuration().n_qubits >= 5)
+                simulator=False, operational=True,
+                filters=lambda b: b.configuration().n_qubits >= 5)[0]
             provider_backend = {'provider': provider, 'backend': backend}
             with self.subTest(provider_backend=provider_backend):
                 circuit = transpile(self._qc, backend, seed_transpiler=self.seed)
@@ -69,15 +73,28 @@ class TestBasicServerPaths(IBMQTestCase):
 
                 self.assertIsNotNone(job.properties())
                 self.assertTrue(job.status())
+                # Cancel job so it doesn't consume more resources.
                 cancel_job(job, verify=True)
 
-    def test_retrieving_jobs(self):
+    def test_retrieve_jobs(self):
         """Test retrieving jobs."""
         backend_name = 'ibmq_qasm_simulator'
         for _desc, provider in self.providers.items():
             with self.subTest(provider=provider):
-                job_list = provider.backends.jobs(backend_name=backend_name, limit=5, skip=0)
-                self.assertTrue(job_list)
+                backend = provider.get_backend(backend_name)
+                qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+                job = backend.run(qobj, validate_qobj=True)
+                job_id = job.job_id()
+
+                # TODO No need to wait for job to run once api is fixed
+                while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+                    time.sleep(0.5)
+
+                retrieved_jobs = provider.backends.jobs(backend_name=backend_name)
+                self.assertGreaterEqual(len(retrieved_jobs), 1)
+                retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
+                self.assertIn(job_id, retrieved_job_ids)
 
     def test_device_properties_and_defaults(self):
         """Test the properties and defaults for an open pulse device."""
@@ -96,7 +113,7 @@ class TestBasicServerPaths(IBMQTestCase):
     def test_device_status_and_job_limit(self):
         """Test the status and job limit for a device."""
         for desc, provider in self.providers.items():
-            backend = provider.backends(simulator=False)[0]
+            backend = provider.backends(simulator=False, operational=True)[0]
             provider_backend = {'provider': provider, 'backend': backend}
             with self.subTest(provider_backend=provider_backend):
                 self.assertTrue(backend.status())
