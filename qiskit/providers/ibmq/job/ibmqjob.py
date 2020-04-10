@@ -479,13 +479,14 @@ class IBMQJob(BaseModel, BaseJob):
         """
         if not self._time_per_step or self._status not in JOB_FINAL_STATES:
             self.refresh()
+        time_per_step_local = {}
         if self._time_per_step:
             for step_name, time_data in self._time_per_step.items():
                 time_data_utc_dt = str_to_datetime(time_data)
                 time_data_local_dt = utc_to_local(time_data_utc_dt)
-                self._time_per_step[step_name] = datetime_to_str(time_data_local_dt)
+                time_per_step_local[step_name] = datetime_to_str(time_data_local_dt)
 
-        return self._time_per_step
+        return time_per_step_local
 
     def scheduling_mode(self) -> Optional[str]:
         """Return the scheduling mode the job is in.

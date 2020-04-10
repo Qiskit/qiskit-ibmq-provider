@@ -24,6 +24,7 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
+from qiskit.providers.ibmq.utils.converters import DATETIME_TO_STR_FORMATTER
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
 
@@ -207,13 +208,40 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(rjob._time_per_step, job._time_per_step)
 
     @requires_provider
-    def test_time_per_step(self, provider):
-        """Test retrieving time per step."""
+    def test_job_creation_date(self, provider):
+        """Test retrieving creation date, while ensuring it is in local time."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        # Date and time as a string, before running the job, in local time.
+        start_datetime_str = time.strftime(DATETIME_TO_STR_FORMATTER, time.localtime(time.time()))
         job = backend.run(qobj, validate_qobj=True)
         job.result()
+        # Date and time as a string, after the job is done running, in local time.
+        end_datetime_str = time.strftime(DATETIME_TO_STR_FORMATTER, time.localtime(time.time()))
+
+        self.assertTrue((start_datetime_str <= job.creation_date() <= end_datetime_str),
+                        'job creation date {} is not '
+                        'between the start date time {} and end date time {}'
+                        .format(job.creation_date(), start_datetime_str, end_datetime_str))
+
+    @requires_provider
+    def test_time_per_step(self, provider):
+        """Test retrieving time per step, while ensuring the date times are in local time."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        # Date and time as a string, before running the job, in local time.
+        start_datetime_str = time.strftime(DATETIME_TO_STR_FORMATTER, time.localtime(time.time()))
+        job = backend.run(qobj, validate_qobj=True)
+        job.result()
+        # Date and time as a string, after the job is done running, in local time.
+        end_datetime_str = time.strftime(DATETIME_TO_STR_FORMATTER, time.localtime(time.time()))
+
         self.assertTrue(job.time_per_step())
+        for step, time_data in job.time_per_step().items():
+            self.assertTrue((start_datetime_str <= time_data <= end_datetime_str),
+                            'job time step {} {} is not '
+                            'between the start date time {} and end date time {}'
+                            .format(step, time_data, start_datetime_str, end_datetime_str))
 
         rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
         self.assertTrue(rjob.time_per_step())
