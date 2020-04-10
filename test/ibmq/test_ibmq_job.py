@@ -406,12 +406,14 @@ class TestIBMQJob(JobTestCase):
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, skip=0, start_datetime=past_month)
         self.assertTrue(job_list)
-        for i, job in enumerate(job_list):
-            creation_date_utc_str = datetime_to_str(job._creation_date)
-            self.assertTrue(creation_date_utc_str >= past_month_str,
-                            '{}) job creation_date {} is not '
-                            'greater than or equal to past month: {}'
-                            .format(i, creation_date_utc_str, past_month_str))
+        for job in job_list:
+            job_id = job.job_id()
+            with self.subTest(job_id=job_id):
+                creation_date_utc_str = datetime_to_str(job._creation_date)
+                self.assertTrue(creation_date_utc_str >= past_month_str,
+                                'job {} creation_date {} is not '
+                                'greater than or equal to the past month: {}'
+                                .format(job_id, creation_date_utc_str, past_month_str))
 
     @requires_qe_access
     def test_retrieve_jobs_end_datetime(self, qe_token, qe_url):
@@ -425,12 +427,14 @@ class TestIBMQJob(JobTestCase):
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, skip=0, end_datetime=past_month)
         self.assertTrue(job_list)
-        for i, job in enumerate(job_list):
-            creation_date_utc_str = datetime_to_str(job._creation_date)
-            self.assertTrue(creation_date_utc_str <= past_month_str,
-                            '{}) job creation_date {} is not '
-                            'less than or equal to past month: {}'
-                            .format(i, creation_date_utc_str, past_month_str))
+        for job in job_list:
+            job_id = job.job_id
+            with self.subTest(job_id=job_id):
+                creation_date_utc_str = datetime_to_str(job._creation_date)
+                self.assertTrue(creation_date_utc_str <= past_month_str,
+                                'job {} creation_date {} is not '
+                                'less than or equal to past month: {}'
+                                .format(job_id, creation_date_utc_str, past_month_str))
 
     @requires_qe_access
     def test_retrieve_jobs_between_datetimes(self, qe_token, qe_url):
@@ -448,12 +452,15 @@ class TestIBMQJob(JobTestCase):
         job_list = provider.backends.jobs(backend_name=backend.name(), limit=5, skip=0,
                                           start_datetime=past_two_month, end_datetime=past_month)
         self.assertTrue(job_list)
-        for i, job in enumerate(job_list):
-            creation_date_utc_str = datetime_to_str(job._creation_date)
-            self.assertTrue((past_two_month_str <= creation_date_utc_str <= past_month_str),
-                            '{}) job creation date {} is not '
-                            'between past two month {} and past month {}'
-                            .format(i, past_two_month_str, creation_date_utc_str, past_month_str))
+        for job in job_list:
+            job_id = job.job_id()
+            with self.subTest(job_id=job_id):
+                creation_date_utc_str = datetime_to_str(job._creation_date)
+                self.assertTrue((past_two_month_str <= creation_date_utc_str <= past_month_str),
+                                'job {} creation date {} is not '
+                                'between past two months {} and past month {}'
+                                .format(job_id, creation_date_utc_str,
+                                        past_two_month_str, past_month_str))
 
     @requires_qe_access
     def test_retrieve_jobs_between_datetimes_not_overriden(self, qe_token, qe_url):
@@ -477,13 +484,15 @@ class TestIBMQJob(JobTestCase):
                                           end_datetime=past_two_month,
                                           db_filter={'creationDate': {'gt': past_ten_days}})
         self.assertTrue(job_list)
-        for i, job in enumerate(job_list):
-            creation_date_utc_str = datetime_to_str(job._creation_date)
-            self.assertTrue((past_three_month_str <= creation_date_utc_str <= past_two_month_str),
-                            '{}) job creation date {} is not '
-                            'between past three month {} and past two month {}'
-                            .format(i, past_three_month_str,
-                                    creation_date_utc_str, past_two_month_str))
+        for job in job_list:
+            job_id = job.job_id()
+            with self.subTest(job_id=job_id):
+                creation_date_utc_str = datetime_to_str(job._creation_date)
+                self.assertTrue(
+                    (past_three_month_str <= creation_date_utc_str <= past_two_month_str),
+                    'job {} creation date {} is not between past three months {} '
+                    'and past two months {}'.format(job_id, creation_date_utc_str,
+                                                    past_three_month_str, past_two_month_str))
 
     @requires_provider
     def test_retrieve_jobs_db_filter(self, provider):
@@ -526,13 +535,13 @@ class TestIBMQJob(JobTestCase):
                                           limit=5, db_filter=my_filter)
 
         self.assertTrue(job_list)
-        self.log.info('found %s matching jobs', len(job_list))
-        for i, job in enumerate(job_list):
-            creation_date_utc_str = datetime_to_str(job._creation_date)
-            self.log.info('match #%d: %s', i, creation_date_utc_str)
-            self.assertTrue(creation_date_utc_str < date_today_str,
-                            '{}) job creation_date: {}, date_today: {}'
-                            .format(i, creation_date_utc_str, date_today_str))
+        for job in job_list:
+            job_id = job.job_id()
+            with self.subTest(job_id=job_id):
+                creation_date_utc_str = datetime_to_str(job._creation_date)
+                self.assertTrue(creation_date_utc_str < date_today_str,
+                                'job {} creation_date {} is not less than date today {}'
+                                .format(job_id, creation_date_utc_str, date_today_str))
 
     @requires_provider
     def test_retrieve_jobs_order(self, provider):
