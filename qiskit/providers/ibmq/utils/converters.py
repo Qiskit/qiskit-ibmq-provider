@@ -20,12 +20,14 @@ from math import ceil
 import dateutil.parser
 from dateutil import tz
 
+DATETIME_TO_STR_FORMATTER = '%Y-%m-%dT%H:%M:%S.%fZ'
+
 
 def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
     """Convert a UTC ``datetime`` object or string to a local timezone ``datetime``.
 
     Args:
-        utc_dt: Input UTC `datetime`.
+        utc_dt: Input UTC `datetime` or string.
 
     Returns:
         A ``datetime`` with the local timezone.
@@ -40,6 +42,30 @@ def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
     utc_dt = utc_dt.replace(tzinfo=datetime.timezone.utc)  # type: ignore[arg-type]
     local_dt = utc_dt.astimezone(tz.tzlocal())  # type: ignore[attr-defined]
     return local_dt
+
+
+def datetime_to_str(date_time: datetime.datetime) -> str:
+    """Convert a datetime object to a string representation.
+
+    Args:
+        date_time: Input `datetime` object.
+
+    Returns:
+        A string representation of the `datetime`.
+    """
+    return date_time.strftime(DATETIME_TO_STR_FORMATTER)
+
+
+def str_to_datetime(date_time: str) -> datetime.datetime:
+    """Convert a string to a datetime object.
+
+    Args:
+        date_time: Input string to convert into a datetime object.
+
+    Returns:
+        The datetime representing the string.
+    """
+    return datetime.datetime.strptime(date_time, DATETIME_TO_STR_FORMATTER)
 
 
 def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:

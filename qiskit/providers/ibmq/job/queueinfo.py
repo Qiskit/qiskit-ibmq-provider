@@ -17,10 +17,9 @@
 from typing import Any, Optional
 from datetime import datetime
 
-import arrow
-
 from qiskit.validation import BaseModel, bind_schema
 
+from ..utils import utc_to_local, datetime_to_str, start_duration
 from ..api.rest.validation import InfoQueueResponseSchema
 from ..apiconstants import ApiJobStatus
 from .utils import api_status_to_job_status
@@ -79,21 +78,25 @@ class QueueInfo(BaseModel):
     def __repr__(self) -> str:
         """Return the string representation of ``QueueInfo``.
 
+        Note:
+            The estimated start and end time are displayed in local time
+            for convenience.
+
         Returns:
             A string representation of ``QueueInfo``.
         """
         status = api_status_to_job_status(ApiJobStatus(self._status)).value \
             if self._status else self._get_value(self._status)
-        estimated_start_time = self.estimated_start_time.isoformat() \
+        est_start_time = datetime_to_str(utc_to_local(self.estimated_start_time)) \
             if self.estimated_start_time else self._get_value(self.estimated_start_time)
-        estimated_complete_time = self.estimated_complete_time.isoformat() \
+        est_complete_time = datetime_to_str(utc_to_local(self.estimated_complete_time)) \
             if self.estimated_complete_time else self._get_value(self.estimated_complete_time)
 
         queue_info = [
             "job_id='{}'".format(self._get_value(self.job_id)),
             "_status='{}'".format(self._get_value(status)),
-            "estimated_start_time='{}'".format(estimated_start_time),
-            "estimated_complete_time='{}'".format(estimated_complete_time),
+            "estimated_start_time='{}'".format(est_start_time),
+            "estimated_complete_time='{}'".format(est_complete_time),
             "position={}".format(self._get_value(self.position)),
             "hub_priority={}".format(self._get_value(self.hub_priority)),
             "group_priority={}".format(self._get_value(self.group_priority)),
@@ -110,17 +113,17 @@ class QueueInfo(BaseModel):
         """
         status = api_status_to_job_status(ApiJobStatus(self._status)).value \
             if self._status else self._get_value(self._status)
-        estimated_start_time = arrow.get(self.estimated_start_time).humanize() \
+        est_start_time = start_duration(self.estimated_start_time) \
             if self.estimated_start_time else self._get_value(self.estimated_start_time)
-        estimated_complete_time = arrow.get(self.estimated_complete_time).humanize() \
+        est_complete_time = start_duration(self.estimated_complete_time) \
             if self.estimated_complete_time else self._get_value(self.estimated_complete_time)
 
         queue_info = [
             "Job {} queue information:".format(self._get_value(self.job_id)),
             "    queue position: {}".format(self._get_value(self.position)),
             "    status: {}".format(status),
-            "    estimated start time: {}".format(estimated_start_time),
-            "    estimated completion time: {}".format(estimated_complete_time),
+            "    estimated start time: {}".format(est_start_time),
+            "    estimated completion time: {}".format(est_complete_time),
             "    hub priority: {}".format(self._get_value(self.hub_priority)),
             "    group priority: {}".format(self._get_value(self.group_priority)),
             "    project priority: {}".format(self._get_value(self.project_priority))

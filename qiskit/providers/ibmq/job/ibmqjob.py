@@ -35,6 +35,7 @@ from qiskit.validation import BaseModel, ModelValidationError, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
+from ..utils import utc_to_local, datetime_to_str, str_to_datetime
 from ..utils.utils import RefreshQueue
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
@@ -428,12 +429,13 @@ class IBMQJob(BaseModel, BaseJob):
         return None
 
     def creation_date(self) -> str:
-        """Return job creation date.
+        """Return job creation date, in local time.
 
         Returns:
             Job creation date.
         """
-        return self._creation_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        creation_date_local_dt = utc_to_local(self._creation_date)
+        return datetime_to_str(creation_date_local_dt)
 
     def job_id(self) -> str:
         """Return the job ID assigned by the server.
@@ -463,8 +465,9 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the date and time information on each step of the job processing.
 
         The output dictionary contains the date and time information on each
-        step of the job processing. The keys of the dictionary are the names
-        of the steps, and the values are the date and time data. For example::
+        step of the job processing, in local time. The keys of the dictionary
+        are the names of the steps, and the values are the date and time data.
+        For example::
 
             {'CREATING': '2020-02-13T20:19:25.717Z',
              'CREATED': '2020-02-13T20:19:26.467Z',
@@ -476,6 +479,12 @@ class IBMQJob(BaseModel, BaseJob):
         """
         if not self._time_per_step or self._status not in JOB_FINAL_STATES:
             self.refresh()
+        if self._time_per_step:
+            for step_name, time_data in self._time_per_step.items():
+                time_data_utc_dt = str_to_datetime(time_data)
+                time_data_local_dt = utc_to_local(time_data_utc_dt)
+                self._time_per_step[step_name] = datetime_to_str(time_data_local_dt)
+
         return self._time_per_step
 
     def scheduling_mode(self) -> Optional[str]:
