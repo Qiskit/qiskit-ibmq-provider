@@ -24,7 +24,8 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
-from qiskit.providers.ibmq.utils.converters import DATETIME_TO_STR_FORMATTER
+from qiskit.providers.ibmq.utils.converters import (DATETIME_TO_STR_FORMATTER, utc_to_local,
+                                                    datetime_to_str, str_to_datetime)
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
 
@@ -223,6 +224,9 @@ class TestIBMQJobAttributes(JobTestCase):
                         'job creation date {} is not '
                         'between the start date time {} and end date time {}'
                         .format(job.creation_date(), start_datetime_str, end_datetime_str))
+        # Ensure creation date could be converted to a string successfully, since this
+        # is done throughout the provider, such as in the jupyter tools.
+        self.assertTrue(str_to_datetime(job.creation_date()))
 
     @requires_provider
     def test_time_per_step(self, provider):
@@ -267,21 +271,21 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_queue_info(self, provider):
         """Test retrieving queue information."""
         # Find the most busy backend.
+        # States a job could be in when queued.
+        queue_states = [JobStatus.QUEUED, JobStatus.RUNNING]
         backend = most_busy_backend(provider)
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
         job = backend.run(qobj, validate_qobj=True)
         queue_info = None
         for _ in range(10):
             queue_info = job.queue_info()
-            # Even if job status is QUEUED, queue information may not be
-            # immediately available.
-            if (job._status is JobStatus.QUEUED and job.queue_position() is not None) or \
-                    job._status in leave_states:
+            # Even if job status is queued, its queue info may not be immediately available.
+            if (job._status in queue_states and job.queue_position() is not None) or \
+                    job._status in JOB_FINAL_STATES:
                 break
             time.sleep(0.5)
 
-        if job._status is JobStatus.QUEUED and job.queue_position() is not None:
+        if job._status in queue_states and job.queue_position() is not None:
             self.log.debug("Job id=%s, queue info=%s, queue position=%s",
                            job.job_id(), queue_info, job.queue_position())
             msg = "Job {} is queued but has no ".format(job.job_id())
@@ -291,8 +295,21 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertTrue(all(0 < priority <= 1.0 for priority in [
                 queue_info.hub_priority, queue_info.group_priority, queue_info.project_priority]),
                             "Unexpected queue info {} for job {}".format(queue_info, job.job_id()))
-            self.assertTrue(queue_info.format())
-            self.assertTrue(repr(queue_info))
+
+            queue_info_format = queue_info.format()
+            self.assertTrue(queue_info_format)
+            queue_info_repr = repr(queue_info)
+            self.assertTrue(queue_info_repr)
+
+            # Convert the utc start and end times to local time, represented as a string.
+            est_start_time_local_str = datetime_to_str(
+                utc_to_local(queue_info.estimated_start_time))
+            est_complete_time_local_str = datetime_to_str(
+                utc_to_local(queue_info.estimated_complete_time))
+
+            # Ensure the local start and end date times are in the `repr` format.
+            self.assertIn(est_start_time_local_str, queue_info_repr)
+            self.assertIn(est_complete_time_local_str, queue_info_repr)
         else:
             self.assertIsNone(job.queue_position())
             self.log.warning("Unable to retrieve queue information")
