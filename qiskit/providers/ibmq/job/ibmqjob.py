@@ -15,7 +15,7 @@
 """IBM Quantum Experience job."""
 
 import logging
-from typing import Dict, Set, Optional, Tuple, Any, List, Callable
+from typing import Dict, Set, Optional, Tuple, Any, List, Callable, Union
 import warnings
 from datetime import datetime
 from concurrent import futures
@@ -28,7 +28,7 @@ from qiskit.providers import (BaseJob,  # type: ignore[attr-defined]
                               BaseBackend)
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
-from qiskit.qobj import Qobj
+from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.result import Result
 from qiskit.validation import BaseModel, ModelValidationError, bind_schema
 
@@ -36,6 +36,7 @@ from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..utils.utils import RefreshQueue, validate_job_tags
+from ..utils.qobj_utils import dict_to_qobj
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError,
                          IBMQJobUpdateError)
@@ -124,7 +125,7 @@ class IBMQJob(BaseModel, BaseJob):
 
         # Convert qobj from dictionary to Qobj.
         if isinstance(kwargs.get('_qobj', None), dict):
-            self._qobj = Qobj.from_dict(kwargs.pop('_qobj'))
+            self._qobj = dict_to_qobj(kwargs.pop('_qobj'))
 
         BaseModel.__init__(self, _backend=_backend, _job_id=_job_id,
                            _creation_date=_creation_date,
@@ -144,7 +145,7 @@ class IBMQJob(BaseModel, BaseJob):
         self._name = kwargs.pop('_name', None)  # type: Optional[str]
         self._tags = kwargs.pop('_tags', [])  # type: List[str]
 
-    def qobj(self) -> Optional[Qobj]:
+    def qobj(self) -> Optional[Union[QasmQobj, PulseQobj]]:
         """Return the Qobj for this job.
 
         Returns:
@@ -162,7 +163,7 @@ class IBMQJob(BaseModel, BaseJob):
             with api_to_job_error():
                 qobj = self._api.job_download_qobj(
                     self.job_id(), self._use_object_storage)
-                self._qobj = Qobj.from_dict(qobj)
+                self._qobj = dict_to_qobj(qobj)
 
         return self._qobj
 
