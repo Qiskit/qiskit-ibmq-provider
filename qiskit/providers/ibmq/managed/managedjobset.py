@@ -26,7 +26,7 @@ import threading
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 from qiskit.compiler import assemble
-from qiskit.qobj import Qobj
+from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 from qiskit.providers.ibmq.accountprovider import AccountProvider
@@ -401,7 +401,7 @@ class ManagedJobSet:
             'Unable to find the job for experiment {}.'.format(experiment))
 
     @requires_submit
-    def qobjs(self) -> List[Qobj]:
+    def qobjs(self) -> List[Union[QasmQobj, PulseQobj]]:
         """Return the Qobjs for the jobs in this set.
 
         Returns:
