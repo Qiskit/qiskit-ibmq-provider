@@ -255,7 +255,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
                           str(context_manager.exception))
 
     def test_load_account_saved_provider_invalid_format(self):
-        # """Test loading an account that contains a saved provider in an invalid format."""
+        """Test loading an account that contains a saved provider in an invalid format."""
         # Format {'test_case_input': 'error message from raised exception'}
         invalid_hgps = {
             'hub_group_project': 'Use the "<hub_name>/<group_name>/<project_name>" format',
