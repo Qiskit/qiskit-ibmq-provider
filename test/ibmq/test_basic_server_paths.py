@@ -14,10 +14,7 @@
 
 """Tests that hit all the basic server endpoints using both a public and premium provider."""
 
-import time
-
 from qiskit.test import slow_test
-from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 
 from qiskit.providers.ibmq import least_busy
 from ..decorators import requires_providers
@@ -38,10 +35,11 @@ class TestBasicServerPaths(IBMQTestCase):
     @slow_test
     def test_job_submission(self):
         """Test running a job against a device."""
-        for _desc, provider in self.providers.items():
+        for desc, provider in self.providers.items():
             backend = least_busy(provider.backends(
-                simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
-            provider_backend = {'provider': provider, 'backend': backend}
+                simulator=False, open_pulse=False,
+                filters=lambda b: b.configuration().n_qubits >= 5))
+            provider_backend = {'provider': desc, 'backend': backend}
             with self.subTest(provider_backend=provider_backend):
                 qobj = bell_in_qobj(backend)
                 job = backend.run(qobj, validate_qobj=True)
@@ -52,15 +50,15 @@ class TestBasicServerPaths(IBMQTestCase):
 
                 # Fetch the qobj.
                 qobj_downloaded = job.qobj()
-                self.assertEqual(qobj_downloaded, qobj.to_dict())
+                self.assertEqual(qobj_downloaded.to_dict(), qobj.to_dict())
 
     def test_job_backend_properties_and_status(self):
         """Test the backend properties and status of a job."""
-        for _desc, provider in self.providers.items():
+        for desc, provider in self.providers.items():
             backend = provider.backends(
                 simulator=False, operational=True,
                 filters=lambda b: b.configuration().n_qubits >= 5)[0]
-            provider_backend = {'provider': provider, 'backend': backend}
+            provider_backend = {'provider': desc, 'backend': backend}
             with self.subTest(provider_backend=provider_backend):
                 qobj = bell_in_qobj(backend)
                 job = backend.run(qobj, validate_qobj=True)
@@ -73,17 +71,13 @@ class TestBasicServerPaths(IBMQTestCase):
     def test_retrieve_jobs(self):
         """Test retrieving jobs."""
         backend_name = 'ibmq_qasm_simulator'
-        for _desc, provider in self.providers.items():
-            with self.subTest(provider=provider):
+        for desc, provider in self.providers.items():
+            with self.subTest(provider=desc):
                 backend = provider.get_backend(backend_name)
                 qobj = bell_in_qobj(backend)
 
                 job = backend.run(qobj, validate_qobj=True)
                 job_id = job.job_id()
-
-                # TODO No need to wait for job to run once api is fixed
-                while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
-                    time.sleep(0.5)
 
                 retrieved_jobs = provider.backends.jobs(backend_name=backend_name)
                 self.assertGreaterEqual(len(retrieved_jobs), 1)
@@ -92,14 +86,14 @@ class TestBasicServerPaths(IBMQTestCase):
 
     def test_device_properties_and_defaults(self):
         """Test the properties and defaults for an open pulse device."""
-        for _desc, provider in self.providers.items():
+        for desc, provider in self.providers.items():
             pulse_backends = provider.backends(open_pulse=True, operational=True)
             if not pulse_backends:
                 raise self.skipTest('Skipping pulse test since no pulse backend '
-                                    'found for provider "{}"'.format(provider))
+                                    'found for "{}"'.format(desc))
 
             pulse_backend = pulse_backends[0]
-            provider_backend = {'provider': provider, 'backend': pulse_backend}
+            provider_backend = {'provider': desc, 'backend': pulse_backend}
             with self.subTest(provider_backend=provider_backend):
                 self.assertIsNotNone(pulse_backend.properties())
                 self.assertIsNotNone(pulse_backend.defaults())
@@ -108,7 +102,7 @@ class TestBasicServerPaths(IBMQTestCase):
         """Test the status and job limit for a device."""
         for desc, provider in self.providers.items():
             backend = provider.backends(simulator=False, operational=True)[0]
-            provider_backend = {'provider': provider, 'backend': backend}
+            provider_backend = {'provider': desc, 'backend': backend}
             with self.subTest(provider_backend=provider_backend):
                 self.assertTrue(backend.status())
                 job_limit = backend.job_limit()
