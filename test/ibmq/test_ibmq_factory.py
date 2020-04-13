@@ -247,15 +247,14 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
         invalid_hgp_to_store = 'invalid_hub/invalid_group/invalid_project'
         with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             hgp = HubGroupProject.from_stored_format(invalid_hgp_to_store)
-            self.factory.save_account(token=qe_token, url=AUTH_URL,
+            self.factory.save_account(token=qe_token, url=qe_url,
                                       hub=hgp.hub, group=hgp.group, project=hgp.project)
             with self.assertRaises(IBMQAccountError) as context_manager:
                 self.factory.load_account()
             self.assertIn('(hub/group/project) stored on disk could not be found',
                           str(context_manager.exception))
 
-    @requires_qe_access
-    def test_load_account_saved_provider_invalid_format(self, qe_token, qe_url):
+    def test_load_account_saved_provider_invalid_format(self):
         """Test loading an account that contains a saved provider in an invalid format."""
         # Format {'test_case_input': 'error message from raised exception'}
         invalid_hgps = {
@@ -269,7 +268,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
                 with no_file('Qconfig.py'), custom_qiskitrc() as temp_qiskitrc, \
                         no_envs(CREDENTIAL_ENV_VARS):
                     # Save the account.
-                    self.factory.save_account(token=qe_token, url=qe_url)
+                    self.factory.save_account(token=self.token, url=AUTH_URL)
                     # Add an invalid provider field to the account stored.
                     with open(temp_qiskitrc.tmp_file.name, 'a') as _file:
                         _file.write('default_provider = {}'.format(invalid_hgp))
