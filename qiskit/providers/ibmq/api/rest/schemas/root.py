@@ -16,7 +16,6 @@
 
 from marshmallow.validate import OneOf
 from qiskit.providers import JobStatus
-from qiskit.providers.models.backendconfiguration import BackendConfigurationSchema
 from qiskit.providers.ibmq.apiconstants import ApiJobKind
 from qiskit.validation import BaseSchema
 from qiskit.validation.fields import String, Dict, Nested, Boolean, List, Number
@@ -120,7 +119,7 @@ class BackendsResponseSchema(BaseSchema):
     """Schema for BackendResponse"""
 
     # Required properties
-    backends = List(Nested(BackendConfigurationSchema, required=True))
+    backends = Dict(required=True, many=True)
 
 
 class JobsRequestSchema(BaseSchema):

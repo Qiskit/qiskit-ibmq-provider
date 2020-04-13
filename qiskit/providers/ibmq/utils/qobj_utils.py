@@ -14,9 +14,9 @@
 
 """Utilities related to Qobj."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 
-from qiskit.qobj import QobjHeader, Qobj
+from qiskit.qobj import QobjHeader, QasmQobj, PulseQobj
 
 
 def _serialize_noise_model(config: Dict[str, Any]) -> Dict[str, Any]:
@@ -45,10 +45,10 @@ def _serialize_noise_model(config: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def update_qobj_config(
-        qobj: Qobj,
+        qobj: Union[QasmQobj, PulseQobj],
         backend_options: Optional[Dict] = None,
         noise_model: Any = None
-) -> Qobj:
+) -> Union[QasmQobj, PulseQobj]:
     """Update a ``Qobj`` configuration from backend options and a noise model.
 
     Args:
@@ -77,3 +77,17 @@ def update_qobj_config(
     qobj.config = QobjHeader.from_dict(config)
 
     return qobj
+
+
+def dict_to_qobj(qobj_dict: Dict) -> Union[QasmQobj, PulseQobj]:
+    """Convert a Qobj in dictionary format to an instance.
+
+    Args:
+        qobj_dict: Qobj in dictionary format.
+
+    Returns:
+        The corresponding QasmQobj or PulseQobj instance.
+    """
+    if qobj_dict['type'] == 'PULSE':
+        return PulseQobj.from_dict(qobj_dict)
+    return QasmQobj.from_dict(qobj_dict)
