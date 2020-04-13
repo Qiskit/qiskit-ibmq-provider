@@ -16,12 +16,12 @@
 
 import warnings
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
 from qiskit.providers.ibmq import IBMQBackend
-from qiskit.qobj import Qobj
+from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobError
@@ -60,7 +60,7 @@ class ManagedJob:
 
     def submit(
             self,
-            qobj: Qobj,
+            qobj: Union[QasmQobj, PulseQobj],
             job_name: str,
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
@@ -87,7 +87,7 @@ class ManagedJob:
 
     def _async_submit(
             self,
-            qobj: Qobj,
+            qobj: Union[QasmQobj, PulseQobj],
             job_name: str,
             backend: IBMQBackend,
             submit_lock: Lock,
@@ -216,7 +216,7 @@ class ManagedJob:
             logger.warning("Unable to cancel job %s for experiments %d-%d: %s",
                            self.job.job_id(), self.start_index, self.end_index, cancel_error)
 
-    def qobj(self) -> Optional[Qobj]:
+    def qobj(self) -> Optional[Union[QasmQobj, PulseQobj]]:
         """Return the Qobj for this job.
 
         Returns:

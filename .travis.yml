@@ -36,6 +36,7 @@ stage_generic: &stage_generic
     - pip install cython
     - pip install -U -c constraints.txt -r requirements.txt
     - pip install -U -c constraints.txt -r requirements-dev.txt
+    - pip install -c constraints.txt -e .
   script:
     # Run the tests.
     - make test
@@ -49,7 +50,6 @@ stage_linux: &stage_linux
 stage_osx: &stage_osx
   <<: *stage_generic
   os: osx
-  osx_image: xcode9.2
   language: generic
   cache:
     pip: true
@@ -60,15 +60,16 @@ stage_osx: &stage_osx
     # installed manually.
     |
     if [ ${TRAVIS_OS_NAME} = "osx" ]; then
-      if [[ ! -d ~/python-interpreters/$PYTHON_VERSION ]]; then
-        git clone git://github.com/pyenv/pyenv.git
-        cd pyenv/plugins/python-build
-        ./install.sh
-        cd ../../..
-        python-build $PYTHON_VERSION ~/python-interpreters/$PYTHON_VERSION
+      if [[ ! -d ~/.pyenv ]]; then
+        git clone git://github.com/pyenv/pyenv.git ~/.pyenv
       fi
-      virtualenv --python ~/python-interpreters/$PYTHON_VERSION/bin/python venv
-      source venv/bin/activate
+      export PYENV_ROOT="$HOME/.pyenv"
+      export PATH="$PYENV_ROOT/bin:$PATH"
+      eval "$(pyenv init -)"
+      pyenv install -s $PYTHON_VERSION
+      pyenv local $PYTHON_VERSION
+      pip install --upgrade pip
+      pip install wheel setuptools
     fi
 
 

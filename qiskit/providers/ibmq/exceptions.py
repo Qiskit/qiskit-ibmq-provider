@@ -27,6 +27,10 @@ class IBMQAccountError(IBMQError):
     pass
 
 
+class IBMQAccountValueError(IBMQError):
+    """Value errors raised by account management."""
+
+
 class IBMQAccountCredentialsNotFound(IBMQAccountError):
     """Errors raised when credentials are not found."""
     pass

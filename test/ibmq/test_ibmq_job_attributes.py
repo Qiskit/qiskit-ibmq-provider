@@ -29,7 +29,7 @@ from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, requires_device
-from ..utils import most_busy_backend, cancel_job
+from ..utils import most_busy_backend, cancel_job, get_large_circuit
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -70,7 +70,8 @@ class TestIBMQJobAttributes(JobTestCase):
                 cancel_job(cjob)
 
         job_properties = [None]
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        large_qx = get_large_circuit(backend=backend)
+        qobj = assemble(transpile(large_qx, backend=backend), backend=backend)
         job = backend.run(qobj, validate_qobj=True)
         job.wait_for_final_state(wait=None, callback=_job_callback)
         self.assertIsNotNone(job_properties[0])
@@ -197,6 +198,8 @@ class TestIBMQJobAttributes(JobTestCase):
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj, validate_qobj=True)
         job._wait_for_completion()
+        if 'COMPLETED' not in job.time_per_step():
+            job.refresh()
 
         rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
         self.assertFalse(rjob._time_per_step)
