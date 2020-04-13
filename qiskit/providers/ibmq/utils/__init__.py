@@ -46,7 +46,7 @@ Misc Functions
 
 """
 
-from .converters import (utc_to_local, seconds_to_duration, start_duration,
+from .converters import (utc_to_local, seconds_to_duration, duration_difference,
                          datetime_to_str, str_to_datetime)
 from .qobj_utils import update_qobj_config
 from .utils import to_python_identifier, validate_job_tags

@@ -35,7 +35,7 @@ from qiskit.validation import BaseModel, ModelValidationError, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
-from ..utils import utc_to_local, datetime_to_str, str_to_datetime
+from ..utils import utc_to_local, datetime_to_str
 from ..utils.utils import RefreshQueue
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
@@ -435,6 +435,8 @@ class IBMQJob(BaseModel, BaseJob):
             Job creation date.
         """
         creation_date_local_dt = utc_to_local(self._creation_date)
+        warnings.warn('The creation date is now returned in local time, '
+                      'rather than UTC.')
         return datetime_to_str(creation_date_local_dt)
 
     def job_id(self) -> str:
@@ -481,9 +483,8 @@ class IBMQJob(BaseModel, BaseJob):
             self.refresh()
         time_per_step_local = {}
         if self._time_per_step:
-            for step_name, time_data in self._time_per_step.items():
-                time_data_utc_dt = str_to_datetime(time_data)
-                time_data_local_dt = utc_to_local(time_data_utc_dt)
+            for step_name, time_data_utc in self._time_per_step.items():
+                time_data_local_dt = utc_to_local(time_data_utc)
                 time_per_step_local[step_name] = datetime_to_str(time_data_local_dt)
 
         return time_per_step_local

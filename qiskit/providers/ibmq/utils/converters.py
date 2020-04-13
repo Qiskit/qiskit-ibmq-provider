@@ -57,7 +57,11 @@ def datetime_to_str(date_time: datetime.datetime) -> str:
 
 
 def str_to_datetime(date_time: str) -> datetime.datetime:
-    """Convert a formatted string representing a date time to a datetime object.
+    """Convert a string representing a date time to a datetime object.
+
+    Note:
+        The datetime returned is not timezone aware. This allow `str_to_datetime`
+        to be used for both local and UTC time conversion.
 
     Args:
         date_time: Input string to convert into a datetime object.
@@ -65,7 +69,7 @@ def str_to_datetime(date_time: str) -> datetime.datetime:
     Returns:
         The datetime representing the string.
     """
-    return datetime.datetime.strptime(date_time, DATETIME_TO_STR_FORMATTER)
+    return dateutil.parser.parse(date_time)
 
 
 def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
@@ -91,17 +95,16 @@ def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
     return days, hours, minutes, seconds, millisec
 
 
-def start_duration(est_start_time: datetime.datetime) -> str:
-    """Compute the duration till starting a job
-    from the estimated start time.
+def duration_difference(date_time_utc: datetime.datetime) -> str:
+    """Compute the estimated duration until the given datetime.
 
     Args:
-        est_start_time: Estimated start time.
+        date_time_utc: The input datetime, in UTC
 
     Returns:
         String giving estimated duration
     """
-    time_delta = est_start_time.replace(tzinfo=None) - datetime.datetime.utcnow()
+    time_delta = date_time_utc.replace(tzinfo=None) - datetime.datetime.utcnow()
     time_tuple = seconds_to_duration(time_delta.total_seconds())
     # The returned tuple contains the duration in terms of
     # days, hours, minutes, seconds, and milliseconds.
