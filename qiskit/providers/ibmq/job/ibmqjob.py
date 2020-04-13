@@ -435,8 +435,8 @@ class IBMQJob(BaseModel, BaseJob):
             Job creation date.
         """
         creation_date_local_dt = utc_to_local(self._creation_date)
-        warnings.warn('The creation date is now returned in local time, '
-                      'rather than UTC.')
+        # TODO: Remove when decided the warning is no longer needed.
+        warnings.warn('The creation date is returned in local time now, rather than UTC.')
         return datetime_to_str(creation_date_local_dt)
 
     def job_id(self) -> str:
@@ -483,6 +483,7 @@ class IBMQJob(BaseModel, BaseJob):
             self.refresh()
         time_per_step_local = {}
         if self._time_per_step:
+            warnings.warn('The time step data is returned in local time now, rather than UTC.')
             for step_name, time_data_utc in self._time_per_step.items():
                 time_data_local_dt = utc_to_local(time_data_utc)
                 time_per_step_local[step_name] = datetime_to_str(time_data_local_dt)

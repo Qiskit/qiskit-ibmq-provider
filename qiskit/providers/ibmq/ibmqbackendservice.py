@@ -15,6 +15,7 @@
 """Backend namespace for an IBM Quantum Experience account provider."""
 
 import logging
+import warnings
 
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
@@ -31,6 +32,7 @@ from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackend
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
 from .utils.utils import to_python_identifier, validate_job_tags, filter_data
+from .utils.converters import local_to_utc
 
 logger = logging.getLogger(__name__)
 
@@ -198,14 +200,23 @@ class IBMQBackendService(SimpleNamespace):
         if job_name:
             api_filter['name'] = {"regexp": job_name}
 
-        if start_datetime and end_datetime:
-            api_filter['creationDate'] = {
-                'between': [start_datetime.isoformat(), end_datetime.isoformat()]
-            }
-        elif start_datetime:
-            api_filter['creationDate'] = {'gte': start_datetime.isoformat()}
-        elif end_datetime:
-            api_filter['creationDate'] = {'lte': end_datetime.isoformat()}
+        # TODO: Remove when decided the warning is no longer needed.
+        if start_datetime or end_datetime:
+            warnings.warn('The parameters `start_datetime` and `end_datetime` are expected '
+                          'to be in local time now, rather than UTC.')
+
+            # Attempt to convert the input datetime objects to UTC.
+            start_datetime_utc = local_to_utc(start_datetime) if start_datetime else None
+            end_datetime_utc = local_to_utc(end_datetime) if end_datetime else None
+
+            if start_datetime_utc and end_datetime_utc:
+                api_filter['creationDate'] = {
+                    'between': [start_datetime_utc.isoformat(), end_datetime_utc.isoformat()]
+                }
+            elif start_datetime_utc:
+                api_filter['creationDate'] = {'gte': start_datetime_utc.isoformat()}
+            elif end_datetime_utc:
+                api_filter['creationDate'] = {'lte': end_datetime_utc.isoformat()}
 
         if job_tags:
             validate_job_tags(job_tags, IBMQBackendValueError)
