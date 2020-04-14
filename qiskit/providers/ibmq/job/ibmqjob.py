@@ -27,7 +27,7 @@ from qiskit.providers import (BaseJob,  # type: ignore[attr-defined]
                               BaseBackend)
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
-from qiskit.qobj import Qobj
+from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.result import Result
 from qiskit.validation.exceptions import ModelValidationError
 
@@ -35,6 +35,7 @@ from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..utils.utils import RefreshQueue
+from ..utils.qobj_utils import dict_to_qobj
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
 from .queueinfo import QueueInfo
@@ -145,7 +146,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._time_per_step = _time_per_step
         self._result = Result.from_dict(_result) if _result else None
         if isinstance(_qobj, dict):
-            _qobj = Qobj.from_dict(_qobj)
+            _qobj = dict_to_qobj(_qobj)
         self._qobj = _qobj
         self._error = _error
         self._tags = _tags
@@ -163,7 +164,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._cancelled = False
         self._job_error_msg = None  # type: Optional[str]
 
-    def qobj(self) -> Optional[Qobj]:
+    def qobj(self) -> Optional[Union[QasmQobj, PulseQobj]]:
         """Return the Qobj for this job.
 
         Returns:
@@ -181,7 +182,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             with api_to_job_error():
                 qobj = self._api.job_download_qobj(
                     self.job_id(), self._use_object_storage)
-                self._qobj = Qobj.from_dict(qobj)
+                self._qobj = dict_to_qobj(qobj)
 
         return self._qobj
 

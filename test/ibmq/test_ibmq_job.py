@@ -659,7 +659,7 @@ class TestIBMQJob(JobTestCase):
                 # Check called within wait time.
                 if callback_info['last call time'] and job._status not in JOB_FINAL_STATES:
                     self.assertAlmostEqual(
-                        time.time() - callback_info['last call time'], wait_time, delta=0.1)
+                        time.time() - callback_info['last call time'], wait_time, delta=0.2)
                 callback_info['last call time'] = time.time()
 
         # Put callback data in a dictionary to make it mutable.

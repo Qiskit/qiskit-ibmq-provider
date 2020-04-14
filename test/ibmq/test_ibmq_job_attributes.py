@@ -200,6 +200,8 @@ class TestIBMQJobAttributes(JobTestCase):
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj, validate_qobj=True)
         job._wait_for_completion()
+        if 'COMPLETED' not in job.time_per_step():
+            job.refresh()
 
         rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
         self.assertFalse(rjob._time_per_step)

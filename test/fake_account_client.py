@@ -202,7 +202,7 @@ class BaseFakeAccountClient:
 
     def job_download_qobj(self, job_id, *_args, **_kwargs):
         """Retrieve and return a Qobj."""
-        return self._get_job(job_id).qobj
+        return copy.deepcopy(self._get_job(job_id).qobj)
 
     def job_result(self, job_id, *_args, **_kwargs):
         """Return a random job result."""

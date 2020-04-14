@@ -16,6 +16,17 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Changed
+
+- `IBMQFactory.save_account()` and `IBMQFactory.enable_account()` now accept
+  the optional parameters `hub`, `group`, `project`, which allow specifying a 
+  default provider to save to disk or use, respectively. (\#611)
+
+### Fixed
+
+- Fixed an issue where `nest_asyncio.apply()` may raise an exception
+  if there is no asyncio loop due to threading. (\#595)  
+  
 ## [0.6.0] - 2020-03-26
 
 ### Added

@@ -241,7 +241,7 @@ class RetrySession(Session):
             final_url = self.base_url + url
 
         # Add a timeout to the connection for non-proxy connections.
-        if not self.proxies:
+        if not self.proxies and 'timeout' not in kwargs:
             kwargs.update({'timeout': self._timeout})
 
         try:
@@ -257,6 +257,7 @@ class RetrySession(Session):
                     error_json = ex.response.json()['error']
                     message += ". {}, Error code: {}.".format(
                         error_json['message'], error_json['code'])
+                    logger.debug("Response uber-trace-id: %s", ex.response.headers['uber-trace-id'])
                 except (ValueError, KeyError):
                     # the response did not contain the expected json.
                     pass

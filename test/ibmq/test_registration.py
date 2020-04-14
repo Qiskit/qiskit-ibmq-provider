@@ -96,7 +96,7 @@ class TestCredentials(IBMQTestCase):
             store_credentials(credentials)
             with no_file('Qconfig.py'), custom_envs({'QE_TOKEN': 'ENVIRON_TOKEN',
                                                      'QE_URL': 'ENVIRON_URL'}):
-                credentials = discover_credentials()
+                credentials, _ = discover_credentials()
 
         self.assertEqual(len(credentials), 1)
         self.assertEqual(list(credentials.values())[0].token, 'ENVIRON_TOKEN')
@@ -110,7 +110,7 @@ class TestCredentials(IBMQTestCase):
             store_credentials(credentials)
             with custom_qconfig(b"APItoken='QCONFIG_TOKEN'"),\
                     custom_envs({'QE_TOKEN': 'ENVIRON_TOKEN'}):
-                credentials = discover_credentials()
+                credentials, _ = discover_credentials()
 
         self.assertEqual(len(credentials), 1)
         self.assertEqual(list(credentials.values())[0].token, 'QCONFIG_TOKEN')
@@ -238,7 +238,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             _ = update_credentials(force=True)
 
             # Assert over the stored (updated) credentials.
-            loaded_accounts = read_credentials_from_qiskitrc()
+            loaded_accounts, _ = read_credentials_from_qiskitrc()
             self.assertCorrectApi2Credentials('A', loaded_accounts)
 
     def test_qconsole_credentials(self):
@@ -249,7 +249,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             _ = update_credentials(force=True)
 
             # Assert over the stored (updated) credentials.
-            loaded_accounts = read_credentials_from_qiskitrc()
+            loaded_accounts, _ = read_credentials_from_qiskitrc()
             self.assertCorrectApi2Credentials('A', loaded_accounts)
 
     def test_proxy_credentials(self):
@@ -261,7 +261,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             _ = update_credentials(force=True)
 
             # Assert over the stored (updated) credentials.
-            loaded_accounts = read_credentials_from_qiskitrc()
+            loaded_accounts, _ = read_credentials_from_qiskitrc()
             self.assertCorrectApi2Credentials('A', loaded_accounts)
 
             # Extra assert on preserving proxies.
@@ -279,7 +279,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             _ = update_credentials(force=True)
 
             # Assert over the stored (updated) credentials.
-            loaded_accounts = read_credentials_from_qiskitrc()
+            loaded_accounts, _ = read_credentials_from_qiskitrc()
             # We don't assert over the token, as it depends on the order of
             # the qiskitrc, which is not guaranteed.
             self.assertCorrectApi2Credentials(None, loaded_accounts)
@@ -291,7 +291,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             _ = update_credentials(force=True)
 
             # Assert over the stored (updated) credentials.
-            loaded_accounts = read_credentials_from_qiskitrc()
+            loaded_accounts, _ = read_credentials_from_qiskitrc()
             self.assertCorrectApi2Credentials('A', loaded_accounts)
 
     def test_auth2_credentials(self):
@@ -311,7 +311,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
 
             # No credentials should be returned nor updated.
             self.assertIsNone(credentials)
-            loaded_accounts = read_credentials_from_qiskitrc()
+            loaded_accounts, _ = read_credentials_from_qiskitrc()
             self.assertEqual(list(loaded_accounts.values())[0].url,
                              'UNKNOWN_URL')
 
