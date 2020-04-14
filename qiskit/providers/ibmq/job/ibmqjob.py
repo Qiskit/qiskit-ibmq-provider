@@ -29,6 +29,7 @@ from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import Qobj
 from qiskit.result import Result
+from qiskit.validation.exceptions import ModelValidationError
 
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
@@ -704,7 +705,8 @@ class IBMQJob(SimpleNamespace, BaseJob):
             try:
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
                 self._result = Result.from_dict(result_response)
-            except ApiError as err:
+            except (ApiError, TypeError, ModelValidationError) as err:
+                # TODO Remove ModelValidationError once marshmallow is removed from Result
                 if self._status is JobStatus.ERROR:
                     raise IBMQJobFailureError(
                         'Unable to retrieve result for job {}. Job has failed. Use '

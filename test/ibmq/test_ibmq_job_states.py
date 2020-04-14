@@ -36,18 +36,29 @@ from ..jobtestcase import JobTestCase
 
 MOCKED_ERROR_RESULT = {
     'qObjectResult': {
+        'backend_name': 'fake_backend',
+        'backend_version': '0.1.1',
+        'qobj_id': '123',
+        'job_id': '123',
+        'success': False,
         'results': [
             {
                 'status': 'DONE',
-                'success': True
+                'success': True,
+                'shots': 1,
+                'data': {}
             },
             {
                 'status': 'Error 1',
-                'success': False
+                'success': False,
+                'shots': 1,
+                'data': {}
             },
             {
                 'status': 'Error 2',
-                'success': False
+                'success': False,
+                'shots': 1,
+                'data': {}
             }
         ]
     }
@@ -106,10 +117,10 @@ VALID_QOBJ_RESPONSE = {
 
 
 VALID_JOB_RESPONSE = {
-    'id': 'TEST_ID',
-    'kind': 'q-object',
-    'status': 'CREATING',
-    'creationDate': '2019-01-01T13:15:58.425972'
+    '_job_id': 'TEST_ID',
+    '_kind': 'q-object',
+    '_api_status': 'CREATING',
+    '_creation_date': '2019-01-01T13:15:58.425972'
 }
 
 
@@ -428,7 +439,7 @@ class BaseFakeAPI:
 
     def job_status(self, job_id):
         """Return the status of a job."""
-        summary_fields = ['status', 'error', 'infoQueue']
+        summary_fields = ['status', 'error', 'info_queue']
         complete_response = self.job_get(job_id)
         try:
             ApiJobStatus(complete_response['status'])
@@ -530,7 +541,7 @@ class QueuedAPI(BaseFakeAPI):
     """Class for emulating a successfully-completed queued API."""
 
     _job_status = [
-        {'status': 'RUNNING', 'infoQueue': {'status': 'PENDING_IN_QUEUE'}},
+        {'status': 'RUNNING', 'info_queue': {'status': 'PENDING_IN_QUEUE'}},
         {'status': 'RUNNING'},
         {'status': 'COMPLETED'}
     ]
@@ -643,7 +654,7 @@ class NoKindJobAPI(BaseFakeAPI):
     ]
 
     no_kind_response = copy.deepcopy(VALID_JOB_RESPONSE)
-    del no_kind_response['kind']
+    del no_kind_response['_kind']
 
     def job_submit(self, *_args, **_kwargs):
         return self.no_kind_response

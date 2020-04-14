@@ -38,13 +38,13 @@ class QueueInfo(SimpleNamespace):
 
     def __init__(
             self,
-            position: Optional[int],
-            status: Optional[str],
-            estimated_start_time: Optional[datetime],
-            estimated_complete_time: Optional[datetime],
-            hub_priority: Optional[float],
-            group_priority: Optional[float],
-            project_priority: Optional[float],
+            position: Optional[int] = None,
+            status: Optional[str] = None,
+            estimated_start_time: Optional[datetime] = None,
+            estimated_complete_time: Optional[datetime] = None,
+            hub_priority: Optional[float] = None,
+            group_priority: Optional[float] = None,
+            project_priority: Optional[float] = None,
             job_id: Optional[str] = None,
             **kwargs: Any
     ) -> None:
