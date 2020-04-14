@@ -39,8 +39,7 @@ class TestBasicServerPaths(IBMQTestCase):
             backend = least_busy(provider.backends(
                 simulator=False, open_pulse=False,
                 filters=lambda b: b.configuration().n_qubits >= 5))
-            provider_backend = {'provider': desc, 'backend': backend}
-            with self.subTest(provider_backend=provider_backend):
+            with self.subTest(desc=desc, backend=backend):
                 qobj = bell_in_qobj(backend)
                 job = backend.run(qobj, validate_qobj=True)
 
@@ -58,8 +57,7 @@ class TestBasicServerPaths(IBMQTestCase):
             backend = provider.backends(
                 simulator=False, operational=True,
                 filters=lambda b: b.configuration().n_qubits >= 5)[0]
-            provider_backend = {'provider': desc, 'backend': backend}
-            with self.subTest(provider_backend=provider_backend):
+            with self.subTest(desc=desc, backend=backend):
                 qobj = bell_in_qobj(backend)
                 job = backend.run(qobj, validate_qobj=True)
 
@@ -72,7 +70,7 @@ class TestBasicServerPaths(IBMQTestCase):
         """Test retrieving jobs."""
         backend_name = 'ibmq_qasm_simulator'
         for desc, provider in self.providers.items():
-            with self.subTest(provider=desc):
+            with self.subTest(desc=desc, backend=backend):
                 backend = provider.get_backend(backend_name)
                 qobj = bell_in_qobj(backend)
 
@@ -93,8 +91,7 @@ class TestBasicServerPaths(IBMQTestCase):
                                     'found for "{}"'.format(desc))
 
             pulse_backend = pulse_backends[0]
-            provider_backend = {'provider': desc, 'backend': pulse_backend}
-            with self.subTest(provider_backend=provider_backend):
+            with self.subTest(desc=desc, backend=pulse_backend):
                 self.assertIsNotNone(pulse_backend.properties())
                 self.assertIsNotNone(pulse_backend.defaults())
 
@@ -102,8 +99,7 @@ class TestBasicServerPaths(IBMQTestCase):
         """Test the status and job limit for a device."""
         for desc, provider in self.providers.items():
             backend = provider.backends(simulator=False, operational=True)[0]
-            provider_backend = {'provider': desc, 'backend': backend}
-            with self.subTest(provider_backend=provider_backend):
+            with self.subTest(desc=desc, backend=backend):
                 self.assertTrue(backend.status())
                 job_limit = backend.job_limit()
                 if desc == 'public_provider':
