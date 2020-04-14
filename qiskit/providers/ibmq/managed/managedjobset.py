@@ -35,13 +35,19 @@ from .managedjob import ManagedJob
 from .managedresults import ManagedResults
 from .utils import requires_submit, format_status_counts, format_job_details
 from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
-                         IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet,
-                         IBMQJobManagerUpdateError)
+                         IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet)
 from ..job import IBMQJob
-from ..job.exceptions import IBMQJobTimeoutError, IBMQJobUpdateError
+from ..job.exceptions import IBMQJobTimeoutError, IBMQJobApiError
 from ..ibmqbackend import IBMQBackend
 
 logger = logging.getLogger(__name__)
+
+# The formatter for the name of a job in the job set. The first entry is the job
+# set name and the second entry is the job's index in the job set.
+JOB_SET_NAME_FORMATTER = "{}_{}_"
+# Regex used to match a job name. The first group captured is the job set name.
+# The second group captured is the job's index in the job set.
+JOB_SET_NAME_RE = re.compile(r'(.*)_([0-9])+_$')
 
 
 class ManagedJobSet:
@@ -117,7 +123,7 @@ class ManagedJobSet:
         exp_index = 0
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)
-            job_name = "{}_{}_".format(self._name, i)
+            job_name = JOB_SET_NAME_FORMATTER.format(self._name, i)
             mjob = ManagedJob(experiments_count=len(experiments), start_index=exp_index)
             mjob.submit(qobj=qobj, job_name=job_name, backend=backend,
                         executor=executor, job_share_level=job_share_level,
@@ -160,8 +166,7 @@ class ManagedJobSet:
 
         # Extract common information from the first job.
         first_job = jobs[0]
-        pattern = re.compile(r'(.*)_([0-9])+_$')
-        matched = pattern.match(first_job.name())
+        matched = JOB_SET_NAME_RE.match(first_job.name())
         if not matched:
             raise IBMQJobManagerInvalidStateError(
                 'Job {} is tagged for the job set {} but does not '
@@ -174,7 +179,7 @@ class ManagedJobSet:
         jobs_dict = {}
         for job in jobs:
             # Verify the job is proper.
-            matched = pattern.match(job.name()) if job.name() else None
+            matched = JOB_SET_NAME_RE.match(job.name()) if job.name() else None
             if not matched or matched.group(1) != self._name or \
                     job.backend().name() != self._backend.name():
                 raise IBMQJobManagerInvalidStateError(
@@ -419,6 +424,7 @@ class ManagedJobSet:
         """
         return self._name
 
+    @requires_submit
     def update_name(self, name: str) -> str:
         """Update the name of this job set.
 
@@ -427,30 +433,16 @@ class ManagedJobSet:
 
         Returns:
             The new name associated with this job set.
-
-        Raises:
-            IBMQJobManagerInvalidStateError: If the input job name is not a string.
-            IBMQJobManagerUpdateError: If there was an error with updating the names
-                for the jobs in the job set.
         """
-        if not isinstance(name, str):
-            raise IBMQJobManagerInvalidStateError(
-                '"{}" of type "{}" is not a valid job name. '
-                'The job name needs to be a string.'.format(name, type(str)))
-
         for i, job in enumerate(self.jobs()):
             if job:
                 try:
-                    _ = job.update_name("{}_{}_".format(name, i))
-                except IBMQJobUpdateError as ex:
-                    raise IBMQJobManagerUpdateError(
-                        "An error occurred when updating the name for this job set: {}"
-                        "As a result, some of the jobs in this set may not have been "
-                        "updated. Please try updating the job set's name again "
-                        "to update the name for all jobs in this set."
-                        .format(str(ex))) from ex
+                    _ = job.update_name(JOB_SET_NAME_FORMATTER.format(name, i))
+                except IBMQJobApiError as ex:
+                    # Log a warning with the job that failed to update.
+                    logger.warning('%s', str(ex))
 
-        # If the update is successful for all jobs, cache the updated job set name.
+        # Cache the updated job set name.
         self._name = name
 
         return self._name
@@ -508,8 +500,6 @@ class ManagedJobSet:
 
         Raises:
             IBMQJobManagerInvalidStateError: If none of the input parameters are specified.
-            IBMQJobManagerUpdateError: If there was an error with updating the tags
-                for the jobs in the job set.
         """
         if (replacement_tags is None) and (additional_tags is None) and (removal_tags is None):
             raise IBMQJobManagerInvalidStateError(
@@ -522,16 +512,11 @@ class ManagedJobSet:
                     updated_tags = job.update_tags(replacement_tags=replacement_tags,
                                                    additional_tags=additional_tags,
                                                    removal_tags=removal_tags)
-                except IBMQJobUpdateError as ex:
-                    raise IBMQJobManagerUpdateError(
-                        "An error occurred when updating the tags for this job set: {}"
-                        "As a result, some of the jobs in this set may not have been "
-                        "updated. Please try updating the job set's tags again "
-                        "to update the tags for all jobs in this set."
-                        .format(str(ex))) from ex
+                except IBMQJobApiError as ex:
+                    # Log a warning with the job that failed to update.
+                    logger.warning('%s', str(ex))
 
-        # If the update is successful for all jobs, cache the updated job
-        # set tags and remove the long id.
+        # Cache the updated job set tags and remove the long id.
         self._tags = updated_tags
         self._tags.remove(self._id_long)
 

@@ -42,7 +42,3 @@ class IBMQJobInvalidStateError(IBMQJobError):
 class IBMQJobTimeoutError(JobTimeoutError, IBMQJobError):
     """Errors raised when a job operation times out."""
     pass
-
-
-class IBMQJobUpdateError(IBMQJobError):
-    """Errors that occur unexpectedly when updating a job."""

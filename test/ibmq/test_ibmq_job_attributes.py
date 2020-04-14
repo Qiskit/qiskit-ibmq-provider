@@ -117,11 +117,6 @@ class TestIBMQJobAttributes(JobTestCase):
         initial_job_name = str(time.time()).replace('.', '')
         job = backend.run(qobj, job_name=initial_job_name, validate_qobj=True)
         job_id = job.job_id()
-        # TODO No need to wait for job to run once api is fixed
-        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
-            time.sleep(0.5)
-        rjob = provider.backends.retrieve_job(job_id)
-        self.assertEqual(rjob.name(), initial_job_name)
 
         new_names_to_test = [
             '',  # empty string as name.
@@ -132,7 +127,7 @@ class TestIBMQJobAttributes(JobTestCase):
                 _ = job.update_name(new_name)  # Update the job name.
                 # Cached results may be returned if updating too quickly.
                 # Wait before updating again.
-                time.sleep(1)
+                time.sleep(2)
                 job.refresh()
                 self.assertEqual(job.name(), new_name,
                                  'Updating the name for job {} from "{}" to "{}" '
@@ -390,10 +385,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
         job_id = job.job_id()
 
-        # TODO No need to wait for job to run once api is fixed
-        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
-            time.sleep(0.5)
-
+        # Create a timestamp to use for unique tags.
         timestamp = str(time.time()).replace('.', '')
         tags_to_replace_subtests = [
             [],  # empty tags.
@@ -421,10 +413,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
         job_id = job.job_id()
 
-        # TODO No need to wait for job to run once api is fixed
-        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
-            time.sleep(0.5)
-
+        # Create a timestamp to use for unique tags.
         tags_to_add_subtests = [
             [],  # empty tags.
             ['{}_new_tag_{}'.format(uuid.uuid4().hex, i) for i in range(2)]  # unique tags.
@@ -452,10 +441,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
         job_id = job.job_id()
 
-        # TODO No need to wait for job to run once api is fixed
-        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
-            time.sleep(0.5)
-
+        # Create a timestamp to use for unique tags.
         tags_to_remove_subtests = [
             [],
             initial_job_tags[:2],  # Will be used to remove the first two tags of initial_job_tags.

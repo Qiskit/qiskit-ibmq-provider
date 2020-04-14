@@ -327,10 +327,6 @@ class TestIBMQJobManager(IBMQTestCase):
         # Wait for jobs to be submitted.
         while JobStatus.INITIALIZING in job_set.statuses():
             time.sleep(1)
-        # TODO No need to wait for job to run once api is fixed
-        while any(status not in JOB_FINAL_STATES + (JobStatus.RUNNING,)
-                  for status in job_set.statuses()):
-            time.sleep(0.5)
 
         tag_prefix = uuid.uuid4().hex
         replacement_tags = ['{}_new_tag_{}'.format(tag_prefix, i) for i in range(2)]
@@ -363,10 +359,6 @@ class TestIBMQJobManager(IBMQTestCase):
         # Wait for jobs to be submitted.
         while JobStatus.INITIALIZING in job_set.statuses():
             time.sleep(1)
-        # TODO No need to wait for job to run once api is fixed
-        while any(status not in JOB_FINAL_STATES + (JobStatus.RUNNING,)
-                  for status in job_set.statuses()):
-            time.sleep(0.5)
 
         initial_job_tags_with_id_long = initial_job_tags + [job_set._id_long]
 
