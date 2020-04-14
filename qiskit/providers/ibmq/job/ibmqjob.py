@@ -111,7 +111,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             _name: Optional[str] = None,
             _time_per_step: Optional[dict] = None,
             _result: Optional[dict] = None,
-            _qobj: Optional[Union[dict, Qobj]] = None,
+            _qobj: Optional[Union[dict, QasmQobj, PulseQobj]] = None,
             _error: Optional[dict] = None,
             _tags: Optional[List[str]] = None,
             _run_mode: Optional[str] = None,
@@ -554,7 +554,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         if '_result' in api_response:
             self._result = Result.from_dict(api_response.pop('_result'))
         if '_qobj' in api_response:
-            self._qobj = Qobj.from_dict(api_response.pop('_qobj'))
+            self._qobj = dict_to_qobj(api_response.pop('_qobj'))
         self.__dict__.update(api_response)
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
         self._status, self._queue_info = \
