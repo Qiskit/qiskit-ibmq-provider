@@ -84,6 +84,10 @@ class QueueInfo(BaseModel):
 
         Returns:
             A string representation of ``QueueInfo``.
+
+        Raises:
+            TypeError: If the `estimated_start_time` or `estimated_end_time`
+                value is not valid.
         """
         status = api_status_to_job_status(ApiJobStatus(self._status)).value \
             if self._status else self._get_value(self._status)

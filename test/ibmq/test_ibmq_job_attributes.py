@@ -242,7 +242,7 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertTrue(job.time_per_step())
         for step, time_data in job.time_per_step().items():
             self.assertTrue((start_datetime_str <= time_data <= end_datetime_str),
-                            'job time step {} {} is not '
+                            'job time step "{}={}" is not '
                             'between the start date time {} and end date time {}'
                             .format(step, time_data, start_datetime_str, end_datetime_str))
 
@@ -278,12 +278,12 @@ class TestIBMQJobAttributes(JobTestCase):
         for _ in range(10):
             queue_info = job.queue_info()
             # Even if job status is queued, its queue info may not be immediately available.
-            if (job._status in JobStatus.QUEUED and job.queue_position() is not None) or \
+            if (job._status is JobStatus.QUEUED and job.queue_position() is not None) or \
                     job._status in leave_states:
                 break
             time.sleep(0.5)
 
-        if job._status in JobStatus.QUEUED and job.queue_position() is not None:
+        if job._status is JobStatus.QUEUED and job.queue_position() is not None:
             self.log.debug("Job id=%s, queue info=%s, queue position=%s",
                            job.job_id(), queue_info, job.queue_position())
             msg = "Job {} is queued but has no ".format(job.job_id())
@@ -294,10 +294,8 @@ class TestIBMQJobAttributes(JobTestCase):
                 queue_info.hub_priority, queue_info.group_priority, queue_info.project_priority]),
                             "Unexpected queue info {} for job {}".format(queue_info, job.job_id()))
 
-            queue_info_format = queue_info.format()
-            self.assertTrue(queue_info_format)
-            queue_info_repr = repr(queue_info)
-            self.assertTrue(queue_info_repr)
+            self.assertTrue(queue_info.format())
+            self.assertTrue(repr(queue_info))
         else:
             self.assertIsNone(job.queue_position())
             self.log.warning("Unable to retrieve queue information")

@@ -186,6 +186,8 @@ class IBMQBackendService(SimpleNamespace):
 
         Raises:
             IBMQBackendValueError: If a keyword value is not recognized.
+            TypeError: If the input `start_datetime` or `end_datetime` parameter value
+                is not valid.
         """
         # Build the filter for the query.
         api_filter = {}  # type: Dict[str, Any]
@@ -203,9 +205,9 @@ class IBMQBackendService(SimpleNamespace):
         # TODO: Remove when decided the warning is no longer needed.
         if start_datetime or end_datetime:
             warnings.warn('The parameters `start_datetime` and `end_datetime` are expected '
-                          'to be in local time now, rather than UTC.')
+                          'to be in local time now, rather than UTC.', stacklevel=2)
 
-            # Attempt to convert the input datetime objects to UTC.
+            # Attempt to convert the input, local datetime objects to UTC.
             start_datetime_utc = local_to_utc(start_datetime) if start_datetime else None
             end_datetime_utc = local_to_utc(end_datetime) if end_datetime else None
 

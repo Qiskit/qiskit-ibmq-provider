@@ -45,13 +45,13 @@ def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
 
 
 def local_to_utc(local_dt: Union[datetime.datetime, str]) -> datetime.datetime:
-    """Convert a local ``datetime`` object or string to a UTC timezone ``datetime``.
+    """Convert a local ``datetime`` object or string to a UTC ``datetime``.
 
     Args:
         local_dt: Input local `datetime` or string.
 
     Returns:
-        A ``datetime`` with a UTC timezone.
+        A ``datetime`` in UTC.
 
     Raises:
         TypeError: If the input parameter value is not valid.
@@ -78,10 +78,6 @@ def datetime_to_str(date_time: datetime.datetime) -> str:
 
 def str_to_datetime(date_time: str) -> datetime.datetime:
     """Convert a string representing a date time to a datetime object.
-
-    Note:
-        The datetime returned is not timezone aware. This allow `str_to_datetime`
-        to be used for both local and UTC time conversion.
 
     Args:
         date_time: Input string to convert into a datetime object.
@@ -119,10 +115,10 @@ def duration_difference(date_time_utc: datetime.datetime) -> str:
     """Compute the estimated duration until the given datetime.
 
     Args:
-        date_time_utc: The input datetime, in UTC
+        date_time_utc: The input datetime, in UTC.
 
     Returns:
-        String giving estimated duration
+        String giving the estimated duration.
     """
     time_delta = date_time_utc.replace(tzinfo=None) - datetime.datetime.utcnow()
     time_tuple = seconds_to_duration(time_delta.total_seconds())
