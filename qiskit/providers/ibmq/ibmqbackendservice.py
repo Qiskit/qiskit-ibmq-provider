@@ -22,7 +22,6 @@ from datetime import datetime
 
 from qiskit.providers import JobStatus, QiskitBackendNotFoundError  # type: ignore[attr-defined]
 from qiskit.providers.providerutils import filter_backends
-from qiskit.validation.exceptions import ModelValidationError
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .api.exceptions import ApiError
@@ -266,7 +265,7 @@ class IBMQBackendService(SimpleNamespace):
         for job_info in job_responses:
             job_id = job_info.get('id', "")
             # Recreate the backend used for this job.
-            backend_name = job_info.get('backend', {}).get('name', 'unknown')
+            backend_name = job_info.get('_backend_info', {}).get('name', 'unknown')
             try:
                 backend = self._provider.get_backend(backend_name)
             except QiskitBackendNotFoundError:
@@ -280,8 +279,8 @@ class IBMQBackendService(SimpleNamespace):
                 'api': self._provider._api,
             })
             try:
-                job = IBMQJob.from_dict(job_info)
-            except ModelValidationError:
+                job = IBMQJob(**job_info)
+            except TypeError:
                 logger.warning('Discarding job "%s" because it contains invalid data.', job_id)
                 continue
 
@@ -381,7 +380,7 @@ class IBMQBackendService(SimpleNamespace):
                                       .format(job_id, str(ex))) from ex
 
         # Recreate the backend used for this job.
-        backend_name = job_info.get('backend', {}).get('name', 'unknown')
+        backend_name = job_info.get('_backend_info', {}).get('name', 'unknown')
         try:
             backend = self._provider.get_backend(backend_name)
         except QiskitBackendNotFoundError:
@@ -395,8 +394,8 @@ class IBMQBackendService(SimpleNamespace):
             'api': self._provider._api
         })
         try:
-            job = IBMQJob.from_dict(job_info)
-        except ModelValidationError as ex:
+            job = IBMQJob(**job_info)
+        except TypeError as ex:
             raise IBMQBackendApiProtocolError(
                 'Unexpected return value received from the server '
                 'when retrieving job {}: {}'.format(job_id, str(ex))) from ex

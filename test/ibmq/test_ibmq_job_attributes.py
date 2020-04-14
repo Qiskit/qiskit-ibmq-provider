@@ -24,12 +24,13 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
-from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
+from qiskit.providers.ibmq.exceptions import IBMQBackendValueError, IBMQBackendApiProtocolError
 from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, requires_device
-from ..utils import most_busy_backend, cancel_job, get_large_circuit
+from ..utils import most_busy_backend, cancel_job, get_large_circuit, bell_in_qobj
+from ..fake_account_client import BaseFakeAccountClient, NewFieldFakeJob, MissingFieldFakeJob
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -49,6 +50,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job = backend.run(qobj, validate_qobj=True)
         self.log.info('job_id: %s', job.job_id())
         self.assertTrue(job.job_id() is not None)
+        self.assertFalse(hasattr(job, 'creationDate'))
 
     @requires_provider
     def test_get_backend_name(self, provider):
@@ -369,6 +371,24 @@ class TestIBMQJobAttributes(JobTestCase):
         rjob = backend.retrieve_job(job.job_id())
         self.assertEqual(rjob.scheduling_mode(), "fairshare", "Job {} scheduling mode is {}".format(
             rjob.job_id(), rjob.scheduling_mode()))
+
+    @requires_provider
+    def test_auto_new_fields(self, provider):
+        """Test new response fields appear in the job."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient(job_class=NewFieldFakeJob)
+
+        job = backend.run(bell_in_qobj(backend=backend))
+        self.assertTrue(hasattr(job, 'new_field'))
+
+    @requires_provider
+    def test_missing_required_fields(self, provider):
+        """Test response data is missing required fields."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        backend._api = BaseFakeAccountClient(job_class=MissingFieldFakeJob)
+
+        qobj = bell_in_qobj(backend=backend)
+        self.assertRaises(IBMQBackendApiProtocolError, backend.run, qobj)
 
 
 def _bell_circuit():

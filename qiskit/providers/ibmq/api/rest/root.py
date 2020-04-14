@@ -23,6 +23,7 @@ from qiskit.providers.ibmq.utils.utils import filter_data
 from .base import RestAdapterBase
 from .backend import Backend
 from .job import Job
+from .utils.data_mapper import map_job_response
 
 logger = logging.getLogger(__name__)
 
@@ -116,8 +117,10 @@ class Api(RestAdapterBase):
             logger.debug("Endpoint: %s. Method: GET. Request Data: {'filter': %s}",
                          url, filter_data(query))
 
-        return self.session.get(
-            url, params={'filter': json.dumps(query)}).json()
+        data = self.session.get(url, params={'filter': json.dumps(query)}).json()
+        for job_data in data:
+            map_job_response(job_data)
+        return data
 
     def create_remote_job(
             self,

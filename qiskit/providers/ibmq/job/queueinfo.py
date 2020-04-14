@@ -16,18 +16,14 @@
 
 from typing import Any, Optional
 from datetime import datetime
+from types import SimpleNamespace
 
 import arrow
 
-from qiskit.validation import BaseModel, bind_schema
-
-from ..api.rest.validation import InfoQueueResponseSchema
-from ..apiconstants import ApiJobStatus
 from .utils import api_status_to_job_status
 
 
-@bind_schema(InfoQueueResponseSchema)
-class QueueInfo(BaseModel):
+class QueueInfo(SimpleNamespace):
     """Queue information for a job.
 
     Attributes:
@@ -43,7 +39,7 @@ class QueueInfo(BaseModel):
     def __init__(
             self,
             position: Optional[int],
-            _status: Optional[str],
+            status: Optional[str],
             estimated_start_time: Optional[datetime],
             estimated_complete_time: Optional[datetime],
             hub_priority: Optional[float],
@@ -56,7 +52,7 @@ class QueueInfo(BaseModel):
 
         Args:
             position: Position in the queue.
-            _status: Job status.
+            status: Job status.
             estimated_start_time: Estimated start time for the job, in UTC.
             estimated_complete_time: Estimated complete time for the job, in UTC.
             hub_priority: Dynamic priority for the hub.
@@ -66,7 +62,7 @@ class QueueInfo(BaseModel):
             kwargs: Additional attributes.
         """
         self.position = position
-        self._status = _status
+        self._status = status
         self.estimated_start_time = estimated_start_time
         self.estimated_complete_time = estimated_complete_time
         self.hub_priority = hub_priority
@@ -82,7 +78,7 @@ class QueueInfo(BaseModel):
         Returns:
             A string representation of ``QueueInfo``.
         """
-        status = api_status_to_job_status(ApiJobStatus(self._status)).value \
+        status = api_status_to_job_status(self._status).name \
             if self._status else self._get_value(self._status)
         estimated_start_time = self.estimated_start_time.isoformat() \
             if self.estimated_start_time else self._get_value(self.estimated_start_time)
@@ -108,7 +104,7 @@ class QueueInfo(BaseModel):
         Returns:
              The job queue information report.
         """
-        status = api_status_to_job_status(ApiJobStatus(self._status)).value \
+        status = api_status_to_job_status(self._status).value \
             if self._status else self._get_value(self._status)
         estimated_start_time = arrow.get(self.estimated_start_time).humanize() \
             if self.estimated_start_time else self._get_value(self.estimated_start_time)

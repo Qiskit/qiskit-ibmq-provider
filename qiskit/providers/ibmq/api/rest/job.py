@@ -15,19 +15,17 @@
 """Job REST adapter."""
 
 import logging
-import pprint
 import json
 from json.decoder import JSONDecodeError
 
 from typing import Dict, Any
-from marshmallow.exceptions import ValidationError
 
 from qiskit.providers.ibmq.utils import json_encoder
 
 from .base import RestAdapterBase
-from .validation import StatusResponseSchema
 from ..session import RetrySession
 from ..exceptions import ApiIBMQProtocolError
+from .utils.data_mapper import map_job_response, map_job_status_response
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +67,7 @@ class Job(RestAdapterBase):
 
         if 'calibration' in response:
             response['properties'] = response.pop('calibration')
+        response = map_job_response(response)
 
         return response
 
@@ -79,7 +78,9 @@ class Job(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('callback_upload')
-        return self.session.post(url).json()
+        data = self.session.post(url).json()
+        mapped_response = {'job': map_job_response(data['job'])}
+        return mapped_response
 
     def callback_download(self) -> Dict[str, Any]:
         """Notify the API after downloading a ``Qobj`` via object storage.
@@ -143,14 +144,7 @@ class Job(RestAdapterBase):
             raise ApiIBMQProtocolError(
                 'Unrecognized return value received from the server: {!r}. This could be caused'
                 ' by too many requests.'.format(raw_response.content)) from err
-
-        try:
-            # Validate the response.
-            StatusResponseSchema().validate(api_response)
-        except ValidationError as err:
-            raise ApiIBMQProtocolError('Unexpected return value received from the server: '
-                                       '\n{}'.format(pprint.pformat(api_response))) from err
-        return api_response
+        return map_job_status_response(api_response)
 
     def upload_url(self) -> Dict[str, Any]:
         """Return an object storage URL for uploading the ``Qobj``.

@@ -19,7 +19,6 @@ from typing import Dict, List, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider  # type: ignore[attr-defined]
-from qiskit.validation.exceptions import ModelValidationError
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 
@@ -131,7 +130,7 @@ class AccountProvider(BaseProvider):
                     provider=self,
                     credentials=self.credentials,
                     api=self._api)
-            except ModelValidationError as ex:
+            except TypeError as ex:
                 logger.warning(
                     'Remote backend "%s" could not be instantiated due to an '
                     'invalid config: %s',

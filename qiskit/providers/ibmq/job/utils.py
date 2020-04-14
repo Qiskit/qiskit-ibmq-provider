@@ -14,7 +14,7 @@
 
 """Utilities for working with IBM Quantum Experience jobs."""
 
-from typing import Dict, List, Generator, Any
+from typing import Dict, List, Generator, Any, Union
 from contextlib import contextmanager
 
 from qiskit.providers.jobstatus import JobStatus
@@ -58,7 +58,7 @@ def build_error_report(results: List[Dict[str, Any]]) -> str:
     return error_report
 
 
-def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
+def api_status_to_job_status(api_status: Union[str, ApiJobStatus]) -> JobStatus:
     """Return the corresponding job status for the input server job status.
 
     Args:
@@ -67,6 +67,8 @@ def api_status_to_job_status(api_status: ApiJobStatus) -> JobStatus:
     Returns:
         Job status.
     """
+    if isinstance(api_status, str):
+        api_status = ApiJobStatus(api_status)
     return API_TO_JOB_STATUS[api_status]
 
 
