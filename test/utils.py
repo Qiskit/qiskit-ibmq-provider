@@ -15,7 +15,7 @@
 """General utility functions for testing."""
 
 from qiskit import QuantumCircuit
-from qiskit.qobj import Qobj
+from qiskit.qobj import QasmQobj
 from qiskit.compiler import assemble, transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.exceptions import JobError
@@ -63,7 +63,7 @@ def get_large_circuit(backend: IBMQBackend) -> QuantumCircuit:
     return circuit
 
 
-def bell_in_qobj(backend: IBMQBackend, shots: int = 1024) -> Qobj:
+def bell_in_qobj(backend: IBMQBackend, shots: int = 1024) -> QasmQobj:
     """Return a bell circuit in Qobj format.
 
     Args:

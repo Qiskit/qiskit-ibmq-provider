@@ -21,7 +21,7 @@ from typing import Dict, List, Union, Optional, Any
 from datetime import datetime as python_datetime
 from marshmallow import ValidationError
 
-from qiskit.qobj import Qobj, validate_qobj_against_schema
+from qiskit.qobj import QasmQobj, PulseQobj, validate_qobj_against_schema
 from qiskit.providers.basebackend import BaseBackend  # type: ignore[attr-defined]
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
@@ -114,7 +114,7 @@ class IBMQBackend(BaseBackend):
 
     def run(
             self,
-            qobj: Qobj,
+            qobj: Union[QasmQobj, PulseQobj],
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
@@ -174,7 +174,7 @@ class IBMQBackend(BaseBackend):
 
     def _submit_job(
             self,
-            qobj: Qobj,
+            qobj: Union[QasmQobj, PulseQobj],
             job_name: Optional[str] = None,
             job_share_level: Optional[ApiJobShareLevel] = None,
             job_tags: Optional[List[str]] = None
@@ -517,7 +517,7 @@ class IBMQSimulator(IBMQBackend):
 
     def run(
             self,
-            qobj: Qobj,
+            qobj: Union[QasmQobj, PulseQobj],
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
@@ -606,7 +606,7 @@ class IBMQRetiredBackend(IBMQBackend):
 
     def run(
             self,
-            qobj: Qobj,
+            qobj: Union[QasmQobj, PulseQobj],
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
