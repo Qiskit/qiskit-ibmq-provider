@@ -49,7 +49,7 @@ class TestBackendInfo(IBMQTestCase):
                 config = backend.configuration()
                 status = backend.status()
                 self.assertIn(config.backend_name, tab_str)
-                self.assertIn(str(status.pending_jobs), tab_str)
+                self.assertIn(str(status.status_msg), tab_str)
 
     def test_qubits_tab(self):
         """Test qubits tab."""
