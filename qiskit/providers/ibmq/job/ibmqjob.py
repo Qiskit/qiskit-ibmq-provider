@@ -326,13 +326,13 @@ class IBMQJob(BaseModel, BaseJob):
         """Update the tags associated with this job.
 
         When multiple parameters are specified, the parameters are processed in the
-        following order::
+        following order:
 
-            1. `replacement_tags`
-            2. `additional_tags`
-            3. `removal_tags`
+            1. replacement_tags
+            2. additional_tags
+            3. removal_tags
 
-        An example of the ordering process when specifying `['new_tag']` for both the
+        An example of the ordering process when specifying ``['new_tag']`` for both the
         `additional_tags` and `removal_tags`::
 
             job.update_tags(additional_tags=['new_tag'], removal_tags=['new_tag'])
@@ -342,8 +342,8 @@ class IBMQJob(BaseModel, BaseJob):
         (i.e. `tags=[]`). Following the order above:
 
             - There are no tags to replace (step 1).
-            - `new_tags` is added, since it is specified in `additional_tags` (step 2).
-            - `new_tag` is removed, since it is specified in `removal_tags`  (step 3).
+            - ``new_tag`` is added, since it is specified in `additional_tags` (step 2).
+            - ``new_tag`` is removed, since it is specified in `removal_tags`  (step 3).
 
         Note:
             * Some tags, such as those starting with ``ibmq_jobset``, are used
