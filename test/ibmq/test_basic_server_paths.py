@@ -70,8 +70,8 @@ class TestBasicServerPaths(IBMQTestCase):
         """Test retrieving jobs."""
         backend_name = 'ibmq_qasm_simulator'
         for desc, provider in self.providers.items():
+            backend = provider.get_backend(backend_name)
             with self.subTest(desc=desc, backend=backend):
-                backend = provider.get_backend(backend_name)
                 qobj = bell_in_qobj(backend)
 
                 job = backend.run(qobj, validate_qobj=True)
