@@ -485,8 +485,8 @@ class IBMQJob(BaseModel, BaseJob):
             self.refresh()
         time_per_step_local = {}
         if self._time_per_step:
-            warnings.warn('The time step data is returned in local time now, '
-                          'rather than UTC.', stacklevel=2)
+            warnings.warn('The time per step date and time information is returned in '
+                          'local time now, rather than UTC.', stacklevel=2)
             for step_name, time_data_utc in self._time_per_step.items():
                 time_data_local_dt = utc_to_local(time_data_utc)
                 time_per_step_local[step_name] = datetime_to_str(time_data_local_dt)
