@@ -29,7 +29,7 @@ from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel, API_JOB_FINAL_S
 
 from ..job.ibmqjob import IBMQJob
 from ..job.exceptions import IBMQJobTimeoutError
-from ..exceptions import IBMQBackendApiError
+from ..exceptions import IBMQBackendJobLimitError
 
 logger = logging.getLogger(__name__)
 
@@ -116,19 +116,17 @@ class ManagedJob:
                         job_name=job_name,
                         job_share_level=job_share_level.value,
                         job_tags=job_tags)
-                except IBMQBackendApiError as api_err:
-                    if 'Error code: 3458' in str(api_err):
-                        final_states = [state.value for state in API_JOB_FINAL_STATES]
-                        oldest_running = backend.jobs(limit=1, descending=False,
-                                                      db_filter={"status": {"nin": final_states}})
-                        if oldest_running:
-                            oldest_running = oldest_running[0]
-                            logger.warning("Job limit reached, waiting for job %s to finish "
-                                           "before submitting the next one.",
-                                           oldest_running.job_id())
-                            oldest_running.wait_for_final_state(timeout=300)
-                    else:
-                        raise
+                except IBMQBackendJobLimitError:
+                    final_states = [state.value for state in API_JOB_FINAL_STATES]
+                    oldest_running = backend.jobs(limit=1, descending=False,
+                                                  db_filter={"status": {"nin": final_states}})
+                    if oldest_running:
+                        oldest_running = oldest_running[0]
+                        logger.warning("Job limit reached, waiting for job %s to finish "
+                                       "before submitting the next one.",
+                                       oldest_running.job_id())
+                        oldest_running.wait_for_final_state(timeout=300)
+
         except Exception as err:  # pylint: disable=broad-except
             warnings.warn("Unable to submit job for experiments {}-{}: {}".format(
                 self.start_index, self.end_index, err))
