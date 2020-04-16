@@ -96,16 +96,16 @@ class BaseFakeJob:
     def data(self):
         """Return job data."""
         data = {
-            '_job_id': self._job_id,
-            '_kind': 'q-object',
-            '_api_status': self._status.value,
-            '_creation_date': '2019-01-01T13:15:58.425972',
+            'job_id': self._job_id,
+            'kind': 'q-object',
+            'status': self._status.value,
+            'creation_date': '2019-01-01T13:15:58.425972',
             '_backend_info': {'name': self._backend_name}
         }
         if self._share_level:
             data['share_level'] = self._share_level
         if self._job_tags:
-            data['_tags'] = self._job_tags
+            data['tags'] = self._job_tags
 
         return data
 
@@ -157,7 +157,7 @@ class MissingFieldFakeJob(BaseFakeJob):
     def data(self):
         """Return job data."""
         data = super().data()
-        del data['_job_id']
+        del data['job_id']
         return data
 
 

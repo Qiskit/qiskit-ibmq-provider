@@ -29,19 +29,14 @@ def map_job_response(data: Dict[str, Any]) -> Dict[str, Any]:
         Mapped data.
     """
     field_map = {
-        'id': '_job_id',
-        'status': '_api_status',
+        'id': 'job_id',
         'backend': '_backend_info',
-        'creationDate': '_creation_date',
-        'qObject': '_qobj',
-        'qObjectResult': '_result',
-        'error': '_error',
-        'name': '_name',
-        'timePerStep': '_time_per_step',
+        'creationDate': 'creation_date',
+        'qObject': 'qobj',
+        'qObjectResult': 'result',
+        'timePerStep': 'time_per_step',
         'shots': '_api_shots',
-        'tags': '_tags',
-        'runMode': '_run_mode',
-        'kind': '_kind'
+        'runMode': 'run_mode'
     }
     info_queue = map_info_queue(data.pop('infoQueue', {}))
     dict_to_identifier(data, field_map)

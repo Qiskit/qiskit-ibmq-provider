@@ -102,63 +102,59 @@ class IBMQJob(SimpleNamespace, BaseJob):
 
     def __init__(
             self,
-            _backend: BaseBackend,
+            backend: BaseBackend,
             api: AccountClient,
-            _job_id: str,
-            _creation_date: str,
-            _api_status: str,
-            _kind: Optional[str] = None,
-            _name: Optional[str] = None,
-            _time_per_step: Optional[dict] = None,
-            _result: Optional[dict] = None,
-            _qobj: Optional[Union[dict, QasmQobj, PulseQobj]] = None,
-            _error: Optional[dict] = None,
-            _tags: Optional[List[str]] = None,
-            _run_mode: Optional[str] = None,
+            job_id: str,
+            creation_date: str,
+            status: str,
+            kind: Optional[str] = None,
+            name: Optional[str] = None,
+            time_per_step: Optional[dict] = None,
+            result: Optional[dict] = None,
+            qobj: Optional[Union[dict, QasmQobj, PulseQobj]] = None,
+            error: Optional[dict] = None,
+            tags: Optional[List[str]] = None,
+            run_mode: Optional[str] = None,
             **kwargs: Any) -> None:
         """IBMQJob constructor.
 
         Args:
-            _backend: The backend instance used to run this job.
+            backend: The backend instance used to run this job.
             api: Object for connecting to the server.
-            _job_id: Job ID.
-            _creation_date: Job creation date.
-            _api_status: Job status returned by the server.
-            _kind: Job type.
-            _name: Job name.
-            _time_per_step: Time spent for each processing step.
-            _result: Job result.
-            _qobj: Qobj for this job.
-            _error: Job error.
-            _tags: Job tags.
-            _run_mode: Scheduling mode the job runs in.
+            job_id: Job ID.
+            creation_date: Job creation date.
+            status: Job status returned by the server.
+            kind: Job type.
+            name: Job name.
+            time_per_step: Time spent for each processing step.
+            result: Job result.
+            qobj: Qobj for this job.
+            error: Job error.
+            tags: Job tags.
+            run_mode: Scheduling mode the job runs in.
             kwargs: Additional job attributes.
         """
-        # pylint: disable=redefined-builtin
-
-        self._backend = _backend
+        self._backend = backend
         self._api = api
-        self._job_id = _job_id
-        self._creation_date = dateutil.parser.isoparse(_creation_date)
-        self._api_status = _api_status
-        self._kind = ApiJobKind(_kind) if _kind else None
-        self._name = _name
-        self._time_per_step = _time_per_step
-        self._result = Result.from_dict(_result) if _result else None
-        if isinstance(_qobj, dict):
-            _qobj = dict_to_qobj(_qobj)
-        self._qobj = _qobj
-        self._error = _error
-        self._tags = _tags
-        self._run_mode = _run_mode
+        self._job_id = job_id
+        self._creation_date = dateutil.parser.isoparse(creation_date)
+        self._api_status = status
+        self._kind = ApiJobKind(kind) if kind else None
+        self._name = name
+        self._time_per_step = time_per_step
+        self._result = Result.from_dict(result) if result else None
+        if isinstance(qobj, dict):
+            qobj = dict_to_qobj(qobj)
+        self._qobj = qobj
+        self._error = error
+        self._tags = tags
+        self._run_mode = run_mode
+        self._status, self._queue_info = \
+            self._get_status_position(status, kwargs.pop('info_queue', None))
+        self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
 
         SimpleNamespace.__init__(self, **kwargs)
         BaseJob.__init__(self, self.backend(), self.job_id())
-
-        self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
-        self._queue_info = None     # type: Optional[QueueInfo]
-        self._status, self._queue_info = self._get_status_position(
-            _api_status, kwargs.pop('info_queue', None))
 
         # Properties used for caching.
         self._cancelled = False
@@ -548,17 +544,29 @@ class IBMQJob(SimpleNamespace, BaseJob):
         with api_to_job_error():
             api_response = self._api.job_get(self.job_id())
 
-        self._creation_date = dateutil.parser.isoparse(api_response.pop('_creation_date'))
-        if '_kind' in api_response:
-            self._kind = ApiJobKind(api_response.pop('_kind'))
-        if '_result' in api_response:
-            self._result = Result.from_dict(api_response.pop('_result'))
-        if '_qobj' in api_response:
-            self._qobj = dict_to_qobj(api_response.pop('_qobj'))
-        self.__dict__.update(api_response)
+        try:
+            api_response.pop('job_id')
+            self._creation_date = dateutil.parser.isoparse(api_response.pop('creation_date'))
+            self._api_status = api_response.pop('status')
+        except KeyError as err:
+            raise IBMQJobApiError("Unexpected return value received "
+                                  "from the server: {}".format(err)) from err
+
+        if 'kind' in api_response:
+            self._kind = ApiJobKind(api_response.pop('kind'))
+        self._name = api_response.pop('name', None)
+        self._time_per_step = api_response.pop('time_per_step', None)
+        if 'result' in api_response:
+            self._result = Result.from_dict(api_response.pop('result'))
+        if 'qobj' in api_response:
+            self._qobj = dict_to_qobj(api_response.pop('qobj'))
+        self._error = api_response.pop('error', None)
+        self._tags = api_response.pop('tags', None)
+        self._run_mode = api_response.pop('run_mode', None)
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
         self._status, self._queue_info = \
             self._get_status_position(self._api_status, api_response.pop('info_queue', None))
+        self.__dict__.update(api_response)
 
     def to_dict(self) -> Dict:
         """Serialize the model into a Python dict of simple types.
@@ -796,7 +804,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
 
             try:
                 status, queue_info = self._get_status_position(
-                    status_response['status'], status_response.get('infoQueue', None))
+                    status_response['status'], status_response.get('info_queue', None))
             except IBMQJobApiError as ex:
                 logger.warning("Unexpected error when getting job status: %s", ex)
                 continue
@@ -829,8 +837,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         queue_info = None
         status = api_status_to_job_status(api_status)
         if api_status is ApiJobStatus.RUNNING.value and api_info_queue:
-            api_info_queue['job_id'] = self.job_id()  # job_id is used for QueueInfo.format().
-            queue_info = QueueInfo(**api_info_queue)
+            queue_info = QueueInfo(job_id=self.job_id(), **api_info_queue)
             if queue_info._status == ApiJobStatus.PENDING_IN_QUEUE.value:
                 status = JobStatus.QUEUED
 

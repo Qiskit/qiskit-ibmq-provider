@@ -219,13 +219,8 @@ class IBMQBackend(BaseBackend):
                 'Error submitting job: {}'.format(str(submit_info['error'])))
 
         # Submission success.
-        submit_info.update({
-            '_backend': self,
-            'api': self._api,
-            'qObject': qobj
-        })
         try:
-            job = IBMQJob(**submit_info)
+            job = IBMQJob(backend=self, api=self._api, qobj=qobj, **submit_info)
             logger.debug('Job %s was successfully submitted.', job.job_id())
         except TypeError as err:
             raise IBMQBackendApiProtocolError('Unexpected return value received from the server '

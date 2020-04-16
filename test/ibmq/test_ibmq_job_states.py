@@ -117,10 +117,10 @@ VALID_QOBJ_RESPONSE = {
 
 
 VALID_JOB_RESPONSE = {
-    '_job_id': 'TEST_ID',
-    '_kind': 'q-object',
-    '_api_status': 'CREATING',
-    '_creation_date': '2019-01-01T13:15:58.425972'
+    'job_id': 'TEST_ID',
+    'kind': 'q-object',
+    'status': 'CREATING',
+    'creation_date': '2019-01-01T13:15:58.425972'
 }
 
 
@@ -654,7 +654,7 @@ class NoKindJobAPI(BaseFakeAPI):
     ]
 
     no_kind_response = copy.deepcopy(VALID_JOB_RESPONSE)
-    del no_kind_response['_kind']
+    del no_kind_response['kind']
 
     def job_submit(self, *_args, **_kwargs):
         return self.no_kind_response
