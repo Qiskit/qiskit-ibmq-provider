@@ -205,11 +205,14 @@ class IBMQJobManager:
 
         if detailed:
             report.append("\nDetail report:")
+            report.append("Note: The '*' indicates fields that were not updated properly "
+                          "or differ from the job set fields.")
             for i, job_set in enumerate(self._job_sets):
                 report.append(("  Job set name: {}, ID: {}".format(
                     job_set.name(), job_set.job_set_id())))
                 report.extend(format_job_details(
-                    job_set_statuses[i], job_set.managed_jobs()))
+                    job_set_statuses[i], job_set.managed_jobs(),
+                    job_set.name(), job_set.job_set_id()))
 
         return '\n'.join(report)
 

@@ -14,6 +14,7 @@
 
 """Utility functions for ``IBMQJobManager``."""
 
+import re
 from typing import Callable, Any, List, Union
 from functools import wraps
 from collections import Counter
@@ -21,7 +22,15 @@ from concurrent.futures import wait
 
 from qiskit.providers.jobstatus import JobStatus
 
+from .exceptions import IBMQJobManagerInvalidStateError
 from .managedjob import ManagedJob
+
+# The formatter for the name of a job in the job set. The first entry is the job
+# set name and the second entry is the job's index in the job set.
+JOB_SET_NAME_FORMATTER = "{}_{}_"
+# Regex used to match a job name. The first group captured is the job set name.
+# The second group captured is the job's index in the job set.
+JOB_SET_NAME_RE = re.compile(r'(.*)_([0-9])+_$')
 
 
 def requires_submit(func: Callable) -> Callable:
@@ -83,16 +92,24 @@ def format_status_counts(statuses: List[Union[JobStatus, None]]) -> List[str]:
 
 def format_job_details(
         statuses: List[Union[JobStatus, None]],
-        managed_jobs: List[ManagedJob]
+        managed_jobs: List[ManagedJob],
+        managed_jobs_name: str,
+        managed_jobs_id: str
 ) -> List[str]:
     """Format detailed report for jobs.
 
     Args:
         statuses: Statuses of the jobs.
         managed_jobs: Jobs being managed.
+        managed_jobs_name: Name of the jobs being managed.
+        managed_jobs_id: ID of the jobs being managed.
 
     Returns:
         Formatted job details.
+
+    Raises:
+        IBMQJobManagerInvalidStateError: If the managed job has unexpected
+            attributes.
     """
     report = []
     for i, mjob in enumerate(managed_jobs):
@@ -110,7 +127,19 @@ def format_job_details(
 
         job = mjob.job
         report.append("    job ID: {}".format(job.job_id()))
-        report.append("    name: {}".format(job.name()))
+
+        job_name_info = "    name: {}".format(job.name())
+        # If a job name does not match the managed job set name, mark it with an asterisk.
+        matched = JOB_SET_NAME_RE.match(job.name()) if job.name() else None
+        if not matched:
+            raise IBMQJobManagerInvalidStateError(
+                'Job {} is tagged for the job set {} but does not appear '
+                'to belong to the set.'.format(job.job_id(), managed_jobs_id))
+        if matched.group(1) != managed_jobs_name:
+            job_name_info += ' *'
+
+        report.append(job_name_info)
+
         status_txt = statuses[i].value if statuses[i] else "Unknown"
         report.append("    status: {}".format(status_txt))
 

@@ -20,7 +20,6 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 import logging
 import uuid
-import re
 import threading
 
 from qiskit.circuit import QuantumCircuit
@@ -33,7 +32,8 @@ from qiskit.providers.ibmq.accountprovider import AccountProvider
 
 from .managedjob import ManagedJob
 from .managedresults import ManagedResults
-from .utils import requires_submit, format_status_counts, format_job_details
+from .utils import (requires_submit, format_status_counts, format_job_details,
+                    JOB_SET_NAME_FORMATTER, JOB_SET_NAME_RE)
 from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
                          IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet)
 from ..job import IBMQJob
@@ -41,13 +41,6 @@ from ..job.exceptions import IBMQJobTimeoutError, IBMQJobApiError
 from ..ibmqbackend import IBMQBackend
 
 logger = logging.getLogger(__name__)
-
-# The formatter for the name of a job in the job set. The first entry is the job
-# set name and the second entry is the job's index in the job set.
-JOB_SET_NAME_FORMATTER = "{}_{}_"
-# Regex used to match a job name. The first group captured is the job set name.
-# The second group captured is the job's index in the job set.
-JOB_SET_NAME_RE = re.compile(r'(.*)_([0-9])+_$')
 
 
 class ManagedJobSet:
@@ -180,11 +173,15 @@ class ManagedJobSet:
         for job in jobs:
             # Verify the job is proper.
             matched = JOB_SET_NAME_RE.match(job.name()) if job.name() else None
-            if not matched or matched.group(1) != self._name or \
-                    job.backend().name() != self._backend.name():
+            if not matched or job.backend().name() != self._backend.name():
                 raise IBMQJobManagerInvalidStateError(
                     'Job {} is tagged for the job set {} but does not appear '
                     'to belong to the set.'.format(job.job_id(), self.job_set_id()))
+            if matched.group(1) != self._name:
+                logger.warning('Job % does not appear to have a proper job name. The base of '
+                               'the job name is "%s", but it should be "%s".',
+                               job.job_id(), matched.group(1), self.name())
+
             jobs_dict[int(matched.group(2))] = job
 
         sorted_indexes = sorted(jobs_dict)
@@ -233,7 +230,7 @@ class ManagedJobSet:
 
         if detailed:
             report.append("\nDetail report:")
-            report.extend(format_job_details(statuses, self._managed_jobs))
+            report.extend(format_job_details(statuses, self._managed_jobs, self._name, self._id))
 
         return '\n'.join(report)
 
