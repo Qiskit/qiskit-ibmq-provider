@@ -81,9 +81,9 @@ class TestAccountClient(IBMQTestCase):
         api = backend._api
 
         job = api.job_submit(backend_name, qobj.to_dict())
-        job_id = job['_job_id']
+        job_id = job['job_id']
         self.assertNotIn('shots', job)
-        self.assertEqual(job['_kind'], 'q-object-external-storage')
+        self.assertEqual(job['kind'], 'q-object-external-storage')
 
         # Wait for completion.
         api.job_final_status(job_id)
@@ -274,7 +274,7 @@ class TestAccountClientJobs(IBMQTestCase):
         cls.client = backend._api
         cls.job = cls.client.job_submit(
             backend_name, cls._get_qobj(backend).to_dict())
-        cls.job_id = cls.job['_job_id']
+        cls.job_id = cls.job['job_id']
 
     @staticmethod
     def _get_qobj(backend):
@@ -295,7 +295,7 @@ class TestAccountClientJobs(IBMQTestCase):
     def test_job_get(self):
         """Test job_get."""
         response = self.client.job_get(self.job_id)
-        self.assertIn('_api_status', response)
+        self.assertIn('status', response)
 
     def test_job_status(self):
         """Test getting job status."""
@@ -331,17 +331,17 @@ class TestAccountClientJobs(IBMQTestCase):
     def test_list_jobs_statuses_skip(self):
         """Test listing job statuses with an offset."""
         jobs_raw = self.client.list_jobs_statuses(limit=1, skip=1, extra_filter={
-            'creationDate': {'lte': self.job['_creation_date']}})
+            'creationDate': {'lte': self.job['creation_date']}})
 
         # Ensure our job is skipped
         for job in jobs_raw:
-            self.assertNotEqual(job['_job_id'], self.job_id)
+            self.assertNotEqual(job['job_id'], self.job_id)
 
     def test_list_jobs_statuses_filter(self):
         """Test listing job statuses with a filter."""
         jobs_raw = self.client.list_jobs_statuses(extra_filter={'id': self.job_id})
         self.assertEqual(len(jobs_raw), 1)
-        self.assertEqual(jobs_raw[0]['_job_id'], self.job_id)
+        self.assertEqual(jobs_raw[0]['job_id'], self.job_id)
 
 
 class TestAuthClient(IBMQTestCase):
