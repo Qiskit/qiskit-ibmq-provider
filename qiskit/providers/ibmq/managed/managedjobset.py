@@ -178,9 +178,11 @@ class ManagedJobSet:
                     'Job {} is tagged for the job set {} but does not appear '
                     'to belong to the set.'.format(job.job_id(), self.job_set_id()))
             if matched.group(1) != self._name:
-                logger.warning('Job % does not appear to have a proper job name. The base of '
-                               'the job name is "%s", but it should be "%s".',
-                               job.job_id(), matched.group(1), self.name())
+                logger.warning('The job %s, belonging to job set %s, does not appear to have '
+                               'a proper job name. The job name should include the job set name '
+                               '"%s", but instead includes the job set name "%s". Use the '
+                               'update_name() method to update the name of the jobs in the job set',
+                               job.job_id(), self.job_set_id(), self.name(), matched.group(1))
 
             jobs_dict[int(matched.group(2))] = job
 
@@ -437,7 +439,9 @@ class ManagedJobSet:
                     _ = job.update_name(JOB_SET_NAME_FORMATTER.format(name, i))
                 except IBMQJobApiError as ex:
                     # Log a warning with the job that failed to update.
-                    logger.warning('%s', str(ex))
+                    logger.warning('There was an error updating the name for job %s, '
+                                   'belonging to job set %s: %s',
+                                   job.job_id(), self.job_set_id(), str(ex))
 
         # Cache the updated job set name.
         self._name = name
@@ -511,7 +515,9 @@ class ManagedJobSet:
                                                    removal_tags=removal_tags)
                 except IBMQJobApiError as ex:
                     # Log a warning with the job that failed to update.
-                    logger.warning('%s', str(ex))
+                    logger.warning('There was an error updating the tags for job %s, '
+                                   'belonging to job set %s: %s',
+                                   job.job_id(), self.job_set_id(), str(ex))
 
         # Cache the updated job set tags and remove the long id.
         self._tags = updated_tags

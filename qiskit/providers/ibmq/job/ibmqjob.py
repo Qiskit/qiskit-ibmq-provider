@@ -309,7 +309,7 @@ class IBMQJob(BaseModel, BaseJob):
         updated_name = response.get('name', None)
         if (updated_name is None) or (name != updated_name):
             raise IBMQJobApiError('An unexpected error occurred when updating the '
-                                  'name for job {}: The name was not updated for '
+                                  'name for job {}. The name was not updated for '
                                   'the job.'.format(self.job_id()))
 
         # Cache updated name.
@@ -385,7 +385,7 @@ class IBMQJob(BaseModel, BaseJob):
         updated_tags = response.get('tags', None)
         if (updated_tags is None) or (set(updated_tags) != set(tags_to_update)):
             raise IBMQJobApiError('An unexpected error occurred when updating the '
-                                  'tags for job {}: The tags were not updated for '
+                                  'tags for job {}. The tags were not updated for '
                                   'the job.'.format(self.job_id()))
 
         # Cache the updated tags.
