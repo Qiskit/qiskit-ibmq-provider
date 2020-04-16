@@ -373,9 +373,9 @@ class IBMQJob(BaseModel, BaseJob):
                 'The tags cannot be updated since none of the parameters are specified.')
 
         # Get the list of tags to update.
-        tags_to_update = self._update_tags(replacement_tags=replacement_tags,
-                                           additional_tags=additional_tags,
-                                           removal_tags=removal_tags)
+        tags_to_update = self._get_tags_to_update(replacement_tags=replacement_tags,
+                                                  additional_tags=additional_tags,
+                                                  removal_tags=removal_tags)
 
         with api_to_job_error():
             response = self._api.job_update_attribute(
@@ -393,10 +393,10 @@ class IBMQJob(BaseModel, BaseJob):
 
         return self._tags
 
-    def _update_tags(self,
-                     replacement_tags: Optional[List[str]],
-                     additional_tags: Optional[List[str]],
-                     removal_tags: Optional[List[str]]) -> List[str]:
+    def _get_tags_to_update(self,
+                            replacement_tags: Optional[List[str]],
+                            additional_tags: Optional[List[str]],
+                            removal_tags: Optional[List[str]]) -> List[str]:
         """Create the list of tags to update for this job.
 
         Args:

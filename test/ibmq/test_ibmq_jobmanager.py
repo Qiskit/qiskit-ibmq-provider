@@ -20,7 +20,6 @@ from inspect import getfullargspec, isfunction
 import uuid
 from concurrent.futures import wait
 from unittest import mock
-from unittest.mock import PropertyMock
 
 from qiskit import QuantumCircuit
 from qiskit.result import Result
@@ -124,7 +123,8 @@ class TestIBMQJobManager(IBMQTestCase):
             jobs = job_set.jobs()
             for job in jobs:
                 self.assertIn(job.job_id(), report)
-            # The old name should appear with an asterisk next to its name, since it failed to update.
+            # The old name should appear with an asterisk next to its name,
+            # since it failed to update.
             job_update_failed_indication = '{} *'.format(old_name)
             self.assertIn(job_update_failed_indication, report)
 
