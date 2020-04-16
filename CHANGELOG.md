@@ -26,6 +26,11 @@ The format is based on [Keep a Changelog].
 
 - Fixed an issue where `nest_asyncio.apply()` may raise an exception
   if there is no asyncio loop due to threading. (\#595)  
+
+### Removed
+
+- The `done()`, `running()`, and `cancelled()` methods were removed from 
+  `IBMQJob`, since they are now a part of `BaseJob`.  
   
 ## [0.6.0] - 2020-03-26
 
