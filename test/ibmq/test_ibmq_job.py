@@ -401,7 +401,7 @@ class TestIBMQJob(JobTestCase):
         """Test retrieving jobs created after a specified datetime."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         past_month = datetime.now() - timedelta(days=30)
-        past_month = past_month.astimezone(tz.tzlocal())
+        past_month = past_month.replace(tzinfo=tz.tzlocal())
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, skip=0, start_datetime=past_month)
@@ -419,7 +419,7 @@ class TestIBMQJob(JobTestCase):
         provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = provider.get_backend('ibmq_qasm_simulator')
         past_month = datetime.now() - timedelta(days=30)
-        past_month = past_month.astimezone(tz.tzlocal())
+        past_month = past_month.replace(tzinfo=tz.tzlocal())
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, skip=0, end_datetime=past_month)
@@ -440,8 +440,8 @@ class TestIBMQJob(JobTestCase):
         past_month = date_today - timedelta(30)
         past_two_month = date_today - timedelta(60)
 
-        past_month = past_month.astimezone(tz.tzlocal())
-        past_two_month = past_two_month.astimezone(tz.tzlocal())
+        past_month = past_month.replace(tzinfo=tz.tzlocal())
+        past_two_month = past_two_month.replace(tzinfo=tz.tzlocal())
 
         job_list = provider.backends.jobs(backend_name=backend.name(), limit=5, skip=0,
                                           start_datetime=past_two_month, end_datetime=past_month)
@@ -460,11 +460,11 @@ class TestIBMQJob(JobTestCase):
         provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
-
         past_two_month = date_today - timedelta(30)
-        past_two_month = past_two_month.astimezone(tz.tzlocal())
         past_three_month = date_today - timedelta(60)
-        past_three_month = past_three_month.astimezone(tz.tzlocal())
+
+        past_two_month = past_two_month.replace(tzinfo=tz.tzlocal())
+        past_three_month = past_three_month.replace(tzinfo=tz.tzlocal())
 
         # Used for `db_filter`, should not override `start_datetime` and `end_datetime` arguments.
         past_ten_days = date_today - timedelta(10)
