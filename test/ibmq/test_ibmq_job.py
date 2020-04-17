@@ -348,7 +348,7 @@ class TestIBMQJob(JobTestCase):
         job = backend.run(qobj, validate_qobj=True)
 
         active_jobs = backend.active_jobs()
-        if job.status() not in JOB_FINAL_STATES:
+        if not job.in_final_state():
             # Assert `job_id` in the list of job id's (instead of the list of jobs),
             # because retrieved jobs might differ in attributes from the originally
             # submitted jobs or they might have changed status.
@@ -677,7 +677,7 @@ class TestIBMQJob(JobTestCase):
                 try:
                     job.wait_for_final_state(timeout=30, wait=wait_time,
                                              callback=final_state_callback)
-                    self.assertTrue(job.status() in JOB_FINAL_STATES)
+                    self.assertTrue(job.in_final_state())
                     self.assertTrue(callback_info['called'])
                 finally:
                     # Ensure all threads ended.

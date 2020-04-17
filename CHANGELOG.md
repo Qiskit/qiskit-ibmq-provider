@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Added
+
+- A new exception, `IBMQBackendJobLimitError`, is now raised if a job 
+  could not be submitted because the limit on active jobs has been reached. 
+
 ### Changed
 
 - `IBMQFactory.save_account()` and `IBMQFactory.enable_account()` now accept
@@ -26,6 +31,11 @@ The format is based on [Keep a Changelog].
 
 - Fixed an issue where `nest_asyncio.apply()` may raise an exception
   if there is no asyncio loop due to threading. (\#595)  
+
+### Removed
+
+- The `done()`, `running()`, and `cancelled()` methods were removed from 
+  `IBMQJob`, since they are now a part of `BaseJob`.  
   
 ## [0.6.0] - 2020-03-26
 

@@ -37,7 +37,8 @@ from .api.exceptions import ApiError
 from .backendjoblimit import BackendJobLimit
 from .credentials import Credentials
 from .exceptions import (IBMQBackendError, IBMQBackendValueError,
-                         IBMQBackendApiError, IBMQBackendApiProtocolError)
+                         IBMQBackendApiError, IBMQBackendApiProtocolError,
+                         IBMQBackendJobLimitError)
 from .job import IBMQJob
 from .utils import update_qobj_config, validate_job_tags
 
@@ -203,6 +204,8 @@ class IBMQBackend(BaseBackend):
                 the job.
             IBMQBackendApiProtocolError: If an unexpected value is received from
                  the server.
+            IBMQBackendJobLimitError: If the job could not be submitted because
+                the job limit has been reached.
         """
         try:
             qobj_dict = qobj.to_dict()
@@ -213,6 +216,8 @@ class IBMQBackend(BaseBackend):
                 job_share_level=job_share_level,
                 job_tags=job_tags)
         except ApiError as ex:
+            if 'Error code: 3458' in str(ex):
+                raise IBMQBackendJobLimitError('Error submitting job: {}'.format(str(ex))) from ex
             raise IBMQBackendApiError('Error submitting job: {}'.format(str(ex))) from ex
 
         # Error in the job after submission:
