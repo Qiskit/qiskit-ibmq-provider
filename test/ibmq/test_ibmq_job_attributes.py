@@ -16,15 +16,17 @@
 
 import time
 from unittest import mock
+from datetime import datetime
 import re
 import uuid
+
+from dateutil import tz
 
 from qiskit.test import slow_test
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
-from qiskit.providers.ibmq.utils.converters import DATETIME_TO_STR_FORMATTER, str_to_datetime
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError
 from qiskit.compiler import assemble, transpile
 
@@ -212,39 +214,36 @@ class TestIBMQJobAttributes(JobTestCase):
         """Test retrieving creation date, while ensuring it is in local time."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        # Date and time as a string, before running the job, in local time.
-        start_datetime_str = time.strftime(DATETIME_TO_STR_FORMATTER, time.localtime(time.time()))
+        # datetime, before running the job, in local time.
+        start_datetime = datetime.now().astimezone(tz.tzlocal())
         job = backend.run(qobj, validate_qobj=True)
         job.result()
-        # Date and time as a string, after the job is done running, in local time.
-        end_datetime_str = time.strftime(DATETIME_TO_STR_FORMATTER, time.localtime(time.time()))
+        # datetime, after the job is done running, in local time.
+        end_datetime = datetime.now().astimezone()
 
-        self.assertTrue((start_datetime_str <= job.creation_date() <= end_datetime_str),
+        self.assertTrue((start_datetime <= job.creation_date() <= end_datetime),
                         'job creation date {} is not '
                         'between the start date time {} and end date time {}'
-                        .format(job.creation_date(), start_datetime_str, end_datetime_str))
-        # Ensure creation date could be converted to a string successfully, since this
-        # is done throughout the provider, such as in the jupyter tools.
-        self.assertTrue(str_to_datetime(job.creation_date()))
+                        .format(job.creation_date(), start_datetime, end_datetime))
 
     @requires_provider
     def test_time_per_step(self, provider):
         """Test retrieving time per step, while ensuring the date times are in local time."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        # Date and time as a string, before running the job, in local time.
-        start_datetime_str = time.strftime(DATETIME_TO_STR_FORMATTER, time.localtime(time.time()))
+        # datetime, before running the job, in local time.
+        start_datetime = datetime.now().astimezone(tz.tzlocal())
         job = backend.run(qobj, validate_qobj=True)
         job.result()
-        # Date and time as a string, after the job is done running, in local time.
-        end_datetime_str = time.strftime(DATETIME_TO_STR_FORMATTER, time.localtime(time.time()))
+        # datetime, after the job is done running, in local time.
+        end_datetime = datetime.now().astimezone()
 
         self.assertTrue(job.time_per_step())
         for step, time_data in job.time_per_step().items():
-            self.assertTrue((start_datetime_str <= time_data <= end_datetime_str),
+            self.assertTrue((start_datetime <= time_data <= end_datetime),
                             'job time step "{}={}" is not '
                             'between the start date time {} and end date time {}'
-                            .format(step, time_data, start_datetime_str, end_datetime_str))
+                            .format(step, time_data, start_datetime, end_datetime))
 
         rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
         self.assertTrue(rjob.time_per_step())

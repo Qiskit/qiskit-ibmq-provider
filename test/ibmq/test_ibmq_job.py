@@ -21,11 +21,11 @@ from unittest import SkipTest
 
 import numpy
 from scipy.stats import chi2_contingency
+from dateutil import tz
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.utils import datetime_to_str
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
@@ -401,16 +401,16 @@ class TestIBMQJob(JobTestCase):
         """Test retrieving jobs created after a specified datetime."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         past_month = datetime.now() - timedelta(days=30)
-        past_month_str = datetime_to_str(past_month)
+        past_month = past_month.astimezone(tz.tzlocal())
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, skip=0, start_datetime=past_month)
         self.assertTrue(job_list)
         for i, job in enumerate(job_list):
-            self.assertTrue(job.creation_date() >= past_month_str,
+            self.assertTrue(job.creation_date() >= past_month,
                             '{}) job creation_date {} is not '
                             'greater than or equal to past month: {}'
-                            .format(i, job.creation_date(), past_month_str))
+                            .format(i, job.creation_date(), past_month))
 
     @requires_qe_access
     def test_retrieve_jobs_end_datetime(self, qe_token, qe_url):
@@ -419,16 +419,16 @@ class TestIBMQJob(JobTestCase):
         provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = provider.get_backend('ibmq_qasm_simulator')
         past_month = datetime.now() - timedelta(days=30)
-        past_month_str = datetime_to_str(past_month)
+        past_month = past_month.astimezone(tz.tzlocal())
 
         job_list = provider.backends.jobs(backend_name=backend.name(),
                                           limit=5, skip=0, end_datetime=past_month)
         self.assertTrue(job_list)
         for i, job in enumerate(job_list):
-            self.assertTrue(job.creation_date() <= past_month_str,
+            self.assertTrue(job.creation_date() <= past_month,
                             '{}) job creation_date {} is not '
                             'less than or equal to past month: {}'
-                            .format(i, job.creation_date(), past_month_str))
+                            .format(i, job.creation_date(), past_month))
 
     @requires_qe_access
     def test_retrieve_jobs_between_datetimes(self, qe_token, qe_url):
@@ -437,20 +437,20 @@ class TestIBMQJob(JobTestCase):
         provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
-
         past_month = date_today - timedelta(30)
-        past_month_str = datetime_to_str(past_month)
         past_two_month = date_today - timedelta(60)
-        past_two_month_str = datetime_to_str(past_two_month)
+
+        past_month = past_month.astimezone(tz.tzlocal())
+        past_two_month = past_two_month.astimezone(tz.tzlocal())
 
         job_list = provider.backends.jobs(backend_name=backend.name(), limit=5, skip=0,
                                           start_datetime=past_two_month, end_datetime=past_month)
         self.assertTrue(job_list)
         for i, job in enumerate(job_list):
-            self.assertTrue((past_two_month_str <= job.creation_date() <= past_month_str),
+            self.assertTrue((past_two_month <= job.creation_date() <= past_month),
                             '{}) job creation date {} is not '
                             'between past two month {} and past month {}'
-                            .format(i, past_two_month_str, job.creation_date(), past_month_str))
+                            .format(i, past_two_month, job.creation_date(), past_month))
 
     @requires_qe_access
     def test_retrieve_jobs_between_datetimes_not_overriden(self, qe_token, qe_url):
@@ -462,9 +462,9 @@ class TestIBMQJob(JobTestCase):
         date_today = datetime.now()
 
         past_two_month = date_today - timedelta(30)
-        past_two_month_str = datetime_to_str(past_two_month)
+        past_two_month = past_two_month.astimezone(tz.tzlocal())
         past_three_month = date_today - timedelta(60)
-        past_three_month_str = datetime_to_str(past_three_month)
+        past_three_month = past_three_month.astimezone(tz.tzlocal())
 
         # Used for `db_filter`, should not override `start_datetime` and `end_datetime` arguments.
         past_ten_days = date_today - timedelta(10)
@@ -475,11 +475,11 @@ class TestIBMQJob(JobTestCase):
                                           db_filter={'creationDate': {'gt': past_ten_days}})
         self.assertTrue(job_list)
         for i, job in enumerate(job_list):
-            self.assertTrue((past_three_month_str <= job.creation_date() <= past_two_month_str),
+            self.assertTrue((past_three_month <= job.creation_date() <= past_two_month),
                             '{}) job creation date {} is not '
                             'between past three month {} and past two month {}'
-                            .format(i, past_three_month_str,
-                                    job.creation_date(), past_two_month_str))
+                            .format(i, past_three_month,
+                                    job.creation_date(), past_two_month))
 
     @requires_provider
     def test_retrieve_jobs_db_filter(self, provider):
@@ -515,7 +515,7 @@ class TestIBMQJob(JobTestCase):
         """Test retrieving jobs filtered by date."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
-        date_today_str = datetime_to_str(date_today)
+        date_today = date_today.astimezone(tz.tzlocal())
 
         my_filter = {'creationDate': {'lt': date_today.isoformat()}}
         job_list = provider.backends.jobs(backend_name=backend.name(),
@@ -525,9 +525,9 @@ class TestIBMQJob(JobTestCase):
         self.log.info('found %s matching jobs', len(job_list))
         for i, job in enumerate(job_list):
             self.log.info('match #%d: %s', i, job.creation_date())
-            self.assertTrue(job.creation_date() < date_today_str,
+            self.assertTrue(job.creation_date() < date_today,
                             '{}) job.creation_date: {}, date_today: {}'
-                            .format(i, job.creation_date(), date_today_str))
+                            .format(i, job.creation_date(), date_today))
 
     @requires_provider
     def test_retrieve_jobs_order(self, provider):
