@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Added
+
+- A new exception, `IBMQBackendJobLimitError`, is now raised if a job 
+  could not be submitted because the limit on active jobs has been reached. 
+
 ### Changed
 
 - `IBMQFactory.save_account()` and `IBMQFactory.enable_account()` now accept

@@ -14,9 +14,12 @@
 
 """Tests that hit all the basic server endpoints using both a public and premium provider."""
 
-from qiskit.test import slow_test
+import time
 
+from qiskit.test import slow_test
 from qiskit.providers.ibmq import least_busy
+from qiskit.providers.ibmq.exceptions import IBMQBackendJobLimitError
+
 from ..decorators import requires_providers
 from ..ibmqtestcase import IBMQTestCase
 from ..utils import cancel_job, bell_in_qobj
@@ -41,7 +44,7 @@ class TestBasicServerPaths(IBMQTestCase):
                 filters=lambda b: b.configuration().n_qubits >= 5))
             with self.subTest(desc=desc, backend=backend):
                 qobj = bell_in_qobj(backend)
-                job = backend.run(qobj, validate_qobj=True)
+                job = self._submit_job_with_retry(qobj, backend)
 
                 # Fetch the results.
                 result = job.result()
@@ -59,8 +62,7 @@ class TestBasicServerPaths(IBMQTestCase):
                 filters=lambda b: b.configuration().n_qubits >= 5)[0]
             with self.subTest(desc=desc, backend=backend):
                 qobj = bell_in_qobj(backend)
-                job = backend.run(qobj, validate_qobj=True)
-
+                job = self._submit_job_with_retry(qobj, backend)
                 self.assertIsNotNone(job.properties())
                 self.assertTrue(job.status())
                 # Cancel job so it doesn't consume more resources.
@@ -73,8 +75,7 @@ class TestBasicServerPaths(IBMQTestCase):
             backend = provider.get_backend(backend_name)
             with self.subTest(desc=desc, backend=backend):
                 qobj = bell_in_qobj(backend)
-
-                job = backend.run(qobj, validate_qobj=True)
+                job = self._submit_job_with_retry(qobj, backend)
                 job_id = job.job_id()
 
                 retrieved_jobs = provider.backends.jobs(backend_name=backend_name)
@@ -105,3 +106,16 @@ class TestBasicServerPaths(IBMQTestCase):
                 if desc == 'public_provider':
                     self.assertEqual(job_limit.maximum_jobs, 5)
                 self.assertTrue(job_limit)
+
+    def _submit_job_with_retry(self, qobj, backend, max_retry=5):
+        """Retry submitting a job if limit is reached."""
+        limit_error = None
+        for _ in range(max_retry):
+            try:
+                job = backend.run(qobj, validate_qobj=True)
+                return job
+            except IBMQBackendJobLimitError as err:
+                limit_error = err
+                time.sleep(1)
+
+        self.fail("Unable to submit job after {} retries: {}".format(max_retry, limit_error))

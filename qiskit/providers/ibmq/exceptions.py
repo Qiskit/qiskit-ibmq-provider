@@ -79,3 +79,8 @@ class IBMQBackendApiProtocolError(IBMQBackendApiError):
 class IBMQBackendValueError(IBMQBackendError, ValueError):
     """Value errors raised by the backend modules."""
     pass
+
+
+class IBMQBackendJobLimitError(IBMQBackendError):
+    """Errors raised when job limit is reached."""
+    pass
