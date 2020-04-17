@@ -30,7 +30,9 @@ The format is based on [Keep a Changelog].
 ### Fixed
 
 - Fixed an issue where `nest_asyncio.apply()` may raise an exception
-  if there is no asyncio loop due to threading. (\#595)  
+  if there is no asyncio loop due to threading. (\#595)
+- Increased timeout value to allow large Qobj to be uploaded. (\#626)
+- Added a JSON decoder to convert lists in Qobj to complex. (\#631)  
   
 ## [0.6.0] - 2020-03-26
 
