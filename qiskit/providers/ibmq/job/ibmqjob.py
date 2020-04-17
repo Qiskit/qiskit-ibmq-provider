@@ -23,13 +23,11 @@ from queue import Empty
 from types import SimpleNamespace
 import dateutil.parser
 
-from qiskit.providers import (BaseJob,  # type: ignore[attr-defined]
-                              BaseBackend)
+from qiskit.providers import BaseJob  # type: ignore[attr-defined]
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.result import Result
-from qiskit.validation.exceptions import ModelValidationError
 
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
@@ -102,7 +100,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
 
     def __init__(
             self,
-            backend: BaseBackend,
+            backend: 'IBMQBackend',
             api: AccountClient,
             job_id: str,
             creation_date: str,
@@ -115,7 +113,8 @@ class IBMQJob(SimpleNamespace, BaseJob):
             error: Optional[dict] = None,
             tags: Optional[List[str]] = None,
             run_mode: Optional[str] = None,
-            **kwargs: Any) -> None:
+            **kwargs: Any
+    ) -> None:
         """IBMQJob constructor.
 
         Args:
@@ -548,18 +547,18 @@ class IBMQJob(SimpleNamespace, BaseJob):
             api_response.pop('job_id')
             self._creation_date = dateutil.parser.isoparse(api_response.pop('creation_date'))
             self._api_status = api_response.pop('status')
-        except KeyError as err:
+            if 'kind' in api_response:
+                self._kind = ApiJobKind(api_response.pop('kind'))
+            if 'result' in api_response:
+                self._result = Result.from_dict(api_response.pop('result'))
+            if 'qobj' in api_response:
+                self._qobj = dict_to_qobj(api_response.pop('qobj'))
+        except (KeyError, TypeError) as err:
             raise IBMQJobApiError("Unexpected return value received "
                                   "from the server: {}".format(err)) from err
 
-        if 'kind' in api_response:
-            self._kind = ApiJobKind(api_response.pop('kind'))
         self._name = api_response.pop('name', None)
         self._time_per_step = api_response.pop('time_per_step', None)
-        if 'result' in api_response:
-            self._result = Result.from_dict(api_response.pop('result'))
-        if 'qobj' in api_response:
-            self._qobj = dict_to_qobj(api_response.pop('qobj'))
         self._error = api_response.pop('error', None)
         self._tags = api_response.pop('tags', None)
         self._run_mode = api_response.pop('run_mode', None)
@@ -577,7 +576,8 @@ class IBMQJob(SimpleNamespace, BaseJob):
         Returns:
             An empty dictionary.
         """
-        warnings.warn("IBMQJob.to_dict() is deprecated and will be removed in the next release.",
+        warnings.warn("IBMQJob.to_dict() is not supported and may not work properly. "
+                      "It will be removed in the next release.",
                       DeprecationWarning, stacklevel=2)
         return {}
 
@@ -714,8 +714,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             try:
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
                 self._result = Result.from_dict(result_response)
-            except (ApiError, TypeError, ModelValidationError) as err:
-                # TODO Remove ModelValidationError once marshmallow is removed from Result
+            except (ApiError, TypeError) as err:
                 if self._status is JobStatus.ERROR:
                     raise IBMQJobFailureError(
                         'Unable to retrieve result for job {}. Job has failed. Use '

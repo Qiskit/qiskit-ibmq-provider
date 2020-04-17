@@ -263,7 +263,7 @@ class IBMQBackendService(SimpleNamespace):
 
         job_list = []
         for job_info in job_responses:
-            job_id = job_info.get('_job_id', "")
+            job_id = job_info.get('job_id', "")
             # Recreate the backend used for this job.
             backend_name = job_info.get('_backend_info', {}).get('name', 'unknown')
             try:
