@@ -14,7 +14,7 @@
 
 """Utilities related to Qobj."""
 
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 
 from qiskit.qobj import QobjHeader, QasmQobj, PulseQobj
 
@@ -89,5 +89,44 @@ def dict_to_qobj(qobj_dict: Dict) -> Union[QasmQobj, PulseQobj]:
         The corresponding QasmQobj or PulseQobj instance.
     """
     if qobj_dict['type'] == 'PULSE':
+        _decode_pulse_qobj(qobj_dict)   # Convert to proper types.
         return PulseQobj.from_dict(qobj_dict)
     return QasmQobj.from_dict(qobj_dict)
+
+
+def _decode_pulse_qobj(pulse_qobj: Dict) -> None:
+    """Decode a pulse Qobj.
+
+    Args:
+        pulse_qobj: Qobj to be decoded.
+    """
+    pulse_library = pulse_qobj['config']['pulse_library']
+    for lib in pulse_library:
+        lib['samples'] = [_to_complex(sample) for sample in lib['samples']]
+
+    for exp in pulse_qobj['experiments']:
+        for instr in exp['instructions']:
+            if 'val' in instr:
+                instr['val'] = _to_complex(instr['val'])
+            if 'parameters' in instr and 'amp' in instr['parameters']:
+                instr['parameters']['amp'] = _to_complex(instr['parameters']['amp'])
+
+
+def _to_complex(value: Union[List[float], complex]) -> complex:
+    """Convert the input value to type ``complex``.
+
+    Args:
+        value: Value to be converted.
+
+    Returns:
+        Input value in ``complex``.
+
+    Raises:
+        ValueError: If the input value is not in the expected format.
+    """
+    if isinstance(value, list) and len(value) == 2:
+        return complex(value[0], value[1])
+    elif isinstance(value, complex):
+        return value
+
+    raise ValueError("{} is not in a valid complex number format.".format(value))
