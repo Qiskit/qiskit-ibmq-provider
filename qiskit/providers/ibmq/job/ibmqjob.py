@@ -449,10 +449,13 @@ class IBMQJob(BaseModel, BaseJob):
         """
         if not self._time_per_step or self._status not in JOB_FINAL_STATES:
             self.refresh()
-        time_per_step_local = {}
+
+        # Note: By default, `None` should be returned if no time per step info is available.
+        time_per_step_local = None
         if self._time_per_step:
             warnings.warn('The time per step date and time information is returned in '
                           'local time now, rather than UTC.', stacklevel=2)
+            time_per_step_local = {}
             for step_name, time_data_utc in self._time_per_step.items():
                 time_per_step_local[step_name] = utc_to_local(time_data_utc)
 

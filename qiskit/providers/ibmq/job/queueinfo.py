@@ -19,7 +19,7 @@ from datetime import datetime
 
 from qiskit.validation import BaseModel, bind_schema
 
-from ..utils import utc_to_local, datetime_to_str, duration_difference
+from ..utils import utc_to_local, duration_difference
 from ..api.rest.validation import InfoQueueResponseSchema
 from ..apiconstants import ApiJobStatus
 from .utils import api_status_to_job_status
@@ -91,9 +91,9 @@ class QueueInfo(BaseModel):
         """
         status = api_status_to_job_status(ApiJobStatus(self._status)).value \
             if self._status else self._get_value(self._status)
-        est_start_time = datetime_to_str(utc_to_local(self.estimated_start_time)) \
+        est_start_time = utc_to_local(self.estimated_start_time).isoformat() \
             if self.estimated_start_time else self._get_value(self.estimated_start_time)
-        est_complete_time = datetime_to_str(utc_to_local(self.estimated_complete_time)) \
+        est_complete_time = utc_to_local(self.estimated_complete_time).isoformat() \
             if self.estimated_complete_time else self._get_value(self.estimated_complete_time)
 
         queue_info = [

@@ -20,9 +20,6 @@ from math import ceil
 import dateutil.parser
 from dateutil import tz
 
-UTC_DATETIME_TO_STR_FORMATTER = '%Y-%m-%dT%H:%M:%S.%fZ'
-LOCAL_DATETIME_TO_STR_FORMATTER = '%Y-%m-%dT%H:%M:%S.%f'
-
 
 def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
     """Convert a UTC ``datetime`` object or string to a local timezone ``datetime``.
@@ -63,37 +60,6 @@ def local_to_utc(local_dt: Union[datetime.datetime, str]) -> datetime.datetime:
         raise TypeError('Input `local_dt` is not string or datetime.')
     utc_dt = local_dt.astimezone(tz.UTC)
     return utc_dt
-
-
-def datetime_to_str(date_time: datetime.datetime) -> str:
-    """Convert a datetime object to a formatted string representation.
-
-    Note:
-        The `date_time` is converted into a string representation based
-        on its timezone info. If the `date_time` does not have timezone
-        info, it is considered to be in local time.
-
-    Args:
-        date_time: Input `datetime` object.
-
-    Returns:
-        A string representation of the `datetime`.
-    """
-    if date_time.tzinfo in (datetime.timezone.utc, tz.UTC):
-        return date_time.strftime(UTC_DATETIME_TO_STR_FORMATTER)
-    return date_time.strftime(LOCAL_DATETIME_TO_STR_FORMATTER)
-
-
-def str_to_datetime(date_time: str) -> datetime.datetime:
-    """Convert a string representing a date time to a datetime object.
-
-    Args:
-        date_time: Input string to convert into a datetime object.
-
-    Returns:
-        The datetime representing the string.
-    """
-    return dateutil.parser.parse(date_time)
 
 
 def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:

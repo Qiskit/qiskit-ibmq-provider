@@ -19,9 +19,7 @@ import warnings
 
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
-from datetime import datetime, timezone
-
-from dateutil import tz
+from datetime import datetime, timedelta
 
 from qiskit.providers import JobStatus, QiskitBackendNotFoundError  # type: ignore[attr-defined]
 from qiskit.providers.providerutils import filter_backends
@@ -207,14 +205,18 @@ class IBMQBackendService(SimpleNamespace):
         # TODO: Remove when decided the warning is no longer needed.
         if start_datetime or end_datetime:
             warnings.warn('The parameters `start_datetime` and `end_datetime` are expected '
-                          'to be in local time now, rather than UTC. If the datetime is in '
-                          'UTC, it will be converted to local time.', stacklevel=2)
+                          'to be in local time now, rather than UTC, for convenience. If the '
+                          'datetime contains timezone information, and it represents local '
+                          'time, then the datetime is converted to UTC.', stacklevel=2)
 
             # If the datetime timezone info is not UTC, then convert the datetime into UTC.
-            # Note: datetime objects without a timezone are considered to be in local time.
-            if start_datetime and (start_datetime.tzinfo not in (tz.UTC, timezone.utc)):
+            # Note: datetime objects whose `utcoffset()` is `None`, or not equal to `timedelta(0)`,
+            # are considered to be in local time.
+            if start_datetime and (start_datetime.utcoffset() is None
+                                   or start_datetime.utcoffset() != timedelta(0)):
                 start_datetime = local_to_utc(start_datetime)
-            if end_datetime and (end_datetime.tzinfo not in (tz.UTC, timezone.utc)):
+            if end_datetime and (end_datetime.utcoffset() is None
+                                 or end_datetime.utcoffset() != timedelta(0)):
                 end_datetime = local_to_utc(end_datetime)
 
             if start_datetime and end_datetime:
