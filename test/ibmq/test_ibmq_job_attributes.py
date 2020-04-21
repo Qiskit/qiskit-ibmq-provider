@@ -215,11 +215,11 @@ class TestIBMQJobAttributes(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         # datetime, before running the job, in local time.
-        start_datetime = datetime.now().astimezone(tz.tzlocal())
+        start_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
         job = backend.run(qobj, validate_qobj=True)
         job.result()
         # datetime, after the job is done running, in local time.
-        end_datetime = datetime.now().astimezone()
+        end_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
 
         self.assertTrue((start_datetime <= job.creation_date() <= end_datetime),
                         'job creation date {} is not '
@@ -232,11 +232,11 @@ class TestIBMQJobAttributes(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         # datetime, before running the job, in local time.
-        start_datetime = datetime.now().astimezone(tz.tzlocal())
+        start_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
         job = backend.run(qobj, validate_qobj=True)
         job.result()
         # datetime, after the job is done running, in local time.
-        end_datetime = datetime.now().astimezone()
+        end_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
 
         self.assertTrue(job.time_per_step())
         for step, time_data in job.time_per_step().items():

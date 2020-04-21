@@ -514,8 +514,7 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_jobs_filter_date(self, provider):
         """Test retrieving jobs filtered by date."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        date_today = datetime.now()
-        date_today = date_today.astimezone(tz.tzlocal())
+        date_today = datetime.now().replace(tzinfo=tz.tzlocal())
 
         my_filter = {'creationDate': {'lt': date_today.isoformat()}}
         job_list = provider.backends.jobs(backend_name=backend.name(),
