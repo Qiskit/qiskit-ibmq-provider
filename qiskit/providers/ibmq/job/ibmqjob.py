@@ -332,18 +332,9 @@ class IBMQJob(BaseModel, BaseJob):
             2. additional_tags
             3. removal_tags
 
-        An example of the ordering process when specifying ``['new_tag']`` for both the
-        `additional_tags` and `removal_tags`::
-
-            job.update_tags(additional_tags=['new_tag'], removal_tags=['new_tag'])
-            tags = job.tags()  # tags = []
-
-        After updating the job's tags, the job is set to not be associated with any tags
-        (i.e. `tags=[]`). Following the order above:
-
-            - There are no tags to replace (step 1).
-            - ``new_tag`` is added, since it is specified in `additional_tags` (step 2).
-            - ``new_tag`` is removed, since it is specified in `removal_tags`  (step 3).
+        For example, if 'new_tag' is specified for both `additional_tags` and `removal_tags`,
+        then it is added and subsequently removed from the tags list, making it a "do nothing"
+        operation.
 
         Note:
             * Some tags, such as those starting with ``ibmq_jobset``, are used

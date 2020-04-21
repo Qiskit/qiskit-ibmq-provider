@@ -25,12 +25,12 @@ from qiskit.providers.jobstatus import JobStatus
 from .exceptions import IBMQJobManagerInvalidStateError
 from .managedjob import ManagedJob
 
-# The formatter for the name of a job in the job set. The first entry is the job
-# set name and the second entry is the job's index in the job set.
 JOB_SET_NAME_FORMATTER = "{}_{}_"
-# Regex used to match a job name. The first group captured is the job set name.
-# The second group captured is the job's index in the job set.
+"""Formatter for the name of a job in a job set. The first entry is the job set
+name, whereas the second entry is the job's index in the job set."""
 JOB_SET_NAME_RE = re.compile(r'(.*)_([0-9])+_$')
+"""Regex used to match the name of a job in a job set. The first captured group is
+the job set name, whereas the second captured group is the job's index in the job set."""
 
 
 def requires_submit(func: Callable) -> Callable:

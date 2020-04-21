@@ -482,6 +482,17 @@ class ManagedJobSet:
     ) -> List[str]:
         """Update the tags assigned to this job set.
 
+        When multiple parameters are specified, the parameters are processed in the
+        following order:
+
+            1. replacement_tags
+            2. additional_tags
+            3. removal_tags
+
+        For example, if 'new_tag' is specified for both `additional_tags` and `removal_tags`,
+        then it is added and subsequently removed from the tags list, making it a "do nothing"
+        operation.
+
         Note:
             * Some tags, such as those starting with ``ibmq_jobset``, are used
               internally by `ibmq-provider` and therefore cannot be modified.
