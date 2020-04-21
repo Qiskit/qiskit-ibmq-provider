@@ -29,7 +29,7 @@ from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, requires_device
-from ..utils import most_busy_backend, cancel_job, get_large_circuit
+from ..utils import most_busy_backend, cancel_job, get_large_circuit, update_job_tags_and_verify
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -380,10 +380,8 @@ class TestIBMQJobAttributes(JobTestCase):
         """Test updating job tags by replacing a job's existing tags."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
         initial_job_tags = [uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
-        job_id = job.job_id()
 
         tags_to_replace_subtests = [
             [],  # empty tags.
@@ -391,25 +389,17 @@ class TestIBMQJobAttributes(JobTestCase):
         ]
         for tags_to_replace in tags_to_replace_subtests:
             with self.subTest(tags_to_replace=tags_to_replace):
-                _ = job.update_tags(replacement_tags=tags_to_replace)  # Update the job tags.
-                # Cached results may be returned if updating the same job too quickly.
-                # Wait before updating again.
-                time.sleep(2)
-                job.refresh()
-                self.assertEqual(set(job.tags()), set(tags_to_replace),
-                                 'Updating the tags for job {} was unsuccessful.'
-                                 'The tags are {}, but they should be {}.'
-                                 .format(job_id, job.tags(), tags_to_replace))
+                update_job_tags_and_verify(job_to_update=job,
+                                           tags_after_update=tags_to_replace,
+                                           replacement_tags=tags_to_replace)
 
     @requires_provider
     def test_job_tags_add(self, provider):
         """Test updating job tags by adding to a job's existing tags."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
         initial_job_tags = [uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
-        job_id = job.job_id()
 
         tags_to_add_subtests = [
             [],  # empty tags.
@@ -417,26 +407,17 @@ class TestIBMQJobAttributes(JobTestCase):
         ]
         for tags_to_add in tags_to_add_subtests:
             tags_after_add = job.tags() + tags_to_add
-            with self.subTest(tags_to_add=tags_to_add):
-                _ = job.update_tags(additional_tags=tags_to_add)  # Update the job tags.
-                # Cached results may be returned if updating the same job too quickly.
-                # Wait before updating again.
-                time.sleep(2)
-                job.refresh()
-                self.assertEqual(set(job.tags()), set(tags_after_add),
-                                 'Updating the tags for job {} was unsuccessful.'
-                                 'The tags are {}, but they should be {}.'
-                                 .format(job_id, job.tags(), list(tags_after_add)))
+            update_job_tags_and_verify(job_to_update=job,
+                                       tags_after_update=tags_after_add,
+                                       additional_tags=tags_to_add)
 
     @requires_provider
     def test_job_tags_remove(self, provider):
         """Test updating job tags by removing from a job's existing tags."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
         initial_job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
-        job_id = job.job_id()
 
         tags_to_remove_subtests = [
             [],
@@ -445,94 +426,62 @@ class TestIBMQJobAttributes(JobTestCase):
         ]
         for tags_to_remove in tags_to_remove_subtests:
             tags_after_removal_set = set(job.tags()) - set(tags_to_remove)
-            with self.subTest(tags_to_remove=tags_to_remove):
-                _ = job.update_tags(removal_tags=tags_to_remove)  # Update the job tags.
-                # Cached results may be returned if updating the same job too quickly.
-                # Wait before updating again.
-                time.sleep(2)
-                job.refresh()
-                self.assertEqual(set(job.tags()), tags_after_removal_set,
-                                 'Updating the tags for job {} was unsuccessful.'
-                                 'The tags are {}, but they should be {}.'
-                                 .format(job_id, job.tags(), list(tags_after_removal_set)))
-
-    @requires_provider
-    def test_job_tags_replace_and_remove(self, provider):
-        """Test updating job tags by adding and removing the same job tag."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
-        job = backend.run(qobj, validate_qobj=True)
-        job_id = job.job_id()
-
-        new_job_tags = [uuid.uuid4().hex]
-        _ = job.update_tags(additional_tags=new_job_tags, removal_tags=new_job_tags)
-        # Cached results may be returned if updating the same job too quickly.
-        # Wait before updating again.
-        time.sleep(2)
-        job.refresh()
-        # After removal, the job should not be associated with any job tags.
-        self.assertEqual(len(job.tags()), 0,
-                         'Updating the tags for job {} was unsuccessful.'
-                         'The tags are {}, but there should not be any tags.'
-                         .format(job_id, job.tags()))
+            update_job_tags_and_verify(job_to_update=job,
+                                       tags_after_update=list(tags_after_removal_set),
+                                       removal_tags=tags_to_remove)
 
     @requires_provider
     def test_job_tags_add_and_remove(self, provider):
         """Test updating job tags by adding and removing the same job tag."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj, validate_qobj=True)
 
+        new_job_tags = [uuid.uuid4().hex]
+        update_job_tags_and_verify(job_to_update=job,
+                                   tags_after_update=[],
+                                   additional_tags=new_job_tags,
+                                   removal_tags=new_job_tags)
+
+    @requires_provider
+    def test_job_tags_replace_and_remove(self, provider):
+        """Test updating job tags by replacing and removing tags."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         job = backend.run(qobj, job_tags=[uuid.uuid4().hex], validate_qobj=True)
-        job_id = job.job_id()
 
         replacement_tags = [uuid.uuid4().hex, uuid.uuid4().hex]
         # Remove the first tag in `replacement_tags`
         removal_tags = replacement_tags[:1]
-        # After updating, the final tags should only include the second tag of
-        # `replacement_tags`.
+        # After updating, the final tags should only be the second tag of `replacement_tags`.
         tags_after_update = replacement_tags[1:]
 
-        _ = job.update_tags(replacement_tags=replacement_tags, removal_tags=removal_tags)
-        # Cached results may be returned if updating the same job too quickly.
-        # Wait before updating again.
-        time.sleep(2)
-        job.refresh()
-        self.assertEqual(set(job.tags()), set(tags_after_update),
-                         'Updating the tags for job {} was unsuccessful.'
-                         'The tags are {}, but they should be {}.'
-                         .format(job_id, job.tags(), tags_after_update))
+        update_job_tags_and_verify(job_to_update=job,
+                                   tags_after_update=tags_after_update,
+                                   replacement_tags=replacement_tags,
+                                   removal_tags=removal_tags)
 
     @requires_provider
     def test_job_tags_all_parameters(self, provider):
-        """Test updating job tags by adding and removing the same job tag."""
+        """Test updating job tags by replacing, adding, and removing tags."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
         initial_job_tags = [uuid.uuid4().hex]
         job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
-        job_id = job.job_id()
 
         replacement_tags = [uuid.uuid4().hex, uuid.uuid4().hex]
         additional_tags = [uuid.uuid4().hex, uuid.uuid4().hex]
         # Remove the first tag of `replacement_tags` and `additional_tags`.
         removal_tags = replacement_tags[:1] + additional_tags[:1]
-        # After updating, the final tags should be a list containing the second tag
-        # of `replacement_tags` and `additional_tags`.
+        # After updating, the final tags should contain the second tag of both
+        # `replacement_tags` and `additional_tags`.
         tags_after_update = replacement_tags[1:] + additional_tags[1:]
 
-        # Replace the tags with `new_tags` and remove the first new tag.
-        _ = job.update_tags(replacement_tags=replacement_tags,
-                            additional_tags=additional_tags,
-                            removal_tags=removal_tags)
-        # Cached results may be returned if updating the same job too quickly.
-        # Wait before updating again.
-        time.sleep(2)
-        job.refresh()
-        self.assertEqual(set(job.tags()), set(tags_after_update),
-                         'Updating the tags for job {} was unsuccessful.'
-                         'The tags are {}, but they should be {}.'
-                         .format(job_id, job.tags(), tags_after_update))
+        update_job_tags_and_verify(job_to_update=job,
+                                   tags_after_update=tags_after_update,
+                                   replacement_tags=replacement_tags,
+                                   additional_tags=additional_tags,
+                                   removal_tags=removal_tags)
 
     @requires_provider
     def test_invalid_job_tags(self, provider):

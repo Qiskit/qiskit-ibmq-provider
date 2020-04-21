@@ -362,13 +362,14 @@ class TestIBMQJobManager(IBMQTestCase):
         replacement_tags = ['{}_new_tag_{}'.format(tag_prefix, i) for i in range(2)]
         replacement_tags_with_id_long = replacement_tags + [job_set._id_long]
 
-        # Update the tags
+        # Update the job set tags.
         _ = job_set.update_tags(replacement_tags=replacement_tags)
 
-        # Wait, since retrieving jobs too quickly may returned cached results.
+        # Cached results may be returned if quickly retrieving jobs,
+        # after an update, so wait some time.
         time.sleep(2)
 
-        # Refresh the jobs and check that the tags were updated correctly.
+        # Refresh the jobs in the job set and ensure that the tags were updated correctly.
         job_set.retrieve_jobs(provider, refresh=True)
         for job in job_set.jobs():
             job_id = job.job_id()
@@ -380,7 +381,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
     @requires_provider
     def test_job_tags_remove(self, provider):
-        """Test updating job tags by removing from the job set's existing tags."""
+        """Test updating job tags by removing the job set's existing tags."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         initial_job_tags = [uuid.uuid4().hex]
         job_set = self._jm.run([self._qc] * 2, backend=backend,
@@ -395,11 +396,11 @@ class TestIBMQJobManager(IBMQTestCase):
         # Update the job tags
         _ = job_set.update_tags(removal_tags=initial_job_tags_with_id_long)
 
-        # Wait, since retrieving jobs too quickly may returned cached results.
+        # Cached results may be returned if quickly retrieving jobs,
+        # after an update, so wait some time.
         time.sleep(2)
 
-        # Refresh the jobs, and check that the job set long id is still present
-        # after updating.
+        # Refresh the jobs in the job set and ensure that the job set long id is still present.
         job_set.retrieve_jobs(provider, refresh=True)
         for job in job_set.jobs():
             job_id = job.job_id()
