@@ -16,6 +16,14 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Added
+
+- A new exception, `IBMQBackendJobLimitError`, is now raised if a job 
+  could not be submitted because the limit on active jobs has been reached.
+- `IBMQJob` and `ManagedJobSet` both have two new methods `update_name()` and 
+  `update_tags()`. They are used to change the name and tags of a job or job set, 
+  respectively. (\#590)   
+
 ### Changed
 
 - `IBMQFactory.save_account()` and `IBMQFactory.enable_account()` now accept
@@ -26,12 +34,13 @@ The format is based on [Keep a Changelog].
 
 - Fixed an issue where `nest_asyncio.apply()` may raise an exception
   if there is no asyncio loop due to threading. (\#595)
+- Increased timeout value to allow large Qobj to be uploaded. (\#626)
+- Added a JSON decoder to convert lists in Qobj to complex. (\#631) 
 
-### Added
+### Removed
 
-- `IBMQJob` and `ManagedJobSet` both have two new methods `update_name()` and 
-  `update_tags()`. They are used to change the name and tags of a job or job set, 
-  respectively. (\#590)  
+- The `done()`, `running()`, and `cancelled()` methods were removed from 
+  `IBMQJob`, since they are now a part of `BaseJob`.  
   
 ## [0.6.0] - 2020-03-26
 

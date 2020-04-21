@@ -204,5 +204,5 @@ class Job(RestAdapterBase):
             JSON response.
         """
         logger.debug('Downloading Qobj from object storage.')
-        response = self.session.get(url, bare=True).json()
+        response = self.session.get(url, bare=True, timeout=600).json()
         return response
