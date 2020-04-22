@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog].
 
 ## [UNRELEASED]
 
+### Fixed
+
+- Increased timeout value to allow large Qobj to be uploaded. (\#626)
+- Added a JSON decoder to convert lists in Qobj to complex. (\#631)
+  
 ## [0.6.0] - 2020-03-26
 
 ### Added

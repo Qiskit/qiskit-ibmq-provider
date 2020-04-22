@@ -17,7 +17,6 @@
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.validation import ModelValidationError
-from qiskit.validation.jsonschema import SchemaValidationError
 
 from qiskit.providers.ibmq import IBMQJob
 
@@ -54,7 +53,7 @@ class TestIBMQJobModel(JobTestCase):
                         backend=backend)
 
         delattr(qobj, 'qobj_id')
-        with self.assertRaises(SchemaValidationError):
+        with self.assertRaises(AttributeError):
             backend.run(qobj, validate_qobj=True)
 
     def test_valid_job(self):

@@ -173,7 +173,7 @@ class Job(RestAdapterBase):
         """
         data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEconder)
         logger.debug('Uploading Qobj to object storage.')
-        response = self.session.put(url, data=data, bare=True)
+        response = self.session.put(url, data=data, bare=True, timeout=600)
         return response.text
 
     def get_object_storage(self, url: str) -> Dict[str, Any]:
@@ -186,5 +186,5 @@ class Job(RestAdapterBase):
             JSON response.
         """
         logger.debug('Downloading Qobj from object storage.')
-        response = self.session.get(url, bare=True).json()
+        response = self.session.get(url, bare=True, timeout=600).json()
         return response
