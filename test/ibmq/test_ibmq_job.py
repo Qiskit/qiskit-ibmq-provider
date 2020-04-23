@@ -453,7 +453,7 @@ class TestIBMQJob(JobTestCase):
             self.assertTrue((past_two_month_tz_aware <= job.creation_date() <= past_month_tz_aware),
                             '{}) job creation date {} is not '
                             'between past two month {} and past month {}'
-                            .format(i, past_two_month, job.creation_date(), past_month))
+                            .format(i, job.creation_date(), past_two_month, past_month))
 
     @requires_qe_access
     def test_retrieve_jobs_between_datetimes_not_overriden(self, qe_token, qe_url):
@@ -483,7 +483,7 @@ class TestIBMQJob(JobTestCase):
                 (past_three_month_tz_aware <= job.creation_date() <= past_two_month_tz_aware),
                 '{}) job creation date {} is not '
                 'between past three month {} and past two month {}'
-                .format(i, past_three_month, job.creation_date(), past_two_month))
+                .format(i, job.creation_date(), past_three_month, past_two_month))
 
     @requires_provider
     def test_retrieve_jobs_db_filter(self, provider):
