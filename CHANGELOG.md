@@ -26,6 +26,10 @@ The format is based on [Keep a Changelog].
 - `IBMQFactory.save_account()` and `IBMQFactory.enable_account()` now accept
   the optional parameters `hub`, `group`, `project`, which allow specifying a 
   default provider to save to disk or use, respectively. (\#611)
+- `IBMQJob.creation_date()` and `IBMQJob.time_per_step()` now return date time
+  information as a datetime object in local time. Also, the parameters 
+  `start_datetime` and `end_datetime`, of `IBMQBackendService.jobs()` and 
+  `IBMQBackend.jobs()`, can now be specified in local time. (\#622) 
 
 ### Fixed
 
