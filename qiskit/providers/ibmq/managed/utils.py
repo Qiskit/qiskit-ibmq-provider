@@ -22,7 +22,6 @@ from concurrent.futures import wait
 
 from qiskit.providers.jobstatus import JobStatus
 
-from .exceptions import IBMQJobManagerInvalidStateError
 from .managedjob import ManagedJob
 
 JOB_SET_NAME_FORMATTER = "{}_{}_"
