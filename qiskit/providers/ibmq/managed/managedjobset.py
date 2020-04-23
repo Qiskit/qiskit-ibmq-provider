@@ -159,12 +159,8 @@ class ManagedJobSet:
 
         # Extract common information from the first job.
         first_job = jobs[0]
-        matched = JOB_SET_NAME_RE.match(first_job.name())
-        if not matched:
-            raise IBMQJobManagerInvalidStateError(
-                'Job {} is tagged for the job set {} but does not '
-                'have a proper job name.'.format(first_job.job_id(), self.job_set_id()))
-        self._name = matched.group(1)
+        job_set_name, _ = self._parse_job_name(first_job)
+        self._name = job_set_name
         self._backend = first_job.backend()
         self._tags = first_job.tags()
         self._tags.remove(self._id_long)
@@ -172,19 +168,12 @@ class ManagedJobSet:
         jobs_dict = {}
         for job in jobs:
             # Verify the job is proper.
-            matched = JOB_SET_NAME_RE.match(job.name()) if job.name() else None
-            if not matched or job.backend().name() != self._backend.name():
+            job_set_name, job_index = self._parse_job_name(job)
+            if job_set_name != self._name or job.backend().name() != self._backend.name():
                 raise IBMQJobManagerInvalidStateError(
                     'Job {} is tagged for the job set {} but does not appear '
                     'to belong to the set.'.format(job.job_id(), self.job_set_id()))
-            if matched.group(1) != self._name:
-                logger.warning('The job %s, belonging to job set %s, does not appear to have '
-                               'a proper job name. The job name should include the job set name '
-                               '"%s", but instead includes the job set name "%s". Use the '
-                               'update_name() method to update the name of the jobs in the job set',
-                               job.job_id(), self.job_set_id(), self.name(), matched.group(1))
-
-            jobs_dict[int(matched.group(2))] = job
+            jobs_dict[job_index] = job
 
         sorted_indexes = sorted(jobs_dict)
         # Verify we got all jobs.
@@ -433,10 +422,11 @@ class ManagedJobSet:
         Returns:
             The new name associated with this job set.
         """
-        for i, job in enumerate(self.jobs()):
+        for job in self.jobs():
             if job:
+                _, job_index = self._parse_job_name(job)
                 try:
-                    _ = job.update_name(JOB_SET_NAME_FORMATTER.format(name, i))
+                    _ = job.update_name(JOB_SET_NAME_FORMATTER.format(name, job_index))
                 except IBMQJobApiError as ex:
                     # Log a warning with the job that failed to update.
                     logger.warning('There was an error updating the name for job %s, '
@@ -535,3 +525,25 @@ class ManagedJobSet:
         self._tags.remove(self._id_long)
 
         return self._tags
+
+    def _parse_job_name(self, job: IBMQJob) -> Tuple[str, int]:
+        """Parse the name of a job from the job set.
+
+        Args:
+            job: A job in the job set.
+
+        Returns:
+            A tuple containing the job set name and the index of the job's
+            placement in the job set: (<job_set_name>, <job_index_in_set>).
+
+        Raises:
+            IBMQJobManagerInvalidStateError: If the job does not have a proper
+                job name.
+        """
+        matched = JOB_SET_NAME_RE.match(job.name())
+        if not matched:
+            raise IBMQJobManagerInvalidStateError(
+                'Job {} is tagged for the job set {} but does not '
+                'have a proper job name.'.format(job.job_id(), self.job_set_id()))
+
+        return matched.group(1), int(matched.group(2))
