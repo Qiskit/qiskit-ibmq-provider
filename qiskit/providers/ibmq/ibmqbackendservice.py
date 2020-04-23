@@ -204,10 +204,9 @@ class IBMQBackendService(SimpleNamespace):
 
         # TODO: Remove when decided the warning is no longer needed.
         if start_datetime or end_datetime:
-            warnings.warn('The parameters `start_datetime` and `end_datetime` are expected '
-                          'to be in local time now, rather than UTC, for convenience. If the '
-                          'datetime contains timezone information, and it represents local '
-                          'time, then the datetime is converted to UTC.', stacklevel=2)
+            warnings.warn('Unless a UTC timezone information is present, the parameters '
+                          '`start_datetime` and `end_datetime` are now expected to be in '
+                          'local time instead of UTC.', stacklevel=2)
 
             # If the datetime timezone info is not UTC, then convert the datetime into UTC.
             # Note: datetime objects whose `utcoffset()` is `None`, or not equal to `timedelta(0)`,
