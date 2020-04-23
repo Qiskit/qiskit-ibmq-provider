@@ -100,11 +100,7 @@ def format_job_details(
         managed_jobs: Jobs being managed.
 
     Returns:
-        Formatted job details.
-
-    Raises:
-        IBMQJobManagerInvalidStateError: If the managed job has unexpected
-            attributes.
+        Formatted job details.format_job_details
     """
     report = []
     for i, mjob in enumerate(managed_jobs):
