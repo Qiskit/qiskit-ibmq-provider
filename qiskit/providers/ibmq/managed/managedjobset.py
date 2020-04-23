@@ -426,6 +426,8 @@ class ManagedJobSet:
             if job:
                 _, job_index = self._parse_job_name(job)
                 try:
+                    # Use the index found in the job name to update the name in order
+                    # to preserve the job set order.
                     _ = job.update_name(JOB_SET_NAME_FORMATTER.format(name, job_index))
                 except IBMQJobApiError as ex:
                     # Log a warning with the job that failed to update.
