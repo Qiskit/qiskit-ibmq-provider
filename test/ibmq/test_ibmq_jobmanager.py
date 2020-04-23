@@ -19,7 +19,6 @@ import time
 from inspect import getfullargspec, isfunction
 import uuid
 from concurrent.futures import wait
-from unittest import mock
 
 from qiskit import QuantumCircuit
 from qiskit.result import Result
@@ -100,33 +99,6 @@ class TestIBMQJobManager(IBMQTestCase):
         report = self._jm.report()
         for job in jobs:
             self.assertIn(job.job_id(), report)
-
-    @requires_provider
-    def test_job_report_name_improper(self, provider):
-        """Test job report, when jobs do not have the proper name."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        backend._api = BaseFakeAccountClient()
-
-        old_job_set_name = 'old_name'
-        new_job_set_name = 'new_name'
-        job_set = self._jm.run([self._qc] * 2, backend=backend,
-                               max_experiments_per_job=1, name=old_job_set_name)
-        job_set.update_name(name=new_job_set_name)
-
-        # Set the name of the first job in the job set to be the old name, in order to
-        # represent a job name update failing.
-        old_name = job_set._managed_jobs[0].job._name.replace(new_job_set_name, old_job_set_name)
-        job_set._managed_jobs[0].job._name = old_name
-
-        with mock.patch.object(self._jm, '_job_sets', [job_set]):
-            report = self._jm.report()
-            jobs = job_set.jobs()
-            for job in jobs:
-                self.assertIn(job.job_id(), report)
-            # The old name should appear with an asterisk next to its name,
-            # since it failed to update.
-            job_update_failed_indication = '{} *'.format(old_name)
-            self.assertIn(job_update_failed_indication, report)
 
     @requires_provider
     def test_skipped_status(self, provider):
