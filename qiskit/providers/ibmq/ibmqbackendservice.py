@@ -15,10 +15,11 @@
 """Backend namespace for an IBM Quantum Experience account provider."""
 
 import logging
+import warnings
 
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from qiskit.providers import JobStatus, QiskitBackendNotFoundError  # type: ignore[attr-defined]
 from qiskit.providers.providerutils import filter_backends
@@ -31,6 +32,7 @@ from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackend
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
 from .utils.utils import to_python_identifier, validate_job_tags, filter_data
+from .utils.converters import local_to_utc
 
 logger = logging.getLogger(__name__)
 
@@ -149,12 +151,12 @@ class IBMQBackendService(SimpleNamespace):
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>`_
                 can be used.
-            start_datetime: Filter by start date. This is used to find jobs
-                whose creation dates are after (greater than or equal to) this
-                date/time.
-            end_datetime: Filter by end date. This is used to find jobs
-                whose creation dates are before (less than or equal to) this
-                date/time.
+            start_datetime: Filter by the given start date, in local time. This is used to
+                find jobs whose creation dates are after (greater than or equal to) this
+                local date/time.
+            end_datetime: Filter by the given end date, in local time. This is used to
+                find jobs whose creation dates are before (less than or equal to) this
+                local date/time.
             job_tags: Filter by tags assigned to jobs.
             job_tags_operator: Logical operator to use when filtering by job tags. Valid
                 values are "AND" and "OR":
@@ -184,6 +186,8 @@ class IBMQBackendService(SimpleNamespace):
 
         Raises:
             IBMQBackendValueError: If a keyword value is not recognized.
+            TypeError: If the input `start_datetime` or `end_datetime` parameter value
+                is not valid.
         """
         # Build the filter for the query.
         api_filter = {}  # type: Dict[str, Any]
@@ -198,14 +202,30 @@ class IBMQBackendService(SimpleNamespace):
         if job_name:
             api_filter['name'] = {"regexp": job_name}
 
-        if start_datetime and end_datetime:
-            api_filter['creationDate'] = {
-                'between': [start_datetime.isoformat(), end_datetime.isoformat()]
-            }
-        elif start_datetime:
-            api_filter['creationDate'] = {'gte': start_datetime.isoformat()}
-        elif end_datetime:
-            api_filter['creationDate'] = {'lte': end_datetime.isoformat()}
+        # TODO: Remove when decided the warning is no longer needed.
+        if start_datetime or end_datetime:
+            warnings.warn('Unless a UTC timezone information is present, the parameters '
+                          '`start_datetime` and `end_datetime` are now expected to be in '
+                          'local time instead of UTC.', stacklevel=2)
+
+            # If the datetime timezone info is not UTC, then convert the datetime into UTC.
+            # Note: datetime objects whose `utcoffset()` is `None`, or not equal to `timedelta(0)`,
+            # are considered to be in local time.
+            if start_datetime and (start_datetime.utcoffset() is None
+                                   or start_datetime.utcoffset() != timedelta(0)):
+                start_datetime = local_to_utc(start_datetime)
+            if end_datetime and (end_datetime.utcoffset() is None
+                                 or end_datetime.utcoffset() != timedelta(0)):
+                end_datetime = local_to_utc(end_datetime)
+
+            if start_datetime and end_datetime:
+                api_filter['creationDate'] = {
+                    'between': [start_datetime.isoformat(), end_datetime.isoformat()]
+                }
+            elif start_datetime:
+                api_filter['creationDate'] = {'gte': start_datetime.isoformat()}
+            elif end_datetime:
+                api_filter['creationDate'] = {'lte': end_datetime.isoformat()}
 
         if job_tags:
             validate_job_tags(job_tags, IBMQBackendValueError)

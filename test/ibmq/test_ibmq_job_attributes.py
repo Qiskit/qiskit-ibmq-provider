@@ -16,8 +16,11 @@
 
 import time
 from unittest import mock
+from datetime import datetime
 import re
 import uuid
+
+from dateutil import tz
 
 from qiskit.test import slow_test
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
@@ -207,13 +210,40 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(rjob._time_per_step, job._time_per_step)
 
     @requires_provider
-    def test_time_per_step(self, provider):
-        """Test retrieving time per step."""
+    def test_job_creation_date(self, provider):
+        """Test retrieving creation date, while ensuring it is in local time."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        # datetime, before running the job, in local time.
+        start_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
         job = backend.run(qobj, validate_qobj=True)
         job.result()
+        # datetime, after the job is done running, in local time.
+        end_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
+
+        self.assertTrue((start_datetime <= job.creation_date() <= end_datetime),
+                        'job creation date {} is not '
+                        'between the start date time {} and end date time {}'
+                        .format(job.creation_date(), start_datetime, end_datetime))
+
+    @requires_provider
+    def test_time_per_step(self, provider):
+        """Test retrieving time per step, while ensuring the date times are in local time."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        # datetime, before running the job, in local time.
+        start_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
+        job = backend.run(qobj, validate_qobj=True)
+        job.result()
+        # datetime, after the job is done running, in local time.
+        end_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
+
         self.assertTrue(job.time_per_step())
+        for step, time_data in job.time_per_step().items():
+            self.assertTrue((start_datetime <= time_data <= end_datetime),
+                            'job time step "{}={}" is not '
+                            'between the start date time {} and end date time {}'
+                            .format(step, time_data, start_datetime, end_datetime))
 
         rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
         self.assertTrue(rjob.time_per_step())
@@ -246,8 +276,7 @@ class TestIBMQJobAttributes(JobTestCase):
         queue_info = None
         for _ in range(10):
             queue_info = job.queue_info()
-            # Even if job status is QUEUED, queue information may not be
-            # immediately available.
+            # Even if job status is queued, its queue info may not be immediately available.
             if (job._status is JobStatus.QUEUED and job.queue_position() is not None) or \
                     job._status in leave_states:
                 break
@@ -263,6 +292,7 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertTrue(all(0 < priority <= 1.0 for priority in [
                 queue_info.hub_priority, queue_info.group_priority, queue_info.project_priority]),
                             "Unexpected queue info {} for job {}".format(queue_info, job.job_id()))
+
             self.assertTrue(queue_info.format())
             self.assertTrue(repr(queue_info))
         else:
