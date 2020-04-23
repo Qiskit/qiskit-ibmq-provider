@@ -211,8 +211,7 @@ class IBMQJobManager:
                 report.append(("  Job set name: {}, ID: {}".format(
                     job_set.name(), job_set.job_set_id())))
                 report.extend(format_job_details(
-                    job_set_statuses[i], job_set.managed_jobs(),
-                    job_set.name(), job_set.job_set_id()))
+                    job_set_statuses[i], job_set.managed_jobs()))
 
         return '\n'.join(report)
 

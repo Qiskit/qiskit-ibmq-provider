@@ -92,17 +92,13 @@ def format_status_counts(statuses: List[Union[JobStatus, None]]) -> List[str]:
 
 def format_job_details(
         statuses: List[Union[JobStatus, None]],
-        managed_jobs: List[ManagedJob],
-        managed_jobs_name: str,
-        managed_jobs_id: str
+        managed_jobs: List[ManagedJob]
 ) -> List[str]:
     """Format detailed report for jobs.
 
     Args:
         statuses: Statuses of the jobs.
         managed_jobs: Jobs being managed.
-        managed_jobs_name: Name of the jobs being managed.
-        managed_jobs_id: ID of the jobs being managed.
 
     Returns:
         Formatted job details.
@@ -127,19 +123,7 @@ def format_job_details(
 
         job = mjob.job
         report.append("    job ID: {}".format(job.job_id()))
-
-        job_name_info = "    name: {}".format(job.name())
-        # If a job name does not match the managed job set name, mark it with an asterisk.
-        matched = JOB_SET_NAME_RE.match(job.name()) if job.name() else None
-        if not matched:
-            raise IBMQJobManagerInvalidStateError(
-                'Job {} is tagged for the job set {} but does not appear '
-                'to belong to the set.'.format(job.job_id(), managed_jobs_id))
-        if matched.group(1) != managed_jobs_name:
-            job_name_info += ' *'
-
-        report.append(job_name_info)
-
+        report.append("    name: {}".format(job.name()))
         status_txt = statuses[i].value if statuses[i] else "Unknown"
         report.append("    status: {}".format(status_txt))
 

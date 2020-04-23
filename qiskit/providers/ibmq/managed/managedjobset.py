@@ -221,7 +221,7 @@ class ManagedJobSet:
 
         if detailed:
             report.append("\nDetail report:")
-            report.extend(format_job_details(statuses, self._managed_jobs, self._name, self._id))
+            report.extend(format_job_details(statuses, self._managed_jobs))
 
         return '\n'.join(report)
 
