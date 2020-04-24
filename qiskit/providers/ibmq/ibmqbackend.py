@@ -415,13 +415,16 @@ class IBMQBackend(BaseBackend):
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>`_
                 can be used.
-            start_datetime: Filter by start date. This is used to find jobs
-                whose creation dates are after (greater than or equal to) this date/time.
-            end_datetime: Filter by end date. This is used to find jobs
-                whose creation dates are before (less than or equal to) this date/time.
+            start_datetime: Filter by the given start date, in local time. This is used to
+                find jobs whose creation dates are after (greater than or equal to) this
+                local date/time.
+            end_datetime: Filter by the given end date, in local time. This is used to
+                find jobs whose creation dates are before (less than or equal to) this
+                local date/time.
             job_tags: Filter by tags assigned to jobs.
             job_tags_operator: Logical operator to use when filtering by job tags. Valid
                 values are "AND" and "OR":
+
                     * If "AND" is specified, then a job must have all of the tags
                       specified in ``job_tags`` to be included.
                     * If "OR" is specified, then a job only needs to have any

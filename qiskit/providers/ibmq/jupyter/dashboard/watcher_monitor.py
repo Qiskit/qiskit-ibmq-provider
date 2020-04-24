@@ -21,7 +21,7 @@ import threading
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 
-from ...utils.converters import start_duration
+from ...utils.converters import duration_difference
 
 
 def _job_monitor(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> None:
@@ -60,7 +60,7 @@ def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> No
                 if queue_pos != prev_queue_pos:
                     queue_info = job.queue_info()
                     if queue_info and queue_info.estimated_start_time:
-                        est_time = start_duration(queue_info.estimated_start_time)
+                        est_time = duration_difference(queue_info.estimated_start_time)
                         prev_est_time = est_time
                     else:
                         est_time = prev_est_time
