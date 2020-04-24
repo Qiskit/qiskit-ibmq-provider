@@ -27,6 +27,7 @@ from .api.clients import AccountClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
 from .ibmqbackendservice import IBMQBackendService
+from .utils.json_decoder import decode_pulse_backend_configuration
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,7 @@ class AccountProvider(BaseProvider):
 
             try:
                 if raw_config.get('open_pulse', False):
+                    decode_pulse_backend_configuration(raw_config)
                     config = PulseBackendConfiguration.from_dict(raw_config)
                 else:
                     config = QasmBackendConfiguration.from_dict(raw_config)

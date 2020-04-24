@@ -25,9 +25,11 @@ from qiskit.qobj import QasmQobj, PulseQobj, validate_qobj_against_schema
 from qiskit.providers.basebackend import BaseBackend  # type: ignore[attr-defined]
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
-                                     PulseDefaults, BackendConfiguration, GateConfig)
+                                     PulseDefaults, GateConfig)
 from qiskit.validation.exceptions import ModelValidationError
 from qiskit.tools.events.pubsub import Publisher
+from qiskit.providers.models import (QasmBackendConfiguration,
+                                     PulseBackendConfiguration)
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from .apiconstants import ApiJobShareLevel, ApiJobStatus, API_JOB_FINAL_STATES
@@ -41,6 +43,7 @@ from .exceptions import (IBMQBackendError, IBMQBackendValueError,
                          IBMQBackendJobLimitError)
 from .job import IBMQJob
 from .utils import update_qobj_config, validate_job_tags
+from .utils.json_decoder import decode_pulse_defaults
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +91,7 @@ class IBMQBackend(BaseBackend):
 
     def __init__(
             self,
-            configuration: BackendConfiguration,
+            configuration: Union[QasmBackendConfiguration, PulseBackendConfiguration],
             provider: 'accountprovider.AccountProvider',
             credentials: Credentials,
             api: AccountClient
@@ -307,6 +310,7 @@ class IBMQBackend(BaseBackend):
         if refresh or self._defaults is None:
             api_defaults = self._api.backend_pulse_defaults(self.name())
             if api_defaults:
+                decode_pulse_defaults(api_defaults)
                 self._defaults = PulseDefaults.from_dict(api_defaults)
             else:
                 self._defaults = None
@@ -560,7 +564,7 @@ class IBMQRetiredBackend(IBMQBackend):
 
     def __init__(
             self,
-            configuration: BackendConfiguration,
+            configuration: Union[QasmBackendConfiguration, PulseBackendConfiguration],
             provider: 'accountprovider.AccountProvider',
             credentials: Credentials,
             api: AccountClient
@@ -629,7 +633,7 @@ class IBMQRetiredBackend(IBMQBackend):
             api: AccountClient
     ) -> 'IBMQRetiredBackend':
         """Return a retired backend from its name."""
-        configuration = BackendConfiguration(
+        configuration = QasmBackendConfiguration(
             backend_name=backend_name,
             backend_version='0.0.0',
             n_qubits=1,
