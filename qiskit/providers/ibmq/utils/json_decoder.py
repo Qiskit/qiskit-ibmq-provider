@@ -33,7 +33,7 @@ def decode_pulse_qobj(pulse_qobj: Dict) -> None:
             _decode_pulse_qobj_instr(instr)
 
 
-def decode_pulse_backend_configuration(config: Dict) -> None:
+def decode_pulse_backend_config(config: Dict) -> None:
     """Decode pulse backend configuration data.
 
     Args:

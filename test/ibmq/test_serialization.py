@@ -15,6 +15,7 @@
 """Test serializing and deserializing data sent to the server."""
 
 from unittest import skipIf
+from typing import Any
 
 import qiskit
 from qiskit.compiler import assemble
@@ -111,7 +112,7 @@ class TestSerialization(IBMQTestCase):
                 self.assertFalse(complex_keys)
 
 
-def _find_potential_complex(data, c_key, tally):
+def _find_potential_complex(data: Any, c_key: str, tally: set) -> None:
     """Find data that looks like serialized complex numbers.
 
     Args:
@@ -123,11 +124,11 @@ def _find_potential_complex(data, c_key, tally):
         if len(data) == 2 and all(isinstance(x, (float, int)) for x in data):
             tally.add(c_key)
         for item in data:
-            if isinstance(item, dict) or isinstance(item, list):
+            if isinstance(item, (dict, list)):
                 _find_potential_complex(item, c_key, tally)
     elif isinstance(data, dict):
         for key, value in data.items():
-            if isinstance(value, dict) or isinstance(value, list):
+            if isinstance(value, (dict, list)):
                 full_key = c_key + '.' + key if c_key else key
                 _find_potential_complex(value, full_key, tally)
 
