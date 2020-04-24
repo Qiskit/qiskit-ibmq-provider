@@ -35,6 +35,7 @@ from qiskit.validation import BaseModel, ModelValidationError, bind_schema
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
+from ..utils import utc_to_local
 from ..utils.utils import RefreshQueue
 from ..utils.qobj_utils import dict_to_qobj
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
@@ -393,13 +394,17 @@ class IBMQJob(BaseModel, BaseJob):
             return self._queue_info
         return None
 
-    def creation_date(self) -> str:
-        """Return job creation date.
+    def creation_date(self) -> datetime:
+        """Return job creation date, in local time.
 
         Returns:
-            Job creation date.
+            The job creation date as a datetime object, in local time.
         """
-        return self._creation_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        creation_date_local_dt = utc_to_local(self._creation_date)
+        # TODO: Remove when decided the warning is no longer needed.
+        warnings.warn('The creation date is returned in local time now, '
+                      'rather than UTC.', stacklevel=2)
+        return creation_date_local_dt
 
     def job_id(self) -> str:
         """Return the job ID assigned by the server.
@@ -429,20 +434,32 @@ class IBMQJob(BaseModel, BaseJob):
         """Return the date and time information on each step of the job processing.
 
         The output dictionary contains the date and time information on each
-        step of the job processing. The keys of the dictionary are the names
-        of the steps, and the values are the date and time data. For example::
+        step of the job processing, in local time. The keys of the dictionary
+        are the names of the steps, and the values are the date and time data,
+        as a datetime object with local timezone info.
+        For example::
 
-            {'CREATING': '2020-02-13T20:19:25.717Z',
-             'CREATED': '2020-02-13T20:19:26.467Z',
-             'VALIDATING': '2020-02-13T20:19:26.527Z'}
+            {'CREATING': datetime(2020, 2, 13, 15, 19, 25, 717000, tzinfo=tzlocal(),
+             'CREATED': datetime(2020, 2, 13, 15, 19, 26, 467000, tzinfo=tzlocal(),
+             'VALIDATING': datetime(2020, 2, 13, 15, 19, 26, 527000, tzinfo=tzlocal()}
 
         Returns:
-            Date and time information on job processing steps, or ``None``
-            if the information is not yet available.
+            Date and time information on job processing steps, in local time,
+            or ``None`` if the information is not yet available.
         """
         if not self._time_per_step or self._status not in JOB_FINAL_STATES:
             self.refresh()
-        return self._time_per_step
+
+        # Note: By default, `None` should be returned if no time per step info is available.
+        time_per_step_local = None
+        if self._time_per_step:
+            warnings.warn('The time per step date and time information is returned in '
+                          'local time now, rather than UTC.', stacklevel=2)
+            time_per_step_local = {}
+            for step_name, time_data_utc in self._time_per_step.items():
+                time_per_step_local[step_name] = utc_to_local(time_data_utc)
+
+        return time_per_step_local
 
     def scheduling_mode(self) -> Optional[str]:
         """Return the scheduling mode the job is in.
