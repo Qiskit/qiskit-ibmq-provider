@@ -41,7 +41,11 @@ class TestSerialization(IBMQTestCase):
     @requires_provider
     def test_pulse_qobj(self, provider):
         """Test serializing pulse qobj data."""
-        backend = provider.get_backend('ibmq_armonk')
+        backends = provider.backends(operational=True, open_pulse=True)
+        if not backends:
+            self.skipTest('Need pulse backends.')
+
+        backend = backends[0]
         config = backend.configuration()
         defaults = backend.defaults()
         inst_map = defaults.circuit_instruction_map
