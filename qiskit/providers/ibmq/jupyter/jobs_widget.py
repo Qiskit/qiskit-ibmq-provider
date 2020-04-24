@@ -23,7 +23,6 @@ import plotly.graph_objects as go
 from qiskit.test.mock.fake_backend import FakeBackend
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
-from ..utils.converters import utc_to_local
 from ..ibmqbackend import IBMQBackend
 from ..visualization.interactive.plotly_wrapper import PlotlyWidget
 
@@ -125,7 +124,7 @@ def _job_summary(backend: Union[IBMQBackend, FakeBackend]) -> PlotlyWidget:
     jobs_dates = {}
 
     for job in jobs:
-        _date = utc_to_local(job.creation_date())
+        _date = job.creation_date()
         _year = _date.year
         _id = job.job_id()
         _name = job.name()

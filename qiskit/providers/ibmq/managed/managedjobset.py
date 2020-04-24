@@ -260,6 +260,7 @@ class ManagedJobSet:
             For example, if one of the experiments failed, trying to get the counts
             of the unsuccessful experiment would raise an exception since there
             are no counts to return::
+
                 try:
                     counts = managed_results.get_counts("failed_experiment")
                 except QiskitError:

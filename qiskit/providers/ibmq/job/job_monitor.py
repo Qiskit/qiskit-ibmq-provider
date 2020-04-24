@@ -20,7 +20,7 @@ import time
 from typing import TextIO, Optional
 
 from .ibmqjob import IBMQJob
-from ..utils.converters import start_duration
+from ..utils.converters import duration_difference
 
 
 def _text_checker(job: IBMQJob,
@@ -55,7 +55,7 @@ def _text_checker(job: IBMQJob,
             if queue_info:
                 if queue_info.estimated_start_time:
                     est_time = queue_info.estimated_start_time
-                    time_str = start_duration(est_time)
+                    time_str = duration_difference(est_time)
                     prev_time_str = time_str
 
             else:
