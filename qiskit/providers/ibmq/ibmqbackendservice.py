@@ -95,13 +95,15 @@ class IBMQBackendService(SimpleNamespace):
             name: Backend name to filter by.
             filters: More complex filters, such as lambda functions.
                 For example::
+
                     AccountProvider.backends(filters=lambda b: b.configuration().n_qubits > 5)
             timeout: Maximum number of seconds to wait for the discovery of
                 remote backends.
             kwargs: Simple filters that specify a ``True``/``False`` criteria in the
                 backend configuration, backends status, or provider credentials.
                 An example to get the operational backends with 5 qubits::
-                    AccountProvider.backends(n_qubits=5, operational=True).
+
+                    AccountProvider.backends(n_qubits=5, operational=True)
 
         Returns:
             The list of available backends that match the filter.
@@ -160,14 +162,14 @@ class IBMQBackendService(SimpleNamespace):
             job_tags: Filter by tags assigned to jobs.
             job_tags_operator: Logical operator to use when filtering by job tags. Valid
                 values are "AND" and "OR":
+
                     * If "AND" is specified, then a job must have all of the tags
                       specified in ``job_tags`` to be included.
                     * If "OR" is specified, then a job only needs to have any
                       of the tags specified in ``job_tags`` to be included.
             descending: If ``True``, return the jobs in descending order of the job
                 creation date (i.e. newest first) until the limit is reached.
-                If ``False``, return in ascending order.
-            db_filter: `loopback-based filter
+            db_filter: A `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter.
                 Some examples of its usage are:
