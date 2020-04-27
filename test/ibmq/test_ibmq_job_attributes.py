@@ -132,6 +132,7 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertEqual(job.name(), job_name)
 
     @slow_test
+    @requires_device
     def test_error_message_device(self, backend):
         """Test retrieving job error messages from a device backend."""
         qc_new = transpile(self._qc, backend)
