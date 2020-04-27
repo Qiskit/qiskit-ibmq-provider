@@ -20,7 +20,7 @@ import re
 import uuid
 
 from qiskit.test import slow_test
-from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
+from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
@@ -29,7 +29,7 @@ from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, requires_device
-from ..utils import most_busy_backend, cancel_job, get_large_circuit
+from ..utils import most_busy_backend, cancel_job, get_large_circuit, bell_in_qobj
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -38,14 +38,13 @@ class TestIBMQJobAttributes(JobTestCase):
     def setUp(self):
         """Initial test setup."""
         super().setUp()
-        self._qc = _bell_circuit()
+        self._qc = ReferenceCircuits.bell()
 
     @requires_provider
     def test_job_id(self, provider):
         """Test getting a job ID."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
         job = backend.run(qobj, validate_qobj=True)
         self.log.info('job_id: %s', job.job_id())
         self.assertTrue(job.job_id() is not None)
@@ -54,8 +53,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_get_backend_name(self, provider):
         """Test getting a backend name."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
         job = backend.run(qobj, validate_qobj=True)
         self.assertTrue(job.backend().name() == backend.name())
 
@@ -80,7 +78,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_job_name(self, provider):
         """Test using job names on a simulator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
 
         # Use a unique job name
         job_name = str(time.time()).replace('.', '')
@@ -111,7 +109,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_duplicate_job_name(self, provider):
         """Test multiple jobs with the same custom job name using a simulator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
 
         # Use a unique job name
         job_name = str(time.time()).replace('.', '')
@@ -134,10 +132,8 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertEqual(job.name(), job_name)
 
     @slow_test
-    @requires_device
     def test_error_message_device(self, backend):
         """Test retrieving job error messages from a device backend."""
-
         qc_new = transpile(self._qc, backend)
         qobj = assemble([qc_new, qc_new], backend=backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
@@ -195,7 +191,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_refresh(self, provider):
         """Test refreshing job data."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
         job = backend.run(qobj, validate_qobj=True)
         job._wait_for_completion()
         if 'COMPLETED' not in job.time_per_step():
@@ -210,7 +206,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_time_per_step(self, provider):
         """Test retrieving time per step."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
         job = backend.run(qobj, validate_qobj=True)
         job.result()
         self.assertTrue(job.time_per_step())
@@ -227,7 +223,7 @@ class TestIBMQJobAttributes(JobTestCase):
             return submit_info
 
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
         original_submit = backend._api.job_submit
         with mock.patch.object(AccountClient, 'job_submit',
                                side_effect=_mocked__api_job_submit):
@@ -240,7 +236,7 @@ class TestIBMQJobAttributes(JobTestCase):
         """Test retrieving queue information."""
         # Find the most busy backend.
         backend = most_busy_backend(provider)
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
         job = backend.run(qobj, validate_qobj=True)
         queue_info = None
@@ -276,7 +272,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_invalid_job_share_level(self, provider):
         """Test setting a non existent share level for a job."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
         with self.assertRaises(IBMQBackendValueError) as context_manager:
             backend.run(qobj, job_share_level='invalid_job_share_level',
                         validate_qobj=True)
@@ -286,7 +282,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_share_job_in_project(self, provider):
         """Test successfully sharing a job within a shareable project."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
         job = backend.run(qobj, job_share_level='project',
                           validate_qobj=True)
 
@@ -298,7 +294,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_job_tags_or(self, provider):
         """Test using job tags with an or operator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
 
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
@@ -325,7 +321,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_job_tags_and(self, provider):
         """Test using job tags with an and operator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
 
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
@@ -353,8 +349,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_invalid_job_tags(self, provider):
         """Test using job tags with an and operator."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
+        qobj = bell_in_qobj(backend)
         self.assertRaises(IBMQBackendValueError, backend.run, qobj, job_tags={'foo'})
         self.assertRaises(IBMQBackendValueError, backend.jobs, job_tags=[1, 2, 3])
 
@@ -362,7 +357,7 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_run_mode(self, provider):
         """Test job run mode."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend)
         job = backend.run(qobj, validate_qobj=True)
         job.wait_for_final_state()
         self.assertEqual(job.scheduling_mode(), "fairshare", "Job {} scheduling mode is {}".format(
@@ -371,14 +366,3 @@ class TestIBMQJobAttributes(JobTestCase):
         rjob = backend.retrieve_job(job.job_id())
         self.assertEqual(rjob.scheduling_mode(), "fairshare", "Job {} scheduling mode is {}".format(
             rjob.job_id(), rjob.scheduling_mode()))
-
-
-def _bell_circuit():
-    """Return a bell state circuit."""
-    qr = QuantumRegister(2, 'q')
-    cr = ClassicalRegister(2, 'c')
-    qc = QuantumCircuit(qr, cr)
-    qc.h(qr[0])
-    qc.cx(qr[0], qr[1])
-    qc.measure(qr, cr)
-    return qc
