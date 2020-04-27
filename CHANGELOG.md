@@ -19,7 +19,10 @@ The format is based on [Keep a Changelog].
 ### Added
 
 - A new exception, `IBMQBackendJobLimitError`, is now raised if a job 
-  could not be submitted because the limit on active jobs has been reached. 
+  could not be submitted because the limit on active jobs has been reached.
+- `IBMQJob` and `ManagedJobSet` both have two new methods `update_name()` and 
+  `update_tags()`. They are used to change the name and tags of a job or job set, 
+  respectively. (\#590)   
 
 ### Changed
 

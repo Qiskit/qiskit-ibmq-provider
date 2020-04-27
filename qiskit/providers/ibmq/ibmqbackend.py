@@ -428,6 +428,7 @@ class IBMQBackend(BaseBackend):
             job_tags: Filter by tags assigned to jobs.
             job_tags_operator: Logical operator to use when filtering by job tags. Valid
                 values are "AND" and "OR":
+
                     * If "AND" is specified, then a job must have all of the tags
                       specified in ``job_tags`` to be included.
                     * If "OR" is specified, then a job only needs to have any
