@@ -218,7 +218,8 @@ class TestAccountClient(IBMQTestCase):
 
     def test_access_token_not_in_exception_traceback(self):
         """Check that access token is replaced within chained request exceptions."""
-        backend = self.provider.backends.ibmq_qasm_simulator
+        backend_name = 'ibmq_qasm_simulator'
+        backend = self.provider.get_backend(backend_name)
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
         qobj = assemble(circuit, backend, shots=1)
         api = backend._api
