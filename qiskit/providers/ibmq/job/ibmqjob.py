@@ -37,7 +37,6 @@ from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..utils.utils import RefreshQueue, validate_job_tags
 from ..utils import utc_to_local
-from ..utils.utils import RefreshQueue
 from ..utils.qobj_utils import dict_to_qobj
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
