@@ -16,6 +16,7 @@
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
+from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.validation import ModelValidationError
 
 from qiskit.providers.ibmq import IBMQJob
@@ -49,7 +50,7 @@ class TestIBMQJobModel(JobTestCase):
     def test_invalid_qobj(self, provider):
         """Test submitting an invalid qobj."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(_bell_circuit(), backend=backend),
+        qobj = assemble(transpile(ReferenceCircuits.bell(), backend=backend),
                         backend=backend)
 
         delattr(qobj, 'qobj_id')
@@ -80,14 +81,3 @@ class TestIBMQJobModel(JobTestCase):
         response['kind'] = 'invalid'
         with self.assertRaises(ModelValidationError):
             IBMQJob.from_dict(response)
-
-
-def _bell_circuit():
-    """Return a bell state circuit."""
-    qr = QuantumRegister(2, 'q')
-    cr = ClassicalRegister(2, 'c')
-    qc = QuantumCircuit(qr, cr)
-    qc.h(qr[0])
-    qc.cx(qr[0], qr[1])
-    qc.measure(qr, cr)
-    return qc
