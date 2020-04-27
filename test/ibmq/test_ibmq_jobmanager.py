@@ -24,6 +24,7 @@ from qiskit import QuantumCircuit
 from qiskit.result import Result
 
 from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
+from qiskit.providers.ibmq.managed.managedjobset import ManagedJobSet
 from qiskit.providers.ibmq.managed.managedresults import ManagedResults
 from qiskit.providers.ibmq.managed import managedjob
 from qiskit.providers.ibmq.managed.exceptions import (
@@ -34,7 +35,8 @@ from qiskit.test.reference_circuits import ReferenceCircuits
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
-from ..fake_account_client import BaseFakeAccountClient, CancelableFakeJob, JobSubmitFailClient
+from ..fake_account_client import (BaseFakeAccountClient, CancelableFakeJob,
+                                   JobSubmitFailClient)
 from ..utils import cancel_job
 
 
@@ -315,6 +317,70 @@ class TestIBMQJobManager(IBMQTestCase):
                 elif job_set._job_submit_lock.locked():
                     job_set._job_submit_lock.release()
             wait([mjob.future for mjob in job_set.managed_jobs()], timeout=5)
+
+    @requires_provider
+    def test_job_tags_replace(self, provider):
+        """Test updating job tags by replacing the job set's existing tags."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        initial_job_tags = [uuid.uuid4().hex]
+        job_set = self._jm.run([self._qc] * 2, backend=backend,
+                               max_experiments_per_job=1, job_tags=initial_job_tags)
+
+        # Wait for jobs to be submitted.
+        while JobStatus.INITIALIZING in job_set.statuses():
+            time.sleep(1)
+
+        tag_prefix = uuid.uuid4().hex
+        replacement_tags = ['{}_new_tag_{}'.format(tag_prefix, i) for i in range(2)]
+        replacement_tags_with_id_long = replacement_tags + [job_set._id_long]
+
+        # Update the job set tags.
+        _ = job_set.update_tags(replacement_tags=replacement_tags)
+
+        # Cached results may be returned if quickly retrieving jobs,
+        # after an update, so wait some time.
+        time.sleep(2)
+
+        # Refresh the jobs in the job set and ensure that the tags were updated correctly.
+        job_set.retrieve_jobs(provider, refresh=True)
+        for job in job_set.jobs():
+            job_id = job.job_id()
+            with self.subTest(job_id=job_id):
+                self.assertEqual(set(job.tags()), set(replacement_tags_with_id_long),
+                                 'Updating the tags for job {} was unsuccessful.'
+                                 'The tags are {}, but they should be {}.'
+                                 .format(job_id, job.tags(), replacement_tags_with_id_long))
+
+    @requires_provider
+    def test_job_tags_remove(self, provider):
+        """Test updating job tags by removing the job set's existing tags."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        initial_job_tags = [uuid.uuid4().hex]
+        job_set = self._jm.run([self._qc] * 2, backend=backend,
+                               max_experiments_per_job=1, job_tags=initial_job_tags)
+
+        # Wait for jobs to be submitted.
+        while JobStatus.INITIALIZING in job_set.statuses():
+            time.sleep(1)
+
+        initial_job_tags_with_id_long = initial_job_tags + [job_set._id_long]
+
+        # Update the job tags
+        _ = job_set.update_tags(removal_tags=initial_job_tags_with_id_long)
+
+        # Cached results may be returned if quickly retrieving jobs,
+        # after an update, so wait some time.
+        time.sleep(2)
+
+        # Refresh the jobs in the job set and ensure that the job set long id is still present.
+        job_set.retrieve_jobs(provider, refresh=True)
+        for job in job_set.jobs():
+            job_id = job.job_id()
+            with self.subTest(job_id=job_id):
+                self.assertEqual(job.tags(), [job_set._id_long],
+                                 'Updating the tags for job {} was unsuccessful.'
+                                 'The tags are {}, but they should be {}.'
+                                 .format(job_id, job.tags(), [job_set._id_long]))
 
 
 class TestResultManager(IBMQTestCase):

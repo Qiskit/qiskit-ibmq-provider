@@ -61,7 +61,7 @@ def backend_widget(backend: Union[IBMQBackend, FakeBackend]) -> None:
                                  children=[
                                      vue.Tab(children=['Configuration']),
                                      vue.Tab(children=['Qubits']),
-                                     vue.Tab(children=['Multi-Qubit Gates']),
+                                     vue.Tab(children=['Non-local Gates']),
                                      vue.Tab(children=['Error map']),
                                      vue.Tab(children=['Job Summary']),
                                      vue.TabItem(children=[config_tab(backend)]),

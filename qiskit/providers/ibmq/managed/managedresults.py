@@ -63,6 +63,7 @@ class ManagedResults:
         Args:
             experiment: Retrieve result for this experiment. Several types are
                 accepted for convenience:
+
                     * str: The name of the experiment.
                     * QuantumCircuit: The name of the circuit instance will be used.
                     * Schedule: The name of the schedule instance will be used.

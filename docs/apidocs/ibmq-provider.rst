@@ -1,4 +1,4 @@
-.. _qiskit-providers-ibmq:
+.. module:: qiskit
 
 *****************************************
 Qiskit IBM Quantum Provider API Reference

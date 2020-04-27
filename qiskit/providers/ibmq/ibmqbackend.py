@@ -25,9 +25,11 @@ from qiskit.qobj import QasmQobj, PulseQobj, validate_qobj_against_schema
 from qiskit.providers.basebackend import BaseBackend  # type: ignore[attr-defined]
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
-                                     PulseDefaults, BackendConfiguration, GateConfig)
+                                     PulseDefaults, GateConfig)
 from qiskit.validation.exceptions import ModelValidationError
 from qiskit.tools.events.pubsub import Publisher
+from qiskit.providers.models import (QasmBackendConfiguration,
+                                     PulseBackendConfiguration)
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from .apiconstants import ApiJobShareLevel, ApiJobStatus, API_JOB_FINAL_STATES
@@ -41,6 +43,7 @@ from .exceptions import (IBMQBackendError, IBMQBackendValueError,
                          IBMQBackendJobLimitError)
 from .job import IBMQJob
 from .utils import update_qobj_config, validate_job_tags
+from .utils.json_decoder import decode_pulse_defaults
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +91,7 @@ class IBMQBackend(BaseBackend):
 
     def __init__(
             self,
-            configuration: BackendConfiguration,
+            configuration: Union[QasmBackendConfiguration, PulseBackendConfiguration],
             provider: 'accountprovider.AccountProvider',
             credentials: Credentials,
             api: AccountClient
@@ -307,6 +310,7 @@ class IBMQBackend(BaseBackend):
         if refresh or self._defaults is None:
             api_defaults = self._api.backend_pulse_defaults(self.name())
             if api_defaults:
+                decode_pulse_defaults(api_defaults)
                 self._defaults = PulseDefaults.from_dict(api_defaults)
             else:
                 self._defaults = None
@@ -415,13 +419,16 @@ class IBMQBackend(BaseBackend):
                 and `regular expressions
                 <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions>`_
                 can be used.
-            start_datetime: Filter by start date. This is used to find jobs
-                whose creation dates are after (greater than or equal to) this date/time.
-            end_datetime: Filter by end date. This is used to find jobs
-                whose creation dates are before (less than or equal to) this date/time.
+            start_datetime: Filter by the given start date, in local time. This is used to
+                find jobs whose creation dates are after (greater than or equal to) this
+                local date/time.
+            end_datetime: Filter by the given end date, in local time. This is used to
+                find jobs whose creation dates are before (less than or equal to) this
+                local date/time.
             job_tags: Filter by tags assigned to jobs.
             job_tags_operator: Logical operator to use when filtering by job tags. Valid
                 values are "AND" and "OR":
+
                     * If "AND" is specified, then a job must have all of the tags
                       specified in ``job_tags`` to be included.
                     * If "OR" is specified, then a job only needs to have any
@@ -560,7 +567,7 @@ class IBMQRetiredBackend(IBMQBackend):
 
     def __init__(
             self,
-            configuration: BackendConfiguration,
+            configuration: Union[QasmBackendConfiguration, PulseBackendConfiguration],
             provider: 'accountprovider.AccountProvider',
             credentials: Credentials,
             api: AccountClient
@@ -629,7 +636,7 @@ class IBMQRetiredBackend(IBMQBackend):
             api: AccountClient
     ) -> 'IBMQRetiredBackend':
         """Return a retired backend from its name."""
-        configuration = BackendConfiguration(
+        configuration = QasmBackendConfiguration(
             backend_name=backend_name,
             backend_version='0.0.0',
             n_qubits=1,

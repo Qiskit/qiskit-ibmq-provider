@@ -16,8 +16,11 @@
 
 import time
 from unittest import mock
+from datetime import datetime
 import re
 import uuid
+
+from dateutil import tz
 
 from qiskit.test import slow_test
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -29,7 +32,8 @@ from qiskit.compiler import assemble, transpile
 
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, requires_device
-from ..utils import most_busy_backend, cancel_job, get_large_circuit, bell_in_qobj
+from ..utils import (most_busy_backend, cancel_job, get_large_circuit,
+                     bell_in_qobj, update_job_tags_and_verify)
 
 
 class TestIBMQJobAttributes(JobTestCase):
@@ -104,6 +108,32 @@ class TestIBMQJobAttributes(JobTestCase):
                                                 job_name=job_name_regex)
         self.assertEqual(len(retrieved_jobs), 1)
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
+
+    @requires_provider
+    def test_job_name_update(self, provider):
+        """Test changing the name associated with a job."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+
+        # Use a unique job name
+        initial_job_name = str(time.time()).replace('.', '')
+        job = backend.run(qobj, job_name=initial_job_name, validate_qobj=True)
+        job_id = job.job_id()
+
+        new_names_to_test = [
+            '',  # empty string as name.
+            '{}_new'.format(str(time.time()).replace('.', ''))  # unique name.
+        ]
+        for new_name in new_names_to_test:
+            with self.subTest(new_name=new_name):
+                _ = job.update_name(new_name)  # Update the job name.
+                # Cached results may be returned if updating too quickly.
+                # Wait before updating again.
+                time.sleep(2)
+                job.refresh()
+                self.assertEqual(job.name(), new_name,
+                                 'Updating the name for job {} from "{}" to "{}" '
+                                 'was unsuccessful.'.format(job_id, job.name(), new_name))
 
     @requires_provider
     def test_duplicate_job_name(self, provider):
@@ -204,13 +234,40 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertEqual(rjob._time_per_step, job._time_per_step)
 
     @requires_provider
-    def test_time_per_step(self, provider):
-        """Test retrieving time per step."""
+    def test_job_creation_date(self, provider):
+        """Test retrieving creation date, while ensuring it is in local time."""
         backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = bell_in_qobj(backend)
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        # datetime, before running the job, in local time.
+        start_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
         job = backend.run(qobj, validate_qobj=True)
         job.result()
+        # datetime, after the job is done running, in local time.
+        end_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
+
+        self.assertTrue((start_datetime <= job.creation_date() <= end_datetime),
+                        'job creation date {} is not '
+                        'between the start date time {} and end date time {}'
+                        .format(job.creation_date(), start_datetime, end_datetime))
+
+    @requires_provider
+    def test_time_per_step(self, provider):
+        """Test retrieving time per step, while ensuring the date times are in local time."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = bell_in_qobj(backend)
+        # datetime, before running the job, in local time.
+        start_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
+        job = backend.run(qobj, validate_qobj=True)
+        job.result()
+        # datetime, after the job is done running, in local time.
+        end_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
+
         self.assertTrue(job.time_per_step())
+        for step, time_data in job.time_per_step().items():
+            self.assertTrue((start_datetime <= time_data <= end_datetime),
+                            'job time step "{}={}" is not '
+                            'between the start date time {} and end date time {}'
+                            .format(step, time_data, start_datetime, end_datetime))
 
         rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
         self.assertTrue(rjob.time_per_step())
@@ -243,8 +300,7 @@ class TestIBMQJobAttributes(JobTestCase):
         queue_info = None
         for _ in range(10):
             queue_info = job.queue_info()
-            # Even if job status is QUEUED, queue information may not be
-            # immediately available.
+            # Even if job status is queued, its queue info may not be immediately available.
             if (job._status is JobStatus.QUEUED and job.queue_position() is not None) or \
                     job._status in leave_states:
                 break
@@ -260,6 +316,7 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertTrue(all(0 < priority <= 1.0 for priority in [
                 queue_info.hub_priority, queue_info.group_priority, queue_info.project_priority]),
                             "Unexpected queue info {} for job {}".format(queue_info, job.job_id()))
+
             self.assertTrue(queue_info.format())
             self.assertTrue(repr(queue_info))
         else:
@@ -345,6 +402,114 @@ class TestIBMQJobAttributes(JobTestCase):
                                  "Expected job {}, got {}".format(job.job_id(), rjobs))
                 self.assertEqual(rjobs[0].job_id(), job.job_id())
                 self.assertEqual(set(rjobs[0].tags()), set(job_tags))
+
+    @requires_provider
+    def test_job_tags_replace(self, provider):
+        """Test updating job tags by replacing a job's existing tags."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        initial_job_tags = [uuid.uuid4().hex]
+        job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
+
+        tags_to_replace_subtests = [
+            [],  # empty tags.
+            ['{}_new_tag_{}'.format(uuid.uuid4().hex, i) for i in range(2)]  # unique tags.
+        ]
+        for tags_to_replace in tags_to_replace_subtests:
+            with self.subTest(tags_to_replace=tags_to_replace):
+                update_job_tags_and_verify(job_to_update=job,
+                                           tags_after_update=tags_to_replace,
+                                           replacement_tags=tags_to_replace)
+
+    @requires_provider
+    def test_job_tags_add(self, provider):
+        """Test updating job tags by adding to a job's existing tags."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        initial_job_tags = [uuid.uuid4().hex]
+        job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
+
+        tags_to_add_subtests = [
+            [],  # empty tags.
+            ['{}_new_tag_{}'.format(uuid.uuid4().hex, i) for i in range(2)]  # unique tags.
+        ]
+        for tags_to_add in tags_to_add_subtests:
+            tags_after_add = job.tags() + tags_to_add
+            update_job_tags_and_verify(job_to_update=job,
+                                       tags_after_update=tags_after_add,
+                                       additional_tags=tags_to_add)
+
+    @requires_provider
+    def test_job_tags_remove(self, provider):
+        """Test updating job tags by removing from a job's existing tags."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        initial_job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
+        job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
+
+        tags_to_remove_subtests = [
+            [],
+            initial_job_tags[:2],  # Will be used to remove the first two tags of initial_job_tags.
+            ['phantom_tag', 'ghost_tag', initial_job_tags[-1]]  # Get the last initial tag.
+        ]
+        for tags_to_remove in tags_to_remove_subtests:
+            tags_after_removal_set = set(job.tags()) - set(tags_to_remove)
+            update_job_tags_and_verify(job_to_update=job,
+                                       tags_after_update=list(tags_after_removal_set),
+                                       removal_tags=tags_to_remove)
+
+    @requires_provider
+    def test_job_tags_add_and_remove(self, provider):
+        """Test updating job tags by adding and removing the same job tag."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj, validate_qobj=True)
+
+        new_job_tags = [uuid.uuid4().hex]
+        update_job_tags_and_verify(job_to_update=job,
+                                   tags_after_update=[],
+                                   additional_tags=new_job_tags,
+                                   removal_tags=new_job_tags)
+
+    @requires_provider
+    def test_job_tags_replace_and_remove(self, provider):
+        """Test updating job tags by replacing and removing tags."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        job = backend.run(qobj, job_tags=[uuid.uuid4().hex], validate_qobj=True)
+
+        replacement_tags = [uuid.uuid4().hex, uuid.uuid4().hex]
+        # Remove the first tag in `replacement_tags`
+        removal_tags = replacement_tags[:1]
+        # After updating, the final tags should only be the second tag of `replacement_tags`.
+        tags_after_update = replacement_tags[1:]
+
+        update_job_tags_and_verify(job_to_update=job,
+                                   tags_after_update=tags_after_update,
+                                   replacement_tags=replacement_tags,
+                                   removal_tags=removal_tags)
+
+    @requires_provider
+    def test_job_tags_all_parameters(self, provider):
+        """Test updating job tags by replacing, adding, and removing tags."""
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        initial_job_tags = [uuid.uuid4().hex]
+        job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
+
+        replacement_tags = [uuid.uuid4().hex, uuid.uuid4().hex]
+        additional_tags = [uuid.uuid4().hex, uuid.uuid4().hex]
+        # Remove the first tag of `replacement_tags` and `additional_tags`.
+        removal_tags = replacement_tags[:1] + additional_tags[:1]
+        # After updating, the final tags should contain the second tag of both
+        # `replacement_tags` and `additional_tags`.
+        tags_after_update = replacement_tags[1:] + additional_tags[1:]
+
+        update_job_tags_and_verify(job_to_update=job,
+                                   tags_after_update=tags_after_update,
+                                   replacement_tags=replacement_tags,
+                                   additional_tags=additional_tags,
+                                   removal_tags=removal_tags)
 
     @requires_provider
     def test_invalid_job_tags(self, provider):
