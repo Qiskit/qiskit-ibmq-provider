@@ -469,7 +469,7 @@ def iplot_error_map(
                       title=dict(text=title_text, x=0.452),
                       title_font_size=20,
                       font=dict(color=text_color),
-                      margin=dict(t=60, l=0, r=0, b=0)
+                      margin=dict(t=60, l=0, r=40, b=0)
                       )
     if as_widget:
         return PlotlyWidget(fig)
