@@ -14,7 +14,6 @@
 
 """IBMQJob model tests."""
 
-from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import assemble, transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.validation import ModelValidationError
