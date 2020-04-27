@@ -30,14 +30,13 @@ from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.job.utils import api_status_to_job_status
 from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, IBMQJobTimeoutError
-from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.test import slow_test
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.compiler import assemble, transpile
 from qiskit.result import Result
 
 from ..jobtestcase import JobTestCase
-from ..decorators import (requires_provider, requires_device, requires_qe_access)
+from ..decorators import (requires_provider, requires_device)
 from ..utils import most_busy_backend, get_large_circuit, bell_in_qobj, cancel_job
 
 
@@ -411,11 +410,9 @@ class TestIBMQJob(JobTestCase):
                             'greater than or equal to past month: {}'
                             .format(i, job.creation_date(), past_month_str))
 
-    @requires_qe_access
-    def test_retrieve_jobs_end_datetime(self, qe_token, qe_url):
+    @requires_provider
+    def test_retrieve_jobs_end_datetime(self, provider):
         """Test retrieving jobs created before a specified datetime."""
-        ibmq_factory = IBMQFactory()
-        provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = provider.get_backend('ibmq_qasm_simulator')
         past_month = datetime.now() - timedelta(days=30)
         past_month_str = past_month.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
@@ -429,11 +426,9 @@ class TestIBMQJob(JobTestCase):
                             'less than or equal to past month: {}'
                             .format(i, job.creation_date(), past_month_str))
 
-    @requires_qe_access
-    def test_retrieve_jobs_between_datetimes(self, qe_token, qe_url):
+    @requires_provider
+    def test_retrieve_jobs_between_datetimes(self, provider):
         """Test retrieving jobs created between two specified datetimes."""
-        ibmq_factory = IBMQFactory()
-        provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
 
@@ -451,12 +446,10 @@ class TestIBMQJob(JobTestCase):
                             'between past two month {} and past month {}'
                             .format(i, past_two_month_str, job.creation_date(), past_month_str))
 
-    @requires_qe_access
-    def test_retrieve_jobs_between_datetimes_not_overriden(self, qe_token, qe_url):
+    @requires_provider
+    def test_retrieve_jobs_between_datetimes_not_overriden(self, provider):
         """Test retrieving jobs created between two specified datetimes
         and ensure `db_filter` does not override datetime arguments."""
-        ibmq_factory = IBMQFactory()
-        provider = ibmq_factory.enable_account(qe_token, qe_url)
         backend = provider.get_backend('ibmq_qasm_simulator')
         date_today = datetime.now()
 
