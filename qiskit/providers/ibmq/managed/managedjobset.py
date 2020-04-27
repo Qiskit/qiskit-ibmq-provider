@@ -20,7 +20,6 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 import logging
 import uuid
-import re
 import threading
 
 from qiskit.circuit import QuantumCircuit
@@ -33,11 +32,12 @@ from qiskit.providers.ibmq.accountprovider import AccountProvider
 
 from .managedjob import ManagedJob
 from .managedresults import ManagedResults
-from .utils import requires_submit, format_status_counts, format_job_details
+from .utils import (requires_submit, format_status_counts, format_job_details,
+                    JOB_SET_NAME_FORMATTER, JOB_SET_NAME_RE)
 from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutError,
                          IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet)
 from ..job import IBMQJob
-from ..job.exceptions import IBMQJobTimeoutError
+from ..job.exceptions import IBMQJobTimeoutError, IBMQJobApiError
 from ..ibmqbackend import IBMQBackend
 
 logger = logging.getLogger(__name__)
@@ -116,7 +116,7 @@ class ManagedJobSet:
         exp_index = 0
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)
-            job_name = "{}_{}_".format(self._name, i)
+            job_name = JOB_SET_NAME_FORMATTER.format(self._name, i)
             mjob = ManagedJob(experiments_count=len(experiments), start_index=exp_index)
             mjob.submit(qobj=qobj, job_name=job_name, backend=backend,
                         executor=executor, job_share_level=job_share_level,
@@ -159,13 +159,8 @@ class ManagedJobSet:
 
         # Extract common information from the first job.
         first_job = jobs[0]
-        pattern = re.compile(r'(.*)_([0-9])+_$')
-        matched = pattern.match(first_job.name())
-        if not matched:
-            raise IBMQJobManagerInvalidStateError(
-                'Job {} is tagged for the job set {} but does not '
-                'have a proper job name.'.format(first_job.job_id(), self.job_set_id()))
-        self._name = matched.group(1)
+        job_set_name, _ = self._parse_job_name(first_job)
+        self._name = job_set_name
         self._backend = first_job.backend()
         self._tags = first_job.tags()
         self._tags.remove(self._id_long)
@@ -173,13 +168,12 @@ class ManagedJobSet:
         jobs_dict = {}
         for job in jobs:
             # Verify the job is proper.
-            matched = pattern.match(job.name()) if job.name() else None
-            if not matched or matched.group(1) != self._name or \
-                    job.backend().name() != self._backend.name():
+            job_set_name, job_index = self._parse_job_name(job)
+            if job_set_name != self._name or job.backend().name() != self._backend.name():
                 raise IBMQJobManagerInvalidStateError(
                     'Job {} is tagged for the job set {} but does not appear '
                     'to belong to the set.'.format(job.job_id(), self.job_set_id()))
-            jobs_dict[int(matched.group(2))] = job
+            jobs_dict[job_index] = job
 
         sorted_indexes = sorted(jobs_dict)
         # Verify we got all jobs.
@@ -419,6 +413,34 @@ class ManagedJobSet:
         """
         return self._name
 
+    @requires_submit
+    def update_name(self, name: str) -> str:
+        """Update the name of this job set.
+
+        Args:
+            name: The new `name` for this job set.
+
+        Returns:
+            The new name associated with this job set.
+        """
+        for job in self.jobs():
+            if job:
+                _, job_index = self._parse_job_name(job)
+                try:
+                    # Use the index found in the job name to update the name in order
+                    # to preserve the job set order.
+                    _ = job.update_name(JOB_SET_NAME_FORMATTER.format(name, job_index))
+                except IBMQJobApiError as ex:
+                    # Log a warning with the job that failed to update.
+                    logger.warning('There was an error updating the name for job %s, '
+                                   'belonging to job set %s: %s',
+                                   job.job_id(), self.job_set_id(), str(ex))
+
+        # Cache the updated job set name.
+        self._name = name
+
+        return self._name
+
     def job_set_id(self) -> str:
         """Return the ID of this job set.
 
@@ -444,3 +466,87 @@ class ManagedJobSet:
             Tags assigned to this job set.
         """
         return self._tags
+
+    def update_tags(
+            self,
+            replacement_tags: List[str] = None,
+            additional_tags: List[str] = None,
+            removal_tags: List[str] = None
+    ) -> List[str]:
+        """Update the tags assigned to this job set.
+
+        When multiple parameters are specified, the parameters are processed in the
+        following order:
+
+            1. replacement_tags
+            2. additional_tags
+            3. removal_tags
+
+        For example, if 'new_tag' is specified for both `additional_tags` and `removal_tags`,
+        then it is added and subsequently removed from the tags list, making it a "do nothing"
+        operation.
+
+        Note:
+            * Some tags, such as those starting with ``ibmq_jobset``, are used
+              internally by `ibmq-provider` and therefore cannot be modified.
+            * When removing tags, if the job does not have a specified tag, it
+              will be ignored.
+
+        Args:
+            replacement_tags: The tags that should replace the current tags
+                associated with this job set.
+            additional_tags: The new tags that should be added to the current tags
+                associated with this job set.
+            removal_tags: The tags that should be removed from the current tags
+                associated with this job set.
+
+        Returns:
+            The new tags associated with this job set.
+
+        Raises:
+            IBMQJobManagerInvalidStateError: If none of the input parameters are specified.
+        """
+        if (replacement_tags is None) and (additional_tags is None) and (removal_tags is None):
+            raise IBMQJobManagerInvalidStateError(
+                'The tags cannot be updated since none of the parameters are specified.')
+
+        updated_tags = []  # type: List[str]
+        for job in self.jobs():
+            if job:
+                try:
+                    updated_tags = job.update_tags(replacement_tags=replacement_tags,
+                                                   additional_tags=additional_tags,
+                                                   removal_tags=removal_tags)
+                except IBMQJobApiError as ex:
+                    # Log a warning with the job that failed to update.
+                    logger.warning('There was an error updating the tags for job %s, '
+                                   'belonging to job set %s: %s',
+                                   job.job_id(), self.job_set_id(), str(ex))
+
+        # Cache the updated job set tags and remove the long id.
+        self._tags = updated_tags
+        self._tags.remove(self._id_long)
+
+        return self._tags
+
+    def _parse_job_name(self, job: IBMQJob) -> Tuple[str, int]:
+        """Parse the name of a job from the job set.
+
+        Args:
+            job: A job in the job set.
+
+        Returns:
+            A tuple containing the job set name and the index of the job's
+            placement in the job set: (<job_set_name>, <job_index_in_set>).
+
+        Raises:
+            IBMQJobManagerInvalidStateError: If the job does not have a proper
+                job name.
+        """
+        matched = JOB_SET_NAME_RE.match(job.name())
+        if not matched:
+            raise IBMQJobManagerInvalidStateError(
+                'Job {} is tagged for the job set {} but does not '
+                'have a proper job name.'.format(job.job_id(), self.job_set_id()))
+
+        return matched.group(1), int(matched.group(2))
