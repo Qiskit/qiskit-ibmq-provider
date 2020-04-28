@@ -19,8 +19,6 @@ from datetime import datetime
 from types import SimpleNamespace
 
 from ..utils import utc_to_local, duration_difference
-from ..api.rest.validation import InfoQueueResponseSchema
-from ..apiconstants import ApiJobStatus
 from .utils import api_status_to_job_status
 
 
