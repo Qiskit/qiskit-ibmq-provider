@@ -75,6 +75,7 @@ class TestSerialization(IBMQTestCase):
         # Known keys that look like a serialized complex number.
         good_keys = ('coupling_map', 'qubit_lo_range', 'meas_lo_range', 'gates.coupling_map',
                      'meas_levels')
+        good_keys_prefix = ('_channel',)
 
         for backend in backends:
             with self.subTest(backend=backend):
@@ -87,6 +88,9 @@ class TestSerialization(IBMQTestCase):
                         complex_keys.remove(gkey)
                     except KeyError:
                         pass
+
+                for gkey in good_keys_prefix:
+                    complex_keys = {ckey for ckey in complex_keys if not ckey.startswith(gkey)}
 
                 self.assertFalse(complex_keys)
 
@@ -133,7 +137,7 @@ def _find_potential_complex(data: Any, c_key: str, tally: set) -> None:
     elif isinstance(data, dict):
         for key, value in data.items():
             if isinstance(value, (dict, list)):
-                full_key = c_key + '.' + key if c_key else key
+                full_key = c_key + '.' + str(key) if c_key else str(key)
                 _find_potential_complex(value, full_key, tally)
 
 
