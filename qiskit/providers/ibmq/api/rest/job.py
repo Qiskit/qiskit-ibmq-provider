@@ -18,7 +18,7 @@ import logging
 import json
 from json.decoder import JSONDecodeError
 
-from typing import Dict, Any
+from typing import Union, Dict, List, Any
 
 from qiskit.providers.ibmq.utils import json_encoder
 
@@ -66,10 +66,28 @@ class Job(RestAdapterBase):
         response = self.session.get(url).json()
 
         if 'calibration' in response:
-            response['properties'] = response.pop('calibration')
+            response['_properties'] = response.pop('calibration')
         response = map_job_response(response)
 
         return response
+
+    def update_attribute(
+            self,
+            job_attribute_info: Dict[str, Union[str, List[str]]]
+    ) -> Dict[str, Any]:
+        """Edit the specified attribute for the job.
+
+        Args:
+            job_attribute_info: A dictionary containing the name of the attribute to
+                update and the new value it should be associated with. The format is
+                {`attribute_name_to_update`: `new_attribute_value`}.
+
+        Returns:
+            JSON response containing the name of the updated attribute and its
+            corresponding value.
+        """
+        url = self.get_url('self')
+        return self.session.put(url, data=json.dumps(job_attribute_info)).json()
 
     def callback_upload(self) -> Dict[str, Any]:
         """Notify the API after uploading a ``Qobj`` via object storage.
@@ -166,7 +184,7 @@ class Job(RestAdapterBase):
             Text response, which is empty if the request was successful.
         """
         data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEconder)
-        logger.debug('Uploading Qobj to object storage.')
+        logger.debug('Uploading to object storage.')
         response = self.session.put(url, data=data, bare=True, timeout=600)
         return response.text
 
@@ -179,6 +197,6 @@ class Job(RestAdapterBase):
         Returns:
             JSON response.
         """
-        logger.debug('Downloading Qobj from object storage.')
-        response = self.session.get(url, bare=True).json()
+        logger.debug('Downloading from object storage.')
+        response = self.session.get(url, bare=True, timeout=600).json()
         return response

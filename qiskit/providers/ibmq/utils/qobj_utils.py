@@ -18,6 +18,8 @@ from typing import Dict, Any, Optional, Union
 
 from qiskit.qobj import QobjHeader, QasmQobj, PulseQobj
 
+from .json_decoder import decode_pulse_qobj
+
 
 def _serialize_noise_model(config: Dict[str, Any]) -> Dict[str, Any]:
     """Traverse the dictionary looking for ``noise_model`` keys and apply
@@ -89,5 +91,6 @@ def dict_to_qobj(qobj_dict: Dict) -> Union[QasmQobj, PulseQobj]:
         The corresponding QasmQobj or PulseQobj instance.
     """
     if qobj_dict['type'] == 'PULSE':
+        decode_pulse_qobj(qobj_dict)   # Convert to proper types.
         return PulseQobj.from_dict(qobj_dict)
     return QasmQobj.from_dict(qobj_dict)

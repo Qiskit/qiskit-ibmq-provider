@@ -106,6 +106,8 @@ class BaseFakeJob:
             data['share_level'] = self._share_level
         if self._job_tags:
             data['tags'] = self._job_tags
+        if self._job_name:
+            data['name'] = self._job_name
 
         return data
 
@@ -240,6 +242,15 @@ class BaseFakeAccountClient:
     def backend_job_limit(self, *_args, **_kwargs):
         """Return the job limit for the backend."""
         return {'maximumJobs': self._job_limit, 'runningJobs': self._unfinished_jobs()}
+
+    def job_update_attribute(self, job_id, attr_name, attr_value, *_args, **_kwargs):
+        """Update the specified job attribute with the given value."""
+        job = self._get_job(job_id)
+        if attr_name == 'name':
+            job._name = attr_value
+        if attr_name == 'tags':
+            job._tags = attr_value
+        return {attr_name: attr_value}
 
     def _unfinished_jobs(self):
         """Return the number of unfinished jobs."""

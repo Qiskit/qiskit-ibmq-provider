@@ -32,7 +32,8 @@ from qiskit.result import Result
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
-from ..utils.utils import RefreshQueue
+from ..utils.utils import RefreshQueue, validate_job_tags
+from ..utils import utc_to_local
 from ..utils.qobj_utils import dict_to_qobj
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
@@ -158,6 +159,8 @@ class IBMQJob(SimpleNamespace, BaseJob):
         # Properties used for caching.
         self._cancelled = False
         self._job_error_msg = None  # type: Optional[str]
+        self._name = kwargs.pop('_name', None)  # type: Optional[str]
+        self._tags = kwargs.pop('_tags', [])  # type: List[str]
 
     def qobj(self) -> Optional[Union[QasmQobj, PulseQobj]]:
         """Return the Qobj for this job.
@@ -295,6 +298,161 @@ class IBMQJob(SimpleNamespace, BaseJob):
             raise IBMQJobApiError('Unexpected error when cancelling job {}: {}'
                                   .format(self.job_id(), str(error))) from error
 
+    def update_name(self, name: str) -> str:
+        """Update the name associated with this job.
+
+        Args:
+            name: The new `name` for this job.
+
+        Returns:
+            The new name associated with this job.
+
+        Raises:
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server or updating the job name.
+            IBMQJobInvalidStateError: If the input job name is not a string.
+        """
+        if not isinstance(name, str):
+            raise IBMQJobInvalidStateError(
+                '"{}" of type "{}" is not a valid job name. '
+                'The job name needs to be a string.'.format(name, type(name)))
+
+        with api_to_job_error():
+            response = self._api.job_update_attribute(
+                job_id=self.job_id(), attr_name='name', attr_value=name)
+
+        # Get the name from the response and check if the update was successful.
+        updated_name = response.get('name', None)
+        if (updated_name is None) or (name != updated_name):
+            raise IBMQJobApiError('An unexpected error occurred when updating the '
+                                  'name for job {}. The name was not updated for '
+                                  'the job.'.format(self.job_id()))
+
+        # Cache updated name.
+        self._name = updated_name
+
+        return self._name
+
+    def update_tags(
+            self,
+            replacement_tags: Optional[List[str]] = None,
+            additional_tags: Optional[List[str]] = None,
+            removal_tags: Optional[List[str]] = None
+    ) -> List[str]:
+        """Update the tags associated with this job.
+
+        When multiple parameters are specified, the parameters are processed in the
+        following order:
+
+            1. replacement_tags
+            2. additional_tags
+            3. removal_tags
+
+        For example, if 'new_tag' is specified for both `additional_tags` and `removal_tags`,
+        then it is added and subsequently removed from the tags list, making it a "do nothing"
+        operation.
+
+        Note:
+            * Some tags, such as those starting with ``ibmq_jobset``, are used
+              internally by `ibmq-provider` and therefore cannot be modified.
+            * When removing tags, if the job does not have a specified tag, it
+              will be ignored.
+
+        Args:
+            replacement_tags: The tags that should replace the current tags
+                associated with this job.
+            additional_tags: The new tags that should be added to the current tags
+                associated with this job.
+            removal_tags: The tags that should be removed from the current tags
+                associated with this job.
+
+        Returns:
+            The new tags associated with this job.
+
+        Raises:
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server or updating the job tags.
+            IBMQJobInvalidStateError: If none of the input parameters are specified or
+                if any of the input parameters are invalid.
+        """
+        if (replacement_tags is None) and (additional_tags is None) and (removal_tags is None):
+            raise IBMQJobInvalidStateError(
+                'The tags cannot be updated since none of the parameters are specified.')
+
+        # Get the list of tags to update.
+        tags_to_update = self._get_tags_to_update(replacement_tags=replacement_tags,
+                                                  additional_tags=additional_tags,
+                                                  removal_tags=removal_tags)
+
+        with api_to_job_error():
+            response = self._api.job_update_attribute(
+                job_id=self.job_id(), attr_name='tags', attr_value=tags_to_update)
+
+        # Get the tags from the response and check if the update was successful.
+        updated_tags = response.get('tags', None)
+        if (updated_tags is None) or (set(updated_tags) != set(tags_to_update)):
+            raise IBMQJobApiError('An unexpected error occurred when updating the '
+                                  'tags for job {}. The tags were not updated for '
+                                  'the job.'.format(self.job_id()))
+
+        # Cache the updated tags.
+        self._tags = updated_tags
+
+        return self._tags
+
+    def _get_tags_to_update(self,
+                            replacement_tags: Optional[List[str]],
+                            additional_tags: Optional[List[str]],
+                            removal_tags: Optional[List[str]]) -> List[str]:
+        """Create the list of tags to update for this job.
+
+        Args:
+            replacement_tags: The tags that should replace the current tags
+                associated with this job.
+            additional_tags: The new tags that should be added to the current tags
+                associated with this job.
+            removal_tags: The tags that should be removed from the current tags
+                associated with this job.
+
+        Returns:
+            The new tags to associate with this job.
+
+        Raises:
+            IBMQJobInvalidStateError: If any of the input parameters are invalid.
+        """
+        # Tags prefix that denotes a job belongs to a jobset.
+        ibmq_jobset_prefix = 'ibmq_jobset_'
+
+        tags_to_update = set(self._tags)  # Get the current job tags.
+        if isinstance(replacement_tags, list):  # `replacement_tags` could be an empty list.
+            # Replace the current tags and re-add those associated with a job set.
+            validate_job_tags(replacement_tags, IBMQJobInvalidStateError)
+            tags_to_update = set(replacement_tags)
+            tags_to_update.update(
+                filter(lambda old_tag: old_tag.startswith(ibmq_jobset_prefix), self._tags))
+        if additional_tags:
+            # Add the specified tags to the tags to update.
+            validate_job_tags(additional_tags, IBMQJobInvalidStateError)
+            tags_to_update.update(additional_tags)
+        if removal_tags:
+            # Remove the specified tags, except those related to a job set,
+            # from the tags to update.
+            validate_job_tags(removal_tags, IBMQJobInvalidStateError)
+            for tag_to_remove in removal_tags:
+                if tag_to_remove.startswith(ibmq_jobset_prefix):
+                    logger.warning('The tag "%s" for job %s will not be removed, because '
+                                   'it is used internally by the ibmq-provider.',
+                                   tag_to_remove, self.job_id())
+                    continue
+                if tag_to_remove in tags_to_update:
+                    tags_to_update.remove(tag_to_remove)
+                else:
+                    logger.warning('The tag "%s" for job %s will not be removed, because it was '
+                                   'not found in the job tags to update %s',
+                                   tag_to_remove, self.job_id(), tags_to_update)
+
+        return list(tags_to_update)
+
     def status(self) -> JobStatus:
         """Query the server for the latest job status.
 
@@ -328,41 +486,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
             self.refresh()
 
         return self._status
-
-    def done(self) -> bool:
-        """Return whether the job has successfully run.
-
-        Returns:
-            ``True`` if the job is done, else ``False``.
-        """
-        return self._is_job_status(JobStatus.DONE)
-
-    def running(self) -> bool:
-        """Return whether the job is actively running.
-
-        Returns:
-            ``True`` if the job is running, else ``False``.
-        """
-        return self._is_job_status(JobStatus.RUNNING)
-
-    def cancelled(self) -> bool:
-        """Return whether the job has been cancelled.
-
-        Returns:
-            ``True`` if the job has been cancelled, else ``False``.
-        """
-        return self._is_job_status(JobStatus.CANCELLED)
-
-    def _is_job_status(self, job_status: JobStatus) -> bool:
-        """Return whether the current job status matches the desired one.
-
-        Args:
-            job_status: The job status to check against.
-
-        Returns:
-            ``True`` if the current job status matches the desired one, else ``False``.
-        """
-        return self.status() == job_status
 
     def error_message(self) -> Optional[str]:
         """Provide details about the reason of failure.
@@ -442,13 +565,17 @@ class IBMQJob(SimpleNamespace, BaseJob):
             return self._queue_info
         return None
 
-    def creation_date(self) -> str:
-        """Return job creation date.
+    def creation_date(self) -> datetime:
+        """Return job creation date, in local time.
 
         Returns:
-            Job creation date.
+            The job creation date as a datetime object, in local time.
         """
-        return self._creation_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        creation_date_local_dt = utc_to_local(self._creation_date)
+        # TODO: Remove when decided the warning is no longer needed.
+        warnings.warn('The creation date is returned in local time now, '
+                      'rather than UTC.', stacklevel=2)
+        return creation_date_local_dt
 
     def job_id(self) -> str:
         """Return the job ID assigned by the server.
@@ -478,20 +605,32 @@ class IBMQJob(SimpleNamespace, BaseJob):
         """Return the date and time information on each step of the job processing.
 
         The output dictionary contains the date and time information on each
-        step of the job processing. The keys of the dictionary are the names
-        of the steps, and the values are the date and time data. For example::
+        step of the job processing, in local time. The keys of the dictionary
+        are the names of the steps, and the values are the date and time data,
+        as a datetime object with local timezone info.
+        For example::
 
-            {'CREATING': '2020-02-13T20:19:25.717Z',
-             'CREATED': '2020-02-13T20:19:26.467Z',
-             'VALIDATING': '2020-02-13T20:19:26.527Z'}
+            {'CREATING': datetime(2020, 2, 13, 15, 19, 25, 717000, tzinfo=tzlocal(),
+             'CREATED': datetime(2020, 2, 13, 15, 19, 26, 467000, tzinfo=tzlocal(),
+             'VALIDATING': datetime(2020, 2, 13, 15, 19, 26, 527000, tzinfo=tzlocal()}
 
         Returns:
-            Date and time information on job processing steps, or ``None``
-            if the information is not yet available.
+            Date and time information on job processing steps, in local time,
+            or ``None`` if the information is not yet available.
         """
         if not self._time_per_step or self._status not in JOB_FINAL_STATES:
             self.refresh()
-        return self._time_per_step
+
+        # Note: By default, `None` should be returned if no time per step info is available.
+        time_per_step_local = None
+        if self._time_per_step:
+            warnings.warn('The time per step date and time information is returned in '
+                          'local time now, rather than UTC.', stacklevel=2)
+            time_per_step_local = {}
+            for step_name, time_data_utc in self._time_per_step.items():
+                time_per_step_local[step_name] = utc_to_local(time_data_utc)
+
+        return time_per_step_local
 
     def scheduling_mode(self) -> Optional[str]:
         """Return the scheduling mode the job is in.
