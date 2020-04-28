@@ -160,8 +160,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
         # Properties used for caching.
         self._cancelled = False
         self._job_error_msg = None  # type: Optional[str]
-        self._name = kwargs.pop('_name', None)  # type: Optional[str]
-        self._tags = kwargs.pop('_tags', [])  # type: List[str]
 
     def qobj(self) -> Optional[Union[QasmQobj, PulseQobj]]:
         """Return the Qobj for this job.
