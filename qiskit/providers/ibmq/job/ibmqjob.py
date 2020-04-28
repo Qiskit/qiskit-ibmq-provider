@@ -148,7 +148,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             qobj = dict_to_qobj(qobj)
         self._qobj = qobj
         self._error = error
-        self._tags = tags
+        self._tags = tags or []
         self._run_mode = run_mode
         self._status, self._queue_info = \
             self._get_status_position(status, kwargs.pop('info_queue', None))
