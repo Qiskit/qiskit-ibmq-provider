@@ -68,7 +68,7 @@ class Job(RestAdapterBase):
         response = self.session.get(url).json()
 
         if 'calibration' in response:
-            response['properties'] = response.pop('calibration')
+            response['_properties'] = response.pop('calibration')
 
         return response
 
@@ -190,7 +190,7 @@ class Job(RestAdapterBase):
             Text response, which is empty if the request was successful.
         """
         data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEconder)
-        logger.debug('Uploading Qobj to object storage.')
+        logger.debug('Uploading to object storage.')
         response = self.session.put(url, data=data, bare=True, timeout=600)
         return response.text
 
@@ -203,6 +203,6 @@ class Job(RestAdapterBase):
         Returns:
             JSON response.
         """
-        logger.debug('Downloading Qobj from object storage.')
+        logger.debug('Downloading from object storage.')
         response = self.session.get(url, bare=True, timeout=600).json()
         return response
