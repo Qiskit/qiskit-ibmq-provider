@@ -40,6 +40,7 @@ class TestAccountClient(IBMQTestCase):
 
     def setUp(self):
         """Initial test setup."""
+        super().setUp()
         qr = QuantumRegister(2)
         cr = ClassicalRegister(2)
         self.qc1 = QuantumCircuit(qr, cr, name='qc1')

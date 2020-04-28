@@ -29,6 +29,7 @@ class TestIBMQIntegration(IBMQTestCase):
     seed = 42
 
     def setUp(self):
+        super().setUp()
         qr = QuantumRegister(1)
         cr = ClassicalRegister(1)
         self._qc1 = QuantumCircuit(qr, cr, name='qc1')

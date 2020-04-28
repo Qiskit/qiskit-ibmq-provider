@@ -45,6 +45,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
     def setUp(self):
         """Initial test setup."""
+        super().setUp()
         self._qc = ReferenceCircuits.bell()
         self._jm = IBMQJobManager()
 
@@ -388,6 +389,7 @@ class TestResultManager(IBMQTestCase):
 
     def setUp(self):
         """Initial test setup."""
+        super().setUp()
         self._qc = ReferenceCircuits.bell()
         self._jm = IBMQJobManager()
 
