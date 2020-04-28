@@ -69,7 +69,8 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
 
     def test_remote_backend_status(self):
         """Test backend_status."""
-        for backend in self.provider.backends():
+        remotes = self.provider.backends()
+        for backend in remotes:
             _ = backend.status()
 
     def test_remote_backend_configuration(self):
@@ -121,7 +122,6 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
     def test_qobj_headers_in_result_devices(self, backend):
         """Test that the qobj headers are passed onto the results for devices."""
         # pylint: disable=unused-argument
-
         custom_qobj_header = {'x': 1, 'y': [1, 2, 3], 'z': {'a': 4}}
 
         qobj = assemble(transpile(self.qc1, backend=backend), backend=backend)

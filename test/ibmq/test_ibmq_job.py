@@ -558,7 +558,7 @@ class TestIBMQJob(JobTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
 
         qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new, qc_new], backend=backend)
+        qobj = assemble([qc_new]*2, backend=backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
         job = backend.run(qobj, validate_qobj=True)
