@@ -96,11 +96,11 @@ class BaseFakeJob:
     def data(self):
         """Return job data."""
         data = {
-            'id': self._job_id,
+            'job_id': self._job_id,
             'kind': 'q-object',
             'status': self._status.value,
-            'creationDate': '2019-01-01T13:15:58.425972',
-            'backend': {'name': self._backend_name}
+            'creation_date': '2019-01-01T13:15:58.425972',
+            '_backend_info': {'name': self._backend_name}
         }
         if self._share_level:
             data['share_level'] = self._share_level
@@ -141,6 +141,26 @@ class CancelableFakeJob(BaseFakeJob):
         ApiJobStatus.VALIDATING,
         ApiJobStatus.RUNNING
     ]
+
+
+class NewFieldFakeJob(BaseFakeJob):
+    """Fake job that contains additional fields."""
+
+    def data(self):
+        """Return job data."""
+        data = super().data()
+        data['new_field'] = 'foo'
+        return data
+
+
+class MissingFieldFakeJob(BaseFakeJob):
+    """Fake job that does not contain required fields."""
+
+    def data(self):
+        """Return job data."""
+        data = super().data()
+        del data['job_id']
+        return data
 
 
 class BaseFakeAccountClient:
