@@ -29,6 +29,7 @@ from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.result import Result
+from qiskit.providers.ibmq import ibmqbackend
 
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
@@ -102,7 +103,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
 
     def __init__(
             self,
-            backend: 'IBMQBackend',
+            backend: 'ibmqbackend.IBMQBackend',
             api: AccountClient,
             job_id: str,
             creation_date: str,
