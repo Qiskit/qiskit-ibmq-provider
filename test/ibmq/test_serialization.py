@@ -133,7 +133,7 @@ def _find_potential_complex(data: Any, c_key: str, tally: set) -> None:
     elif isinstance(data, dict):
         for key, value in data.items():
             if isinstance(value, (dict, list)):
-                full_key = c_key + '.' + key if c_key else key
+                full_key = c_key + '.' + str(key) if c_key else str(key)
                 _find_potential_complex(value, full_key, tally)
 
 
