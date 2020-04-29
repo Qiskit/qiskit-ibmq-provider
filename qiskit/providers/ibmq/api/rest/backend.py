@@ -17,8 +17,10 @@
 import json
 from typing import Dict, Optional, Any
 from datetime import datetime  # pylint: disable=unused-import
+
 from .base import RestAdapterBase
 from ..session import RetrySession
+from .utils.data_mapper import map_jobs_limit_response
 
 
 class Backend(RestAdapterBase):
@@ -116,4 +118,4 @@ class Backend(RestAdapterBase):
             JSON response of job limit.
         """
         url = self.get_url('jobs_limit')
-        return self.session.get(url).json()
+        return map_jobs_limit_response(self.session.get(url).json())

@@ -15,14 +15,10 @@
 """Job limit information related to a backend."""
 
 from typing import Any
-
-from qiskit.validation import BaseModel, bind_schema
-
-from .api.rest.validation import BackendJobLimitResponseSchema
+from types import SimpleNamespace
 
 
-@bind_schema(BackendJobLimitResponseSchema)
-class BackendJobLimit(BaseModel):
+class BackendJobLimit(SimpleNamespace):
     """Job limit for a backend.
 
     Represent the job limit for a backend on a specific provider. This
