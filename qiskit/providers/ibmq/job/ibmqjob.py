@@ -116,6 +116,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             error: Optional[dict] = None,
             tags: Optional[List[str]] = None,
             run_mode: Optional[str] = None,
+            share_level: Optional[str] = None,
             **kwargs: Any
     ) -> None:
         """IBMQJob constructor.
@@ -134,6 +135,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             error: Job error.
             tags: Job tags.
             run_mode: Scheduling mode the job runs in.
+            share_level: Level the job can be shared with.
             kwargs: Additional job attributes.
         """
         self._backend = backend
@@ -154,6 +156,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._status, self._queue_info = \
             self._get_status_position(status, kwargs.pop('info_queue', None))
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
+        self._share_level = share_level
 
         SimpleNamespace.__init__(self, **kwargs)
         BaseJob.__init__(self, self.backend(), self.job_id())
@@ -601,6 +604,18 @@ class IBMQJob(SimpleNamespace, BaseJob):
         """
         return self._tags.copy()
 
+    def share_level(self) -> str:
+        """Return the share level of the job.
+
+        The share level is one of ``global``, ``hub``, ``group``, ``project``, and ``none``.
+
+        Returns:
+            The share level of the job.
+        """
+        if not self._share_level:
+            self.refresh()
+        return self._share_level
+
     def time_per_step(self) -> Optional[Dict]:
         """Return the date and time information on each step of the job processing.
 
@@ -704,6 +719,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
         self._status, self._queue_info = \
             self._get_status_position(self._api_status, api_response.pop('info_queue', None))
+        self._share_level = api_response.pop('share_level', 'none')
         self.__dict__.update(api_response)
 
     def to_dict(self) -> Dict:
