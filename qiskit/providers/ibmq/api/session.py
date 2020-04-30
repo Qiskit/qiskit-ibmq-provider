@@ -22,6 +22,7 @@ from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
 from urllib3.util.retry import Retry
+import time
 
 from qiskit.providers.ibmq.utils.utils import filter_data
 from .exceptions import RequestsApiError
@@ -62,12 +63,16 @@ class PostForcelistRetry(Retry):
     ):
         """Overwrites parent class increment method for logging."""
         if logger.getEffectiveLevel() is logging.DEBUG:
-            status = data = None
+            status = data = headers = None
             if response:
                 status = response.status
                 data = response.data
-            logger.debug("Retrying method=%s, url=%s, status=%s, error=%s, data=%s",
-                         method, url, status, error, data)
+                headers = response.headers
+            logger.debug("Retrying method=%s, url=%s, status=%s, error=%s, data=%s, headers=%s",
+                         method, url, status, error, data, headers)
+            if str(method) == 'PUT':
+                logger.debug("Sleeping for a minute")
+                time.sleep(60)
         return super().increment(method=method, url=url, response=response,
                                  error=error, _pool=_pool, _stacktrace=_stacktrace)
 
