@@ -35,6 +35,9 @@ jobs:
         pip install pytest pytest-azurepipelines
         pytest -s -v
       displayName: 'pytest'
+      env:
+        QE_TOKEN: $(QE_TOKEN)
+        QE_URL: $(QE_URL)
 
 - job: 'Windows_Merge_Tests'
   pool: {vmImage: 'vs2017-win2016'}
