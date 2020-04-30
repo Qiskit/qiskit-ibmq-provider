@@ -212,22 +212,24 @@ def _get_credentials():
         # will always be in place, as is used by the Travis setup.
         return Credentials(os.getenv('QE_STAGING_TOKEN'), os.getenv('QE_STAGING_URL'))
 
+    return Credentials(os.getenv('QE_TOKEN_TEMP'), os.getenv('QE_URL'))
+
     # Attempt to read the standard credentials.
-    discovered_credentials, _ = discover_credentials()
-
-    if discovered_credentials:
-        # Decide which credentials to use for testing.
-        if len(discovered_credentials) > 1:
-            try:
-                # Attempt to use QE credentials.
-                return discovered_credentials[(None, None, None)]
-            except KeyError:
-                pass
-
-        # Use the first available credentials.
-        return list(discovered_credentials.values())[0]
-
-    raise Exception('Unable to locate valid credentials.')
+    # discovered_credentials, _ = discover_credentials()
+    #
+    # if discovered_credentials:
+    #     # Decide which credentials to use for testing.
+    #     if len(discovered_credentials) > 1:
+    #         try:
+    #             # Attempt to use QE credentials.
+    #             return discovered_credentials[(None, None, None)]
+    #         except KeyError:
+    #             pass
+    #
+    #     # Use the first available credentials.
+    #     return list(discovered_credentials.values())[0]
+    #
+    # raise Exception('Unable to locate valid credentials.')
 
 
 def _get_custom_provider(ibmq_factory: IBMQFactory) -> Optional[AccountProvider]:
