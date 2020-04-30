@@ -118,7 +118,6 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
             ibmq.enable_account(qe_token, qe_url, proxies=proxies)
         self.assertIn('ProxyError', str(context_manager.exception))
 
-    @skipIf(os.name == 'nt', 'Test not supported in Windows')
     @requires_qe_access
     def test_enable_specified_provider(self, qe_token, qe_url):
         """Test enabling an account with a specified provider."""
@@ -168,10 +167,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
             # Ensure the `default_provider` name was written to the config file.
             config_parser = ConfigParser()
-            try:
-                config_parser.read(custom_qiskitrc_cm.tmp_file.name)
-            except ParsingError as ex:
-                self.log.warning('There was an issue parsing the custom_qiskitrc file: %s', str(ex))
+            config_parser.read(custom_qiskitrc_cm.tmp_file.name)
 
             for name in config_parser.sections():
                 single_credentials = dict(config_parser.items(name))
