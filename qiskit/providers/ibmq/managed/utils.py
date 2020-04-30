@@ -14,6 +14,7 @@
 
 """Utility functions for ``IBMQJobManager``."""
 
+import re
 from typing import Callable, Any, List, Union
 from functools import wraps
 from collections import Counter
@@ -22,6 +23,13 @@ from concurrent.futures import wait
 from qiskit.providers.jobstatus import JobStatus
 
 from .managedjob import ManagedJob
+
+JOB_SET_NAME_FORMATTER = "{}_{}_"
+"""Formatter for the name of a job in a job set. The first entry is the job set
+name, whereas the second entry is the job's index in the job set."""
+JOB_SET_NAME_RE = re.compile(r'(.*)_([0-9])+_$')
+"""Regex used to match the name of a job in a job set. The first captured group is
+the job set name, whereas the second captured group is the job's index in the job set."""
 
 
 def requires_submit(func: Callable) -> Callable:
@@ -92,15 +100,15 @@ def format_job_details(
         managed_jobs: Jobs being managed.
 
     Returns:
-        Formatted job details.
+        Formatted job details.format_job_details
     """
     report = []
     for i, mjob in enumerate(managed_jobs):
         report.append("  experiments: {}-{}".format(mjob.start_index, mjob.end_index))
         report.append("    job index: {}".format(i))
         if (mjob.job is None) and mjob.future \
-                and (not mjob.future.done()):  # type: ignore[warn-unreachable]
-            report.append("    status: {}".format(  # type: ignore[warn-unreachable]
+                and (not mjob.future.done()):  # type: ignore[unreachable]
+            report.append("    status: {}".format(  # type: ignore[unreachable]
                 JobStatus.INITIALIZING.value))
             continue
         if mjob.submit_error is not None:

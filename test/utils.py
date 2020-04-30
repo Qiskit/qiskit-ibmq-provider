@@ -14,12 +14,16 @@
 
 """General utility functions for testing."""
 
+import time
+from typing import List, Optional
+
 from qiskit import QuantumCircuit
 from qiskit.qobj import QasmQobj
 from qiskit.compiler import assemble, transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.exceptions import JobError
 from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.job import IBMQJob
@@ -102,3 +106,69 @@ def cancel_job(job: IBMQJob, verify: bool = False) -> bool:
             pass
 
     return cancelled
+
+
+def get_provider(
+        ibmq_factory: IBMQFactory,
+        qe_token: str,
+        qe_url: str,
+        default: bool = True
+) -> AccountProvider:
+    """Return a provider for the account.
+
+    Args:
+        ibmq_factory: An `IBMQFactory` instance.
+        qe_token: IBM Quantum Experience token.
+        qe_url: IBM Quantum Experience auth URL.
+        default: If `True`, the default open access project provider is returned.
+            Otherwise, a non open access project provider is returned.
+
+    Returns:
+        A provider, as specified by `default`.
+    """
+    provider_to_return = ibmq_factory.enable_account(qe_token, url=qe_url)  # Default provider.
+    if not default:
+        # Get a non default provider (i.e.not the default open access project).
+        providers = ibmq_factory.providers()
+        for provider in providers:
+            if provider != provider_to_return:
+                provider_to_return = provider
+                break
+    ibmq_factory.disable_account()
+
+    return provider_to_return
+
+
+def update_job_tags_and_verify(
+        job_to_update: IBMQJob,
+        tags_after_update: List[str],
+        replacement_tags: Optional[List[str]] = None,
+        additional_tags: Optional[List[str]] = None,
+        removal_tags: Optional[List[str]] = None
+) -> None:
+    """Update the tags for a job and assert that the update was successful.
+
+    Args:
+        job_to_update: The job to update.
+        tags_after_update: The list of tags a job should be associated after updating.
+        replacement_tags: The tags that should replace the current tags
+            associated with this job set.
+        additional_tags: The new tags that should be added to the current tags
+            associated with this job set.
+        removal_tags: The tags that should be removed from the current tags
+            associated with this job set.
+    """
+    # Update the job tags.
+    _ = job_to_update.update_tags(replacement_tags=replacement_tags,
+                                  additional_tags=additional_tags,
+                                  removal_tags=removal_tags)
+
+    # Cached results may be returned if quickly refreshing,
+    # after an update, so wait some time.
+    time.sleep(2)
+    job_to_update.refresh()
+
+    assert set(job_to_update.tags()) == set(tags_after_update), (
+        'Updating the tags for job {} was unsuccessful. '
+        'The tags are {}, but they should be {}.'
+        .format(job_to_update.job_id(), job_to_update.tags(), tags_after_update))

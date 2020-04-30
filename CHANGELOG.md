@@ -14,13 +14,50 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [0.7.0] - 2020-04-29
+
+### Added
+
+- A new exception, `IBMQBackendJobLimitError`, is now raised if a job 
+  could not be submitted because the limit on active jobs has been reached.
+- `IBMQJob` and `ManagedJobSet` both have two new methods `update_name()` and 
+  `update_tags()`. They are used to change the name and tags of a job or job set, 
+  respectively. (\#590)
+- `IBMQFactory.save_account()` and `IBMQFactory.enable_account()` now accept
+  the optional parameters `hub`, `group`, `project`, which allow specifying a 
+  default provider to save to disk or use, respectively. (\#611)     
+
+### Changed
+
+- `IBMQJob.creation_date()` and `IBMQJob.time_per_step()` now return date time
+  information as a datetime object in local time. Also, the parameters 
+  `start_datetime` and `end_datetime`, of `IBMQBackendService.jobs()` and 
+  `IBMQBackend.jobs()`, can now be specified in local time. (\#622) 
+
+### Fixed
+
+- Fixed an issue where `nest_asyncio.apply()` may raise an exception
+  if there is no asyncio loop due to threading. (\#595)
+
+### Removed
+
+- The `done()`, `running()`, and `cancelled()` methods were removed from 
+  `IBMQJob`, since they are now a part of `BaseJob`.  
+- Marshmallow validation is removed for performance. (\#632)
+
+
+### Deprecated
+
+- The `from_dict()` and `to_dict()` methods of `IBMQJob` are deprecated and
+  will be removed in the next release. (\#632)
+  
 ## [0.6.1] - 2020-04-22
 
 ### Fixed
 
 - Increased timeout value to allow large Qobj to be uploaded. (\#626)
-- Added a JSON decoder to convert lists in Qobj to complex. (\#631)
-  
+- Added a JSON decoder to convert lists in Qobj to complex. (\#631) 
+
 ## [0.6.0] - 2020-03-26
 
 ### Added
@@ -370,7 +407,7 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.1...HEAD
+[0.7.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.1...HEAD
 [0.6.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.6...0.5.0

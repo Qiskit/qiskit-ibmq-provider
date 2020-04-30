@@ -74,6 +74,44 @@ def requires_qe_access(func):
     return _wrapper
 
 
+def requires_providers(func):
+    """Decorator that signals the test uses the online API, via a public and premium provider.
+
+    This decorator delegates into the `requires_qe_access` decorator, but
+    instead of the credentials it appends a dictionary, containing the open access project
+    `public_provider` and a `premium_provider`, to the decorated function.
+
+    Args:
+        func (callable): Test function to be decorated.
+
+    Returns:
+        callable: The decorated function.
+    """
+    @wraps(func)
+    @requires_qe_access
+    def _wrapper(*args, **kwargs):
+        ibmq_factory = IBMQFactory()
+        qe_token = kwargs.pop('qe_token')
+        qe_url = kwargs.pop('qe_url')
+
+        # Get the open access project public provider.
+        public_provider = ibmq_factory.enable_account(qe_token, qe_url)
+        # Get a premium provider.
+        premium_provider = _get_custom_provider(ibmq_factory)
+
+        if premium_provider is None:
+            raise SkipTest('Requires both the public provider and a premium provider.')
+
+        kwargs.update({
+            'providers': {'public_provider': public_provider,
+                          'premium_provider': premium_provider}
+        })
+
+        return func(*args, **kwargs)
+
+    return _wrapper
+
+
 def requires_provider(func):
     """Decorator that signals the test uses the online API, via a provider.
 
@@ -165,8 +203,8 @@ def _get_credentials():
         Credentials: set of credentials
 
     Raises:
-        Exception: when the credential could not be set and they are needed
-            for that set of options
+        Exception: When the credential could not be set and they are needed
+            for that set of options.
     """
     if os.getenv('USE_STAGING_CREDENTIALS', ''):
         # Special case: instead of using the standard credentials mechanism,
@@ -175,7 +213,7 @@ def _get_credentials():
         return Credentials(os.getenv('QE_STAGING_TOKEN'), os.getenv('QE_STAGING_URL'))
 
     # Attempt to read the standard credentials.
-    discovered_credentials = discover_credentials()
+    discovered_credentials, _ = discover_credentials()
 
     if discovered_credentials:
         # Decide which credentials to use for testing.

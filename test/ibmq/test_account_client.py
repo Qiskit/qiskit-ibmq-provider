@@ -81,7 +81,7 @@ class TestAccountClient(IBMQTestCase):
         api = backend._api
 
         job = api.job_submit(backend_name, qobj.to_dict())
-        job_id = job['id']
+        job_id = job['job_id']
         self.assertNotIn('shots', job)
         self.assertEqual(job['kind'], 'q-object-external-storage')
 
@@ -123,9 +123,9 @@ class TestAccountClient(IBMQTestCase):
 
         job_limit = api.backend_job_limit(backend.name())
         self.assertIsNotNone(job_limit)
-        self.assertIsNotNone(job_limit['maximumJobs'])
-        self.assertIsNotNone(job_limit['runningJobs'])
-        self.assertNotEqual(job_limit['maximumJobs'], 0)
+        self.assertIsNotNone(job_limit['maximum_jobs'])
+        self.assertIsNotNone(job_limit['running_jobs'])
+        self.assertNotEqual(job_limit['maximum_jobs'], 0)
 
     def test_backend_pulse_defaults(self):
         """Check the backend pulse defaults of each backend."""
@@ -247,7 +247,7 @@ class TestAccountClient(IBMQTestCase):
         api = backend._api
 
         # Send request to local server.
-        valid_data = {'id': 'fake_id', 'url': SimpleServer.URL, 'job': 'fake_job'}
+        valid_data = {'id': 'fake_id', 'url': SimpleServer.URL, 'job': {'id': 'fake_id'}}
         SimpleServer(handler_class=ServerErrorOnceHandler, valid_data=valid_data).start()
         api.client_api.session.base_url = SimpleServer.URL
 
@@ -274,7 +274,7 @@ class TestAccountClientJobs(IBMQTestCase):
         cls.client = backend._api
         cls.job = cls.client.job_submit(
             backend_name, cls._get_qobj(backend).to_dict())
-        cls.job_id = cls.job['id']
+        cls.job_id = cls.job['job_id']
 
     @staticmethod
     def _get_qobj(backend):
@@ -331,17 +331,17 @@ class TestAccountClientJobs(IBMQTestCase):
     def test_list_jobs_statuses_skip(self):
         """Test listing job statuses with an offset."""
         jobs_raw = self.client.list_jobs_statuses(limit=1, skip=1, extra_filter={
-            'creationDate': {'lte': self.job['creationDate']}})
+            'creationDate': {'lte': self.job['creation_date']}})
 
         # Ensure our job is skipped
         for job in jobs_raw:
-            self.assertNotEqual(job['id'], self.job_id)
+            self.assertNotEqual(job['job_id'], self.job_id)
 
     def test_list_jobs_statuses_filter(self):
         """Test listing job statuses with a filter."""
         jobs_raw = self.client.list_jobs_statuses(extra_filter={'id': self.job_id})
         self.assertEqual(len(jobs_raw), 1)
-        self.assertEqual(jobs_raw[0]['id'], self.job_id)
+        self.assertEqual(jobs_raw[0]['job_id'], self.job_id)
 
 
 class TestAuthClient(IBMQTestCase):

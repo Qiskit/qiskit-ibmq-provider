@@ -19,7 +19,6 @@ from typing import Dict, List, Optional, Any
 from collections import OrderedDict
 
 from qiskit.providers import BaseProvider  # type: ignore[attr-defined]
-from qiskit.validation.exceptions import ModelValidationError
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 
@@ -27,6 +26,7 @@ from .api.clients import AccountClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
 from .ibmqbackendservice import IBMQBackendService
+from .utils.json_decoder import decode_pulse_backend_config
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +122,7 @@ class AccountProvider(BaseProvider):
 
             try:
                 if raw_config.get('open_pulse', False):
+                    decode_pulse_backend_config(raw_config)
                     config = PulseBackendConfiguration.from_dict(raw_config)
                 else:
                     config = QasmBackendConfiguration.from_dict(raw_config)
@@ -131,7 +132,7 @@ class AccountProvider(BaseProvider):
                     provider=self,
                     credentials=self.credentials,
                     api=self._api)
-            except ModelValidationError as ex:
+            except TypeError as ex:
                 logger.warning(
                     'Remote backend "%s" could not be instantiated due to an '
                     'invalid config: %s',
@@ -141,7 +142,7 @@ class AccountProvider(BaseProvider):
 
         return ret
 
-    def __eq__(  # type: ignore[overide]
+    def __eq__(  # type: ignore[override]
             self,
             other: 'AccountProvider'
     ) -> bool:

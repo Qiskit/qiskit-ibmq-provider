@@ -89,7 +89,7 @@ class Credentials:
         and project are considered equivalent.
 
         Returns:
-            The (hub, group, project) tuple.
+            A ``HubGroupProject`` instance.
         """
         return HubGroupProject(self.hub, self.group, self.project)
 

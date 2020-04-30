@@ -27,6 +27,10 @@ class IBMQAccountError(IBMQError):
     pass
 
 
+class IBMQAccountValueError(IBMQError):
+    """Value errors raised by account management."""
+
+
 class IBMQAccountCredentialsNotFound(IBMQAccountError):
     """Errors raised when credentials are not found."""
     pass
@@ -74,4 +78,9 @@ class IBMQBackendApiProtocolError(IBMQBackendApiError):
 
 class IBMQBackendValueError(IBMQBackendError, ValueError):
     """Value errors raised by the backend modules."""
+    pass
+
+
+class IBMQBackendJobLimitError(IBMQBackendError):
+    """Errors raised when job limit is reached."""
     pass

@@ -36,6 +36,7 @@ stage_generic: &stage_generic
     - pip install cython
     - pip install -U -c constraints.txt -r requirements.txt
     - pip install -U -c constraints.txt -r requirements-dev.txt
+    - pip install -c constraints.txt -e .
   script:
     # Run the tests.
     - make test
