@@ -40,11 +40,15 @@ API1_URL = 'https://quantumexperience.ng.bluemix.net/api'
 class TestIBMQFactoryEnableAccount(IBMQTestCase):
     """Tests for IBMQFactory ``enable_account()``."""
 
+    def setUp(self):
+        """Initial test setup."""
+        super().setUp()
+        self.factory = IBMQFactory()
+
     @requires_qe_access
     def test_auth_url(self, qe_token, qe_url):
         """Test login into an auth account."""
-        ibmq = IBMQFactory()
-        provider = ibmq.enable_account(qe_token, qe_url)
+        provider = self.factory.enable_account(qe_token, qe_url)
         self.assertIsInstance(provider, AccountProvider)
 
     def test_old_api_url(self):
@@ -53,8 +57,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         qe_url = API1_URL
 
         with self.assertRaises(IBMQAccountCredentialsInvalidUrl) as context_manager:
-            ibmq = IBMQFactory()
-            ibmq.enable_account(qe_token, qe_url)
+            self.factory.enable_account(qe_token, qe_url)
 
         self.assertIn('authentication URL', str(context_manager.exception))
 
@@ -64,8 +67,7 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         qe_url = API_URL
 
         with self.assertRaises(IBMQAccountCredentialsInvalidUrl) as context_manager:
-            ibmq = IBMQFactory()
-            ibmq.enable_account(qe_token, qe_url)
+            self.factory.enable_account(qe_token, qe_url)
 
         self.assertIn('authentication URL', str(context_manager.exception))
 
@@ -75,32 +77,29 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         qe_url = API_URL + '/Hubs/X/Groups/Y/Projects/Z'
 
         with self.assertRaises(IBMQAccountCredentialsInvalidUrl) as context_manager:
-            ibmq = IBMQFactory()
-            ibmq.enable_account(qe_token, qe_url)
+            self.factory.enable_account(qe_token, qe_url)
 
         self.assertIn('authentication URL', str(context_manager.exception))
 
     @requires_qe_access
     def test_enable_twice(self, qe_token, qe_url):
         """Test login into an already logged-in account."""
-        ibmq = IBMQFactory()
-        ibmq.enable_account(qe_token, qe_url)
+        self.factory.enable_account(qe_token, qe_url)
 
         with self.assertRaises(IBMQAccountError) as context_manager:
-            ibmq.enable_account(qe_token, qe_url)
+            self.factory.enable_account(qe_token, qe_url)
 
         self.assertIn('already', str(context_manager.exception))
 
     @requires_qe_access
     def test_enable_twice_invalid(self, qe_token, qe_url):
         """Test login into an invalid account during an already logged-in account."""
-        ibmq = IBMQFactory()
-        ibmq.enable_account(qe_token, qe_url)
+        self.factory.enable_account(qe_token, qe_url)
 
         with self.assertRaises(IBMQAccountError) as context_manager:
             qe_token_api1 = 'invalid'
             qe_url_api1 = API1_URL
-            ibmq.enable_account(qe_token_api1, qe_url_api1)
+            self.factory.enable_account(qe_token_api1, qe_url_api1)
 
         self.assertIn('already', str(context_manager.exception))
 
@@ -113,21 +112,20 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
                 'https': 'https://user:password@127.0.0.1:5678'
             }
         }
-        ibmq = IBMQFactory()
         with self.assertRaises(RequestsApiError) as context_manager:
-            ibmq.enable_account(qe_token, qe_url, proxies=proxies)
+            self.factory.enable_account(qe_token, qe_url, proxies=proxies)
         self.assertIn('ProxyError', str(context_manager.exception))
 
     @skipIf(os.name == 'nt', 'Test not supported in Windows')
     @requires_qe_access
     def test_enable_specified_provider(self, qe_token, qe_url):
         """Test enabling an account with a specified provider."""
-        ibmq = IBMQFactory()
-        non_default_provider = get_provider(ibmq, qe_token, qe_url, default=False)
-        enabled_provider = ibmq.enable_account(token=qe_token, url=qe_url,
-                                               hub=non_default_provider.credentials.hub,
-                                               group=non_default_provider.credentials.group,
-                                               project=non_default_provider.credentials.project)
+        non_default_provider = get_provider(self.factory, qe_token, qe_url, default=False)
+        enabled_provider = self.factory.enable_account(
+            token=qe_token, url=qe_url,
+            hub=non_default_provider.credentials.hub,
+            group=non_default_provider.credentials.group,
+            project=non_default_provider.credentials.project)
         self.assertEqual(non_default_provider, enabled_provider)
 
 
@@ -312,19 +310,19 @@ class TestIBMQFactoryProvider(IBMQTestCase):
     @requires_qe_access
     def _get_provider(self, qe_token=None, qe_url=None):
         """Return default provider."""
-        return self.ibmq.enable_account(qe_token, qe_url)
+        return self.factory.enable_account(qe_token, qe_url)
 
     def setUp(self):
         """Initial test setup."""
         super().setUp()
 
-        self.ibmq = IBMQFactory()
+        self.factory = IBMQFactory()
         self.provider = self._get_provider()
         self.credentials = self.provider.credentials
 
     def test_get_provider(self):
         """Test get single provider."""
-        provider = self.ibmq.get_provider(
+        provider = self.factory.get_provider(
             hub=self.credentials.hub,
             group=self.credentials.group,
             project=self.credentials.project)
@@ -332,7 +330,7 @@ class TestIBMQFactoryProvider(IBMQTestCase):
 
     def test_providers_with_filter(self):
         """Test providers() with a filter."""
-        provider = self.ibmq.providers(
+        provider = self.factory.providers(
             hub=self.credentials.hub,
             group=self.credentials.group,
             project=self.credentials.project)[0]
@@ -340,5 +338,5 @@ class TestIBMQFactoryProvider(IBMQTestCase):
 
     def test_providers_no_filter(self):
         """Test providers() without a filter."""
-        providers = self.ibmq.providers()
+        providers = self.factory.providers()
         self.assertIn(self.provider, providers)
