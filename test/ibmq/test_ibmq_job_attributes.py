@@ -552,14 +552,3 @@ class TestIBMQJobAttributes(JobTestCase):
 
         qobj = bell_in_qobj(backend=backend)
         self.assertRaises(IBMQBackendApiProtocolError, backend.run, qobj)
-
-
-def _bell_circuit():
-    """Return a bell state circuit."""
-    qr = QuantumRegister(2, 'q')
-    cr = ClassicalRegister(2, 'c')
-    qc = QuantumCircuit(qr, cr)
-    qc.h(qr[0])
-    qc.cx(qr[0], qr[1])
-    qc.measure(qr, cr)
-    return qc
