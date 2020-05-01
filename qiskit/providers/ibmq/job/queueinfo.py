@@ -16,17 +16,13 @@
 
 from typing import Any, Optional
 from datetime import datetime
-
-from qiskit.validation import BaseModel, bind_schema
+from types import SimpleNamespace
 
 from ..utils import utc_to_local, duration_difference
-from ..api.rest.validation import InfoQueueResponseSchema
-from ..apiconstants import ApiJobStatus
 from .utils import api_status_to_job_status
 
 
-@bind_schema(InfoQueueResponseSchema)
-class QueueInfo(BaseModel):
+class QueueInfo(SimpleNamespace):
     """Queue information for a job.
 
     Attributes:
@@ -41,13 +37,13 @@ class QueueInfo(BaseModel):
 
     def __init__(
             self,
-            position: Optional[int],
-            _status: Optional[str],
-            estimated_start_time: Optional[datetime],
-            estimated_complete_time: Optional[datetime],
-            hub_priority: Optional[float],
-            group_priority: Optional[float],
-            project_priority: Optional[float],
+            position: Optional[int] = None,
+            status: Optional[str] = None,
+            estimated_start_time: Optional[datetime] = None,
+            estimated_complete_time: Optional[datetime] = None,
+            hub_priority: Optional[float] = None,
+            group_priority: Optional[float] = None,
+            project_priority: Optional[float] = None,
             job_id: Optional[str] = None,
             **kwargs: Any
     ) -> None:
@@ -55,7 +51,7 @@ class QueueInfo(BaseModel):
 
         Args:
             position: Position in the queue.
-            _status: Job status.
+            status: Job status.
             estimated_start_time: Estimated start time for the job, in UTC.
             estimated_complete_time: Estimated complete time for the job, in UTC.
             hub_priority: Dynamic priority for the hub.
@@ -65,7 +61,7 @@ class QueueInfo(BaseModel):
             kwargs: Additional attributes.
         """
         self.position = position
-        self._status = _status
+        self._status = status
         self.estimated_start_time = estimated_start_time
         self.estimated_complete_time = estimated_complete_time
         self.hub_priority = hub_priority
@@ -89,7 +85,7 @@ class QueueInfo(BaseModel):
             TypeError: If the `estimated_start_time` or `estimated_end_time`
                 value is not valid.
         """
-        status = api_status_to_job_status(ApiJobStatus(self._status)).value \
+        status = api_status_to_job_status(self._status).name \
             if self._status else self._get_value(self._status)
         est_start_time = utc_to_local(self.estimated_start_time).isoformat() \
             if self.estimated_start_time else self._get_value(self.estimated_start_time)
@@ -115,7 +111,7 @@ class QueueInfo(BaseModel):
         Returns:
              The job queue information report.
         """
-        status = api_status_to_job_status(ApiJobStatus(self._status)).value \
+        status = api_status_to_job_status(self._status).value \
             if self._status else self._get_value(self._status)
         est_start_time = duration_difference(self.estimated_start_time) \
             if self.estimated_start_time else self._get_value(self.estimated_start_time)

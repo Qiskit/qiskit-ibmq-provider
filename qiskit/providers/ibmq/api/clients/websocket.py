@@ -34,7 +34,7 @@ from qiskit.providers.ibmq.utils.utils import RefreshQueue, filter_data
 from ..exceptions import (WebsocketError, WebsocketTimeoutError,
                           WebsocketIBMQProtocolError,
                           WebsocketAuthenticationError)
-
+from ..rest.utils.data_mapper import map_job_status_response
 from .base import BaseClient
 
 
@@ -280,10 +280,10 @@ class WebsocketClient(BaseClient):
                                 response_raw = yield from websocket.recv()
 
                         response = WebsocketResponseMethod.from_bytes(response_raw)
-                        last_status = response.data
                         if logger.getEffectiveLevel() is logging.DEBUG:
                             logger.debug('Received message from websocket: %s',
                                          filter_data(response.get_data()))
+                        last_status = map_job_status_response(response.get_data())
 
                         # Share the new status.
                         if status_queue is not None:

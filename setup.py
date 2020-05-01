@@ -22,8 +22,6 @@ REQUIREMENTS = [
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
     "websockets>=7,<8",
-    "arrow>=0.15.5",
-    "marshmallow>=3,<4",
     "numpy>=1.13",
     "urllib3>=1.21.1",
     "python-dateutil>=2.8.0"
@@ -73,6 +71,7 @@ setup(
               'qiskit.providers.ibmq.api',
               'qiskit.providers.ibmq.api.clients',
               'qiskit.providers.ibmq.api.rest',
+              'qiskit.providers.ibmq.api.rest.utils',
               'qiskit.providers.ibmq.credentials',
               'qiskit.providers.ibmq.job',
               'qiskit.providers.ibmq.managed',
