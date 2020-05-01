@@ -39,6 +39,7 @@ class TestWebsocketIntegration(IBMQTestCase):
     def setUp(self, provider):
         """Initial test setup."""
         # pylint: disable=arguments-differ
+        super().setUp()
         self.provider = provider
         self.sim_backend = self.provider.get_backend(simulator=True)
 

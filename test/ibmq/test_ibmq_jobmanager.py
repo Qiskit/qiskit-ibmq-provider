@@ -45,6 +45,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
     def setUp(self):
         """Initial test setup."""
+        super().setUp()
         self._qc = ReferenceCircuits.bell()
         self._jm = IBMQJobManager()
 
@@ -138,7 +139,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
         # Create a bad job.
         qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new, qc_new], backend=backend)
+        qobj = assemble([qc_new]*2, backend=backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
         job = backend.run(qobj, validate_qobj=True)
 
@@ -174,7 +175,7 @@ class TestIBMQJobManager(IBMQTestCase):
         qc2.h(0)
         qc2.measure([0], [0])
 
-        job_set1 = self._jm.run([self._qc, self._qc], backend=backend, max_experiments_per_job=1)
+        job_set1 = self._jm.run([self._qc]*2, backend=backend, max_experiments_per_job=1)
         job_set2 = self._jm.run([qc2], backend=backend, max_experiments_per_job=1)
 
         id1 = {job.job_id() for job in job_set1.jobs()}
@@ -388,6 +389,7 @@ class TestResultManager(IBMQTestCase):
 
     def setUp(self):
         """Initial test setup."""
+        super().setUp()
         self._qc = ReferenceCircuits.bell()
         self._jm = IBMQJobManager()
 
