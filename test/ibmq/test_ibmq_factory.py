@@ -16,7 +16,7 @@
 
 import os
 from unittest import skipIf
-from configparser import ConfigParser, ParsingError
+from configparser import ConfigParser
 
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError

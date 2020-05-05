@@ -199,6 +199,7 @@ class BaseFakeAccountClient:
 
     def list_jobs_statuses(self, limit, skip, descending=True, extra_filter=None):
         """Return a list of statuses of jobs."""
+        # pylint: disable=unused-argument
         job_data = []
         for job in list(self._jobs.values())[skip:skip+limit]:
             job_data.append(job.data())

@@ -280,7 +280,7 @@ class TestIBMQJob(JobTestCase):
                 for job in backend_jobs:
                     self.assertTrue(job.status() is JobStatus.DONE,
                                     "Job {} has status {} when it should be DONE"
-                                    .format(job.job_id(), job.status(), JobStatus.DONE))
+                                    .format(job.job_id(), job.status()))
 
     def test_retrieve_multiple_job_statuses(self):
         """Test retrieving jobs filtered by multiple job statuses."""

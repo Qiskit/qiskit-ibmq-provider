@@ -65,6 +65,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
     @property
     def fake_api_backend(self):
+        """Setup a backend instance with fake API client."""
         if not self._fake_api_backend:
             self._fake_api_backend = copy.copy(self.sim_backend)
             self._fake_api_provider = copy.copy(self.provider)
@@ -75,6 +76,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
     @property
     def fake_api_provider(self):
+        """Setup a provider instance with fake API client."""
         if not self._fake_api_provider:
             _ = self.fake_api_backend
         return self._fake_api_provider
@@ -144,7 +146,8 @@ class TestIBMQJobManager(IBMQTestCase):
         self.fake_api_backend._api = BaseFakeAccountClient(job_class=[BaseFakeJob, FailedFakeJob])
         self.fake_api_provider._api = self.fake_api_backend._api
 
-        job_set = self._jm.run([self._qc]*4, backend=self.fake_api_backend, max_experiments_per_job=2)
+        job_set = self._jm.run([self._qc]*4, backend=self.fake_api_backend,
+                               max_experiments_per_job=2)
         job_set.results()
         jobs = job_set.jobs()
 
