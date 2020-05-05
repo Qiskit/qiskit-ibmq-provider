@@ -20,6 +20,7 @@ import logging
 from qiskit.test import QiskitTestCase
 
 from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
+from qiskit.providers.ibmq.exceptions import IBMQAccountCredentialsNotFound
 
 
 class IBMQTestCase(QiskitTestCase):
@@ -36,7 +37,10 @@ class IBMQTestCase(QiskitTestCase):
         # Reset the default providers, as in practice they acts as a singleton
         # due to importing the wrapper from qiskit.
         from qiskit.providers.ibmq import IBMQ
-        IBMQ.disable_account()
+        try:
+            IBMQ.disable_account()
+        except IBMQAccountCredentialsNotFound:
+            pass
 
         from qiskit.providers.basicaer import BasicAer
         BasicAer._backends = BasicAer._verify_backends()
