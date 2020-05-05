@@ -114,14 +114,10 @@ class ManagedJobSet:
             self._tags = job_tags.copy()
 
         exp_index = 0
-        logger.debug("Executor max worker is %s", executor._max_workers)
         for i, experiments in enumerate(experiment_list):
             qobj = assemble(experiments, backend=backend, **assemble_config)
             job_name = JOB_SET_NAME_FORMATTER.format(self._name, i)
             mjob = ManagedJob(experiments_count=len(experiments), start_index=exp_index)
-            logger.debug("Calling ManagedJob.submit(). Pool threads are %s, pending jobs are %s",
-                         str(len(executor._threads)),
-                         str(executor._work_queue.qsize()))
             mjob.submit(qobj=qobj, job_name=job_name, backend=backend,
                         executor=executor, job_share_level=job_share_level,
                         job_tags=self._tags+[self._id_long], submit_lock=self._job_submit_lock)
