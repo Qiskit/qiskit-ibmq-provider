@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2017, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -18,6 +18,7 @@ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.result import Result
 from qiskit.execute import execute
 from qiskit.compiler import assemble, transpile
+from qiskit.test.reference_circuits import ReferenceCircuits
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, requires_device
@@ -27,6 +28,15 @@ class TestIBMQIntegration(IBMQTestCase):
     """Integration tests."""
 
     seed = 42
+
+    @classmethod
+    @requires_provider
+    def setUpClass(cls, provider):
+        """Initial class level setup."""
+        # pylint: disable=arguments-differ
+        super().setUpClass()
+        cls.provider = provider
+        cls.sim_backend = provider.get_backend('ibmq_qasm_simulator')
 
     def setUp(self):
         super().setUp()
@@ -38,12 +48,11 @@ class TestIBMQIntegration(IBMQTestCase):
         self._qc2.x(qr[0])
         self._qc2.measure(qr[0], cr[0])
 
-    @requires_provider
-    def test_ibmq_result_fields(self, provider):
+    def test_ibmq_result_fields(self):
         """Test components of a result from a remote simulator."""
-        remote_backend = provider.get_backend(local=False, simulator=True)
-        remote_result = execute(self._qc1, remote_backend).result()
-        self.assertEqual(remote_result.backend_name, remote_backend.name())
+        remote_result = execute(self._qc1, self.sim_backend).result()
+        self.assertIsInstance(remote_result, Result)
+        self.assertEqual(remote_result.backend_name, self.sim_backend.name())
         self.assertIsInstance(remote_result.job_id, str)
         self.assertEqual(remote_result.status, 'COMPLETED')
         self.assertEqual(remote_result.results[0].status, 'DONE')
@@ -76,28 +85,8 @@ class TestIBMQIntegration(IBMQTestCase):
         self.assertIsInstance(circuits[0], QuantumCircuit)
         self.assertIsInstance(circuits[1], QuantumCircuit)
 
-    @requires_provider
-    def test_compile_run_remote(self, provider):
-        """Test transpile and run on a remote backend."""
-        backend = provider.get_backend(local=False, simulator=True)
-
-        qubit_reg = QuantumRegister(2, name='q')
-        clbit_reg = ClassicalRegister(2, name='c')
-        qc = QuantumCircuit(qubit_reg, clbit_reg, name="bell")
-        qc.h(qubit_reg[0])
-        qc.cx(qubit_reg[0], qubit_reg[1])
-        qc.measure(qubit_reg, clbit_reg)
-        qobj = assemble(transpile(qc, backend=backend, seed_transpiler=self.seed),
-                        backend=backend)
-        job = backend.run(qobj, validate_qobj=True)
-        result = job.result(timeout=20)
-        self.assertIsInstance(result, Result)
-
-    @requires_provider
-    def test_compile_two_run_remote(self, provider):
+    def test_compile_two_run_remote(self):
         """Test transpile and run two circuits."""
-        backend = provider.get_backend(local=False, simulator=True)
-
         qubit_reg = QuantumRegister(2, name='q')
         clbit_reg = ClassicalRegister(2, name='c')
         qc = QuantumCircuit(qubit_reg, clbit_reg, name="bell")
@@ -106,41 +95,17 @@ class TestIBMQIntegration(IBMQTestCase):
         qc.measure(qubit_reg, clbit_reg)
         qc_extra = QuantumCircuit(qubit_reg, clbit_reg, name="extra")
         qc_extra.measure(qubit_reg, clbit_reg)
-        qobj = assemble(transpile([qc, qc_extra], backend=backend, seed_transpiler=self.seed),
-                        backend=backend)
-        job = backend.run(qobj, validate_qobj=True)
+        qobj = assemble(transpile([qc, qc_extra], backend=self.sim_backend,
+                                  seed_transpiler=self.seed), backend=self.sim_backend)
+        job = self.sim_backend.run(qobj, validate_qobj=True)
         result = job.result()
         self.assertIsInstance(result, Result)
 
-    @requires_provider
-    def test_execute_remote(self, provider):
-        """Test executing on a remote backend."""
-        backend = provider.get_backend(local=False, simulator=True)
-
-        qubit_reg = QuantumRegister(2)
-        clbit_reg = ClassicalRegister(2)
-        qc = QuantumCircuit(qubit_reg, clbit_reg)
-        qc.h(qubit_reg[0])
-        qc.cx(qubit_reg[0], qubit_reg[1])
-        qc.measure(qubit_reg, clbit_reg)
-
-        job = execute(qc, backend, seed_transpiler=self.seed)
-        results = job.result()
-        self.assertIsInstance(results, Result)
-
-    @requires_provider
-    def test_execute_two_remote(self, provider):
+    def test_execute_two_remote(self):
         """Test executing two circuits on a remote backend."""
-        backend = provider.get_backend(local=False, simulator=True)
-
-        qubit_reg = QuantumRegister(2)
-        clbit_reg = ClassicalRegister(2)
-        qc = QuantumCircuit(qubit_reg, clbit_reg)
-        qc.h(qubit_reg[0])
-        qc.cx(qubit_reg[0], qubit_reg[1])
-        qc.measure(qubit_reg, clbit_reg)
-        qc_extra = QuantumCircuit(qubit_reg, clbit_reg)
-        qc_extra.measure(qubit_reg, clbit_reg)
-        job = execute([qc, qc_extra], backend, seed_transpiler=self.seed)
+        qc = ReferenceCircuits.bell()
+        qc_extra = QuantumCircuit(2, 2)
+        qc_extra.measure_all()
+        job = execute([qc, qc_extra], self.sim_backend, seed_transpiler=self.seed)
         results = job.result()
         self.assertIsInstance(results, Result)

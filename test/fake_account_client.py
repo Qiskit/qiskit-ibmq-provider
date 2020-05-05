@@ -32,27 +32,27 @@ VALID_RESULT_RESPONSE = {
     'job_id': 'XC1323XG2',
     'qobj_id': 'Experiment1',
     'success': True,
-    'results': [
-        {
-            'header': {
-                'name': 'Bell state',
-                'memory_slots': 2,
-                'creg_sizes': [['c', 2]],
-                'clbit_labels': [['c', 0], ['c', 1]],
-                'qubit_labels': [['q', 0], ['q', 1]]
-            },
-            'shots': 1024,
-            'status': 'DONE',
-            'success': True,
-            'data': {
-                'counts': {
-                    '0x0': 484, '0x3': 540
-                }
-            }
-        }
-    ]
+    'results': []
 }
 """A valid job result response."""
+
+VALID_RESULT = {
+    'header': {
+        'name': 'Bell state',
+        'memory_slots': 2,
+        'creg_sizes': [['c', 2]],
+        'clbit_labels': [['c', 0], ['c', 1]],
+        'qubit_labels': [['q', 0], ['q', 1]]
+    },
+    'shots': 1024,
+    'status': 'DONE',
+    'success': True,
+    'data': {
+        'counts': {
+            '0x0': 484, '0x3': 540
+        }
+    }
+}
 
 
 class BaseFakeJob:
@@ -86,9 +86,12 @@ class BaseFakeJob:
 
         if self._status == ApiJobStatus.COMPLETED:
             new_result = copy.deepcopy(VALID_RESULT_RESPONSE)
-            counts = randrange(1024)
-            new_result['results'][0]['data']['counts'] = {
-                '0x0': counts, '0x3': 1024-counts}
+            for _ in range(len(self.qobj['experiments'])):
+                valid_result = copy.deepcopy(VALID_RESULT)
+                counts = randrange(1024)
+                valid_result['data']['counts'] = {
+                    '0x0': counts, '0x3': 1024-counts}
+                new_result['results'].append(valid_result)
             new_result['job_id'] = self._job_id
             new_result['backend_name'] = self._backend_name
             self._result = new_result
@@ -105,7 +108,7 @@ class BaseFakeJob:
         if self._share_level:
             data['share_level'] = self._share_level
         if self._job_tags:
-            data['tags'] = self._job_tags
+            data['tags'] = self._job_tags.copy()
         if self._job_name:
             data['name'] = self._job_name
 
@@ -163,6 +166,24 @@ class MissingFieldFakeJob(BaseFakeJob):
         return data
 
 
+class FailedFakeJob(BaseFakeJob):
+    """Fake job that fails."""
+
+    _job_progress = [
+        ApiJobStatus.CREATING,
+        ApiJobStatus.VALIDATING,
+        ApiJobStatus.RUNNING,
+        ApiJobStatus.ERROR_RUNNING_JOB
+    ]
+
+    def data(self):
+        """Return job data."""
+        data = super().data()
+        if self.status() == ApiJobStatus.ERROR_RUNNING_JOB:
+            data['error'] = {'message': 'Job failed.', 'code': 1234}
+        return data
+
+
 class BaseFakeAccountClient:
     """Base class for faking the AccountClient."""
 
@@ -173,12 +194,16 @@ class BaseFakeAccountClient:
         self._job_limit = job_limit
         self._executor = ThreadPoolExecutor()
         self._job_class = job_class
+        if isinstance(self._job_class, list):
+            self._job_class.reverse()
 
-    def list_jobs_statuses(self, limit, skip, *_args, **_kwargs):
+    def list_jobs_statuses(self, limit, skip, descending=True, extra_filter=None):
         """Return a list of statuses of jobs."""
         job_data = []
         for job in list(self._jobs.values())[skip:skip+limit]:
             job_data.append(job.data())
+        if not descending:
+            job_data.reverse()
         return job_data
 
     def job_submit(self, backend_name, qobj_dict, job_name, job_share_level,
@@ -191,7 +216,9 @@ class BaseFakeAccountClient:
 
         new_job_id = uuid.uuid4().hex
         job_share_level = job_share_level or ApiJobShareLevel.NONE
-        new_job = self._job_class(
+        job_class = self._job_class.pop() \
+            if isinstance(self._job_class, list) else self._job_class
+        new_job = job_class(
             executor=self._executor,
             job_id=new_job_id,
             qobj=qobj_dict,
@@ -247,9 +274,9 @@ class BaseFakeAccountClient:
         """Update the specified job attribute with the given value."""
         job = self._get_job(job_id)
         if attr_name == 'name':
-            job._name = attr_value
+            job._job_name = attr_value
         if attr_name == 'tags':
-            job._tags = attr_value
+            job._job_tags = attr_value.copy()
         return {attr_name: attr_value}
 
     def _unfinished_jobs(self):
