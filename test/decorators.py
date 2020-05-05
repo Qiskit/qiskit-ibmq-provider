@@ -37,6 +37,7 @@ from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.credentials import (Credentials,
                                                discover_credentials)
 from qiskit.providers.ibmq.accountprovider import AccountProvider
+from qiskit.providers.ibmq import IBMQ
 
 
 def requires_qe_access(func):
@@ -128,11 +129,12 @@ def requires_provider(func):
     @wraps(func)
     @requires_qe_access
     def _wrapper(*args, **kwargs):
-        ibmq_factory = IBMQFactory()
         qe_token = kwargs.pop('qe_token')
         qe_url = kwargs.pop('qe_url')
-        provider = ibmq_factory.enable_account(qe_token, qe_url)
-        provider = _get_custom_provider(ibmq_factory) or provider
+        if not IBMQ.active_account():
+            IBMQ.enable_account(qe_token, qe_url)
+        provider = _get_custom_provider(IBMQ) or IBMQ.get_provider(
+            hub='ibm-q', group='open', project='main')
         kwargs.update({'provider': provider})
 
         return func(*args, **kwargs)
@@ -163,20 +165,21 @@ def requires_device(func):
     @requires_qe_access
     def _wrapper(obj, *args, **kwargs):
 
-        ibmq_factory = IBMQFactory()
         qe_token = kwargs.pop('qe_token')
         qe_url = kwargs.pop('qe_url')
-        provider = ibmq_factory.enable_account(qe_token, qe_url)
+        if not IBMQ.active_account():
+            IBMQ.enable_account(qe_token, qe_url)
 
         backend_name = os.getenv('QE_STAGING_DEVICE', None) if \
             os.getenv('USE_STAGING_CREDENTIALS', '') else os.getenv('QE_DEVICE', None)
 
         _backend = None
-        provider = _get_custom_provider(ibmq_factory) or provider
+        provider = _get_custom_provider(IBMQ) or IBMQ.get_provider(
+            hub='ibm-q', group='open', project='main')
 
         if backend_name:
             # Put desired provider as the first in the list.
-            providers = [provider] + ibmq_factory.providers()
+            providers = [provider] + IBMQ.providers()
             for provider in providers:
                 backends = provider.backends(name=backend_name)
                 if backends:
