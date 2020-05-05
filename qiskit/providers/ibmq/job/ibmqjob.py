@@ -158,7 +158,9 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
         self._share_level = share_level
 
-        SimpleNamespace.__init__(self, **kwargs)
+        for key, value in kwargs.items():
+            # Append suffix to key to avoid conflicts.
+            self.__dict__[key + '_'] = value
         BaseJob.__init__(self, self.backend(), self.job_id())
 
         # Properties used for caching.
@@ -720,7 +722,9 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._status, self._queue_info = \
             self._get_status_position(self._api_status, api_response.pop('info_queue', None))
         self._share_level = api_response.pop('share_level', 'none')
-        self.__dict__.update(api_response)
+
+        for key, value in api_response.items():
+            self.__dict__[key + '_'] = value
 
     def to_dict(self) -> Dict:
         """Serialize the model into a Python dict of simple types.

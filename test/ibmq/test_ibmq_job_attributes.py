@@ -265,7 +265,7 @@ class TestIBMQJobAttributes(JobTestCase):
                                side_effect=_mocked__api_job_submit):
             job = self.sim_backend.run(qobj, validate_qobj=True)
 
-        self.assertEqual(job.batman, 'bruce')
+        self.assertEqual(job.batman_, 'bruce')
 
     def test_queue_info(self):
         """Test retrieving queue information."""
