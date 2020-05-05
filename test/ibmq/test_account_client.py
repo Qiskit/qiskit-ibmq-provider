@@ -36,6 +36,15 @@ from ..http_server import SimpleServer, ServerErrorOnceHandler
 class TestAccountClient(IBMQTestCase):
     """Tests for AccountClient."""
 
+    @classmethod
+    @requires_provider
+    def setUpClass(cls, provider):
+        """Initial class level setup."""
+        # pylint: disable=arguments-differ
+        super().setUpClass()
+        cls.provider = provider
+        cls.access_token = cls.provider._api.client_api.session.access_token
+
     def setUp(self):
         """Initial test setup."""
         super().setUp()
@@ -51,15 +60,6 @@ class TestAccountClient(IBMQTestCase):
         self.qc2.measure(qr[0], cr[0])
         self.qc2.measure(qr[1], cr[1])
         self.seed = 73846087
-
-    @classmethod
-    @requires_provider
-    def setUpClass(cls, provider):
-        """Initial class level setup."""
-        # pylint: disable=arguments-differ
-        super().setUpClass()
-        cls.provider = provider
-        cls.access_token = cls.provider._api.client_api.session.access_token
 
     def _get_client(self):
         """Helper for instantiating an AccountClient."""

@@ -481,7 +481,7 @@ class TestIBMQJob(JobTestCase):
         backend = least_busy(backends)
         config = backend.configuration()
         defaults = backend.defaults()
-        inst_map = defaults.circuit_instruction_map
+        inst_map = defaults.instruction_schedule_map
 
         # Run 2 experiments - 1 with x pulse and 1 without
         x = inst_map.get('x', 0)
