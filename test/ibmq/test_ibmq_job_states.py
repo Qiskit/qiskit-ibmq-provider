@@ -129,6 +129,7 @@ class TestIBMQJobStates(JobTestCase):
 
     def setUp(self):
         """Initial test setup."""
+        super().setUp()
         self._current_api = None
         self._current_qjob = None
 
