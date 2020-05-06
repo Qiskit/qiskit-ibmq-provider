@@ -239,7 +239,7 @@ class TestIBMQJobManager(IBMQTestCase):
                                max_experiments_per_job=1, job_share_level="project")
         for job in job_set.jobs():
             job.refresh()
-            self.assertEqual(getattr(job, 'share_level'), 'project',
+            self.assertEqual(job.share_level(), 'project',
                              "Job {} has incorrect share level".format(job.job_id()))
 
     def test_invalid_job_share_level(self):
@@ -340,10 +340,6 @@ class TestIBMQJobManager(IBMQTestCase):
         for job in job_set.jobs():
             job.refresh()
             self.assertEqual(job.tags(), [job_set._id_long])
-
-
-class TestResultManager(TestIBMQJobManager):
-    """Tests for ResultManager."""
 
     def test_index_by_number(self):
         """Test indexing results by number."""
