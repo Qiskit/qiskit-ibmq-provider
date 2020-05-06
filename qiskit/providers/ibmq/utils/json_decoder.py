@@ -16,6 +16,8 @@
 
 from typing import Dict, Union, List
 
+import dateutil.parser
+
 
 def decode_pulse_qobj(pulse_qobj: Dict) -> None:
     """Decode a pulse Qobj.
@@ -55,6 +57,36 @@ def decode_pulse_defaults(defaults: Dict) -> None:
         if 'sequence' in cmd:
             for instr in cmd['sequence']:
                 _decode_pulse_qobj_instr(instr)
+
+
+def decode_backend_properties(properties: Dict) -> None:
+    """Decode backend properties.
+
+    Args:
+        properties: A ``BackendProperties`` in dictionary format.
+    """
+    properties['last_update_date'] = dateutil.parser.isoparse(properties['last_update_date'])
+    for qubit in properties['qubits']:
+        for nduv in qubit:
+            nduv['date'] = dateutil.parser.isoparse(nduv['date'])
+    for gate in properties['gates']:
+        for param in gate['parameters']:
+            param['date'] = dateutil.parser.isoparse(param['date'])
+    for gen in properties['general']:
+        gen['date'] = dateutil.parser.isoparse(gen['date'])
+
+
+def decode_backend_configuration(config: Dict) -> None:
+    """Decode backend configuration.
+
+    Args:
+        config: A ``QasmBackendConfiguration`` or ``PulseBackendConfiguration``
+            in dictionary format.
+    """
+    config['online_date'] = dateutil.parser.isoparse(config['online_date'])
+
+    if config.get('open_pulse', False):
+        decode_pulse_backend_config(config)
 
 
 def _to_complex(value: Union[List[float], complex]) -> complex:
