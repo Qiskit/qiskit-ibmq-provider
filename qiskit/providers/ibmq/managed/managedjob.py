@@ -81,9 +81,11 @@ class ManagedJob:
         """
 
         # Submit the job in its own future.
+        logger.debug("Submitting job %s in future", job_name)
         self.future = executor.submit(
             self._async_submit, qobj=qobj, job_name=job_name, backend=backend,
             submit_lock=submit_lock, job_share_level=job_share_level, job_tags=job_tags)
+        logger.debug("Job %s future obtained", job_name)
 
     def _async_submit(
             self,
