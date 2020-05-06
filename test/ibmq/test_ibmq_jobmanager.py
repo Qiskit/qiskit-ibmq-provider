@@ -210,6 +210,7 @@ class TestIBMQJobManager(IBMQTestCase):
                 self.assertEqual(job_set.tags(), tags)
                 # Wait for jobs to be submitted.
                 while JobStatus.INITIALIZING in job_set.statuses():
+                    self.log.debug("Waiting for jobs to be submitted.")
                     time.sleep(1)
 
                 rjob_set = IBMQJobManager().retrieve_job_set(

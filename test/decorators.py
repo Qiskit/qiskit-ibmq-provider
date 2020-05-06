@@ -245,7 +245,6 @@ def _get_custom_provider(ibmq_factory: IBMQFactory) -> Optional[AccountProvider]
     hgp = os.getenv('QE_STAGING_HGP', None) if os.getenv('USE_STAGING_CREDENTIALS', '') else \
         os.getenv('QE_HGP', None)
     if hgp:
-        print("Using custom HGP")
         hgp = hgp.split('/')
         return ibmq_factory.get_provider(hub=hgp[0], group=hgp[1], project=hgp[2])
     return None  # No custom provider.
