@@ -17,6 +17,7 @@
 import os
 import re
 import logging
+import time
 from typing import Dict, Optional, Any, Tuple, Union
 from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
@@ -69,6 +70,9 @@ class PostForcelistRetry(Retry):
                 headers = response.headers
             logger.debug("Retrying method=%s, url=%s, status=%s, error=%s, data=%s, headers=%s",
                          method, url, status, error, data, headers)
+        if method == 'PUT':
+            logger.debug("Waiting a minute before retrying.")
+            time.sleep(60)
         return super().increment(method=method, url=url, response=response,
                                  error=error, _pool=_pool, _stacktrace=_stacktrace)
 
