@@ -439,7 +439,7 @@ class TestIBMQJob(JobTestCase):
         for job in job_list:
             job.refresh()
             self.assertEqual(
-                job.summary_data['summary']['qobj_config']['n_qubits'], 3,
+                job.summary_data_['summary']['qobj_config']['n_qubits'], 3,
                 "Job {} does not have correct data.".format(job.job_id())
             )
 

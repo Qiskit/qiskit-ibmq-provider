@@ -265,7 +265,7 @@ class TestIBMQJobAttributes(JobTestCase):
                                side_effect=_mocked__api_job_submit):
             job = self.sim_backend.run(qobj, validate_qobj=True)
 
-        self.assertEqual(job.batman, 'bruce')
+        self.assertEqual(job.batman_, 'bruce')
 
     def test_queue_info(self):
         """Test retrieving queue information."""
@@ -315,7 +315,7 @@ class TestIBMQJobAttributes(JobTestCase):
         job = self.sim_backend.run(self.qobj, job_share_level='project', validate_qobj=True)
 
         retrieved_job = self.sim_backend.retrieve_job(job.job_id())
-        self.assertEqual(getattr(retrieved_job, 'share_level'), 'project',
+        self.assertEqual(retrieved_job.share_level(), 'project',
                          "Job {} has incorrect share level".format(job.job_id()))
 
     def test_job_tags_or(self):
