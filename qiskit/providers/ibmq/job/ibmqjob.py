@@ -955,6 +955,8 @@ class IBMQJob(SimpleNamespace, BaseJob):
                 if (status, queue_info) == last_data:
                     continue
                 last_data = (status, queue_info)
+            logger.debug("Invoking callback function, job status=%s, queue_info=%s",
+                         status, queue_info)
             callback(self.job_id(), status, self, queue_info=queue_info)
 
     def _get_status_position(

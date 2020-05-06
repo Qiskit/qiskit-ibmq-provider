@@ -23,7 +23,7 @@ import uuid
 from dateutil import tz
 
 from qiskit.test import slow_test
-from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
+from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
 from qiskit.providers.ibmq.api.clients.account import AccountClient
@@ -33,37 +33,36 @@ from qiskit.compiler import assemble, transpile
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, requires_device
 from ..utils import (most_busy_backend, cancel_job, get_large_circuit,
-                     update_job_tags_and_verify, bell_in_qobj)
-from ..fake_account_client import BaseFakeAccountClient, NewFieldFakeJob, MissingFieldFakeJob
+                     update_job_tags_and_verify, bell_in_qobj, submit_bad_job)
+from ..fake_account_client import BaseFakeAccountClient, MissingFieldFakeJob
 
 
 class TestIBMQJobAttributes(JobTestCase):
     """Test IBMQJob instance attributes."""
 
+    @classmethod
+    @requires_provider
+    def setUpClass(cls, provider):
+        """Initial class level setup."""
+        # pylint: disable=arguments-differ
+        super().setUpClass()
+        cls.provider = provider
+        cls.sim_backend = provider.get_backend('ibmq_qasm_simulator')
+        cls.qobj = bell_in_qobj(backend=cls.sim_backend)
+        cls.sim_job = cls.sim_backend.run(cls.qobj, validate_qobj=True)
+
     def setUp(self):
         """Initial test setup."""
         super().setUp()
-        self._qc = _bell_circuit()
+        self._qc = ReferenceCircuits.bell()
 
-    @requires_provider
-    def test_job_id(self, provider):
+    def test_job_id(self):
         """Test getting a job ID."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
+        self.assertTrue(self.sim_job.job_id() is not None)
 
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj, validate_qobj=True)
-        self.log.info('job_id: %s', job.job_id())
-        self.assertTrue(job.job_id() is not None)
-        self.assertFalse(hasattr(job, 'creationDate'))
-
-    @requires_provider
-    def test_get_backend_name(self, provider):
+    def test_get_backend_name(self):
         """Test getting a backend name."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj, validate_qobj=True)
-        self.assertTrue(job.backend().name() == backend.name())
+        self.assertTrue(self.sim_job.backend().name() == self.sim_backend.name())
 
     @slow_test
     @requires_device
@@ -82,47 +81,42 @@ class TestIBMQJobAttributes(JobTestCase):
         job.wait_for_final_state(wait=None, callback=_job_callback)
         self.assertIsNotNone(job_properties[0])
 
-    @requires_provider
-    def test_job_name(self, provider):
+    def test_job_name(self):
         """Test using job names on a simulator."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(self.sim_backend)
 
         # Use a unique job name
         job_name = str(time.time()).replace('.', '')
-        job = backend.run(qobj, job_name=job_name, validate_qobj=True)
+        job = self.sim_backend.run(qobj, job_name=job_name, validate_qobj=True)
         job_id = job.job_id()
         # TODO No need to wait for job to run once api is fixed
         while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
             time.sleep(0.5)
-        rjob = provider.backends.retrieve_job(job_id)
+        rjob = self.provider.backends.retrieve_job(job_id)
         self.assertEqual(rjob.name(), job_name)
 
         # Check using partial matching.
         job_name_partial = job_name[8:]
-        retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
-                                                job_name=job_name_partial)
+        retrieved_jobs = self.provider.backends.jobs(backend_name=self.sim_backend.name(),
+                                                     job_name=job_name_partial)
         self.assertGreaterEqual(len(retrieved_jobs), 1)
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertIn(job_id, retrieved_job_ids)
 
         # Check using regular expressions.
         job_name_regex = '^{}$'.format(job_name)
-        retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
-                                                job_name=job_name_regex)
+        retrieved_jobs = self.provider.backends.jobs(backend_name=self.sim_backend.name(),
+                                                     job_name=job_name_regex)
         self.assertEqual(len(retrieved_jobs), 1)
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
-    @requires_provider
-    def test_job_name_update(self, provider):
+    def test_job_name_update(self):
         """Test changing the name associated with a job."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(backend=self.sim_backend)
 
         # Use a unique job name
         initial_job_name = str(time.time()).replace('.', '')
-        job = backend.run(qobj, job_name=initial_job_name, validate_qobj=True)
-        job_id = job.job_id()
+        job = self.sim_backend.run(qobj, job_name=initial_job_name, validate_qobj=True)
 
         new_names_to_test = [
             '',  # empty string as name.
@@ -137,26 +131,24 @@ class TestIBMQJobAttributes(JobTestCase):
                 job.refresh()
                 self.assertEqual(job.name(), new_name,
                                  'Updating the name for job {} from "{}" to "{}" '
-                                 'was unsuccessful.'.format(job_id, job.name(), new_name))
+                                 'was unsuccessful.'.format(job.job_id(), job.name(), new_name))
 
-    @requires_provider
-    def test_duplicate_job_name(self, provider):
+    def test_duplicate_job_name(self):
         """Test multiple jobs with the same custom job name using a simulator."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        qobj = bell_in_qobj(self.sim_backend)
 
         # Use a unique job name
         job_name = str(time.time()).replace('.', '')
         job_ids = set()
         for _ in range(2):
-            job = backend.run(qobj, job_name=job_name, validate_qobj=True)
+            job = self.sim_backend.run(qobj, job_name=job_name, validate_qobj=True)
             job_ids.add(job.job_id())
             # TODO No need to wait for job to run once api is fixed
             while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
                 time.sleep(0.5)
 
-        retrieved_jobs = provider.backends.jobs(backend_name=backend.name(),
-                                                job_name=job_name)
+        retrieved_jobs = self.provider.backends.jobs(backend_name=self.sim_backend.name(),
+                                                     job_name=job_name)
 
         self.assertEqual(len(retrieved_jobs), 2,
                          "More than 2 jobs retrieved: {}".format(retrieved_jobs))
@@ -169,9 +161,8 @@ class TestIBMQJobAttributes(JobTestCase):
     @requires_device
     def test_error_message_device(self, backend):
         """Test retrieving job error messages from a device backend."""
-
         qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new, qc_new], backend=backend)
+        qobj = assemble([qc_new]*2, backend=backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
         job = backend.run(qobj, validate_qobj=True)
@@ -188,31 +179,25 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertTrue(r_message)
         self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', r_message), r_message)
 
-    @requires_provider
-    def test_error_message_simulator(self, provider):
+    def test_error_message_simulator(self):
         """Test retrieving job error messages from a simulator backend."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-
-        qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new, qc_new], backend=backend)
+        qc_new = transpile(self._qc, self.sim_backend)
+        qobj = assemble([qc_new]*2, backend=self.sim_backend)
         qobj.experiments[1].instructions[1].name = 'bad_instruction'
 
-        job = backend.run(qobj, validate_qobj=True)
+        job = self.sim_backend.run(qobj, validate_qobj=True)
         with self.assertRaises(IBMQJobFailureError):
             job.result()
 
         message = job.error_message()
         self.assertIn('Experiment 1: ERROR', message)
 
-        r_message = provider.backends.retrieve_job(job.job_id()).error_message()
+        r_message = self.provider.backends.retrieve_job(job.job_id()).error_message()
         self.assertIn('Experiment 1: ERROR', r_message)
 
-    @requires_provider
-    def test_error_message_validation(self, provider):
+    def test_error_message_validation(self):
         """Test retrieving job error message for a validation error."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend), shots=10000)
-        job = backend.run(qobj, validate_qobj=True)
+        job = submit_bad_job(self.sim_backend)
         with self.assertRaises(IBMQJobFailureError):
             job.result()
 
@@ -220,32 +205,25 @@ class TestIBMQJobAttributes(JobTestCase):
         self.assertNotIn("Unknown", message)
         self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', message), message)
 
-        r_message = provider.backends.retrieve_job(job.job_id()).error_message()
+        r_message = self.provider.backends.retrieve_job(job.job_id()).error_message()
         self.assertEqual(message, r_message)
 
-    @requires_provider
-    def test_refresh(self, provider):
+    def test_refresh(self):
         """Test refreshing job data."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj, validate_qobj=True)
-        job._wait_for_completion()
-        if 'COMPLETED' not in job.time_per_step():
-            job.refresh()
+        self.sim_job._wait_for_completion()
+        if 'COMPLETED' not in self.sim_job.time_per_step():
+            self.sim_job.refresh()
 
-        rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
+        rjob = self.provider.backends.jobs(db_filter={'id': self.sim_job.job_id()})[0]
         self.assertFalse(rjob._time_per_step)
         rjob.refresh()
-        self.assertEqual(rjob._time_per_step, job._time_per_step)
+        self.assertEqual(rjob._time_per_step, self.sim_job._time_per_step)
 
-    @requires_provider
-    def test_job_creation_date(self, provider):
+    def test_job_creation_date(self):
         """Test retrieving creation date, while ensuring it is in local time."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         # datetime, before running the job, in local time.
         start_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
-        job = backend.run(qobj, validate_qobj=True)
+        job = self.sim_backend.run(self.qobj, validate_qobj=True)
         job.result()
         # datetime, after the job is done running, in local time.
         end_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
@@ -255,14 +233,11 @@ class TestIBMQJobAttributes(JobTestCase):
                         'between the start date time {} and end date time {}'
                         .format(job.creation_date(), start_datetime, end_datetime))
 
-    @requires_provider
-    def test_time_per_step(self, provider):
+    def test_time_per_step(self):
         """Test retrieving time per step, while ensuring the date times are in local time."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         # datetime, before running the job, in local time.
         start_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
-        job = backend.run(qobj, validate_qobj=True)
+        job = self.sim_backend.run(self.qobj, validate_qobj=True)
         job.result()
         # datetime, after the job is done running, in local time.
         end_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
@@ -274,32 +249,29 @@ class TestIBMQJobAttributes(JobTestCase):
                             'between the start date time {} and end date time {}'
                             .format(step, time_data, start_datetime, end_datetime))
 
-        rjob = provider.backends.jobs(db_filter={'id': job.job_id()})[0]
+        rjob = self.provider.backends.jobs(db_filter={'id': job.job_id()})[0]
         self.assertTrue(rjob.time_per_step())
 
-    @requires_provider
-    def test_new_job_attributes(self, provider):
+    def test_new_job_attributes(self):
         """Test job with new attributes."""
         def _mocked__api_job_submit(*args, **kwargs):
             submit_info = original_submit(*args, **kwargs)
             submit_info.update({'batman': 'bruce'})
             return submit_info
 
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        original_submit = backend._api.job_submit
+        qobj = bell_in_qobj(self.sim_backend)
+        original_submit = self.sim_backend._api.job_submit
         with mock.patch.object(AccountClient, 'job_submit',
                                side_effect=_mocked__api_job_submit):
-            job = backend.run(qobj, validate_qobj=True)
+            job = self.sim_backend.run(qobj, validate_qobj=True)
 
         self.assertEqual(job.batman, 'bruce')
 
-    @requires_provider
-    def test_queue_info(self, provider):
+    def test_queue_info(self):
         """Test retrieving queue information."""
         # Find the most busy backend.
-        backend = most_busy_backend(provider)
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        backend = most_busy_backend(self.provider)
+        qobj = bell_in_qobj(backend)
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
         job = backend.run(qobj, validate_qobj=True)
         queue_info = None
@@ -331,42 +303,31 @@ class TestIBMQJobAttributes(JobTestCase):
         # Cancel job so it doesn't consume more resources.
         cancel_job(job)
 
-    @requires_provider
-    def test_invalid_job_share_level(self, provider):
+    def test_invalid_job_share_level(self):
         """Test setting a non existent share level for a job."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         with self.assertRaises(IBMQBackendValueError) as context_manager:
-            backend.run(qobj, job_share_level='invalid_job_share_level',
-                        validate_qobj=True)
+            self.sim_backend.run(self.qobj, job_share_level='invalid_job_share_level',
+                                 validate_qobj=True)
         self.assertIn('not a valid job share', context_manager.exception.message)
 
-    @requires_provider
-    def test_share_job_in_project(self, provider):
+    def test_share_job_in_project(self):
         """Test successfully sharing a job within a shareable project."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj, job_share_level='project',
-                          validate_qobj=True)
+        job = self.sim_backend.run(self.qobj, job_share_level='project', validate_qobj=True)
 
-        retrieved_job = backend.retrieve_job(job.job_id())
+        retrieved_job = self.sim_backend.retrieve_job(job.job_id())
         self.assertEqual(getattr(retrieved_job, 'share_level'), 'project',
                          "Job {} has incorrect share level".format(job.job_id()))
 
-    @requires_provider
-    def test_job_tags_or(self, provider):
+    def test_job_tags_or(self):
         """Test using job tags with an or operator."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
-        job = backend.run(qobj, job_tags=job_tags, validate_qobj=True)
+        job = self.sim_backend.run(self.qobj, job_tags=job_tags, validate_qobj=True)
         # TODO No need to wait for job to run once api is fixed
         while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
             time.sleep(0.5)
 
-        rjobs = backend.jobs(job_tags=['phantom_tag'])
+        rjobs = self.sim_backend.jobs(job_tags=['phantom_tag'])
         self.assertEqual(len(rjobs), 0,
                          "Expected job {}, got {}".format(job.job_id(), rjobs))
 
@@ -374,47 +335,40 @@ class TestIBMQJobAttributes(JobTestCase):
         tags_to_check = [job_tags, job_tags[1:2], job_tags[0:1]+['phantom_tag']]
         for tags in tags_to_check:
             with self.subTest(tags=tags):
-                rjobs = backend.jobs(job_tags=tags)
+                rjobs = self.sim_backend.jobs(job_tags=tags)
                 self.assertEqual(len(rjobs), 1,
                                  "Expected job {}, got {}".format(job.job_id(), rjobs))
                 self.assertEqual(rjobs[0].job_id(), job.job_id())
                 self.assertEqual(set(rjobs[0].tags()), set(job_tags))
 
-    @requires_provider
-    def test_job_tags_and(self, provider):
+    def test_job_tags_and(self):
         """Test using job tags with an and operator."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-
         # Use a unique tag.
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
-        job = backend.run(qobj, job_tags=job_tags, validate_qobj=True)
+        job = self.sim_backend.run(self.qobj, job_tags=job_tags, validate_qobj=True)
         # TODO No need to wait for job to run once api is fixed
         while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
             time.sleep(0.5)
 
         no_rjobs_tags = [job_tags[0:1]+['phantom_tags'], ['phantom_tag']]
         for tags in no_rjobs_tags:
-            rjobs = backend.jobs(job_tags=tags, job_tags_operator="AND")
+            rjobs = self.sim_backend.jobs(job_tags=tags, job_tags_operator="AND")
             self.assertEqual(len(rjobs), 0,
                              "Expected job {}, got {}".format(job.job_id(), rjobs))
 
         has_rjobs_tags = [job_tags, job_tags[1:3]]
         for tags in has_rjobs_tags:
             with self.subTest(tags=tags):
-                rjobs = backend.jobs(job_tags=tags, job_tags_operator="AND")
+                rjobs = self.sim_backend.jobs(job_tags=tags, job_tags_operator="AND")
                 self.assertEqual(len(rjobs), 1,
                                  "Expected job {}, got {}".format(job.job_id(), rjobs))
                 self.assertEqual(rjobs[0].job_id(), job.job_id())
                 self.assertEqual(set(rjobs[0].tags()), set(job_tags))
 
-    @requires_provider
-    def test_job_tags_replace(self, provider):
+    def test_job_tags_replace(self):
         """Test updating job tags by replacing a job's existing tags."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         initial_job_tags = [uuid.uuid4().hex]
-        job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
+        job = self.sim_backend.run(self.qobj, job_tags=initial_job_tags, validate_qobj=True)
 
         tags_to_replace_subtests = [
             [],  # empty tags.
@@ -426,13 +380,10 @@ class TestIBMQJobAttributes(JobTestCase):
                                            tags_after_update=tags_to_replace,
                                            replacement_tags=tags_to_replace)
 
-    @requires_provider
-    def test_job_tags_add(self, provider):
+    def test_job_tags_add(self):
         """Test updating job tags by adding to a job's existing tags."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         initial_job_tags = [uuid.uuid4().hex]
-        job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
+        job = self.sim_backend.run(self.qobj, job_tags=initial_job_tags, validate_qobj=True)
 
         tags_to_add_subtests = [
             [],  # empty tags.
@@ -444,13 +395,10 @@ class TestIBMQJobAttributes(JobTestCase):
                                        tags_after_update=tags_after_add,
                                        additional_tags=tags_to_add)
 
-    @requires_provider
-    def test_job_tags_remove(self, provider):
+    def test_job_tags_remove(self):
         """Test updating job tags by removing from a job's existing tags."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
         initial_job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
-        job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
+        job = self.sim_backend.run(self.qobj, job_tags=initial_job_tags, validate_qobj=True)
 
         tags_to_remove_subtests = [
             [],
@@ -463,25 +411,17 @@ class TestIBMQJobAttributes(JobTestCase):
                                        tags_after_update=list(tags_after_removal_set),
                                        removal_tags=tags_to_remove)
 
-    @requires_provider
-    def test_job_tags_add_and_remove(self, provider):
+    def test_job_tags_add_and_remove(self):
         """Test updating job tags by adding and removing the same job tag."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj, validate_qobj=True)
-
         new_job_tags = [uuid.uuid4().hex]
-        update_job_tags_and_verify(job_to_update=job,
+        update_job_tags_and_verify(job_to_update=self.sim_job,
                                    tags_after_update=[],
                                    additional_tags=new_job_tags,
                                    removal_tags=new_job_tags)
 
-    @requires_provider
-    def test_job_tags_replace_and_remove(self, provider):
+    def test_job_tags_replace_and_remove(self):
         """Test updating job tags by replacing and removing tags."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj, job_tags=[uuid.uuid4().hex], validate_qobj=True)
+        job = self.sim_backend.run(self.qobj, job_tags=[uuid.uuid4().hex], validate_qobj=True)
 
         replacement_tags = [uuid.uuid4().hex, uuid.uuid4().hex]
         # Remove the first tag in `replacement_tags`
@@ -494,13 +434,9 @@ class TestIBMQJobAttributes(JobTestCase):
                                    replacement_tags=replacement_tags,
                                    removal_tags=removal_tags)
 
-    @requires_provider
-    def test_job_tags_all_parameters(self, provider):
+    def test_job_tags_all_parameters(self):
         """Test updating job tags by replacing, adding, and removing tags."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        initial_job_tags = [uuid.uuid4().hex]
-        job = backend.run(qobj, job_tags=initial_job_tags, validate_qobj=True)
+        job = self.sim_backend.run(self.qobj, job_tags=[uuid.uuid4().hex], validate_qobj=True)
 
         replacement_tags = [uuid.uuid4().hex, uuid.uuid4().hex]
         additional_tags = [uuid.uuid4().hex, uuid.uuid4().hex]
@@ -516,54 +452,29 @@ class TestIBMQJobAttributes(JobTestCase):
                                    additional_tags=additional_tags,
                                    removal_tags=removal_tags)
 
-    @requires_provider
-    def test_invalid_job_tags(self, provider):
+    def test_invalid_job_tags(self):
         """Test using job tags with an and operator."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
+        self.assertRaises(IBMQBackendValueError, self.sim_backend.run,
+                          self.qobj, job_tags={'foo'})
+        self.assertRaises(IBMQBackendValueError, self.sim_backend.jobs, job_tags=[1, 2, 3])
 
-        self.assertRaises(IBMQBackendValueError, backend.run, qobj, job_tags={'foo'})
-        self.assertRaises(IBMQBackendValueError, backend.jobs, job_tags=[1, 2, 3])
-
-    @requires_provider
-    def test_run_mode(self, provider):
+    def test_run_mode(self):
         """Test job run mode."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        qobj = assemble(transpile(self._qc, backend=backend), backend=backend)
-        job = backend.run(qobj, validate_qobj=True)
-        job.wait_for_final_state()
-        self.assertEqual(job.scheduling_mode(), "fairshare", "Job {} scheduling mode is {}".format(
-            job.job_id(), job.scheduling_mode()))
+        self.sim_job.wait_for_final_state()
+        self.assertEqual(self.sim_job.scheduling_mode(), "fairshare",
+                         "Job {} scheduling mode is {}".format(
+                             self.sim_job.job_id(), self.sim_job.scheduling_mode()))
 
-        rjob = backend.retrieve_job(job.job_id())
-        self.assertEqual(rjob.scheduling_mode(), "fairshare", "Job {} scheduling mode is {}".format(
-            rjob.job_id(), rjob.scheduling_mode()))
+        rjob = self.sim_backend.retrieve_job(self.sim_job.job_id())
+        self.assertEqual(rjob.scheduling_mode(), "fairshare",
+                         "Job {} scheduling mode is {}".format(
+                             rjob.job_id(), rjob.scheduling_mode()))
 
-    @requires_provider
-    def test_auto_new_fields(self, provider):
-        """Test new response fields appear in the job."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        backend._api = BaseFakeAccountClient(job_class=NewFieldFakeJob)
-
-        job = backend.run(bell_in_qobj(backend=backend))
-        self.assertTrue(hasattr(job, 'new_field'))
-
-    @requires_provider
-    def test_missing_required_fields(self, provider):
+    def test_missing_required_fields(self):
         """Test response data is missing required fields."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
-        backend._api = BaseFakeAccountClient(job_class=MissingFieldFakeJob)
-
-        qobj = bell_in_qobj(backend=backend)
-        self.assertRaises(IBMQBackendApiProtocolError, backend.run, qobj)
-
-
-def _bell_circuit():
-    """Return a bell state circuit."""
-    qr = QuantumRegister(2, 'q')
-    cr = ClassicalRegister(2, 'c')
-    qc = QuantumCircuit(qr, cr)
-    qc.h(qr[0])
-    qc.cx(qr[0], qr[1])
-    qc.measure(qr, cr)
-    return qc
+        saved_api = self.sim_backend._api
+        try:
+            self.sim_backend._api = BaseFakeAccountClient(job_class=MissingFieldFakeJob)
+            self.assertRaises(IBMQBackendApiProtocolError, self.sim_backend.run, self.qobj)
+        finally:
+            self.sim_backend._api = saved_api

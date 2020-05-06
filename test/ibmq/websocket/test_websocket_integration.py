@@ -18,9 +18,7 @@ from unittest import mock
 from threading import Thread
 from queue import Queue
 
-from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.test import slow_test
-from qiskit.compiler import assemble, transpile
 from qiskit.providers import JobTimeoutError
 from qiskit.providers.ibmq.api.clients.websocket import (
     WebsocketClient, WebsocketAuthenticationMessage)
@@ -35,22 +33,25 @@ from ...utils import most_busy_backend, bell_in_qobj, cancel_job
 class TestWebsocketIntegration(IBMQTestCase):
     """Websocket integration tests."""
 
+    @classmethod
     @requires_provider
-    def setUp(self, provider):
-        """Initial test setup."""
+    def setUpClass(cls, provider):
+        """Initial class level setup."""
         # pylint: disable=arguments-differ
-        self.provider = provider
-        self.sim_backend = self.provider.get_backend(simulator=True)
+        super().setUpClass()
+        cls.provider = provider
+        cls.sim_backend = provider.get_backend('ibmq_qasm_simulator')
+        cls.qobj = bell_in_qobj(cls.sim_backend, shots=1)
 
-        # Create a circuit
-        qr = QuantumRegister(1)
-        cr = ClassicalRegister(1)
-        self.qc1 = QuantumCircuit(qr, cr, name='qc1')
-        self.qc1.measure(qr[0], cr[0])
+    def setUp(self):
+        """Initial test setup."""
+        super().setUp()
+        self.saved_status_polling = self.sim_backend._api._job_final_status_polling
 
-        # Create a default Qobj using the simulator.
-        self.circuit = transpile(self.qc1, backend=self.sim_backend)
-        self.qobj = assemble(self.circuit, backend=self.sim_backend, shots=1)
+    def tearDown(self):
+        """Test tear down."""
+        super().tearDown()
+        self.sim_backend._api._job_final_status_polling = self.saved_status_polling
 
     def _job_final_status_polling(self, *args, **kwargs):
         """Replaces the actual _job_final_status_polling and fails the test."""
@@ -71,7 +72,7 @@ class TestWebsocketIntegration(IBMQTestCase):
     @requires_device
     def test_websockets_device(self, backend):
         """Test checking status of a job via websockets for a device."""
-        qobj = bell_in_qobj(backend=backend)
+        qobj = bell_in_qobj(backend=backend, shots=1)
         job = backend.run(qobj, validate_qobj=True)
 
         # Manually disable the non-websocket polling.

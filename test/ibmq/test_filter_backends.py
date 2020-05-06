@@ -23,6 +23,14 @@ from ..decorators import requires_provider, requires_device
 class TestBackendFilters(IBMQTestCase):
     """Qiskit Backend Filtering Tests."""
 
+    @classmethod
+    @requires_provider
+    def setUpClass(cls, provider):
+        """Initial class level setup."""
+        # pylint: disable=arguments-differ
+        super().setUpClass()
+        cls.provider = provider
+
     @requires_device
     def test_filter_config_properties(self, backend):
         """Test filtering by configuration properties."""
@@ -33,41 +41,38 @@ class TestBackendFilters(IBMQTestCase):
         filtered_backends = provider.backends(n_qubits=n_qubits, local=False)
 
         self.assertTrue(filtered_backends)
-        for filtered_backend in filtered_backends:
+        for filtered_backend in filtered_backends[:5]:
             with self.subTest(filtered_backend=filtered_backend):
                 self.assertEqual(n_qubits, filtered_backend.configuration().n_qubits)
                 self.assertFalse(filtered_backend.configuration().local)
 
-    @requires_provider
-    def test_filter_status_dict(self, provider):
+    def test_filter_status_dict(self):
         """Test filtering by dictionary of mixed status/configuration properties."""
-        filtered_backends = provider.backends(
+        filtered_backends = self.provider.backends(
             operational=True,  # from status
             local=False, simulator=True)  # from configuration
 
         self.assertTrue(filtered_backends)
-        for backend in filtered_backends:
+        for backend in filtered_backends[:5]:
             with self.subTest(backend=backend):
                 self.assertTrue(backend.status().operational)
                 self.assertFalse(backend.configuration().local)
                 self.assertTrue(backend.configuration().simulator)
 
-    @requires_provider
-    def test_filter_config_callable(self, provider):
+    def test_filter_config_callable(self):
         """Test filtering by lambda function on configuration properties."""
-        filtered_backends = provider.backends(
+        filtered_backends = self.provider.backends(
             filters=lambda x: (not x.configuration().simulator
                                and x.configuration().n_qubits >= 5))
 
         self.assertTrue(filtered_backends)
-        for backend in filtered_backends:
+        for backend in filtered_backends[:5]:
             with self.subTest(backend=backend):
                 self.assertFalse(backend.configuration().simulator)
                 self.assertGreaterEqual(backend.configuration().n_qubits, 5)
 
-    @requires_provider
-    def test_filter_least_busy(self, provider):
+    def test_filter_least_busy(self):
         """Test filtering by least busy function."""
-        backends = provider.backends()
+        backends = self.provider.backends()
         least_busy_backend = least_busy(backends)
         self.assertTrue(least_busy_backend)

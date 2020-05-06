@@ -66,6 +66,7 @@ jobs:
       env:
         QE_TOKEN: $(QE_TOKEN)
         QE_URL: $(QE_URL)
+        QE_HGP: $(QE_HGP)
 - job: 'Docs'
   pool: {vmImage: 'ubuntu-16.04'}
   condition: not(startsWith(variables['Build.SourceBranch'], 'refs/tags'))

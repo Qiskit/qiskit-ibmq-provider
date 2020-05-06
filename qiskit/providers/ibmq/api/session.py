@@ -62,12 +62,13 @@ class PostForcelistRetry(Retry):
     ):
         """Overwrites parent class increment method for logging."""
         if logger.getEffectiveLevel() is logging.DEBUG:
-            status = data = None
+            status = data = headers = None
             if response:
                 status = response.status
                 data = response.data
-            logger.debug("Retrying method=%s, url=%s, status=%s, error=%s, data=%s",
-                         method, url, status, error, data)
+                headers = response.headers
+            logger.debug("Retrying method=%s, url=%s, status=%s, error=%s, data=%s, headers=%s",
+                         method, url, status, error, data, headers)
         return super().increment(method=method, url=url, response=response,
                                  error=error, _pool=_pool, _stacktrace=_stacktrace)
 
