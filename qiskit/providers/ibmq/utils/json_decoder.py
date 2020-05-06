@@ -33,17 +33,6 @@ def decode_pulse_qobj(pulse_qobj: Dict) -> None:
             _decode_pulse_qobj_instr(instr)
 
 
-def decode_pulse_backend_config(config: Dict) -> None:
-    """Decode pulse backend configuration data.
-
-    Args:
-        config: A ``PulseBackendConfiguration`` in dictionary format.
-    """
-    for u_channle_list in config['u_channel_lo']:
-        for u_channle_lo in u_channle_list:
-            u_channle_lo['scale'] = _to_complex(u_channle_lo['scale'])
-
-
 def decode_pulse_defaults(defaults: Dict) -> None:
     """Decode pulse defaults data.
 
@@ -85,8 +74,10 @@ def decode_backend_configuration(config: Dict) -> None:
     """
     config['online_date'] = dateutil.parser.isoparse(config['online_date'])
 
-    if config.get('open_pulse', False):
-        decode_pulse_backend_config(config)
+    if 'u_channel_lo' in config:
+        for u_channle_list in config['u_channel_lo']:
+            for u_channle_lo in u_channle_list:
+                u_channle_lo['scale'] = _to_complex(u_channle_lo['scale'])
 
 
 def _to_complex(value: Union[List[float], complex]) -> complex:

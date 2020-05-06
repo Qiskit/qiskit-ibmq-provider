@@ -29,20 +29,26 @@ from ..ibmqtestcase import IBMQTestCase
 class TestSerialization(IBMQTestCase):
     """Test data serialization."""
 
+    @classmethod
     @requires_provider
-    def test_qasm_qobj(self, provider):
+    def setUpClass(cls, provider):
+        """Initial class level setup."""
+        # pylint: disable=arguments-differ
+        super().setUpClass()
+        cls.provider = provider
+
+    def test_qasm_qobj(self):
         """Test serializing qasm qobj data."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
+        backend = self.provider.get_backend('ibmq_qasm_simulator')
         qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
         rqobj = backend.retrieve_job(job.job_id()).qobj()
 
         self.assertEqual(_array_to_list(qobj.to_dict()), rqobj.to_dict())
 
-    @requires_provider
-    def test_pulse_qobj(self, provider):
+    def test_pulse_qobj(self):
         """Test serializing pulse qobj data."""
-        backends = provider.backends(operational=True, open_pulse=True)
+        backends = self.provider.backends(operational=True, open_pulse=True)
         if not backends:
             self.skipTest('Need pulse backends.')
 
@@ -65,15 +71,14 @@ class TestSerialization(IBMQTestCase):
 
         cancel_job(job)
 
-    @requires_provider
     @skipIf(qiskit.__version__ < '0.14.0', 'Test requires terra 0.14.0')
-    def test_backend_configuration(self, provider):
+    def test_backend_configuration(self):
         """Test deserializing backend configuration."""
-        backends = provider.backends(operational=True, simulator=False)
+        backends = self.provider.backends(operational=True, simulator=False)
 
         # Known keys that look like a serialized complex number.
         good_keys = ('coupling_map', 'qubit_lo_range', 'meas_lo_range', 'gates.coupling_map',
-                     'meas_levels', 'qubit_channel_mapping')
+                     'meas_levels', 'qubit_channel_mapping', 'backend_version')
         good_keys_prefix = ('channels',)
 
         for backend in backends:
@@ -93,11 +98,10 @@ class TestSerialization(IBMQTestCase):
 
                 self.assertFalse(suspect_keys)
 
-    @requires_provider
     @skipIf(qiskit.__version__ < '0.14.0', 'Test requires terra 0.14.0')
-    def test_pulse_defaults(self, provider):
+    def test_pulse_defaults(self):
         """Test deserializing backend configuration."""
-        backends = provider.backends(operational=True, open_pulse=True)
+        backends = self.provider.backends(operational=True, open_pulse=True)
         if not backends:
             self.skipTest('Need pulse backends.')
 
@@ -118,16 +122,15 @@ class TestSerialization(IBMQTestCase):
 
                 self.assertFalse(complex_keys)
 
-    @requires_provider
     @skipIf(qiskit.__version__ < '0.14.0', 'Test requires terra 0.14.0')
-    def test_backend_properties(self, provider):
+    def test_backend_properties(self):
         """Test deserializing backend properties."""
-        backends = provider.backends(operational=True, simulator=False)
+        backends = self.provider.backends(operational=True, simulator=False)
 
         # Known keys that look like a serialized object.
         good_keys = ('gates.qubits', 'qubits.name', 'backend_version')
 
-        for backend in backends[:1]:
+        for backend in backends:
             with self.subTest(backend=backend):
                 properties = backend.properties()
                 suspect_keys = set()
