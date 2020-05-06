@@ -6,6 +6,7 @@
 trigger:
 - master
 - stable
+- test
 
 jobs:
 - job: 'Windows_PR_Tests'
