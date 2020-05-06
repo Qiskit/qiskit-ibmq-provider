@@ -61,7 +61,7 @@ jobs:
       displayName: 'Install dependencies'
     - script: |
         pip install pytest pytest-azurepipelines
-        pytest -s -v
+        pytest -s -v --tb=native
       displayName: 'pytest'
       env:
         QE_TOKEN: $(QE_TOKEN)
