@@ -20,10 +20,19 @@ from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
 
 from ..ibmqtestcase import IBMQTestCase
+from ..decorators import requires_device
 
 
 class TestIBMQBackend(IBMQTestCase):
     """Test ibmqbackend module."""
+
+    @classmethod
+    @requires_device
+    def setUpClass(cls, backend):
+        """Initial class level setup."""
+        # pylint: disable=arguments-differ
+        super().setUpClass()
+        cls.backend = backend
 
     def test_backend_jobs_signature(self):
         """Test ``IBMQBackend.jobs()`` signature is similar to ``IBMQBackendService.jobs()``.
@@ -51,3 +60,30 @@ class TestIBMQBackend(IBMQTestCase):
 
         # Ensure method signatures are similar, other than the acceptable differences.
         self.assertEqual(backend_service_jobs_params, backend_jobs_params)
+
+    def test_backend_status(self):
+        """Check the status of a real chip."""
+        self.assertTrue(self.backend.status().operational)
+
+    def test_backend_properties(self):
+        """Check the properties of calibration of a real chip."""
+        self.assertIsNotNone(self.backend.properties())
+
+    def test_backend_job_limit(self):
+        """Check the backend job limits of a real backend."""
+        job_limit = self.backend.job_limit()
+        self.assertIsNotNone(job_limit)
+        self.assertIsNotNone(job_limit.active_jobs)
+        if job_limit.maximum_jobs:
+            self.assertGreater(job_limit.maximum_jobs, 0)
+
+    def test_backend_pulse_defaults(self):
+        """Check the backend pulse defaults of each backend."""
+        provider = self.backend.provider()
+        for backend in provider.backends():
+            with self.subTest(backend_name=backend.name()):
+                defaults = backend.defaults()
+                if backend.configuration().open_pulse:
+                    self.assertIsNotNone(defaults)
+                else:
+                    self.assertIsNone(defaults)

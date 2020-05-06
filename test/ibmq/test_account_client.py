@@ -25,18 +25,25 @@ from qiskit.compiler import assemble, transpile
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus
 from qiskit.providers.ibmq.api.clients import AccountClient, AuthClient
 from qiskit.providers.ibmq.api.exceptions import ApiError, RequestsApiError
-from qiskit.providers.ibmq.job.utils import get_cancel_status
-from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.utils.utils import RefreshQueue
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_qe_access, requires_device, requires_provider
+from ..decorators import requires_qe_access, requires_provider
 from ..contextmanagers import custom_envs, no_envs
 from ..http_server import SimpleServer, ServerErrorOnceHandler
 
 
 class TestAccountClient(IBMQTestCase):
     """Tests for AccountClient."""
+
+    @classmethod
+    @requires_provider
+    def setUpClass(cls, provider):
+        """Initial class level setup."""
+        # pylint: disable=arguments-differ
+        super().setUpClass()
+        cls.provider = provider
+        cls.access_token = cls.provider._api.client_api.session.access_token
 
     def setUp(self):
         """Initial test setup."""
@@ -53,15 +60,6 @@ class TestAccountClient(IBMQTestCase):
         self.qc2.measure(qr[0], cr[0])
         self.qc2.measure(qr[1], cr[1])
         self.seed = 73846087
-
-    @classmethod
-    @requires_provider
-    def setUpClass(cls, provider):
-        """Initial class level setup."""
-        # pylint: disable=arguments-differ
-        super().setUpClass()
-        cls.provider = provider
-        cls.access_token = cls.provider._api.client_api.session.access_token
 
     def _get_client(self):
         """Helper for instantiating an AccountClient."""
@@ -102,52 +100,6 @@ class TestAccountClient(IBMQTestCase):
         jobs = api.list_jobs_statuses(limit=2)
         self.assertEqual(len(jobs), 2)
 
-    @requires_device
-    def test_backend_status(self, backend):
-        """Check the status of a real chip."""
-        api = self._get_client()
-        is_available = api.backend_status(backend.name())
-        self.assertIsNotNone(is_available['operational'])
-
-    @requires_device
-    def test_backend_properties(self, backend):
-        """Check the properties of calibration of a real chip."""
-        api = self._get_client()
-
-        properties = api.backend_properties(backend.name())
-        self.assertIsNotNone(properties)
-
-    @requires_device
-    def test_backend_job_limit(self, backend):
-        """Check the backend job limits of a real backend."""
-        api = self._get_client()
-
-        job_limit = api.backend_job_limit(backend.name())
-        self.assertIsNotNone(job_limit)
-        self.assertIsNotNone(job_limit['maximum_jobs'])
-        self.assertIsNotNone(job_limit['running_jobs'])
-        self.assertNotEqual(job_limit['maximum_jobs'], 0)
-
-    def test_backend_pulse_defaults(self):
-        """Check the backend pulse defaults of each backend."""
-        api = self._get_client()
-        api_backends = api.list_backends()
-        # TODO revert to testing all backends when api is fixed
-        test_backend_names = ['ibmq_armonk', 'ibmq_vigo', 'ibmq_qasm_simulator']
-
-        for backend_info in api_backends:
-            backend_name = backend_info['backend_name']
-            if backend_name not in test_backend_names:
-                continue
-            with self.subTest(backend_name=backend_name):
-                defaults = api.backend_pulse_defaults(backend_name=backend_name)
-                is_open_pulse = backend_info['open_pulse']
-
-                if is_open_pulse:
-                    self.assertTrue(defaults)
-                else:
-                    self.assertFalse(defaults)
-
     def test_exception_message(self):
         """Check exception has proper message."""
         api = self._get_client()
@@ -175,47 +127,6 @@ class TestAccountClient(IBMQTestCase):
             api = self._get_client()
             self.assertNotIn(custom_header,
                              api.client_api.session.headers['X-Qx-Client-Application'])
-
-    def test_list_backends(self):
-        """Test listing backends."""
-        api = self._get_client()
-        provider_backends = {backend.name() for backend
-                             in self.provider.backends()}
-        api_backends = {backend_info['backend_name'] for backend_info
-                        in api.list_backends()}
-
-        self.assertEqual(provider_backends, api_backends)
-
-    def test_job_cancel(self):
-        """Test canceling a job."""
-        backend_name = 'ibmq_qasm_simulator'
-        backend = self.provider.get_backend(backend_name)
-        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
-        qobj = assemble(circuit, backend, shots=1)
-
-        api = backend._api
-        job = backend.run(qobj, validate_qobj=True)
-        job_id = job.job_id()
-
-        max_retry = 2
-        for _ in range(max_retry):
-            try:
-                cancel_response = api.job_cancel(job_id)
-                is_cancelled = get_cancel_status(cancel_response)
-                if is_cancelled:
-                    status = job.status()
-                    self.assertEqual(status, JobStatus.CANCELLED,
-                                     'cancel() was successful for job {} but its status is {}.'
-                                     .format(job.job_id(), status))
-                    break
-            except RequestsApiError as ex:
-                if 'JOB_NOT_RUNNING' in str(ex):
-                    self.assertEqual(job.status(), JobStatus.DONE)
-                    break
-                # We may hit the JOB_NOT_CANCELLED error if the job is
-                # in a temporary, noncancellable state. In this case we'll
-                # just retry.
-                self.assertIn('JOB_NOT_CANCELLED', str(ex))
 
     def test_access_token_not_in_exception_traceback(self):
         """Check that access token is replaced within chained request exceptions."""
