@@ -57,7 +57,8 @@ jobs:
       displayName: 'Use Python $(python.version)'
     - script: |
         nslookup s3.us-east.objectstorage.softlayer.net
-        ping -c1 s3.us-east.objectstorage.softlayer.net
+        ping -n 1 s3.us-east.objectstorage.softlayer.net
+        ping -n 1 169.63.118.98
         python -m pip install --upgrade pip
         pip install -U -r requirements.txt
         pip install -U -r requirements-dev.txt
