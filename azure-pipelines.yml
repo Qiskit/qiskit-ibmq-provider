@@ -40,7 +40,7 @@ jobs:
       displayName: 'pytest'
 
 - job: 'Windows_Merge_Tests'
-  pool: {vmImage: 'windows-2019'}
+  pool: {vmImage: 'Ubuntu-16.04'}
   condition: not(eq(variables['Build.Reason'], 'PullRequest'))
   strategy:
     matrix:
@@ -57,16 +57,13 @@ jobs:
       displayName: 'Use Python $(python.version)'
     - script: |
         nslookup s3.us-east.objectstorage.softlayer.net
-        ping -n 10 s3.us-east.objectstorage.softlayer.net
-        ping -n 10 169.63.118.98
-        ping -n 10 www.google.com
-#        python -m pip install --upgrade pip
-#        pip install -U -r requirements.txt
-#        pip install -U -r requirements-dev.txt
+        python -m pip install --upgrade pip
+        pip install -U -r requirements.txt
+        pip install -U -r requirements-dev.txt
       displayName: 'Install dependencies'
     - script: |
         pip install pytest pytest-azurepipelines
-#        pytest -s -v --tb=native
+        pytest -s -v --tb=native
       displayName: 'pytest'
       env:
         QE_TOKEN: $(QE_TOKEN)
