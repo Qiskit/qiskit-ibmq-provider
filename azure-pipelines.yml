@@ -62,6 +62,7 @@ jobs:
       displayName: 'Install dependencies'
     - script: |
         pip install pytest pytest-azurepipelines
+        nslookup 's3.us-east.objectstorage.softlayer.net'
         pytest -s -v --tb=native
       displayName: 'pytest'
       env:
