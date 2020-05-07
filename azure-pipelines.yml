@@ -57,11 +57,12 @@ jobs:
       displayName: 'Use Python $(python.version)'
     - script: |
         nslookup s3.us-east.objectstorage.softlayer.net
-        ping -n 1 s3.us-east.objectstorage.softlayer.net
-        ping -n 1 169.63.118.98
-        python -m pip install --upgrade pip
-        pip install -U -r requirements.txt
-        pip install -U -r requirements-dev.txt
+        ping -n 10 s3.us-east.objectstorage.softlayer.net
+        ping -n 10 169.63.118.98
+        ping -n 10 www.google.com
+#        python -m pip install --upgrade pip
+#        pip install -U -r requirements.txt
+#        pip install -U -r requirements-dev.txt
       displayName: 'Install dependencies'
     - script: |
         pip install pytest pytest-azurepipelines
