@@ -72,6 +72,19 @@ stage_osx: &stage_osx
       pip install wheel setuptools
     fi
 
+stage_win: &stage_win
+  <<: *stage_generic
+  os: windows
+  language: shell
+  before_install:
+    # Travis does not provide support for Python 3 under osx - it needs to be
+    # installed manually.
+    - choco install python --version 3.7
+    - python -m pip install --upgrade pip
+    - python --version
+    - pip --version
+  env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+
 
 ###############################################################################
 # Stage-related definitions
@@ -80,7 +93,6 @@ stage_osx: &stage_osx
 # Define the order of the stages.
 stages:
   - lint and pure python test
-  - test
   - slow tests
 
 # Define the job matrix explicitly, as matrix expansion causes issues when
@@ -90,21 +102,26 @@ jobs:
     # "lint and and pure python test" stage
     ###########################################################################
     # Linter and style check (GNU/Linux, Python 3.5)
-    - stage: lint and pure python test
+    - stage: test
       <<: *stage_linux
       if: type != cron
       python: 3.7
       script: make style && make lint
 
     # Type checking using mypy
-    - stage: lint and pure python test
+    - stage: test
       name: mypy type checking
       <<: *stage_linux
       if: type != cron
       script: make mypy
 
-    # Run the tests against without compilation (GNU/Linux, Python 3.5)
+    # Windows, Python 3.7
     - stage: lint and pure python test
+      <<: *stage_win
+      if: type != cron
+
+    # Run the tests against without compilation (GNU/Linux, Python 3.5)
+    - stage: test
       <<: *stage_linux
       if: type != cron
 
