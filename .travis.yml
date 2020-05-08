@@ -119,6 +119,7 @@ jobs:
     - stage: lint and pure python test
       <<: *stage_win
       if: type != cron
+      script: python -m unittest -v
 
     # Run the tests against without compilation (GNU/Linux, Python 3.5)
     - stage: test
