@@ -80,7 +80,10 @@ stage_win: &stage_win
     # Travis does not provide support for Python 3 under osx - it needs to be
     # installed manually.
     - choco install python --version 3.7.2
+    - doskey python=python3
+    - doskey pip=pip3
     - python --version
+    - python3 --version
     - python -m pip install --upgrade pip
     - pip --version
   env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
