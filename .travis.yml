@@ -93,6 +93,7 @@ stage_win: &stage_win
 # Define the order of the stages.
 stages:
   - lint and pure python test
+  - test
   - slow tests
 
 # Define the job matrix explicitly, as matrix expansion causes issues when
@@ -102,27 +103,21 @@ jobs:
     # "lint and and pure python test" stage
     ###########################################################################
     # Linter and style check (GNU/Linux, Python 3.5)
-    - stage: test
+    - stage: lint and pure python test
       <<: *stage_linux
       if: type != cron
       python: 3.7
       script: make style && make lint
 
     # Type checking using mypy
-    - stage: test
+    - stage: lint and pure python test
       name: mypy type checking
       <<: *stage_linux
       if: type != cron
       script: make mypy
 
-    # Windows, Python 3.7
-    - stage: lint and pure python test
-      <<: *stage_win
-      if: type != cron
-      script: python -m unittest -v
-
     # Run the tests against without compilation (GNU/Linux, Python 3.5)
-    - stage: test
+    - stage: lint and pure python test
       <<: *stage_linux
       if: type != cron
 
@@ -179,6 +174,12 @@ jobs:
       env:
         - MPLBACKEND=ps
         - PYTHON_VERSION=3.8.0
+
+    # Windows, Python 3.7
+    - stage: test
+      <<: *stage_win
+      if: type != cron
+      script: python -m unittest -v
 
     # "slow tests" stage
     ###########################################################################

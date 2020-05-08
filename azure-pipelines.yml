@@ -10,7 +10,7 @@ trigger:
 jobs:
 - job: 'Windows_PR_Tests'
   pool: {vmImage: 'vs2017-win2016'}
-  condition: eq(variables['Build.Reason'], 'PullRequest')
+#  condition: eq(variables['Build.Reason'], 'PullRequest')
   strategy:
     matrix:
       Python35:
@@ -40,7 +40,8 @@ jobs:
 
 - job: 'Windows_Merge_Tests'
   pool: {vmImage: 'vs2017-win2016'}
-  condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+#  condition: not(eq(variables['Build.Reason'], 'PullRequest'))
+  condition: eq(variables['Build.Reason'], 'Schedule')
   strategy:
     matrix:
       Python35:
@@ -101,3 +102,11 @@ jobs:
       inputs:
         pathtoPublish: '$(Build.ArtifactStagingDirectory)'
         artifactName: 'html_docs'
+
+schedules:
+  - cron: "0 12 * * 6"
+    displayName: Weekly build
+    branches:
+      include:
+        - master
+    always: true
