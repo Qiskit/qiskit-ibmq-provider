@@ -19,9 +19,10 @@ from qiskit.result import Result
 from qiskit.execute import execute
 from qiskit.compiler import assemble, transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
+from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_provider, requires_device
+from ..decorators import requires_provider, requires_device, requires_private_provider
 
 
 class TestIBMQIntegration(IBMQTestCase):
@@ -109,3 +110,20 @@ class TestIBMQIntegration(IBMQTestCase):
         job = execute([qc, qc_extra], self.sim_backend, seed_transpiler=self.seed)
         results = job.result()
         self.assertIsInstance(results, Result)
+
+    @requires_private_provider
+    def test_private_job(self, provider):
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        qc = ReferenceCircuits.bell()
+        job = execute(qc, backend=backend)
+        self.assertIsNotNone(job.qobj())
+        self.assertIsNotNone(job.result())
+
+        rjob = backend.retrieve_job(job.job_id())
+        with self.assertRaises(IBMQJobApiError) as cm:
+            rjob.qobj()
+        self.assertIn('3202', str(cm.exception))
+
+        with self.assertRaises(IBMQJobApiError) as cm:
+            rjob.result()
+        self.assertIn('3202', str(cm.exception))
