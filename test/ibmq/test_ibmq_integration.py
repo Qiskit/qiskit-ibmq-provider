@@ -113,6 +113,7 @@ class TestIBMQIntegration(IBMQTestCase):
 
     @requires_private_provider
     def test_private_job(self, provider):
+        """Test a private job."""
         backend = provider.get_backend('ibmq_qasm_simulator')
         qc = ReferenceCircuits.bell()
         job = execute(qc, backend=backend)
@@ -120,10 +121,10 @@ class TestIBMQIntegration(IBMQTestCase):
         self.assertIsNotNone(job.result())
 
         rjob = backend.retrieve_job(job.job_id())
-        with self.assertRaises(IBMQJobApiError) as cm:
+        with self.assertRaises(IBMQJobApiError) as err_cm:
             rjob.qobj()
-        self.assertIn('3202', str(cm.exception))
+        self.assertIn('3202', str(err_cm.exception))
 
-        with self.assertRaises(IBMQJobApiError) as cm:
+        with self.assertRaises(IBMQJobApiError) as err_cm:
             rjob.result()
-        self.assertIn('3202', str(cm.exception))
+        self.assertIn('3202', str(err_cm.exception))
