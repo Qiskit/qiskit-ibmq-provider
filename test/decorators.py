@@ -18,14 +18,14 @@
         * QE_TOKEN: default token to use.
         * QE_URL: default url to use.
         * QE_HGP: default hub/group/project to use.
-        * QE_PRIVATE_HGP: private hub/group/project to use.
+        * QE_PRIVATE_HGP: hub/group/project to use for private jobs.
         * QE_DEVICE: default device to use.
         * USE_STAGING_CREDENTIALS: True if use staging credentials.
         * QE_STAGING_TOKEN: staging token to use.
         * QE_STAGING_URL: staging url to use.
         * QE_STAGING_HGP: staging hub/group/project to use.
         * QE_STAGING_DEVICE: staging device to use.
-        * QE_STAGING_PRIVATE_HGP: staging private hub/group/project to use.
+        * QE_STAGING_PRIVATE_HGP: staging hub/group/project to use for private jobs.
 """
 
 import os
@@ -141,7 +141,7 @@ def requires_provider(func):
 
 
 def requires_private_provider(func):
-    """Decorator that signals the test requires a private provider.
+    """Decorator that signals the test requires a provider for private jobs.
 
     This decorator appends a `provider` argument to the decorated function.
 
