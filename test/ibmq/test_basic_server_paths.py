@@ -104,7 +104,7 @@ class TestBasicServerPaths(IBMQTestCase):
                 self.assertTrue(backend.status())
                 job_limit = backend.job_limit()
                 if desc == 'public_provider':
-                    self.assertEqual(job_limit.maximum_jobs, 5)
+                    self.assertIsNotNone(job_limit.maximum_jobs)
                 self.assertTrue(job_limit)
 
     def _submit_job_with_retry(self, qobj, backend, max_retry=5):
