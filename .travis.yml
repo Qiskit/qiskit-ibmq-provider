@@ -76,17 +76,14 @@ stage_win: &stage_win
   <<: *stage_generic
   os: windows
   language: shell
+  env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
   before_install:
-    # Travis does not provide support for Python 3 under osx - it needs to be
+    # Travis does not provide support for Python 3 under windows - it needs to be
     # installed manually.
     - choco install python --version 3.7.2
-    - doskey python=python3
-    - doskey pip=pip3
     - python --version
-    - python3 --version
     - python -m pip install --upgrade pip
     - pip --version
-  env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
 
 
 ###############################################################################
