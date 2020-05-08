@@ -86,7 +86,7 @@ stage_win: &stage_win
     - python3 --version
     - python -m pip install --upgrade pip
     - pip --version
-  env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+  env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
 
 
 ###############################################################################
