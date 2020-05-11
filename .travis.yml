@@ -81,9 +81,7 @@ stage_win: &stage_win
     # Travis does not provide support for Python 3 under windows - it needs to be
     # installed manually.
     - choco install python --version 3.7.2
-    - python --version
     - python -m pip install --upgrade pip
-    - pip --version
 
 
 ###############################################################################
