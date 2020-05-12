@@ -14,13 +14,15 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
-## [0.7.1] - 2020-05-12
+## [0.7.1] - 2020-05-13
 
 ### Fixed
 
 - Fixed an issue where job status was incorrectly shown as `RUNNING` when it
   should be `QUEUED`. (\#663)
-- Fixed timestamp formats in `QueueInfo`. (\#668) 
+- Fixed timestamp formats in `QueueInfo`. (\#668)
+- Fixed timestamp formats in `backend.configuration()` and `backend.properties()`
+  return values. (\#658)
 
 ## [0.7.0] - 2020-04-29
 
