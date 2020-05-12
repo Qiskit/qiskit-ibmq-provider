@@ -14,6 +14,13 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [UNRELEASED]
+
+### Fixed
+
+- Fixed an issue where job status was incorrectly shown as `RUNNING` when it
+  should be `QUEUED`. (\#662)
+
 ## [0.7.0] - 2020-04-29
 
 ### Added
@@ -407,6 +414,7 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
+[UNRELEASED]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.7.0...HEAD
 [0.7.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.1...HEAD
 [0.6.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.5.0...0.6.0
