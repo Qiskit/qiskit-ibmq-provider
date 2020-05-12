@@ -14,9 +14,9 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
-## [UNRELEASED]
+## [0.7.1] - 2020-05-12
 
-### [0.7.1] - 2020-05-12
+### Fixed
 
 - Fixed an issue where job status was incorrectly shown as `RUNNING` when it
   should be `QUEUED`. (\#663)
