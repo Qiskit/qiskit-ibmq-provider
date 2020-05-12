@@ -14,9 +14,10 @@
 
 """Queue information for a job."""
 
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from datetime import datetime
 from types import SimpleNamespace
+import dateutil.parser
 
 from ..utils import utc_to_local, duration_difference
 from .utils import api_status_to_job_status
@@ -39,8 +40,8 @@ class QueueInfo(SimpleNamespace):
             self,
             position: Optional[int] = None,
             status: Optional[str] = None,
-            estimated_start_time: Optional[datetime] = None,
-            estimated_complete_time: Optional[datetime] = None,
+            estimated_start_time: Optional[Union[str,datetime]] = None,
+            estimated_complete_time: Optional[Union[str, datetime]] = None,
             hub_priority: Optional[float] = None,
             group_priority: Optional[float] = None,
             project_priority: Optional[float] = None,
@@ -62,6 +63,10 @@ class QueueInfo(SimpleNamespace):
         """
         self.position = position
         self._status = status
+        if isinstance(estimated_start_time, str):
+            estimated_start_time = dateutil.parser.isoparse(estimated_start_time)
+        if isinstance(estimated_complete_time, str):
+            estimated_complete_time = dateutil.parser.isoparse(estimated_complete_time)
         self.estimated_start_time = estimated_start_time
         self.estimated_complete_time = estimated_complete_time
         self.hub_priority = hub_priority

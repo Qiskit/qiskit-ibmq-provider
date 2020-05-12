@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog].
 
 - Fixed an issue where job status was incorrectly shown as `RUNNING` when it
   should be `QUEUED`. (\#663)
+- Fixed timestamp formats in `QueueInfo`. (\#668) 
 
 ## [0.7.0] - 2020-04-29
 
