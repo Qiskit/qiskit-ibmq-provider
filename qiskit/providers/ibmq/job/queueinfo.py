@@ -40,7 +40,7 @@ class QueueInfo(SimpleNamespace):
             self,
             position: Optional[int] = None,
             status: Optional[str] = None,
-            estimated_start_time: Optional[Union[str,datetime]] = None,
+            estimated_start_time: Optional[Union[str, datetime]] = None,
             estimated_complete_time: Optional[Union[str, datetime]] = None,
             hub_priority: Optional[float] = None,
             group_priority: Optional[float] = None,
