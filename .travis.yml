@@ -72,6 +72,17 @@ stage_osx: &stage_osx
       pip install wheel setuptools
     fi
 
+stage_win: &stage_win
+  <<: *stage_generic
+  os: windows
+  language: shell
+  env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+  before_install:
+    # Travis does not provide support for Python 3 under windows - it needs to be
+    # installed manually.
+    - choco install python --version 3.7.2
+    - python -m pip install --upgrade pip
+
 
 ###############################################################################
 # Stage-related definitions
@@ -161,6 +172,12 @@ jobs:
       env:
         - MPLBACKEND=ps
         - PYTHON_VERSION=3.8.0
+
+    # Windows, Python 3.7
+    - stage: test
+      <<: *stage_win
+      if: type != cron
+      script: python -m unittest -v
 
     # "slow tests" stage
     ###########################################################################

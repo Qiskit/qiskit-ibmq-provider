@@ -133,8 +133,7 @@ def requires_provider(func):
         qe_url = kwargs.pop('qe_url')
         if not IBMQ.active_account():
             IBMQ.enable_account(qe_token, qe_url)
-        provider = _get_custom_provider(IBMQ) or IBMQ.get_provider(
-            hub='ibm-q', group='open', project='main')
+        provider = _get_custom_provider(IBMQ) or list(IBMQ._providers.values())[0]
         kwargs.update({'provider': provider})
 
         return func(*args, **kwargs)
@@ -174,8 +173,7 @@ def requires_device(func):
             os.getenv('USE_STAGING_CREDENTIALS', '') else os.getenv('QE_DEVICE', None)
 
         _backend = None
-        provider = _get_custom_provider(IBMQ) or IBMQ.get_provider(
-            hub='ibm-q', group='open', project='main')
+        provider = _get_custom_provider(IBMQ) or list(IBMQ._providers.values())[0]
 
         if backend_name:
             # Put desired provider as the first in the list.
