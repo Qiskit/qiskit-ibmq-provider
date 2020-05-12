@@ -41,7 +41,7 @@ from .exceptions import (IBMQBackendError, IBMQBackendValueError,
                          IBMQBackendJobLimitError)
 from .job import IBMQJob
 from .utils import update_qobj_config, validate_job_tags
-from .utils.json_decoder import decode_pulse_defaults
+from .utils.json_decoder import decode_pulse_defaults, decode_backend_properties
 
 logger = logging.getLogger(__name__)
 
@@ -260,10 +260,12 @@ class IBMQBackend(BaseBackend):
             api_properties = self._api.backend_properties(self.name(), datetime=datetime)
             if not api_properties:
                 return None
+            decode_backend_properties(api_properties)
             return BackendProperties.from_dict(api_properties)
 
         if refresh or self._properties is None:
             api_properties = self._api.backend_properties(self.name())
+            decode_backend_properties(api_properties)
             self._properties = BackendProperties.from_dict(api_properties)
 
         return self._properties
