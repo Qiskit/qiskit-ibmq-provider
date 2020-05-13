@@ -39,6 +39,7 @@ class Job(RestAdapterBase):
         'cancel': '/cancel',
         'download_url': '/jobDownloadUrl',
         'self': '/v/1',
+        'self_update': '',
         'status': '/status/v/1',
         'properties': '/properties',
         'result_url': '/resultDownloadUrl',
@@ -86,7 +87,7 @@ class Job(RestAdapterBase):
             JSON response containing the name of the updated attribute and its
             corresponding value.
         """
-        url = self.get_url('self')
+        url = self.get_url('self_update')
         return self.session.put(url, data=json.dumps(job_attribute_info)).json()
 
     def callback_upload(self) -> Dict[str, Any]:
