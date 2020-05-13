@@ -14,6 +14,16 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [0.7.1] - 2020-05-13
+
+### Fixed
+
+- Fixed an issue where job status was incorrectly shown as `RUNNING` when it
+  should be `QUEUED`. (\#663)
+- Fixed timestamp formats in `QueueInfo`. (\#668)
+- Fixed timestamp formats in `backend.configuration()` and `backend.properties()`
+  return values. (\#658)
+
 ## [0.7.0] - 2020-04-29
 
 ### Added
@@ -407,7 +417,8 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
-[0.7.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.1...HEAD
+[0.7.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.7.0...0.7.1
+[0.7.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.1...0.7.0
 [0.6.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.4.6...0.5.0

@@ -183,8 +183,8 @@ class AccountClient(BaseClient):
 
         # Get the upload URL.
         job_id = job_info['id']
+        upload_url = job_info['objectStorageInfo']['uploadUrl']
         job_api = self.client_api.job(job_id)
-        upload_url = job_api.upload_url()['url']
 
         # Upload the Qobj to object storage.
         _ = job_api.put_object_storage(upload_url, qobj_dict)

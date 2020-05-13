@@ -160,7 +160,9 @@ class TestAccountClient(IBMQTestCase):
         api = backend._api
 
         # Send request to local server.
-        valid_data = {'id': 'fake_id', 'url': SimpleServer.URL, 'job': {'id': 'fake_id'}}
+        valid_data = {'id': 'fake_id',
+                      'objectStorageInfo': {'uploadUrl': SimpleServer.URL},
+                      'job': {'id': 'fake_id'}}
         SimpleServer(handler_class=ServerErrorOnceHandler, valid_data=valid_data).start()
         api.client_api.session.base_url = SimpleServer.URL
 
