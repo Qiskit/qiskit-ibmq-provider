@@ -347,19 +347,14 @@ class TestIBMQJob(JobTestCase):
         before_status = job._status
         job_list_queued = backend.jobs(status=JobStatus.QUEUED, limit=5)
         if before_status is JobStatus.QUEUED and job.status() is JobStatus.QUEUED:
-            # When retrieving jobs, the status of a recent job might be `RUNNING` when it is in fact
-            # `QUEUED`. This is due to queue info not being returned for the job. To ensure the job
-            # was retrieved, check whether the job id is in the list of queued jobs retrieved.
             self.assertIn(job.job_id(), [queued_job.job_id() for queued_job in job_list_queued],
                           "job {} is queued but not retrieved when filtering for queued jobs."
                           .format(job.job_id()))
 
-        # TODO: Uncomment when api fixes job statuses.
-        # for queued_job in job_list_queued:
-        #     self.assertTrue(queued_job._status == JobStatus.QUEUED,
-        #                     "status for job {} is '{}' but it should be {}"
-        #                     .format(queued_job.job_id(), queued_job._status,
-        #                             JobStatus.QUEUED))
+        for queued_job in job_list_queued:
+            self.assertTrue(queued_job._status == JobStatus.QUEUED,
+                            "status for job {} is '{}' but it should be {}"
+                            .format(queued_job.job_id(), queued_job._status, JobStatus.QUEUED))
 
         # Cancel job so it doesn't consume more resources.
         cancel_job(job)
@@ -540,9 +535,6 @@ class TestIBMQJob(JobTestCase):
             self.assertIn('queue_info', kwargs)
 
             queue_info = kwargs.pop('queue_info', None)
-            if c_status is JobStatus.QUEUED:
-                self.assertIsNotNone(
-                    queue_info, "queue_info not found for job {}".format(c_job_id))
             callback_info['called'] = True
 
             if wait_time is None:

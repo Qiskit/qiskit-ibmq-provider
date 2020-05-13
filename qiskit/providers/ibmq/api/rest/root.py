@@ -35,7 +35,7 @@ class Api(RestAdapterBase):
         'backends': '/devices/v/1',
         'hubs': '/Network',
         'jobs': '/Jobs',
-        'jobs_status': '/Jobs/status',
+        'jobs_status': '/Jobs/status/v/1',
         'circuit': '/qcircuit',
         'version': '/version'
     }

@@ -38,8 +38,8 @@ class Job(RestAdapterBase):
         'callback_download': '/resultDownloaded',
         'cancel': '/cancel',
         'download_url': '/jobDownloadUrl',
-        'self': '',
-        'status': '/status',
+        'self': '/v/1',
+        'status': '/status/v/1',
         'properties': '/properties',
         'result_url': '/resultDownloadUrl',
         'upload_url': '/jobUploadUrl'
