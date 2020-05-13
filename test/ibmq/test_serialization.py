@@ -17,6 +17,7 @@
 from unittest import skipIf
 from typing import Any
 
+import dateutil.parser
 import qiskit
 from qiskit.compiler import assemble
 
@@ -28,20 +29,26 @@ from ..ibmqtestcase import IBMQTestCase
 class TestSerialization(IBMQTestCase):
     """Test data serialization."""
 
+    @classmethod
     @requires_provider
-    def test_qasm_qobj(self, provider):
+    def setUpClass(cls, provider):
+        """Initial class level setup."""
+        # pylint: disable=arguments-differ
+        super().setUpClass()
+        cls.provider = provider
+
+    def test_qasm_qobj(self):
         """Test serializing qasm qobj data."""
-        backend = provider.get_backend('ibmq_qasm_simulator')
+        backend = self.provider.get_backend('ibmq_qasm_simulator')
         qobj = bell_in_qobj(backend=backend)
         job = backend.run(qobj, validate_qobj=True)
         rqobj = backend.retrieve_job(job.job_id()).qobj()
 
         self.assertEqual(_array_to_list(qobj.to_dict()), rqobj.to_dict())
 
-    @requires_provider
-    def test_pulse_qobj(self, provider):
+    def test_pulse_qobj(self):
         """Test serializing pulse qobj data."""
-        backends = provider.backends(operational=True, open_pulse=True)
+        backends = self.provider.backends(operational=True, open_pulse=True)
         if not backends:
             self.skipTest('Need pulse backends.')
 
@@ -64,52 +71,48 @@ class TestSerialization(IBMQTestCase):
 
         cancel_job(job)
 
-    @requires_provider
     @skipIf(qiskit.__version__ < '0.14.0', 'Test requires terra 0.14.0')
-    def test_backend_configuration(self, provider):
+    def test_backend_configuration(self):
         """Test deserializing backend configuration."""
-        backends = provider.backends(operational=True, open_pulse=True)
-        if not backends:
-            self.skipTest('Need pulse backends.')
+        backends = self.provider.backends(operational=True, simulator=False)
 
         # Known keys that look like a serialized complex number.
         good_keys = ('coupling_map', 'qubit_lo_range', 'meas_lo_range', 'gates.coupling_map',
-                     'meas_levels')
+                     'meas_levels', 'qubit_channel_mapping', 'backend_version')
         good_keys_prefix = ('channels',)
 
         for backend in backends:
             with self.subTest(backend=backend):
                 configuration = backend.configuration()
-                complex_keys = set()
-                _find_potential_complex(configuration.to_dict(), '', complex_keys)
+                suspect_keys = set()
+                _find_potential_encoded(configuration.to_dict(), '', suspect_keys)
 
                 for gkey in good_keys:
                     try:
-                        complex_keys.remove(gkey)
+                        suspect_keys.remove(gkey)
                     except KeyError:
                         pass
 
                 for gkey in good_keys_prefix:
-                    complex_keys = {ckey for ckey in complex_keys if not ckey.startswith(gkey)}
+                    suspect_keys = {ckey for ckey in suspect_keys if not ckey.startswith(gkey)}
 
-                self.assertFalse(complex_keys)
+                self.assertFalse(suspect_keys)
 
-    @requires_provider
     @skipIf(qiskit.__version__ < '0.14.0', 'Test requires terra 0.14.0')
-    def test_pulse_defaults(self, provider):
+    def test_pulse_defaults(self):
         """Test deserializing backend configuration."""
-        backends = provider.backends(operational=True, open_pulse=True)
+        backends = self.provider.backends(operational=True, open_pulse=True)
         if not backends:
             self.skipTest('Need pulse backends.')
 
         # Known keys that look like a serialized complex number.
-        good_keys = ('cmd_def.qubits',)
+        good_keys = ('cmd_def.qubits', 'cmd_def.sequence.ch')
 
         for backend in backends:
             with self.subTest(backend=backend):
                 defaults = backend.defaults()
                 complex_keys = set()
-                _find_potential_complex(defaults.to_dict(), '', complex_keys)
+                _find_potential_encoded(defaults.to_dict(), '', complex_keys)
 
                 for gkey in good_keys:
                     try:
@@ -119,26 +122,60 @@ class TestSerialization(IBMQTestCase):
 
                 self.assertFalse(complex_keys)
 
+    @skipIf(qiskit.__version__ < '0.14.0', 'Test requires terra 0.14.0')
+    def test_backend_properties(self):
+        """Test deserializing backend properties."""
+        backends = self.provider.backends(operational=True, simulator=False)
 
-def _find_potential_complex(data: Any, c_key: str, tally: set) -> None:
-    """Find data that looks like serialized complex numbers.
+        # Known keys that look like a serialized object.
+        good_keys = ('gates.qubits', 'qubits.name', 'backend_version')
+
+        for backend in backends:
+            with self.subTest(backend=backend):
+                properties = backend.properties()
+                suspect_keys = set()
+                _find_potential_encoded(properties.to_dict(), '', suspect_keys)
+
+                for gkey in good_keys:
+                    try:
+                        suspect_keys.remove(gkey)
+                    except KeyError:
+                        pass
+
+                self.assertFalse(suspect_keys)
+
+
+def _find_potential_encoded(data: Any, c_key: str, tally: set) -> None:
+    """Find data that may be in JSON serialized format.
 
     Args:
-        data: Data to be recursively traversed to find potential complex numbers.
+        data: Data to be recursively traversed to find suspects.
         c_key: Key of the field currently being traversed.
-        tally: Keys of fields that may contain complex numbers.
+        tally: Keys of fields that look suspect.
     """
+    if _check_encoded(data):
+        tally.add(c_key)
+
     if isinstance(data, list):
-        if len(data) == 2 and all(isinstance(x, (float, int)) for x in data):
-            tally.add(c_key)
         for item in data:
-            if isinstance(item, (dict, list)):
-                _find_potential_complex(item, c_key, tally)
+            _find_potential_encoded(item, c_key, tally)
     elif isinstance(data, dict):
         for key, value in data.items():
-            if isinstance(value, (dict, list)):
-                full_key = c_key + '.' + str(key) if c_key else str(key)
-                _find_potential_complex(value, full_key, tally)
+            full_key = c_key + '.' + str(key) if c_key else str(key)
+            _find_potential_encoded(value, full_key, tally)
+
+
+def _check_encoded(data):
+    """Check if the input data is potentially in JSON serialized format."""
+    if isinstance(data, list) and len(data) == 2 and all(isinstance(x, (float, int)) for x in data):
+        return True
+    elif isinstance(data, str):
+        try:
+            dateutil.parser.parse(data)
+            return True
+        except ValueError:
+            pass
+    return False
 
 
 def _array_to_list(data):
