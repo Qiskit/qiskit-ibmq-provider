@@ -37,6 +37,7 @@ from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..utils.utils import RefreshQueue, validate_job_tags
 from ..utils import utc_to_local
 from ..utils.qobj_utils import dict_to_qobj
+from ..utils.json_decoder import decode_backend_properties
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
 from .queueinfo import QueueInfo
@@ -116,6 +117,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             error: Optional[dict] = None,
             tags: Optional[List[str]] = None,
             run_mode: Optional[str] = None,
+            share_level: Optional[str] = None,
             **kwargs: Any
     ) -> None:
         """IBMQJob constructor.
@@ -134,6 +136,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             error: Job error.
             tags: Job tags.
             run_mode: Scheduling mode the job runs in.
+            share_level: Level the job can be shared with.
             kwargs: Additional job attributes.
         """
         self._backend = backend
@@ -154,8 +157,11 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._status, self._queue_info = \
             self._get_status_position(status, kwargs.pop('info_queue', None))
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
+        self._share_level = share_level
 
-        SimpleNamespace.__init__(self, **kwargs)
+        for key, value in kwargs.items():
+            # Append suffix to key to avoid conflicts.
+            self.__dict__[key + '_'] = value
         BaseJob.__init__(self, self.backend(), self.job_id())
 
         # Properties used for caching.
@@ -201,6 +207,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         if not properties:
             return None
 
+        decode_backend_properties(properties)
         return BackendProperties.from_dict(properties)
 
     def result(
@@ -601,6 +608,18 @@ class IBMQJob(SimpleNamespace, BaseJob):
         """
         return self._tags.copy()
 
+    def share_level(self) -> str:
+        """Return the share level of the job.
+
+        The share level is one of ``global``, ``hub``, ``group``, ``project``, and ``none``.
+
+        Returns:
+            The share level of the job.
+        """
+        if not self._share_level:
+            self.refresh()
+        return self._share_level
+
     def time_per_step(self) -> Optional[Dict]:
         """Return the date and time information on each step of the job processing.
 
@@ -704,7 +723,10 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
         self._status, self._queue_info = \
             self._get_status_position(self._api_status, api_response.pop('info_queue', None))
-        self.__dict__.update(api_response)
+        self._share_level = api_response.pop('share_level', 'none')
+
+        for key, value in api_response.items():
+            self.__dict__[key + '_'] = value
 
     def to_dict(self) -> Dict:
         """Serialize the model into a Python dict of simple types.
@@ -976,7 +998,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         """
         queue_info = None
         status = api_status_to_job_status(api_status)
-        if api_status is ApiJobStatus.RUNNING.value and api_info_queue:
+        if api_status == ApiJobStatus.RUNNING.value and api_info_queue:
             queue_info = QueueInfo(job_id=self.job_id(), **api_info_queue)
             if queue_info._status == ApiJobStatus.PENDING_IN_QUEUE.value:
                 status = JobStatus.QUEUED
