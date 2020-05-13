@@ -119,10 +119,11 @@ class ManagedJobSet:
             qobj = assemble(experiments, backend=backend, **assemble_config)
             job_name = JOB_SET_NAME_FORMATTER.format(self._name, i)
             mjob = ManagedJob(experiments_count=len(experiments), start_index=exp_index)
-            logger.debug("Submitting job %s/%s for job set %s", i, total_jobs, self._name)
+            logger.debug("Submitting job %s/%s for job set %s", i+1, total_jobs, self._name)
             mjob.submit(qobj=qobj, job_name=job_name, backend=backend,
                         executor=executor, job_share_level=job_share_level,
                         job_tags=self._tags+[self._id_long], submit_lock=self._job_submit_lock)
+            logger.debug("Job %s submitted", i+1)
             self._managed_jobs.append(mjob)
             exp_index += len(experiments)
 
