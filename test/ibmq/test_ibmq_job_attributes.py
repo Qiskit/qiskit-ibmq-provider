@@ -275,13 +275,13 @@ class TestIBMQJobAttributes(JobTestCase):
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
         job = backend.run(qobj, validate_qobj=True)
         queue_info = None
-        for _ in range(10):
+        for _ in range(20):
             queue_info = job.queue_info()
             # Even if job status is queued, its queue info may not be immediately available.
             if (job._status is JobStatus.QUEUED and job.queue_position() is not None) or \
                     job._status in leave_states:
                 break
-            time.sleep(0.5)
+            time.sleep(1)
 
         if job._status is JobStatus.QUEUED and job.queue_position() is not None:
             self.log.debug("Job id=%s, queue info=%s, queue position=%s",

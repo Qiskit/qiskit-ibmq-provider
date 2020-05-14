@@ -998,10 +998,8 @@ class IBMQJob(SimpleNamespace, BaseJob):
         """
         queue_info = None
         status = api_status_to_job_status(api_status)
-        if api_status == ApiJobStatus.RUNNING.value and api_info_queue:
+        if api_status == ApiJobStatus.QUEUED.value and api_info_queue:
             queue_info = QueueInfo(job_id=self.job_id(), **api_info_queue)
-            if queue_info._status == ApiJobStatus.PENDING_IN_QUEUE.value:
-                status = JobStatus.QUEUED
 
         if status is not JobStatus.QUEUED:
             queue_info = None

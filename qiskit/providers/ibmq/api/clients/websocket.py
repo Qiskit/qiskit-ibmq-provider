@@ -251,7 +251,7 @@ class WebsocketClient(BaseClient):
             WebsocketError: If the websocket connection ended unexpectedly.
             WebsocketTimeoutError: If the timeout has been reached.
         """
-        url = '{}/jobs/{}/status'.format(self.websocket_url, job_id)
+        url = '{}/jobs/{}/status/v/1'.format(self.websocket_url, job_id)
 
         original_timeout = timeout
         start_time = time.time()
