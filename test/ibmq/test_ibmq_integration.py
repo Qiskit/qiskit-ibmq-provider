@@ -14,12 +14,14 @@
 
 """Integration tests."""
 
+import time
+
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.result import Result
 from qiskit.execute import execute
 from qiskit.compiler import assemble, transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
-from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
+from qiskit.providers.ibmq.exceptions import IBMQBackendApiError
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, requires_device, requires_private_provider
@@ -120,11 +122,9 @@ class TestIBMQIntegration(IBMQTestCase):
         self.assertIsNotNone(job.qobj())
         self.assertIsNotNone(job.result())
 
-        rjob = backend.retrieve_job(job.job_id())
-        with self.assertRaises(IBMQJobApiError) as err_cm:
-            rjob.qobj()
-        self.assertIn('3202', str(err_cm.exception))
+        # Wait a bit for databases to update.
+        time.sleep(2)
 
-        with self.assertRaises(IBMQJobApiError) as err_cm:
-            rjob.result()
-        self.assertIn('3202', str(err_cm.exception))
+        with self.assertRaises(IBMQBackendApiError) as err_cm:
+            backend.retrieve_job(job.job_id())
+        self.assertIn('3250', str(err_cm.exception))
