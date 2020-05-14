@@ -18,12 +18,14 @@
         * QE_TOKEN: default token to use.
         * QE_URL: default url to use.
         * QE_HGP: default hub/group/project to use.
+        * QE_PRIVATE_HGP: hub/group/project to use for private jobs.
         * QE_DEVICE: default device to use.
         * USE_STAGING_CREDENTIALS: True if use staging credentials.
         * QE_STAGING_TOKEN: staging token to use.
         * QE_STAGING_URL: staging url to use.
         * QE_STAGING_HGP: staging hub/group/project to use.
         * QE_STAGING_DEVICE: staging device to use.
+        * QE_STAGING_PRIVATE_HGP: staging hub/group/project to use for private jobs.
 """
 
 import os
@@ -129,11 +131,39 @@ def requires_provider(func):
     @wraps(func)
     @requires_qe_access
     def _wrapper(*args, **kwargs):
-        qe_token = kwargs.pop('qe_token')
-        qe_url = kwargs.pop('qe_url')
-        if not IBMQ.active_account():
-            IBMQ.enable_account(qe_token, qe_url)
+        _enable_account(kwargs.pop('qe_token'), kwargs.pop('qe_url'))
         provider = _get_custom_provider(IBMQ) or list(IBMQ._providers.values())[0]
+        kwargs.update({'provider': provider})
+
+        return func(*args, **kwargs)
+
+    return _wrapper
+
+
+def requires_private_provider(func):
+    """Decorator that signals the test requires a provider for private jobs.
+
+    This decorator appends a `provider` argument to the decorated function.
+
+    Args:
+        func (callable): test function to be decorated.
+
+    Returns:
+        callable: the decorated function.
+    """
+    @wraps(func)
+    @requires_qe_access
+    def _wrapper(*args, **kwargs):
+        _enable_account(kwargs.pop('qe_token'), kwargs.pop('qe_url'))
+
+        # Get the private hub/group/project.
+        hgp = os.getenv('QE_STAGING_PRIVATE_HGP', None) \
+            if os.getenv('USE_STAGING_CREDENTIALS', '') else os.getenv('QE_PRIVATE_HGP', None)
+        if not hgp:
+            raise SkipTest('Requires private provider.')
+
+        hgp = hgp.split('/')
+        provider = IBMQ.get_provider(hub=hgp[0], group=hgp[1], project=hgp[2])
         kwargs.update({'provider': provider})
 
         return func(*args, **kwargs)
@@ -164,10 +194,7 @@ def requires_device(func):
     @requires_qe_access
     def _wrapper(obj, *args, **kwargs):
 
-        qe_token = kwargs.pop('qe_token')
-        qe_url = kwargs.pop('qe_url')
-        if not IBMQ.active_account():
-            IBMQ.enable_account(qe_token, qe_url)
+        _enable_account(kwargs.pop('qe_token'), kwargs.pop('qe_url'))
 
         backend_name = os.getenv('QE_STAGING_DEVICE', None) if \
             os.getenv('USE_STAGING_CREDENTIALS', '') else os.getenv('QE_DEVICE', None)
@@ -246,3 +273,13 @@ def _get_custom_provider(ibmq_factory: IBMQFactory) -> Optional[AccountProvider]
         hgp = hgp.split('/')
         return ibmq_factory.get_provider(hub=hgp[0], group=hgp[1], project=hgp[2])
     return None  # No custom provider.
+
+
+def _enable_account(qe_token: str, qe_url: str) -> None:
+    """Enable the account if one is not already active.
+
+    :param qe_token: API token.
+    :param qe_url: API URL.
+    """
+    if not IBMQ.active_account():
+        IBMQ.enable_account(qe_token, qe_url)
