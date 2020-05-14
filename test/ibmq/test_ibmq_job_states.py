@@ -543,7 +543,7 @@ class QueuedAPI(BaseFakeAPI):
     """Class for emulating a successfully-completed queued API."""
 
     _job_status = [
-        {'status': 'RUNNING', 'info_queue': {'status': 'PENDING_IN_QUEUE'}},
+        {'status': 'QUEUED'},
         {'status': 'RUNNING'},
         {'status': 'COMPLETED'}
     ]
