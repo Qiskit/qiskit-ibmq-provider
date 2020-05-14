@@ -324,8 +324,8 @@ class TestIBMQJobAttributes(JobTestCase):
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
         job = self.sim_backend.run(self.qobj, job_tags=job_tags, validate_qobj=True)
         # TODO No need to wait for job to run once api is fixed
-        # while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
-        #     time.sleep(0.5)
+        while job.status() not in JOB_FINAL_STATES + (JobStatus.RUNNING,):
+            time.sleep(0.5)
 
         rjobs = self.sim_backend.jobs(job_tags=['phantom_tag'])
         self.assertEqual(len(rjobs), 0,
