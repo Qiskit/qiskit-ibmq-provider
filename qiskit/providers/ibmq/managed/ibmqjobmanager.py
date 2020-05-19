@@ -44,13 +44,20 @@ class IBMQJobManager:
     You can use the :meth:`run()` method to submit multiple experiments
     with the Job Manager::
 
+        from qiskit import IBMQ, transpile
         from qiskit.providers.ibmq.managed import IBMQJobManager
         from qiskit.circuit.random import random_circuit
+
+        provider = IBMQ.load_account()
+        backend = provider.get_backend('ibmq_qasm_simulator')
 
         # Build a thousand circuits.
         circs = []
         for _ in range(1000):
-            circs.append(random_circuit(n_qubits=5, depth=4))
+            circs.append(random_circuit(num_qubits=5, depth=4, measure=True))
+
+        # Need to transpile the circuits first.
+        circs = transpile(circs, backend=backend)
 
         # Use Job Manager to break the circuits into multiple jobs.
         job_manager = IBMQJobManager()
