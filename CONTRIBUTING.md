@@ -190,8 +190,8 @@ notes will look like for the current state of the repo you can run:
 and the release notes in particular will be located at
 `docs/_build/html/release_notes.html`
 
-## Installing Qiskit Terra from source
-Please see the [Installing Qiskit Terra from
+## Installing Qiskit IBMQ Provider from source
+Please see the [Installing IBM Quantum Provider from
 Source](https://qiskit.org/documentation/contributing_to_qiskit.html#installing-ibm-quantum-provider-from-source)
 section of the Qiskit documentation.
 
