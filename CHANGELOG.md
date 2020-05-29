@@ -18,7 +18,8 @@ The format is based on [Keep a Changelog].
 
 ### Fixed
 
-- `backend.jobs(status='RUNNING')` now returns the correct jobs. (\#669) 
+- `backend.jobs(status='RUNNING')` now returns the correct jobs. (\#669)
+- Fixed `setup.py` to match `requirements.txt`. (\#677)  
 
 ## [0.7.1] - 2020-05-13
 
