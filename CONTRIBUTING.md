@@ -1,179 +1,200 @@
 Contributing
 ============
 
-**We appreciate all kinds of help, so thank you!**
+First read the overall project contributing guidelines. These are all
+included in the qiskit documentation:
+
+https://qiskit.org/documentation/contributing_to_qiskit.html
+
 
 Contributing Qiskit IBMQ Provider
 ---------------------------
 
-You can contribute in many ways to this project.
+In addition to the general guidelines there are specific details for
+contributing to the IBMQ Provider, these are documented below.
 
-### Issue reporting
-
-This is a good point to start, when you find a problem please add it to
-the [issue
-tracker](https://github.com/Qiskit/qiskit-ibmq-provider/issues). The
-ideal report should include the steps to reproduce it.
-
-### Doubts solving
-
-To help less advanced users is another wonderful way to start. You can
-help us close some opened issues. This kind of tickets should be labeled
-as `question`.
-
-### Improvement proposal
-
-If you have an idea for a new feature please open a ticket labeled as
-`enhancement`. If you could also add a piece of code with the idea or a
-partial implementation it would be awesome.
-
-### Contributor License Agreement
-
-We\'d love to accept your code! Before we can, we have to get a few
-legal requirements sorted out. By signing a contributor license
-agreement (CLA), we ensure that the community is free to use your
-contributions.
-
-When you contribute to the project with a new pull request, a bot will
-evaluate whether you have signed the CLA. If required, the bot will
-comment on the pull request, including a link to accept the agreement.
-The [individual CLA](https://qiskit.org/license/qiskit-cla.pdf) document
-is available for review as a PDF.
-
-**Note:**
-> If you work for a company that wants to allow you to contribute
-> your work, then you will need to sign a [corporate CLA](https://qiskit.org/license/qiskit-corporate-cla.pdf) 
-> and email it to us at <qiskit@us.ibm.com>.
-
-### Good first contributions
-
-You are welcome to contribute wherever in the code you want to, of
-course, but we recommend taking a look at the 
-[`good first contribution`
-](https://github.com/Qiskit/qiskit-ibmq-provider/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+) 
-label into the issues and pick one. We would love to mentor you!
-
-### Documentation
-
-Review the parts of the documentation regarding the new changes and
-update it if it\'s needed.
-
-### Pull requests
-
-We use [GitHub pull requests](https://help.github.com/articles/about-pull-requests) 
-to accept the contributions.
-
-A friendly reminder! We\'d love to have a previous discussion about the
-best way to implement the feature/bug you are contributing with. This is
-a good way to improve code quality in our beloved Qiskit!, so remember
-to file a new Issue before starting to code for a solution.
-
-So after having discussed the best way to land your changes into the
-codebase, you are ready to start coding (yay!). We have two options
-here:
-
-1.  You think your implementation doesn\'t introduce a lot of code,
-    right?. Ok, no problem, you are all set to create the PR once you
-    have finished coding. We are waiting for it!
-2.  Your implementation does introduce many things in the codebase. That
-    sounds great! Thanks!. In this case you can start coding and create
-    a PR with the word: **\[WIP\]** as a prefix of the description. This
-    means \"Work In Progress\", and allow reviewers to make micro
-    reviews from time to time without waiting for the big and final
-    solution\... otherwise, it would make reviewing and coming changes
-    pretty difficult to accomplish. The reviewer will remove the
-    **\[WIP\]** prefix from the description once the PR is ready to
-    merge.
-
-#### Pull request checklist
+### Pull request checklist
 
 When submitting a pull request and you feel it is ready for review,
-please double check that:
+please ensure that:
 
--   the code follows the code style of the project. For convenience, you
-    can execute `make style` and `make lint` locally, which will print
-    potential style warnings and fixes.
--   the documentation has been updated accordingly. In particular, if a
-    function or class has been modified during the PR, please update the
-    docstring accordingly.
--   your contribution passes the existing tests, and if developing a new
-    feature, that you have added new tests that cover those changes.
--   you add a new line to the `CHANGELOG.rst` file, in the `UNRELEASED`
-    section, with the title of your pull request and its identifier (for
-    example, \"`Replace OldComponent with FluxCapacitor (#123)`\".
+1. The code follows the code style of the project and successfully
+   passes the tests. For convenience, you can execute `tox` locally,
+   which will run these checks and report any issues.
+2. The documentation has been updated accordingly. In particular, if a
+   function or class has been modified during the PR, please update the
+   *docstring* accordingly.
+3. If it makes sense for your change that you have added new tests that
+   cover the changes.
+4. Ensure that if your change has an end user facing impact (new feature,
+   deprecation, removal etc) that you have added a reno release note for that
+   change and that the PR is tagged for the changelog.
 
-#### Commit messages
+### Changelog generation
 
-Please follow the next rules for the commit messages:
+The changelog is automatically generated as part of the release process
+automation. This works through a combination of the git log and the pull
+request. When a release is tagged and pushed to github the release automation
+bot looks at all commit messages from the git log for the release. It takes the
+PR numbers from the git log (assuming a squash merge) and checks if that PR had
+a `Changelog:` label on it. If there is a label it will add the git commit
+message summary line from the git log for the release to the changelog.
 
--   It should include a reference to the issue ID in the first line of
-    the commit, **and** a brief description of the issue, so everybody
-    knows what this ID actually refers to without wasting to much time
-    on following the link to the issue.
--   It should provide enough information for a reviewer to understand
-    the changes and their relation to the rest of the code.
+If there are multiple `Changelog:` tags on a PR the git commit message summary
+line from the git log will be used for each changelog category tagged.
 
-A good example:
+The current categories for each label are as follows:
 
-``` {.text}
-Issue #190: Short summary of the issue
-* One of the important changes
-* Another important change
+| PR Label               | Changelog Category |
+| -----------------------|--------------------|
+| Changelog: Deprecation | Deprecated         |
+| Changelog: New Feature | Added              |
+| Changelog: API Change  | Changed            |
+| Changelog: Removal     | Removed            |
+| Changelog: Bugfix      | Fixed              |
+
+### Release Notes
+
+When making any end user facing changes in a contribution we have to make sure
+we document that when we release a new version of qiskit-ibmq-provider. The
+expectation is that if your code contribution has user facing changes that you
+will write the release documentation for these changes. This documentation must
+explain what was changed, why it was changed, and how users can either use or
+adapt to the change. The idea behind release documentation is that when a naive
+user with limited internal knowledege of the project is upgrading from the
+previous release to the new one, they should be able to read the release notes,
+understand if they need to update their program which uses qiskit, and how they
+would go about doing that. It ideally should explain why they need to make
+this change too, to provide the necessary context.
+
+To make sure we don't forget a release note or if the details of user facing
+changes over a release cycle we require that all user facing changes include
+documentation at the same time as the code. To accomplish this we use the
+[reno](https://docs.openstack.org/reno/latest/) tool which enables a git based
+workflow for writing and compiling release notes.
+
+#### Adding a new release note
+
+Making a new release note is quite straightforward. Ensure that you have reno
+installed with::
+
+    pip install -U reno
+
+Once you have reno installed you can make a new release note by running in
+your local repository checkout's root::
+
+    reno new short-description-string
+
+where short-description-string is a brief string (with no spaces) that describes
+what's in the release note. This will become the prefix for the release note
+file. Once that is run it will create a new yaml file in releasenotes/notes.
+Then open that yaml file in a text editor and write the release note. The basic
+structure of a release note is restructured text in yaml lists under category
+keys. You add individual items under each category and they will be grouped
+automatically by release when the release notes are compiled. A single file
+can have as many entries in it as needed, but to avoid potential conflicts
+you'll want to create a new file for each pull request that has user facing
+changes. When you open the newly created file it will be a full template of
+the different categories with a description of a category as a single entry
+in each category. You'll want to delete all the sections you aren't using and
+update the contents for those you are. For example, the end result should
+look something like::
+
+```yaml
+features:
+  - |
+    Introduced a new feature foo, that adds support for doing something to
+    ``QuantumCircuit`` objects. It can be used by using the foo function,
+    for example::
+
+      from qiskit import foo
+      from qiskit import QuantumCircuit
+      foo(QuantumCircuit())
+
+  - |
+    The ``qiskit.QuantumCircuit`` module has a new method ``foo()``. This is
+    the equivalent of calling the ``qiskit.foo()`` to do something to your
+    QuantumCircuit. This is the equivalent of running ``qiskit.foo()`` on
+    your circuit, but provides the convenience of running it natively on
+    an object. For example::
+
+      from qiskit import QuantumCircuit
+
+      circ = QuantumCircuit()
+      circ.foo()
+
+deprecations:
+  - |
+    The ``qiskit.bar`` module has been deprecated and will be removed in a
+    future release. Its sole function, ``foobar()`` has been superseded by the
+    ``qiskit.foo()`` function which provides similar functionality but with
+    more accurate results and better performance. You should update your calls
+    ``qiskit.bar.foobar()`` calls to ``qiskit.foo()``.
 ```
 
-Code
-----
+You can also look at other release notes for other examples.
 
-This section include some tips that will help you to push source code.
+You can use any restructured text feature in them (code sections, tables,
+enumerated lists, bulleted list, etc) to express what is being changed as
+needed. In general you want the release notes to include as much detail as
+needed so that users will understand what has changed, why it changed, and how
+they'll have to update their code.
 
-**Note:**
-> We recommend using a self-contained environment, 
-> such as [Python virtual environments](https://docs.python.org/3/tutorial/venv.html) 
-> or [Anaconda](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html)
-> environments, to cleanly separate Qiskit from other applications 
-> and improve your experience.
+After you've finished writing your release notes you'll want to add the note
+file to your commit with `git add` and commit them to your PR branch to make
+sure they're included with the code in your PR.
 
-### Setup with Conda virtual environment
+##### Linking to issues
 
-Issue the following command to create and activate the virtual environment:
+If you need to link to an issue or other github artifact as part of the release
+note this should be done using an inline link with the text being the issue
+number. For example you would write a release note with a link to issue 12345
+as:
 
-``` {.sh}
-$ conda create -y -n QiskitDevenv python=3
-$ conda activate QiskitDevenv
+```yaml
+fixes:
+  - |
+    Fixes a race condition in the function ``foo()``. Refer to
+    `#12345 <https://github.com/Qiskit/qiskit-ibmq-provider/issues/12345>`_ for
+    more details.
 ```
 
-### Setup with Python virtual environment
+#### Generating the release notes
 
-Issue the following command to create a virtual environment:
+After release notes have been added if you want to see what the full output of
+the release notes. In general the output from reno that we'll get is a rst
+(ReStructuredText) file that can be compiled by
+[sphinx](https://www.sphinx-doc.org/en/master/). To generate the rst file you
+use the ``reno report`` command. If you want to generate the full ibmq provider
+release notes for all releases (since we started using reno during 0.9) you just
+run::
 
-```{.sh}
-$ python -m venv QiskitDevenv
-```
+    reno report
 
-#### Linux and Mac
+but you can also use the ``--version`` argument to view a single release (after
+it has been tagged::
 
-Issue the following command to activate the virtual environment:
+    reno report --version 0.9.0
 
-```{.sh}
-$ source QiskitDevenv/bin/activate
-```
+At release time ``reno report`` is used to generate the release notes for the
+release and the output will be submitted as a pull request to the documentation
+repository's [release notes file](
+https://github.com/Qiskit/qiskit/blob/master/docs/release_notes.rst)
 
-#### Windows
+#### Building release notes locally
 
-Issue the following command to activate the virtual environment:
+Building The release notes are part of the standard qiskit-ibmq-provider
+documentation builds. To check what the rendered html output of the release
+notes will look like for the current state of the repo you can run:
+`tox -edocs` which will build all the documentation into `docs/_build/html`
+and the release notes in particular will be located at
+`docs/_build/html/release_notes.html`
 
-```{.sh}
-$ QiskitDevenv\Scripts\activate.bat
-```
+## Installing Qiskit IBMQ Provider from source
+Please see the [Installing IBM Quantum Provider from
+Source](https://qiskit.org/documentation/contributing_to_qiskit.html#installing-ibm-quantum-provider-from-source)
+section of the Qiskit documentation.
 
-For the python code, we need some libraries that can be installed in
-this way:
-
-``` {.sh}
-$ cd qiskit-ibmq-provider
-$ pip install -r requirements.txt
-$ pip install -r requirements-dev.txt
-```
 
 ### Test
 
@@ -255,59 +276,46 @@ out$> make style
 out$> make mypy
 ```
 
-Development cycle
------------------
+### Development Cycle
 
-Our development cycle is straightforward, we define a roadmap with
-milestones for releases, and features that we want to include in these
-releases. The roadmap is not public at the moment, but it\'s a committed
-project in our community and we are working to make parts of it public
-in a way that can be beneficial for everyone. Whenever a new release is
-close to be launched, we\'ll announce it and detail what has changed
-since the latest version. The channels we\'ll use to announce new
-releases are still being discussed, but for now you can [follow
-us](https://twitter.com/qiskit) on Twitter!
+The development cycle for qiskit-ibmq-provider  is all handled in the open using
+the project boards in Github for project management. We use milestones
+in Github to track work for specific releases. The features or other changes
+that we want to include in a release will be tagged and discussed in Github.
+As we're preparing a new release we'll document what has changed since the
+previous version in the release notes.
 
-### Branch model
+### Branches
 
-There are two main branches in the repository:
+* `master`:
 
--   `master`
-    -   This is the development branch.
-    -   Next release is going to be developed here. For example, if the
-        current latest release version is r1.0.3, the master branch
-        version will point to r1.1.0 (or r2.0.0).
-    -   You should expect this branch to be updated very frequently.
-    -   Even though we are always doing our best to not push code that
-        breaks things, is more likely to eventually push code that
-        breaks something\... we will fix it ASAP, promise :).
-    -   This should not be considered as a stable branch to use in
-        production environments.
-    -   The API of Qiskit could change without prior notice.
--   `stable`
-    -   This is our stable release branch.
-    -   It\'s always synchronized with the latest distributed package,
-        as for now, the package you can download from pip.
-    -   The code in this branch is well tested and should be free of
-        errors (unfortunately sometimes it\'s not).
-    -   This is a stable branch (as the name suggest), meaning that you
-        can expect stable software ready for production environments.
-    -   All the tags from the release versions are created from this
-        branch.
+The master branch is used for development of the next version of qiskit-ibmq-provider.
+It will be updated frequently and should not be considered stable. The API
+can and will change on master as we introduce and refine new features.
+
+* `stable/*` branches:
+Branches under `stable/*` are used to maintain released versions of qiskit-ibmq-provider.
+It contains the version of the code corresponding to the latest release for
+that minor version on pypi. For example, stable/0.8 contains the code for the
+0.8.2 release on pypi. The API on these branches are stable and the only changes
+merged to it are bugfixes.
 
 ### Release cycle
 
-From time to time, we will release brand new versions of the package.
-These are well-tested versions of the software.
+When it is time to release a new minor version of qiskit-ibmq-provider we will:
 
-When the time for a new release has come, we will:
+1.  Create a new tag with the version number and push it to github
+2.  Change the `master` version to the next release version.
 
-1.  Merge the `master` branch with the `stable` branch.
-2.  Create a new tag with the version number in the `stable` branch.
-3.  Crate and distribute the pip package.
-4.  Change the `master` version to the next release version.
-5.  Announce the new version to the world!
+The release automation processes will be triggered by the new tag and perform
+the following steps:
 
-The `stable` branch should only receive changes in the form of bug
-fixes, so the third version number (the maintenance number:
-\[major\].\[minor\].\[maintenance\]) will increase on every new change.
+1.  Create a stable branch for the new minor version from the release tag
+    on the `master` branch
+2.  Build and upload binary wheels to pypi
+3.  Create a github release page with a generated changelog
+4.  Generate a PR on the meta-repository to bump the ibmq provider version and
+    meta-package version.
+
+The `stable/*` branches should only receive changes in the form of bug
+fixes.

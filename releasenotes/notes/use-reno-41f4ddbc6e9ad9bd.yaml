@@ -1,0 +1,13 @@
+---
+fixes:
+  - |
+    :meth:`qiskit.provider.ibmq.IBMQBackend.jobs` will now return the correct
+    list of :class:`~qiskit.provider.ibmq.job.IBMQJob` objects when the
+    ``status`` kwarg is set to ``'RUNNING'``.
+  - |
+    The package metadata has been updated to properly reflect the dependency
+    on ``qiskit-terra`` >= 0.14.0. This dependency was implicitly added as
+    part of the 0.7.0 release but was not reflected in the package requirements
+    so it was previously possible to install ``qiskit-ibmq-provider`` with a
+    version of ``qiskit-terra`` which was too old. Fixes
+    `#677 <https://github.com/Qiskit/qiskit-ibmq-provider/issues/677>`_
