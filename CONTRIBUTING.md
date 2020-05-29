@@ -192,7 +192,7 @@ and the release notes in particular will be located at
 
 ## Installing Qiskit Terra from source
 Please see the [Installing Qiskit Terra from
-Source](https://qiskit.org/documentation/contributing_to_qiskit.html#installing-terra-from-source)
+Source](https://qiskit.org/documentation/contributing_to_qiskit.html#installing-ibm-quantum-provider-from-source)
 section of the Qiskit documentation.
 
 
