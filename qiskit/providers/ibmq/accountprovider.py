@@ -132,13 +132,12 @@ class AccountProvider(BaseProvider):
                     provider=self,
                     credentials=self.credentials,
                     api=self._api)
-            except TypeError as ex:
+            except (TypeError, ValueError) as ex:
                 logger.warning(
                     'Remote backend "%s" could not be instantiated due to an '
-                    'invalid config: %s',
-                    raw_config.get('backend_name',
-                                   raw_config.get('name', 'unknown')),
-                    ex)
+                    'invalid config: %s: %s',
+                    raw_config.get('backend_name', raw_config.get('name', 'unknown')),
+                    type(ex).__name__, ex)
 
         return ret
 
