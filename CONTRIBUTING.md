@@ -156,7 +156,7 @@ fixes:
   - |
     Fixes a race condition in the function ``foo()``. Refer to
     `#12345 <https://github.com/Qiskit/qiskit-ibmq-provider/issues/12345>`_ for
-	more details.
+    more details.
 ```
 
 #### Generating the release notes
