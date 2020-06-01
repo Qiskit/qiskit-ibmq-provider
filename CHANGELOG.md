@@ -14,6 +14,13 @@ The format is based on [Keep a Changelog].
 > - **Security**: in case of vulnerabilities.
 
 
+## [0.7.2] - 2020-06-01
+
+### Fixed
+
+- `backend.jobs(status='RUNNING')` now returns the correct jobs. (\#669)
+- Fixed `setup.py` to match `requirements.txt`. (\#678)  
+
 ## [0.7.1] - 2020-05-13
 
 ### Fixed
@@ -417,6 +424,7 @@ The format is based on [Keep a Changelog].
 - Support for non-qobj format has been removed. (\#26, \#28)
 
 
+[0.7.2]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.7.1...0.7.2
 [0.7.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.1...0.7.0
 [0.6.1]: https://github.com/Qiskit/qiskit-ibmq-provider/compare/0.6.0...0.6.1
