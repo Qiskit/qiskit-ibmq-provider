@@ -132,7 +132,7 @@ class AccountProvider(BaseProvider):
                     provider=self,
                     credentials=self.credentials,
                     api=self._api)
-            except (TypeError, ValueError) as ex:
+            except Exception as ex:  # pylint: disable=broad-except
                 logger.warning(
                     'Remote backend "%s" could not be instantiated due to an '
                     'invalid config: %s: %s',
