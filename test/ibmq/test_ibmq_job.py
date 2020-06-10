@@ -231,8 +231,9 @@ class TestIBMQJob(JobTestCase):
         # Get a second backend.
         backend_2 = None
         provider = backend.provider()
-        for backend_2 in provider.backends():
-            if backend_2.status().operational and backend_2.name() != backend_1.name():
+        for backend in provider.backends():
+            if backend.status().operational and backend.name() != backend_1.name():
+                backend_2 = backend
                 break
         if not backend_2:
             raise SkipTest('Skipping test that requires multiple backends')
@@ -513,7 +514,7 @@ class TestIBMQJob(JobTestCase):
 
     def test_retrieve_from_retired_backend(self):
         """Test retrieving a job from a retired backend."""
-        saved_backends = self.provider._backends
+        saved_backends = copy.copy(self.provider._backends)
         try:
             del self.provider._backends[self.sim_backend.name()]
             new_job = self.provider.backends.retrieve_job(self.sim_job.job_id())
