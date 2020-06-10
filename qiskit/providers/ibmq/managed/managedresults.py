@@ -15,10 +15,10 @@
 """Results managed by the Job Manager."""
 
 from typing import List, Optional, Union, Tuple, Dict
-# TODO Use TYPE_CHECKING instead of pylint disable after dropping python 3.5
-import numpy  # pylint: disable=unused-import
 import copy
 
+# TODO Use TYPE_CHECKING instead of pylint disable after dropping python 3.5
+import numpy  # pylint: disable=unused-import
 from qiskit.result import Result
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
@@ -57,7 +57,7 @@ class ManagedResults:
         self._job_set = job_set
         self.backend_name = backend_name
         self.success = success
-        self._combined_results = None  # Used for caching.
+        self._combined_results = None  # type: Result
 
     def data(self, experiment: Union[str, QuantumCircuit, Schedule, int]) -> Dict:
         """Get the raw data for an experiment.
