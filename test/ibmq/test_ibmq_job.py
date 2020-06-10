@@ -231,9 +231,9 @@ class TestIBMQJob(JobTestCase):
         # Get a second backend.
         backend_2 = None
         provider = backend.provider()
-        for backend in provider.backends():
-            if backend.status().operational and backend.name() != backend_1.name():
-                backend_2 = backend
+        for my_backend in provider.backends():
+            if my_backend.status().operational and my_backend.name() != backend_1.name():
+                backend_2 = my_backend
                 break
         if not backend_2:
             raise SkipTest('Skipping test that requires multiple backends')
