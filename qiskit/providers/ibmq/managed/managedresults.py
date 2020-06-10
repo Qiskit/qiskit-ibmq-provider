@@ -17,6 +17,7 @@
 from typing import List, Optional, Union, Tuple, Dict
 # TODO Use TYPE_CHECKING instead of pylint disable after dropping python 3.5
 import numpy  # pylint: disable=unused-import
+import copy
 
 from qiskit.result import Result
 from qiskit.circuit import QuantumCircuit
@@ -56,6 +57,7 @@ class ManagedResults:
         self._job_set = job_set
         self.backend_name = backend_name
         self.success = success
+        self._combined_results = None  # Used for caching.
 
     def data(self, experiment: Union[str, QuantumCircuit, Schedule, int]) -> Dict:
         """Get the raw data for an experiment.
@@ -172,6 +174,35 @@ class ManagedResults:
         """
         result, exp_index = self._get_result(experiment)
         return result.get_unitary(experiment=exp_index, decimals=decimals)
+
+    def to_result(self) -> Result:
+        """Combine results from all jobs into a single `Result`.
+
+        Note:
+            Since the order of the results must match the order of the initial
+            experiments, job results can only be combined if all jobs succeeded.
+
+        Returns:
+            A :class:`~qiskit.result.Result` object that contains results from
+                all jobs.
+        Raises:
+            IBMQManagedResultDataNotAvailable: If results cannot be combined
+                because some jobs failed.
+        """
+        if self._combined_results:
+            return self._combined_results
+
+        if not self.success:
+            raise IBMQManagedResultDataNotAvailable(
+                "Results cannot be combined since some of the jobs failed.")
+
+        jobs = self._job_set.jobs()
+        combined_result = copy.deepcopy(jobs[0].result())
+        for idx in range(1, len(jobs)):
+            combined_result.results.extend(jobs[idx].result().results)
+
+        self._combined_results = combined_result
+        return combined_result
 
     def _get_result(
             self,

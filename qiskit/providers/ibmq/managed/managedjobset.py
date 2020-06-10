@@ -232,7 +232,8 @@ class ManagedJobSet:
     def results(
             self,
             timeout: Optional[float] = None,
-            partial: bool = False
+            partial: bool = False,
+            refresh: bool = False
     ) -> ManagedResults:
         """Return the results of the jobs.
 
@@ -272,6 +273,8 @@ class ManagedJobSet:
         Args:
            timeout: Number of seconds to wait for job results.
            partial: If ``True``, attempt to retrieve partial job results.
+           refresh: If ``True``, re-query the server for the result. Otherwise
+                return the cached value.
 
         Returns:
             A :class:`ManagedResults`
@@ -282,7 +285,7 @@ class ManagedJobSet:
             IBMQJobManagerTimeoutError: if unable to retrieve all job results before the
                 specified timeout.
         """
-        if self._managed_results is not None:
+        if self._managed_results is not None and not refresh:
             return self._managed_results
 
         start_time = time.time()
@@ -292,7 +295,7 @@ class ManagedJobSet:
         # TODO We can potentially make this multithreaded
         for mjob in self._managed_jobs:
             try:
-                result = mjob.result(timeout=timeout, partial=partial)
+                result = mjob.result(timeout=timeout, partial=partial, refresh=refresh)
                 if result is None or not result.success:
                     success = False
             except IBMQJobTimeoutError as ex:
