@@ -421,6 +421,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
         managed_results_methods = self._get_class_methods(ManagedResults)
         self.assertTrue(managed_results_methods)
+        del managed_results_methods['to_result']
 
         # Ensure both classes share the *exact* same public methods.
         self.assertEqual(result_methods.keys(), managed_results_methods.keys())
