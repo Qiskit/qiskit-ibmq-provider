@@ -545,7 +545,8 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(cached_result, result)
         self.assertNotEqual(result.results[0].header.name, 'modified_result')
 
-    def test_wait_for_final_state(self):
+    @requires_device
+    def test_wait_for_final_state(self, backend):
         """Test waiting for job to reach final state."""
 
         def final_state_callback(c_job_id, c_status, c_job, **kwargs):
@@ -556,7 +557,7 @@ class TestIBMQJob(JobTestCase):
             self.assertIn('queue_info', kwargs)
 
             queue_info = kwargs.pop('queue_info', None)
-            callback_info['called'] = True
+            callback_info['count'] += 1
 
             if wait_time is None:
                 # Look for status change.
@@ -570,21 +571,25 @@ class TestIBMQJob(JobTestCase):
                         time.time() - callback_info['last call time'], wait_time, delta=0.2)
                 callback_info['last call time'] = time.time()
 
-        # Put callback data in a dictionary to make it mutable.
-        callback_info = {'called': False, 'last call time': 0.0, 'last data': {}}
-        qc = get_large_circuit(self.sim_backend)
-        qobj = assemble(transpile(qc, backend=self.sim_backend), backend=self.sim_backend)
+            # Cancel after 3 calls
+            if callback_info['count'] > 3:
+                cancel_job(c_job)
+                callback_info['last call time'] = 0.0
+
+        qc = get_large_circuit(backend)
+        qobj = assemble(transpile(qc, backend=backend), backend=backend)
 
         wait_args = [0.5, None]
         for wait_time in wait_args:
             with self.subTest(wait_time=wait_time):
-                callback_info = {'called': False, 'last call time': 0.0, 'last data': {}}
-                job = self.sim_backend.run(qobj, validate_qobj=True)
+                # Put callback data in a dictionary to make it mutable.
+                callback_info = {'count': 0, 'last call time': 0.0, 'last data': {}}
+                job = backend.run(qobj, validate_qobj=True)
                 try:
-                    job.wait_for_final_state(timeout=30, wait=wait_time,
+                    job.wait_for_final_state(timeout=90, wait=wait_time,
                                              callback=final_state_callback)
                     self.assertTrue(job.in_final_state())
-                    self.assertTrue(callback_info['called'])
+                    self.assertTrue(callback_info['count'])
                 finally:
                     # Ensure all threads ended.
                     for thread in job._executor._threads:
