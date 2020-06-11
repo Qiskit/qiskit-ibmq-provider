@@ -175,7 +175,7 @@ class ManagedResults:
         result, exp_index = self._get_result(experiment)
         return result.get_unitary(experiment=exp_index, decimals=decimals)
 
-    def to_result(self) -> Result:
+    def combine_results(self) -> Result:
         """Combine results from all jobs into a single `Result`.
 
         Note:
