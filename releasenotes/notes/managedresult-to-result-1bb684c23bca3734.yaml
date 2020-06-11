@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    :class:`~qiskit.providers.ibmq.managed.ManagedResults` now has a new
+    :meth:`~qiskit.providers.ibmq.managed.ManagedResults.combine_results` method
+    that combines results from all managed jobs and returns a single
+    :class:`~qiskit.result.Result` object. This ``Result`` object can
+    be used, for example, in ``qiskit-ignis`` fitter methods.

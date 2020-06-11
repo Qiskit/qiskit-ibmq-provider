@@ -162,13 +162,16 @@ class ManagedJob:
     def result(
             self,
             timeout: Optional[float] = None,
-            partial: bool = False
+            partial: bool = False,
+            refresh: bool = False
     ) -> Optional[Result]:
         """Return the result of the job.
 
         Args:
            timeout: Number of seconds to wait for job.
            partial: If ``True``, attempt to retrieve partial job results.
+           refresh: If ``True``, re-query the server for the result. Otherwise
+                return the cached value.
 
         Returns:
             Job result or ``None`` if result could not be retrieved.
@@ -180,7 +183,7 @@ class ManagedJob:
         result = None
         if self.job is not None:
             try:
-                result = self.job.result(timeout=timeout, partial=partial)
+                result = self.job.result(timeout=timeout, partial=partial, refresh=refresh)
             except IBMQJobTimeoutError:
                 raise
             except JobError as err:
