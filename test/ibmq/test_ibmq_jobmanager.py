@@ -397,6 +397,17 @@ class TestIBMQJobManager(IBMQTestCase):
         with self.assertRaises(IBMQManagedResultDataNotAvailable):
             result_manager.get_counts(1)
 
+    def test_combine_results(self):
+        """Test converting ManagedResult to Result."""
+        max_per_job = 5
+        job_set = self._jm.run([self._qc]*max_per_job*2, backend=self.fake_api_backend,
+                               max_experiments_per_job=max_per_job)
+        result_manager = job_set.results()
+        combined_result = result_manager.combine_results()
+
+        for i in range(max_per_job*2):
+            self.assertEqual(result_manager.get_counts(i), combined_result.get_counts(i))
+
     def test_ibmq_managed_results_signature(self):
         """Test ``ManagedResults`` and ``Result`` contain the same public methods.
 
@@ -410,6 +421,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
         managed_results_methods = self._get_class_methods(ManagedResults)
         self.assertTrue(managed_results_methods)
+        del managed_results_methods['combine_results']
 
         # Ensure both classes share the *exact* same public methods.
         self.assertEqual(result_methods.keys(), managed_results_methods.keys())
