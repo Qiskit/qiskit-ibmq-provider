@@ -18,6 +18,7 @@ import time
 import copy
 from datetime import datetime, timedelta
 from unittest import SkipTest
+from threading import Thread, Event
 
 import numpy
 from scipy.stats import chi2_contingency
@@ -231,8 +232,9 @@ class TestIBMQJob(JobTestCase):
         # Get a second backend.
         backend_2 = None
         provider = backend.provider()
-        for backend_2 in provider.backends():
-            if backend_2.status().operational and backend_2.name() != backend_1.name():
+        for my_backend in provider.backends():
+            if my_backend.status().operational and my_backend.name() != backend_1.name():
+                backend_2 = my_backend
                 break
         if not backend_2:
             raise SkipTest('Skipping test that requires multiple backends')
@@ -513,7 +515,7 @@ class TestIBMQJob(JobTestCase):
 
     def test_retrieve_from_retired_backend(self):
         """Test retrieving a job from a retired backend."""
-        saved_backends = self.provider._backends
+        saved_backends = copy.copy(self.provider._backends)
         try:
             del self.provider._backends[self.sim_backend.name()]
             new_job = self.provider.backends.retrieve_job(self.sim_job.job_id())
@@ -544,7 +546,8 @@ class TestIBMQJob(JobTestCase):
         self.assertEqual(cached_result, result)
         self.assertNotEqual(result.results[0].header.name, 'modified_result')
 
-    def test_wait_for_final_state(self):
+    @requires_device
+    def test_wait_for_final_state(self, backend):
         """Test waiting for job to reach final state."""
 
         def final_state_callback(c_job_id, c_status, c_job, **kwargs):
@@ -569,21 +572,28 @@ class TestIBMQJob(JobTestCase):
                         time.time() - callback_info['last call time'], wait_time, delta=0.2)
                 callback_info['last call time'] = time.time()
 
-        # Put callback data in a dictionary to make it mutable.
-        callback_info = {'called': False, 'last call time': 0.0, 'last data': {}}
-        qc = get_large_circuit(self.sim_backend)
-        qobj = assemble(transpile(qc, backend=self.sim_backend), backend=self.sim_backend)
+        def job_canceller(job_, exit_event, wait):
+            exit_event.wait(wait)
+            cancel_job(job_)
 
-        wait_args = [0.5, None]
+        qc = get_large_circuit(backend)
+        qobj = assemble(transpile(qc, backend=backend), backend=backend)
+
+        wait_args = [5, None]
         for wait_time in wait_args:
             with self.subTest(wait_time=wait_time):
+                # Put callback data in a dictionary to make it mutable.
                 callback_info = {'called': False, 'last call time': 0.0, 'last data': {}}
-                job = self.sim_backend.run(qobj, validate_qobj=True)
+                cancel_event = Event()
+                job = backend.run(qobj, validate_qobj=True)
+                # Cancel the job after a while.
+                Thread(target=job_canceller, args=(job, cancel_event, 60), daemon=True).start()
                 try:
-                    job.wait_for_final_state(timeout=30, wait=wait_time,
+                    job.wait_for_final_state(timeout=90, wait=wait_time,
                                              callback=final_state_callback)
                     self.assertTrue(job.in_final_state())
                     self.assertTrue(callback_info['called'])
+                    cancel_event.set()
                 finally:
                     # Ensure all threads ended.
                     for thread in job._executor._threads:
