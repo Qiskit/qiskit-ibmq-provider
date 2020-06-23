@@ -248,11 +248,7 @@ class IBMQBackendService(SimpleNamespace):
             # Rather than overriding the logical operators `and`/`or`, first
             # check to see if the `api_filter` query should be extended with the
             # `api_filter` query for the same keys instead.
-            logical_operators_to_expand = ['or', 'and']
-            for key in db_filter:
-                key = key.lower()
-                if key in logical_operators_to_expand and key in api_filter:
-                    api_filter[key].extend(db_filter[key])
+            self._merge_logical_filters(api_filter, db_filter)
 
             # Argument filters takes precedence over db_filter for same keys
             api_filter = {**db_filter, **api_filter}
@@ -290,18 +286,23 @@ class IBMQBackendService(SimpleNamespace):
             api_filter = copy.deepcopy(initial_filter)
             cur_dt_filter = api_filter.pop('creationDate', {})
             if descending:
-                api_filter['creationDate'] = self._get_creation_date_filter(
+                new_dt_filter = self._get_creation_date_filter(
                     cur_dt_filter=cur_dt_filter, lte_dt=last_job['creation_date'])
             else:
-                api_filter['creationDate'] = self._get_creation_date_filter(
+                new_dt_filter = self._get_creation_date_filter(
                     cur_dt_filter=cur_dt_filter, gte_dt=last_job['creation_date'])
+            if not cur_dt_filter:
+                api_filter['creationDate'] = new_dt_filter
+            else:
+                self._merge_logical_filters(
+                    api_filter, {'and': [{'creationDate': new_dt_filter}, cur_dt_filter]})
 
-            cur_id_filter = api_filter.pop('id', {})
-            api_filter['id'] = {'nin': [last_job['job_id']]}
-            if 'neq' in cur_id_filter:
-                api_filter['id']['nin'].append(cur_id_filter['neq'])
-            if 'nin' in cur_id_filter:
-                api_filter['id']['nin'].extend(cur_id_filter['nin'])
+            if 'id' not in api_filter:
+                api_filter['id'] = {'nin': [last_job['job_id']]}
+            else:
+                new_id_filter = {'and': [{'id': {'nin': [last_job['job_id']]}},
+                                         {'id': api_filter.pop('id')}]}
+                self._merge_logical_filters(api_filter, new_id_filter)
 
         job_list = []
         for job_info in job_responses:
@@ -325,6 +326,24 @@ class IBMQBackendService(SimpleNamespace):
 
         return job_list
 
+    def _merge_logical_filters(self, cur_filter: Dict, new_filter: Dict) -> None:
+        """Merge the logical operators in the input filters.
+
+        Args:
+            cur_filter: Current filter.
+            new_filter: New filter to be merged into ``cur_filter``.
+
+        Returns:
+            ``cur_filter`` with ``new_filter``'s logical operators merged into it.
+        """
+        logical_operators_to_expand = ['or', 'and']
+        for key in logical_operators_to_expand:
+            if key in new_filter:
+                if key in cur_filter:
+                    cur_filter[key].extend(new_filter[key])
+                else:
+                    cur_filter[key] = new_filter[key]
+
     def _get_creation_date_filter(
             self,
             cur_dt_filter: Dict[str, Any],
@@ -342,14 +361,16 @@ class IBMQBackendService(SimpleNamespace):
             Updated creation date filter.
         """
         if not gte_dt:
-            gt_list = [cur_dt_filter[gt_op] for gt_op in ['gt', 'gte'] if gt_op in cur_dt_filter]
+            gt_list = [cur_dt_filter.pop(gt_op) for gt_op in ['gt', 'gte']
+                       if gt_op in cur_dt_filter]
             if 'between' in cur_dt_filter and len(cur_dt_filter['between']) > 0:
-                gt_list.append(cur_dt_filter['between'][0])
+                gt_list.append(cur_dt_filter.pop('between')[0])
             gte_dt = max(gt_list) if gt_list else None
         if not lte_dt:
-            lt_list = [cur_dt_filter[lt_op] for lt_op in ['lt', 'lte'] if lt_op in cur_dt_filter]
+            lt_list = [cur_dt_filter.pop(lt_op) for lt_op in ['lt', 'lte']
+                       if lt_op in cur_dt_filter]
             if 'between' in cur_dt_filter and len(cur_dt_filter['between']) > 1:
-                lt_list.append(cur_dt_filter['between'][1])
+                lt_list.append(cur_dt_filter.pop('between')[1])
             lte_dt = max(lt_list) if lt_list else None
 
         new_dt_filter = {}

@@ -36,6 +36,7 @@ from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError
 from qiskit.providers.ibmq.job.utils import api_status_to_job_status
 from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, IBMQJobTimeoutError
+from qiskit.providers.ibmq.utils.converters import local_to_utc
 
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_device)
@@ -388,7 +389,7 @@ class TestIBMQJob(JobTestCase):
         past_month_tz_aware = past_month.replace(tzinfo=tz.tzlocal())
 
         job_list = self.provider.backends.jobs(backend_name=self.sim_backend.name(),
-                                               limit=2, start_datetime=past_month)
+                                               limit=10, start_datetime=past_month)
         self.assertTrue(job_list)
         for job in job_list:
             self.assertGreaterEqual(job.creation_date(), past_month_tz_aware,
@@ -459,6 +460,26 @@ class TestIBMQJob(JobTestCase):
                 job.summary_data_['summary']['qobj_config']['n_qubits'], 3,
                 "Job {} does not have correct data.".format(job.job_id())
             )
+
+    def test_pagination_filter(self):
+        """Test db_filter that could conflict with pagination."""
+        jobs = self.sim_backend.jobs(limit=25)
+        job = jobs[3]
+        job_utc = local_to_utc(job.creation_date()).isoformat()
+
+        db_filters = [
+            {'id': {'neq': job.job_id()}},
+            {'and': [{'id': {'neq': job.job_id()}}]},
+            {'creationDate': {'neq': job_utc}},
+            {'and': [{'creationDate': {'gt': job_utc}}]}
+        ]
+        for db_filter in db_filters:
+            with self.subTest(filter=db_filter):
+                job_list = self.sim_backend.jobs(limit=25, db_filter=db_filter)
+                self.assertTrue(job_list)
+                self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in job_list],
+                                 "Job {} with creation date {} should not be returned".format(
+                                     job.job_id(), job_utc))
 
     def test_retrieve_jobs_order(self):
         """Test retrieving jobs with different orders."""
