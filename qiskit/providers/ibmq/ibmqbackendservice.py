@@ -225,7 +225,7 @@ class IBMQBackendService(SimpleNamespace):
                     return input_dt.isoformat()
                 return None
 
-            api_filter['creationDate'] = self._get_creation_date_filter(
+            api_filter['creationDate'] = self._update_creation_date_filter(
                 cur_dt_filter={}, gte_dt=_to_utc_str(start_datetime),
                 lte_dt=_to_utc_str(end_datetime))
 
@@ -286,10 +286,10 @@ class IBMQBackendService(SimpleNamespace):
             api_filter = copy.deepcopy(initial_filter)
             cur_dt_filter = api_filter.pop('creationDate', {})
             if descending:
-                new_dt_filter = self._get_creation_date_filter(
+                new_dt_filter = self._update_creation_date_filter(
                     cur_dt_filter=cur_dt_filter, lte_dt=last_job['creation_date'])
             else:
-                new_dt_filter = self._get_creation_date_filter(
+                new_dt_filter = self._update_creation_date_filter(
                     cur_dt_filter=cur_dt_filter, gte_dt=last_job['creation_date'])
             if not cur_dt_filter:
                 api_filter['creationDate'] = new_dt_filter
@@ -344,18 +344,18 @@ class IBMQBackendService(SimpleNamespace):
                 else:
                     cur_filter[key] = new_filter[key]
 
-    def _get_creation_date_filter(
+    def _update_creation_date_filter(
             self,
             cur_dt_filter: Dict[str, Any],
             gte_dt: Optional[str] = None,
             lte_dt: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Return the filter to use when retrieving jobs based on revised datetime.
+        """Use the new start and end datetime in the creation date filter.
 
         Args:
-            cur_dt_filter: Current datetime filter.
-            gte_dt: The start datetime.
-            lte_dt: The end datetime.
+            cur_dt_filter: Current creation date filter.
+            gte_dt: New start datetime.
+            lte_dt: New end datetime.
 
         Returns:
             Updated creation date filter.
@@ -371,7 +371,7 @@ class IBMQBackendService(SimpleNamespace):
                        if lt_op in cur_dt_filter]
             if 'between' in cur_dt_filter and len(cur_dt_filter['between']) > 1:
                 lt_list.append(cur_dt_filter.pop('between')[1])
-            lte_dt = max(lt_list) if lt_list else None
+            lte_dt = min(lt_list) if lt_list else None
 
         new_dt_filter = {}
         if gte_dt and lte_dt:

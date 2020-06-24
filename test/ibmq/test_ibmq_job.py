@@ -389,7 +389,7 @@ class TestIBMQJob(JobTestCase):
         past_month_tz_aware = past_month.replace(tzinfo=tz.tzlocal())
 
         job_list = self.provider.backends.jobs(backend_name=self.sim_backend.name(),
-                                               limit=10, start_datetime=past_month)
+                                               limit=2, start_datetime=past_month)
         self.assertTrue(job_list)
         for job in job_list:
             self.assertGreaterEqual(job.creation_date(), past_month_tz_aware,
