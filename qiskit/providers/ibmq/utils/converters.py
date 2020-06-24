@@ -14,9 +14,10 @@
 
 """Utilities related to conversion."""
 
-from typing import Union, Tuple
+from typing import Union, Tuple, Any
 import datetime
 from math import ceil
+
 import dateutil.parser
 from dateutil import tz
 
@@ -61,6 +62,24 @@ def local_to_utc(local_dt: Union[datetime.datetime, str]) -> datetime.datetime:
     local_dt = local_dt.replace(tzinfo=tz.tzlocal())
     utc_dt = local_dt.astimezone(tz.UTC)
     return utc_dt
+
+
+def utc_to_local_all(data: Any) -> Any:
+    """Recursively convert all ``datetime`` in the input data from local time to UTC.
+
+    Args:
+        data: Data to be converted.
+
+    Returns:
+        Converted data.
+    """
+    if isinstance(data, datetime.datetime):
+        return utc_to_local(data)
+    elif isinstance(data, list):
+        return [utc_to_local_all(elem) for elem in data]
+    elif isinstance(data, dict):
+        return {key: utc_to_local_all(elem) for key, elem in data.items()}
+    return data
 
 
 def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
