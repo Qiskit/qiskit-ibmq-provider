@@ -22,8 +22,6 @@ import ipywidgets as wid
 from qiskit.test.mock.fake_backend import FakeBackend
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
-from ..utils.converters import utc_to_local
-
 
 def gates_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.GridBox:
     """Construct the multiple qubit gate error widget.
@@ -35,7 +33,7 @@ def gates_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.GridBox:
         A widget with gate information.
     """
     props = backend.properties().to_dict()
-    update_date = utc_to_local(props['last_update_date'])
+    update_date = props['last_update_date']
     date_str = update_date.strftime("%a %d %B %Y at %H:%M %Z")
 
     multi_qubit_gates = [g for g in props['gates'] if len(g['qubits']) > 1]

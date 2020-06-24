@@ -15,14 +15,14 @@
 """Utilities related to conversion."""
 
 from typing import Union, Tuple, Any
-import datetime
+from datetime import datetime, timedelta, timezone
 from math import ceil
 
 import dateutil.parser
 from dateutil import tz
 
 
-def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
+def utc_to_local(utc_dt: Union[datetime, str]) -> datetime:
     """Convert a UTC ``datetime`` object or string to a local timezone ``datetime``.
 
     Args:
@@ -36,14 +36,14 @@ def utc_to_local(utc_dt: Union[datetime.datetime, str]) -> datetime.datetime:
     """
     if isinstance(utc_dt, str):
         utc_dt = dateutil.parser.parse(utc_dt)
-    if not isinstance(utc_dt, datetime.datetime):
+    if not isinstance(utc_dt, datetime):
         raise TypeError('Input `utc_dt` is not string or datetime.')
-    utc_dt = utc_dt.replace(tzinfo=datetime.timezone.utc)  # type: ignore[arg-type]
+    utc_dt = utc_dt.replace(tzinfo=timezone.utc)  # type: ignore[arg-type]
     local_dt = utc_dt.astimezone(tz.tzlocal())  # type: ignore[attr-defined]
     return local_dt
 
 
-def local_to_utc(local_dt: Union[datetime.datetime, str]) -> datetime.datetime:
+def local_to_utc(local_dt: Union[datetime, str]) -> datetime:
     """Convert a local ``datetime`` object or string to a UTC ``datetime``.
 
     Args:
@@ -57,11 +57,14 @@ def local_to_utc(local_dt: Union[datetime.datetime, str]) -> datetime.datetime:
     """
     if isinstance(local_dt, str):
         local_dt = dateutil.parser.parse(local_dt)
-    if not isinstance(local_dt, datetime.datetime):
+    if not isinstance(local_dt, datetime):
         raise TypeError('Input `local_dt` is not string or datetime.')
-    local_dt = local_dt.replace(tzinfo=tz.tzlocal())
-    utc_dt = local_dt.astimezone(tz.UTC)
-    return utc_dt
+
+    # Input is considered local if it's ``utcoffset()`` is ``None`` or none-zero.
+    if local_dt.utcoffset() is None or local_dt.utcoffset() != timedelta(0):
+        local_dt = local_dt.replace(tzinfo=tz.tzlocal())
+        return local_dt.astimezone(tz.UTC)
+    return local_dt  # Already in UTC.
 
 
 def utc_to_local_all(data: Any) -> Any:
@@ -73,7 +76,7 @@ def utc_to_local_all(data: Any) -> Any:
     Returns:
         Converted data.
     """
-    if isinstance(data, datetime.datetime):
+    if isinstance(data, datetime):
         return utc_to_local(data)
     elif isinstance(data, list):
         return [utc_to_local_all(elem) for elem in data]
@@ -105,7 +108,7 @@ def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
     return days, hours, minutes, seconds, millisec
 
 
-def duration_difference(date_time_utc: datetime.datetime) -> str:
+def duration_difference(date_time_utc: datetime) -> str:
     """Compute the estimated duration until the given datetime.
 
     Args:
@@ -114,7 +117,7 @@ def duration_difference(date_time_utc: datetime.datetime) -> str:
     Returns:
         String giving the estimated duration.
     """
-    time_delta = date_time_utc.replace(tzinfo=None) - datetime.datetime.utcnow()
+    time_delta = date_time_utc.replace(tzinfo=None) - datetime.utcnow()
     time_tuple = seconds_to_duration(time_delta.total_seconds())
     # The returned tuple contains the duration in terms of
     # days, hours, minutes, seconds, and milliseconds.

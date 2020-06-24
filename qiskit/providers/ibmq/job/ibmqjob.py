@@ -35,10 +35,9 @@ from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..utils.utils import RefreshQueue, validate_job_tags
-from ..utils import utc_to_local
 from ..utils.qobj_utils import dict_to_qobj
 from ..utils.json_decoder import decode_backend_properties
-from ..utils.converters import utc_to_local_all
+from ..utils.converters import utc_to_local, utc_to_local_all
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
 from .queueinfo import QueueInfo
@@ -212,7 +211,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
 
         decode_backend_properties(properties)
         properties = utc_to_local_all(properties)
-        # TODO cache properties
         return BackendProperties.from_dict(properties)
 
     def result(
