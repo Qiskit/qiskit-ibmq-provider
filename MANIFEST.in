@@ -1,3 +1,3 @@
 include LICENSE.txt README.md
-include qiskit/providers/ibmq/VERSION.txt
+include qiskit_ibmq_provider/VERSION.txt
 recursive-include test *.py

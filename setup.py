@@ -14,7 +14,7 @@
 
 import os
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 REQUIREMENTS = [
     "nest-asyncio>=1.0.0,!=1.1.0",
@@ -30,7 +30,7 @@ REQUIREMENTS = [
 
 # Handle version.
 VERSION_PATH = os.path.join(os.path.dirname(__file__),
-                            "qiskit", "providers", "ibmq", "VERSION.txt")
+                            "qiskit_ibmq_provider", "VERSION.txt")
 with open(VERSION_PATH, "r") as version_file:
     VERSION = version_file.read().strip()
 
@@ -68,19 +68,7 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
     keywords="qiskit sdk quantum api ibmq",
-    packages=['qiskit.providers.ibmq',
-              'qiskit.providers.ibmq.api',
-              'qiskit.providers.ibmq.api.clients',
-              'qiskit.providers.ibmq.api.rest',
-              'qiskit.providers.ibmq.api.rest.utils',
-              'qiskit.providers.ibmq.credentials',
-              'qiskit.providers.ibmq.job',
-              'qiskit.providers.ibmq.managed',
-              'qiskit.providers.ibmq.utils',
-              'qiskit.providers.ibmq.visualization',
-              'qiskit.providers.ibmq.visualization.interactive',
-              'qiskit.providers.ibmq.jupyter',
-              'qiskit.providers.ibmq.jupyter.dashboard'],
+    packages=find_packages(exclude=['test*']),
     install_requires=REQUIREMENTS,
     include_package_data=True,
     python_requires=">=3.5",
