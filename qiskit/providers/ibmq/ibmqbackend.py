@@ -260,14 +260,14 @@ class IBMQBackend(BaseBackend):
             warnings.warn('Unless a UTC timezone information is present, the parameter `datetime`'
                           'is now expected to be in local time instead of UTC.', stacklevel=2)
             datetime = local_to_utc(datetime)
-        warnings.warn('All timestamps in the backend properties are now in local time '
-                      'instead of UTC.', stacklevel=2)
 
         if datetime or refresh or self._properties is None:
             api_properties = self._api.backend_properties(self.name(), datetime=datetime)
             if not api_properties:
                 return None
             decode_backend_properties(api_properties)
+            warnings.warn('All timestamps in backend properties are now in local time '
+                          'instead of UTC.', stacklevel=2)
             api_properties = utc_to_local_all(api_properties)
             backend_properties = BackendProperties.from_dict(api_properties)
             if datetime:    # Don't cache result.

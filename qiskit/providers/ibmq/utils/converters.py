@@ -70,6 +70,9 @@ def local_to_utc(local_dt: Union[datetime, str]) -> datetime:
 def utc_to_local_all(data: Any) -> Any:
     """Recursively convert all ``datetime`` in the input data from local time to UTC.
 
+    Note:
+        Only lists and dictionaries are traversed.
+
     Args:
         data: Data to be converted.
 
@@ -108,16 +111,16 @@ def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
     return days, hours, minutes, seconds, millisec
 
 
-def duration_difference(date_time_utc: datetime) -> str:
+def duration_difference(date_time: datetime) -> str:
     """Compute the estimated duration until the given datetime.
 
     Args:
-        date_time_utc: The input datetime, in UTC.
+        date_time: The input local datetime.
 
     Returns:
         String giving the estimated duration.
     """
-    time_delta = date_time_utc.replace(tzinfo=None) - datetime.utcnow()
+    time_delta = date_time.replace(tzinfo=None) - datetime.now()
     time_tuple = seconds_to_duration(time_delta.total_seconds())
     # The returned tuple contains the duration in terms of
     # days, hours, minutes, seconds, and milliseconds.
