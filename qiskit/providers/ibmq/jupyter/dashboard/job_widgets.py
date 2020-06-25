@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2019.
+# (C) Copyright IBM 2017, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -20,7 +20,6 @@ from datetime import datetime
 import ipywidgets as widgets
 
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
-from qiskit.providers.ibmq.utils.converters import utc_to_local
 
 
 def make_clear_button(watcher: 'IQXDashboard') -> widgets.GridBox:
@@ -106,7 +105,7 @@ def create_job_widget(watcher: 'IQXDashboard',
     status_label = widgets.HTML(value="{}{}".format(status, queue_str),
                                 layout=widgets.Layout(width='125px'))
 
-    est_time = utc_to_local(est_start_time).strftime("%H:%M %Z (%m/%d)") if est_start_time else '-'
+    est_time = est_start_time.strftime("%H:%M %Z (%m/%d)") if est_start_time else '-'
     est_time_label = widgets.HTML(value="{}".format(est_time),
                                   layout=widgets.Layout(width='125px'))
 

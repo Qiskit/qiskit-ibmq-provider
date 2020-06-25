@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2019.
+# (C) Copyright IBM 2017, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -21,8 +21,6 @@ import ipywidgets as wid
 from qiskit.test.mock.fake_backend import FakeBackend
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
-from ..utils.converters import utc_to_local
-
 
 def qubits_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.VBox:
     """The qubit properties widget.
@@ -35,7 +33,7 @@ def qubits_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.VBox:
     """
     props = backend.properties().to_dict()
 
-    update_date = utc_to_local(props['last_update_date'])
+    update_date = props['last_update_date']
     date_str = update_date.strftime("%a %d %B %Y at %H:%M %Z")
     header_html = "<div><font style='font-weight:bold'>{key}</font>: {value}</div>"
     header_html = header_html.format(key='last_update_date',

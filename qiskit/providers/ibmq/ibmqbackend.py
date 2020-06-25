@@ -41,6 +41,7 @@ from .exceptions import (IBMQBackendError, IBMQBackendValueError,
                          IBMQBackendJobLimitError)
 from .job import IBMQJob
 from .utils import update_qobj_config, validate_job_tags
+from .utils.converters import utc_to_local_all, local_to_utc
 from .utils.json_decoder import decode_pulse_defaults, decode_backend_properties
 
 logger = logging.getLogger(__name__)
@@ -256,18 +257,22 @@ class IBMQBackend(BaseBackend):
         """
         # pylint: disable=arguments-differ
         if datetime:
-            # Do not use cache for specific datetime properties.
+            warnings.warn('Unless a UTC timezone information is present, the parameter `datetime`'
+                          'is now expected to be in local time instead of UTC.', stacklevel=2)
+            datetime = local_to_utc(datetime)
+
+        if datetime or refresh or self._properties is None:
             api_properties = self._api.backend_properties(self.name(), datetime=datetime)
             if not api_properties:
                 return None
             decode_backend_properties(api_properties)
-            return BackendProperties.from_dict(api_properties)
-
-        if refresh or self._properties is None:
-            api_properties = self._api.backend_properties(self.name())
-            decode_backend_properties(api_properties)
-            self._properties = BackendProperties.from_dict(api_properties)
-
+            warnings.warn('All timestamps in backend properties are now in local time '
+                          'instead of UTC.', stacklevel=2)
+            api_properties = utc_to_local_all(api_properties)
+            backend_properties = BackendProperties.from_dict(api_properties)
+            if datetime:    # Don't cache result.
+                return backend_properties
+            self._properties = backend_properties
         return self._properties
 
     def status(self) -> BackendStatus:

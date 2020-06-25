@@ -20,7 +20,7 @@ import copy
 
 from typing import Dict, List, Callable, Optional, Any, Union
 from types import SimpleNamespace
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from qiskit.providers import JobStatus, QiskitBackendNotFoundError  # type: ignore[attr-defined]
 from qiskit.providers.providerutils import filter_backends
@@ -209,25 +209,10 @@ class IBMQBackendService(SimpleNamespace):
                           '`start_datetime` and `end_datetime` are now expected to be in '
                           'local time instead of UTC.', stacklevel=2)
 
-            def _to_utc_str(input_dt: Optional[datetime]) -> Optional[str]:
-                """Convert the input ``datetime`` to UTC and return its ISO format.
-
-                Args:
-                    input_dt: Datetime to be processed.
-
-                Returns:
-                    UTC in ISO format string.
-                """
-                if input_dt:
-                    # Input is considered local if it's ``utcoffset()`` is ``None`` or none-zero.
-                    if input_dt.utcoffset() is None or input_dt.utcoffset() != timedelta(0):
-                        input_dt = local_to_utc(input_dt)
-                    return input_dt.isoformat()
-                return None
-
             api_filter['creationDate'] = self._update_creation_date_filter(
-                cur_dt_filter={}, gte_dt=_to_utc_str(start_datetime),
-                lte_dt=_to_utc_str(end_datetime))
+                cur_dt_filter={},
+                gte_dt=local_to_utc(start_datetime).isoformat() if start_datetime else None,
+                lte_dt=local_to_utc(end_datetime).isoformat() if end_datetime else None)
 
         if job_tags:
             validate_job_tags(job_tags, IBMQBackendValueError)
