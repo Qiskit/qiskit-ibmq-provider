@@ -26,17 +26,7 @@ from .utils import api_status_to_job_status
 
 
 class QueueInfo(SimpleNamespace):
-    """Queue information for a job.
-
-    Attributes:
-        position: Job position in the queue within the scope of the provider.
-        estimated_start_time: Estimated start time for the job, in UTC.
-        estimated_complete_time: Estimated completion time for the job, in UTC.
-        hub_priority: Dynamic priority for the hub the job is in.
-        group_priority: Dynamic priority for the group the job is in.
-        project_priority: Dynamic priority for the project the job is in.
-        job_id: Job ID.
-    """
+    """Queue information for a job."""
 
     def __init__(
             self,
