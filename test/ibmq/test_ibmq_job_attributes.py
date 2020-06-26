@@ -19,6 +19,7 @@ from unittest import mock
 from datetime import datetime
 import re
 import uuid
+from unittest import skip
 
 from dateutil import tz
 
@@ -478,3 +479,9 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertRaises(IBMQBackendApiProtocolError, self.sim_backend.run, self.qobj)
         finally:
             self.sim_backend._api = saved_api
+
+    @skip('Skip until feature is available')
+    def test_client_info(self):
+        """Test job client information."""
+        self.assertIsNotNone(self.sim_job.result().client_info)
+        self.assertIsNotNone(self.sim_job.client_info)
