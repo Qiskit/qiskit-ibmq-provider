@@ -15,11 +15,10 @@
 """Test IBMQJob attributes."""
 
 import time
-from unittest import mock
+from unittest import mock, skip
 from datetime import datetime
 import re
 import uuid
-from unittest import skip
 
 from dateutil import tz
 

@@ -690,7 +690,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
         Args:
             data: Client information.
         """
-        print(f"data is {data}")
         if data:
             self._client_info = dict(zip(data['name'].split(','), data['version'].split(',')))
         else:
@@ -921,11 +920,16 @@ class IBMQJob(SimpleNamespace, BaseJob):
 
         return self._result
 
-    def _set_result(self, raw_data) -> None:
+    def _set_result(self, raw_data: Optional[Dict]) -> None:
         """Set the job result.
 
         Args:
             raw_data: Raw result data.
+
+        Raises:
+            IBMQJobInvalidStateError: If result is in an unsupported format.
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
         """
         if raw_data is None:
             self._result = None
@@ -938,7 +942,9 @@ class IBMQJob(SimpleNamespace, BaseJob):
                 raise IBMQJobInvalidStateError(
                     'Unable to retrieve result for job {}. Job result '
                     'is in an unsupported format.'.format(self.job_id())) from err
-            raise
+            raise IBMQJobApiError(
+                'Unable to retrieve result for '
+                'job {}: {}'.format(self.job_id(), str(err))) from err
 
     def _check_for_error_message(self, result_response: Dict[str, Any]) -> None:
         """Retrieves the error message from the result response.

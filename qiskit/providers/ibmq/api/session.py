@@ -24,9 +24,10 @@ from requests.auth import AuthBase
 from urllib3.util.retry import Retry
 
 from qiskit.providers.ibmq.utils.utils import filter_data
+from qiskit.version import __qiskit_version__
+
 from .exceptions import RequestsApiError
 from ..version import __version__ as ibmq_provider_version
-from qiskit.version import __qiskit_version__
 
 STATUS_FORCELIST = (
     502,  # Bad Gateway
