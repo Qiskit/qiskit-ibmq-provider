@@ -436,7 +436,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         # Tags prefix that denotes a job belongs to a jobset.
         ibmq_jobset_prefix = 'ibmq_jobset_'
 
-        tags_to_update = set(self._tags)  # Get the current job tags.
+        tags_to_update = set(self._tags or [])  # Get the current job tags.
         if isinstance(replacement_tags, list):  # `replacement_tags` could be an empty list.
             # Replace the current tags and re-add those associated with a job set.
             validate_job_tags(replacement_tags, IBMQJobInvalidStateError)
@@ -741,7 +741,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._name = api_response.pop('name', None)
         self._time_per_step = api_response.pop('time_per_step', None)
         self._error = api_response.pop('error', None)
-        self._tags = api_response.pop('tags', None)
+        self._tags = api_response.pop('tags', [])
         self._run_mode = api_response.pop('run_mode', None)
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
         self._status, self._queue_info = \
