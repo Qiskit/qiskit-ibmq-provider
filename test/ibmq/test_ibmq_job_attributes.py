@@ -479,7 +479,7 @@ class TestIBMQJobAttributes(JobTestCase):
         finally:
             self.sim_backend._api = saved_api
 
-    def test_client_info(self):
-        """Test job client information."""
-        self.assertIsNotNone(self.sim_job.result().client_info)
-        self.assertIsNotNone(self.sim_job.client_info)
+    def test_client_version(self):
+        """Test job client version information."""
+        self.assertIsNotNone(self.sim_job.result().client_version)
+        self.assertIsNotNone(self.sim_job.client_version)

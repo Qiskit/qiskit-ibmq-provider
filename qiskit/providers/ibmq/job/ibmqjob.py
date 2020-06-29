@@ -159,7 +159,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             self._get_status_position(status, kwargs.pop('info_queue', None))
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
         self._share_level = share_level
-        self.client_info = client_info
+        self.client_version = client_info
         self._set_result(result)
 
         for key, value in kwargs.items():
@@ -677,19 +677,19 @@ class IBMQJob(SimpleNamespace, BaseJob):
         return self._run_mode
 
     @property
-    def client_info(self) -> Optional[Dict[str, str]]:
+    def client_version(self) -> Optional[Dict[str, str]]:
         """Return information on the client used for this job.
 
         Returns:
             Client information in dictionary format, where the key is the name
                 of the client and the value is the version.
         """
-        if self._client_info is None:
+        if self._client_version is None:
             self.refresh()
-        return self._client_info
+        return self._client_version
 
-    @client_info.setter
-    def client_info(self, data: Dict[str, str]) -> None:
+    @client_version.setter
+    def client_version(self, data: Dict[str, str]) -> None:
         """Set client information.
 
         Args:
@@ -697,11 +697,13 @@ class IBMQJob(SimpleNamespace, BaseJob):
         """
         if data:
             if data.get('name', '').startswith('qiskit'):
-                self._client_info = dict(zip(data['name'].split(','), data['version'].split(',')))
+                self._client_version = dict(
+                    zip(data['name'].split(','), data['version'].split(',')))
             else:
-                self._client_info = {data.get('name', 'unknown'): data.get('version', 'unknown')}
+                self._client_version = \
+                    {data.get('name', 'unknown'): data.get('version', 'unknown')}
         else:
-            self._client_info = None
+            self._client_version = None
 
     def submit(self) -> None:
         """Submit this job to an IBM Quantum Experience backend.
@@ -755,7 +757,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._status, self._queue_info = \
             self._get_status_position(self._api_status, api_response.pop('info_queue', None))
         self._share_level = api_response.pop('share_level', 'none')
-        self.client_info = api_response.pop('client_info', None)
+        self.client_version = api_response.pop('client_info', None)
         self._set_result(api_response.pop('result', None))
 
         for key, value in api_response.items():
@@ -942,7 +944,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         if raw_data is None:
             self._result = None
             return
-        raw_data['client_info'] = self.client_info
+        raw_data['client_version'] = self.client_version
         try:
             self._result = Result.from_dict(raw_data)
         except (KeyError, TypeError) as err:

@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    :class:`~qiskit.providers.ibmq.job.IBMQJob` now has a new attribute
+    ``client_version`` that contains version information of the client used
+    to submit the job, such as Qiskit version. The version information is
+    also available as the ``client_version`` attribute of the
+    :class:`qiskit.result.Result` object retrieved via
+    :meth:`qiskit.providers.ibmq.job.IBMQJob.result`.
