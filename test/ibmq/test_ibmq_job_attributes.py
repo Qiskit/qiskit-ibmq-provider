@@ -15,7 +15,7 @@
 """Test IBMQJob attributes."""
 
 import time
-from unittest import mock, skip
+from unittest import mock
 from datetime import datetime
 import re
 import uuid
@@ -479,7 +479,6 @@ class TestIBMQJobAttributes(JobTestCase):
         finally:
             self.sim_backend._api = saved_api
 
-    @skip('Skip until feature is available')
     def test_client_info(self):
         """Test job client information."""
         self.assertIsNotNone(self.sim_job.result().client_info)
