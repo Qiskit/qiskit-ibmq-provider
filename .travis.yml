@@ -92,7 +92,7 @@ stage_win: &stage_win
 stages:
   - lint and pure python test
   - test
-  - slow tests
+  - conditional tests
 
 # Define the job matrix explicitly, as matrix expansion causes issues when
 # using it with stages and some variables/sections cannot be overridden.
@@ -179,10 +179,10 @@ jobs:
       if: type != cron
       script: python -m unittest -v
 
-    # "slow tests" stage
+    # "conditional tests" stage
     ###########################################################################
-    # GNU/Linux, Python 3.6
-    - stage: slow tests
+    # OSX, Python 3.6
+    - stage: conditional tests
       <<: *stage_osx
       if: type = cron
       python: 3.6
@@ -192,9 +192,8 @@ jobs:
         # effectively increases timeout to 1h.
         - travis_wait 60 make test
     # GNU/Linux, Python 3.8
-    - stage: terra master tests
+    - if: type = cron
       <<: *stage_linux
-      if: type = cron
       python: 3.8
       before_script: pip install -U git+https://github.com/Qiskit/qiskit-terra.git
     - if: tag IS present
