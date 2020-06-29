@@ -696,7 +696,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             data: Client information.
         """
         if data:
-            if data['name'].startswith('qiskit'):
+            if data.get('name', '').startswith('qiskit'):
                 self._client_info = dict(zip(data['name'].split(','), data['version'].split(',')))
             else:
                 self._client_info = {data.get('name', 'unknown'): data.get('version', 'unknown')}
