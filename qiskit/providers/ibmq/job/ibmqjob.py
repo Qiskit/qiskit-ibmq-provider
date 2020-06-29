@@ -138,7 +138,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             tags: Job tags.
             run_mode: Scheduling mode the job runs in.
             share_level: Level the job can be shared with.
-            client_info: Client (Qiskit) version.
+            client_info: Client version.
             kwargs: Additional job attributes.
         """
         self._backend = backend
@@ -678,7 +678,12 @@ class IBMQJob(SimpleNamespace, BaseJob):
 
     @property
     def client_info(self) -> Optional[Dict[str, str]]:
-        """Return information on the client used for this job."""
+        """Return information on the client used for this job.
+
+        Returns:
+            Client information in dictionary format, where the key is the name
+                of the client and the value is the version.
+        """
         if self._client_info is None:
             self.refresh()
         return self._client_info
@@ -691,7 +696,10 @@ class IBMQJob(SimpleNamespace, BaseJob):
             data: Client information.
         """
         if data:
-            self._client_info = dict(zip(data['name'].split(','), data['version'].split(',')))
+            if data['name'].startswith('qiskit'):
+                self._client_info = dict(zip(data['name'].split(','), data['version'].split(',')))
+            else:
+                self._client_info = {data.get('name', 'unknown'): data.get('version', 'unknown')}
         else:
             self._client_info = None
 
