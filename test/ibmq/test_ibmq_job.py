@@ -554,17 +554,17 @@ class TestIBMQJob(JobTestCase):
         result = self.sim_job.result()
 
         # Save original cached results.
-        cached_result = copy.deepcopy(result)
+        cached_result = copy.deepcopy(result.to_dict())
         self.assertTrue(cached_result)
 
         # Modify cached results.
         result.results[0].header.name = 'modified_result'
-        self.assertNotEqual(cached_result, result)
+        self.assertNotEqual(cached_result, result.to_dict())
         self.assertEqual(result.results[0].header.name, 'modified_result')
 
         # Re-retrieve result via refresh.
         result = self.sim_job.result(refresh=True)
-        self.assertEqual(cached_result, result)
+        self.assertDictEqual(cached_result, result.to_dict())
         self.assertNotEqual(result.results[0].header.name, 'modified_result')
 
     @requires_device
