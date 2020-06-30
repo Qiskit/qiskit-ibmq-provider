@@ -192,7 +192,7 @@ jobs:
         # effectively increases timeout to 1h.
         - travis_wait 60 make test
     # GNU/Linux, Python 3.8
-    - if: type = cron
+    - if: type != cron
       <<: *stage_linux
       python: 3.8
       before_script: pip install -U git+https://github.com/Qiskit/qiskit-terra.git
