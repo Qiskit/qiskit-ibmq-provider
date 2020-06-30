@@ -1,0 +1,5 @@
+---
+upgrade:
+  - |
+    ``websockets`` 8.0 or above is now required if Python 3.7 or above is used.
+    ``websockets`` 7.0 will continue to be used for Python 3.6 or below.
