@@ -55,7 +55,7 @@ class TestSerialization(IBMQTestCase):
         backend = backends[0]
         config = backend.configuration()
         defaults = backend.defaults()
-        inst_map = defaults.circuit_instruction_map
+        inst_map = defaults.instruction_schedule_map
 
         x = inst_map.get('x', 0)
         measure = inst_map.get('measure', range(config.n_qubits)) << x.duration
