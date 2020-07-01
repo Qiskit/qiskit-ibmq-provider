@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    A new attribute ``client_version`` was added to
+    :class:`~qiskit.providers.ibmq.job.IBMQJob` and
+    :class:`qiskit.result.Result` object retrieved via
+    :meth:`qiskit.providers.ibmq.job.IBMQJob.result`.
+    ``client_version`` is a dictionary with the key being the name
+    and the value being the version of the client used to submit
+    the job, such as Qiskit.

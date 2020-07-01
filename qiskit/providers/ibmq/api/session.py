@@ -24,6 +24,8 @@ from requests.auth import AuthBase
 from urllib3.util.retry import Retry
 
 from qiskit.providers.ibmq.utils.utils import filter_data
+from qiskit.version import __qiskit_version__
+
 from .exceptions import RequestsApiError
 from ..version import __version__ as ibmq_provider_version
 
@@ -33,7 +35,6 @@ STATUS_FORCELIST = (
     504,  # Gateway Timeout
     524,  # Cloudflare Timeout
 )
-CLIENT_APPLICATION = 'ibmqprovider/' + ibmq_provider_version
 CUSTOM_HEADER_ENV_VAR = 'QE_CUSTOM_CLIENT_APP_HEADER'
 logger = logging.getLogger(__name__)
 # Regex used to match the `/devices` endpoint, capturing the device name as group(2).
@@ -41,6 +42,22 @@ logger = logging.getLogger(__name__)
 # the `/devices/v/1` endpoint.
 # Capture groups: (/devices/)(<device_name>)(</optional rest of the url>)
 RE_DEVICES_ENDPOINT = re.compile(r'^(/devices/)([^/}]{2,})(.*)$', re.IGNORECASE)
+
+
+def _get_client_header() -> str:
+    """Return the client version."""
+    if __qiskit_version__.get('qiskit', None):
+        client_header = 'qiskit/' + __qiskit_version__['qiskit']
+    else:
+        known_versions = dict(
+            filter(lambda item: item[1] is not None, __qiskit_version__.items()))
+        # Always include provider version.
+        known_versions['qiskit-ibmq-provider'] = ibmq_provider_version
+        client_header = ','.join(known_versions.keys()) + '/' + ','.join(known_versions.values())
+    return client_header
+
+
+CLIENT_APPLICATION = _get_client_header()
 
 
 class PostForcelistRetry(Retry):

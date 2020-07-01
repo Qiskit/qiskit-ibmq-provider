@@ -478,3 +478,8 @@ class TestIBMQJobAttributes(JobTestCase):
             self.assertRaises(IBMQBackendApiProtocolError, self.sim_backend.run, self.qobj)
         finally:
             self.sim_backend._api = saved_api
+
+    def test_client_version(self):
+        """Test job client version information."""
+        self.assertIsNotNone(self.sim_job.result().client_version)
+        self.assertIsNotNone(self.sim_job.client_version)
