@@ -80,6 +80,16 @@ def decode_backend_configuration(config: Dict) -> None:
                 u_channle_lo['scale'] = _to_complex(u_channle_lo['scale'])
 
 
+def decode_result(result: Dict) -> None:
+    """Decode result data.
+
+    Args:
+        result: A `Result` in dictionary format.
+    """
+    if 'date' in result and isinstance(result['date'], str):
+        result['date'] = dateutil.parser.isoparse(result['date'])
+
+
 def _to_complex(value: Union[List[float], complex]) -> complex:
     """Convert the input value to type ``complex``.
 

@@ -14,12 +14,14 @@
 
 """Test serializing and deserializing data sent to the server."""
 
-from unittest import skipIf
+from unittest import skipIf, SkipTest
 from typing import Any
 
 import dateutil.parser
 import qiskit
-from qiskit.compiler import assemble
+from qiskit.test import slow_test
+from qiskit.providers.ibmq import least_busy
+from qiskit import assemble, transpile, schedule, QuantumCircuit
 
 from ..decorators import requires_provider
 from ..utils import bell_in_qobj, cancel_job
@@ -144,6 +146,41 @@ class TestSerialization(IBMQTestCase):
 
                 self.assertFalse(suspect_keys)
 
+    @skipIf(qiskit.__version__ < '0.15.0', 'Test requires terra 0.15.0')
+    def test_qasm_job_result(self):
+        """Test deserializing a QASM job result."""
+        backend = self.provider.get_backend('ibmq_qasm_simulator')
+        qobj = bell_in_qobj(backend=backend)
+        result = backend.run(qobj, validate_qobj=True).result()
+
+        suspect_keys = set()
+        _find_potential_encoded(result.to_dict(), '', suspect_keys)
+        self.assertFalse(suspect_keys)
+
+    @skipIf(qiskit.__version__ < '0.15.0', 'Test requires terra 0.15.0')
+    @slow_test
+    def test_pulse_job_result(self):
+        """Test deserializing a pulse job result."""
+        backends = self.provider.backends(open_pulse=True, operational=True)
+        if not backends:
+            raise SkipTest('Skipping pulse test since no pulse backend found.')
+
+        backend = least_busy(backends)
+        qx = QuantumCircuit(1, 1)
+        qx.x(0)
+        qx.measure([0], [0])
+        sched = schedule(transpile(qx, backend=backend), backend=backend)
+        job = backend.run(assemble(sched, backend=backend))
+        result = job.result()
+
+        # Known keys that look like a serialized object.
+        good_keys = ('header.backend_version', 'backend_version')
+
+        suspect_keys = set()
+        _find_potential_encoded(result.to_dict(), '', suspect_keys)
+        _remove_good_keys(suspect_keys, good_keys)
+        self.assertFalse(suspect_keys)
+
 
 def _find_potential_encoded(data: Any, c_key: str, tally: set) -> None:
     """Find data that may be in JSON serialized format.
@@ -191,3 +228,13 @@ def _array_to_list(data):
                     value[index] = _array_to_list(item)
 
     return data
+
+
+def _remove_good_keys(suspect_keys, good_keys):
+    """Remove known good keys from suspect keys."""
+    for gkey in good_keys:
+        try:
+            suspect_keys.remove(gkey)
+        except KeyError:
+            pass
+
