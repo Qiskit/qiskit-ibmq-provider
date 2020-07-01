@@ -256,10 +256,6 @@ class TestIBMQJobManager(IBMQTestCase):
         # Wait for jobs to be submitted.
         while JobStatus.INITIALIZING in job_set.statuses():
             time.sleep(1)
-        # TODO No need to wait for job to run once api is fixed
-        while any(status not in JOB_FINAL_STATES + (JobStatus.RUNNING,)
-                  for status in job_set.statuses()):
-            time.sleep(0.5)
 
         rjobs = self.provider.backends.jobs(job_tags=job_tags)
         self.assertEqual({job.job_id() for job in job_set.jobs()},
