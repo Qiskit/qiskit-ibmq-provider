@@ -118,6 +118,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             tags: Optional[List[str]] = None,
             run_mode: Optional[str] = None,
             share_level: Optional[str] = None,
+            client_info: Optional[Dict[str, str]] = None,
             **kwargs: Any
     ) -> None:
         """IBMQJob constructor.
@@ -137,6 +138,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
             tags: Job tags.
             run_mode: Scheduling mode the job runs in.
             share_level: Level the job can be shared with.
+            client_info: Client version.
             kwargs: Additional job attributes.
         """
         self._backend = backend
@@ -147,7 +149,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._kind = ApiJobKind(kind) if kind else None
         self._name = name
         self._time_per_step = time_per_step
-        self._result = Result.from_dict(result) if result else None
         if isinstance(qobj, dict):
             qobj = dict_to_qobj(qobj)
         self._qobj = qobj
@@ -158,6 +159,8 @@ class IBMQJob(SimpleNamespace, BaseJob):
             self._get_status_position(status, kwargs.pop('info_queue', None))
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
         self._share_level = share_level
+        self.client_version = client_info
+        self._set_result(result)
 
         for key, value in kwargs.items():
             # Append suffix to key to avoid conflicts.
@@ -673,6 +676,35 @@ class IBMQJob(SimpleNamespace, BaseJob):
 
         return self._run_mode
 
+    @property
+    def client_version(self) -> Dict[str, str]:
+        """Return version of the client used for this job.
+
+        Returns:
+            Client version in dictionary format, where the key is the name
+                of the client and the value is the version.
+        """
+        if not self._client_version:
+            self.refresh()
+        return self._client_version
+
+    @client_version.setter
+    def client_version(self, data: Dict[str, str]) -> None:
+        """Set client version.
+
+        Args:
+            data: Client version.
+        """
+        if data:
+            if data.get('name', '').startswith('qiskit'):
+                self._client_version = dict(
+                    zip(data['name'].split(','), data['version'].split(',')))
+            else:
+                self._client_version = \
+                    {data.get('name', 'unknown'): data.get('version', 'unknown')}
+        else:
+            self._client_version = {}
+
     def submit(self) -> None:
         """Submit this job to an IBM Quantum Experience backend.
 
@@ -710,8 +742,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
             self._api_status = api_response.pop('status')
             if 'kind' in api_response:
                 self._kind = ApiJobKind(api_response.pop('kind'))
-            if 'result' in api_response:
-                self._result = Result.from_dict(api_response.pop('result'))
             if 'qobj' in api_response:
                 self._qobj = dict_to_qobj(api_response.pop('qobj'))
         except (KeyError, TypeError) as err:
@@ -727,6 +757,8 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._status, self._queue_info = \
             self._get_status_position(self._api_status, api_response.pop('info_queue', None))
         self._share_level = api_response.pop('share_level', 'none')
+        self.client_version = api_response.pop('client_info', None)
+        self._set_result(api_response.pop('result', None))
 
         for key, value in api_response.items():
             self.__dict__[key + '_'] = value
@@ -877,16 +909,12 @@ class IBMQJob(SimpleNamespace, BaseJob):
         if not self._result or refresh:  # type: ignore[has-type]
             try:
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
-                self._result = Result.from_dict(result_response)
-            except (ApiError, TypeError) as err:
+                self._set_result(result_response)
+            except ApiError as err:
                 if self._status is JobStatus.ERROR:
                     raise IBMQJobFailureError(
                         'Unable to retrieve result for job {}. Job has failed. Use '
                         'job.error_message() to get more details.'.format(self.job_id())) from err
-                if not self._kind:
-                    raise IBMQJobInvalidStateError(
-                        'Unable to retrieve result for job {}. Job result '
-                        'is in an unsupported format.'.format(self.job_id())) from err
                 raise IBMQJobApiError(
                     'Unable to retrieve result for '
                     'job {}: {}'.format(self.job_id(), str(err))) from err
@@ -901,6 +929,32 @@ class IBMQJob(SimpleNamespace, BaseJob):
                 'Use job.error_message() to get more details.'.format(self.job_id()))
 
         return self._result
+
+    def _set_result(self, raw_data: Optional[Dict]) -> None:
+        """Set the job result.
+
+        Args:
+            raw_data: Raw result data.
+
+        Raises:
+            IBMQJobInvalidStateError: If result is in an unsupported format.
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
+        """
+        if raw_data is None:
+            self._result = None
+            return
+        raw_data['client_version'] = self.client_version
+        try:
+            self._result = Result.from_dict(raw_data)
+        except (KeyError, TypeError) as err:
+            if not self._kind:
+                raise IBMQJobInvalidStateError(
+                    'Unable to retrieve result for job {}. Job result '
+                    'is in an unsupported format.'.format(self.job_id())) from err
+            raise IBMQJobApiError(
+                'Unable to retrieve result for '
+                'job {}: {}'.format(self.job_id(), str(err))) from err
 
     def _check_for_error_message(self, result_response: Dict[str, Any]) -> None:
         """Retrieves the error message from the result response.
