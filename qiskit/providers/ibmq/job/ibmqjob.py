@@ -947,11 +947,16 @@ class IBMQJob(SimpleNamespace, BaseJob):
             self._result = None
             return
         raw_data['client_version'] = self.client_version
-        decode_result(raw_data)
-        if 'date' in raw_data:
-            raw_data['date'] = utc_to_local(raw_data['date'])
+        # TODO Stop checking Terra version when it's released.
+        from qiskit.version import __version__ as terra_version
+        if terra_version >= '0.15.0':
+            decode_result(raw_data)
+        # if 'date' in raw_data:
+        #     raw_data['date'] = utc_to_local(raw_data['date'])
         try:
             self._result = Result.from_dict(raw_data)
+            if hasattr(self._result, 'date'):
+                self._result.date = utc_to_local(self._result.date)
         except (KeyError, TypeError) as err:
             if not self._kind:
                 raise IBMQJobInvalidStateError(

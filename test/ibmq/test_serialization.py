@@ -166,10 +166,10 @@ class TestSerialization(IBMQTestCase):
             raise SkipTest('Skipping pulse test since no pulse backend found.')
 
         backend = least_busy(backends)
-        qx = QuantumCircuit(1, 1)
-        qx.x(0)
-        qx.measure([0], [0])
-        sched = schedule(transpile(qx, backend=backend), backend=backend)
+        qc = QuantumCircuit(1, 1)
+        qc.x(0)
+        qc.measure([0], [0])
+        sched = schedule(transpile(qc, backend=backend), backend=backend)
         job = backend.run(assemble(sched, backend=backend))
         result = job.result()
 
@@ -237,4 +237,3 @@ def _remove_good_keys(suspect_keys, good_keys):
             suspect_keys.remove(gkey)
         except KeyError:
             pass
-
