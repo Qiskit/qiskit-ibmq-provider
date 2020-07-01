@@ -677,23 +677,23 @@ class IBMQJob(SimpleNamespace, BaseJob):
         return self._run_mode
 
     @property
-    def client_version(self) -> Optional[Dict[str, str]]:
-        """Return information on the client used for this job.
+    def client_version(self) -> Dict[str, str]:
+        """Return version of the client used for this job.
 
         Returns:
-            Client information in dictionary format, where the key is the name
+            Client version in dictionary format, where the key is the name
                 of the client and the value is the version.
         """
-        if self._client_version is None:
+        if not self._client_version:
             self.refresh()
         return self._client_version
 
     @client_version.setter
     def client_version(self, data: Dict[str, str]) -> None:
-        """Set client information.
+        """Set client version.
 
         Args:
-            data: Client information.
+            data: Client version.
         """
         if data:
             if data.get('name', '').startswith('qiskit'):
@@ -703,7 +703,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
                 self._client_version = \
                     {data.get('name', 'unknown'): data.get('version', 'unknown')}
         else:
-            self._client_version = None
+            self._client_version = {}
 
     def submit(self) -> None:
         """Submit this job to an IBM Quantum Experience backend.
