@@ -15,7 +15,7 @@
 """Test serializing and deserializing data sent to the server."""
 
 from unittest import skipIf, SkipTest
-from typing import Any
+from typing import Any, Dict, Optional
 
 import dateutil.parser
 import qiskit
@@ -81,24 +81,12 @@ class TestSerialization(IBMQTestCase):
         # Known keys that look like a serialized complex number.
         good_keys = ('coupling_map', 'qubit_lo_range', 'meas_lo_range', 'gates.coupling_map',
                      'meas_levels', 'qubit_channel_mapping', 'backend_version')
-        good_keys_prefix = ('channels',)
+        good_keys_prefixes = ('channels',)
 
         for backend in backends:
             with self.subTest(backend=backend):
-                configuration = backend.configuration()
-                suspect_keys = set()
-                _find_potential_encoded(configuration.to_dict(), '', suspect_keys)
-
-                for gkey in good_keys:
-                    try:
-                        suspect_keys.remove(gkey)
-                    except KeyError:
-                        pass
-
-                for gkey in good_keys_prefix:
-                    suspect_keys = {ckey for ckey in suspect_keys if not ckey.startswith(gkey)}
-
-                self.assertFalse(suspect_keys)
+                self._verify_data(backend.configuration().to_dict(),
+                                  good_keys, good_keys_prefixes)
 
     @skipIf(qiskit.__version__ < '0.14.0', 'Test requires terra 0.14.0')
     def test_pulse_defaults(self):
@@ -112,17 +100,7 @@ class TestSerialization(IBMQTestCase):
 
         for backend in backends:
             with self.subTest(backend=backend):
-                defaults = backend.defaults()
-                complex_keys = set()
-                _find_potential_encoded(defaults.to_dict(), '', complex_keys)
-
-                for gkey in good_keys:
-                    try:
-                        complex_keys.remove(gkey)
-                    except KeyError:
-                        pass
-
-                self.assertFalse(complex_keys)
+                self._verify_data(backend.defaults().to_dict(), good_keys)
 
     @skipIf(qiskit.__version__ < '0.14.0', 'Test requires terra 0.14.0')
     def test_backend_properties(self):
@@ -135,16 +113,7 @@ class TestSerialization(IBMQTestCase):
         for backend in backends:
             with self.subTest(backend=backend):
                 properties = backend.properties()
-                suspect_keys = set()
-                _find_potential_encoded(properties.to_dict(), '', suspect_keys)
-
-                for gkey in good_keys:
-                    try:
-                        suspect_keys.remove(gkey)
-                    except KeyError:
-                        pass
-
-                self.assertFalse(suspect_keys)
+                self._verify_data(properties.to_dict(), good_keys)
 
     @skipIf(qiskit.__version__ < '0.15.0', 'Test requires terra 0.15.0')
     def test_qasm_job_result(self):
@@ -153,9 +122,7 @@ class TestSerialization(IBMQTestCase):
         qobj = bell_in_qobj(backend=backend)
         result = backend.run(qobj, validate_qobj=True).result()
 
-        suspect_keys = set()
-        _find_potential_encoded(result.to_dict(), '', suspect_keys)
-        self.assertFalse(suspect_keys)
+        self._verify_data(result.to_dict(), ())
 
     @skipIf(qiskit.__version__ < '0.15.0', 'Test requires terra 0.15.0')
     @slow_test
@@ -175,10 +142,33 @@ class TestSerialization(IBMQTestCase):
 
         # Known keys that look like a serialized object.
         good_keys = ('header.backend_version', 'backend_version')
+        self._verify_data(result.to_dict(), good_keys)
 
+    def _verify_data(
+            self,
+            data: Dict,
+            good_keys: tuple,
+            good_key_prefixes: Optional[tuple] = None
+    ):
+        """Verify that the input data does not contain serialized objects.
+
+        Args:
+            data: Data to validate.
+            good_keys: A list of known keys that look serialized objects.
+            good_key_prefixes: A list of known prefixes for keys that look like
+                serialized objects.
+        """
         suspect_keys = set()
-        _find_potential_encoded(result.to_dict(), '', suspect_keys)
-        _remove_good_keys(suspect_keys, good_keys)
+        _find_potential_encoded(data, '', suspect_keys)
+        # Remove known good keys from suspect keys.
+        for gkey in good_keys:
+            try:
+                suspect_keys.remove(gkey)
+            except KeyError:
+                pass
+        if good_key_prefixes:
+            for gkey in good_key_prefixes:
+                suspect_keys = {ckey for ckey in suspect_keys if not ckey.startswith(gkey)}
         self.assertFalse(suspect_keys)
 
 
@@ -228,12 +218,3 @@ def _array_to_list(data):
                     value[index] = _array_to_list(item)
 
     return data
-
-
-def _remove_good_keys(suspect_keys, good_keys):
-    """Remove known good keys from suspect keys."""
-    for gkey in good_keys:
-        try:
-            suspect_keys.remove(gkey)
-        except KeyError:
-            pass
