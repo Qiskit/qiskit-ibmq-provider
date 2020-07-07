@@ -181,12 +181,13 @@ jobs:
 
     # "conditional tests" stage
     ###########################################################################
-    # OSX, Python 3.6
+    # OSX, Python 3.6.5
     - stage: conditional tests
       <<: *stage_osx
       if: type = cron
-      python: 3.6
       env:
+        - MPLBACKEND=ps
+        - PYTHON_VERSION=3.6.5
         - QISKIT_TESTS=run_slow
       script:
         # effectively increases timeout to 1h.
