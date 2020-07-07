@@ -76,11 +76,11 @@ stage_win: &stage_win
   <<: *stage_generic
   os: windows
   language: shell
-  env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+  env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
   before_install:
     # Travis does not provide support for Python 3 under windows - it needs to be
     # installed manually.
-    - choco install python --version 3.7.2
+    - choco install python --version 3.8.1
     - python -m pip install --upgrade pip
 
 
@@ -173,7 +173,7 @@ jobs:
         - MPLBACKEND=ps
         - PYTHON_VERSION=3.8.0
 
-    # Windows, Python 3.7
+    # Windows, Python 3.8
     - stage: test
       <<: *stage_win
       if: type != cron
