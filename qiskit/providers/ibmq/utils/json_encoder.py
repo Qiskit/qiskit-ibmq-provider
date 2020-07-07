@@ -22,7 +22,7 @@ from typing import Any
 from qiskit.circuit.parameterexpression import ParameterExpression
 
 
-class IQXJsonEconder(json.JSONEncoder):
+class IQXJsonEncoder(json.JSONEncoder):
     """A json encoder for qobj"""
 
     def default(self, o: Any) -> Any:

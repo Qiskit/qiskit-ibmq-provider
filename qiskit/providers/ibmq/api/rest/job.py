@@ -184,7 +184,7 @@ class Job(RestAdapterBase):
         Returns:
             Text response, which is empty if the request was successful.
         """
-        data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEconder)
+        data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEncoder)
         logger.debug('Uploading to object storage.')
         response = self.session.put(url, data=data, bare=True, timeout=600)
         return response.text
