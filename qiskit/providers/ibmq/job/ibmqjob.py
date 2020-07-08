@@ -36,7 +36,7 @@ from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
 from ..utils.utils import RefreshQueue, validate_job_tags
 from ..utils.qobj_utils import dict_to_qobj
-from ..utils.json_decoder import decode_backend_properties
+from ..utils.json_decoder import decode_backend_properties, decode_result
 from ..utils.converters import utc_to_local, utc_to_local_all
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
@@ -284,6 +284,8 @@ class IBMQJob(SimpleNamespace, BaseJob):
                     'Unable to retrieve result for job {}. Job has failed. '
                     'Use job.error_message() to get more details.'.format(self.job_id()))
 
+        warnings.warn('The date in job Result object is now returned '
+                      'in local time instead of UTC.', stacklevel=2)
         return self._retrieve_result(refresh=refresh)
 
     def cancel(self) -> bool:
@@ -945,8 +947,16 @@ class IBMQJob(SimpleNamespace, BaseJob):
             self._result = None
             return
         raw_data['client_version'] = self.client_version
+        # TODO Stop checking Terra version when it's released.
+        from qiskit.version import __version__ as terra_version
+        if terra_version >= '0.15.0':
+            decode_result(raw_data)
+        # if 'date' in raw_data:
+        #     raw_data['date'] = utc_to_local(raw_data['date'])
         try:
             self._result = Result.from_dict(raw_data)
+            if hasattr(self._result, 'date'):
+                self._result.date = utc_to_local(self._result.date)
         except (KeyError, TypeError) as err:
             if not self._kind:
                 raise IBMQJobInvalidStateError(
