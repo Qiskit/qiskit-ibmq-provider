@@ -101,10 +101,11 @@ class TestIQXDashboard(IBMQTestCase):
     def test_backend_widget(self):
         """Test devices tab."""
         for backend in self.backends:
-            cred = backend.provider().credentials
-            provider_str = "{}/{}/{}".format(cred.hub, cred.group, cred.project)
-            b_w_p = BackendWithProviders(backend=backend, providers=[provider_str])
-            make_backend_widget(b_w_p)
+            with self.subTest(backend=backend):
+                cred = backend.provider().credentials
+                provider_str = "{}/{}/{}".format(cred.hub, cred.group, cred.project)
+                b_w_p = BackendWithProviders(backend=backend, providers=[provider_str])
+                make_backend_widget(b_w_p)
 
     def test_job_widget(self):
         """Test jobs tab."""
