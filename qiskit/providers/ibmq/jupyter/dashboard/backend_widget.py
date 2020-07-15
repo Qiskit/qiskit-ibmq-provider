@@ -137,7 +137,10 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
                         if param['value'] != 1.0:
                             sum_cx_err += param['value']
                             num_cx += 1
-        avg_cx_err = round(sum_cx_err/(num_cx)*100, 2)
+        if num_cx:
+            avg_cx_err = round(sum_cx_err/(num_cx)*100, 2)
+        else:
+            avg_cx_err = 100.0
 
     avg_meas_err = 0
     for qub in props['qubits']:

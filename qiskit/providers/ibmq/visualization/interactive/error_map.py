@@ -144,37 +144,36 @@ def iplot_error_map(
 
     q_colors = [mpl.colors.rgb2hex(color_map(single_norm(err))) for err in single_gate_errors]
 
-    if n_qubits > 1:
-        line_colors = []
-        if cmap:
-            cx_errors = []
-            for line in cmap:
-                for item in props['gates']:
-                    if item['qubits'] == line:
-                        cx_errors.append(item['parameters'][0]['value'])
-                        break
-                else:
-                    continue
-
-            # Convert to percent
-            cx_errors = 100 * np.asarray(cx_errors)
-
-            # remove bad cx edges
-            if remove_badcal_edges:
-                cx_idx = np.where(cx_errors != 100.0)[0]
+    line_colors = []
+    cx_idx = []
+    if n_qubits > 1 and cmap:
+        cx_errors = []
+        for cmap_qubits in cmap:
+            for gate in props['gates']:
+                if gate['qubits'] == cmap_qubits:
+                    cx_errors.append(gate['parameters'][0]['value'])
+                    break
             else:
-                cx_idx = np.arange(len(cx_errors))
+                continue
 
-            avg_cx_err = np.mean(cx_errors[cx_idx])
+        # Convert to percent
+        cx_errors = 100 * np.asarray(cx_errors)
 
-            cx_norm = mpl.colors.Normalize(
-                vmin=min(cx_errors[cx_idx]), vmax=max(cx_errors[cx_idx]))
+        # remove bad cx edges
+        if remove_badcal_edges:
+            cx_idx = np.where(cx_errors != 100.0)[0]
+        else:
+            cx_idx = np.arange(len(cx_errors))
 
-            for err in cx_errors:
-                if err != 100.0 or not remove_badcal_edges:
-                    line_colors.append(mpl.colors.rgb2hex(color_map(cx_norm(err))))
-                else:
-                    line_colors.append("#ff0000")
+        avg_cx_err = np.mean(cx_errors[cx_idx])
+
+        for err in cx_errors:
+            if err != 100.0 or not remove_badcal_edges:
+                cx_norm = mpl.colors.Normalize(
+                    vmin=min(cx_errors[cx_idx]), vmax=max(cx_errors[cx_idx]))
+                line_colors.append(mpl.colors.rgb2hex(color_map(cx_norm(err))))
+            else:
+                line_colors.append("#ff0000")
 
     # Measurement errors
     read_err = []
@@ -213,7 +212,7 @@ def iplot_error_map(
     else:
         right_meas_title = None
 
-    if cmap:
+    if cmap and cx_idx.size > 0:
         cx_title = "CNOT Error Rate [Avg. {}%]".format(np.round(avg_cx_err, 3))
     else:
         cx_title = None
@@ -234,7 +233,7 @@ def iplot_error_map(
                         )
 
     # Add lines for couplings
-    if cmap and n_qubits > 1:
+    if cmap and n_qubits > 1 and cx_idx.size > 0:
         for ind, edge in enumerate(cmap):
             is_symmetric = False
             if edge[::-1] in cmap:
@@ -359,9 +358,12 @@ def iplot_error_map(
                                    np.round(max_1q_err, 3)])
 
     # CX error rate colorbar
-    if cmap and n_qubits > 1:
+    if cmap and n_qubits > 1 and cx_idx.size > 0:
         min_cx_err = min(cx_errors)
         max_cx_err = max(cx_errors)
+        if min_cx_err == max_cx_err:
+            min_cx_err = 0  # Force more than 1 color.
+
         fig.append_trace(go.Heatmap(z=[np.linspace(min_cx_err,
                                                    max_cx_err, 100),
                                        np.linspace(min_cx_err,
