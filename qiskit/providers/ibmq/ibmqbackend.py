@@ -255,6 +255,10 @@ class IBMQBackend(BaseBackend):
             The backend properties or ``None`` if the backend properties are not
             currently available.
         """
+        if not isinstance(refresh, bool):
+            raise TypeError("The 'refresh' argument needs to be a boolean. "
+                            "{} is of type {}".format(refresh, type(refresh)))
+
         # pylint: disable=arguments-differ
         if datetime:
             warnings.warn('Unless a UTC timezone information is present, the parameter `datetime`'
