@@ -76,12 +76,27 @@ stage_win: &stage_win
   <<: *stage_generic
   os: windows
   language: shell
-  env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
   before_install:
     # Travis does not provide support for Python 3 under windows - it needs to be
     # installed manually.
-    - choco install python --version 3.7.2
-    - python -m pip install --upgrade pip
+    |
+    export PATH="/c/Python${PYTHON_VERSION}:/c/Python${PYTHON_VERSION}/Scripts:${PATH}"
+    case $PYTHON_VERSION in
+      35)
+        choco install python --version 3.5.4
+        ;;
+      36)
+        choco install python --version 3.6.5
+        ;;
+      37)
+        choco install python --version 3.7.2
+        ;;
+      *)
+        choco install python --version 3.8.1
+        ;;
+    esac
+    python -m pip install --upgrade pip
+  script: python -m unittest -v
 
 
 ###############################################################################
@@ -173,15 +188,16 @@ jobs:
         - MPLBACKEND=ps
         - PYTHON_VERSION=3.8.0
 
-    # Windows, Python 3.7
+    # Windows, Python 3.8
     - stage: test
       <<: *stage_win
       if: type != cron
-      script: python -m unittest -v
+      env:
+        - PYTHON_VERSION=38
 
     # "conditional tests" stage
     ###########################################################################
-    # OSX, Python 3.6.5
+    # slow tests using OSX, Python 3.6.5
     - stage: conditional tests
       <<: *stage_osx
       if: type = cron
@@ -192,12 +208,28 @@ jobs:
       script:
         # effectively increases timeout to 1h.
         - travis_wait 60 make test
-    # GNU/Linux, Python 3.8
+    # test with terra master, using GNU/Linux, Python 3.8
     - if: type = cron
       <<: *stage_linux
       python: 3.8
       name: with terra master
       before_script: pip install -U git+https://github.com/Qiskit/qiskit-terra.git
+    # additional Windows tests
+    # Windows, Python 3.7
+    - if: type = cron
+      <<: *stage_win
+      env:
+        - PYTHON_VERSION=37
+    # Windows, Python 3.6
+    - if: type = cron
+      <<: *stage_win
+      env:
+        - PYTHON_VERSION=36
+    # Windows, Python 3.5
+    - if: type = cron
+      <<: *stage_win
+      env:
+        - PYTHON_VERSION=35
     - if: tag IS present
       language: python
       python: "3.6"
