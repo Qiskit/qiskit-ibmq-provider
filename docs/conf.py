@@ -89,10 +89,6 @@ autodoc_default_options = {
     'inherited-members': None,
 }
 
-# This value controls the behavior of sphinx-build -W during importing modules.
-# If False is given, autodoc forcedly suppresses the error if the imported
-# module emits warnings.
-autodoc_warningiserror = False
 
 # If true, figures, tables and code-blocks are automatically numbered if they
 # have a caption.

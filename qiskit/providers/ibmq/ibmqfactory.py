@@ -40,9 +40,6 @@ UPDATE_ACCOUNT_TEXT = "Please update your accounts and programs by following the
                       "instructions here: https://github.com/Qiskit/qiskit-ibmq-provider#" \
                       "updating-to-the-new-ibm-q-experience "
 
-warnings.warn('Timestamps in IBMQ backend properties, jobs, and job results '
-              'are all now in local time instead of UTC.')
-
 
 class IBMQFactory:
     """Factory and account manager for IBM Quantum Experience."""
@@ -107,6 +104,10 @@ class IBMQFactory:
             raise IBMQAccountCredentialsInvalidUrl(
                 'The URL specified ({}) is not an IBM Quantum Experience authentication '
                 'URL. Valid authentication URL: {}.'.format(credentials.url, QX_AUTH_URL))
+
+        # TODO Remove in the future.
+        warnings.warn('Timestamps in IBMQ backend properties, jobs, and job results '
+                      'are all now in local time instead of UTC.')
 
         # Initialize the providers.
         self._initialize_providers(credentials)
@@ -186,6 +187,10 @@ class IBMQFactory:
         if not version_info['new_api'] or 'api-auth' not in version_info:
             raise IBMQAccountCredentialsInvalidUrl(
                 'Invalid IBM Quantum Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
+
+        # TODO: Remove in the future.
+        warnings.warn('Timestamps in IBMQ backend properties, jobs, and job results '
+                      'are all now in local time instead of UTC.')
 
         # Initialize the providers.
         if self._credentials:
