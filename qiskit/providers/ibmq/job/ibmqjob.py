@@ -21,7 +21,6 @@ from datetime import datetime
 from concurrent import futures
 from threading import Event
 from queue import Empty
-from types import SimpleNamespace
 import dateutil.parser
 
 from qiskit.providers import BaseJob  # type: ignore[attr-defined]
@@ -47,7 +46,7 @@ from .utils import (build_error_report, api_status_to_job_status,
 logger = logging.getLogger(__name__)
 
 
-class IBMQJob(SimpleNamespace, BaseJob):
+class IBMQJob(BaseJob):
     """Representation of a job that executes on an IBM Quantum Experience backend.
 
     The job may be executed on a simulator or a real device. A new ``IBMQJob``
@@ -162,10 +161,11 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self.client_version = client_info
         self._set_result(result)
 
+        self._data = {}
         for key, value in kwargs.items():
             # Append suffix to key to avoid conflicts.
-            self.__dict__[key + '_'] = value
-        BaseJob.__init__(self, self.backend(), self.job_id())
+            self._data[key + '_'] = value
+        super().__init__(self.backend(), self.job_id())
 
         # Properties used for caching.
         self._cancelled = False
@@ -763,7 +763,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._set_result(api_response.pop('result', None))
 
         for key, value in api_response.items():
-            self.__dict__[key + '_'] = value
+            self._data[key + '_'] = value
 
     def to_dict(self) -> Dict:
         """Serialize the model into a Python dict of simple types.
@@ -1072,3 +1072,9 @@ class IBMQJob(SimpleNamespace, BaseJob):
             queue_info = None
 
         return status, queue_info
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self._data[name]
+        except KeyError:
+            raise AttributeError('Attribute {} is not defined.'.format(name))

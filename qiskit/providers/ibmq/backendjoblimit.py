@@ -15,10 +15,9 @@
 """Job limit information related to a backend."""
 
 from typing import Any
-from types import SimpleNamespace
 
 
-class BackendJobLimit(SimpleNamespace):
+class BackendJobLimit:
     """Job limit for a backend.
 
     Represent the job limit for a backend on a specific provider. This
@@ -44,5 +43,12 @@ class BackendJobLimit(SimpleNamespace):
         """
         self.maximum_jobs = maximum_jobs
         self.active_jobs = running_jobs
+        self._data = {}
 
         super().__init__(**kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self._data[name]
+        except KeyError:
+            raise AttributeError('Attribute {} is not defined.'.format(name))
