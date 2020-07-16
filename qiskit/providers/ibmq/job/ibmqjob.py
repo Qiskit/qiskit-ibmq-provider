@@ -98,6 +98,8 @@ class IBMQJob(BaseJob):
     which is a supported attribute.
     """
 
+    _data = {}
+
     _executor = futures.ThreadPoolExecutor()
     """Threads used for asynchronous processing."""
 
@@ -1077,4 +1079,4 @@ class IBMQJob(BaseJob):
         try:
             return self._data[name]
         except KeyError:
-            raise AttributeError('Attribute {} is not defined.'.format(name))
+            raise AttributeError('Attribute {} is not defined.'.format(name)) from None

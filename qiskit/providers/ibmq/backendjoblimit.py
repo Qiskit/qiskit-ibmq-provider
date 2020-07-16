@@ -31,6 +31,8 @@ class BackendJobLimit:
             this provider.
     """
 
+    _data = {}
+
     def __init__(self, maximum_jobs: int, running_jobs: int, **kwargs: Any) -> None:
         """BackendJobLimit constructor.
 
@@ -51,4 +53,4 @@ class BackendJobLimit:
         try:
             return self._data[name]
         except KeyError:
-            raise AttributeError('Attribute {} is not defined.'.format(name))
+            raise AttributeError('Attribute {} is not defined.'.format(name)) from None

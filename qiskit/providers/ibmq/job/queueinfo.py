@@ -27,6 +27,8 @@ from .utils import api_status_to_job_status
 class QueueInfo:
     """Queue information for a job."""
 
+    _data = {}
+
     def __init__(
             self,
             position: Optional[int] = None,
@@ -110,7 +112,7 @@ class QueueInfo:
         try:
             return self._data[name]
         except KeyError:
-            raise AttributeError('Attribute {} is not defined.'.format(name))
+            raise AttributeError('Attribute {} is not defined.'.format(name)) from None
 
     def format(self) -> str:
         """Build a user-friendly report for the job queue information.
