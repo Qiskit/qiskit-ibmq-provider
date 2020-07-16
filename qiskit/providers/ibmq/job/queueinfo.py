@@ -90,9 +90,6 @@ class QueueInfo(SimpleNamespace):
                 if self.estimated_start_time else None
             est_complete_time = self.estimated_complete_time.isoformat() \
                 if self.estimated_complete_time else None
-        if est_start_time or est_complete_time:
-            warnings.warn('The estimated start and completion time is now returned '
-                          'in local time instead of UTC.', stacklevel=2)
 
         queue_info = [
             "job_id='{}'".format(self.job_id),
@@ -123,10 +120,6 @@ class QueueInfo(SimpleNamespace):
             est_complete_time = duration_difference(self.estimated_complete_time) \
                 if self.estimated_complete_time else self._get_value(self.estimated_complete_time)
 
-        if est_start_time or est_complete_time:
-            warnings.warn('The estimated start and completion time is now returned '
-                          'in local time instead of UTC.', stacklevel=2)
-
         queue_info = [
             "Job {} queue information:".format(self._get_value(self.job_id)),
             "    queue position: {}".format(self._get_value(self.position)),
@@ -153,8 +146,6 @@ class QueueInfo(SimpleNamespace):
         """Return estimated start time in local time."""
         if self._estimated_start_time_utc is None:
             return None
-        warnings.warn('The estimated start time is now returned in local time instead of UTC.',
-                      stacklevel=2)
         return utc_to_local(self._estimated_start_time_utc)
 
     @property
@@ -162,6 +153,4 @@ class QueueInfo(SimpleNamespace):
         """Return estimated complete time in local time."""
         if self._estimated_complete_time_utc is None:
             return None
-        warnings.warn('The estimated complete time is now returned in local time instead of UTC.',
-                      stacklevel=2)
         return utc_to_local(self._estimated_complete_time_utc)

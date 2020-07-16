@@ -15,6 +15,7 @@
 """Factory and Account manager for IBM Quantum Experience."""
 
 import logging
+import warnings
 from typing import Dict, List, Union, Callable, Optional, Any
 from collections import OrderedDict
 
@@ -38,6 +39,9 @@ QX_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
 UPDATE_ACCOUNT_TEXT = "Please update your accounts and programs by following the " \
                       "instructions here: https://github.com/Qiskit/qiskit-ibmq-provider#" \
                       "updating-to-the-new-ibm-q-experience "
+
+warnings.warn('Timestamps in IBMQ backend properties, jobs, and job results '
+              'are all now in local time instead of UTC.')
 
 
 class IBMQFactory:
