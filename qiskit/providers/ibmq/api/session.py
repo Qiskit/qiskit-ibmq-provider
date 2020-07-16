@@ -30,9 +30,12 @@ from .exceptions import RequestsApiError
 from ..version import __version__ as ibmq_provider_version
 
 STATUS_FORCELIST = (
+    500,  # General server error
     502,  # Bad Gateway
     503,  # Service Unavailable
     504,  # Gateway Timeout
+    520,  # Cloudflare general error
+    522,  # Cloudflare connection timeout
     524,  # Cloudflare Timeout
 )
 CUSTOM_HEADER_ENV_VAR = 'QE_CUSTOM_CLIENT_APP_HEADER'
