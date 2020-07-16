@@ -14,6 +14,7 @@
 
 """Client for communicating with the IBM Quantum Experience API via websocket."""
 
+import sys
 import asyncio
 import json
 import logging
@@ -39,6 +40,12 @@ from .base import BaseClient
 
 
 logger = logging.getLogger(__name__)
+
+# WindowsProactorEventLoopPolicy raises an exception in tornado (used by Jupyter)
+# and causes a hang with websockets.
+if sys.platform.startswith('win') and sys.version_info[:3] >= (3, 8, 0) and \
+        isinstance(asyncio.get_event_loop_policy(), asyncio.WindowsProactorEventLoopPolicy):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # `asyncio` by design does not allow event loops to be nested. Jupyter (really
 # tornado) has its own event loop already so we need to patch it.
