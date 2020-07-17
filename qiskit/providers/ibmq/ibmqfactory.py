@@ -15,6 +15,7 @@
 """Factory and Account manager for IBM Quantum Experience."""
 
 import logging
+import warnings
 from typing import Dict, List, Union, Callable, Optional, Any
 from collections import OrderedDict
 
@@ -104,6 +105,10 @@ class IBMQFactory:
                 'The URL specified ({}) is not an IBM Quantum Experience authentication '
                 'URL. Valid authentication URL: {}.'.format(credentials.url, QX_AUTH_URL))
 
+        # TODO Remove in the future.
+        warnings.warn('Timestamps in IBMQ backend properties, jobs, and job results '
+                      'are all now in local time instead of UTC.')
+
         # Initialize the providers.
         self._initialize_providers(credentials)
 
@@ -182,6 +187,10 @@ class IBMQFactory:
         if not version_info['new_api'] or 'api-auth' not in version_info:
             raise IBMQAccountCredentialsInvalidUrl(
                 'Invalid IBM Quantum Experience credentials found. ' + UPDATE_ACCOUNT_TEXT)
+
+        # TODO: Remove in the future.
+        warnings.warn('Timestamps in IBMQ backend properties, jobs, and job results '
+                      'are all now in local time instead of UTC.')
 
         # Initialize the providers.
         if self._credentials:
