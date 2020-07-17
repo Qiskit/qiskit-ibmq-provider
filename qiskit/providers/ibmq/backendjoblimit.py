@@ -45,9 +45,7 @@ class BackendJobLimit:
         """
         self.maximum_jobs = maximum_jobs
         self.active_jobs = running_jobs
-        self._data = {}
-
-        super().__init__(**kwargs)
+        self._data = kwargs
 
     def __getattr__(self, name: str) -> Any:
         try:
