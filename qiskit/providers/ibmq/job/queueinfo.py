@@ -16,7 +16,6 @@
 
 from typing import Any, Optional, Union
 from datetime import datetime
-from types import SimpleNamespace
 import warnings
 
 import dateutil.parser
@@ -25,8 +24,10 @@ from ..utils import utc_to_local, duration_difference
 from .utils import api_status_to_job_status
 
 
-class QueueInfo(SimpleNamespace):
+class QueueInfo:
     """Queue information for a job."""
+
+    _data = {}
 
     def __init__(
             self,
@@ -66,7 +67,7 @@ class QueueInfo(SimpleNamespace):
         self.project_priority = project_priority
         self.job_id = job_id
 
-        super().__init__(**kwargs)
+        self._data = kwargs
 
     def __repr__(self) -> str:
         """Return the string representation of ``QueueInfo``.
@@ -103,6 +104,12 @@ class QueueInfo(SimpleNamespace):
         ]
 
         return "<{}({})>".format(self.__class__.__name__, ', '.join(queue_info))
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self._data[name]
+        except KeyError:
+            raise AttributeError('Attribute {} is not defined.'.format(name)) from None
 
     def format(self) -> str:
         """Build a user-friendly report for the job queue information.

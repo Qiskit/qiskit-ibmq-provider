@@ -214,6 +214,10 @@ jobs:
       python: 3.8
       name: with terra master
       before_script: pip install -U git+https://github.com/Qiskit/qiskit-terra.git
+      env:
+        - QISKIT_TESTS=run_slow
+      script:
+        - travis_wait 60 make test
     # additional Windows tests
     # Windows, Python 3.7
     - if: type = cron
