@@ -210,8 +210,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
         if not properties:
             return None
 
-        warnings.warn('All timestamps in backend properties are now in '
-                      'local time instead of UTC.', stacklevel=2)
         decode_backend_properties(properties)
         properties = utc_to_local_all(properties)
         return BackendProperties.from_dict(properties)
@@ -284,8 +282,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
                     'Unable to retrieve result for job {}. Job has failed. '
                     'Use job.error_message() to get more details.'.format(self.job_id()))
 
-        warnings.warn('The date in job Result object is now returned '
-                      'in local time instead of UTC.', stacklevel=2)
         return self._retrieve_result(refresh=refresh)
 
     def cancel(self) -> bool:
@@ -587,9 +583,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
             The job creation date as a datetime object, in local time.
         """
         creation_date_local_dt = utc_to_local(self._creation_date)
-        # TODO: Remove when decided the warning is no longer needed.
-        warnings.warn('The creation date is returned in local time now, '
-                      'rather than UTC.', stacklevel=2)
         return creation_date_local_dt
 
     def job_id(self) -> str:
@@ -651,8 +644,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
         # Note: By default, `None` should be returned if no time per step info is available.
         time_per_step_local = None
         if self._time_per_step:
-            warnings.warn('The time per step date and time information is returned in '
-                          'local time now, rather than UTC.', stacklevel=2)
             time_per_step_local = {}
             for step_name, time_data_utc in self._time_per_step.items():
                 time_per_step_local[step_name] = utc_to_local(time_data_utc)
