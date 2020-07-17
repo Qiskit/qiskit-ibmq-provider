@@ -21,7 +21,6 @@ from datetime import datetime
 from concurrent import futures
 from threading import Event
 from queue import Empty
-from types import SimpleNamespace
 import dateutil.parser
 
 from qiskit.providers import BaseJob  # type: ignore[attr-defined]
@@ -47,7 +46,7 @@ from .utils import (build_error_report, api_status_to_job_status,
 logger = logging.getLogger(__name__)
 
 
-class IBMQJob(SimpleNamespace, BaseJob):
+class IBMQJob(BaseJob):
     """Representation of a job that executes on an IBM Quantum Experience backend.
 
     The job may be executed on a simulator or a real device. A new ``IBMQJob``
@@ -98,6 +97,8 @@ class IBMQJob(SimpleNamespace, BaseJob):
     can use :meth:`creation_date()` to retrieve the job creation date,
     which is a supported attribute.
     """
+
+    _data = {}
 
     _executor = futures.ThreadPoolExecutor()
     """Threads used for asynchronous processing."""
@@ -162,10 +163,11 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self.client_version = client_info
         self._set_result(result)
 
+        self._data = {}
         for key, value in kwargs.items():
             # Append suffix to key to avoid conflicts.
-            self.__dict__[key + '_'] = value
-        BaseJob.__init__(self, self.backend(), self.job_id())
+            self._data[key + '_'] = value
+        super().__init__(self.backend(), self.job_id())
 
         # Properties used for caching.
         self._cancelled = False
@@ -210,8 +212,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
         if not properties:
             return None
 
-        warnings.warn('All timestamps in backend properties are now in '
-                      'local time instead of UTC.', stacklevel=2)
         decode_backend_properties(properties)
         properties = utc_to_local_all(properties)
         return BackendProperties.from_dict(properties)
@@ -284,8 +284,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
                     'Unable to retrieve result for job {}. Job has failed. '
                     'Use job.error_message() to get more details.'.format(self.job_id()))
 
-        warnings.warn('The date in job Result object is now returned '
-                      'in local time instead of UTC.', stacklevel=2)
         return self._retrieve_result(refresh=refresh)
 
     def cancel(self) -> bool:
@@ -587,9 +585,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
             The job creation date as a datetime object, in local time.
         """
         creation_date_local_dt = utc_to_local(self._creation_date)
-        # TODO: Remove when decided the warning is no longer needed.
-        warnings.warn('The creation date is returned in local time now, '
-                      'rather than UTC.', stacklevel=2)
         return creation_date_local_dt
 
     def job_id(self) -> str:
@@ -651,8 +646,6 @@ class IBMQJob(SimpleNamespace, BaseJob):
         # Note: By default, `None` should be returned if no time per step info is available.
         time_per_step_local = None
         if self._time_per_step:
-            warnings.warn('The time per step date and time information is returned in '
-                          'local time now, rather than UTC.', stacklevel=2)
             time_per_step_local = {}
             for step_name, time_data_utc in self._time_per_step.items():
                 time_per_step_local[step_name] = utc_to_local(time_data_utc)
@@ -763,7 +756,7 @@ class IBMQJob(SimpleNamespace, BaseJob):
         self._set_result(api_response.pop('result', None))
 
         for key, value in api_response.items():
-            self.__dict__[key + '_'] = value
+            self._data[key + '_'] = value
 
     def to_dict(self) -> Dict:
         """Serialize the model into a Python dict of simple types.
@@ -1072,3 +1065,9 @@ class IBMQJob(SimpleNamespace, BaseJob):
             queue_info = None
 
         return status, queue_info
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self._data[name]
+        except KeyError:
+            raise AttributeError('Attribute {} is not defined.'.format(name)) from None

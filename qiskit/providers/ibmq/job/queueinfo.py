@@ -16,7 +16,6 @@
 
 from typing import Any, Optional, Union
 from datetime import datetime
-from types import SimpleNamespace
 import warnings
 
 import dateutil.parser
@@ -25,8 +24,10 @@ from ..utils import utc_to_local, duration_difference
 from .utils import api_status_to_job_status
 
 
-class QueueInfo(SimpleNamespace):
+class QueueInfo:
     """Queue information for a job."""
+
+    _data = {}
 
     def __init__(
             self,
@@ -66,7 +67,7 @@ class QueueInfo(SimpleNamespace):
         self.project_priority = project_priority
         self.job_id = job_id
 
-        super().__init__(**kwargs)
+        self._data = kwargs
 
     def __repr__(self) -> str:
         """Return the string representation of ``QueueInfo``.
@@ -90,9 +91,6 @@ class QueueInfo(SimpleNamespace):
                 if self.estimated_start_time else None
             est_complete_time = self.estimated_complete_time.isoformat() \
                 if self.estimated_complete_time else None
-        if est_start_time or est_complete_time:
-            warnings.warn('The estimated start and completion time is now returned '
-                          'in local time instead of UTC.', stacklevel=2)
 
         queue_info = [
             "job_id='{}'".format(self.job_id),
@@ -106,6 +104,12 @@ class QueueInfo(SimpleNamespace):
         ]
 
         return "<{}({})>".format(self.__class__.__name__, ', '.join(queue_info))
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self._data[name]
+        except KeyError:
+            raise AttributeError('Attribute {} is not defined.'.format(name)) from None
 
     def format(self) -> str:
         """Build a user-friendly report for the job queue information.
@@ -122,10 +126,6 @@ class QueueInfo(SimpleNamespace):
                 if self.estimated_start_time else self._get_value(self.estimated_start_time)
             est_complete_time = duration_difference(self.estimated_complete_time) \
                 if self.estimated_complete_time else self._get_value(self.estimated_complete_time)
-
-        if est_start_time or est_complete_time:
-            warnings.warn('The estimated start and completion time is now returned '
-                          'in local time instead of UTC.', stacklevel=2)
 
         queue_info = [
             "Job {} queue information:".format(self._get_value(self.job_id)),
@@ -153,8 +153,6 @@ class QueueInfo(SimpleNamespace):
         """Return estimated start time in local time."""
         if self._estimated_start_time_utc is None:
             return None
-        warnings.warn('The estimated start time is now returned in local time instead of UTC.',
-                      stacklevel=2)
         return utc_to_local(self._estimated_start_time_utc)
 
     @property
@@ -162,6 +160,4 @@ class QueueInfo(SimpleNamespace):
         """Return estimated complete time in local time."""
         if self._estimated_complete_time_utc is None:
             return None
-        warnings.warn('The estimated complete time is now returned in local time instead of UTC.',
-                      stacklevel=2)
         return utc_to_local(self._estimated_complete_time_utc)

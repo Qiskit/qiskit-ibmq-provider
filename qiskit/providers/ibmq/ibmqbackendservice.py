@@ -19,7 +19,6 @@ import warnings
 import copy
 
 from typing import Dict, List, Callable, Optional, Any, Union
-from types import SimpleNamespace
 from datetime import datetime
 
 from qiskit.providers import JobStatus, QiskitBackendNotFoundError  # type: ignore[attr-defined]
@@ -37,7 +36,7 @@ from .utils.converters import local_to_utc
 logger = logging.getLogger(__name__)
 
 
-class IBMQBackendService(SimpleNamespace):
+class IBMQBackendService:
     """Backend namespace for an IBM Quantum Experience account provider.
 
     Represent a namespace that provides backend related services for the IBM
