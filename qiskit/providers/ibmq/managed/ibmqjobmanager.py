@@ -157,6 +157,11 @@ class IBMQJobManager:
 
         validate_job_tags(job_tags, IBMQJobManagerInvalidStateError)
 
+        if not isinstance(backend, IBMQBackend):
+            raise IBMQJobManagerInvalidStateError(
+                "IBMQJobManager only supports IBMQBackend. "
+                "{} is not an IBMQBackend.".format(backend))
+
         experiment_list = self._split_experiments(
             experiments, backend=backend, max_experiments_per_job=max_experiments_per_job)
 
