@@ -278,13 +278,22 @@ class IBMQJob(BaseJob):
             if self._status is JobStatus.CANCELLED:
                 raise IBMQJobInvalidStateError('Unable to retrieve result for job {}. '
                                                'Job was cancelled.'.format(self.job_id()))
-
-            if self._status is JobStatus.ERROR and not partial:
+            # Job failed.
+            if partial:
+                self._retrieve_result(refresh=refresh)
+            if not partial or not self._result:
+                error_message = self.error_message()
+                if '\n' in error_message:
+                    error_message = ". Use job.error_message() to get more details"
+                else:
+                    error_message = ": " + error_message
                 raise IBMQJobFailureError(
-                    'Unable to retrieve result for job {}. Job has failed. '
-                    'Use job.error_message() to get more details.'.format(self.job_id()))
+                    'Unable to retrieve result for job {}. Job has failed{}'.format(
+                        self.job_id(), error_message))
+        else:
+            self._retrieve_result(refresh=refresh)
 
-        return self._retrieve_result(refresh=refresh)
+        return self._result
 
     def cancel(self) -> bool:
         """Attempt to cancel the job.
@@ -512,10 +521,7 @@ class IBMQJob(BaseJob):
 
         if not self._job_error_msg:
             # First try getting error messages from the result.
-            try:
-                self._retrieve_result()
-            except IBMQJobFailureError:
-                pass
+            self._retrieve_result()
 
         if not self._job_error_msg:
             # Then try refreshing the job
@@ -882,48 +888,30 @@ class IBMQJob(BaseJob):
 
         return self._status in required_status
 
-    def _retrieve_result(self, refresh: bool = False) -> Result:
+    def _retrieve_result(self, refresh: bool = False):
         """Retrieve the job result response.
 
         Args:
             refresh: If ``True``, re-query the server for the result.
                Otherwise return the cached value.
 
-        Returns:
-            The job result.
-
         Raises:
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
-            IBMQJobFailureError: If the job failed and partial result could not
-                be retrieved.
-            IBMQJobInvalidStateError: If result is in an unsupported format.
         """
-        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
-        result_response = None
         if not self._result or refresh:  # type: ignore[has-type]
             try:
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
                 self._set_result(result_response)
-            except ApiError as err:
                 if self._status is JobStatus.ERROR:
-                    raise IBMQJobFailureError(
-                        'Unable to retrieve result for job {}. Job has failed. Use '
-                        'job.error_message() to get more details.'.format(self.job_id())) from err
+                    # Look for error message in result response.
+                    self._check_for_error_message(result_response)
+            except ApiError as err:
+                if self._status in [JobStatus.ERROR, JobStatus.CANCELLED]:
+                    pass
                 raise IBMQJobApiError(
                     'Unable to retrieve result for '
                     'job {}: {}'.format(self.job_id(), str(err))) from err
-            finally:
-                # In case partial results are returned or job failure, an error message is cached.
-                if result_response:
-                    self._check_for_error_message(result_response)
-
-        if self._status is JobStatus.ERROR and not self._result.results:
-            raise IBMQJobFailureError(
-                'Unable to retrieve result for job {}. Job has failed. '
-                'Use job.error_message() to get more details.'.format(self.job_id()))
-
-        return self._result
 
     def _set_result(self, raw_data: Optional[Dict]) -> None:
         """Set the job result.
