@@ -281,7 +281,7 @@ class IBMQJob(BaseJob):
             # Job failed.
             if partial:
                 self._retrieve_result(refresh=refresh)
-            if not partial or not self._result:
+            if not partial or not self._result or not self._result.results:
                 error_message = self.error_message()
                 if '\n' in error_message:
                     error_message = ". Use job.error_message() to get more details"
@@ -500,8 +500,9 @@ class IBMQJob(BaseJob):
 
         with api_to_job_error():
             api_response = self._api.job_status(self.job_id())
+            self._api_status = api_response['status']
             self._status, self._queue_info = self._get_status_position(
-                api_response['status'], api_response.get('info_queue', None))
+                self._api_status, api_response.get('info_queue', None))
 
         # Get all job attributes if the job is done.
         if self._status in JOB_FINAL_STATES:
@@ -880,8 +881,9 @@ class IBMQJob(BaseJob):
             raise IBMQJobApiError('Error checking job status due to a network '
                                   'error: {}'.format(str(api_err))) from api_err
 
+        self._api_status = status_response['status']
         self._status, self._queue_info = self._get_status_position(
-            status_response['status'], status_response.get('info_queue', None))
+            self._api_status, status_response.get('info_queue', None))
 
         # Get all job attributes when the job is done.
         self.refresh()
@@ -899,6 +901,11 @@ class IBMQJob(BaseJob):
             IBMQJobApiError: If an unexpected error occurred when communicating
                 with the server.
         """
+        if self._api_status in (ApiJobStatus.ERROR_CREATING_JOB.value,
+                                ApiJobStatus.ERROR_VALIDATING_JOB.value):
+            # No results if job was never executed.
+            return
+
         if not self._result or refresh:  # type: ignore[has-type]
             try:
                 result_response = self._api.job_result(self.job_id(), self._use_object_storage)
@@ -907,11 +914,10 @@ class IBMQJob(BaseJob):
                     # Look for error message in result response.
                     self._check_for_error_message(result_response)
             except ApiError as err:
-                if self._status in [JobStatus.ERROR, JobStatus.CANCELLED]:
-                    pass
-                raise IBMQJobApiError(
-                    'Unable to retrieve result for '
-                    'job {}: {}'.format(self.job_id(), str(err))) from err
+                if self._status not in (JobStatus.ERROR, JobStatus.CANCELLED):
+                    raise IBMQJobApiError(
+                        'Unable to retrieve result for '
+                        'job {}: {}'.format(self.job_id(), str(err))) from err
 
     def _set_result(self, raw_data: Optional[Dict]) -> None:
         """Set the job result.

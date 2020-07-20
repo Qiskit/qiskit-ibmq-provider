@@ -33,7 +33,8 @@ from qiskit.compiler import assemble, transpile
 from ..jobtestcase import JobTestCase
 from ..decorators import requires_provider, requires_device
 from ..utils import (most_busy_backend, cancel_job, get_large_circuit,
-                     update_job_tags_and_verify, bell_in_qobj, submit_bad_job)
+                     update_job_tags_and_verify, bell_in_qobj, submit_job_bad_shots,
+                     submit_job_one_bad_instr)
 from ..fake_account_client import BaseFakeAccountClient, MissingFieldFakeJob
 
 
@@ -155,33 +156,25 @@ class TestIBMQJobAttributes(JobTestCase):
     @requires_device
     def test_error_message_device(self, backend):
         """Test retrieving job error messages from a device backend."""
-        qc_new = transpile(self._qc, backend)
-        qobj = assemble([qc_new]*2, backend=backend)
-        qobj.experiments[1].instructions[1].name = 'bad_instruction'
-
-        job = backend.run(qobj, validate_qobj=True)
+        job = submit_job_one_bad_instr(backend)
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
-        with self.assertRaises(IBMQJobFailureError):
-            job.result(partial=False)
 
-        message = job.error_message()
-        self.assertTrue(message)
-        self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', message), message)
+        rjob = backend.retrieve_job(job.job_id())
 
-        provider = backend.provider()
-        r_message = provider.backends.retrieve_job(job.job_id()).error_message()
-        self.assertTrue(r_message)
-        self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', r_message), r_message)
+        for q_job, partial in [(job, False), (rjob, True)]:
+            with self.subTest(partial=partial):
+                with self.assertRaises(IBMQJobFailureError) as err_cm:
+                    q_job.result(partial=partial)
+                for msg in (err_cm.exception.message, q_job.error_message()):
+                    self.assertIn('bad_instruction', msg)
+                    self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', msg), msg)
 
     def test_error_message_simulator(self):
         """Test retrieving job error messages from a simulator backend."""
-        qc_new = transpile(self._qc, self.sim_backend)
-        qobj = assemble([qc_new]*2, backend=self.sim_backend)
-        qobj.experiments[1].instructions[1].name = 'bad_instruction'
-
-        job = self.sim_backend.run(qobj, validate_qobj=True)
-        with self.assertRaises(IBMQJobFailureError):
+        job = submit_job_one_bad_instr(self.sim_backend)
+        with self.assertRaises(IBMQJobFailureError) as err_cm:
             job.result()
+        self.assertNotIn('bad_instruction', err_cm.exception.message)
 
         message = job.error_message()
         self.assertIn('Experiment 1: ERROR', message)
@@ -191,16 +184,18 @@ class TestIBMQJobAttributes(JobTestCase):
 
     def test_error_message_validation(self):
         """Test retrieving job error message for a validation error."""
-        job = submit_bad_job(self.sim_backend)
-        with self.assertRaises(IBMQJobFailureError):
-            job.result()
+        job = submit_job_bad_shots(self.sim_backend)
+        rjob = self.sim_backend.retrieve_job(job.job_id())
 
-        message = job.error_message()
-        self.assertNotIn("Unknown", message)
-        self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', message), message)
+        for q_job, partial in [(job, False), (rjob, True)]:
+            with self.subTest(partial=partial):
+                with self.assertRaises(IBMQJobFailureError) as err_cm:
+                    q_job.result(partial=partial)
+                for msg in (err_cm.exception.message, q_job.error_message()):
+                    self.assertNotIn("Unknown", msg)
+                    self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', msg), msg)
 
-        r_message = self.provider.backends.retrieve_job(job.job_id()).error_message()
-        self.assertEqual(message, r_message)
+        self.assertEqual(job.error_message(), rjob.error_message())
 
     def test_refresh(self):
         """Test refreshing job data."""

@@ -41,7 +41,7 @@ from qiskit.providers.ibmq.utils.converters import local_to_utc
 from ..jobtestcase import JobTestCase
 from ..decorators import (requires_provider, requires_device)
 from ..utils import (most_busy_backend, get_large_circuit, bell_in_qobj, cancel_job,
-                     submit_bad_job, submit_and_cancel)
+                     submit_job_bad_shots, submit_and_cancel, submit_job_one_bad_instr)
 
 
 class TestIBMQJob(JobTestCase):
@@ -298,7 +298,8 @@ class TestIBMQJob(JobTestCase):
         ]
 
         job_to_cancel = submit_and_cancel(backend=self.sim_backend)
-        job_to_fail = submit_bad_job(backend=self.sim_backend)
+        job_to_fail = submit_job_bad_shots(backend=self.sim_backend)
+        job_to_fail.wait_for_final_state()
 
         for status_filter in status_filters:
             with self.subTest(status_filter=status_filter):
@@ -498,11 +499,7 @@ class TestIBMQJob(JobTestCase):
 
     def test_retrieve_failed_job_simulator_partial(self):
         """Test retrieving partial results from a simulator backend."""
-        qc_new = transpile(ReferenceCircuits.bell(), self.sim_backend)
-        qobj = assemble([qc_new]*2, backend=self.sim_backend)
-        qobj.experiments[1].instructions[1].name = 'bad_instruction'
-
-        job = self.sim_backend.run(qobj, validate_qobj=True)
+        job = submit_job_one_bad_instr(self.sim_backend)
         result = job.result(partial=True)
 
         self.assertIsInstance(result, Result)
