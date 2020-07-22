@@ -16,7 +16,7 @@
 
 import time
 from unittest import mock
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import uuid
 
@@ -216,11 +216,11 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_job_creation_date(self):
         """Test retrieving creation date, while ensuring it is in local time."""
         # datetime, before running the job, in local time.
-        start_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
+        start_datetime = datetime.now().replace(tzinfo=tz.tzlocal()) - timedelta(seconds=1)
         job = self.sim_backend.run(self.qobj, validate_qobj=True)
         job.result()
         # datetime, after the job is done running, in local time.
-        end_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
+        end_datetime = datetime.now().replace(tzinfo=tz.tzlocal()) + timedelta(seconds=1)
 
         self.assertTrue((start_datetime <= job.creation_date() <= end_datetime),
                         'job creation date {} is not '
@@ -230,11 +230,11 @@ class TestIBMQJobAttributes(JobTestCase):
     def test_time_per_step(self):
         """Test retrieving time per step, while ensuring the date times are in local time."""
         # datetime, before running the job, in local time.
-        start_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
+        start_datetime = datetime.now().replace(tzinfo=tz.tzlocal()) - timedelta(seconds=1)
         job = self.sim_backend.run(self.qobj, validate_qobj=True)
         job.result()
         # datetime, after the job is done running, in local time.
-        end_datetime = datetime.now().replace(tzinfo=tz.tzlocal())
+        end_datetime = datetime.now().replace(tzinfo=tz.tzlocal()) + timedelta(seconds=1)
 
         self.assertTrue(job.time_per_step())
         for step, time_data in job.time_per_step().items():
