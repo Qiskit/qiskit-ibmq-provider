@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    :meth:`qiskit.providers.ibmq.job.IBMQJob.result` raises an
+    :class:`~qiskit.providers.ibmq.job.IBMQJobFailureError` exception if
+    the job has failed. The exception message will now contain the reason
+    the job failed, if the entire job failed for a single reason.

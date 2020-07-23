@@ -108,21 +108,35 @@ def cancel_job(job: IBMQJob, verify: bool = False) -> bool:
     return cancelled
 
 
-def submit_bad_job(backend: IBMQBackend) -> IBMQJob:
-    """Submit a job that is destined to fail.
+def submit_job_bad_shots(backend: IBMQBackend) -> IBMQJob:
+    """Submit a job that will fail due to too many shots.
 
     Args:
         backend: Backend to submit the job to.
 
     Returns:
-        Failed job.
+        Submitted job.
     """
-    # Submit a job that will fail.
     qobj = bell_in_qobj(backend=backend)
     qobj.config.shots = 10000  # Modify the number of shots to be an invalid amount.
     job_to_fail = backend.run(qobj, validate_qobj=True)
-    job_to_fail.wait_for_final_state()
     return job_to_fail
+
+
+def submit_job_one_bad_instr(backend: IBMQBackend) -> IBMQJob:
+    """Submit a job that contains one good and one bad instruction.
+
+    Args:
+        backend: Backend to submit the job to.
+
+    Returns:
+        Submitted job.
+    """
+    qc_new = transpile(ReferenceCircuits.bell(), backend)
+    qobj = assemble([qc_new]*2, backend=backend)
+    qobj.experiments[1].instructions[1].name = 'bad_instruction'
+    job = backend.run(qobj, validate_qobj=True)
+    return job
 
 
 def submit_and_cancel(backend: IBMQBackend) -> IBMQJob:
