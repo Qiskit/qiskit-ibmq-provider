@@ -60,6 +60,8 @@ class TestIBMQJobManager(IBMQTestCase):
     def tearDown(self):
         """Tear down."""
         super().tearDown()
+        if self._fake_api_backend:
+            self._fake_api_backend._api.tear_down()
         # Restore provider backends since we cannot deep copy provider.
         self.provider.backends._provider = self.provider
 
