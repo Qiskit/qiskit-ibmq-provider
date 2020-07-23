@@ -280,6 +280,14 @@ class BaseFakeAccountClient:
             job._job_tags = attr_value.copy()
         return {attr_name: attr_value}
 
+    def tear_down(self):
+        """Clean up job threads."""
+        for job_id in list(self._jobs.keys()):
+            try:
+                self._jobs[job_id].cancel()
+            except KeyError:
+                pass
+
     def _unfinished_jobs(self):
         """Return the number of unfinished jobs."""
         return sum(1 for job in self._jobs.values() if job.status() not in API_JOB_FINAL_STATES)
