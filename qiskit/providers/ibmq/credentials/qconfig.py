@@ -15,8 +15,9 @@
 """Utilities for reading credentials from the deprecated ``Qconfig.py`` file."""
 
 import os
+import warnings
 from collections import OrderedDict
-from typing import Dict, Tuple
+from typing import Dict
 from importlib.util import module_from_spec, spec_from_file_location
 
 from .credentials import Credentials
@@ -42,14 +43,11 @@ def read_credentials_from_qconfig() -> Dict[HubGroupProject, Credentials]:
     if not os.path.isfile(DEFAULT_QCONFIG_FILE):
         return OrderedDict()
     else:
-        # Note this is nested inside the else to prevent some tools marking
-        # the whole method as deprecated.
-        pass
-        # TODO: reintroduce when we decide on deprecating
-        # warnings.warn(
-        #     "Using 'Qconfig.py' for storing the credentials will be deprecated in"
-        #     "upcoming versions (>0.6.0). Using .qiskitrc is recommended",
-        #     DeprecationWarning)
+        # TODO: remove in 0.9.
+        warnings.warn(
+            "Using 'Qconfig.py' for storing credentials is deprecated and will "
+            "be removed in the next release. Please use .qiskitrc instead.",
+            category=DeprecationWarning, stacklevel=4)
 
     try:
         spec = spec_from_file_location('Qconfig', DEFAULT_QCONFIG_FILE)
