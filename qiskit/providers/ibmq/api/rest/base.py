@@ -14,6 +14,8 @@
 
 """Base REST adapter."""
 
+from typing import Any
+
 from ..session import RetrySession
 
 
@@ -33,13 +35,15 @@ class RestAdapterBase:
         self.session = session
         self.prefix_url = prefix_url
 
-    def get_url(self, identifier: str) -> str:
+    def get_url(self, identifier: str, **fields: Any) -> str:
         """Return the resolved URL for the specified identifier.
 
         Args:
             identifier: Internal identifier of the endpoint.
+            fields: Replacement fields and their values.
 
         Returns:
             The resolved URL of the endpoint (relative to the session base URL).
         """
-        return '{}{}'.format(self.prefix_url, self.URL_MAP[identifier])
+        url = self.URL_MAP[identifier].format(**fields)
+        return '{}{}'.format(self.prefix_url, url)

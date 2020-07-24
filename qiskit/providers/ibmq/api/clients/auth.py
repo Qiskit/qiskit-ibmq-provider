@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Any
 from requests.exceptions import RequestException
 
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
-from ..rest import Api, Auth
+from ..rest import Api
 from ..session import RetrySession
 
 from .base import BaseClient
@@ -39,7 +39,7 @@ class AuthClient(BaseClient):
         self.auth_url = auth_url
         self._service_urls = {}  # type: ignore[var-annotated]
 
-        self.client_auth = Auth(RetrySession(auth_url, **request_kwargs))
+        self.client_auth = Api(RetrySession(auth_url, **request_kwargs))
         self.client_api = self._init_service_clients(**request_kwargs)
 
     def _init_service_clients(self, **request_kwargs: Any) -> Api:

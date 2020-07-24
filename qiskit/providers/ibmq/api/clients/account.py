@@ -25,10 +25,11 @@ from datetime import datetime  # pylint: disable=unused-import
 from qiskit.providers.ibmq.apiconstants import (API_JOB_FINAL_STATES, ApiJobStatus,
                                                 ApiJobShareLevel)
 from qiskit.providers.ibmq.utils.utils import RefreshQueue
+from qiskit.providers.ibmq.credentials import Credentials
 
 from ..exceptions import (RequestsApiError, WebsocketError,
                           WebsocketTimeoutError, UserTimeoutExceededError)
-from ..rest import Api
+from ..rest import Api, Account
 from ..session import RetrySession
 from ..exceptions import ApiIBMQProtocolError
 from .base import BaseClient
@@ -43,24 +44,24 @@ class AccountClient(BaseClient):
     def __init__(
             self,
             access_token: str,
-            project_url: str,
-            websockets_url: str,
-            use_websockets: bool,
+            credentials: Credentials,
             **request_kwargs: Any
     ) -> None:
         """AccountClient constructor.
 
         Args:
             access_token: IBM Quantum Experience access token.
-            project_url: IBM Quantum Experience URL for a specific hub/group/project.
-            websockets_url: URL for the websockets server.
-            use_websockets: Whether to use webscokets.
+            credentials: Account credentials.
             **request_kwargs: Arguments for the request ``Session``.
         """
-        self.client_api = Api(RetrySession(project_url, access_token,
-                                           **request_kwargs))
-        self.client_ws = WebsocketClient(websockets_url, access_token)
-        self._use_websockets = use_websockets
+        self.session = RetrySession(credentials.base_url, access_token, **request_kwargs)
+        # base_api is used to handle endpoints that don't include h/g/p.
+        # account_api is for h/g/p.
+        self.base_api = Api(self.session)
+        self.account_api = Account(session=self.session, hub=credentials.hub,
+                                   group=credentials.group, project=credentials.project)
+        self.client_ws = WebsocketClient(credentials.websockets_url, access_token)
+        self._use_websockets = (not credentials.proxies)
 
     # Backend-related public functions.
 
@@ -73,7 +74,7 @@ class AccountClient(BaseClient):
         Returns:
             Backends available for this provider.
         """
-        return self.client_api.backends(timeout=timeout)
+        return self.account_api.backends(timeout=timeout)
 
     def backend_status(self, backend_name: str) -> Dict[str, Any]:
         """Return the status of the backend.
@@ -84,7 +85,7 @@ class AccountClient(BaseClient):
         Returns:
             Backend status.
         """
-        return self.client_api.backend(backend_name).status()
+        return self.account_api.backend(backend_name).status()
 
     def backend_properties(
             self,
@@ -101,7 +102,7 @@ class AccountClient(BaseClient):
             Backend properties.
         """
         # pylint: disable=redefined-outer-name
-        return self.client_api.backend(backend_name).properties(datetime=datetime)
+        return self.account_api.backend(backend_name).properties(datetime=datetime)
 
     def backend_pulse_defaults(self, backend_name: str) -> Dict:
         """Return the pulse defaults of the backend.
@@ -112,7 +113,7 @@ class AccountClient(BaseClient):
         Returns:
             Backend pulse defaults.
         """
-        return self.client_api.backend(backend_name).pulse_defaults()
+        return self.account_api.backend(backend_name).pulse_defaults()
 
     def backend_job_limit(self, backend_name: str) -> Dict[str, Any]:
         """Return the job limit for the backend.
@@ -123,7 +124,7 @@ class AccountClient(BaseClient):
         Returns:
             Backend job limit.
         """
-        return self.client_api.backend(backend_name).job_limit()
+        return self.account_api.backend(backend_name).job_limit()
 
     # Jobs-related public functions.
 
@@ -148,7 +149,7 @@ class AccountClient(BaseClient):
         Returns:
             A list of job data.
         """
-        return self.client_api.jobs(limit=limit, skip=skip, descending=descending,
+        return self.account_api.jobs(limit=limit, skip=skip, descending=descending,
                                     extra_filter=extra_filter)
 
     def job_submit(
@@ -175,7 +176,7 @@ class AccountClient(BaseClient):
         _job_share_level = job_share_level.value if job_share_level else None
 
         # Create a remote job instance on the server.
-        job_info = self.client_api.create_remote_job(
+        job_info = self.account_api.create_remote_job(
             backend_name,
             job_name=job_name,
             job_share_level=_job_share_level,
@@ -184,7 +185,7 @@ class AccountClient(BaseClient):
         # Get the upload URL.
         job_id = job_info['id']
         upload_url = job_info['objectStorageInfo']['uploadUrl']
-        job_api = self.client_api.job(job_id)
+        job_api = self.account_api.job(job_id)
 
         # Upload the Qobj to object storage.
         _ = job_api.put_object_storage(upload_url, qobj_dict)
@@ -218,7 +219,7 @@ class AccountClient(BaseClient):
         Returns:
             ``Qobj`` in dictionary form.
         """
-        job_api = self.client_api.job(job_id)
+        job_api = self.account_api.job(job_id)
 
         # Get the download URL.
         download_url = job_api.download_url()['url']
@@ -257,7 +258,7 @@ class AccountClient(BaseClient):
         Returns:
             Job result.
         """
-        job_api = self.client_api.job(job_id)
+        job_api = self.account_api.job(job_id)
 
         # Get the download URL.
         download_url = job_api.result_url()['url']
@@ -285,7 +286,7 @@ class AccountClient(BaseClient):
         Returns:
             Job information.
         """
-        return self.client_api.job(job_id).get()
+        return self.account_api.job(job_id).get()
 
     def job_status(self, job_id: str) -> Dict[str, Any]:
         """Return the status of the job.
@@ -299,7 +300,7 @@ class AccountClient(BaseClient):
         Raises:
             ApiIBMQProtocolError: If unexpected data is received from the server.
         """
-        return self.client_api.job(job_id).status()
+        return self.account_api.job(job_id).status()
 
     def job_final_status(
             self,
@@ -433,7 +434,7 @@ class AccountClient(BaseClient):
         Returns:
             Backend properties.
         """
-        return self.client_api.job(job_id).properties()
+        return self.account_api.job(job_id).properties()
 
     def job_cancel(self, job_id: str) -> Dict[str, Any]:
         """Submit a request for cancelling the job.
@@ -444,7 +445,7 @@ class AccountClient(BaseClient):
         Returns:
             Job cancellation response.
         """
-        return self.client_api.job(job_id).cancel()
+        return self.account_api.job(job_id).cancel()
 
     def job_update_attribute(
             self,
@@ -467,4 +468,9 @@ class AccountClient(BaseClient):
             A dictionary containing the name of the updated attribute and the new value
             it is associated with.
         """
-        return self.client_api.job(job_id).update_attribute({attr_name: attr_value})
+        return self.account_api.job(job_id).update_attribute({attr_name: attr_value})
+
+    # Other public functions.
+
+    def backend_reservation(self):
+        pass

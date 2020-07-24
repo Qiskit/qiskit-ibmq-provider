@@ -267,6 +267,7 @@ class RetrySession(Session):
             kwargs.update({'timeout': self._timeout})
 
         try:
+            print(f"final url is {final_url}")
             self._log_request_info(url, method, kwargs)
             response = super().request(method, final_url, **kwargs)
             response.raise_for_status()

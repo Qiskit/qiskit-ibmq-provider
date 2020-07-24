@@ -33,15 +33,16 @@ class Backend(RestAdapterBase):
         'jobs_limit': '/jobsLimit'
     }
 
-    def __init__(self, session: RetrySession, backend_name: str) -> None:
+    def __init__(self, session: RetrySession, backend_name: str, url_prefix: str) -> None:
         """Backend constructor.
 
         Args:
             session: Session to be used in the adaptor.
             backend_name: Name of the backend.
+            url_prefix: Base URL.
         """
         self.backend_name = backend_name
-        super().__init__(session, '/devices/{}'.format(backend_name))
+        super().__init__(session, '{}/devices/{}'.format(url_prefix, backend_name))
 
     def properties(self, datetime: Optional[datetime] = None) -> Dict[str, Any]:
         """Return backend properties.

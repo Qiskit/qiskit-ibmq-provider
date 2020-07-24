@@ -84,9 +84,7 @@ class AccountProvider(BaseProvider):
         self.credentials = credentials
         # set the client.
         self._api = AccountClient(access_token,
-                                  credentials.url,
-                                  credentials.websockets_url,
-                                  use_websockets=(not credentials.proxies),
+                                  credentials,
                                   **credentials.connection_parameters())
 
         # Initialize the internal list of backends.

@@ -12,7 +12,12 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""REST adaptors for communicating with the IBM Quantum Experience services."""
+"""REST adaptors for communicating with the IBM Quantum Experience services.
+
+Each adaptor handles a specific endpoint prefix followed by the base URL. The
+Job adaptor, for example, handles all /Jobs/{job id} endpoints.
+"""
 
 from .auth import Auth
 from .root import Api
+from .account import Account

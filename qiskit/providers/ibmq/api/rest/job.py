@@ -46,7 +46,7 @@ class Job(RestAdapterBase):
         'upload_url': '/jobUploadUrl'
     }
 
-    def __init__(self, session: RetrySession, job_id: str) -> None:
+    def __init__(self, session: RetrySession, job_id: str, url_prefix: str) -> None:
         """Job constructor.
 
         Args:
@@ -54,7 +54,7 @@ class Job(RestAdapterBase):
             job_id: ID of the job.
         """
         self.job_id = job_id
-        super().__init__(session, '/Jobs/{}'.format(job_id))
+        super().__init__(session, '{}/Jobs/{}'.format(url_prefix, job_id))
 
     def get(self) -> Dict[str, Any]:
         """Return job information.
