@@ -33,7 +33,7 @@ class Backend(RestAdapterBase):
         'jobs_limit': '/jobsLimit'
     }
 
-    def __init__(self, session: RetrySession, backend_name: str, url_prefix: str) -> None:
+    def __init__(self, session: RetrySession, backend_name: str, url_prefix: str = '') -> None:
         """Backend constructor.
 
         Args:
