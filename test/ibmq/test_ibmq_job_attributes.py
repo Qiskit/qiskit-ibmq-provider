@@ -460,7 +460,7 @@ class TestIBMQJobAttributes(JobTestCase):
             self.sim_backend._api_client = BaseFakeAccountClient(job_class=MissingFieldFakeJob)
             self.assertRaises(IBMQBackendApiProtocolError, self.sim_backend.run, self.qobj)
         finally:
-            self.sim_backend._api = saved_api
+            self.sim_backend._api_client = saved_api
 
     def test_client_version(self):
         """Test job client version information."""

@@ -99,7 +99,6 @@ class Job(RestAdapterBase):
         """
         url = self.get_url('callback_upload')
         data = self.session.post(url).json()
-        print("callback_upload data received: {}".format(data))
         mapped_response = {'job': map_job_response(data['job'])}
         return mapped_response
 
