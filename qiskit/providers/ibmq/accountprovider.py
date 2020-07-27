@@ -82,10 +82,9 @@ class AccountProvider(BaseProvider):
         super().__init__()
 
         self.credentials = credentials
-        # set the client.
-        self._api = AccountClient(access_token,
-                                  credentials,
-                                  **credentials.connection_parameters())
+        self._api_client = AccountClient(access_token,
+                                         credentials,
+                                         **credentials.connection_parameters())
 
         # Initialize the internal list of backends.
         self._backends = self._discover_remote_backends()
@@ -110,7 +109,7 @@ class AccountProvider(BaseProvider):
             A dict of the remote backend instances, keyed by backend name.
         """
         ret = OrderedDict()  # type: ignore[var-annotated]
-        configs_list = self._api.list_backends(timeout=timeout)
+        configs_list = self._api_client.list_backends(timeout=timeout)
         for raw_config in configs_list:
             # Make sure the raw_config is of proper type
             if not isinstance(raw_config, dict):
@@ -129,7 +128,7 @@ class AccountProvider(BaseProvider):
                     configuration=config,
                     provider=self,
                     credentials=self.credentials,
-                    api=self._api)
+                    api_client=self._api_client)
             except Exception as ex:  # pylint: disable=broad-except
                 logger.warning(
                     'Remote backend "%s" could not be instantiated due to an '

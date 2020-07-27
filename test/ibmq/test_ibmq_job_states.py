@@ -395,7 +395,7 @@ class TestIBMQJobStates(JobTestCase):
 
     def run_with_api(self, api):
         """Creates a new ``IBMQJob`` running with the provided API object."""
-        backend = IBMQBackend(mock.Mock(), mock.Mock(), mock.Mock(), api=api)
+        backend = IBMQBackend(mock.Mock(), mock.Mock(), mock.Mock(), api_client=api)
         self._current_api = api
         self._current_qjob = backend.run(qobj=FakeQobj(), validate_qobj=True)
         self._current_qjob.refresh = mock.Mock()

@@ -106,7 +106,7 @@ class IBMQJob(BaseJob):
     def __init__(
             self,
             backend: 'ibmqbackend.IBMQBackend',
-            api: AccountClient,
+            api_client: AccountClient,
             job_id: str,
             creation_date: str,
             status: str,
@@ -126,7 +126,7 @@ class IBMQJob(BaseJob):
 
         Args:
             backend: The backend instance used to run this job.
-            api: Object for connecting to the server.
+            api_client: Object for connecting to the server.
             job_id: Job ID.
             creation_date: Job creation date.
             status: Job status returned by the server.
@@ -143,7 +143,7 @@ class IBMQJob(BaseJob):
             kwargs: Additional job attributes.
         """
         self._backend = backend
-        self._api = api
+        self._api_client = api_client
         self._job_id = job_id
         self._creation_date = dateutil.parser.isoparse(creation_date)
         self._api_status = status
@@ -189,7 +189,7 @@ class IBMQJob(BaseJob):
         # pylint: disable=access-member-before-definition,attribute-defined-outside-init
         if not self._qobj:  # type: ignore[has-type]
             with api_to_job_error():
-                qobj = self._api.job_download_qobj(
+                qobj = self._api_client.job_download_qobj(
                     self.job_id(), self._use_object_storage)
                 self._qobj = dict_to_qobj(qobj)
 
@@ -207,7 +207,7 @@ class IBMQJob(BaseJob):
                 with the server.
         """
         with api_to_job_error():
-            properties = self._api.job_properties(job_id=self.job_id())
+            properties = self._api_client.job_properties(job_id=self.job_id())
 
         if not properties:
             return None
@@ -310,7 +310,7 @@ class IBMQJob(BaseJob):
                 with the server.
         """
         try:
-            response = self._api.job_cancel(self.job_id())
+            response = self._api_client.job_cancel(self.job_id())
             self._cancelled = get_cancel_status(response)
             logger.debug('Job %s cancel status is "%s". Response data: %s.',
                          self.job_id(), self._cancelled, response)
@@ -340,7 +340,7 @@ class IBMQJob(BaseJob):
                 'The job name needs to be a string.'.format(name, type(name)))
 
         with api_to_job_error():
-            response = self._api.job_update_attribute(
+            response = self._api_client.job_update_attribute(
                 job_id=self.job_id(), attr_name='name', attr_value=name)
 
         # Get the name from the response and check if the update was successful.
@@ -407,7 +407,7 @@ class IBMQJob(BaseJob):
                                                   removal_tags=removal_tags)
 
         with api_to_job_error():
-            response = self._api.job_update_attribute(
+            response = self._api_client.job_update_attribute(
                 job_id=self.job_id(), attr_name='tags', attr_value=tags_to_update)
 
         # Get the tags from the response and check if the update was successful.
@@ -499,7 +499,7 @@ class IBMQJob(BaseJob):
             return self._status
 
         with api_to_job_error():
-            api_response = self._api.job_status(self.job_id())
+            api_response = self._api_client.job_status(self.job_id())
             self._api_status = api_response['status']
             self._status, self._queue_info = self._get_status_position(
                 self._api_status, api_response.get('info_queue', None))
@@ -736,7 +736,7 @@ class IBMQJob(BaseJob):
                 with the server.
         """
         with api_to_job_error():
-            api_response = self._api.job_get(self.job_id())
+            api_response = self._api_client.job_get(self.job_id())
 
         try:
             api_response.pop('job_id')
@@ -870,7 +870,7 @@ class IBMQJob(BaseJob):
             return self._status in required_status
 
         try:
-            status_response = self._api.job_final_status(
+            status_response = self._api_client.job_final_status(
                 self.job_id(), timeout=timeout, wait=wait, status_queue=status_queue)
         except UserTimeoutExceededError:
             raise IBMQJobTimeoutError(
@@ -908,7 +908,8 @@ class IBMQJob(BaseJob):
 
         if not self._result or refresh:  # type: ignore[has-type]
             try:
-                result_response = self._api.job_result(self.job_id(), self._use_object_storage)
+                result_response = self._api_client.job_result(
+                    self.job_id(), self._use_object_storage)
                 self._set_result(result_response)
                 if self._status is JobStatus.ERROR:
                     # Look for error message in result response.

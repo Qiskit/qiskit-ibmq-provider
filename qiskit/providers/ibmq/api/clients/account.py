@@ -54,11 +54,11 @@ class AccountClient(BaseClient):
             credentials: Account credentials.
             **request_kwargs: Arguments for the request ``Session``.
         """
-        self.session = RetrySession(credentials.base_url, access_token, **request_kwargs)
+        self._session = RetrySession(credentials.base_url, access_token, **request_kwargs)
         # base_api is used to handle endpoints that don't include h/g/p.
         # account_api is for h/g/p.
-        self.base_api = Api(self.session)
-        self.account_api = Account(session=self.session, hub=credentials.hub,
+        self.base_api = Api(self._session)
+        self.account_api = Account(session=self._session, hub=credentials.hub,
                                    group=credentials.group, project=credentials.project)
         self.client_ws = WebsocketClient(credentials.websockets_url, access_token)
         self._use_websockets = (not credentials.proxies)
@@ -150,7 +150,7 @@ class AccountClient(BaseClient):
             A list of job data.
         """
         return self.account_api.jobs(limit=limit, skip=skip, descending=descending,
-                                    extra_filter=extra_filter)
+                                     extra_filter=extra_filter)
 
     def job_submit(
             self,

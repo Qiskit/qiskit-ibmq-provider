@@ -244,7 +244,7 @@ class IBMQBackendService:
         initial_filter = copy.deepcopy(api_filter)
 
         while True:
-            job_page = self._provider._api.list_jobs_statuses(
+            job_page = self._provider._api_client.list_jobs_statuses(
                 limit=current_page_limit, skip=skip, descending=descending,
                 extra_filter=api_filter)
             if logger.getEffectiveLevel() is logging.DEBUG:
@@ -299,9 +299,9 @@ class IBMQBackendService:
                 backend = IBMQRetiredBackend.from_name(backend_name,
                                                        self._provider,
                                                        self._provider.credentials,
-                                                       self._provider._api)
+                                                       self._provider._api_client)
             try:
-                job = IBMQJob(backend=backend, api=self._provider._api, **job_info)
+                job = IBMQJob(backend=backend, api_client=self._provider._api_client, **job_info)
             except TypeError:
                 logger.warning('Discarding job "%s" because it contains invalid data.', job_id)
                 continue
@@ -453,7 +453,7 @@ class IBMQBackendService:
                  from the server.
         """
         try:
-            job_info = self._provider._api.job_get(job_id)
+            job_info = self._provider._api_client.job_get(job_id)
         except ApiError as ex:
             raise IBMQBackendApiError('Failed to get job {}: {}'
                                       .format(job_id, str(ex))) from ex
@@ -466,9 +466,9 @@ class IBMQBackendService:
             backend = IBMQRetiredBackend.from_name(backend_name,
                                                    self._provider,
                                                    self._provider.credentials,
-                                                   self._provider._api)
+                                                   self._provider._api_client)
         try:
-            job = IBMQJob(backend=backend, api=self._provider._api, **job_info)
+            job = IBMQJob(backend=backend, api_client=self._provider._api_client, **job_info)
         except TypeError as ex:
             raise IBMQBackendApiProtocolError(
                 'Unexpected return value received from the server '

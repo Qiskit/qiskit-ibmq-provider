@@ -61,7 +61,7 @@ class TestIBMQJobManager(IBMQTestCase):
         """Tear down."""
         super().tearDown()
         if self._fake_api_backend:
-            self._fake_api_backend._api.tear_down()
+            self._fake_api_backend._api_client.tear_down()
         # Restore provider backends since we cannot deep copy provider.
         self.provider.backends._provider = self.provider
 
@@ -71,7 +71,8 @@ class TestIBMQJobManager(IBMQTestCase):
         if not self._fake_api_backend:
             self._fake_api_backend = copy.copy(self.sim_backend)
             self._fake_api_provider = copy.copy(self.provider)
-            self._fake_api_provider._api = self._fake_api_backend._api = BaseFakeAccountClient()
+            self._fake_api_provider._api_client = self._fake_api_backend._api_client \
+                = BaseFakeAccountClient()
             self._fake_api_backend._provider = self._fake_api_provider
             self._fake_api_provider.backends._provider = self._fake_api_provider
         return self._fake_api_backend
@@ -145,8 +146,9 @@ class TestIBMQJobManager(IBMQTestCase):
 
     def test_error_message(self):
         """Test error message report."""
-        self.fake_api_backend._api = BaseFakeAccountClient(job_class=[BaseFakeJob, FailedFakeJob])
-        self.fake_api_provider._api = self.fake_api_backend._api
+        self.fake_api_backend._api_client = \
+            BaseFakeAccountClient(job_class=[BaseFakeJob, FailedFakeJob])
+        self.fake_api_provider._api_client = self.fake_api_backend._api_client
 
         job_set = self._jm.run([self._qc]*4, backend=self.fake_api_backend,
                                max_experiments_per_job=2)
@@ -160,7 +162,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
     def test_async_submit_exception(self):
         """Test asynchronous job submit failed."""
-        self.fake_api_backend._api = JobSubmitFailClient(max_fail_count=1)
+        self.fake_api_backend._api_client = JobSubmitFailClient(max_fail_count=1)
 
         job_set = self._jm.run([self._qc]*2, backend=self.fake_api_backend,
                                max_experiments_per_job=1)
@@ -268,9 +270,9 @@ class TestIBMQJobManager(IBMQTestCase):
     def test_job_limit(self):
         """Test reaching job limit."""
         job_limit = 5
-        self.fake_api_backend._api = BaseFakeAccountClient(
+        self.fake_api_backend._api_client = BaseFakeAccountClient(
             job_limit=job_limit, job_class=CancelableFakeJob)
-        self.fake_api_provider._api = self.fake_api_backend._api
+        self.fake_api_provider._api_client = self.fake_api_backend._api_client
 
         job_set = None
         try:
@@ -383,7 +385,7 @@ class TestIBMQJobManager(IBMQTestCase):
 
     def test_skipped_result(self):
         """Test one of jobs has no result."""
-        self.fake_api_backend._api = BaseFakeAccountClient(
+        self.fake_api_backend._api_client = BaseFakeAccountClient(
             job_class=[BaseFakeJob, CancelableFakeJob])
 
         job_set = self._jm.run([self._qc]*2, backend=self.fake_api_backend,

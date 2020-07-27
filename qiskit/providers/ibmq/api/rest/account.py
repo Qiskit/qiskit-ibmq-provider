@@ -39,7 +39,7 @@ class Account(RestAdapterBase):
     }
 
     TEMPLATE_IBMQ_HUBS = '/Network/{hub}/Groups/{group}/Projects/{project}'
-    """str: Template for creating an IBM Quantum Experience URL with 
+    """str: Template for creating an IBM Quantum Experience URL with
     hub/group/project information."""
 
     def __init__(self, session: RetrySession, hub: str, group: str, project: str) -> None:

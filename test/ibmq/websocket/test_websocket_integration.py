@@ -46,12 +46,12 @@ class TestWebsocketIntegration(IBMQTestCase):
     def setUp(self):
         """Initial test setup."""
         super().setUp()
-        self.saved_status_polling = self.sim_backend._api._job_final_status_polling
+        self.saved_status_polling = self.sim_backend._api_client._job_final_status_polling
 
     def tearDown(self):
         """Test tear down."""
         super().tearDown()
-        self.sim_backend._api._job_final_status_polling = self.saved_status_polling
+        self.sim_backend._api_client._job_final_status_polling = self.saved_status_polling
 
     def _job_final_status_polling(self, *args, **kwargs):
         """Replaces the actual _job_final_status_polling and fails the test."""
@@ -63,7 +63,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         job = self.sim_backend.run(self.qobj, validate_qobj=True)
 
         # Manually disable the non-websocket polling.
-        job._api._job_final_status_polling = self._job_final_status_polling
+        job._api_client._job_final_status_polling = self._job_final_status_polling
         result = job.result()
 
         self.assertEqual(result.status, 'COMPLETED')
@@ -76,7 +76,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         job = backend.run(qobj, validate_qobj=True)
 
         # Manually disable the non-websocket polling.
-        job._api._job_final_status_polling = self._job_final_status_polling
+        job._api_client._job_final_status_polling = self._job_final_status_polling
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         result = job.result()
 
@@ -89,7 +89,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         job._wait_for_completion()
 
         # Manually disable the non-websocket polling.
-        job._api._job_final_status_polling = self._job_final_status_polling
+        job._api_client._job_final_status_polling = self._job_final_status_polling
 
         # Pretend we haven't seen the final status
         job._status = JobStatus.RUNNING
@@ -101,16 +101,16 @@ class TestWebsocketIntegration(IBMQTestCase):
         """Test http retry after websocket error due to an invalid URL."""
         job = self.sim_backend.run(self.qobj, validate_qobj=True)
 
-        saved_websocket_url = job._api.client_ws.websocket_url
+        saved_websocket_url = job._api_client.client_ws.websocket_url
         try:
             # Use fake websocket address.
-            job._api.client_ws.websocket_url = 'wss://wss.localhost'
+            job._api_client.client_ws.websocket_url = 'wss://wss.localhost'
 
             # _wait_for_completion() should retry with http successfully
             # after getting websockets error.
             job._wait_for_completion()
         finally:
-            job._api.client_ws.websocket_url = saved_websocket_url
+            job._api_client.client_ws.websocket_url = saved_websocket_url
 
         self.assertIs(job._status, JobStatus.DONE)
 
@@ -122,7 +122,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         job = self.sim_backend.run(self.qobj, validate_qobj=True)
 
         with mock.patch.object(AccountClient, 'job_status',
-                               side_effect=job._api.job_status) as mocked_wait:
+                               side_effect=job._api_client.job_status) as mocked_wait:
             job._wait_for_completion()
             self.assertIs(job._status, JobStatus.DONE)
             mocked_wait.assert_called_with(job.job_id())
@@ -140,7 +140,7 @@ class TestWebsocketIntegration(IBMQTestCase):
 
         # Save the originals.
         saved_job_id = job._job_id
-        saved_job_status = job._api.job_status
+        saved_job_status = job._api_client.job_status
         # Use bad job ID to fail the status retrieval.
         job._job_id = '12345'
 
@@ -171,7 +171,7 @@ class TestWebsocketIntegration(IBMQTestCase):
             """Run a job and get its result."""
             job = self.sim_backend.run(self.qobj, validate_qobj=True)
             # Manually disable the non-websocket polling.
-            job._api._job_final_status_polling = self._job_final_status_polling
+            job._api_client._job_final_status_polling = self._job_final_status_polling
             job._wait_for_completion()
             if job._status is not JobStatus.DONE:
                 q.put("Job {} status should be DONE but is {}".format(
