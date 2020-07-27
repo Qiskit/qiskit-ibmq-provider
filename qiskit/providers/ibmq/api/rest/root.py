@@ -30,8 +30,7 @@ class Api(RestAdapterBase):
         'login': '/users/loginWithToken',
         'user_info': '/users/me',
         'hubs': '/Network',
-        'version': '/version',
-        'reservation': '/Network/devices/{backend_name}/bookings/v2'
+        'version': '/version'
     }
 
 # Client functions.
@@ -94,18 +93,3 @@ class Api(RestAdapterBase):
         response = self.session.get(url).json()
 
         return response
-
-    def reservation(self, backend_name: Optional[str] = None) -> Dict[str, Any]:
-        """Return backend reservations.
-
-        Args:
-            backend_name: Name of the backend.
-
-        Returns:
-            JSON response.
-        """
-        if backend_name:
-            url = self.get_url('reservation', backend_name=backend_name)
-        else:
-            url = self.get_url('reservation_all')
-        return self.session.get(url, bare=True)
