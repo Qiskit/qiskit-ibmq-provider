@@ -232,6 +232,7 @@ class IBMQBackend(BaseBackend):
             job = IBMQJob(backend=self, api_client=self._api_client, qobj=qobj, **submit_info)
             logger.debug('Job %s was successfully submitted.', job.job_id())
         except TypeError as err:
+            logger.debug("Invalid job data received: %s", submit_info)
             raise IBMQBackendApiProtocolError('Unexpected return value received from the server '
                                               'when submitting job: {}'.format(str(err))) from err
         Publisher().publish("ibmq.job.start", job)
