@@ -486,4 +486,3 @@ class IBMQFactory:
                 # Catch-all for errors instantiating the provider.
                 logger.warning('Unable to instantiate provider for %s: %s',
                                hub_info, ex)
-                raise

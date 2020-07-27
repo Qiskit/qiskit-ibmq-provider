@@ -469,8 +469,3 @@ class AccountClient(BaseClient):
             it is associated with.
         """
         return self.account_api.job(job_id).update_attribute({attr_name: attr_value})
-
-    # Other public functions.
-
-    def backend_reservation(self):
-        pass
