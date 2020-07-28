@@ -14,16 +14,11 @@
 
 """Root REST adapter."""
 
-import json
 import logging
-from typing import Dict, List, Optional, Any
-
-from qiskit.providers.ibmq.utils.utils import filter_data
+from typing import Dict, List, Any, Union
+from json import JSONDecodeError
 
 from .base import RestAdapterBase
-from .backend import Backend
-from .job import Job
-from .utils.data_mapper import map_job_response
 
 logger = logging.getLogger(__name__)
 
@@ -32,47 +27,13 @@ class Api(RestAdapterBase):
     """Rest adapter for general endpoints."""
 
     URL_MAP = {
-        'backends': '/devices/v/1',
+        'login': '/users/loginWithToken',
+        'user_info': '/users/me',
         'hubs': '/Network',
-        'jobs': '/Jobs',
-        'jobs_status': '/Jobs/status/v/1',
-        'circuit': '/qcircuit',
         'version': '/version'
     }
 
-    def backend(self, backend_name: str) -> Backend:
-        """Return an adapter for the backend.
-
-        Args:
-            backend_name: Name of the backend.
-
-        Returns:
-            The backend adapter.
-        """
-        return Backend(self.session, backend_name)
-
-    def job(self, job_id: str) -> Job:
-        """Return an adapter for the job.
-
-        Args:
-            job_id: ID of the job.
-
-        Returns:
-            The backend adapter.
-        """
-        return Job(self.session, job_id)
-
-    def backends(self, timeout: Optional[float] = None) -> List[Dict[str, Any]]:
-        """Return a list of backends.
-
-        Args:
-            timeout: Number of seconds to wait for the request.
-
-        Returns:
-            JSON response.
-        """
-        url = self.get_url('backends')
-        return self.session.get(url, timeout=timeout).json()
+# Client functions.
 
     def hubs(self) -> List[Dict[str, Any]]:
         """Return the list of hub/group/project sets available to the user.
@@ -83,105 +44,52 @@ class Api(RestAdapterBase):
         url = self.get_url('hubs')
         return self.session.get(url).json()
 
-    def jobs(
-            self,
-            limit: int = 10,
-            skip: int = 0,
-            descending: bool = True,
-            extra_filter: Dict[str, Any] = None
-    ) -> List[Dict[str, Any]]:
-        """Return a list of job information.
-
-        Args:
-            limit: Maximum number of items to return.
-            skip: Offset for the items to return.
-            descending: Whether the jobs should be in descending order.
-            extra_filter: Additional filtering passed to the query.
+    def version(self) -> Dict[str, Union[str, bool]]:
+        """Return the version information.
 
         Returns:
-            JSON response.
-        """
-        url = self.get_url('jobs_status')
+            A dictionary with information about the API version,
+            with the following keys:
 
-        order = 'DESC' if descending else 'ASC'
+                * ``new_api`` (bool): Whether the new API is being used
 
-        query = {
-            'order': 'creationDate ' + order,
-            'limit': limit,
-            'skip': skip,
-        }
-        if extra_filter:
-            query['where'] = extra_filter
+            And the following optional keys:
 
-        if logger.getEffectiveLevel() is logging.DEBUG:
-            logger.debug("Endpoint: %s. Method: GET. Request Data: {'filter': %s}",
-                         url, filter_data(query))
-
-        data = self.session.get(url, params={'filter': json.dumps(query)}).json()
-        for job_data in data:
-            map_job_response(job_data)
-        return data
-
-    def create_remote_job(
-            self,
-            backend_name: str,
-            job_name: Optional[str] = None,
-            job_share_level: Optional[str] = None,
-            job_tags: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
-        """Create a job instance on the remote server.
-
-        Args:
-            backend_name: The name of the backend.
-            job_name: Custom name to be assigned to the job.
-            job_share_level: Level the job should be shared at.
-            job_tags: Tags to be assigned to the job.
-
-        Returns:
-            JSON response.
-        """
-        url = self.get_url('jobs')
-
-        payload = {
-            'backend': {'name': backend_name},
-            'allowObjectStorage': True
-        }
-
-        if job_name:
-            payload['name'] = job_name
-
-        if job_share_level:
-            payload['shareLevel'] = job_share_level
-
-        if job_tags:
-            payload['tags'] = job_tags
-
-        return self.session.post(url, json=payload).json()
-
-    def circuit(self, name: str, **kwargs: Any) -> Dict[str, Any]:
-        """Execute a Circuit.
-
-        Args:
-            name: Name of the Circuit.
-            **kwargs: Arguments for the Circuit.
-
-        Returns:
-            JSON response.
-        """
-        url = self.get_url('circuit')
-
-        payload = {
-            'name': name,
-            'params': kwargs
-        }
-
-        return self.session.post(url, json=payload).json()
-
-    def version(self) -> Dict[str, Any]:
-        """Return the API versions.
-
-        Returns:
-            JSON response.
+                * ``api-*`` (str): The versions of each individual API component
         """
         url = self.get_url('version')
-        return self.session.get(url).json()
+        response = self.session.get(url)
+
+        try:
+            version_info = response.json()
+            version_info['new_api'] = True
+        except JSONDecodeError:
+            return {
+                'new_api': False,
+                'api': response.text
+            }
+
+        return version_info
+
+    def login(self, api_token: str) -> Dict[str, Any]:
+        """Login with token.
+
+        Args:
+            api_token: API token.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('login')
+        return self.session.post(url, json={'apiToken': api_token}).json()
+
+    def user_info(self) -> Dict[str, Any]:
+        """Return user information.
+
+        Returns:
+            JSON response of user information.
+        """
+        url = self.get_url('user_info')
+        response = self.session.get(url).json()
+
+        return response

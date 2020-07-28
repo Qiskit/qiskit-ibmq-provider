@@ -17,7 +17,7 @@
 from typing import Dict, Union, Any
 
 from ..session import RetrySession
-from ..rest.version_finder import VersionFinder
+from ..rest.root import Api
 
 from .base import BaseClient
 
@@ -32,7 +32,7 @@ class VersionClient(BaseClient):
             url: URL of the service.
             **request_kwargs: Arguments for the request ``Session``.
         """
-        self.client_version_finder = VersionFinder(
+        self.client_version_finder = Api(
             RetrySession(url, **request_kwargs))
 
     def version(self) -> Dict[str, Union[bool, str]]:

@@ -43,7 +43,7 @@ class TestAccountClient(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.provider = provider
-        cls.access_token = cls.provider._api.client_api.session.access_token
+        cls.access_token = cls.provider._api_client.account_api.session.access_token
 
     def setUp(self):
         """Initial test setup."""
@@ -64,9 +64,7 @@ class TestAccountClient(IBMQTestCase):
     def _get_client(self):
         """Helper for instantiating an AccountClient."""
         return AccountClient(self.access_token,
-                             self.provider.credentials.url,
-                             self.provider.credentials.websockets_url,
-                             use_websockets=True)
+                             self.provider.credentials)
 
     def test_job_submit_object_storage(self):
         """Test running a job against a simulator using object storage."""
@@ -77,35 +75,35 @@ class TestAccountClient(IBMQTestCase):
         qobj = assemble(circuit, backend, shots=1)
 
         # Run the job through the AccountClient directly using object storage.
-        api = backend._api
+        client = backend._api_client
 
-        job = api.job_submit(backend_name, qobj.to_dict())
+        job = client.job_submit(backend_name, qobj.to_dict())
         job_id = job['job_id']
         self.assertNotIn('shots', job)
         self.assertEqual(job['kind'], 'q-object-external-storage')
 
         # Wait for completion.
-        api.job_final_status(job_id)
+        client.job_final_status(job_id)
 
         # Fetch results and qobj via object storage.
-        result = api._job_result_object_storage(job_id)
-        qobj_downloaded = api._job_download_qobj_object_storage(job_id)
+        result = client._job_result_object_storage(job_id)
+        qobj_downloaded = client._job_download_qobj_object_storage(job_id)
 
         self.assertEqual(qobj_downloaded, qobj.to_dict())
         self.assertEqual(result['status'], 'COMPLETED')
 
     def test_list_jobs_statuses(self):
         """Check get status jobs by user authenticated."""
-        api = self._get_client()
-        jobs = api.list_jobs_statuses(limit=2)
+        client = self._get_client()
+        jobs = client.list_jobs_statuses(limit=2)
         self.assertEqual(len(jobs), 2)
 
     def test_exception_message(self):
         """Check exception has proper message."""
-        api = self._get_client()
+        client = self._get_client()
 
         with self.assertRaises(RequestsApiError) as exception_context:
-            api.job_status('foo')
+            client.job_status('foo')
 
         raised_exception = exception_context.exception
         original_error = raised_exception.__cause__.response.json()['error']
@@ -118,15 +116,15 @@ class TestAccountClient(IBMQTestCase):
         """Check custom client application header."""
         custom_header = 'batman'
         with custom_envs({'QE_CUSTOM_CLIENT_APP_HEADER': custom_header}):
-            api = self._get_client()
+            client = self._get_client()
             self.assertIn(custom_header,
-                          api.client_api.session.headers['X-Qx-Client-Application'])
+                          client._session.headers['X-Qx-Client-Application'])
 
         # Make sure the header is re-initialized
         with no_envs(['QE_CUSTOM_CLIENT_APP_HEADER']):
-            api = self._get_client()
+            client = self._get_client()
             self.assertNotIn(custom_header,
-                             api.client_api.session.headers['X-Qx-Client-Application'])
+                             client._session.headers['X-Qx-Client-Application'])
 
     def test_access_token_not_in_exception_traceback(self):
         """Check that access token is replaced within chained request exceptions."""
@@ -134,7 +132,7 @@ class TestAccountClient(IBMQTestCase):
         backend = self.provider.get_backend(backend_name)
         circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
         qobj = assemble(circuit, backend, shots=1)
-        api = backend._api
+        client = backend._api_client
 
         exception_message = 'The access token in this exception ' \
                             'message should be replaced: {}'.format(self.access_token)
@@ -145,7 +143,7 @@ class TestAccountClient(IBMQTestCase):
                     'urlopen',
                     side_effect=MaxRetryError(
                         HTTPConnectionPool('host'), 'url', reason=exception_message)):
-                _ = api.job_submit(backend.name(), qobj.to_dict())
+                _ = client.job_submit(backend.name(), qobj.to_dict())
         except RequestsApiError:
             exception_traceback_str = traceback.format_exc()
 
@@ -157,16 +155,16 @@ class TestAccountClient(IBMQTestCase):
         """Test job submit requests get retried."""
         backend_name = 'ibmq_qasm_simulator'
         backend = self.provider.get_backend(backend_name)
-        api = backend._api
+        client = backend._api_client
 
         # Send request to local server.
         valid_data = {'id': 'fake_id',
                       'objectStorageInfo': {'uploadUrl': SimpleServer.URL},
                       'job': {'id': 'fake_id'}}
         SimpleServer(handler_class=ServerErrorOnceHandler, valid_data=valid_data).start()
-        api.client_api.session.base_url = SimpleServer.URL
+        client.account_api.session.base_url = SimpleServer.URL
 
-        api.job_submit(backend_name, {})
+        client.job_submit(backend_name, {})
 
 
 class TestAccountClientJobs(IBMQTestCase):
@@ -182,11 +180,11 @@ class TestAccountClientJobs(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.provider = provider
-        cls.access_token = cls.provider._api.client_api.session.access_token
+        cls.access_token = cls.provider._api_client.account_api.session.access_token
 
         backend_name = 'ibmq_qasm_simulator'
         backend = cls.provider.get_backend(backend_name)
-        cls.client = backend._api
+        cls.client = backend._api_client
         cls.job = cls.client.job_submit(
             backend_name, cls._get_qobj(backend).to_dict())
         cls.job_id = cls.job['job_id']
@@ -266,7 +264,7 @@ class TestAuthClient(IBMQTestCase):
     def test_valid_login(self, qe_token, qe_url):
         """Test valid authentication."""
         client = AuthClient(qe_token, qe_url)
-        self.assertTrue(client.client_api.session.access_token)
+        self.assertTrue(client.base_api.session.access_token)
 
     @requires_qe_access
     def test_url_404(self, qe_token, qe_url):
@@ -292,23 +290,23 @@ class TestAuthClient(IBMQTestCase):
     @requires_qe_access
     def test_api_version(self, qe_token, qe_url):
         """Check the version of the QX API."""
-        api = AuthClient(qe_token, qe_url)
-        version = api.api_version()
+        client = AuthClient(qe_token, qe_url)
+        version = client.api_version()
         self.assertIsNotNone(version)
 
     @requires_qe_access
     def test_user_urls(self, qe_token, qe_url):
         """Check the user urls of the QX API."""
-        api = AuthClient(qe_token, qe_url)
-        user_urls = api.user_urls()
+        client = AuthClient(qe_token, qe_url)
+        user_urls = client.user_urls()
         self.assertIsNotNone(user_urls)
         self.assertTrue('http' in user_urls and 'ws' in user_urls)
 
     @requires_qe_access
     def test_user_hubs(self, qe_token, qe_url):
         """Check the user hubs of the QX API."""
-        api = AuthClient(qe_token, qe_url)
-        user_hubs = api.user_hubs()
+        client = AuthClient(qe_token, qe_url)
+        user_hubs = client.user_hubs()
         self.assertIsNotNone(user_hubs)
         for user_hub in user_hubs:
             with self.subTest(user_hub=user_hub):

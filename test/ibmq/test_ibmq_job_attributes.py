@@ -249,7 +249,7 @@ class TestIBMQJobAttributes(JobTestCase):
             return submit_info
 
         qobj = bell_in_qobj(self.sim_backend)
-        original_submit = self.sim_backend._api.job_submit
+        original_submit = self.sim_backend._api_client.job_submit
         with mock.patch.object(AccountClient, 'job_submit',
                                side_effect=_mocked__api_job_submit):
             job = self.sim_backend.run(qobj, validate_qobj=True)
@@ -455,12 +455,12 @@ class TestIBMQJobAttributes(JobTestCase):
 
     def test_missing_required_fields(self):
         """Test response data is missing required fields."""
-        saved_api = self.sim_backend._api
+        saved_api = self.sim_backend._api_client
         try:
-            self.sim_backend._api = BaseFakeAccountClient(job_class=MissingFieldFakeJob)
+            self.sim_backend._api_client = BaseFakeAccountClient(job_class=MissingFieldFakeJob)
             self.assertRaises(IBMQBackendApiProtocolError, self.sim_backend.run, self.qobj)
         finally:
-            self.sim_backend._api = saved_api
+            self.sim_backend._api_client = saved_api
 
     def test_client_version(self):
         """Test job client version information."""

@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Any
 from requests.exceptions import RequestException
 
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
-from ..rest import Api, Auth
+from ..rest import Api
 from ..session import RetrySession
 
 from .base import BaseClient
@@ -39,8 +39,8 @@ class AuthClient(BaseClient):
         self.auth_url = auth_url
         self._service_urls = {}  # type: ignore[var-annotated]
 
-        self.client_auth = Auth(RetrySession(auth_url, **request_kwargs))
-        self.client_api = self._init_service_clients(**request_kwargs)
+        self.auth_api = Api(RetrySession(auth_url, **request_kwargs))
+        self.base_api = self._init_service_clients(**request_kwargs)
 
     def _init_service_clients(self, **request_kwargs: Any) -> Api:
         """Initialize the clients used for communicating with the API.
@@ -54,14 +54,14 @@ class AuthClient(BaseClient):
         # Request an access token.
         access_token = self._request_access_token()
         # Use the token for the next auth server requests.
-        self.client_auth.session.access_token = access_token
+        self.auth_api.session.access_token = access_token
         self._service_urls = self.user_urls()
 
         # Create the api server client, using the access token.
-        client_api = Api(RetrySession(self._service_urls['http'], access_token,
-                                      **request_kwargs))
+        base_api = Api(RetrySession(self._service_urls['http'], access_token,
+                                    **request_kwargs))
 
-        return client_api
+        return base_api
 
     def _request_access_token(self) -> str:
         """Request a new access token from the API authentication service.
@@ -74,7 +74,7 @@ class AuthClient(BaseClient):
             RequestsApiError: If the request failed.
         """
         try:
-            response = self.client_auth.login(self.api_token)
+            response = self.auth_api.login(self.api_token)
             return response['id']
         except RequestsApiError as ex:
             # Get the original exception that raised.
@@ -106,7 +106,7 @@ class AuthClient(BaseClient):
                 * ``http``: The API URL for HTTP communication.
                 * ``ws``: The API URL for websocket communication.
         """
-        response = self.client_auth.user_info()
+        response = self.auth_api.user_info()
         return response['urls']
 
     def user_hubs(self) -> List[Dict[str, str]]:
@@ -119,7 +119,7 @@ class AuthClient(BaseClient):
             A list of dictionaries with the hub, group, and project values keyed by
             ``hub``, ``group``, and ``project``, respectively.
         """
-        response = self.client_api.hubs()
+        response = self.base_api.hubs()
 
         hubs = []  # type: ignore[var-annotated]
         for hub in response:
@@ -146,7 +146,7 @@ class AuthClient(BaseClient):
         Returns:
             API version.
         """
-        return self.client_api.version()
+        return self.base_api.version()
 
     def current_access_token(self) -> Optional[str]:
         """Return the current access token.
@@ -154,7 +154,7 @@ class AuthClient(BaseClient):
         Returns:
             The access token in use.
         """
-        return self.client_auth.session.access_token
+        return self.auth_api.session.access_token
 
     def current_service_urls(self) -> Dict[str, str]:
         """Return the current service URLs.
