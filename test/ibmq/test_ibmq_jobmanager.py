@@ -75,6 +75,7 @@ class TestIBMQJobManager(IBMQTestCase):
                 = BaseFakeAccountClient()
             self._fake_api_backend._provider = self._fake_api_provider
             self._fake_api_provider.backends._provider = self._fake_api_provider
+            self._fake_api_backend._configuration.max_experiments = 10
         return self._fake_api_backend
 
     @property
