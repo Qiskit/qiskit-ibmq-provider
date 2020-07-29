@@ -197,17 +197,16 @@ jobs:
 
     # "conditional tests" stage
     ###########################################################################
-    # slow tests using OSX, Python 3.6.5
+    # slow tests using Linux, Python 3.6
     - stage: conditional tests
-      <<: *stage_osx
       if: type = cron
+      <<: *stage_linux
+      python: 3.6
+      name: slow test
       env:
-        - MPLBACKEND=ps
-        - PYTHON_VERSION=3.6.5
         - QISKIT_TESTS=run_slow
       script:
-        # effectively increases timeout to 1h.
-        - travis_wait 60 make test
+        - make test
     # test with terra master, using GNU/Linux, Python 3.8
     - if: type = cron
       <<: *stage_linux
@@ -217,7 +216,7 @@ jobs:
       env:
         - QISKIT_TESTS=run_slow
       script:
-        - travis_wait 60 make test
+        - make test
     # additional Windows tests
     # Windows, Python 3.7
     - if: type = cron
