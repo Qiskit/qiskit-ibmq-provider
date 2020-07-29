@@ -20,7 +20,7 @@ from typing import Union
 
 import ipywidgets as wid
 from qiskit.test.mock.fake_backend import FakeBackend
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.backend.ibmqbackend import IBMQBackend
 
 
 def gates_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.GridBox:

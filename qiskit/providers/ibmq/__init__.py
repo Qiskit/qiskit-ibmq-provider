@@ -56,9 +56,6 @@ Classes
     :toctree: ../stubs/
 
     AccountProvider
-    BackendJobLimit
-    IBMQBackend
-    IBMQBackendService
     IBMQFactory
 
 Exceptions
@@ -83,16 +80,16 @@ Exceptions
 import logging
 from typing import List
 
+from qiskit.providers.basebackend import BaseBackend
+
 from .ibmqfactory import IBMQFactory
-from .ibmqbackend import IBMQBackend, BaseBackend
 from .job import IBMQJob
 from .managed import IBMQJobManager
 from .accountprovider import AccountProvider
-from .backendjoblimit import BackendJobLimit
+from .backend import BackendJobLimit, IBMQBackend, IBMQBackendService
+from .backend.exceptions import *
 from .exceptions import *
-from .ibmqbackendservice import IBMQBackendService
 from .utils.utils import setup_logger
-
 from .version import __version__
 
 # Setup the logger for the IBM Quantum Provider package.

@@ -23,9 +23,9 @@ from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 
 from .api.clients import AccountClient
-from .ibmqbackend import IBMQBackend, IBMQSimulator
+from .backend.ibmqbackend import IBMQBackend, IBMQSimulator
+from .backend.ibmqbackendservice import IBMQBackendService
 from .credentials import Credentials
-from .ibmqbackendservice import IBMQBackendService
 from .utils.json_decoder import decode_backend_configuration
 
 logger = logging.getLogger(__name__)

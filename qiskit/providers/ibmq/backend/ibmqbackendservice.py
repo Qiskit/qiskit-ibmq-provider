@@ -25,13 +25,13 @@ from qiskit.providers import JobStatus, QiskitBackendNotFoundError  # type: igno
 from qiskit.providers.providerutils import filter_backends
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
-from .api.exceptions import ApiError
-from .apiconstants import ApiJobStatus
-from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackendApiProtocolError)
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
-from .job import IBMQJob
-from .utils.utils import to_python_identifier, validate_job_tags, filter_data
-from .utils.converters import local_to_utc
+from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackendApiProtocolError)
+from ..api.exceptions import ApiError
+from ..apiconstants import ApiJobStatus
+from ..job import IBMQJob
+from ..utils.utils import to_python_identifier, validate_job_tags, filter_data
+from ..utils.converters import local_to_utc
 
 logger = logging.getLogger(__name__)
 

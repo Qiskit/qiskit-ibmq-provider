@@ -27,7 +27,7 @@ from qiskit.providers.ibmq.accountprovider import AccountProvider
 from .exceptions import IBMQJobManagerInvalidStateError
 from .utils import format_job_details, format_status_counts
 from .managedjobset import ManagedJobSet
-from ..ibmqbackend import IBMQBackend
+from ..backend.ibmqbackend import IBMQBackend
 
 logger = logging.getLogger(__name__)
 

@@ -1,0 +1,18 @@
+---
+upgrade:
+  - |
+    Backend related classes, including
+
+    * :class:`~qiskit.providers.ibmq.backend.IBMQBackendService`,
+    * :class:`~qiskit.providers.ibmq.backend.BackendJobLimit`,
+    * :class:`~qiskit.providers.ibmq.backend.IBMQBackend`,
+    * :class:`~qiskit.providers.ibmq.backend.IBMQBackendError`,
+    * :class:`~qiskit.providers.ibmq.backend.IBMQBackendApiError`,
+    * :class:`~qiskit.providers.ibmq.backend.IBMQBackendApiProtocolError`,
+    * :class:`~qiskit.providers.ibmq.backend.IBMQBackendValueError`,
+    * :class:`~qiskit.providers.ibmq.backend.IBMQBackendJobLimitError`,
+
+    have been moved to the new ``backend`` package. However, you can continue
+    to import them from ``qiskit.providers.ibmq``. For example::
+
+      from qiskit.providers.ibmq import IBMQBackend

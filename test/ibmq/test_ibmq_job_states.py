@@ -27,9 +27,9 @@ from qiskit.providers import JobTimeoutError
 from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError, IBMQJobInvalidStateError
 from qiskit.providers.ibmq.api.exceptions import (ApiError, UserTimeoutExceededError,
                                                   ApiIBMQProtocolError)
-from qiskit.providers.ibmq.exceptions import IBMQBackendError
+from qiskit.providers.ibmq.backend.exceptions import IBMQBackendError
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.backend.ibmqbackend import IBMQBackend
 
 from ..jobtestcase import JobTestCase
 

@@ -28,7 +28,7 @@ from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.result import Result
-from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
+from qiskit.providers.ibmq.backend import ibmqbackend  # pylint: disable=unused-import
 
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient

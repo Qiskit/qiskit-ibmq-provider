@@ -63,6 +63,7 @@ class TestIBMQJobManager(IBMQTestCase):
         if self._fake_api_backend:
             self._fake_api_backend._api_client.tear_down()
         # Restore provider backends since we cannot deep copy provider.
+        # TODO Can deep copy with terra 0.15 fix.
         self.provider.backends._provider = self.provider
 
     @property

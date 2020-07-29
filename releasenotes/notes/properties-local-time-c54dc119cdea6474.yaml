@@ -4,7 +4,7 @@ upgrade:
     Timestamps in the following fields are now in local time instead of UTC:
 
     * Backend properties returned by
-      meth:`qiskit.providers.ibmq.IBMQBackend.properties`.
+      :meth:`qiskit.providers.ibmq.IBMQBackend.properties`.
     * Backend properties returned by
       :meth:`qiskit.providers.ibmq.job.IBMQJob.properties`.
     * ``estimated_start_time`` and ``estimated_complete_time`` in

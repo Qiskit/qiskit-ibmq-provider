@@ -18,7 +18,7 @@ import time
 
 from qiskit.test import slow_test
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.exceptions import IBMQBackendJobLimitError
+from qiskit.providers.ibmq.backend import IBMQBackendJobLimitError
 
 from ..decorators import requires_providers
 from ..ibmqtestcase import IBMQTestCase

@@ -21,12 +21,13 @@ from typing import Union
 import ipyvuetify as vue
 from IPython.display import display  # pylint: disable=import-error
 from qiskit.test.mock.fake_backend import FakeBackend
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+
 from .config_widget import config_tab
 from .qubits_widget import qubits_tab
 from .gates_widget import gates_tab
 from .jobs_widget import jobs_tab
 from ..visualization.interactive import iplot_error_map
+from ..backend.ibmqbackend import IBMQBackend
 
 
 def _async_job_loader(tab: vue.TabItem, backend: Union[IBMQBackend, FakeBackend]) -> None:

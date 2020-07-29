@@ -21,9 +21,8 @@ from typing import Union
 import ipywidgets as wid
 import plotly.graph_objects as go
 from qiskit.test.mock.fake_backend import FakeBackend
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
-from ..ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.backend.ibmqbackend import IBMQBackend
 from ..visualization.interactive.plotly_wrapper import PlotlyWidget
 
 MONTH_NAMES = {1: 'Jan.',

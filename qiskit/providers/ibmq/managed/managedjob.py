@@ -20,16 +20,16 @@ from typing import List, Optional, Union
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
-from qiskit.providers.ibmq import IBMQBackend
 from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobError
-from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel, API_JOB_FINAL_STATES
 
+from ..apiconstants import ApiJobShareLevel, API_JOB_FINAL_STATES
+from ..backend.ibmqbackend import IBMQBackend
 from ..job.ibmqjob import IBMQJob
 from ..job.exceptions import IBMQJobTimeoutError
-from ..exceptions import IBMQBackendJobLimitError
+from ..backend.exceptions import IBMQBackendJobLimitError
 
 logger = logging.getLogger(__name__)
 

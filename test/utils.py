@@ -25,7 +25,7 @@ from qiskit.providers.exceptions import JobError
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.accountprovider import AccountProvider
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.backend.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.job import IBMQJob
 
 

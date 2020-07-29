@@ -59,28 +59,3 @@ class IBMQAccountMultipleCredentialsFound(IBMQAccountError):
 class IBMQProviderError(IBMQAccountError):
     """Errors related to provider handling."""
     pass
-
-
-class IBMQBackendError(IBMQError):
-    """Base class for errors raised by the backend modules."""
-    pass
-
-
-class IBMQBackendApiError(IBMQBackendError):
-    """Errors that occur unexpectedly when querying the server."""
-    pass
-
-
-class IBMQBackendApiProtocolError(IBMQBackendApiError):
-    """Errors raised when an unexpected value is received from the server."""
-    pass
-
-
-class IBMQBackendValueError(IBMQBackendError, ValueError):
-    """Value errors raised by the backend modules."""
-    pass
-
-
-class IBMQBackendJobLimitError(IBMQBackendError):
-    """Errors raised when job limit is reached."""
-    pass

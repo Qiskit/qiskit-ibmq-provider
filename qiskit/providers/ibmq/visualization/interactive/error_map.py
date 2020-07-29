@@ -22,7 +22,7 @@ import numpy as np
 import matplotlib as mpl
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.backend.ibmqbackend import IBMQBackend
 
 from .plotly_wrapper import PlotlyWidget, PlotlyFigure
 from ..device_layouts import DEVICE_LAYOUTS

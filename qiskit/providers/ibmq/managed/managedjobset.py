@@ -38,7 +38,7 @@ from .exceptions import (IBMQJobManagerInvalidStateError, IBMQJobManagerTimeoutE
                          IBMQJobManagerJobNotFound, IBMQJobManagerUnknownJobSet)
 from ..job import IBMQJob
 from ..job.exceptions import IBMQJobTimeoutError, IBMQJobApiError
-from ..ibmqbackend import IBMQBackend
+from ..backend.ibmqbackend import IBMQBackend
 
 logger = logging.getLogger(__name__)
 
