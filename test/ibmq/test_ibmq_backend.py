@@ -16,7 +16,8 @@
 
 from inspect import getfullargspec
 
-from qiskit.providers.ibmq import IBMQBackend, IBMQBackendService
+from qiskit.providers.ibmq.backend.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.backend.ibmqbackendservice import IBMQBackendService
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_device

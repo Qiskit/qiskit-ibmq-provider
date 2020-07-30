@@ -70,10 +70,6 @@ Exceptions
     IBMQAccountCredentialsInvalidToken
     IBMQAccountCredentialsInvalidUrl
     IBMQAccountMultipleCredentialsFound
-    IBMQBackendError
-    IBMQBackendApiError
-    IBMQBackendApiProtocolError
-    IBMQBackendValueError
     IBMQProviderError
 """
 
@@ -86,7 +82,6 @@ from .ibmqfactory import IBMQFactory
 from .job import IBMQJob
 from .managed import IBMQJobManager
 from .accountprovider import AccountProvider
-from .backend import BackendJobLimit, IBMQBackend, IBMQBackendService
 from .backend.exceptions import *
 from .exceptions import *
 from .utils.utils import setup_logger
