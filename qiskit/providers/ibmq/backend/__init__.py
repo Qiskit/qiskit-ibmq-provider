@@ -19,7 +19,7 @@ Backend (:mod:`qiskit.providers.ibmq.backend`)
 
 .. currentmodule:: qiskit.providers.ibmq.backend
 
-Modules representing IBM Quantum Experience backends.
+Modules representing IBM Quantum Experience backends and backend services.
 
 Classes
 =========
@@ -27,9 +27,9 @@ Classes
 .. autosummary::
     :toctree: ../stubs/
 
-    BackendJobLimit
     IBMQBackend
     IBMQBackendService
+    BackendJobLimit
 
 Exception
 =========

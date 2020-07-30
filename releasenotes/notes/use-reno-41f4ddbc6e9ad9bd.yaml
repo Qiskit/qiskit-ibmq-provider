@@ -1,7 +1,7 @@
 ---
 fixes:
   - |
-    :meth:`qiskit.provider.ibmq.IBMQBackend.jobs` will now return the correct
+    :meth:`qiskit.provider.ibmq.backend.IBMQBackend.jobs` will now return the correct
     list of :class:`~qiskit.provider.ibmq.job.IBMQJob` objects when the
     ``status`` kwarg is set to ``'RUNNING'``.
   - |

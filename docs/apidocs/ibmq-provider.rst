@@ -8,10 +8,10 @@ Qiskit IBM Quantum Provider API Reference
    :maxdepth: 1
 
    ibmq_provider
+   ibmq_backend
    ibmq_job
    ibmq_managed
    ibmq_credentials
    ibmq_visualization
    ibmq_jupyter
    ibmq_utils
-   ibmq_backend
