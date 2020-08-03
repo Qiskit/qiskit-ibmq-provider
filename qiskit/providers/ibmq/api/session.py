@@ -372,6 +372,8 @@ class RetrySession(Session):
             return False
         if endpoint_url.startswith(('/users', '/version')):
             return False
+        if endpoint_url == '/Network':
+            return False
         if 'objectstorage' in endpoint_url:
             return False
 
