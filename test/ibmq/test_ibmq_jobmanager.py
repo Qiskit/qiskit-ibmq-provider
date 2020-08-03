@@ -225,7 +225,6 @@ class TestIBMQJobManager(IBMQTestCase):
                                      job_set.job_set_id()))
                 self.assertEqual(rjob_set.tags(), job_set.tags())
                 self.assertEqual(len(rjob_set.qobjs()), len(job_set.qobjs()))
-                self.log.info("Job set report:\n%s", rjob_set.report())
 
                 mjobs = job_set.managed_jobs()
                 for index, rmjob in enumerate(rjob_set.managed_jobs()):
