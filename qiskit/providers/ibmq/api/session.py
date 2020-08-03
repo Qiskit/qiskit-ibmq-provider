@@ -367,7 +367,7 @@ class RetrySession(Session):
         Returns:
             Whether the endpoint URL should be logged.
         """
-        if endpoint_url in ('/devices/.../queue/status', '/devices/v/1', '/Jobs/status'):
+        if endpoint_url.endswith(('/devices/.../queue/status', '/devices/v/1', '/Jobs/status')):
             return False
         if endpoint_url.startswith(('/users', '/version')):
             return False
