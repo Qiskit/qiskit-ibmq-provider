@@ -30,7 +30,8 @@ class Api(RestAdapterBase):
         'login': '/users/loginWithToken',
         'user_info': '/users/me',
         'hubs': '/Network',
-        'version': '/version'
+        'version': '/version',
+        'bookings': '/Network/bookings/v2'
     }
 
 # Client functions.
@@ -93,3 +94,12 @@ class Api(RestAdapterBase):
         response = self.session.get(url).json()
 
         return response
+
+    def reservations(self) -> List:
+        """Return reservation information.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('bookings')
+        return self.session.get(url).json()

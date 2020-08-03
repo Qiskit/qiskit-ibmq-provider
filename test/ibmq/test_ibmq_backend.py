@@ -15,12 +15,13 @@
 """IBMQBackend Test."""
 
 from inspect import getfullargspec
+from datetime import timedelta
 
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_device
+from ..decorators import requires_device, requires_provider
 
 
 class TestIBMQBackend(IBMQTestCase):
@@ -87,3 +88,68 @@ class TestIBMQBackend(IBMQTestCase):
                     self.assertIsNotNone(defaults)
                 else:
                     self.assertIsNone(defaults)
+
+    def test_backend_reservations(self):
+        """Test backend reservations."""
+        provider = self.backend.provider()
+        backend = reservations = None
+        for backend in provider.backends(simulator=False, operational=True):
+            reservations = backend.reservations()
+            if reservations:
+                break
+
+        if not reservations:
+            self.skipTest("Test case requires reservations.")
+
+        reserv = reservations[0]
+        before_start = reserv.start_datetime - timedelta(seconds=30)
+        after_start = reserv.start_datetime + timedelta(seconds=30)
+        before_end = reserv.end_datetime - timedelta(seconds=30)
+        after_end = reserv.end_datetime + timedelta(seconds=30)
+
+        # Each tuple contains the start datetime, end datetime, whether a
+        # reservation should be found, and the description.
+        sub_tests = [
+            (before_start, after_end, True, 'before start, after end'),
+            (before_start, before_end, True, 'before start, before end'),
+            (after_start, after_end, False, 'after start, after end'),
+            (before_start, None, True, 'before start, None'),
+            (after_start, None, False, 'after start, None'),
+            (None, before_end, True, 'None, before end'),
+            (before_start, before_start, False, 'before start, before start'),
+            (after_end, after_end, False, 'after end, after end')
+        ]
+
+        for start_dt, end_dt, should_find, name in sub_tests:
+            with self.subTest(name=name):
+                f_reservs = backend.reservations(start_datetime=start_dt, end_datetime=end_dt)
+                found = False
+                for f_reserv in f_reservs:
+                    if f_reserv == reserv:
+                        found = True
+                        break
+                self.assertEqual(
+                    found, should_find,
+                    "Reservation {} found={}, used start datetime {}, end datetime {}".format(
+                        reserv, found, start_dt, end_dt))
+
+
+class TestIBMQBackendService(IBMQTestCase):
+    """Test ibmqbackendservice module."""
+
+    @classmethod
+    @requires_provider
+    def setUpClass(cls, provider):
+        """Initial class level setup."""
+        # pylint: disable=arguments-differ
+        cls.provider = provider
+
+    def test_my_reservations(self):
+        """Test my_reservations method"""
+        reservations = self.provider.backends.my_reservations()
+        for reserv in reservations:
+            print(reserv)
+            for attr in reserv.__dict__:
+                self.assertIsNotNone(
+                    getattr(reserv, attr),
+                    "Reservation {} is missing attribute {}".format(reserv, attr))

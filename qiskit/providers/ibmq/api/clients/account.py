@@ -30,6 +30,7 @@ from qiskit.providers.ibmq.credentials import Credentials
 from ..exceptions import (RequestsApiError, WebsocketError,
                           WebsocketTimeoutError, UserTimeoutExceededError)
 from ..rest import Api, Account
+from ..rest.backend import Backend
 from ..session import RetrySession
 from ..exceptions import ApiIBMQProtocolError
 from .base import BaseClient
@@ -125,6 +126,33 @@ class AccountClient(BaseClient):
             Backend job limit.
         """
         return self.account_api.backend(backend_name).job_limit()
+
+    def backend_reservations(
+            self,
+            backend_name: str,
+            start_datetime: Optional[datetime] = None,
+            end_datetime: Optional[datetime] = None
+    ) -> List:
+        """Return backend reservation information.
+
+        Args:
+            backend_name: Name of the backend.
+            start_datetime: Starting datetime in UTC.
+            end_datetime: Ending datetime in UTC.
+
+        Returns:
+            Backend reservation information.
+        """
+        backend_api = Backend(self._session, backend_name, '/Network')
+        return backend_api.reservations(start_datetime, end_datetime)
+
+    def my_reservations(self) -> List:
+        """Return backend reservations made by the caller.
+
+        Returns:
+            Backend reservation information.
+        """
+        return self.base_api.reservations()
 
     # Jobs-related public functions.
 

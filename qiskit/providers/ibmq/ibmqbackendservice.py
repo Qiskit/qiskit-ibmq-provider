@@ -29,9 +29,11 @@ from .api.exceptions import ApiError
 from .apiconstants import ApiJobStatus
 from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackendApiProtocolError)
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
+from .backendreservation import BackendReservation
 from .job import IBMQJob
 from .utils.utils import to_python_identifier, validate_job_tags, filter_data
 from .utils.converters import local_to_utc
+from .utils.backend import convert_reservation_data
 
 logger = logging.getLogger(__name__)
 
@@ -475,6 +477,15 @@ class IBMQBackendService:
                 'when retrieving job {}: {}'.format(job_id, str(ex))) from ex
 
         return job
+
+    def my_reservations(self) -> List[BackendReservation]:
+        """Return your upcoming reservations.
+
+        Returns:
+            A list of your upcoming reservations.
+        """
+        raw_response = self._provider._api_client.my_reservations()
+        return convert_reservation_data(raw_response)
 
     @staticmethod
     def _deprecated_backend_names() -> Dict[str, str]:
