@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 # The number of letters for group(2) must be greater than 1, so it does not match
 # the `/devices/v/1` endpoint.
 # Capture groups: (/devices/)(<device_name>)(</optional rest of the url>)
-RE_DEVICES_ENDPOINT = re.compile(r'^(/devices/)([^/}]{2,})(.*)$', re.IGNORECASE)
+RE_DEVICES_ENDPOINT = re.compile(r'^(.*/devices/)([^/}]{2,})(.*)$', re.IGNORECASE)
 
 
 def _get_client_header() -> str:
@@ -367,7 +367,8 @@ class RetrySession(Session):
         Returns:
             Whether the endpoint URL should be logged.
         """
-        if endpoint_url.endswith(('/devices/.../queue/status', '/devices/v/1', '/Jobs/status')):
+        if endpoint_url.endswith(('/queue/status', '/devices/v/1', '/Jobs/status',
+                                  '/.../properties', '/.../defaults')):
             return False
         if endpoint_url.startswith(('/users', '/version')):
             return False
