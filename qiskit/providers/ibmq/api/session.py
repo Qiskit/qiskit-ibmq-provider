@@ -262,6 +262,11 @@ class RetrySession(Session):
         else:
             final_url = self.base_url + url
 
+        if 'experiments' in final_url:
+            final_url = 'https://api-dev.quantum-computing.ibm.com/resultsdb' + \
+                        final_url.split('quantum-computing.ibm.com/api')[1]
+            print(f"final url is {final_url}, params is {kwargs.get('params', {})}")
+
         # Add a timeout to the connection for non-proxy connections.
         if not self.proxies and 'timeout' not in kwargs:
             kwargs.update({'timeout': self._timeout})

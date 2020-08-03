@@ -15,10 +15,12 @@
 """Root REST adapter."""
 
 import logging
-from typing import Dict, List, Any, Union
+from typing import Dict, List, Any, Union, Optional
 from json import JSONDecodeError
 
 from .base import RestAdapterBase
+from .experiment import Experiment
+from .utils.data_mapper import map_experiment_response
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +32,19 @@ class Api(RestAdapterBase):
         'login': '/users/loginWithToken',
         'user_info': '/users/me',
         'hubs': '/Network',
-        'version': '/version'
+        'version': '/version',
+        'experiments': '/experiments'
     }
+
+# Function-specific rest adapters.
+
+    def experiment(self, program_uuid: str) -> Experiment:
+        """Return an adapter for the experiment.
+
+        Returns:
+            The experiment adapter.
+        """
+        return Experiment(self.session, program_uuid)
 
 # Client functions.
 
@@ -93,3 +106,23 @@ class Api(RestAdapterBase):
         response = self.session.get(url).json()
 
         return response
+
+    def experiments(self, backend_name: Optional[str] = None) -> List:
+        """Return experiment data.
+
+        Args:
+            backend_name: Name of the backend.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('experiments')
+        params = {}
+        if backend_name:
+            params['device_name'] = backend_name
+        raw_data = self.session.get(url, params=params).json()
+        mapped_data = []
+        for exp in raw_data:
+            mapped_data.append(map_experiment_response(exp))
+
+        return mapped_data

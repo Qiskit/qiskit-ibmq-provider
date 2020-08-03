@@ -98,6 +98,23 @@ def map_jobs_limit_response(data: Dict[str, Any]) -> Dict[str, Any]:
     return data
 
 
+def map_experiment_response(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Map experiment data.
+
+    Args:
+        data: Data to be mapped.
+
+    Returns:
+        Mapped data.
+    """
+    filed_map = {
+        'type': 'program_type',
+        'uuid': 'program_uuid'
+    }
+    dict_to_identifier(data, filed_map)
+    return data
+
+
 def dict_to_identifier(data: Dict[str, Any], mapper: Optional[dict] = None) -> None:
     """Convert keys in a dictionary to valid identifiers, with optional mapping.
 

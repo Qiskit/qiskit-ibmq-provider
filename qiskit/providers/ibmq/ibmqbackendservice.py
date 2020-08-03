@@ -30,6 +30,7 @@ from .apiconstants import ApiJobStatus
 from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackendApiProtocolError)
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .job import IBMQJob
+from .job.program import Program
 from .utils.utils import to_python_identifier, validate_job_tags, filter_data
 from .utils.converters import local_to_utc
 
@@ -475,6 +476,30 @@ class IBMQBackendService:
                 'when retrieving job {}: {}'.format(job_id, str(ex))) from ex
 
         return job
+
+    def programs(self, backend_name: Optional[str] = None) -> List[Program]:
+        """Retrieve programs, with optional filtering.
+
+        Returns:
+            A list of programs.
+        """
+        raw_data = self._provider._api_client.programs(backend_name)
+        programs = []
+        for prog in raw_data:
+            programs.append(Program.from_dict(prog))
+        return programs
+
+    def retrieve_program(self, program_id: str) -> Program:
+        """Retrieve a single program.
+
+        Args:
+            program_id: UUID of the program.
+
+        Returns:
+            Retrieved program.
+        """
+        raw_data = self._provider._api_client.program_get(program_id)
+        return Program.from_dict(raw_data)
 
     @staticmethod
     def _deprecated_backend_names() -> Dict[str, str]:
