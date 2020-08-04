@@ -29,6 +29,7 @@ class BackendReservation:
         backend_name: The name of the backend.
         start_datetime: Starting datetime of the reservation, in local timezone.
         end_datetime: Ending datetime of the reservation, in local timezone.
+        duration: Duration of the reservation, in minutes.
         mode: Reservation mode. Only available if it's your reservation.
         reservation_id: Reservation ID. Only available if it's your reservation.
         creation_datetime: Reservation creation datetime. Only available if it's your reservation.
@@ -61,6 +62,7 @@ class BackendReservation:
         self.backend_name = backend_name
         self.start_datetime = start_datetime
         self.end_datetime = end_datetime
+        self.duration = (end_datetime - start_datetime).seconds / 60
         self.mode = mode
         self.reservation_id = reservation_id
         self.creation_datetime = creation_datetime
@@ -75,7 +77,8 @@ class BackendReservation:
         out_str = "<{}(backend_name={}, start_datetime={}, end_datetime={}".format(
             self.__class__.__name__, self.backend_name, self.start_datetime.isoformat(),
             self.end_datetime.isoformat())
-        for attr in ['mode', 'reservation_id', 'creation_datetime', 'hub', 'group', 'project']:
+        for attr in ['mode', 'duration', 'reservation_id', 'creation_datetime',
+                     'hub', 'group', 'project']:
             val = getattr(self, attr)
             if isinstance(val, datetime):
                 val = val.isoformat()

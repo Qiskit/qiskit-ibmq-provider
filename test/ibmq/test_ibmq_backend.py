@@ -102,6 +102,7 @@ class TestIBMQBackend(IBMQTestCase):
             self.skipTest("Test case requires reservations.")
 
         reserv = reservations[0]
+        self.assertGreater(reserv.duration, 0)
         before_start = reserv.start_datetime - timedelta(seconds=30)
         # after_start = reserv.start_datetime + timedelta(seconds=30)
         before_end = reserv.end_datetime - timedelta(seconds=30)
