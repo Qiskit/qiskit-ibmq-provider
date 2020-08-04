@@ -112,7 +112,10 @@ QISKIT_IBMQ_PROVIDER_LOG_FILE = 'QISKIT_IBMQ_PROVIDER_LOG_FILE'
 """The environment variable name that is used to set the file for the IBM Quantum logger."""
 
 
-def least_busy(backends: List[BaseBackend], reservation_free: Optional[int] = 60) -> BaseBackend:
+def least_busy(
+        backends: List[BaseBackend],
+        reservation_lookahead: Optional[int] = 6
+) -> BaseBackend:
     """Return the least busy backend from a list.
 
     Return the least busy available backend for those that
@@ -121,10 +124,9 @@ def least_busy(backends: List[BaseBackend], reservation_free: Optional[int] = 60
 
     Args:
         backends: The backends to choose from.
-        reservation_free: The number of minutes the backend needs not have
-            any reservations to be considered available. For example, if
-            the default value of 60 is used, then any backends that have
-            reservations in the next 60 minutes are considered unavailable.
+        reservation_lookahead: A backend is considered unavailable if it
+            has reservations in the next ``n`` minutes, where ``n`` is
+            the value of ``reservation_lookahead``.
             If ``None``, reservations are not taken into consideration.
 
     Returns:
@@ -143,9 +145,9 @@ def least_busy(backends: List[BaseBackend], reservation_free: Optional[int] = 60
         for back in backends:
             if not back.status().operational:
                 continue
-            if reservation_free:
+            if reservation_lookahead:
                 now = datetime.now()
-                end_time = now + timedelta(minutes=reservation_free)
+                end_time = now + timedelta(minutes=reservation_lookahead)
                 if isinstance(back, IBMQBackend) and back.reservations(now, end_time):
                     continue
             candidates.append(back)
