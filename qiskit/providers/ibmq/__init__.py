@@ -121,8 +121,11 @@ def least_busy(backends: List[BaseBackend], reservation_free: Optional[int] = 60
 
     Args:
         backends: The backends to choose from.
-        reservation_free: The number of minutes the backend needs to be free
-            of any reservations. If ``None``, reservations are not taken into consideration.
+        reservation_free: The number of minutes the backend needs not have
+            any reservations to be considered available. For example, if
+            the default value of 60 is used, then any backends that have
+            reservations in the next 60 minutes are considered unavailable.
+            If ``None``, reservations are not taken into consideration.
 
     Returns:
         The backend with the fewest number of pending jobs.
