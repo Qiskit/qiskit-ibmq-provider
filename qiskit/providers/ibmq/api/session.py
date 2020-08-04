@@ -376,5 +376,7 @@ class RetrySession(Session):
             return False
         if 'objectstorage' in endpoint_url:
             return False
+        if 'bookings' in endpoint_url:
+            return False
 
         return True

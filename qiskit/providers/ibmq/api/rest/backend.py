@@ -15,7 +15,7 @@
 """Backend REST adapter."""
 
 import json
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List
 from datetime import datetime  # pylint: disable=unused-import
 
 from .base import RestAdapterBase
@@ -30,7 +30,8 @@ class Backend(RestAdapterBase):
         'properties': '/properties',
         'pulse_defaults': '/defaults',
         'status': '/queue/status',
-        'jobs_limit': '/jobsLimit'
+        'jobs_limit': '/jobsLimit',
+        'bookings': '/bookings/v2'
     }
 
     def __init__(self, session: RetrySession, backend_name: str, url_prefix: str = '') -> None:
@@ -120,3 +121,25 @@ class Backend(RestAdapterBase):
         """
         url = self.get_url('jobs_limit')
         return map_jobs_limit_response(self.session.get(url).json())
+
+    def reservations(
+            self,
+            start_datetime: Optional[datetime] = None,
+            end_datetime: Optional[datetime] = None
+    ) -> List:
+        """Return backend reservation information.
+
+        Args:
+            start_datetime: Starting datetime in UTC.
+            end_datetime: Ending datetime in UTC.
+
+        Returns:
+            JSON response.
+        """
+        params = {}
+        if start_datetime:
+            params['initialDate'] = start_datetime.isoformat()
+        if end_datetime:
+            params['endDate'] = end_datetime.isoformat()
+        url = self.get_url('bookings')
+        return self.session.get(url, params=params).json()
