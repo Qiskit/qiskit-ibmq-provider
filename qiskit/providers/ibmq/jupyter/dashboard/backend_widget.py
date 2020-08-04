@@ -15,6 +15,7 @@
 """Module for constructing backend widgets."""
 
 import ipywidgets as wid
+from datetime import datetime, timedelta
 
 from ...visualization.interactive import iplot_gate_map
 from .provider_buttons import provider_buttons
@@ -37,6 +38,8 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
     status = backend.status()
     config = backend.configuration()
     props = backend.properties().to_dict()
+    reservations = backend.reservations(start_datetime=datetime.now(),
+                                        end_datetime=datetime.now() + timedelta(hours=24))
 
     name_str = "<font size='5' face='monospace'>%s</font>"
     backend_name = wid.HTML(value=name_str % backend.name())
@@ -47,14 +50,17 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
     status_wid = wid.HTML(value="<font size='3'>Status:</font>")
 
     color = '#000000'
-    if status.status_msg == 'active':
+    status_msg = status.status_msg
+    if status_msg == 'active':
         color = '#34BC6E'
-    if status.status_msg in ['maintenance', 'internal']:
+        if reservations:
+            status_msg += ' [R]'
+    if status_msg in ['maintenance', 'internal']:
         color = '#FFB000'
 
     status_str = "<font size='4' style='color:{color}' face='monospace'>{msg}</font>"
     status_val_wid = wid.HTML(value=status_str.format(color=color,
-                                                      msg=status.status_msg))
+                                                      msg=status_msg))
 
     left_labels = wid.VBox(children=[qubits_wid, status_wid])
     left_values = wid.VBox(children=[qubits_val_wid, status_val_wid],
@@ -87,9 +93,17 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
 
     providers_list = provider_buttons(backend_providers)
 
-    device_stats = wid.VBox(children=[backend_name, stats,
-                                      providers_label,
-                                      providers_list],
+    device_stats_children = [backend_name, stats, providers_label, providers_list]
+    if reservations:
+        next_start = min([reserv.start_datetime for reserv in reservations])
+        next_start = next_start.replace(tzinfo=None)
+        reservation_title = wid.HTML(value="<font size='3'>Reservation:</font>")
+        reservation_val = wid.HTML(
+            value="<font size='4' face='monospace'>%s</font>" % next_start.isoformat())
+        reservation_wid = wid.HBox(children=[reservation_title, reservation_val])
+        device_stats_children.insert(2, reservation_wid)
+
+    device_stats = wid.VBox(children=device_stats_children,
                             layout=wid.Layout(width='auto',
                                               margin="0px 20px 0px 0px"))
 
