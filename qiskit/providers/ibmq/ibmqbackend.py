@@ -523,8 +523,8 @@ class IBMQBackend(BaseBackend):
     ) -> List[BackendReservation]:
         """Return backend reservations.
 
-        If `start_datetime` and/or `end_datetime` is specified, reservations
-        starting within that time range are returned.
+        If start_datetime and/or end_datetime is specified, reservations with
+        time slots that overlap with the specified time window will be returned.
 
         Some of the reservation information, such as scheduling mode, is only
         available if you are the owner of the reservation.
