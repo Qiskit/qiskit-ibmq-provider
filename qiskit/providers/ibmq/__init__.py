@@ -81,7 +81,8 @@ Exceptions
 """
 
 import logging
-from typing import List
+from typing import List, Optional
+from datetime import datetime, timedelta
 
 from .ibmqfactory import IBMQFactory
 from .ibmqbackend import IBMQBackend, BaseBackend
@@ -111,7 +112,7 @@ QISKIT_IBMQ_PROVIDER_LOG_FILE = 'QISKIT_IBMQ_PROVIDER_LOG_FILE'
 """The environment variable name that is used to set the file for the IBM Quantum logger."""
 
 
-def least_busy(backends: List[BaseBackend]) -> BaseBackend:
+def least_busy(backends: List[BaseBackend], reservation_free: Optional[int] = 60) -> BaseBackend:
     """Return the least busy backend from a list.
 
     Return the least busy available backend for those that
@@ -120,20 +121,34 @@ def least_busy(backends: List[BaseBackend]) -> BaseBackend:
 
     Args:
         backends: The backends to choose from.
+        reservation_free: The number of minutes the backend needs to be free
+            of any reservations. If ``None``, reservations are not taken into consideration.
 
     Returns:
         The backend with the fewest number of pending jobs.
 
     Raises:
-        IBMQError: If the backends list is empty or if a backend in the list
+        IBMQError: If the backends list is empty, or if none of the backends
+            is available, or if a backend in the list
             does not have the ``pending_jobs`` attribute in its status.
     """
-    try:
-        return min([b for b in backends if b.status().operational],
-                   key=lambda b: b.status().pending_jobs)
-    except (ValueError, TypeError):
+    if not backends:
         raise IBMQError('Unable to find the least_busy '
                         'backend from an empty list.') from None
+    try:
+        candidates = []
+        for back in backends:
+            if not back.status().operational:
+                continue
+            if reservation_free:
+                now = datetime.now()
+                end_time = now + timedelta(minutes=reservation_free)
+                if isinstance(back, IBMQBackend) and back.reservations(now, end_time):
+                    continue
+            candidates.append(back)
+        if not candidates:
+            raise IBMQError('No backend matches the criteria.')
+        return min(candidates, key=lambda b: b.status().pending_jobs)
     except AttributeError as ex:
         raise IBMQError('A backend in the list does not have the `pending_jobs` '
                         'attribute in its status.') from ex
