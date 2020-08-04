@@ -1,8 +1,8 @@
 ---
 fixes:
   - |
-    :meth:`qiskit.provider.ibmq.IBMQBackend.jobs` will now return the correct
-    list of :class:`~qiskit.provider.ibmq.job.IBMQJob` objects when the
+    :meth:`qiskit.providers.ibmq.IBMQBackend.jobs` will now return the correct
+    list of :class:`~qiskit.providers.ibmq.job.IBMQJob` objects when the
     ``status`` kwarg is set to ``'RUNNING'``.
   - |
     The package metadata has been updated to properly reflect the dependency
