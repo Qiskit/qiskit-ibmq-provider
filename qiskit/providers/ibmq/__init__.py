@@ -142,11 +142,11 @@ def least_busy(
                         'backend from an empty list.') from None
     try:
         candidates = []
+        now = datetime.now()
         for back in backends:
             if not back.status().operational:
                 continue
             if reservation_lookahead and isinstance(back, IBMQBackend):
-                now = datetime.now()
                 end_time = now + timedelta(minutes=reservation_lookahead)
                 if back.reservations(now, end_time):
                     continue
