@@ -114,7 +114,7 @@ QISKIT_IBMQ_PROVIDER_LOG_FILE = 'QISKIT_IBMQ_PROVIDER_LOG_FILE'
 
 def least_busy(
         backends: List[BaseBackend],
-        reservation_lookahead: Optional[int] = 6
+        reservation_lookahead: Optional[int] = 60
 ) -> BaseBackend:
     """Return the least busy backend from a list.
 
@@ -145,10 +145,10 @@ def least_busy(
         for back in backends:
             if not back.status().operational:
                 continue
-            if reservation_lookahead:
+            if reservation_lookahead and isinstance(back, IBMQBackend):
                 now = datetime.now()
                 end_time = now + timedelta(minutes=reservation_lookahead)
-                if isinstance(back, IBMQBackend) and back.reservations(now, end_time):
+                if back.reservations(now, end_time):
                     continue
             candidates.append(back)
         if not candidates:
