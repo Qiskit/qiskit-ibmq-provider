@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 
 from ...visualization.interactive import iplot_gate_map
 from .provider_buttons import provider_buttons
-from .utils import BackendWithProviders
+from .utils import BackendWithProviders, get_next_reservation
 
 
 def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
@@ -38,8 +38,7 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
     status = backend.status()
     config = backend.configuration()
     props = backend.properties().to_dict()
-    reservations = backend.reservations(start_datetime=datetime.now(),
-                                        end_datetime=datetime.now() + timedelta(hours=24))
+    next_resrv = get_next_reservation(backend)
 
     name_str = "<font size='5' face='monospace'>%s</font>"
     backend_name = wid.HTML(value=name_str % backend.name())
@@ -53,7 +52,7 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
     status_msg = status.status_msg
     if status_msg == 'active':
         color = '#34BC6E'
-        if reservations:
+        if next_resrv:
             status_msg += ' [R]'
     if status_msg in ['maintenance', 'internal']:
         color = '#FFB000'
@@ -94,13 +93,15 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
     providers_list = provider_buttons(backend_providers)
 
     device_stats_children = [backend_name, stats, providers_label, providers_list]
-    if reservations:
-        next_start = min([reserv.start_datetime for reserv in reservations])
-        next_start = next_start.replace(tzinfo=None)
+    reservation_val_wid = None
+    if next_resrv:
         reservation_title = wid.HTML(value="<font size='3'>Reservation:</font>")
-        reservation_val = wid.HTML(
-            value="<font size='4' face='monospace'>%s</font>" % next_start.isoformat())
-        reservation_wid = wid.HBox(children=[reservation_title, reservation_val])
+        reservation_str = "<font size='4' face='monospace'>{start_dt} ({duration}m)</font>"
+        start_dt = next_resrv.start_datetime.replace(tzinfo=None)
+        reservation_val_wid = wid.HTML(
+            value=reservation_str.format(start_dt=start_dt.isoformat(),
+                                         duration=next_resrv.duration))
+        reservation_wid = wid.HBox(children=[reservation_title, reservation_val_wid])
         device_stats_children.insert(2, reservation_wid)
 
     device_stats = wid.VBox(children=device_stats_children,
@@ -215,5 +216,9 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
                                      max_width='700px',
                                      border='1px solid #212121'))
 
+    # Attach information to the backend panel for later updates.
     out._backend = backend  # pylint: disable=protected-access
+    out._status_val_wid = status_val_wid
+    out._queue_val_wid = queue_val_wid
+    out._reservation_val_wid = reservation_val_wid
     return out

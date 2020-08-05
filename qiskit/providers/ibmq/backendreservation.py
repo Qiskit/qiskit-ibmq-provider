@@ -62,7 +62,7 @@ class BackendReservation:
         self.backend_name = backend_name
         self.start_datetime = start_datetime
         self.end_datetime = end_datetime
-        self.duration = (end_datetime - start_datetime).seconds / 60
+        self.duration = int((end_datetime - start_datetime).seconds / 60)
         self.mode = mode
         self.reservation_id = reservation_id
         self.creation_datetime = creation_datetime
