@@ -16,12 +16,12 @@
 
 import time
 import threading
-from datetime import datetime
 
 import ipywidgets as wid
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.utils.converters import duration_difference
 
 from .utils import get_next_reservation
+from .constants import RESERVATION_STR, RESERVATION_NONE, STAT_FONT_VALUE, STAT_FONT_VALUE_COLOR
 
 
 def update_backend_info(device_list: wid.VBox,
@@ -35,11 +35,8 @@ def update_backend_info(device_list: wid.VBox,
     my_thread = threading.currentThread()
     current_interval = 0
     started = False
-    reservation_interval = 12*60*60
+    reservation_interval = 30#10*60
     cur_rsvr_interval = 0
-    val_str = "<font size='4' face='monospace'>{pend}</font>"
-    stat_str = "<font size='4' style='color:{color}' face='monospace'>{msg}</font>"
-    reservation_str = "<font size='4' face='monospace'>{start_dt} ({duration}m)</font>"
     while getattr(my_thread, "do_run", False):
         if current_interval == interval or started is False:
             for backend_pane in device_list.children:
@@ -59,31 +56,27 @@ def update_backend_info(device_list: wid.VBox,
                     if stat_msg in ['maintenance', 'internal', 'dedicated']:
                         color = '#FFB000'
 
-                    reservation_wid = backend_pane._reservation_val_wid
-                    if reservation_wid:
-                        reservation_dt = \
-                            reservation_wid.value.split('>')[1].split("<")[0].split('(')[0]
-                        now = datetime.now().replace(microsecond=0).isoformat()
-                        if reservation_dt <= now:   # Reservation started in the past.
-                            stat_msg = _update_reservation_value(
-                                backend_pane._backend, reservation_wid, reservation_str, stat_msg)
-                        else:
-                            stat_msg += ' [R]'
-                    elif cur_rsvr_interval >= reservation_interval:
-                        # TODO need to add reservation panel
+                    if cur_rsvr_interval >= reservation_interval:
                         cur_rsvr_interval = 0
-                        stat_msg = _update_reservation_value(
-                            backend_pane._backend, reservation_wid, reservation_str, stat_msg)
+                        next_resrv = get_next_reservation(backend_pane._backend)
+                        if next_resrv:
+                            start_dt_str = duration_difference(next_resrv.start_datetime)
+                            backend_pane._reservation_val_wid.value = RESERVATION_STR.format(
+                                start_dt=start_dt_str, duration=next_resrv.duration)
+                            if stat_msg == 'active':
+                                stat_msg += ' [R]'
+                        else:
+                            backend_pane._reservation_val_wid.value = RESERVATION_NONE
 
                     status_wid = backend_pane._status_val_wid
                     if status_wid.value.split('>')[1].split("<")[0] != stat_msg:
                         # If the status message has changed.
-                        status_wid.value = stat_str.format(color=color, msg=stat_msg)
+                        status_wid.value = STAT_FONT_VALUE_COLOR.format(color=color, msg=stat_msg)
 
-                    pend_wid = backend_pane.children[0].children[1].children[1].children[1].children[1]
+                    pend_wid = backend_pane._queue_val_wid
                     if pend_wid.value.split('>')[1].split("<")[0] != pending:
                         # If the number of pending jobs has changed.
-                        pend_wid.value = val_str.format(pend=pending)
+                        pend_wid.value = STAT_FONT_VALUE.format(pending)
 
                 if not getattr(my_thread, "do_run", False):
                     break
@@ -93,33 +86,3 @@ def update_backend_info(device_list: wid.VBox,
         time.sleep(1)
         current_interval += 1
         cur_rsvr_interval += 1
-
-
-def _update_reservation_value(
-        backend: IBMQBackend,
-        reservation_wid: wid.HTML,
-        reservation_str: str,
-        stat_msg: str
-) -> str:
-    """Update reservation information.
-
-    Args:
-        backend: Backend whose reservation information is to be updated.
-        reservation_wid: Reservation widget.
-        reservation_str: String on the reservation widget.
-        stat_msg: Status message.
-
-    Returns:
-        Updated status message.
-    """
-    next_resrv = get_next_reservation(backend)
-    if next_resrv:
-        if stat_msg == 'active':
-            stat_msg += ' [R]'
-        start_dt = next_resrv.start_datetime.replace(tzinfo=None)
-        reservation_wid.value = reservation_str.format(
-            start_dt=start_dt.isoformat(), duration=next_resrv.duration)
-    else:
-        reservation_wid.value = ''
-
-    return stat_msg
