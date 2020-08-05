@@ -111,13 +111,6 @@ class IQXDashboard(Subscriber):
                                                         group=pro.credentials.group,
                                                         project=pro.credentials.project)
             for back in pro.backends():
-                if back.name() in ['ibmq_n_gotham', 'ibmq_qcaas']:
-                    continue
-                if back.name().startswith('test_'):
-                    continue
-                if not back.properties():
-                    print(f">>>>>> {back.name()} has no properties")
-                    continue
                 if not back.configuration().simulator:
                     if back.name() not in ibmq_backends.keys():
                         ibmq_backends[back.name()] = \

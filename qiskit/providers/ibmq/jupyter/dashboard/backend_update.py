@@ -20,7 +20,7 @@ import threading
 import ipywidgets as wid
 from qiskit.providers.ibmq.utils.converters import duration_difference
 
-from .utils import get_next_reservation
+from ..utils import get_next_reservation
 from .constants import RESERVATION_STR, RESERVATION_NONE, STAT_FONT_VALUE, STAT_FONT_VALUE_COLOR
 
 
@@ -35,7 +35,7 @@ def update_backend_info(device_list: wid.VBox,
     my_thread = threading.currentThread()
     current_interval = 0
     started = False
-    reservation_interval = 30#10*60
+    reservation_interval = 10*60
     cur_rsvr_interval = 0
     while getattr(my_thread, "do_run", False):
         if current_interval == interval or started is False:

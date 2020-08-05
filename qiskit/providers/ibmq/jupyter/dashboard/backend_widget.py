@@ -20,8 +20,10 @@ from qiskit.providers.ibmq.utils.converters import duration_difference
 
 from ...visualization.interactive import iplot_gate_map
 from .provider_buttons import provider_buttons
-from .utils import BackendWithProviders, get_next_reservation
-from .constants import RESERVATION_STR, RESERVATION_NONE, STAT_FONT_TITLE, STAT_FONT_VALUE, STAT_FONT_VALUE_COLOR
+from .utils import BackendWithProviders
+from .constants import (RESERVATION_STR, RESERVATION_NONE, STAT_FONT_TITLE,
+                        STAT_FONT_VALUE, STAT_FONT_VALUE_COLOR)
+from ..utils import get_next_reservation
 
 
 def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
