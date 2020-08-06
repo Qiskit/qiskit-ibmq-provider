@@ -93,10 +93,17 @@ class TestBackendFilters(IBMQTestCase):
             self.skipTest("Test case requires reservations.")
 
         reserv = reservations[0]
-        now = datetime.now().astimezone(tz.tzlocal())
+        now = datetime.now().replace(tzinfo=tz.tzlocal())
         window = 60
         if reserv.start_datetime > now:
             window = (reserv.start_datetime - now).seconds * 60
         self.assertRaises(IBMQError, least_busy, [backend], window)
 
         self.assertEqual(least_busy([backend], None), backend)
+
+        backs = [backend]
+        for back in self.provider.backends(simulator=False, operational=True):
+            if back.name() != backend.name():
+                backs.append(back)
+                break
+        self.assertTrue(least_busy(backs, window))
