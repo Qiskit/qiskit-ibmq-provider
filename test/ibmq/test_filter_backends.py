@@ -93,7 +93,7 @@ class TestBackendFilters(IBMQTestCase):
             self.skipTest("Test case requires reservations.")
 
         reserv = reservations[0]
-        now = datetime.now().replace(tzinfo=tz.tzlocal())
+        now = datetime.now(tz=tz.tzlocal())
         window = 60
         if reserv.start_datetime > now:
             window = (reserv.start_datetime - now).seconds * 60
