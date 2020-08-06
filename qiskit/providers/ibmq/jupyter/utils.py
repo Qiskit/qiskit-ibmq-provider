@@ -14,15 +14,16 @@
 
 """Utility functions for Jupyter modules."""
 
-from typing import Optional
+from typing import Optional, Union
 from datetime import datetime, timedelta
 
+from qiskit.test.mock.fake_backend import FakeBackend
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.backendreservation import BackendReservation
 
 
 def get_next_reservation(
-        backend: IBMQBackend,
+        backend: Union[IBMQBackend, FakeBackend],
         time_period_hr: int = 24
 ) -> Optional[BackendReservation]:
     """Get the next reservation within the input time period for the backend.
@@ -34,6 +35,8 @@ def get_next_reservation(
     Returns:
         The next reservation for the backend.
     """
+    if not isinstance(backend, IBMQBackend):
+        return None
     reservations = backend.reservations(
         start_datetime=datetime.now(),
         end_datetime=datetime.now() + timedelta(hours=time_period_hr))
