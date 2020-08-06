@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes an issue which would raise a ``ValueError`` when building
+    error maps in Jupyter for backends that are offline. Fixes
+    `#706 <https://github.com/Qiskit/qiskit-ibmq-provider/issues/706>`_
