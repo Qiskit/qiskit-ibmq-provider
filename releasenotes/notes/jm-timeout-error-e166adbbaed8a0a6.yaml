@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    :class:`~qiskit.providers.ibmq.managed.IBMQJobManager` has been updated so
+    that if a time out happens while waiting for an old job to finish, the
+    time out error doesn't prevent a new job to be submitted. Fixes
+    `#737 <https://github.com/Qiskit/qiskit-ibmq-provider/issues/737>`_

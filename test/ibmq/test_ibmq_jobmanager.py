@@ -34,7 +34,8 @@ from qiskit.test.reference_circuits import ReferenceCircuits
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
 from ..fake_account_client import (BaseFakeAccountClient, CancelableFakeJob,
-                                   JobSubmitFailClient, BaseFakeJob, FailedFakeJob)
+                                   JobSubmitFailClient, BaseFakeJob, FailedFakeJob,
+                                   JobTimeoutClient)
 
 
 class TestIBMQJobManager(IBMQTestCase):
@@ -297,6 +298,31 @@ class TestIBMQJobManager(IBMQTestCase):
             self.assertTrue(all(job_set.jobs()))
         finally:
             # Cancel all submitted jobs first.
+            for mjob in job_set.managed_jobs():
+                if mjob.job is not None:
+                    mjob.cancel()
+                elif job_set._job_submit_lock.locked():
+                    job_set._job_submit_lock.release()
+            wait([mjob.future for mjob in job_set.managed_jobs()], timeout=5)
+
+    def test_job_limit_timeout(self):
+        """Test reaching job limit."""
+        job_limit = 5
+        self.fake_api_backend._api_client = JobTimeoutClient(
+            job_limit=job_limit, max_fail_count=1)
+        self.fake_api_provider._api_client = self.fake_api_backend._api_client
+
+        job_set = None
+        try:
+            job_set = self._jm.run([self._qc]*(job_limit+2),
+                                   backend=self.fake_api_backend, max_experiments_per_job=1)
+            last_mjobs = job_set._managed_jobs[-2:]
+            for _ in range(10):
+                if all(mjob.job for mjob in last_mjobs):
+                    break
+            self.assertTrue(all(job.job_id() for job in job_set.jobs()))
+        finally:
+            # Cancel all jobs.
             for mjob in job_set.managed_jobs():
                 if mjob.job is not None:
                     mjob.cancel()
