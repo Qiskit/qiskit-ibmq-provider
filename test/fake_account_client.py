@@ -323,9 +323,9 @@ class JobTimeoutClient(BaseFakeAccountClient):
         self._fail_count = max_fail_count
         super().__init__(*args, **kwargs)
 
-    def job_final_status(self, *_args, **_kwargs):
+    def job_final_status(self, job_id, *_args, **_kwargs):
         """Wait until the job progress to a final state."""
         if self._fail_count != 0:
             self._fail_count -= 1
             raise UserTimeoutExceededError('Job timed out!')
-        return super().job_final_status(*_args, **_kwargs)
+        return super().job_final_status(job_id, *_args, **_kwargs)
