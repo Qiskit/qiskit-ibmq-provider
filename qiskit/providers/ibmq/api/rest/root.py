@@ -16,11 +16,11 @@
 
 import logging
 from typing import Dict, List, Any, Union, Optional
-from json import JSONDecodeError
+import json
 
 from .base import RestAdapterBase
 from .experiment import Experiment
-from .utils.data_mapper import map_experiment_response
+from .analysis_results import AnalysisResult
 
 logger = logging.getLogger(__name__)
 
@@ -33,18 +33,34 @@ class Api(RestAdapterBase):
         'user_info': '/users/me',
         'hubs': '/Network',
         'version': '/version',
-        'experiments': '/experiments'
+        'experiments': '/experiments',
+        'experiment_devices': '/devices',
+        'analysis_results': '/analysis_results'
     }
 
 # Function-specific rest adapters.
 
-    def experiment(self, program_uuid: str) -> Experiment:
+    def experiment(self, experiment_uuid: str) -> Experiment:
         """Return an adapter for the experiment.
+
+        Args:
+            experiment_uuid: UUID of the experiment.
 
         Returns:
             The experiment adapter.
         """
-        return Experiment(self.session, program_uuid)
+        return Experiment(self.session, experiment_uuid)
+
+    def analysis_result(self, analysis_result_id: str) -> AnalysisResult:
+        """Return an adapter for the analysis result.
+
+        Args:
+            analysis_result_id: UUID of the analysis result.
+
+        Returns:
+            The analysis result adapter.
+        """
+        return AnalysisResult(self.session, analysis_result_id)
 
 # Client functions.
 
@@ -76,7 +92,7 @@ class Api(RestAdapterBase):
         try:
             version_info = response.json()
             version_info['new_api'] = True
-        except JSONDecodeError:
+        except json.JSONDecodeError:
             return {
                 'new_api': False,
                 'api': response.text
@@ -107,6 +123,8 @@ class Api(RestAdapterBase):
 
         return response
 
+    # Experiment-related public functions.
+
     def experiments(self, backend_name: Optional[str] = None) -> List:
         """Return experiment data.
 
@@ -120,9 +138,57 @@ class Api(RestAdapterBase):
         params = {}
         if backend_name:
             params['device_name'] = backend_name
-        raw_data = self.session.get(url, params=params).json()
-        mapped_data = []
-        for exp in raw_data:
-            mapped_data.append(map_experiment_response(exp))
+        return self.session.get(url, params=params).json()
 
-        return mapped_data
+    def experiment_devices(self) -> List:
+        """Return experiment devices.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('experiment_devices')
+        raw_data = self.session.get(url).json()
+        return raw_data
+
+    def experiment_upload(self, experiment: Dict) -> Dict:
+        """Upload an experiment.
+
+        Args:
+            experiment: The experiment to upload.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('experiments')
+        raw_data = self.session.post(url, json=experiment).json()
+        return raw_data
+
+    def analysis_results(self, backend_name: Optional[str] = None) -> List:
+        """Return all analysis results.
+
+        Args:
+            backend_name: Name of the backend.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('analysis_results')
+        params = {}
+        if backend_name:
+            params['device_name'] = backend_name
+        return self.session.get(url, params=params).json()
+
+    def analysis_result_upload(self, result: Dict) -> Dict:
+        """Upload an analysis result.
+
+        Args:
+            result: The analysis result to upload.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('analysis_results')
+        # data = json.dumps(result)
+        # print(f"upload data is {data}")
+        return self.session.post(url, json=result).json()
+        # return self.session.post(url, data=data).json()

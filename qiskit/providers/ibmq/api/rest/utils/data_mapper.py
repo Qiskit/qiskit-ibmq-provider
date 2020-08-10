@@ -98,21 +98,20 @@ def map_jobs_limit_response(data: Dict[str, Any]) -> Dict[str, Any]:
     return data
 
 
-def map_experiment_response(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Map experiment data.
+def rename_fields(data: Dict[str, Any], mapper: dict) -> None:
+    """Convert names of keys in the input data to the new names in the mapper.
+
+    This is similar to ``dict_to_identifier`` but without converting the
+    keys to Python identifiers.
 
     Args:
-        data: Data to be mapped.
-
-    Returns:
-        Mapped data.
+        data: Dictionary to be converted.
+        mapper: Mapper of selected field names to rename.
     """
-    filed_map = {
-        'type': 'program_type',
-        'uuid': 'program_uuid'
-    }
-    dict_to_identifier(data, filed_map)
-    return data
+    for key in list(data.keys()):
+        if key in mapper:
+            new_key = mapper[key]
+            data[new_key] = data.pop(key)
 
 
 def dict_to_identifier(data: Dict[str, Any], mapper: Optional[dict] = None) -> None:

@@ -469,26 +469,3 @@ class AccountClient(BaseClient):
             it is associated with.
         """
         return self.account_api.job(job_id).update_attribute({attr_name: attr_value})
-
-    def programs(self, backend_name: Optional[str]) -> List[Dict]:
-        """Retrieve programs, with optional filtering.
-
-        Args:
-            backend_name: Name of the backend.
-
-        Returns:
-            A list of programs.
-
-        """
-        return self.base_api.experiments(backend_name)
-
-    def program_get(self, program_id: str) -> Dict[str, Any]:
-        """Get a specific program.
-
-        Args:
-            program_id: The program's uuid.
-
-        Returns:
-            Program data.
-        """
-        return self.base_api.experiment(program_id).get_experiment()

@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2018, 2020.
+# (C) Copyright IBM 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -19,46 +19,68 @@ from typing import Dict, Any
 
 
 from .base import RestAdapterBase
-from .utils.data_mapper import map_experiment_response
 from ..session import RetrySession
 
 logger = logging.getLogger(__name__)
 
 
 class Experiment(RestAdapterBase):
-    """Rest adapter for hub/group/project related endpoints."""
+    """Rest adapter for experiment related endpoints."""
 
     URL_MAP = {
         'self': '',
         'plots': '/plots'
     }
 
-    def __init__(self, session: RetrySession, program_uuid: str, url_prefix: str = '') -> None:
+    def __init__(self, session: RetrySession, experiment_uuid: str, url_prefix: str = '') -> None:
         """Account constructor.
 
         Args:
             session: Session to be used in the adaptor.
-            program_uuid: UUID of the experiment.
+            experiment_uuid: UUID of the experiment.
         """
-        self.url_prefix = '{}/experiments/{}'.format(url_prefix, program_uuid)
+        self.url_prefix = '{}/experiments/{}'.format(url_prefix, experiment_uuid)
         super().__init__(session, self.url_prefix)
 
-    def get_experiment(self) -> Dict[str, Any]:
-        """Get the specific experiment.
+    def retrieve(self) -> Dict[str, Any]:
+        """Retrieve the specific experiment.
 
         Returns:
             JSON response.
         """
         url = self.get_url('self')
-        raw_data = self.session.get(url).json()
-        return map_experiment_response(raw_data)
+        return self.session.get(url).json()
 
-    def upload_experiment(self, experiment):
-        """Upload the experiment.
+    def update(self, experiment):
+        """Update an experiment.
 
         Args:
             experiment: Experiment to upload.
+
+        Returns:
+            JSON response.
         """
         url = self.get_url('self')
-        self.session.put(url, experiment)
+        return self.session.put(url, json=experiment).json()
 
+    def delete(self):
+        """Delete an experiment.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('self')
+        return self.session.delete(url).json()
+
+    def upload_plot(self, plot_fn: str):
+        """Upload an experiment plot.
+
+        Args:
+            plot_fn: Plot file name.
+
+        Returns:
+            JSON response.
+        """
+        files = {'file': (plot_fn, open(plot_fn, 'rb'), 'multipart/form-data')}
+        url = self.get_url('plots')
+        return self.session.post(url, files=files).json()
