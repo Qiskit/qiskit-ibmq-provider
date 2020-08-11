@@ -1,5 +1,3 @@
-.. module:: qiskit
-
 *****************************************
 Qiskit IBM Quantum Provider API Reference
 *****************************************
