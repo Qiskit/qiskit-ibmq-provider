@@ -23,7 +23,7 @@ from concurrent.futures import ThreadPoolExecutor, wait
 
 from qiskit.test.mock.backends.poughkeepsie.fake_poughkeepsie import FakePoughkeepsie
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES, ApiJobShareLevel
-from qiskit.providers.ibmq.api.exceptions import RequestsApiError
+from qiskit.providers.ibmq.api.exceptions import RequestsApiError, UserTimeoutExceededError
 
 
 VALID_RESULT_RESPONSE = {
@@ -309,7 +309,23 @@ class JobSubmitFailClient(BaseFakeAccountClient):
 
     def job_submit(self, *_args, **_kwargs):  # pylint: disable=arguments-differ
         """Failing job submit."""
-        if self._fail_count > 0:
+        if self._fail_count != 0:
             self._fail_count -= 1
             raise RequestsApiError('Job submit failed!')
         return super().job_submit(*_args, **_kwargs)
+
+
+class JobTimeoutClient(BaseFakeAccountClient):
+    """Fake AccountClient used to fail a job submit."""
+
+    def __init__(self, *args, max_fail_count=-1, **kwargs):
+        """JobTimeoutClient constructor."""
+        self._fail_count = max_fail_count
+        super().__init__(*args, **kwargs)
+
+    def job_final_status(self, job_id, *_args, **_kwargs):
+        """Wait until the job progress to a final state."""
+        if self._fail_count != 0:
+            self._fail_count -= 1
+            raise UserTimeoutExceededError('Job timed out!')
+        return super().job_final_status(job_id, *_args, **_kwargs)
