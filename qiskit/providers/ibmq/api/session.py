@@ -262,8 +262,8 @@ class RetrySession(Session):
         else:
             final_url = self.base_url + url
 
-        if 'resultsdb' in final_url:
-            print(f"final url is {final_url}, params is {kwargs.get('params', {})}")
+        # if 'resultsdb' in final_url:
+        #     print(f"final url is {final_url}, params is {kwargs.get('params', {})}")
 
         # Add a timeout to the connection for non-proxy connections.
         if not self.proxies and 'timeout' not in kwargs:
@@ -285,7 +285,7 @@ class RetrySession(Session):
                     logger.debug("Response uber-trace-id: %s", ex.response.headers['uber-trace-id'])
                 except (ValueError, KeyError):
                     # the response did not contain the expected json.
-                    pass
+                    message += ". {}".format(ex.response.json())
 
             if self.access_token:
                 message = message.replace(self.access_token, '...')

@@ -29,9 +29,7 @@ class Experiment:
             extra: Optional[Dict] = None,
             tags: Optional[List[str]] = None,
             start_datetime: Optional[datetime] = None,
-            # creation_datetime: Optional[datetime] = None,       #?
             end_datetime: Optional[datetime] = None,
-            # updated_datetime: Optional[datetime] = None,        #?
             experiment_uuid: Optional[str] = None
     ):
         """Experiment constructor.
@@ -43,12 +41,8 @@ class Experiment:
             tags: Tags for the experiment.
             start_datetime: Timestamp when the experiment started. If no timezone
                 information is present, local timezone is assumed.
-            creation_datetime: Timestamp when the experiment is created. If no timezone
-                information is present, local timezone is assumed.
             end_datetime: Timestamp when the experiment ended. If no timezone
                 information is present, local timezone is assumed.
-            updated_datetime: Timestamp when the experiment was last updated. If no
-                timezone information is present, local timezone is assumed.
             experiment_uuid: Unique identifier of the experiment.
         """
         self._backend_name = backend_name
@@ -140,3 +134,20 @@ class Experiment:
         experiment._creation_datetime = str_to_utc(remote_data['created_at'])
         experiment._updated_datetime = str_to_utc(remote_data['updated_at'])
         return experiment
+
+    def __repr__(self):
+        attr_str = 'uuid="{}", backend_name="{}", type="{}"'.format(
+            self.uuid, self.backend_name, self.type)
+        for attr in ['extra', 'tags']:
+            val = getattr(self, attr)
+            if val is not None:
+                if isinstance(val, str):
+                    attr_str += ', {}="{}"'.format(attr, val)
+                else:
+                    attr_str += ', {}={}'.format(attr, val)
+        for dt in ['creation_datetime', 'updated_datetime', 'start_datetime', 'end_datetime']:
+            val = getattr(self, dt)
+            if val is not None:
+                attr_str += ', {}="{}"'.format(dt, val.isoformat())
+
+        return "<{}({})>".format(self.__class__.__name__, attr_str)

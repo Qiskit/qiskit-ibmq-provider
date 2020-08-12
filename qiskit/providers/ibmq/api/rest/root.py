@@ -35,7 +35,8 @@ class Api(RestAdapterBase):
         'version': '/version',
         'experiments': '/experiments',
         'experiment_devices': '/devices',
-        'analysis_results': '/analysis_results'
+        'analysis_results': '/analysis_results',
+        'device_components': '/device_components'
     }
 
 # Function-specific rest adapters.
@@ -192,3 +193,18 @@ class Api(RestAdapterBase):
         # print(f"upload data is {data}")
         return self.session.post(url, json=result).json()
         # return self.session.post(url, data=data).json()
+
+    def device_components(self, backend_name: Optional[str] = None) -> List[Dict]:
+        """Return a list of device components for the backend.
+
+        Args:
+            backend_name: Name of the backend.
+
+        Returns:
+            JSON response.
+        """
+        params = {}
+        if backend_name:
+            params['device_name'] = backend_name
+        url = self.get_url('device_components')
+        return self.session.get(url).json()

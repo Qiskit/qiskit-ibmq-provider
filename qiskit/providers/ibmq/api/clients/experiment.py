@@ -162,3 +162,14 @@ class ExperimentClient(BaseClient):
             JSON response.
         """
         return self.base_api.analysis_result(result_id).update(new_data)
+
+    def device_components(self, backend_name: Optional[str]) -> List[Dict]:
+        """Return device components for the backend.
+
+        Args:
+            backend_name: Name of the backend.
+
+        Returns:
+            JSON response.
+        """
+        return self.base_api.device_components(backend_name)

@@ -135,7 +135,7 @@ class TestExperiment(IBMQTestCase):
                 if getattr(res, dt_attr):
                     self.assertTrue(getattr(res, dt_attr).tzinfo)
 
-    @skip("Not supported yet")
+    # @skip("Not supported yet")
     def test_upload_analysis_result(self):
         """Test uploading an analysis result."""
         experiment_uuid = self.experiments[0].uuid

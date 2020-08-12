@@ -15,8 +15,6 @@
 """Analysis result REST adapter."""
 
 import logging
-from typing import Dict, Any
-
 
 from .base import RestAdapterBase
 from ..session import RetrySession
