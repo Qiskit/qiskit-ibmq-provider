@@ -33,16 +33,17 @@ class Experiment(RestAdapterBase):
     }
 
     def __init__(self, session: RetrySession, experiment_uuid: str, url_prefix: str = '') -> None:
-        """Account constructor.
+        """Experiment constructor.
 
         Args:
             session: Session to be used in the adaptor.
             experiment_uuid: UUID of the experiment.
+            url_prefix: URL prefix.
         """
         self.url_prefix = '{}/experiments/{}'.format(url_prefix, experiment_uuid)
         super().__init__(session, self.url_prefix)
 
-    def retrieve(self) -> Dict[str, Any]:
+    def retrieve(self) -> Dict:
         """Retrieve the specific experiment.
 
         Returns:
@@ -51,11 +52,11 @@ class Experiment(RestAdapterBase):
         url = self.get_url('self')
         return self.session.get(url).json()
 
-    def update(self, experiment):
-        """Update an experiment.
+    def update(self, experiment: Dict) -> Dict:
+        """Update the experiment.
 
         Args:
-            experiment: Experiment to upload.
+            experiment: Experiment to update.
 
         Returns:
             JSON response.
@@ -63,8 +64,8 @@ class Experiment(RestAdapterBase):
         url = self.get_url('self')
         return self.session.put(url, json=experiment).json()
 
-    def delete(self):
-        """Delete an experiment.
+    def delete(self) -> Dict:
+        """Delete the experiment.
 
         Returns:
             JSON response.
@@ -72,8 +73,8 @@ class Experiment(RestAdapterBase):
         url = self.get_url('self')
         return self.session.delete(url).json()
 
-    def upload_plot(self, plot_fn: str):
-        """Upload an experiment plot.
+    def upload_plot(self, plot_fn: str) -> Dict:
+        """Upload a plot for the experiment.
 
         Args:
             plot_fn: Plot file name.

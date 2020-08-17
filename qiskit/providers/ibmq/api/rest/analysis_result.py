@@ -15,6 +15,7 @@
 """Analysis result REST adapter."""
 
 import logging
+from typing import Dict
 
 from .base import RestAdapterBase
 from ..session import RetrySession
@@ -30,17 +31,18 @@ class AnalysisResult(RestAdapterBase):
     }
 
     def __init__(self, session: RetrySession, result_uuid: str, url_prefix: str = '') -> None:
-        """Account constructor.
+        """AnalysisResult constructor.
 
         Args:
             session: Session to be used in the adaptor.
             result_uuid: UUID of the analysis result.
+            url_prefix: URL prefix.
         """
         self.url_prefix = '{}/analysis_results/{}'.format(url_prefix, result_uuid)
         super().__init__(session, self.url_prefix)
 
-    def update(self, analysis_result):
-        """Update an analysis result.
+    def update(self, analysis_result: Dict) -> Dict:
+        """Update the analysis result.
 
         Args:
             analysis_result: Analysis result to upload.
@@ -49,4 +51,13 @@ class AnalysisResult(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('self')
-        return self.session.put(url, json=analysis_result)
+        return self.session.put(url, json=analysis_result).json()
+
+    def delete(self) -> Dict:
+        """Delete the analysis result.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('self')
+        return self.session.delete(url).json()

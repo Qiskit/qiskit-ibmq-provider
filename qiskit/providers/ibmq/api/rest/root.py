@@ -20,7 +20,7 @@ import json
 
 from .base import RestAdapterBase
 from .experiment import Experiment
-from .analysis_results import AnalysisResult
+from .analysis_result import AnalysisResult
 
 logger = logging.getLogger(__name__)
 
@@ -207,4 +207,4 @@ class Api(RestAdapterBase):
         if backend_name:
             params['device_name'] = backend_name
         url = self.get_url('device_components')
-        return self.session.get(url).json()
+        return self.session.get(url, params=params).json()

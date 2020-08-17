@@ -14,25 +14,36 @@
 
 """IBM Quantum Experience experiment analysis result."""
 
-from typing import Optional, Union, Dict, List
+from typing import Optional, Union, Dict, List, NamedTuple
 from datetime import datetime
 
 from ..utils.converters import str_to_utc, convert_tz
 from .constants import ResultQuality
+from ..exceptions import IBMQInputValueError
+
+
+class DeviceComponent(NamedTuple):
+    """Named tuple representing a device component."""
+    backend_name: str
+    type: str
+    uuid: str
 
 
 class Fit:
+    """Class representing a fit value."""
+
     def __init__(self, value: float, variance: Optional[float] = None):
-        """
+        """Fit constructor.
 
         Args:
-            value:
-            variance:
+            value: Value of the fit.
+            variance: Variance of the fit.
         """
         self.value = value
         self.variance = variance
 
     def to_dict(self):
+        """Return the dictionary representation of the object."""
         return {'value': self.value, 'variance': self.variance}
 
 
@@ -55,7 +66,7 @@ class AnalysisResult:
 
         Args:
             experiment_uuid: Unique identifier of the experiment.
-            device_components: Device components.
+            device_components: Device component types.
             fit: Fit value. This can be an instance of the :class:`Fit` class, or
                 a dictionary with the keys ``value`` and optionally ``variance``.
             result_type: Result type.
@@ -64,9 +75,12 @@ class AnalysisResult:
             tags: Tags for this result.
             result_uuid: Unique identifier for the result.
             backend_name: Name of the backend on which the experiment was run.
+
+        Raises:
+            IBMQInputValueError: If an input argument is invalid.
         """
         if not device_components:
-            raise ValueError('device_components must not be empty.')
+            raise IBMQInputValueError('device_components must not be empty.')
 
         self.experiment_uuid = experiment_uuid
         self.fit = fit
@@ -126,30 +140,10 @@ class AnalysisResult:
         """Return the timestamp when the experiment was created."""
         return convert_tz(self._creation_datetime, to_utc=False)
 
-    # @creation_datetime.setter
-    # def creation_datetime(self, dt: datetime) -> None:
-    #     """Update the experiment creation timestamp.
-    #
-    #     Args:
-    #         dt: Timestamp when the experiment was created. If no
-    #             timezone information is present, local timezone is assumed.
-    #     """
-    #     self._creation_datetime = convert_tz(dt, to_utc=True)
-
     @property
     def updated_datetime(self) -> datetime:
         """Return the timestamp when the experiment was last updated."""
         return convert_tz(self._updated_datetime, to_utc=False)
-
-    # @updated_datetime.setter
-    # def updated_datetime(self, dt: datetime) -> None:
-    #     """Update the experiment update timestamp.
-    #
-    #     Args:
-    #         dt: Timestamp when the experiment ended. If no
-    #             timezone information is present, local timezone is assumed.
-    #     """
-    #     self._updated_datetime = convert_tz(dt, to_utc=True)
 
     @classmethod
     def from_remote_data(cls, remote_data: Dict) -> 'AnalysisResult':
@@ -186,9 +180,9 @@ class AnalysisResult:
                 else:
                     attr_str += ', {}={}'.format(attr, val)
         attr_str += ', fit={}'.format(self.fit.to_dict())
-        for dt in ['creation_datetime', 'updated_datetime']:
-            val = getattr(self, dt)
+        for dt_ in ['creation_datetime', 'updated_datetime']:
+            val = getattr(self, dt_)
             if val is not None:
-                attr_str += ', {}="{}"'.format(dt, val.isoformat())
+                attr_str += ', {}="{}"'.format(dt_, val.isoformat())
 
         return "<{}({})>".format(self.__class__.__name__, attr_str)

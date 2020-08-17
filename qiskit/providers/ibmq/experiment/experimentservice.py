@@ -19,7 +19,7 @@ from typing import Optional, List, Dict, Union
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .experiment import Experiment
-from .analysis_results import AnalysisResult
+from .analysis_result import AnalysisResult, DeviceComponent
 from ..utils.converters import local_to_utc
 from ..api.clients.experiment import ExperimentClient
 
@@ -87,7 +87,7 @@ class ExperimentService:
         response_data = self._api_client.experiment_upload(data)
         experiment.update_from_remote_data(response_data)
 
-    def retrieve_experiment(self, experiment_id) -> Experiment:
+    def retrieve_experiment(self, experiment_id: str) -> Experiment:
         """Retrieve an experiment.
 
         Args:
@@ -122,7 +122,7 @@ class ExperimentService:
         response = self._api_client.experiment_update(experiment.uuid, data)
         experiment.update_from_remote_data(response)
 
-    def delete_experiment(self, experiment: Union[Experiment, str]) -> None:
+    def delete_experiment(self, experiment: Union[Experiment, str]) -> Optional[Experiment]:
         """Delete an experiment.
 
         Args:
@@ -130,13 +130,17 @@ class ExperimentService:
 
         Note:
             This method prompts for confirmation and requires a response before proceeding.
+
+        Returns:
+            Deleted experiment.
         """
         confirmation = input('\nAre you sure you want to delete the experiment? [y/N]: ')
         if confirmation not in ('y', 'Y'):
-            return
+            return None
         if isinstance(experiment, Experiment):
             experiment = experiment.uuid
-        self._api_client.experiment_delete(experiment)
+        raw_data = self._api_client.experiment_delete(experiment)
+        return Experiment.from_remote_data(raw_data)
 
     def analysis_results(self, backend_name: Optional[str] = None) -> List[AnalysisResult]:
         """Retrieve all analysis results, with optional filtering.
@@ -160,7 +164,6 @@ class ExperimentService:
             result: The analysis result to upload.
         """
         data = {
-            # 'device_name': 'NOV001',
             'device_components': result.device_components,
             'experiment_uuid': result.experiment_uuid,
             'fit': result.fit.to_dict(),
@@ -193,6 +196,29 @@ class ExperimentService:
         response = self._api_client.analysis_result_update(result.uuid, data)
         result.update_from_remote_data(response)
 
+    def delete_analysis_result(
+            self,
+            result: Union[AnalysisResult, str]
+    ) -> Optional[AnalysisResult]:
+        """Delete an analysis result.
+
+        Args:
+            result: The ``AnalysisResult`` object or the analysis result UUID.
+
+        Note:
+            This method prompts for confirmation and requires a response before proceeding.
+
+        Returns:
+            The deleted analysis result.
+        """
+        confirmation = input('\nAre you sure you want to delete the analysis result? [y/N]: ')
+        if confirmation not in ('y', 'Y'):
+            return None
+        if isinstance(result, AnalysisResult):
+            result = result.uuid
+        deleted = self._api_client.analysis_result_delete(result)
+        return AnalysisResult.from_remote_data(deleted)
+
     def upload_plot(self, experiment: Union[Experiment, str], plot_file_name: str) -> Dict:
         """Upload an experiment plot.
 
@@ -208,4 +234,22 @@ class ExperimentService:
         return self._api_client.experiment_plot_upload(experiment, plot_file_name)
 
     def plots(self):
+        """Retrieve all plots."""
         raise NotImplementedError
+
+    def device_components(self, backend_name: Optional[str] = None) -> List[DeviceComponent]:
+        """Return the device components.
+
+        Args:
+            backend_name: Name of the backend whose components are to be retrieved.
+
+        Returns:
+            A list of device components.
+        """
+        raw_data = self._api_client.device_components(backend_name)
+        components = []
+        for data in raw_data:
+            components.append(DeviceComponent(backend_name=data['device_name'],
+                                              type=data['type'],
+                                              uuid=data['uuid']))
+        return components

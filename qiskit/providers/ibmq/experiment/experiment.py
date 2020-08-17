@@ -21,6 +21,7 @@ from ..utils.converters import str_to_utc, convert_tz
 
 
 class Experiment:
+    """Class representing an experiment."""
 
     def __init__(
             self,
@@ -104,14 +105,14 @@ class Experiment:
         return convert_tz(self._end_datetime, to_utc=False)
 
     @end_datetime.setter
-    def end_datetime(self, dt: Optional[datetime]) -> None:
+    def end_datetime(self, end_dt: Optional[datetime]) -> None:
         """Update the experiment update timestamp.
 
         Args:
-            dt: Timestamp when the experiment ended. If no
+            end_dt: Timestamp when the experiment ended. If no
                 timezone information is present, local timezone is assumed.
         """
-        self._end_datetime = convert_tz(dt, to_utc=True)
+        self._end_datetime = convert_tz(end_dt, to_utc=True)
 
     @classmethod
     def from_remote_data(cls, remote_data: Dict) -> 'Experiment':
@@ -145,9 +146,9 @@ class Experiment:
                     attr_str += ', {}="{}"'.format(attr, val)
                 else:
                     attr_str += ', {}={}'.format(attr, val)
-        for dt in ['creation_datetime', 'updated_datetime', 'start_datetime', 'end_datetime']:
-            val = getattr(self, dt)
+        for dt_ in ['creation_datetime', 'updated_datetime', 'start_datetime', 'end_datetime']:
+            val = getattr(self, dt_)
             if val is not None:
-                attr_str += ', {}="{}"'.format(dt, val.isoformat())
+                attr_str += ', {}="{}"'.format(dt_, val.isoformat())
 
         return "<{}({})>".format(self.__class__.__name__, attr_str)

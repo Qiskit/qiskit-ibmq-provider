@@ -67,21 +67,21 @@ def local_to_utc(local_dt: Union[datetime, str]) -> datetime:
     return local_dt  # Already in UTC.
 
 
-def convert_tz(dt: Optional[datetime], to_utc: bool) -> Optional[datetime]:
+def convert_tz(input_dt: Optional[datetime], to_utc: bool) -> Optional[datetime]:
     """Convert input timestamp timezone.
 
     Args:
-        dt: Timestamp to be converted.
+        input_dt: Timestamp to be converted.
         to_utc: True if to convert to UTC, otherwise to local timezone.
 
     Returns:
         Converted timestamp, or ``None`` if input is ``None``.
     """
-    if dt is None:
+    if input_dt is None:
         return None
     if to_utc:
-        return local_to_utc(dt)
-    return utc_to_local(dt)
+        return local_to_utc(input_dt)
+    return utc_to_local(input_dt)
 
 
 def utc_to_local_all(data: Any) -> Any:
