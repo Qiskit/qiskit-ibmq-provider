@@ -14,7 +14,11 @@
 
 """Backends Filtering Test."""
 
+from datetime import datetime
+from dateutil import tz
+
 from qiskit.providers.ibmq import least_busy
+from qiskit.providers.ibmq import IBMQError
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, requires_device
@@ -76,3 +80,30 @@ class TestBackendFilters(IBMQTestCase):
         backends = self.provider.backends()
         least_busy_backend = least_busy(backends)
         self.assertTrue(least_busy_backend)
+
+    def test_filter_least_busy_reservation(self):
+        """Test filtering by least busy function, with reservations."""
+        backend = reservations = None
+        for backend in self.provider.backends(simulator=False, operational=True):
+            reservations = backend.reservations()
+            if reservations:
+                break
+
+        if not reservations:
+            self.skipTest("Test case requires reservations.")
+
+        reserv = reservations[0]
+        now = datetime.now(tz=tz.tzlocal())
+        window = 60
+        if reserv.start_datetime > now:
+            window = (reserv.start_datetime - now).seconds * 60
+        self.assertRaises(IBMQError, least_busy, [backend], window)
+
+        self.assertEqual(least_busy([backend], None), backend)
+
+        backs = [backend]
+        for back in self.provider.backends(simulator=False, operational=True):
+            if back.name() != backend.name():
+                backs.append(back)
+                break
+        self.assertTrue(least_busy(backs, window))

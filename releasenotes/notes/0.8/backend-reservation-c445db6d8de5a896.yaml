@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    :class:`~qiskit.providers.ibmq.IBMQBackend` now has a new
+    :meth:`~qiskit.providers.ibmq.IBMQBackend.reservations` method that
+    returns reservation information for the backend, with optional filtering.
+    In addition, you can now use
+    :meth:`provider.backends.my_reservations()<qiskit.providers.ibmq.IBMQBackendService.my_reservations>`
+    to query for your own reservations.

@@ -102,8 +102,8 @@ def discover_credentials(
                 credentials, stored_provider_hgp = stored_account_info
             else:
                 credentials = stored_account_info
-            logger.info('Using credentials from %s', display_name)
             if credentials:
+                logger.info('Using credentials from %s', display_name)
                 break
         except CredentialsError as ex:
             logger.warning(

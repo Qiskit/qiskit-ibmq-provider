@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes an issue wherein a call to :meth:`qiskit.providers.ibmq.IBMQBackend.jobs`
+    can hang if the number of jobs being returned is large. Fixes
+    `#674 <https://github.com/Qiskit/qiskit-ibmq-provider/issues/674>`_

@@ -1,0 +1,8 @@
+---
+upgrade:
+  - |
+    On Windows, the event loop policy is set to ``WindowsSelectorEventLoopPolicy``
+    instead of using the default ``WindowsProactorEventLoopPolicy``. This fixes
+    the issue that the :meth:`qiskit.providers.ibmq.job.IBMQJob.result` method
+    could hang on Windows. Fixes
+    `#691 <https://github.com/Qiskit/qiskit-ibmq-provider/issues/691>`_

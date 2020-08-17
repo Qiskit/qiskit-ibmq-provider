@@ -33,6 +33,7 @@ class Api(RestAdapterBase):
         'user_info': '/users/me',
         'hubs': '/Network',
         'version': '/version',
+        'bookings': '/Network/bookings/v2'
         'experiments': '/experiments',
         'experiment_devices': '/devices',
         'analysis_results': '/analysis_results',
@@ -123,6 +124,15 @@ class Api(RestAdapterBase):
         response = self.session.get(url).json()
 
         return response
+
+    def reservations(self) -> List:
+        """Return reservation information.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('bookings')
+        return self.session.get(url).json()
 
     # Experiment-related public functions.
 
