@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes an issue that may raise a ``ValueError`` if
+    :meth:`~qiskit.providers.ibmq.IBMQBackend.retrieve_job` is used to retrieve
+    a job submitted via the IBM Quantum Experience Composer.
