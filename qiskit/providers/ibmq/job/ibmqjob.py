@@ -902,7 +902,8 @@ class IBMQJob(BaseJob):
                 with the server.
         """
         if self._api_status in (ApiJobStatus.ERROR_CREATING_JOB.value,
-                                ApiJobStatus.ERROR_VALIDATING_JOB.value):
+                                ApiJobStatus.ERROR_VALIDATING_JOB.value,
+                                ApiJobStatus.ERROR_TRANSPILING_JOB.value):
             # No results if job was never executed.
             return
 
