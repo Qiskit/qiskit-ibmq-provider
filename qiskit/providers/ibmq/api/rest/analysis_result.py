@@ -61,3 +61,12 @@ class AnalysisResult(RestAdapterBase):
         """
         url = self.get_url('self')
         return self.session.delete(url).json()
+
+    def get(self) -> Dict:
+        """Retrieve the analysis result.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('self')
+        return self.session.get(url).json()

@@ -19,7 +19,7 @@ from typing import Dict, List, Any, Union, Optional
 import json
 
 from .base import RestAdapterBase
-from .experiment import Experiment
+from .experiment import Experiment, ExperimentPlot
 from .analysis_result import AnalysisResult
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class Api(RestAdapterBase):
         'user_info': '/users/me',
         'hubs': '/Network',
         'version': '/version',
-        'bookings': '/Network/bookings/v2'
+        'bookings': '/Network/bookings/v2',
         'experiments': '/experiments',
         'experiment_devices': '/devices',
         'analysis_results': '/analysis_results',
@@ -52,6 +52,18 @@ class Api(RestAdapterBase):
             The experiment adapter.
         """
         return Experiment(self.session, experiment_uuid)
+
+    def experiment_plot(self, experiment_uuid: str, plot_name: str) -> ExperimentPlot:
+        """
+
+        Args:
+            experiment_uuid: UUID of the experiment.
+            plot_name: Name of the experiment plot.
+
+        Returns:
+            The experiment plot adapter.
+        """
+        return ExperimentPlot(self.session, experiment_uuid, plot_name)
 
     def analysis_result(self, analysis_result_id: str) -> AnalysisResult:
         """Return an adapter for the analysis result.
@@ -136,11 +148,18 @@ class Api(RestAdapterBase):
 
     # Experiment-related public functions.
 
-    def experiments(self, backend_name: Optional[str] = None) -> List:
+    def experiments(
+            self,
+            backend_name: Optional[str] = None,
+            experiment_type: Optional[str] = None,
+            start_time: Optional[List] = None
+    ) -> List:
         """Return experiment data.
 
         Args:
             backend_name: Name of the backend.
+            experiment_type: Experiment type.
+            start_time: A list of timestamps used to filter by experiment start time.
 
         Returns:
             JSON response.
@@ -149,6 +168,10 @@ class Api(RestAdapterBase):
         params = {}
         if backend_name:
             params['device_name'] = backend_name
+        if experiment_type:
+            params['type'] = experiment_type
+        if start_time:
+            params['start_time'] = start_time
         return self.session.get(url, params=params).json()
 
     def experiment_devices(self) -> List:
@@ -199,10 +222,7 @@ class Api(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('analysis_results')
-        # data = json.dumps(result)
-        # print(f"upload data is {data}")
         return self.session.post(url, json=result).json()
-        # return self.session.post(url, data=data).json()
 
     def device_components(self, backend_name: Optional[str] = None) -> List[Dict]:
         """Return a list of device components for the backend.

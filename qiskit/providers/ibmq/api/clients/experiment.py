@@ -15,7 +15,7 @@
 """Client for accessing IBM Quantum Experience experiment services."""
 
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 
 from qiskit.providers.ibmq.credentials import Credentials
 
@@ -32,7 +32,7 @@ class ExperimentClient(BaseClient):
     def __init__(
             self,
             access_token: str,
-            credentials: Credentials,
+            credentials: Credentials
     ) -> None:
         """ExperimentClient constructor.
 
@@ -44,16 +44,23 @@ class ExperimentClient(BaseClient):
                                      **credentials.connection_parameters())
         self.base_api = Api(self._session)
 
-    def experiments(self, backend_name: Optional[str]) -> List[Dict]:
+    def experiments(
+            self,
+            backend_name: Optional[str],
+            experiment_type: Optional[str] = None,
+            start_time: Optional[List] = None
+    ) -> List[Dict]:
         """Retrieve experiments, with optional filtering.
 
         Args:
             backend_name: Name of the backend.
+            experiment_type: Experiment type.
+            start_time: A list of timestamps used to filter by experiment start time.
 
         Returns:
             A list of experiments.
         """
-        return self.base_api.experiments(backend_name)
+        return self.base_api.experiments(backend_name, experiment_type, start_time)
 
     def experiment_get(self, experiment_id: str) -> Dict:
         """Get a specific experiment.
@@ -81,7 +88,7 @@ class ExperimentClient(BaseClient):
         """Update an experiment.
 
         Args:
-            experiment_id: Experiment uuid.
+            experiment_id: Experiment UUID.
             new_data: New experiment data.
 
         Returns:
@@ -93,24 +100,52 @@ class ExperimentClient(BaseClient):
         """Delete an experiment.
 
         Args:
-            experiment_id: Experiment uuid.
+            experiment_id: Experiment UUID.
 
         Returns:
             Experiment data.
         """
         return self.base_api.experiment(experiment_id).delete()
 
-    def experiment_plot_upload(self, experiment_id: str, plot_file_name: str) -> Dict:
+    def experiment_plot_upload(
+            self,
+            experiment_id: str,
+            plot: Union[bytes, str],
+            plot_name: str
+    ) -> Dict:
         """Upload an experiment plot.
 
         Args:
-            experiment_id: Experiment uuid.
-            plot_file_name: Plot file name.
+            experiment_id: Experiment UUID.
+            plot: Plot file name or data to upload.
+            plot_name: Name of the plot.
 
         Returns:
             JSON response.
         """
-        return self.base_api.experiment(experiment_id).upload_plot(plot_file_name)
+        return self.base_api.experiment(experiment_id).upload_plot(plot, plot_name)
+
+    def experiment_plot_get(self, experiment_id: str, plot_name: str) -> bytes:
+        """Retrieve an experiment plot.
+
+        Args:
+            experiment_id: Experiment UUID.
+            plot_name: Name of the plot.
+
+        Returns:
+            Retrieved experiment plot.
+
+        """
+        return self.base_api.experiment_plot(experiment_id, plot_name).retrieve()
+
+    def experiment_plot_delete(self, experiment_id: str, plot_file_name: str):
+        """Delete an experiment plot.
+
+        Args:
+            experiment_id: Experiment UUID.
+            plot_file_name: Plot file name.
+        """
+        return self.base_api.experiment_plot(experiment_id, plot_file_name).delete()
 
     def experiment_devices(self) -> List:
         """Return list of experiment devices.
@@ -164,6 +199,17 @@ class ExperimentClient(BaseClient):
             Analysis result data.
         """
         return self.base_api.analysis_result(result_id).delete()
+
+    def analysis_result_get(self, result_id: str) -> Dict:
+        """Retrieve an analysis result.
+
+        Args:
+            result_id: Analysis result ID.
+
+        Returns:
+            Analysis result data.
+        """
+        return self.base_api.analysis_result(result_id).get()
 
     def device_components(self, backend_name: Optional[str]) -> List[Dict]:
         """Return device components for the backend.

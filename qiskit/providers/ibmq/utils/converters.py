@@ -47,7 +47,7 @@ def local_to_utc(local_dt: Union[datetime, str]) -> datetime:
     """Convert a local ``datetime`` object or string to a UTC ``datetime``.
 
     Args:
-        local_dt: Input local `datetime` or string.
+        local_dt: Input local ``datetime`` or string.
 
     Returns:
         A ``datetime`` in UTC.
@@ -65,6 +65,23 @@ def local_to_utc(local_dt: Union[datetime, str]) -> datetime:
         local_dt = local_dt.replace(tzinfo=tz.tzlocal())
         return local_dt.astimezone(tz.UTC)
     return local_dt  # Already in UTC.
+
+
+def local_to_utc_str(local_dt: Union[datetime, str], suffix: str = 'Z') -> str:
+    """Convert a local ``datetime`` object or string to a UTC string.
+
+    Args:
+        local_dt: Input local ``datetime`` or string.
+        suffix: ``Z`` or ``+``, indicating whether the suffix should be ``Z`` or
+            ``+00:00``.
+
+    Returns:
+        UTC datetime in ISO format.
+    """
+    utc_dt_str = local_to_utc(local_dt).isoformat()
+    if suffix == 'Z':
+        utc_dt_str = utc_dt_str.replace('+00:00', 'Z')
+    return utc_dt_str
 
 
 def convert_tz(input_dt: Optional[datetime], to_utc: bool) -> Optional[datetime]:

@@ -269,6 +269,9 @@ class RetrySession(Session):
         if not self.proxies and 'timeout' not in kwargs:
             kwargs.update({'timeout': self._timeout})
 
+        if 'files' in kwargs:
+            self.headers.pop('Content-Type', None)
+
         try:
             self._log_request_info(url, method, kwargs)
             response = super().request(method, final_url, **kwargs)

@@ -16,19 +16,17 @@
 
 import os
 from unittest import mock
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from qiskit.providers.ibmq.experiment.experiment import Experiment
 from qiskit.providers.ibmq.experiment.analysis_result import AnalysisResult, Fit, DeviceComponent
+from qiskit.providers.ibmq.experiment.exceptions import ExperimentNotFoundError
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from qiskit.providers.ibmq.experiment.constants import ResultQuality
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
-
-saved_environ = os.environ.get('USE_STAGING_CREDENTIALS')
-os.environ['USE_STAGING_CREDENTIALS'] = 'true'
 
 
 class TestExperiment(IBMQTestCase):
@@ -104,6 +102,52 @@ class TestExperiment(IBMQTestCase):
         self.assertTrue(found, "Experiment {} not found when filter by backend name {}.".format(
             uuid, backend_name))
 
+    def test_get_experiments_with_type(self):
+        """Test retrieving all experiments for a specific type."""
+        expr_type = self.experiments[0].type
+        uuid = self.experiments[0].uuid
+        backend_experiments = self.provider.experiment.experiments(type=expr_type)
+
+        found = False
+        for exp in backend_experiments:
+            self.assertEqual(exp.type, expr_type)
+            if exp.uuid == uuid:
+                found = True
+        self.assertTrue(found, "Experiment {} not found when filter by type {}.".format(
+            uuid, expr_type))
+
+    def test_get_experiments_with_start_time(self):
+        """Test retrieving all experiments for a specific type."""
+        ref_start_dt = self.experiments[0].start_datetime
+        uuid = self.experiments[0].uuid
+
+        before_start = ref_start_dt - timedelta(hours=1)
+        after_start = ref_start_dt + timedelta(hours=1)
+        sub_tests = [(before_start, None, True, "before start, None"),
+                     (None, after_start, True, "None, after start"),
+                     (before_start, after_start, True, "before, after start"),
+                     (after_start, None, False, "after start, None"),
+                     (None, before_start, False, "None, before start"),
+                     (before_start, before_start, False, "before, before start")
+                     ]
+
+        for start_dt, end_dt, expected, title in sub_tests:
+            with self.subTest(title=title):
+                backend_experiments = self.provider.experiment.experiments(
+                    start_datetime=start_dt, end_datetime=end_dt)
+                found = False
+                for exp in backend_experiments:
+                    if start_dt:
+                        self.assertGreaterEqual(exp.start_datetime, start_dt)
+                    if end_dt:
+                        self.assertLessEqual(exp.start_datetime, end_dt)
+                    if exp.uuid == uuid:
+                        found = True
+                self.assertEqual(found, expected,
+                                 "Experiment {} (not)found unexpectedly when filter using"
+                                 "start_dt={}, end_dt={}. Found={}".format(
+                                     uuid, start_dt, end_dt, found))
+
     def test_retrieve_experiment(self):
         """Test retrieving an experiment by its ID."""
         exp = self.experiments[0]
@@ -114,6 +158,7 @@ class TestExperiment(IBMQTestCase):
         """Test uploading an experiment."""
         exp = self.experiments[0]
         new_exp = Experiment(
+            provider=self.provider,
             backend_name=exp.backend_name,
             experiment_type='test',
             tags=['qiskit-test']
@@ -174,14 +219,7 @@ class TestExperiment(IBMQTestCase):
         self.provider.experiment.upload_analysis_result(new_result)
         self.results_to_delete.append(new_result.uuid)
 
-        # TODO retrieve just the result when supported.
-        results = self.provider.experiment.analysis_results()
-        rresult = None
-        for res in results:
-            if res.uuid == new_result.uuid:
-                rresult = res
-        self.assertTrue(rresult, "Cannot find new result.")
-
+        rresult = self.provider.experiment.retrieve_analysis_result(new_result.uuid)
         sub_tests = [(new_result, 'local result'), (rresult, 'retrieved result')]
         self.log.debug("Verifying analysis result %s", new_result.uuid)
         for res, name in sub_tests:
@@ -204,20 +242,14 @@ class TestExperiment(IBMQTestCase):
         new_result.fit = new_fit
         self.provider.experiment.update_analysis_result(new_result)
 
-        # TODO retrieve just the result when supported.
-        results = self.provider.experiment.analysis_results()
-        rresult = None
-        for res in results:
-            if res.uuid == new_result.uuid:
-                rresult = res
-        self.assertTrue(rresult, "Cannot find new result.")
-
+        rresult = self.provider.experiment.retrieve_analysis_result(new_result.uuid)
         sub_tests = [(new_result, 'local result'), (rresult, 'retrieved result')]
         for res, name in sub_tests:
             with self.subTest(sub_test_name=name):
                 self.assertEqual(res.fit.to_dict(), new_fit.to_dict())
                 self.assertEqual(res.type, original_type)
                 self.assertEqual(res.quality, ResultQuality.HUMAN_BAD)
+                self.assertTrue(res.updated_datetime.tzinfo)
 
     def test_delete_analysis_result(self):
         """Test deleting an analysis result."""
@@ -225,13 +257,8 @@ class TestExperiment(IBMQTestCase):
         with mock.patch('builtins.input', lambda _: 'y'):
             self.provider.experiment.delete_analysis_result(result.uuid)
 
-        # TODO retrieve just the result when supported.
-        results = self.provider.experiment.analysis_results()
-        rresult = None
-        for res in results:
-            if res.uuid == result.uuid:
-                rresult = res
-        self.assertFalse(rresult, "Found deleted result.")
+        self.assertRaises(ExperimentNotFoundError,
+                          self.provider.experiment.retrieve_analysis_result, result.uuid)
 
     def test_backend_components(self):
         """Test retrieving all device components."""
@@ -252,12 +279,59 @@ class TestExperiment(IBMQTestCase):
         backend_names = [b['name'] for b in backends]
         self.assertIn(self.experiments[0].backend_name, backend_names)
 
-    def _create_experiment(self, backend_name: Optional[str] = None):
+    def test_plot(self):
+        """Test uploading and retrieving a plot file."""
+        new_exp = self._create_experiment()
+        # Upload a new plot.
+        hello_bytes = str.encode("hello world")
+        file_name = "hello_world.svg"
+        plot_name = "hello.svg"
+        with open(file_name, 'wb') as f:
+            f.write(hello_bytes)
+        response = self.provider.experiment.upload_plot(new_exp.uuid, file_name, plot_name)
+        self.assertEqual(response['name'], plot_name)
+        new_exp.refresh()
+        self.assertIn(plot_name, new_exp.plot_names)
+
+        # Retrieve the plot we just uploaded.
+        plot_content = self.provider.experiment.retrieve_plot(new_exp.uuid, plot_name)
+        self.assertEqual(plot_content, hello_bytes)
+
+        # Delete plot.
+        with mock.patch('builtins.input', lambda _: 'y'):
+            self.provider.experiment.delete_plot(new_exp.uuid, plot_name)
+        with self.assertRaises(RequestsApiError) as manager:
+            self.provider.experiment.retrieve_plot(new_exp.uuid, plot_name)
+        self.assertIn("not found", manager.exception.message)
+
+    def test_upload_plot_data(self):
+        """Test uploading plot data."""
+        new_exp = self._create_experiment()
+        # Upload a new plot.
+        hello_bytes = str.encode("hello world")
+        plot_names = ["batman.svg", None]
+        for name in plot_names:
+            with self.subTest(name=name):
+                response = self.provider.experiment.upload_plot(new_exp.uuid, hello_bytes, name)
+                if name:
+                    self.assertEqual(response['name'], name)
+                else:
+                    name = response['name']
+                new_exp.refresh()
+                self.assertIn(name, new_exp.plot_names)
+
+    def _create_experiment(
+            self,
+            backend_name: Optional[str] = None,
+            start_dt: Optional[datetime] = None
+    ) -> Experiment:
         backend_name = backend_name or self.experiments[0].backend_name
         new_exp = Experiment(
+            provider=self.provider,
             backend_name=backend_name,
             experiment_type='test',
-            tags=['qiskit-test']
+            tags=['qiskit-test'],
+            start_datetime=start_dt
         )
         self.provider.experiment.upload_experiment(new_exp)
         self.experiments_to_delete.append(new_exp.uuid)

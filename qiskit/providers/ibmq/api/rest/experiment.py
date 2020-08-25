@@ -15,8 +15,7 @@
 """Experiment REST adapter."""
 
 import logging
-from typing import Dict, Any
-
+from typing import Dict, Union
 
 from .base import RestAdapterBase
 from ..session import RetrySession
@@ -73,15 +72,62 @@ class Experiment(RestAdapterBase):
         url = self.get_url('self')
         return self.session.delete(url).json()
 
-    def upload_plot(self, plot_fn: str) -> Dict:
+    def upload_plot(self, plot: Union[bytes, str], plot_name: str) -> Dict:
         """Upload a plot for the experiment.
 
         Args:
-            plot_fn: Plot file name.
+            plot: Plot file name or data to upload.
+            plot_name: Name of the plot.
 
         Returns:
             JSON response.
         """
-        files = {'file': (plot_fn, open(plot_fn, 'rb'), 'multipart/form-data')}
         url = self.get_url('plots')
-        return self.session.post(url, files=files).json()
+        if isinstance(plot, str):
+            with open(plot, 'rb') as file:
+                data = {'plot': (plot_name, file)}
+                response = self.session.post(url, files=data).json()
+        else:
+            data = {'plot': (plot_name, plot)}
+            response = self.session.post(url, files=data).json()
+
+        return response
+
+
+class ExperimentPlot(Experiment):
+
+    URL_MAP = {
+        'self': ''
+    }
+
+    def __init__(
+            self,
+            session: RetrySession,
+            experiment_uuid: str,
+            plot_name: str,
+            url_prefix: str = '') -> None:
+        """Experiment constructor.
+
+        Args:
+            session: Session to be used in the adaptor.
+            experiment_uuid: UUID of the experiment.
+            url_prefix: URL prefix.
+        """
+        super().__init__(session, experiment_uuid, url_prefix)
+        self.prefix_url += '/plots/{}'.format(plot_name)
+
+    def retrieve(self) -> bytes:
+        """Retrieve the specific experiment plot.
+
+        Returns:
+            Plot content.
+        """
+        url = self.get_url('self')
+        response = self.session.get(url)
+        return response.content
+
+    def delete(self) -> None:
+        """Delete this experiment plot."""
+        url = self.get_url('self')
+        self.session.delete(url)
+

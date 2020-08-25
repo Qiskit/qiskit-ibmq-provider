@@ -15,13 +15,16 @@
 """IBM Quantum Experience experiment service."""
 
 from typing import Optional, List, Dict, Union
+from datetime import datetime
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .experiment import Experiment
 from .analysis_result import AnalysisResult, DeviceComponent
-from ..utils.converters import local_to_utc
+from .exceptions import ExperimentNotFoundError
+from ..utils.converters import local_to_utc_str
 from ..api.clients.experiment import ExperimentClient
+from ..api.exceptions import RequestsApiError
 
 
 class ExperimentService:
@@ -51,20 +54,41 @@ class ExperimentService:
         """
         return self._api_client.experiment_devices()
 
-    def experiments(self, backend_name: Optional[str] = None) -> List[Experiment]:
+    def experiments(
+            self,
+            backend_name: Optional[str] = None,
+            type: Optional[str] = None,
+            start_datetime: Optional[datetime] = None,
+            end_datetime: Optional[datetime] = None
+    ) -> List[Experiment]:
         """Retrieve all experiments, with optional filtering.
 
         Args:
             backend_name: Backend name used for filtering.
+            type: Experiment type used for filtering.
+            start_datetime: Filter by the given start timestamp, in local time. This is used to
+                find experiments whose start date/time is after (greater than or equal to) this
+                local timestamp.
+            end_datetime: Filter by the given end timestamp, in local time. This is used to
+                find experiments whose start date/time is before (less than or equal to) this
+                local timestamp.
 
         Returns:
             A list of experiments.
         """
-        raw_data = self._api_client.experiments(backend_name)
+        start_time_filters = []
+        if start_datetime:
+            st_filter = 'ge:{}'.format(local_to_utc_str(start_datetime))
+            start_time_filters.append(st_filter)
+        if end_datetime:
+            st_filter = 'le:{}'.format(local_to_utc_str(end_datetime))
+            start_time_filters.append(st_filter)
+
+        raw_data = self._api_client.experiments(backend_name, type, start_time_filters)
         experiments = []
         # TODO get analysis results for the experiment.
         for exp in raw_data:
-            experiments.append(Experiment.from_remote_data(exp))
+            experiments.append(Experiment.from_remote_data(self._provider, exp))
         return experiments
 
     def upload_experiment(self, experiment: Experiment) -> None:
@@ -79,7 +103,7 @@ class ExperimentService:
             'extra': experiment.extra,
         }
         if experiment.start_datetime:
-            data['start_time'] = local_to_utc(experiment.start_datetime).isoformat()
+            data['start_time'] = local_to_utc_str(experiment.start_datetime)
         if experiment.tags:
             data['tags'] = experiment.tags
         if experiment.uuid:
@@ -97,7 +121,7 @@ class ExperimentService:
             Retrieved experiment.
         """
         raw_data = self._api_client.experiment_get(experiment_id)
-        experiment = Experiment.from_remote_data(raw_data)
+        experiment = Experiment.from_remote_data(self._provider, raw_data)
         # TODO get analysis results for the experiment.
         return experiment
 
@@ -134,13 +158,14 @@ class ExperimentService:
         Returns:
             Deleted experiment.
         """
-        confirmation = input('\nAre you sure you want to delete the experiment? [y/N]: ')
+        confirmation = input('\nAre you sure you want to delete the experiment? '
+                             'Results and plots for the experiment will also be deleted. [y/N]: ')
         if confirmation not in ('y', 'Y'):
             return None
         if isinstance(experiment, Experiment):
             experiment = experiment.uuid
         raw_data = self._api_client.experiment_delete(experiment)
-        return Experiment.from_remote_data(raw_data)
+        return Experiment.from_remote_data(self._provider, raw_data)
 
     def analysis_results(self, backend_name: Optional[str] = None) -> List[AnalysisResult]:
         """Retrieve all analysis results, with optional filtering.
@@ -179,6 +204,23 @@ class ExperimentService:
             data['uuid'] = result.uuid
         response = self._api_client.analysis_result_upload(data)
         result.update_from_remote_data(response)
+
+    def retrieve_analysis_result(self, result_id: str) -> AnalysisResult:
+        """Retrieve an analysis result.
+
+        Args:
+            result_id: Analysis result UUID.
+
+        Returns:
+            Retrieved analysis result.
+        """
+        try:
+            data = self._api_client.analysis_result_get(result_id)
+        except RequestsApiError as err:
+            if 'Analysis result not found' in err.message:
+                raise ExperimentNotFoundError(err.message)
+            raise
+        return AnalysisResult.from_remote_data(data)
 
     def update_analysis_result(self, result: AnalysisResult) -> None:
         """Update an analysis result.
@@ -219,19 +261,80 @@ class ExperimentService:
         deleted = self._api_client.analysis_result_delete(result)
         return AnalysisResult.from_remote_data(deleted)
 
-    def upload_plot(self, experiment: Union[Experiment, str], plot_file_name: str) -> Dict:
+    def upload_plot(
+            self,
+            experiment: Union[Experiment, str],
+            plot: Union[str, bytes],
+            plot_name: Optional[str] = None
+    ) -> Dict:
         """Upload an experiment plot.
 
         Args:
             experiment: The ``Experiment`` object or the experiment UUID.
-            plot_file_name: Name of the plot file.
+            plot: Name of the plot file or plot data to upload.
+            plot_name: Name of the plot. If ``None``, the plot file name, if
+                given, or a generated name is used.
 
         Returns:
-            A dictionary with name and size of the uploaded plot file.
+            A dictionary with name and size of the uploaded plot.
         """
         if isinstance(experiment, Experiment):
             experiment = experiment.uuid
-        return self._api_client.experiment_plot_upload(experiment, plot_file_name)
+
+        if plot_name is None:
+            if isinstance(plot, str):
+                plot_name = plot
+            else:
+                plot_name = "plot_{}.svg".format(datetime.now().isoformat())
+        return self._api_client.experiment_plot_upload(experiment, plot, plot_name)
+
+    def delete_plot(
+            self,
+            experiment: Union[Experiment, str],
+            plot_name: str
+    ) -> None:
+        """Delete an experiment plot.
+
+        Note:
+            This method prompts for confirmation and requires a response before proceeding.
+
+        Args:
+            experiment: The ``Experiment`` object or the experiment UUID.
+            plot_name: Name of the plot.
+        """
+        confirmation = input('\nAre you sure you want to delete the experiment plot? [y/N]: ')
+        if confirmation not in ('y', 'Y'):
+            return None
+        if isinstance(experiment, Experiment):
+            experiment = experiment.uuid
+        self._api_client.experiment_plot_delete(experiment, plot_name)
+
+    def retrieve_plot(
+            self,
+            experiment: Union[Experiment, str],
+            plot_name: str,
+            file_name: Optional[str] = None
+    ) -> Union[int, bytes]:
+        """Retrieve an experiment plot.
+
+        Args:
+            experiment: The ``Experiment`` object or the experiment UUID.
+            plot_name: Name of the plot.
+            file_name: Name of the local file to save the plot to. If ``None``,
+                the content of the plot is returned instead.
+
+        Returns:
+            The size of the plot if `file_name` is specified. Otherwise the
+            content of the plot in bytes.
+        """
+        if isinstance(experiment, Experiment):
+            experiment = experiment.uuid
+        data = self._api_client.experiment_plot_get(experiment, plot_name)
+        if file_name:
+            with open(file_name, 'wb') as f:
+                num_bytes = f.write(data)
+            return num_bytes
+        return data
 
     def plots(self):
         """Retrieve all plots."""
