@@ -22,6 +22,8 @@ Example::
 import os
 import subprocess
 
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 def _minimal_ext_cmd(cmd):
     # construct minimal environment
