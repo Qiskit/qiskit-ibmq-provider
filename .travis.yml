@@ -37,6 +37,8 @@ stage_generic: &stage_generic
     - pip install -U -c constraints.txt -r requirements.txt
     - pip install -U -c constraints.txt -r requirements-dev.txt
     - pip install -c constraints.txt -e .
+  # TODO: Remove after qiskit 0.21.0 metapackage release:
+  before_script: pip install -U git+https://github.com/Qiskit/qiskit-terra.git
   script:
     # Run the tests.
     - make test
