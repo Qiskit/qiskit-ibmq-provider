@@ -14,13 +14,13 @@
 .PHONY: lint style test mypy
 
 lint:
-	pylint -rn qiskit/providers/ibmq test
+	pylint -rn qiskit_ibmq_provider test
 
 mypy:
-	mypy --module qiskit.providers.ibmq --show-error-codes
+	mypy --module qiskit_ibmq_provider --show-error-codes
 
 style:
-	pycodestyle qiskit test
+	pycodestyle qiskit_ibmq_provider test
 
 test:
 	python -m unittest -v
