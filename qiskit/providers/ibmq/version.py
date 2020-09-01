@@ -81,4 +81,5 @@ def get_version_info():
 
     return full_version
 
+
 __version__ = get_version_info()
