@@ -20,8 +20,35 @@ import enum
 class ResultQuality(enum.Enum):
     """Possible values for analysis result quality."""
 
-    HUMAN_BAD = 'Human Bad'
-    COMPUTER_BAD = 'Computer Bad'
-    NO_INFORMATION = 'No Information'
-    COMPUTER_GOOD = 'Computer Good'
-    HUMAN_GOOD = 'Human Good'
+    def __new__(cls, description: str, ranking: int = 0):
+        # ranking is defaulted to 0 to silence linter.
+        obj = object.__new__(cls)
+        obj._value_ = description
+        obj.ranking = ranking
+        return obj
+
+    def __ge__(self, other):
+        if self.__class__ is other.__class__:
+            return self.ranking >= other.ranking
+        return NotImplemented
+
+    def __gt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.ranking > other.ranking
+        return NotImplemented
+
+    def __le__(self, other):
+        if self.__class__ is other.__class__:
+            return self.ranking <= other.ranking
+        return NotImplemented
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.ranking < other.ranking
+        return NotImplemented
+
+    HUMAN_BAD = 'Human Bad', 1
+    COMPUTER_BAD = 'Computer Bad', 2
+    NO_INFORMATION = 'No Information', 3
+    COMPUTER_GOOD = 'Computer Good', 4
+    HUMAN_GOOD = 'Human Good', 5

@@ -95,6 +95,7 @@ class Experiment(RestAdapterBase):
 
 
 class ExperimentPlot(Experiment):
+    """Rest adapter for experiment plot related endpoints."""
 
     URL_MAP = {
         'self': ''
@@ -111,6 +112,7 @@ class ExperimentPlot(Experiment):
         Args:
             session: Session to be used in the adaptor.
             experiment_uuid: UUID of the experiment.
+            plot_name: Name of the plot.
             url_prefix: URL prefix.
         """
         super().__init__(session, experiment_uuid, url_prefix)
@@ -130,4 +132,3 @@ class ExperimentPlot(Experiment):
         """Delete this experiment plot."""
         url = self.get_url('self')
         self.session.delete(url)
-

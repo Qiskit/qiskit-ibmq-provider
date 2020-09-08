@@ -15,7 +15,7 @@
 """Root REST adapter."""
 
 import logging
-from typing import Dict, List, Any, Union, Optional
+from typing import Dict, List, Any, Union, Optional, Tuple
 import json
 
 from .base import RestAdapterBase
@@ -152,7 +152,9 @@ class Api(RestAdapterBase):
             self,
             backend_name: Optional[str] = None,
             experiment_type: Optional[str] = None,
-            start_time: Optional[List] = None
+            start_time: Optional[List] = None,
+            device_components: Optional[List[str]] = None,
+            tags: Optional[str] = None
     ) -> List:
         """Return experiment data.
 
@@ -160,6 +162,8 @@ class Api(RestAdapterBase):
             backend_name: Name of the backend.
             experiment_type: Experiment type.
             start_time: A list of timestamps used to filter by experiment start time.
+            device_components: A list of device components used for filtering.
+            tags: Tags used for filtering.
 
         Returns:
             JSON response.
@@ -172,6 +176,10 @@ class Api(RestAdapterBase):
             params['type'] = experiment_type
         if start_time:
             params['start_time'] = start_time
+        if device_components:
+            params['device_components'] = device_components
+        if tags:
+            params['tags'] = tags
         return self.session.get(url, params=params).json()
 
     def experiment_devices(self) -> List:
@@ -197,11 +205,22 @@ class Api(RestAdapterBase):
         raw_data = self.session.post(url, json=experiment).json()
         return raw_data
 
-    def analysis_results(self, backend_name: Optional[str] = None) -> List:
+    def analysis_results(
+            self,
+            backend_name: Optional[str] = None,
+            device_components: Optional[List[str]] = None,
+            experiment_uuid: Optional[str] = None,
+            result_type: Optional[str] = None,
+            quality: Optional[List[str]] = None
+    ) -> List:
         """Return all analysis results.
 
         Args:
             backend_name: Name of the backend.
+            device_components: A list of device components used for filtering.
+            experiment_uuid: Experiment UUID used for filtering.
+            result_type: Analysis result type used for filtering.
+            quality: Quality value used for filtering.
 
         Returns:
             JSON response.
@@ -210,6 +229,14 @@ class Api(RestAdapterBase):
         params = {}
         if backend_name:
             params['device_name'] = backend_name
+        if device_components:
+            params['device_components'] = device_components
+        if experiment_uuid:
+            params['experiment_uuid'] = experiment_uuid
+        if quality:
+            params['quality'] = quality
+        if result_type:
+            params['type'] = result_type
         return self.session.get(url, params=params).json()
 
     def analysis_result_upload(self, result: Dict) -> Dict:

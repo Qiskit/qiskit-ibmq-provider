@@ -14,7 +14,7 @@
 
 """IBM Quantum Experience experiment service."""
 
-from typing import Optional, List, Dict, Union
+from typing import Optional, List, Dict, Union, Tuple
 from datetime import datetime
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
@@ -22,6 +22,7 @@ from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-impo
 from .experiment import Experiment
 from .analysis_result import AnalysisResult, DeviceComponent
 from .exceptions import ExperimentNotFoundError
+from .constants import ResultQuality
 from ..utils.converters import local_to_utc_str
 from ..api.clients.experiment import ExperimentClient
 from ..api.exceptions import RequestsApiError
@@ -57,9 +58,12 @@ class ExperimentService:
     def experiments(
             self,
             backend_name: Optional[str] = None,
-            type: Optional[str] = None,
+            type: Optional[str] = None,  # pylint: disable=redefined-builtin
             start_datetime: Optional[datetime] = None,
-            end_datetime: Optional[datetime] = None
+            end_datetime: Optional[datetime] = None,
+            device_components: Optional[List[str]] = None,
+            tags: Optional[List[str]] = None,
+            tags_operator: Optional[str] = "OR",
     ) -> List[Experiment]:
         """Retrieve all experiments, with optional filtering.
 
@@ -72,9 +76,22 @@ class ExperimentService:
             end_datetime: Filter by the given end timestamp, in local time. This is used to
                 find experiments whose start date/time is before (less than or equal to) this
                 local timestamp.
+            device_components: Filter by device components. An experiment must have analysis
+                results with device components matching the given list exactly to be included.
+            tags: Filter by tags assigned to experiments.
+            tags_operator: Logical operator to use when filtering by job tags. Valid
+                values are "AND" and "OR":
+
+                    * If "AND" is specified, then an experiment must have all of the tags
+                      specified in `tags` to be included.
+                    * If "OR" is specified, then an experiment only needs to have any
+                      of the tags specified in `tags` to be included.
 
         Returns:
             A list of experiments.
+
+        Raises:
+            ValueError: If an invalid `tags_operator` value is specified.
         """
         start_time_filters = []
         if start_datetime:
@@ -84,9 +101,19 @@ class ExperimentService:
             st_filter = 'le:{}'.format(local_to_utc_str(end_datetime))
             start_time_filters.append(st_filter)
 
-        raw_data = self._api_client.experiments(backend_name, type, start_time_filters)
+        tags_filter = None
+        if tags:
+            if tags_operator.upper() == 'OR':
+                tags_filter = 'any:' + ','.join(tags)
+            elif tags_operator.upper() == 'AND':
+                tags_filter = 'contains:' + ','.join(tags)
+            else:
+                raise ValueError('{} is not a valid `tags_operator`. Valid values are '
+                                 '"AND" and "OR".'.format(tags_operator))
+
+        raw_data = self._api_client.experiments(
+            backend_name, type, start_time_filters, device_components, tags_filter)
         experiments = []
-        # TODO get analysis results for the experiment.
         for exp in raw_data:
             experiments.append(Experiment.from_remote_data(self._provider, exp))
         return experiments
@@ -122,7 +149,6 @@ class ExperimentService:
         """
         raw_data = self._api_client.experiment_get(experiment_id)
         experiment = Experiment.from_remote_data(self._provider, raw_data)
-        # TODO get analysis results for the experiment.
         return experiment
 
     def update_experiment(self, experiment: Experiment) -> None:
@@ -150,7 +176,7 @@ class ExperimentService:
         """Delete an experiment.
 
         Args:
-            experiment: The ``Experiment`` object or the experiment UUID.
+            experiment: The ``Experiment`` object or the experiment ID.
 
         Note:
             This method prompts for confirmation and requires a response before proceeding.
@@ -167,16 +193,40 @@ class ExperimentService:
         raw_data = self._api_client.experiment_delete(experiment)
         return Experiment.from_remote_data(self._provider, raw_data)
 
-    def analysis_results(self, backend_name: Optional[str] = None) -> List[AnalysisResult]:
+    def analysis_results(
+            self,
+            backend_name: Optional[str] = None,
+            device_components: Optional[List[str]] = None,
+            experiment_id: Optional[str] = None,
+            result_type: Optional[str] = None,
+            quality: Optional[List[Tuple[str, Union[str, ResultQuality]]]] = None
+    ) -> List[AnalysisResult]:
         """Retrieve all analysis results, with optional filtering.
 
         Args:
             backend_name: Backend name used for filtering.
+            device_components: Filter by device components. An analysis result's
+                device components must match this list exactly for it to be included.
+            experiment_id: Experiment ID used for filtering.
+            result_type: Analysis result type used for filtering.
+            quality: Quality value used for filtering. Each element in this list is a tuple
+                of an operator and a value. The operator is one of
+                ``lt``, ``le``, ``gt``, ``ge``, and ``eq``. The value is one of the
+                :class:`ResultQuality` values.
 
         Returns:
             A list of analysis results.
         """
-        response = self._api_client.analysis_results(backend_name)
+        qualit_list = []
+        if quality:
+            for op, qual in quality:
+                if isinstance(qual, ResultQuality):
+                    qual = qual.value
+                qual_str = qual if op == 'eq' else "{}:{}".format(op, qual)
+                qualit_list.append(qual_str)
+        response = self._api_client.analysis_results(
+            backend_name=backend_name, device_components=device_components,
+            experiment_uuid=experiment_id, result_type=result_type, quality=qualit_list)
         results = []
         for result in response:
             results.append(AnalysisResult.from_remote_data(result))
@@ -213,6 +263,11 @@ class ExperimentService:
 
         Returns:
             Retrieved analysis result.
+
+        Raises:
+            ExperimentNotFoundError: If the analysis result is not found.
+            RequestsApiError: If an unexpected error occurred when retrieving
+                analysis result from the server.
         """
         try:
             data = self._api_client.analysis_result_get(result_id)
@@ -304,7 +359,7 @@ class ExperimentService:
         """
         confirmation = input('\nAre you sure you want to delete the experiment plot? [y/N]: ')
         if confirmation not in ('y', 'Y'):
-            return None
+            return
         if isinstance(experiment, Experiment):
             experiment = experiment.uuid
         self._api_client.experiment_plot_delete(experiment, plot_name)
@@ -331,14 +386,10 @@ class ExperimentService:
             experiment = experiment.uuid
         data = self._api_client.experiment_plot_get(experiment, plot_name)
         if file_name:
-            with open(file_name, 'wb') as f:
-                num_bytes = f.write(data)
+            with open(file_name, 'wb') as file:
+                num_bytes = file.write(data)
             return num_bytes
         return data
-
-    def plots(self):
-        """Retrieve all plots."""
-        raise NotImplementedError
 
     def device_components(self, backend_name: Optional[str] = None) -> List[DeviceComponent]:
         """Return the device components.

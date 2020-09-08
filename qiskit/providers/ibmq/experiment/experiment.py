@@ -14,14 +14,19 @@
 
 """IBM Quantum Experience experiment."""
 
+import logging
 from datetime import datetime
 from typing import Dict, Optional, List
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
+from .analysis_result import AnalysisResult
 from .exceptions import ExperimentError
 from .utils import requires_experiment_uuid
 from ..utils.converters import str_to_utc, convert_tz
+from ..api.exceptions import RequestsApiError
+
+logger = logging.getLogger(__name__)
 
 
 class Experiment:
@@ -37,7 +42,8 @@ class Experiment:
             start_datetime: Optional[datetime] = None,
             end_datetime: Optional[datetime] = None,
             experiment_uuid: Optional[str] = None,
-            plot_names: Optional[List[str]] = None
+            plot_names: Optional[List[str]] = None,
+            analysis_results: Optional[List[AnalysisResult]] = None
     ):
         """Experiment constructor.
 
@@ -53,6 +59,10 @@ class Experiment:
                 information is present, local timezone is assumed.
             experiment_uuid: Unique identifier of the experiment.
             plot_names: A list of plot names for this experiment.
+            analysis_results: A list of analysis results associated with this experiment.
+
+        Raises:
+            ExperimentError: If the provider does not offer experiment services.
         """
         self._backend_name = backend_name
         self._uuid = experiment_uuid
@@ -61,9 +71,9 @@ class Experiment:
         self.extra = extra or {}
         self.tags = tags or []
         self.type = experiment_type
-        self.analysis_results = []
+        self._analysis_results = analysis_results
         self._plot_names = plot_names or []
-        self.retrieved_plots = False
+        self._retrieved_plots = False
 
         self._creation_datetime = None
         self._updated_datetime = None
@@ -72,7 +82,7 @@ class Experiment:
             self._api_client = provider.experiment._api_client
         except AttributeError:
             raise ExperimentError(
-                "Provider {} does not offer experiment service.".format(provider))
+                "Provider {} does not offer experiment services.".format(provider))
 
     def update_from_remote_data(self, remote_data: Dict) -> None:
         """Update the attributes of this instance using remote data.
@@ -95,18 +105,6 @@ class Experiment:
     def refresh(self):
         """Update this experiment instance with remote data."""
         self.update_from_remote_data(self._api_client.experiment_get(self.uuid))
-
-    @requires_experiment_uuid
-    def retrieve_plot(self, plot_name: str):
-        """Retrieve a plot.
-
-        Args:
-            plot_name: Name of the plot.
-
-        Returns:
-
-        """
-        return self._api_client.experiment_plot_get(self.uuid, plot_name)
 
     @property
     def backend_name(self) -> str:
@@ -151,10 +149,35 @@ class Experiment:
     @property
     def plot_names(self) -> List:
         """Return names of plots associated with this experiment."""
-        if not self._plot_names and not self.retrieved_plots:
+        if not self._plot_names and not self._retrieved_plots:
             self.refresh()
-            self.retrieved_plots = True
+            self._retrieved_plots = True
         return self._plot_names
+
+    @property
+    def analysis_results(self) -> List:
+        """Return analysis results associated with this experiment."""
+        if self._analysis_results is None:
+            try:
+                response = self._api_client.analysis_results(experiment_uuid=self.uuid)
+                self._analysis_results = []
+                for result in response:
+                    self._analysis_results.append(AnalysisResult.from_remote_data(result))
+            except RequestsApiError as api_err:
+                logger.warning("Unable to retrieve analysis results for this experiment: %s",
+                               str(api_err))
+                self._analysis_results = None
+
+        return self._analysis_results
+
+    @analysis_results.setter
+    def analysis_results(self, results: List[AnalysisResult]) -> None:
+        """Assign analysis results to this experiment.
+
+        Args:
+            results: A list of analysis results to be assigned.
+        """
+        self._analysis_results = results
 
     @classmethod
     def from_remote_data(
@@ -188,7 +211,7 @@ class Experiment:
     def __repr__(self):
         attr_str = 'uuid="{}", backend_name="{}", type="{}"'.format(
             self.uuid, self.backend_name, self.type)
-        for attr in ['extra', 'tags', 'plot_names']:
+        for attr in ['extra', 'tags']:
             val = getattr(self, attr)
             if val is not None:
                 if isinstance(val, str):
@@ -201,5 +224,3 @@ class Experiment:
                 attr_str += ', {}="{}"'.format(dt_, val.isoformat())
 
         return "<{}({})>".format(self.__class__.__name__, attr_str)
-
-

@@ -15,7 +15,7 @@
 """Client for accessing IBM Quantum Experience experiment services."""
 
 import logging
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Tuple
 
 from qiskit.providers.ibmq.credentials import Credentials
 
@@ -48,7 +48,9 @@ class ExperimentClient(BaseClient):
             self,
             backend_name: Optional[str],
             experiment_type: Optional[str] = None,
-            start_time: Optional[List] = None
+            start_time: Optional[List] = None,
+            device_components: Optional[List[str]] = None,
+            tags: Optional[str] = None
     ) -> List[Dict]:
         """Retrieve experiments, with optional filtering.
 
@@ -56,11 +58,14 @@ class ExperimentClient(BaseClient):
             backend_name: Name of the backend.
             experiment_type: Experiment type.
             start_time: A list of timestamps used to filter by experiment start time.
+            device_components: A list of device components used for filtering.
+            tags: Tags used for filtering.
 
         Returns:
             A list of experiments.
         """
-        return self.base_api.experiments(backend_name, experiment_type, start_time)
+        return self.base_api.experiments(
+            backend_name, experiment_type, start_time, device_components, tags)
 
     def experiment_get(self, experiment_id: str) -> Dict:
         """Get a specific experiment.
@@ -134,18 +139,17 @@ class ExperimentClient(BaseClient):
 
         Returns:
             Retrieved experiment plot.
-
         """
         return self.base_api.experiment_plot(experiment_id, plot_name).retrieve()
 
-    def experiment_plot_delete(self, experiment_id: str, plot_file_name: str):
+    def experiment_plot_delete(self, experiment_id: str, plot_file_name: str) -> None:
         """Delete an experiment plot.
 
         Args:
             experiment_id: Experiment UUID.
             plot_file_name: Plot file name.
         """
-        return self.base_api.experiment_plot(experiment_id, plot_file_name).delete()
+        self.base_api.experiment_plot(experiment_id, plot_file_name).delete()
 
     def experiment_devices(self) -> List:
         """Return list of experiment devices.
@@ -155,16 +159,28 @@ class ExperimentClient(BaseClient):
         """
         return self.base_api.experiment_devices()
 
-    def analysis_results(self, backend_name: Optional[str]) -> List[Dict]:
+    def analysis_results(
+            self,
+            backend_name: Optional[str] = None,
+            device_components: Optional[List[str]] = None,
+            experiment_uuid: Optional[str] = None,
+            result_type: Optional[str] = None,
+            quality: Optional[List[str]] = None
+    ) -> List[Dict]:
         """Return a list of analysis results.
 
         Args:
             backend_name: Name of the backend.
+            device_components: A list of device components used for filtering.
+            experiment_uuid: Experiment UUID used for filtering.
+            result_type: Analysis result type used for filtering.
+            quality: Quality value used for filtering.
 
         Returns:
             A list of analysis results.
         """
-        return self.base_api.analysis_results(backend_name)
+        return self.base_api.analysis_results(
+            backend_name, device_components, experiment_uuid, result_type, quality)
 
     def analysis_result_upload(self, result: Dict) -> Dict:
         """Upload an analysis result.
