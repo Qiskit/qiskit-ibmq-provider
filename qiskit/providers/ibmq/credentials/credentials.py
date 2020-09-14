@@ -50,7 +50,8 @@ class Credentials:
             group: Optional[str] = None,
             project: Optional[str] = None,
             proxies: Optional[Dict] = None,
-            verify: bool = True
+            verify: bool = True,
+            services: Optional[Dict] = None
     ) -> None:
         """Credentials constructor.
 
@@ -63,6 +64,7 @@ class Credentials:
             project: The project to use.
             proxies: Proxy configuration.
             verify: If ``False``, ignores SSL certificates errors.
+            services: Additional services for this account.
         """
         self.token = token
         (self.url, self.base_url,
@@ -74,6 +76,10 @@ class Credentials:
 
         # Normalize proxy urls.
         self._prepend_protocol_if_needed()
+
+        # Initialize additional service URLs.
+        services = services or {}
+        self.cqc_url = services.get('extractorsService', None)
 
     def is_ibmq(self) -> bool:
         """Return whether the credentials represent an IBM Quantum Experience account."""

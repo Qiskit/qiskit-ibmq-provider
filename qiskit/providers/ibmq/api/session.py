@@ -221,7 +221,6 @@ class RetrySession(Session):
             client_app_header += "/" + custom_header
 
         self.headers.update({'X-Qx-Client-Application': client_app_header})
-        self.headers['Content-Type'] = 'application/json'
 
         self.auth = auth
         self.proxies = proxies or {}
@@ -266,6 +265,8 @@ class RetrySession(Session):
         if not self.proxies and 'timeout' not in kwargs:
             kwargs.update({'timeout': self._timeout})
 
+        self.headers.update(kwargs.pop('headers', {}))
+
         try:
             self._log_request_info(url, method, kwargs)
             response = super().request(method, final_url, **kwargs)
@@ -282,7 +283,7 @@ class RetrySession(Session):
                     logger.debug("Response uber-trace-id: %s", ex.response.headers['uber-trace-id'])
                 except (ValueError, KeyError):
                     # the response did not contain the expected json.
-                    pass
+                    message += ". {}".format(ex.response.json())
 
             if self.access_token:
                 message = message.replace(self.access_token, '...')

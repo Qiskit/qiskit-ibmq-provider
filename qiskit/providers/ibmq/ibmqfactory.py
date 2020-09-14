@@ -475,6 +475,7 @@ class IBMQFactory:
                 websockets_url=service_urls['ws'],
                 proxies=credentials.proxies,
                 verify=credentials.verify,
+                services=service_urls.get('services', {}),
                 **hub_info, )
 
             # Build the provider.
