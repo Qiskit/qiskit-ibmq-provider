@@ -50,7 +50,7 @@ setup(
     long_description_content_type='text/markdown',
     url="https://github.com/Qiskit/qiskit-ibmq-provider",
     author="Qiskit Development Team",
-    author_email="qiskit@qiskit.org",
+    author_email="hello@qiskit.org",
     license="Apache 2.0",
     classifiers=[
         "Environment :: Console",
@@ -90,4 +90,9 @@ setup(
                                       "seaborn>=0.9.0", "plotly>=4.4",
                                       "ipyvuetify>=1.1", "pyperclip>=1.7",
                                       "ipython>=5.0.0"]},
+    project_urls={
+        "Bug Tracker": "https://github.com/Qiskit/qiskit-ibmq-provider/issues",
+        "Documentation": "https://qiskit.org/documentation/",
+        "Source Code": "https://github.com/Qiskit/qiskit-ibmq-provider",
+    },
 )
