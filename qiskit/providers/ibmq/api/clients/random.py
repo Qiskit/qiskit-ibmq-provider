@@ -39,7 +39,7 @@ class RandomClient:
             access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
         """
-        self._session = RetrySession(credentials.cqc_url, access_token,
+        self._session = RetrySession(credentials.extractor_url, access_token,
                                      **credentials.connection_parameters())
         self.random_api = Random(self._session)
 
