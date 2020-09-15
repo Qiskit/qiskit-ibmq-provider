@@ -37,7 +37,7 @@ class CQCExtractor(BaseRandomService):
             ext2_seed_num_bits: int,
             ext2_wsr_multiplier: int,
             ext2_wsr_generator: Optional[Callable] = None) -> List[int]:
-        """Process input data asynchronously.
+        """Process input data synchronously.
 
         Args:
             ext1_in_num_bits: Number of input bits, for extractor 1.
@@ -75,7 +75,7 @@ class CQCExtractor(BaseRandomService):
             ext1_raw_bytes: bytes,
             ext1_wsr_bytes: bytes,
     ) -> List[int]:
-        """Run the first extractor asynchronously.
+        """Run the first extractor synchronously.
 
         Args:
             ext1_in_num_bits: Number of input bits, for extractor 1.
@@ -102,7 +102,7 @@ class CQCExtractor(BaseRandomService):
             ext2_wsr_multiplier: int,
             ext2_wsr_generator: Optional[Callable] = None
     ) -> List[int]:
-        """Run the second extractor asynchronously.
+        """Run the second extractor synchronously.
 
         Args:
             ext2_seed: Seed used for extractor 2, such as the output of extractor 1.
