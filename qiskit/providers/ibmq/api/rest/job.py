@@ -187,7 +187,8 @@ class Job(RestAdapterBase):
         """
         data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEncoder)
         logger.debug('Uploading to object storage.')
-        response = self.session.put(url, data=data, bare=True, timeout=600)
+        response = self.session.put(url, data=data, bare=True, timeout=600,
+                                    headers={'Content-Type': 'application/json'})
         return response.text
 
     def get_object_storage(self, url: str) -> Dict[str, Any]:
