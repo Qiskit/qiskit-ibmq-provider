@@ -19,6 +19,7 @@ from typing import List
 from abc import ABC, abstractmethod
 
 
+from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from ..api.clients.random import RandomClient
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ class BaseRandomService(ABC):
     def __init__(
             self,
             name: str,
-            provider: 'AccountProvider',
+            provider: 'accountprovider.AccountProvider',
             client: RandomClient,
             methods: List
     ):

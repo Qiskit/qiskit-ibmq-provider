@@ -17,6 +17,7 @@
 import logging
 from typing import Dict, List
 
+from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from .baserandomservice import BaseRandomService
 from .cqcextractor import CQCExtractor
 from ..api.clients.random import RandomClient
@@ -40,7 +41,7 @@ class IBMQRandomService:
         extractor = provider.random.cqc_extractor  # Short hand for above.
     """
 
-    def __init__(self, provider: 'AccountProvider', access_token: str) -> None:
+    def __init__(self, provider: 'accountprovider.AccountProvider', access_token: str) -> None:
         """IBMQRandomService constructor.
 
         Args:
