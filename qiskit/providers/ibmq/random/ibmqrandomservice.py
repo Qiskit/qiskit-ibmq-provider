@@ -15,8 +15,9 @@
 """IBMQ random number service."""
 
 import logging
-from typing import Dict
+from typing import Dict, List
 
+from .baserandomservice import BaseRandomService
 from .cqcextractor import CQCExtractor
 from ..api.clients.random import RandomClient
 from ..api.exceptions import RequestsApiError
@@ -30,7 +31,8 @@ class IBMQRandomService:
 
     Represent a namespace for random number services available to this provider.
     An instance of this class is used as an attribute to the
-    :class:`AccountProvider` class. This allows a convenient way to query for
+    :class:`~qiskit.providers.ibmq.AccountProvider` class.
+    This allows a convenient way to query for
     all services or to access a specific one::
 
         random_services = provider.random.services()
@@ -45,16 +47,14 @@ class IBMQRandomService:
             provider: IBM Quantum Experience account provider.
             access_token: IBM Quantum Experience access token.
         """
-        super().__init__()
-
         self._provider = provider
-        if provider.credentials.cqc_url:
+        if provider.credentials.extractor_url:
             self._random_client = RandomClient(access_token, provider.credentials)
             self._initialized = False
         else:
             self._random_client = None
             self._initialized = True
-        self._services = {}     # type: Dict[str, Extractor]
+        self._services = {}     # type: Dict[str, BaseRandomService]
 
     def _discover_services(self) -> None:
         """Discovers the remote random services for this provider, if not already known."""
@@ -80,13 +80,13 @@ class IBMQRandomService:
                                "Please try again later.")
                 pass
 
-    def services(self):
-        """Return all known services."""
+    def services(self) -> List[BaseRandomService]:
+        """Return all random number services available to this account."""
         self._discover_services()
         return list(self._services.values())
 
-    def get_service(self, name: str) -> CQCExtractor:
-        """Return the service with the given name.
+    def get_service(self, name: str) -> BaseRandomService:
+        """Return the random number service with the given name.
 
         Args:
             name: Name of the service.

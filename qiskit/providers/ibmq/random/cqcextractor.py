@@ -20,33 +20,13 @@ from typing import Optional, Callable, List
 import numpy as np
 
 from .utils import generate_wsr, bytes_to_bitarray, bitarray_to_bytes
-from ..api.clients.random import RandomClient
+from .baserandomservice import BaseRandomService
 
 logger = logging.getLogger(__name__)
 
 
-class CQCExtractor:
+class CQCExtractor(BaseRandomService):
     """Class for interfacing with a CQC remote extractor."""
-
-    def __init__(
-            self,
-            name: str,
-            provider: 'AccountProvider',
-            client: RandomClient,
-            methods: List
-    ):
-        """CQCExtractor constructor.
-
-        Args:
-            name: Name of the extractor.
-            provider: IBM Quantum Experience account provider.
-            client: Client used to communicate with the server.
-            methods: Extractor methods.
-        """
-        self.name = name
-        self._provider = provider
-        self._client = client
-        self.methods = methods
 
     def run(
             self,
@@ -74,6 +54,7 @@ class CQCExtractor:
         Returns:
             Extracted random bits.
         """
+        # pylint: disable=arguments-differ
         logger.info("Starting first extraction.")
         # Run ext1
         output = self.run_ext1(ext1_in_num_bits, ext1_out_num_bits,
