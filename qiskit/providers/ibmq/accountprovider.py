@@ -27,6 +27,7 @@ from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
 from .ibmqbackendservice import IBMQBackendService
 from .utils.json_decoder import decode_backend_configuration
+from .random.ibmqrandomservice import IBMQRandomService
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,9 @@ class AccountProvider(BaseProvider):
         # Initialize the internal list of backends.
         self._backends = self._discover_remote_backends()
         self.backends = IBMQBackendService(self)  # type: ignore[assignment]
+
+        # Initialize other services.
+        self.random = IBMQRandomService(self, access_token)
 
     def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
         """Return all backends accessible via this provider, subject to optional filtering."""
