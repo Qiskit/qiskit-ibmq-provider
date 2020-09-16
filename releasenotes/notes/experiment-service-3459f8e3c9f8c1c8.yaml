@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    You can now use the new IBMQ experiment service to query, retrieve, and
+    download experiment related data. Interface to this service is located
+    in the new :mod:`qiskit.providers.ibmq.experiment` package.
+    Note that this feature is still in
+    beta, and not all accounts have access to it. It is also subject to heavy
+    modification in both functionality and API without backward compatibility.
