@@ -180,7 +180,7 @@ class Api(RestAdapterBase):
             params['device_components'] = device_components
         if tags:
             params['tags'] = tags
-        return self.session.get(url, params=params, headers={'Content-Type': 'application/json'}).json()
+        return self.session.get(url, params=params).json()
 
     def experiment_devices(self) -> List:
         """Return experiment devices.
