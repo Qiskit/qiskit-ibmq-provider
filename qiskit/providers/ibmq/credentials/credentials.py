@@ -46,7 +46,6 @@ class Credentials:
             token: str,
             url: str,
             websockets_url: Optional[str] = None,
-            experiment_url: Optional[str] = None,
             hub: Optional[str] = None,
             group: Optional[str] = None,
             project: Optional[str] = None,
@@ -60,7 +59,6 @@ class Credentials:
             token: IBM Quantum Experience API token.
             url: IBM Quantum Experience URL.
             websockets_url: URL for websocket server.
-            experiment_url: URL for experiment server.
             hub: The hub to use.
             group: The group to use.
             project: The project to use.
@@ -73,7 +71,6 @@ class Credentials:
          self.hub, self.group, self.project) = _unify_ibmq_url(
              url, hub, group, project)
         self.websockets_url = websockets_url
-        self.experiment_url = experiment_url
         self.proxies = proxies or {}
         self.verify = verify
 
@@ -83,6 +80,7 @@ class Credentials:
         # Initialize additional service URLs.
         services = services or {}
         self.extractor_url = services.get('extractorsService', None)
+        self.experiment_url = services.get('resultsDB', None)
 
     def is_ibmq(self) -> bool:
         """Return whether the credentials represent an IBM Quantum Experience account."""

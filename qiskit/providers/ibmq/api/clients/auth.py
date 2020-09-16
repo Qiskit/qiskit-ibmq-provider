@@ -56,7 +56,6 @@ class AuthClient(BaseClient):
         # Use the token for the next auth server requests.
         self.auth_api.session.access_token = access_token
         self._service_urls = self.user_urls()
-        self._service_urls.update(self._service_urls.pop('services', {}))
 
         # Create the api server client, using the access token.
         base_api = Api(RetrySession(self._service_urls['http'], access_token,

@@ -23,8 +23,10 @@ from typing import Optional
 from qiskit.providers.ibmq.experiment.experiment import Experiment
 from qiskit.providers.ibmq.experiment.analysis_result import AnalysisResult, Fit, DeviceComponent
 from qiskit.providers.ibmq.experiment.exceptions import ExperimentNotFoundError
-from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from qiskit.providers.ibmq.experiment.constants import ResultQuality
+from qiskit.providers.ibmq.api.exceptions import RequestsApiError
+from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
+
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
@@ -77,6 +79,17 @@ class TestExperiment(IBMQTestCase):
             except Exception as err:    # pylint: disable=broad-except
                 self.log.info("Unable to delete experiment %s: %s", expr_uuid, err)
         super().tearDown()
+
+    def test_unathorized(self):
+        """Test unauthorized access."""
+        saved_experiment = self.provider._experiment
+        try:
+            self.provider._experiment = None
+            with self.assertRaises(IBMQNotAuthorizedError) as context_manager:
+                self.provider.experiment.experiments()
+            self.assertIn("experiment service", str(context_manager.exception))
+        finally:
+            self.provider._experiment = saved_experiment
 
     def test_experiments(self):
         """Test retrieving all experiments."""

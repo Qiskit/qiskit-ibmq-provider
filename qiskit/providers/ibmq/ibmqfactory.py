@@ -473,7 +473,6 @@ class IBMQFactory:
                 credentials.token,
                 url=service_urls['http'],
                 websockets_url=service_urls['ws'],
-                experiment_url=service_urls.get('resultsDB', None),
                 proxies=credentials.proxies,
                 verify=credentials.verify,
                 services=service_urls.get('services', {}),

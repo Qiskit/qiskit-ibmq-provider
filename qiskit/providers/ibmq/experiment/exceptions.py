@@ -23,5 +23,5 @@ class ExperimentError(IBMQError):
     pass
 
 
-class ExperimentNotFoundError(IBMQError):
+class ExperimentNotFoundError(ExperimentError):
     """Error raised when an experiment cannot be found."""

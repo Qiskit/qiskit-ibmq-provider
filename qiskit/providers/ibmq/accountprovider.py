@@ -2,7 +2,7 @@
 
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2019.
+# (C) Copyright IBM 2017, 2020.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -29,6 +29,7 @@ from .ibmqbackendservice import IBMQBackendService
 from .utils.json_decoder import decode_backend_configuration
 from .random.ibmqrandomservice import IBMQRandomService
 from .experiment.experimentservice import ExperimentService
+from .exceptions import IBMQNotAuthorizedError
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +96,8 @@ class AccountProvider(BaseProvider):
         # Initialize other services.
         self.random = IBMQRandomService(self, access_token)
 
-        if credentials.experiment_url:
-            self.experiment = ExperimentService(self, access_token)
+        self._experiment = ExperimentService(self, access_token) \
+            if credentials.experiment_url else None
 
     def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
         """Return all backends accessible via this provider, subject to optional filtering."""
@@ -145,6 +146,22 @@ class AccountProvider(BaseProvider):
                     type(ex).__name__, ex)
 
         return ret
+
+    @property
+    def experiment(self) -> ExperimentService:
+        """Return the experiment service.
+
+        Returns:
+            The experiment service instance.
+
+        Raises:
+            IBMQNotAuthorizedError: If the account is not authorized to use
+                the experiment service.
+        """
+        if self._experiment:
+            return self._experiment
+        else:
+            raise IBMQNotAuthorizedError("You are not authorized to use the experiment service.")
 
     def __eq__(  # type: ignore[override]
             self,
