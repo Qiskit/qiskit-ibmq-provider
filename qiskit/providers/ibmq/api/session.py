@@ -265,11 +265,12 @@ class RetrySession(Session):
         if not self.proxies and 'timeout' not in kwargs:
             kwargs.update({'timeout': self._timeout})
 
-        self.headers.update(kwargs.pop('headers', {}))
+        headers = self.headers.copy()
+        headers.update(kwargs.pop('headers', {}))
 
         try:
             self._log_request_info(url, method, kwargs)
-            response = super().request(method, final_url, **kwargs)
+            response = super().request(method, final_url, headers=headers, **kwargs)
             response.raise_for_status()
         except RequestException as ex:
             # Wrap the requests exceptions into a IBM Q custom one, for
@@ -283,7 +284,7 @@ class RetrySession(Session):
                     logger.debug("Response uber-trace-id: %s", ex.response.headers['uber-trace-id'])
                 except (ValueError, KeyError):
                     # the response did not contain the expected json.
-                    message += ". {}".format(ex.response.json())
+                    message += ". {}".format(ex.response.text)
 
             if self.access_token:
                 message = message.replace(self.access_token, '...')
