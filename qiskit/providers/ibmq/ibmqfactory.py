@@ -476,6 +476,7 @@ class IBMQFactory:
                 experiment_url=service_urls.get('resultsDB', None),
                 proxies=credentials.proxies,
                 verify=credentials.verify,
+                services=service_urls.get('services', {}),
                 **hub_info, )
 
             # Build the provider.

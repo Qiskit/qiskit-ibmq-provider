@@ -27,6 +27,8 @@ from .exceptions import IBMQJobApiError
 API_TO_JOB_STATUS = {
     ApiJobStatus.CREATING: JobStatus.INITIALIZING,
     ApiJobStatus.CREATED: JobStatus.INITIALIZING,
+    ApiJobStatus.TRANSPILING: JobStatus.INITIALIZING,
+    ApiJobStatus.TRANSPILED: JobStatus.INITIALIZING,
     ApiJobStatus.VALIDATING: JobStatus.VALIDATING,
     ApiJobStatus.VALIDATED: JobStatus.VALIDATING,
     ApiJobStatus.RUNNING: JobStatus.RUNNING,
@@ -36,7 +38,8 @@ API_TO_JOB_STATUS = {
     ApiJobStatus.CANCELLED: JobStatus.CANCELLED,
     ApiJobStatus.ERROR_CREATING_JOB: JobStatus.ERROR,
     ApiJobStatus.ERROR_VALIDATING_JOB: JobStatus.ERROR,
-    ApiJobStatus.ERROR_RUNNING_JOB: JobStatus.ERROR
+    ApiJobStatus.ERROR_RUNNING_JOB: JobStatus.ERROR,
+    ApiJobStatus.ERROR_TRANSPILING_JOB: JobStatus.ERROR
 }
 
 

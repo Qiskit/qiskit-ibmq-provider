@@ -128,8 +128,8 @@ class TestIBMQIntegration(IBMQTestCase):
 
         with self.assertRaises(IBMQJobApiError) as err_cm:
             rjob.qobj()
-        self.assertIn('3202', str(err_cm.exception))
+        self.assertIn('2801', str(err_cm.exception))
 
         with self.assertRaises(IBMQJobApiError) as err_cm:
             rjob.result()
-        self.assertIn('3202', str(err_cm.exception))
+        self.assertIn('2801', str(err_cm.exception))

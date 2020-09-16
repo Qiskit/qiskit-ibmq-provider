@@ -221,7 +221,6 @@ class RetrySession(Session):
             client_app_header += "/" + custom_header
 
         self.headers.update({'X-Qx-Client-Application': client_app_header})
-        self.headers['Content-Type'] = 'application/json'
 
         self.auth = auth
         self.proxies = proxies or {}
@@ -262,15 +261,11 @@ class RetrySession(Session):
         else:
             final_url = self.base_url + url
 
-        # if 'resultsdb' in final_url:
-        #     print(f"final url is {final_url}, params is {kwargs.get('params', {})}")
-
         # Add a timeout to the connection for non-proxy connections.
         if not self.proxies and 'timeout' not in kwargs:
             kwargs.update({'timeout': self._timeout})
 
-        if 'files' in kwargs:
-            self.headers.pop('Content-Type', None)
+        self.headers.update(kwargs.pop('headers', {}))
 
         try:
             self._log_request_info(url, method, kwargs)
