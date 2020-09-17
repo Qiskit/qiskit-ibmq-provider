@@ -17,7 +17,7 @@
 import logging
 import warnings
 
-from typing import Dict, List, Union, Optional, Any
+from typing import Dict, List, Union, Optional, Any, TYPE_CHECKING
 from datetime import datetime as python_datetime
 
 from qiskit.qobj import QasmQobj, PulseQobj, validate_qobj_against_schema
@@ -29,7 +29,6 @@ from qiskit.tools.events.pubsub import Publisher
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 
-from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from .apiconstants import ApiJobShareLevel, ApiJobStatus, API_JOB_FINAL_STATES
 from .job.utils import api_status_to_job_status
 from .api.clients import AccountClient
@@ -45,6 +44,9 @@ from .utils import update_qobj_config, validate_job_tags
 from .utils.converters import utc_to_local_all, local_to_utc
 from .utils.json_decoder import decode_pulse_defaults, decode_backend_properties
 from .utils.backend import convert_reservation_data
+
+if TYPE_CHECKING:
+    from qiskit.providers.ibmq import accountprovider
 
 logger = logging.getLogger(__name__)
 

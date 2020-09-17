@@ -15,12 +15,13 @@
 """Module for interfacing with a remote extractor."""
 
 import logging
-from typing import List, Any
+from typing import List, Any, TYPE_CHECKING
 from abc import ABC, abstractmethod
 
-
-from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from ..api.clients.random import RandomClient
+
+if TYPE_CHECKING:
+    from qiskit.providers.ibmq import accountprovider
 
 logger = logging.getLogger(__name__)
 

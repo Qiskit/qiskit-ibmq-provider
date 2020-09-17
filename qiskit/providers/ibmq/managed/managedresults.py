@@ -14,18 +14,19 @@
 
 """Results managed by the Job Manager."""
 
-from typing import List, Optional, Union, Tuple, Dict
+from typing import List, Optional, Union, Tuple, Dict, TYPE_CHECKING
 import copy
 
-# TODO Use TYPE_CHECKING instead of pylint disable after dropping python 3.5
-import numpy  # pylint: disable=unused-import
 from qiskit.result import Result
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 
-from qiskit.providers.ibmq.managed import managedjobset  # pylint: disable=unused-import
 from .exceptions import IBMQManagedResultDataNotAvailable
 from ..job.exceptions import JobError
+
+if TYPE_CHECKING:
+    import numpy
+    from qiskit.providers.ibmq.managed import managedjobset  # pylint: disable=ungrouped-imports
 
 
 class ManagedResults:
@@ -57,7 +58,7 @@ class ManagedResults:
         self._job_set = job_set
         self.backend_name = backend_name
         self.success = success
-        self._combined_results = None  # type: Result
+        self._combined_results = None  # type: Optional[Result]
 
     def data(self, experiment: Union[str, QuantumCircuit, Schedule, int]) -> Dict:
         """Get the raw data for an experiment.

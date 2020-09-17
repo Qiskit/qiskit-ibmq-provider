@@ -15,7 +15,7 @@
 """IBM Quantum Experience job."""
 
 import logging
-from typing import Dict, Optional, Tuple, Any, List, Callable, Union
+from typing import Dict, Optional, Tuple, Any, List, Callable, Union, TYPE_CHECKING
 import warnings
 from datetime import datetime
 from concurrent import futures
@@ -28,7 +28,6 @@ from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.result import Result
-from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
 
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
@@ -42,6 +41,9 @@ from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
 from .queueinfo import QueueInfo
 from .utils import (build_error_report, api_status_to_job_status,
                     api_to_job_error, get_cancel_status)
+
+if TYPE_CHECKING:
+    from qiskit.providers.ibmq import ibmqbackend
 
 logger = logging.getLogger(__name__)
 

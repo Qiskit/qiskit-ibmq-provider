@@ -15,14 +15,16 @@
 """IBMQ random number service."""
 
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, TYPE_CHECKING
 
-from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from .baserandomservice import BaseRandomService
 from .cqcextractor import CQCExtractor
 from ..api.clients.random import RandomClient
 from ..api.exceptions import RequestsApiError
 from ..exceptions import IBMQError
+
+if TYPE_CHECKING:
+    from qiskit.providers.ibmq import accountprovider
 
 logger = logging.getLogger(__name__)
 
