@@ -31,8 +31,8 @@ HTML_STR = """
   cursor: pointer;
 }
 .iqx-button {
-  background-color: #0f62fe; 
-  color: white; 
+  background-color: #0f62fe;
+  color: white;
 }
 .iqx-button:hover {
   background-color: #0043ce;
@@ -43,6 +43,7 @@ HTML_STR = """
 """
 
 URL = 'https://quantum-computing.ibm.com/docs/manage/errors#error'
+
 
 class IBMQErrorString(str):
     """A subclass of str that displays a button in jupyter
