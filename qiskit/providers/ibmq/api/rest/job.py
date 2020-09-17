@@ -89,7 +89,8 @@ class Job(RestAdapterBase):
             corresponding value.
         """
         url = self.get_url('self_update')
-        return self.session.put(url, data=json.dumps(job_attribute_info)).json()
+        return self.session.put(url, data=json.dumps(job_attribute_info),
+                                headers={'Content-Type': 'application/json'}).json()
 
     def callback_upload(self) -> Dict[str, Any]:
         """Notify the API after uploading a ``Qobj`` via object storage.
