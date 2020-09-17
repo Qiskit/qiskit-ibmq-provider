@@ -53,7 +53,11 @@ class IBMQErrorString(str):
         # pylint: disable=import-outside-toplevel
         from IPython.display import HTML, display
         error_msg = self.__str__()
-        match = re.search(r'\d{4}', error_msg)
+        match = None
+        if 'Error code:' in error_msg:
+            error_split = error_msg.split('Error code:')
+            if len(error_split) > 1:
+                match = re.search(r'\d{4}', error_split[1])
         if match:
             error_code = match.group()
             html_str = HTML_STR % (URL+error_code, error_code)
