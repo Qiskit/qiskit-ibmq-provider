@@ -187,7 +187,8 @@ class WebsocketClient(BaseClient):
                 # Verify that the server acknowledged our authentication.
                 auth_response_raw = await websocket.recv()
 
-            auth_response = WebsocketResponseMethod.from_bytes(auth_response_raw)
+            auth_response = WebsocketResponseMethod.from_bytes(
+                auth_response_raw)  # type: ignore[arg-type]
 
             if auth_response.type_ != 'authenticated':
                 raise WebsocketIBMQProtocolError('Failed to authenticate against the server: {}'
@@ -274,7 +275,8 @@ class WebsocketClient(BaseClient):
                             else:
                                 response_raw = await websocket.recv()
 
-                        response = WebsocketResponseMethod.from_bytes(response_raw)
+                        response = WebsocketResponseMethod.from_bytes(
+                            response_raw)  # type: ignore[arg-type]
                         if logger.getEffectiveLevel() is logging.DEBUG:
                             logger.debug('Received message from websocket: %s',
                                          filter_data(response.get_data()))
