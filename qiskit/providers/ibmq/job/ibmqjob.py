@@ -33,6 +33,7 @@ from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
+from ..error_string import IBMQErrorString
 from ..utils.utils import RefreshQueue, validate_job_tags
 from ..utils.qobj_utils import dict_to_qobj
 from ..utils.json_decoder import decode_backend_properties, decode_result
@@ -535,7 +536,7 @@ class IBMQJob(BaseJob):
             else:
                 self._job_error_msg = "Unknown error."
 
-        return self._job_error_msg
+        return IBMQErrorString(self._job_error_msg)
 
     def queue_position(self, refresh: bool = False) -> Optional[int]:
         """Return the position of the job in the server queue.
