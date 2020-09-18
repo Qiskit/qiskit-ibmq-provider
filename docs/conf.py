@@ -150,3 +150,4 @@ html_theme_options = {
 }
 
 autoclass_content = 'both'
+set_type_checking_flag = True
