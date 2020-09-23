@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    You can now access the IBMQ random number services, such as the CQC
+    randomness extractor, using the new package
+    :mod:`qiskit.providers.ibmq.random`. Note that this feature is still in
+    beta, and not all accounts have access to it. It is also subject to heavy
+    modification in both functionality and API without backward compatibility.

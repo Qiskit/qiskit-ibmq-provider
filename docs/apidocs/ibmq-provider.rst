@@ -1,5 +1,3 @@
-.. module:: qiskit
-
 *****************************************
 Qiskit IBM Quantum Provider API Reference
 *****************************************
@@ -14,3 +12,4 @@ Qiskit IBM Quantum Provider API Reference
    ibmq_visualization
    ibmq_jupyter
    ibmq_utils
+   ibmq_random

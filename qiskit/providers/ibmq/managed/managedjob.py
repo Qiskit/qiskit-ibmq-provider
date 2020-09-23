@@ -127,7 +127,12 @@ class ManagedJob:
                         logger.warning("Job limit reached, waiting for job %s to finish "
                                        "before submitting the next one.",
                                        oldest_running.job_id())
-                        oldest_running.wait_for_final_state(timeout=300)
+                        try:
+                            oldest_running.wait_for_final_state(timeout=300)
+                        except Exception as err:  # pylint: disable=broad-except
+                            # Don't kill the submit if unable to wait for old job.
+                            logger.debug("An error occurred while waiting for "
+                                         "job %s to finish: %s", oldest_running.job_id(), err)
 
         except Exception as err:  # pylint: disable=broad-except
             warnings.warn("Unable to submit job for experiments {}-{}: {}".format(

@@ -1,0 +1,6 @@
+---
+deprecations:
+  - |
+    Use of ``Qconfig.py`` to save IBM Quantum Experience credentials is deprecated
+    and will be removed in the next release. You should use ``qiskitrc``
+    (the default) instead.

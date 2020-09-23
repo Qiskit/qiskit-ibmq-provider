@@ -89,7 +89,8 @@ class Job(RestAdapterBase):
             corresponding value.
         """
         url = self.get_url('self_update')
-        return self.session.put(url, data=json.dumps(job_attribute_info)).json()
+        return self.session.put(url, data=json.dumps(job_attribute_info),
+                                headers={'Content-Type': 'application/json'}).json()
 
     def callback_upload(self) -> Dict[str, Any]:
         """Notify the API after uploading a ``Qobj`` via object storage.
@@ -187,7 +188,8 @@ class Job(RestAdapterBase):
         """
         data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEncoder)
         logger.debug('Uploading to object storage.')
-        response = self.session.put(url, data=data, bare=True, timeout=600)
+        response = self.session.put(url, data=data, bare=True, timeout=600,
+                                    headers={'Content-Type': 'application/json'})
         return response.text
 
     def get_object_storage(self, url: str) -> Dict[str, Any]:
