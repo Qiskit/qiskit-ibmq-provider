@@ -15,7 +15,7 @@
 """Utility functions for ``IBMQJobManager``."""
 
 import re
-from typing import Callable, Any, List, Union, TYPE_CHECKING
+from typing import Callable, Any, List, Union
 from functools import wraps
 from collections import Counter
 from concurrent.futures import wait
@@ -23,9 +23,6 @@ from concurrent.futures import wait
 from qiskit.providers.jobstatus import JobStatus
 
 from .managedjob import ManagedJob
-
-if TYPE_CHECKING:
-    from qiskit.providers.ibmq.managed import managedjobset
 
 JOB_SET_NAME_FORMATTER = "{}_{}_"
 """Formatter for the name of a job in a job set. The first entry is the job set
@@ -46,7 +43,7 @@ def requires_submit(func: Callable) -> Callable:
     """
     @wraps(func)
     def _wrapper(
-            job_set: 'managedjobset.ManagedJobSet',
+            job_set: 'ManagedJobSet',   # type: ignore[name-defined]
             *args: Any,
             **kwargs: Any
     ) -> Any:

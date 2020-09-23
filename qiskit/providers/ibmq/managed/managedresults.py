@@ -14,19 +14,17 @@
 
 """Results managed by the Job Manager."""
 
-from typing import List, Optional, Union, Tuple, Dict, TYPE_CHECKING
+from typing import List, Optional, Union, Tuple, Dict
 import copy
 
+import numpy  # pylint: disable=unused-import
 from qiskit.result import Result
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 
+from qiskit.providers.ibmq.managed import managedjobset  # pylint: disable=unused-import
 from .exceptions import IBMQManagedResultDataNotAvailable
 from ..job.exceptions import JobError
-
-if TYPE_CHECKING:
-    import numpy
-    from qiskit.providers.ibmq.managed import managedjobset  # pylint: disable=ungrouped-imports
 
 
 class ManagedResults:

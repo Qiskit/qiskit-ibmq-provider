@@ -18,12 +18,13 @@ import logging
 import warnings
 import copy
 
-from typing import Dict, List, Callable, Optional, Any, Union, TYPE_CHECKING
+from typing import Dict, List, Callable, Optional, Any, Union
 from datetime import datetime
 
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.providerutils import filter_backends
+from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .api.exceptions import ApiError
 from .apiconstants import ApiJobStatus
@@ -34,9 +35,6 @@ from .job import IBMQJob
 from .utils.utils import to_python_identifier, validate_job_tags, filter_data
 from .utils.converters import local_to_utc
 from .utils.backend import convert_reservation_data
-
-if TYPE_CHECKING:
-    from qiskit.providers.ibmq import accountprovider
 
 logger = logging.getLogger(__name__)
 
