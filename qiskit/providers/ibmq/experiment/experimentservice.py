@@ -343,6 +343,27 @@ class ExperimentService:
                 plot_name = "plot_{}.svg".format(datetime.now().isoformat())
         return self._api_client.experiment_plot_upload(experiment, plot, plot_name)
 
+    def update_plot(
+            self,
+            experiment: Union[Experiment, str],
+            plot: Union[str, bytes],
+            plot_name: str
+    ) -> Dict:
+        """Update an experiment plot.
+
+        Args:
+            experiment: The ``Experiment`` object or the experiment UUID.
+            plot: Name of the plot file or plot data to upload.
+            plot_name: Name of the plot to update.
+
+        Returns:
+            A dictionary with name and size of the uploaded plot.
+        """
+        if isinstance(experiment, Experiment):
+            experiment = experiment.uuid
+
+        return self._api_client.experiment_plot_update(experiment, plot, plot_name)
+
     def delete_plot(
             self,
             experiment: Union[Experiment, str],

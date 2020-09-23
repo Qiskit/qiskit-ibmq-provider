@@ -130,6 +130,24 @@ class ExperimentClient(BaseClient):
         """
         return self.base_api.experiment(experiment_id).upload_plot(plot, plot_name)
 
+    def experiment_plot_update(
+            self,
+            experiment_id: str,
+            plot: Union[bytes, str],
+            plot_name: str
+    ) -> Dict:
+        """Update an experiment plot.
+
+        Args:
+            experiment_id: Experiment UUID.
+            plot: Plot file name or data to upload.
+            plot_name: Name of the plot.
+
+        Returns:
+            JSON response.
+        """
+        return self.base_api.experiment_plot(experiment_id, plot_name).update(plot)
+
     def experiment_plot_get(self, experiment_id: str, plot_name: str) -> bytes:
         """Retrieve an experiment plot.
 

@@ -501,12 +501,13 @@ class TestExperiment(IBMQTestCase):
             self.provider.experiment.retrieve_plot(new_exp.uuid, plot_name)
         self.assertIn("not found", manager.exception.message)
 
-    def test_upload_plot_data(self):
-        """Test uploading plot data."""
+    def test_upload_update_plot_data(self):
+        """Test uploading and updating plot data."""
         new_exp = self._create_experiment()
         # Upload a new plot.
+        plot_name = "batman.svg"
         hello_bytes = str.encode("hello world")
-        plot_names = ["batman.svg", None]
+        plot_names = [plot_name, None]
         for name in plot_names:
             with self.subTest(name=name):
                 response = self.provider.experiment.upload_plot(new_exp.uuid, hello_bytes, name)
@@ -516,6 +517,13 @@ class TestExperiment(IBMQTestCase):
                     name = response['name']
                 new_exp.refresh()
                 self.assertIn(name, new_exp.plot_names)
+
+        # Update the plot we just uploaded.
+        friend_bytes = str.encode("hello friend!")
+        response = self.provider.experiment.update_plot(new_exp.uuid, friend_bytes, plot_name)
+        self.assertEqual(response['name'], plot_name)
+        rplot = self.provider.experiment.retrieve_plot(new_exp.uuid, plot_name)
+        self.assertEqual(rplot, friend_bytes, "Retrieved plot not equal updated plot.")
 
     def _create_experiment(
             self,
