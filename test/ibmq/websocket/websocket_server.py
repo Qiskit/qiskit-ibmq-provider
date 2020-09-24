@@ -16,7 +16,6 @@
 
 import asyncio
 import json
-import warnings
 
 from qiskit.providers.ibmq.api.clients.websocket import WebsocketResponseMethod
 
@@ -30,12 +29,11 @@ TOKEN_WEBSOCKET_RETRY_FAILURE = 'token_websocket_retry_failure'
 TOKEN_WEBSOCKET_JOB_NOT_FOUND = 'token_websocket_job_not_found'
 
 
-@asyncio.coroutine
-def websocket_handler(websocket, path):
+async def websocket_handler(websocket, path):
     """Entry point for the websocket mock server."""
     # pylint: disable=unused-argument
     # Receive the authentication message.
-    msg_in = yield from websocket.recv()
+    msg_in = await websocket.recv()
     auth_message = json.loads(msg_in)
 
     # Check for valid access tokens.
@@ -48,86 +46,77 @@ def websocket_handler(websocket, path):
                  TOKEN_WEBSOCKET_RETRY_FAILURE,
                  TOKEN_WEBSOCKET_JOB_NOT_FOUND):
         msg_out = json.dumps({'type': 'authenticated'})
-        yield from websocket.send(msg_out.encode('utf8'))
+        await websocket.send(msg_out.encode('utf8'))
     else:
         # Close the connection.
-        yield from websocket.close()
+        await websocket.close()
 
     # Depending on the access token, perform different actions:
     if token == TOKEN_JOB_COMPLETED:
-        yield from handle_token_job_completed(websocket)
+        await handle_token_job_completed(websocket)
     elif token == TOKEN_JOB_TRANSITION:
-        yield from handle_token_job_transition(websocket)
+        await handle_token_job_transition(websocket)
     elif token == TOKEN_TIMEOUT:
-        yield from handle_token_timeout(websocket)
+        await handle_token_timeout(websocket)
     elif token == TOKEN_WRONG_FORMAT:
-        yield from handle_token_wrong_format(websocket)
+        await handle_token_wrong_format(websocket)
     elif token == TOKEN_WEBSOCKET_RETRY_SUCCESS:
-        yield from handle_token_retry_success(websocket)
+        await handle_token_retry_success(websocket)
     elif token == TOKEN_WEBSOCKET_RETRY_FAILURE:
-        yield from handle_token_retry_failure(websocket)
+        await handle_token_retry_failure(websocket)
     elif token == TOKEN_WEBSOCKET_JOB_NOT_FOUND:
-        yield from handle_token_job_not_found(websocket)
+        await handle_token_job_not_found(websocket)
 
 
-@asyncio.coroutine
-def handle_token_job_completed(websocket):
+async def handle_token_job_completed(websocket):
     """Return a final job status, and close with 4002."""
     msg_out = WebsocketResponseMethod(type_='job-status',
                                       data={'status': 'COMPLETED'})
 
-    yield from websocket.send(msg_out.as_json().encode('utf8'))
-    yield from websocket.close(code=4002)
+    await websocket.send(msg_out.as_json().encode('utf8'))
+    await websocket.close(code=4002)
 
 
-@asyncio.coroutine
-def handle_token_job_transition(websocket):
+async def handle_token_job_transition(websocket):
     """Send several job status, and close with 4002."""
     msg_out = WebsocketResponseMethod(type_='job-status',
                                       data={'status': 'RUNNING'})
-    yield from websocket.send(msg_out.as_json().encode('utf8'))
+    await websocket.send(msg_out.as_json().encode('utf8'))
 
-    yield from asyncio.sleep(1)
+    await asyncio.sleep(1)
     msg_out = WebsocketResponseMethod(type_='job-status',
                                       data={'status': 'COMPLETED'})
-    yield from websocket.send(msg_out.as_json().encode('utf8'))
+    await websocket.send(msg_out.as_json().encode('utf8'))
 
-    yield from websocket.close(code=4002)
+    await websocket.close(code=4002)
 
 
-@asyncio.coroutine
-def handle_token_timeout(websocket):
+async def handle_token_timeout(websocket):
     """Close the socket after 10 seconds, without replying."""
-    yield from asyncio.sleep(10)
-    yield from websocket.close()
+    await asyncio.sleep(10)
+    await websocket.close()
 
 
-@asyncio.coroutine
-def handle_token_wrong_format(websocket):
+async def handle_token_wrong_format(websocket):
     """Return a status in an invalid format."""
-    yield from websocket.send('INVALID'.encode('utf8'))
-    yield from websocket.close()
+    await websocket.send('INVALID'.encode('utf8'))
+    await websocket.close()
 
 
-@asyncio.coroutine
-def handle_token_retry_success(websocket):
+async def handle_token_retry_success(websocket):
     """Close the socket once and force a retry."""
     if not hasattr(handle_token_retry_success, 'retry_attempt'):
         setattr(handle_token_retry_success, 'retry_attempt', True)
-        yield from handle_token_retry_failure(websocket)
+        await handle_token_retry_failure(websocket)
     else:
-        yield from handle_token_job_completed(websocket)
+        await handle_token_job_completed(websocket)
 
 
-@asyncio.coroutine
-def handle_token_retry_failure(websocket):
+async def handle_token_retry_failure(websocket):
     """Continually close the socket, until both the first attempt and retry fail."""
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", category=DeprecationWarning)
-        yield from websocket.close()
+    await websocket.close()
 
 
-@asyncio.coroutine
-def handle_token_job_not_found(websocket):
+async def handle_token_job_not_found(websocket):
     """Close the socket, specifying code for job not found."""
-    yield from websocket.close(code=4003)
+    await websocket.close(code=4003)
