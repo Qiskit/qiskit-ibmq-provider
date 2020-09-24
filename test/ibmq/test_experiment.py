@@ -250,12 +250,10 @@ class TestExperiment(IBMQTestCase):
     def test_get_analysis_results(self):
         """Test retrieving all analysis results."""
         results = self.provider.experiment.analysis_results()
-        experiment_ids = [exp.uuid for exp in self.experiments]
         for res in results:
             self.assertTrue(isinstance(res, AnalysisResult))
             self.assertTrue(isinstance(res.fit, Fit))
             self.assertTrue(res.uuid, "{} does not have an uuid!".format(res))
-            self.assertIn(res.experiment_uuid, experiment_ids)
             for dt_attr in ['creation_datetime', 'updated_datetime']:
                 if getattr(res, dt_attr):
                     self.assertTrue(getattr(res, dt_attr).tzinfo)
