@@ -87,7 +87,7 @@ class Experiment(RestAdapterBase):
                 data = {'plot': (plot_name, file)}
                 response = self.session.post(url, files=data).json()
         else:
-            data = {'plot': (plot_name, plot)}
+            data = {'plot': (plot_name, plot)}  # type: ignore[dict-item]
             response = self.session.post(url, files=data).json()
 
         return response
@@ -148,7 +148,7 @@ class ExperimentPlot(RestAdapterBase):
                 data = {'plot': (self.plot_name, file)}
                 response = self.session.put(url, files=data).json()
         else:
-            data = {'plot': (self.plot_name, plot)}
+            data = {'plot': (self.plot_name, plot)}  # type: ignore[dict-item]
             response = self.session.put(url, files=data).json()
 
         return response

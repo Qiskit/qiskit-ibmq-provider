@@ -14,7 +14,7 @@
 
 """IBM Quantum Experience experiment service."""
 
-from typing import Optional, List, Dict, Union, Tuple
+from typing import Optional, List, Dict, Union, Tuple, Any
 from datetime import datetime
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
@@ -243,7 +243,7 @@ class ExperimentService:
             'experiment_uuid': result.experiment_uuid,
             'fit': result.fit.to_dict(),
             'type': result.type
-        }
+        }  # type: Dict[str, Any]
         if result.chisq:
             data['chisq'] = result.chisq
         if result.quality:

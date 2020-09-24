@@ -15,36 +15,37 @@
 """Experiment constants."""
 
 import enum
+from typing import Any
 
 
 class ResultQuality(enum.Enum):
     """Possible values for analysis result quality."""
 
-    def __new__(cls, description: str, ranking: int = 0):
+    def __new__(cls, description: str, ranking: int = 0) -> 'ResultQuality':
         # ranking is defaulted to 0 to silence linter.
         obj = object.__new__(cls)
         obj._value_ = description
         obj.ranking = ranking
         return obj
 
-    def __ge__(self, other):
+    def __ge__(self, other: Any) -> bool:
         if self.__class__ is other.__class__:
-            return self.ranking >= other.ranking
+            return self.ranking >= other.ranking  # type: ignore[attr-defined]
         return NotImplemented
 
-    def __gt__(self, other):
+    def __gt__(self, other: Any) -> bool:
         if self.__class__ is other.__class__:
-            return self.ranking > other.ranking
+            return self.ranking > other.ranking  # type: ignore[attr-defined]
         return NotImplemented
 
-    def __le__(self, other):
+    def __le__(self, other: Any) -> bool:
         if self.__class__ is other.__class__:
-            return self.ranking <= other.ranking
+            return self.ranking <= other.ranking  # type: ignore[attr-defined]
         return NotImplemented
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
         if self.__class__ is other.__class__:
-            return self.ranking < other.ranking
+            return self.ranking < other.ranking  # type: ignore[attr-defined]
         return NotImplemented
 
     HUMAN_BAD = 'Human Bad', 1

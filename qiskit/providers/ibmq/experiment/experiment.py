@@ -79,7 +79,7 @@ class Experiment:
         self._updated_datetime = None
 
         try:
-            self._api_client = provider.experiment._api_client
+            self._api_client = provider.experiment._api_client  # type: ignore[has-type]
         except AttributeError:
             raise ExperimentError(
                 "Provider {} does not offer experiment services.".format(provider))
@@ -102,7 +102,7 @@ class Experiment:
         self._plot_names = remote_data.get('plot_names', [])
 
     @requires_experiment_uuid
-    def refresh(self):
+    def refresh(self) -> None:
         """Update this experiment instance with remote data."""
         self.update_from_remote_data(self._api_client.experiment_get(self.uuid))
 
@@ -208,7 +208,7 @@ class Experiment:
         experiment._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
         return experiment
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         attr_str = 'uuid="{}", backend_name="{}", type="{}"'.format(
             self.uuid, self.backend_name, self.type)
         for attr in ['extra', 'tags']:

@@ -42,7 +42,7 @@ class Fit:
         self.value = value
         self.variance = variance
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
         """Return the dictionary representation of the object."""
         return {'value': self.value, 'variance': self.variance}
 
@@ -83,7 +83,7 @@ class AnalysisResult:
             raise IBMQInputValueError('device_components must not be empty.')
 
         self.experiment_uuid = experiment_uuid
-        self.fit = fit
+        self.fit = fit  # type: ignore[assignment]
         self.type = result_type
         self.chisq = chisq
         if isinstance(quality, str):
@@ -120,7 +120,7 @@ class AnalysisResult:
         return self._uuid
 
     @property
-    def fit(self):
+    def fit(self) -> Fit:
         """Return the fit value for the experiment."""
         return self._fit
 
@@ -136,7 +136,7 @@ class AnalysisResult:
         self._fit = fit_val
 
     @property
-    def creation_datetime(self):
+    def creation_datetime(self) -> datetime:
         """Return the timestamp when the experiment was created."""
         return convert_tz(self._creation_datetime, to_utc=False)
 
@@ -169,7 +169,7 @@ class AnalysisResult:
         obj._updated_datetime = str_to_utc(remote_data['updated_at'])
         return obj
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         attr_str = 'uuid="{}"'.format(self.uuid)
         for attr in ['type', 'quality', 'experiment_uuid', 'backend_name',
                      'chisq', 'tags', 'device_components']:
