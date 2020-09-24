@@ -21,7 +21,7 @@ from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-impo
 
 from .experiment import Experiment
 from .analysis_result import AnalysisResult, DeviceComponent
-from .exceptions import ExperimentNotFoundError
+from .exceptions import ExperimentNotFoundError, AnalysisResultNotFoundError, PlotNotFoundError
 from .constants import ResultQuality
 from ..utils.converters import local_to_utc_str
 from ..api.clients.experiment import ExperimentClient
@@ -29,7 +29,49 @@ from ..api.exceptions import RequestsApiError
 
 
 class ExperimentService:
-    """Provides experiment related services."""
+    """Provides experiment related services.
+
+    This class is the main interface to invoke IBM Quantum Experience
+    experiment services, which allow you to create, delete, update, query, and
+    retrieve experiments, experiment plots, and analysis results. The
+    ``experiment`` attribute of
+    :class:`~qiskit.providers.ibmq.accountprovider.AccountProvider` is an
+    instance of this class, and the main syntax for using the services is
+    ``provider.experiment.<action>``. For example::
+
+        from qiskit import IBMQ
+        provider = IBMQ.load_account()
+
+        # Retrieve all experiments.
+        experiments = provider.experiment.experiments()
+
+        # Retrieve experiments with filtering.
+        experiment_filtered = provider.experiment.experiments(backend_name='foo')
+
+        # Retrieve a specific experiment using its ID.
+        experiment = provider.experiment.retrieve_experiment(EXPERIMENT_ID)
+
+        # Upload a new experiment.
+        from qiskit.providers.ibmq.experiment import Experiment
+        new_exp = Experiment(
+            provider=provider,
+            backend_name=backend_name,
+            experiment_type='test',
+            tags=['qiskit-test']
+        )
+        provider.experiment.upload_experiment(new_exp)
+
+        # Update an experiment.
+        new_exp.end_datetime = datetime.now()
+        provider.experiment.update_experiment(new_exp)
+
+        # Delete an experiment.
+        provider.experiment.delete_experiment(EXPERIMENT_ID)
+
+    Similar syntax applies to analysis results and experiment plots. Classes
+    :class:`Experiment` and :class:`AnalysisResult` encapsulate data of an
+    experiment and an analysis result, respectively.
+    """
 
     def __init__(
             self,
@@ -146,8 +188,18 @@ class ExperimentService:
 
         Returns:
             Retrieved experiment.
+
+        Raises:
+            ExperimentNotFoundError: If the experiment is not found.
+            RequestsApiError: If an unexpected error occurred when retrieving
+                experiment from the server.
         """
-        raw_data = self._api_client.experiment_get(experiment_id)
+        try:
+            raw_data = self._api_client.experiment_get(experiment_id)
+        except RequestsApiError as err:
+            if err.status_code == 404:
+                raise ExperimentNotFoundError(err.message)
+            raise
         experiment = Experiment.from_remote_data(self._provider, raw_data)
         return experiment
 
@@ -212,7 +264,10 @@ class ExperimentService:
             quality: Quality value used for filtering. Each element in this list is a tuple
                 of an operator and a value. The operator is one of
                 ``lt``, ``le``, ``gt``, ``ge``, and ``eq``. The value is one of the
-                :class:`ResultQuality` values.
+                :class:`ResultQuality` values. For example,
+                ``analysis_results(quality=[('ge', 'Computer Bad'), ('lt', 'Computer Good')])``
+                will return all analysis results with a quality of ``Computer Bad`` and
+                ``No Information``.
 
         Returns:
             A list of analysis results.
@@ -265,15 +320,15 @@ class ExperimentService:
             Retrieved analysis result.
 
         Raises:
-            ExperimentNotFoundError: If the analysis result is not found.
+            AnalysisResultNotFoundError: If the analysis result is not found.
             RequestsApiError: If an unexpected error occurred when retrieving
                 analysis result from the server.
         """
         try:
             data = self._api_client.analysis_result_get(result_id)
         except RequestsApiError as err:
-            if 'Analysis result not found' in err.message:
-                raise ExperimentNotFoundError(err.message)
+            if err.status_code == 404:
+                raise AnalysisResultNotFoundError(err.message)
             raise
         return AnalysisResult.from_remote_data(data)
 
@@ -402,10 +457,20 @@ class ExperimentService:
         Returns:
             The size of the plot if `file_name` is specified. Otherwise the
             content of the plot in bytes.
+
+        Raises:
+            PlotNotFoundError: If the plot is not found.
+            RequestsApiError: If an unexpected error occurred when retrieving
+                plot from the server.
         """
         if isinstance(experiment, Experiment):
             experiment = experiment.uuid
-        data = self._api_client.experiment_plot_get(experiment, plot_name)
+        try:
+            data = self._api_client.experiment_plot_get(experiment, plot_name)
+        except RequestsApiError as err:
+            if err.status_code == 404:
+                raise PlotNotFoundError(err.message)
+            raise
         if file_name:
             with open(file_name, 'wb') as file:
                 num_bytes = file.write(data)

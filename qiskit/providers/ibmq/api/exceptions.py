@@ -24,7 +24,16 @@ class ApiError(IBMQError):
 
 class RequestsApiError(ApiError):
     """Exception re-raising a RequestException."""
-    pass
+
+    def __init__(self, message: str, status_code: int = -1):
+        """RequestsApiError constructor.
+
+        Args:
+            message: Exception message.
+            status_code: Response status code. -1 for unknown status code.
+        """
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class WebsocketError(ApiError):
