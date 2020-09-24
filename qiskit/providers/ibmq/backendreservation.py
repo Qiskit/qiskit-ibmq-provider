@@ -14,7 +14,7 @@
 
 """Reservation information related to a backend."""
 
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
 
 
@@ -87,7 +87,7 @@ class BackendReservation:
         out_str += ')>'
         return out_str
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, BackendReservation) and self.backend_name == other.backend_name:
             if self.reservation_id and self.reservation_id == other.reservation_id:
                 return True

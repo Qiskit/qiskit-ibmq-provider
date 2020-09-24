@@ -16,7 +16,7 @@
 
 import json
 from typing import Dict, Optional, Any, List
-from datetime import datetime  # pylint: disable=unused-import
+from datetime import datetime
 
 from .base import RestAdapterBase
 from ..session import RetrySession
