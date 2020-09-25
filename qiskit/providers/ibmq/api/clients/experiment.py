@@ -50,7 +50,7 @@ class ExperimentClient(BaseClient):
             experiment_type: Optional[str] = None,
             start_time: Optional[List] = None,
             device_components: Optional[List[str]] = None,
-            tags: Optional[str] = None
+            tags: Optional[List[str]] = None
     ) -> List[Dict]:
         """Retrieve experiments, with optional filtering.
 
