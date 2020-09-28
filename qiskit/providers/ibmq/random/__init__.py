@@ -39,8 +39,10 @@ Classes
 
    IBMQRandomService
    CQCExtractor
+   CQCExtractorJob
 
 """
 
 from .ibmqrandomservice import IBMQRandomService
 from .cqcextractor import CQCExtractor
+from .cqcextractorjob import CQCExtractorJob

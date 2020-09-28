@@ -21,7 +21,7 @@ import warnings
 import dateutil.parser
 
 from ..utils import utc_to_local, duration_difference
-from .utils import api_status_to_job_status
+from ..utils.utils import api_status_to_job_status
 
 
 class QueueInfo:

@@ -1,0 +1,13 @@
+---
+features:
+  - |
+    CQC randomness extractors can now be invoked asynchronously, using methods
+    :meth:`~qiskit.providers.ibmq.random.CQCExtractor.run_async_ext1` and
+    :meth:`~qiskit.providers.ibmq.random.CQCExtractor.run_async_ext2`. Each of
+    these methods returns a :class:`~qiskit.providers.ibmq.random.CQCExtractorJob`
+    instance that allows you to check on the job status (using
+    :meth:`~qiskit.providers.ibmq.random.CQCExtractorJob.status`) and wait for
+    its result (using
+    :meth:`~qiskit.providers.ibmq.random.CQCExtractorJob.block_until_ready`).
+    The :meth:`qiskit.provider.ibmq.random.CQCExtractor.run` method remains
+    synchronous.

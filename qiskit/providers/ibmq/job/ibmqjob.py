@@ -33,15 +33,14 @@ from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
 from ..api.exceptions import ApiError, UserTimeoutExceededError
-from ..utils.utils import RefreshQueue, validate_job_tags
+from ..utils.utils import RefreshQueue, validate_job_tags, api_status_to_job_status
 from ..utils.qobj_utils import dict_to_qobj
 from ..utils.json_decoder import decode_backend_properties, decode_result
 from ..utils.converters import utc_to_local, utc_to_local_all
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
 from .queueinfo import QueueInfo
-from .utils import (build_error_report, api_status_to_job_status,
-                    api_to_job_error, get_cancel_status)
+from .utils import build_error_report, api_to_job_error, get_cancel_status
 
 logger = logging.getLogger(__name__)
 

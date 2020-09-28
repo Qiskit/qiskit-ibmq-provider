@@ -23,6 +23,43 @@ from typing import List, Optional, Type, Any, Dict, Union, Tuple
 from threading import Condition
 from queue import Queue
 
+from qiskit.providers.jobstatus import JobStatus
+
+from ..apiconstants import ApiJobStatus
+
+
+API_TO_JOB_STATUS = {
+    ApiJobStatus.CREATING: JobStatus.INITIALIZING,
+    ApiJobStatus.CREATED: JobStatus.INITIALIZING,
+    ApiJobStatus.TRANSPILING: JobStatus.INITIALIZING,
+    ApiJobStatus.TRANSPILED: JobStatus.INITIALIZING,
+    ApiJobStatus.VALIDATING: JobStatus.VALIDATING,
+    ApiJobStatus.VALIDATED: JobStatus.VALIDATING,
+    ApiJobStatus.RUNNING: JobStatus.RUNNING,
+    ApiJobStatus.PENDING_IN_QUEUE: JobStatus.QUEUED,
+    ApiJobStatus.QUEUED: JobStatus.QUEUED,
+    ApiJobStatus.COMPLETED: JobStatus.DONE,
+    ApiJobStatus.CANCELLED: JobStatus.CANCELLED,
+    ApiJobStatus.ERROR_CREATING_JOB: JobStatus.ERROR,
+    ApiJobStatus.ERROR_VALIDATING_JOB: JobStatus.ERROR,
+    ApiJobStatus.ERROR_RUNNING_JOB: JobStatus.ERROR,
+    ApiJobStatus.ERROR_TRANSPILING_JOB: JobStatus.ERROR
+}
+
+
+def api_status_to_job_status(api_status: Union[str, ApiJobStatus]) -> JobStatus:
+    """Return the corresponding job status for the input server job status.
+
+    Args:
+        api_status: Server job status.
+
+    Returns:
+        Job status.
+    """
+    if isinstance(api_status, str):
+        api_status = ApiJobStatus(api_status.upper())
+    return API_TO_JOB_STATUS[api_status]
+
 
 def to_python_identifier(name: str) -> str:
     """Convert a name to a valid Python identifier.

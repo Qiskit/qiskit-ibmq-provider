@@ -27,7 +27,8 @@ class Random(RestAdapterBase):
 
     URL_MAP = {
         'list_extractors': '/extractors',
-        'extract': '/extractors/{}/{}'
+        'extract': '/extractors/{}/{}/async',
+        'job_get': '/tasks/{}'
     }
 
     def list_services(self) -> List[Dict[str, Any]]:
@@ -45,8 +46,8 @@ class Random(RestAdapterBase):
             method: str,
             data: Dict,
             files: Dict
-    ) -> Any:
-        """
+    ) -> Dict:
+        """Invoke the remote extractor asynchronously.
 
         Args:
             name: Name of the extractor.
@@ -55,8 +56,32 @@ class Random(RestAdapterBase):
             files: Raw extractor parameters.
 
         Returns:
-            Response data.
+            JSON response.
         """
         url = self.get_url('extract').format(name, method)
-        response = self.session.post(url, data=data, files=files, timeout=600)
+        return self.session.post(url, data=data, files=files, timeout=600).json()
+
+    def job_get(self, job_id: str) -> Dict:
+        """Retrieve a job.
+
+        Args:
+            job_id: Job ID.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('job_get').format(job_id)
+        return self.session.get(url).json()
+
+    def get_object_storage(self, url: str) -> Any:
+        """Get data from object storage.
+
+        Args:
+            url: Object storage URL.
+
+        Returns:
+            Response data.
+        """
+        logger.debug('Downloading from object storage.')
+        response = self.session.get(url, bare=True, timeout=600)
         return response.content
