@@ -107,7 +107,14 @@ class CQCExtractor(BaseRandomService):
         Returns:
             An instance of ``CQCExtractorJob`` which can be used to retrieve the
             results later.
+
+        Raises:
+            ValueError: If an invalid argument values are specified.
         """
+        if not ext1_input_num_bits or not ext1_output_num_bits:
+            raise ValueError("Invalid input arguments. ext1_input_num_bits and "
+                             "ext1_output_num_bits must be non-zero.")
+
         logger.info("Starting first extraction.")
         # Run ext1
         ext1_data = {"n": ext1_input_num_bits,
@@ -143,7 +150,14 @@ class CQCExtractor(BaseRandomService):
         Returns:
             An instance of ``CQCExtractorJob`` which can be used to retrieve the
             results later.
+
+        Raises:
+            ValueError: If an invalid argument values are specified.
         """
+        if not ext2_seed_num_bits or not ext2_wsr_multiplier:
+            raise ValueError("Invalid input arguments. ext2_seed_num_bits and "
+                             "ext2_wsr_multiplier must be non-zero.")
+
         logger.info("Starting second extraction.")
         ext2_seed = bitarray_to_bytes(ext2_seed[:ext2_seed_num_bits])  # type: ignore[assignment]
         if ext2_wsr_generator is None:
