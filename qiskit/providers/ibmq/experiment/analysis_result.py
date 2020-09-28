@@ -86,8 +86,6 @@ class AnalysisResult:
         self.fit = fit  # type: ignore[assignment]
         self.type = result_type
         self.chisq = chisq
-        if isinstance(quality, str):
-            quality = ResultQuality(quality)
         self.quality = quality
         self.tags = tags or []
         self._uuid = result_uuid
@@ -126,10 +124,10 @@ class AnalysisResult:
 
     @fit.setter
     def fit(self, fit_val: Union[Fit, Dict[str, float]]) -> None:
-        """Update the experiment fit value.
+        """Update the analysis result fit value.
 
         Args:
-            fit_val: Experiment fit value.
+            fit_val: Analysis result fit value.
         """
         if not isinstance(fit_val, Fit):
             fit_val = Fit(**fit_val)
@@ -144,6 +142,22 @@ class AnalysisResult:
     def updated_datetime(self) -> datetime:
         """Return the timestamp when the experiment was last updated."""
         return convert_tz(self._updated_datetime, to_utc=False)
+
+    @property
+    def quality(self) -> ResultQuality:
+        """Return the analysis result quality."""
+        return self._quality
+
+    @quality.setter
+    def quality(self, quality: Union[ResultQuality, str]) -> None:
+        """Update the analysis result quality.
+
+        Args:
+            quality: Analysis result quality.
+        """
+        if isinstance(quality, str):
+            quality = ResultQuality(quality)
+        self._quality = quality
 
     @classmethod
     def from_remote_data(cls, remote_data: Dict) -> 'AnalysisResult':
