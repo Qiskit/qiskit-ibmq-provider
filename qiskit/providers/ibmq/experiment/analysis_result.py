@@ -86,7 +86,7 @@ class AnalysisResult:
         self.fit = fit  # type: ignore[assignment]
         self.type = result_type
         self.chisq = chisq
-        self.quality = quality
+        self.quality = quality  # type: ignore[assignment]
         self.tags = tags or []
         self._uuid = result_uuid
         self.device_components = device_components

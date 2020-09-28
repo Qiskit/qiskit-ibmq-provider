@@ -22,7 +22,9 @@ from typing import Optional
 
 from qiskit.providers.ibmq.experiment.experiment import Experiment
 from qiskit.providers.ibmq.experiment.analysis_result import AnalysisResult, Fit, DeviceComponent
-from qiskit.providers.ibmq.experiment.exceptions import ExperimentNotFoundError
+from qiskit.providers.ibmq.experiment.exceptions import (ExperimentNotFoundError,
+                                                         AnalysisResultNotFoundError,
+                                                         PlotNotFoundError)
 from qiskit.providers.ibmq.experiment.constants import ResultQuality
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
@@ -236,7 +238,7 @@ class TestExperiment(IBMQTestCase):
             deleted_exp = self.provider.experiment.delete_experiment(new_exp.uuid)
         self.assertEqual(deleted_exp.uuid, new_exp.uuid)
 
-        with self.assertRaises(RequestsApiError) as ex_cm:
+        with self.assertRaises(ExperimentNotFoundError) as ex_cm:
             self.provider.experiment.retrieve_experiment(new_exp.uuid)
         self.assertIn("Not Found for url", ex_cm.exception.message)
 
@@ -452,8 +454,8 @@ class TestExperiment(IBMQTestCase):
         with mock.patch('builtins.input', lambda _: 'y'):
             self.provider.experiment.delete_analysis_result(result.uuid)
 
-        self.assertRaises(ExperimentNotFoundError,
-                          self.provider.experiment.retrieve_analysis_result, result.uuid)
+        with self.assertRaises(AnalysisResultNotFoundError):
+            self.provider.experiment.retrieve_analysis_result(result.uuid)
 
     def test_backend_components(self):
         """Test retrieving all device components."""
@@ -495,7 +497,7 @@ class TestExperiment(IBMQTestCase):
         # Delete plot.
         with mock.patch('builtins.input', lambda _: 'y'):
             self.provider.experiment.delete_plot(new_exp.uuid, plot_name)
-        with self.assertRaises(RequestsApiError) as manager:
+        with self.assertRaises(PlotNotFoundError) as manager:
             self.provider.experiment.retrieve_plot(new_exp.uuid, plot_name)
         self.assertIn("not found", manager.exception.message)
 
