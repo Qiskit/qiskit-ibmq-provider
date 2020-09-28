@@ -35,7 +35,7 @@ class CQCExtractor(BaseRandomService):
 
         random_bits = extractor.run(*cqc_parameters)
 
-    To invoke them asynchronously:
+    To invoke them asynchronously::
 
         import numpy as np
         extractor1_out = extractor.run_async_ext1(*ext1_parameters).block_until_ready()
