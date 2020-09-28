@@ -42,7 +42,7 @@ class CQCExtractorJob:
 
     Some of the methods in this class are blocking, which means control may
     not be returned immediately. :meth:`block_until_ready()` is an example
-    of a blocking method::
+    of a blocking method, which waits until the job completes::
 
         job = extractor.run_async_ext1(...)
         random_bits = job.block_until_ready()
