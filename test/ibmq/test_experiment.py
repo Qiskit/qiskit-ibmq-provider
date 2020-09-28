@@ -26,7 +26,6 @@ from qiskit.providers.ibmq.experiment.exceptions import (ExperimentNotFoundError
                                                          AnalysisResultNotFoundError,
                                                          PlotNotFoundError)
 from qiskit.providers.ibmq.experiment.constants import ResultQuality
-from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 
 
