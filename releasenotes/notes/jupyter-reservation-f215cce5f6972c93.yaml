@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    Two Jupyter magic functions, the IQX dashboard and the backend widget, are
+    updated to display backend reservations. If a backend has reservations
+    scheduled in the next 24 hours, time to the next one and its duration
+    are displayed (e.g. ``Reservation: in 6 hrs 30 min (60m)``). If there is
+    a reservation and the backend is active, the backend status is displayed
+    as ``active [R]``.

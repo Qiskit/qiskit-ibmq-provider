@@ -18,6 +18,10 @@ import time
 import threading
 
 import ipywidgets as wid
+from qiskit.providers.ibmq.utils.converters import duration_difference
+
+from ..utils import get_next_reservation
+from .constants import RESERVATION_STR, RESERVATION_NONE, STAT_FONT_VALUE, STAT_FONT_VALUE_COLOR
 
 
 def update_backend_info(device_list: wid.VBox,
@@ -31,15 +35,15 @@ def update_backend_info(device_list: wid.VBox,
     my_thread = threading.currentThread()
     current_interval = 0
     started = False
-    val_str = "<font size='4' face='monospace'>{pend}</font>"
-    stat_str = "<font size='4' style='color:{color}' face='monospace'>{msg}</font>"
+    reservation_interval = 10*60
+    cur_rsvr_interval = 0
     while getattr(my_thread, "do_run", False):
         if current_interval == interval or started is False:
-            for backend in device_list.children:
-                # Each "backend" is a backend widget. See ``make_backend_widget()``
+            for backend_pane in device_list.children:
+                # Each backend_pane is a backend widget. See ``make_backend_widget()``
                 # for more information on how the widget is constructed and its child widgets.
                 try:
-                    status = backend._backend.status()
+                    status = backend_pane._backend.status()
                 except Exception:  # pylint: disable=broad-except
                     pass
                 else:
@@ -52,17 +56,31 @@ def update_backend_info(device_list: wid.VBox,
                     if stat_msg in ['maintenance', 'internal', 'dedicated']:
                         color = '#FFB000'
 
-                    # Grab the particular status widget of interest
-                    # from the parent backend device widget.
-                    status_wid = backend.children[0].children[1].children[0].children[1].children[1]
+                    if cur_rsvr_interval >= reservation_interval:
+                        cur_rsvr_interval = 0
+                        next_resrv = get_next_reservation(backend_pane._backend)
+                        reservation_wid = backend_pane._reservation_val_wid
+                        if next_resrv:
+                            start_dt_str = duration_difference(next_resrv.start_datetime)
+                            new_resrv_val = RESERVATION_STR.format(
+                                start_dt=start_dt_str, duration=next_resrv.duration)
+                            if stat_msg == 'active':
+                                stat_msg += ' [R]'
+                        else:
+                            new_resrv_val = RESERVATION_NONE
+
+                        if reservation_wid.value != new_resrv_val:
+                            reservation_wid.value = new_resrv_val
+
+                    status_wid = backend_pane._status_val_wid
                     if status_wid.value.split('>')[1].split("<")[0] != stat_msg:
                         # If the status message has changed.
-                        status_wid.value = stat_str.format(color=color, msg=stat_msg)
+                        status_wid.value = STAT_FONT_VALUE_COLOR.format(color=color, msg=stat_msg)
 
-                    pend_wid = backend.children[0].children[1].children[1].children[1].children[1]
+                    pend_wid = backend_pane._queue_val_wid
                     if pend_wid.value.split('>')[1].split("<")[0] != pending:
                         # If the number of pending jobs has changed.
-                        pend_wid.value = val_str.format(pend=pending)
+                        pend_wid.value = STAT_FONT_VALUE.format(pending)
 
                 if not getattr(my_thread, "do_run", False):
                     break
@@ -71,3 +89,4 @@ def update_backend_info(device_list: wid.VBox,
             current_interval = 0
         time.sleep(1)
         current_interval += 1
+        cur_rsvr_interval += 1
