@@ -23,7 +23,8 @@ from ..exceptions import IBMQInputValueError
 
 
 # TODO Use variable annotation syntax when Python 3.5 support is dropped.
-DeviceComponent = NamedTuple('DeviceComponent', [('backend_name', str), ('type', str), ('uuid', str)])
+DeviceComponent = NamedTuple('DeviceComponent',
+                             [('backend_name', str), ('type', str), ('uuid', str)])
 """Named tuple representing a device component."""
 
 
