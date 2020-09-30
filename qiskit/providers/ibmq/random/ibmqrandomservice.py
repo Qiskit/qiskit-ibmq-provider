@@ -15,7 +15,7 @@
 """IBMQ random number service."""
 
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from .baserandomservice import BaseRandomService
@@ -105,11 +105,11 @@ class IBMQRandomService:
 
         return service
 
-    def __dir__(self) -> Dict:
+    def __dir__(self):
         self._discover_services()
         return self.__dict__
 
-    def __getattr__(self, item: str) -> Any:
+    def __getattr__(self, item):
         self._discover_services()
         try:
             return self._services[item]

@@ -21,7 +21,8 @@ REQUIREMENTS = [
     "qiskit-terra>=0.14",
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
-    "websockets>=8",
+    "websockets>=7,<8;python_version <= '3.6'",
+    "websockets>=8;python_version > '3.6'",
     "numpy>=1.13",
     "urllib3>=1.21.1",
     "python-dateutil>=2.8.0"

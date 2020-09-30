@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class CQCExtractor(BaseRandomService):
     """Class for interfacing with a CQC remote extractor."""
 
-    def run(  # type: ignore[override]
+    def run(
             self,
             ext1_in_num_bits: int,
             ext1_out_num_bits: int,
@@ -36,8 +36,7 @@ class CQCExtractor(BaseRandomService):
             ext1_wsr_bytes: bytes,
             ext2_seed_num_bits: int,
             ext2_wsr_multiplier: int,
-            ext2_wsr_generator: Optional[Callable] = None
-    ) -> List[int]:
+            ext2_wsr_generator: Optional[Callable] = None) -> List[int]:
         """Process input data synchronously.
 
         Args:
@@ -118,7 +117,7 @@ class CQCExtractor(BaseRandomService):
             Extracted random bits.
         """
         logger.info("Starting second extraction.")
-        ext2_seed = bitarray_to_bytes(ext2_seed[:ext2_seed_num_bits])  # type: ignore[assignment]
+        ext2_seed = bitarray_to_bytes(ext2_seed[:ext2_seed_num_bits])
         if ext2_wsr_generator is None:
             ext2_wsr_generator = generate_wsr
         ext2_wsr = ext2_wsr_generator(ext2_seed_num_bits*ext2_wsr_multiplier)
@@ -130,7 +129,7 @@ class CQCExtractor(BaseRandomService):
         raw_data = self._client.extract(name='cqc', method='ext2', data=ext2_data, files=ext2_files)
         return bytes_to_bitarray(raw_data, (ext2_wsr_multiplier-1)*ext2_seed_num_bits)
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return "<{}('{}') from {}>".format(self.__class__.__name__,
                                            self.name,
                                            self._provider)
