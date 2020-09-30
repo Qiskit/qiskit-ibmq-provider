@@ -76,9 +76,9 @@ class IBMQRandomService:
                                        service_name)
                 self.__dict__.update(self._services)
                 self._initialized = True
-            except RequestsApiError:
+            except RequestsApiError as err:
                 logger.warning("Unable to retrieve service information. "
-                               "Please try again later.")
+                               "Please try again later. Error: %s", str(err))
                 pass
 
     def services(self) -> List[BaseRandomService]:

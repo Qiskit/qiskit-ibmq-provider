@@ -49,6 +49,7 @@ class RandomClient:
         Returns:
             RNG services available for this provider.
         """
+        # return [{'name': 'cqc', 'extractors': ['ext1', 'ext2']}]
         return self.random_api.list_services()
 
     def extract(
@@ -57,8 +58,8 @@ class RandomClient:
             method: str,
             data: Dict,
             files: Dict
-    ) -> bytes:
-        """Perform extraction.
+    ) -> Dict:
+        """Perform extraction asynchronously.
 
         Args:
             name: Name of the extractor.
@@ -67,6 +68,28 @@ class RandomClient:
             files: Raw extractor parameters.
 
         Returns:
-            Extraction results.
+            JSON response.
         """
         return self.random_api.extract(name, method, data, files)
+
+    def job_get(self, job_id: str) -> Dict:
+        """Retrieve a job.
+
+        Args:
+            job_id: Job ID.
+
+        Returns:
+            JSON response.
+        """
+        return self.random_api.job_get(job_id)
+
+    def get_object_storage(self, url: str) -> Any:
+        """Get data from object storage.
+
+        Args:
+            url: Object storage URL.
+
+        Returns:
+            Response data.
+        """
+        return self.random_api.get_object_storage(url)

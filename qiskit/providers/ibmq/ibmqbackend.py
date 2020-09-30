@@ -31,7 +31,6 @@ from qiskit.providers.models import (QasmBackendConfiguration,
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from .apiconstants import ApiJobShareLevel, ApiJobStatus, API_JOB_FINAL_STATES
-from .job.utils import api_status_to_job_status
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
 from .backendjoblimit import BackendJobLimit
@@ -45,6 +44,7 @@ from .utils import update_qobj_config, validate_job_tags
 from .utils.converters import utc_to_local_all, local_to_utc
 from .utils.json_decoder import decode_pulse_defaults, decode_backend_properties
 from .utils.backend import convert_reservation_data
+from .utils.utils import api_status_to_job_status
 
 logger = logging.getLogger(__name__)
 
