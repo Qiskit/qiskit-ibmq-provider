@@ -21,6 +21,9 @@ import ipywidgets as wid
 from qiskit.test.mock.fake_backend import FakeBackend
 from qiskit.providers.ibmq.visualization.interactive import iplot_gate_map
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.utils.converters import duration_difference
+
+from .utils import get_next_reservation
 
 
 def config_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.GridBox:
@@ -34,8 +37,15 @@ def config_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.GridBox:
     """
     status = backend.status().to_dict()
     config = backend.configuration().to_dict()
+    next_resrv = get_next_reservation(backend)
+    if next_resrv:
+        reservation_str = "in {} ({}m)".format(duration_difference(next_resrv.start_datetime),
+                                               next_resrv.duration)
+    else:
+        reservation_str = '-'
 
     config_dict = {**status, **config}
+    config_dict['reservation'] = reservation_str
 
     upper_list = ['n_qubits']
 
@@ -44,7 +54,7 @@ def config_tab(backend: Union[IBMQBackend, FakeBackend]) -> wid.GridBox:
             upper_list.append('quantum_volume')
 
     upper_list.extend(['operational',
-                       'status_msg', 'pending_jobs',
+                       'status_msg', 'pending_jobs', 'reservation',
                        'backend_version', 'basis_gates',
                        'max_shots', 'max_experiments'])
 

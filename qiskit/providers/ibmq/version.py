@@ -21,12 +21,11 @@ Example::
 
 import os
 import subprocess
-from typing import List
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def _minimal_ext_cmd(cmd: List[str]) -> bytes:
+def _minimal_ext_cmd(cmd):
     # construct minimal environment
     env = {}
     for k in ['SYSTEMROOT', 'PATH']:
@@ -46,7 +45,7 @@ def _minimal_ext_cmd(cmd: List[str]) -> bytes:
     return out
 
 
-def git_version() -> str:
+def git_version():
     """Get the current git head sha1."""
     # Determine if we're at master
     try:
@@ -62,7 +61,7 @@ with open(os.path.join(ROOT_DIR, "VERSION.txt"), "r") as version_file:
     VERSION = version_file.read().strip()
 
 
-def get_version_info() -> str:
+def get_version_info():
     """Get the full version string."""
     # Adding the git rev number needs to be done inside
     # write_version_py(), otherwise the import of scipy.version messes

@@ -142,12 +142,10 @@ class AccountProvider(BaseProvider):
 
         return ret
 
-    def __eq__(
+    def __eq__(  # type: ignore[override]
             self,
-            other: Any
+            other: 'AccountProvider'
     ) -> bool:
-        if not isinstance(other, AccountProvider):
-            return False
         return self.credentials == other.credentials
 
     def __repr__(self) -> str:

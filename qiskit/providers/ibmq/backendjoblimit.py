@@ -14,7 +14,7 @@
 
 """Job limit information related to a backend."""
 
-from typing import Any, Dict
+from typing import Any
 
 
 class BackendJobLimit:
@@ -31,7 +31,7 @@ class BackendJobLimit:
             this provider.
     """
 
-    _data = {}  # type:Dict
+    _data = {}
 
     def __init__(self, maximum_jobs: int, running_jobs: int, **kwargs: Any) -> None:
         """BackendJobLimit constructor.
