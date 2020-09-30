@@ -28,7 +28,7 @@ class Experiment(RestAdapterBase):
 
     URL_MAP = {
         'self': '',
-        'plots': '/plots'
+        'upload_plots': '/plots'
     }
 
     def __init__(self, session: RetrySession, experiment_uuid: str, url_prefix: str = '') -> None:
@@ -39,8 +39,7 @@ class Experiment(RestAdapterBase):
             experiment_uuid: UUID of the experiment.
             url_prefix: URL prefix.
         """
-        self.url_prefix = '{}/experiments/{}'.format(url_prefix, experiment_uuid)
-        super().__init__(session, self.url_prefix)
+        super().__init__(session, '{}/experiments/{}'.format(url_prefix, experiment_uuid))
 
     def retrieve(self) -> Dict:
         """Retrieve the specific experiment.
@@ -82,19 +81,19 @@ class Experiment(RestAdapterBase):
         Returns:
             JSON response.
         """
-        url = self.get_url('plots')
+        url = self.get_url('upload_plots')
         if isinstance(plot, str):
             with open(plot, 'rb') as file:
                 data = {'plot': (plot_name, file)}
                 response = self.session.post(url, files=data).json()
         else:
-            data = {'plot': (plot_name, plot)}
+            data = {'plot': (plot_name, plot)}  # type: ignore[dict-item]
             response = self.session.post(url, files=data).json()
 
         return response
 
 
-class ExperimentPlot(Experiment):
+class ExperimentPlot(RestAdapterBase):
     """Rest adapter for experiment plot related endpoints."""
 
     URL_MAP = {
@@ -115,8 +114,9 @@ class ExperimentPlot(Experiment):
             plot_name: Name of the plot.
             url_prefix: URL prefix.
         """
-        super().__init__(session, experiment_uuid, url_prefix)
-        self.prefix_url += '/plots/{}'.format(plot_name)
+        super().__init__(session, '{}/experiments/{}/plots/{}'.format(
+            url_prefix, experiment_uuid, plot_name))
+        self.plot_name = plot_name
 
     def retrieve(self) -> bytes:
         """Retrieve the specific experiment plot.
@@ -132,3 +132,23 @@ class ExperimentPlot(Experiment):
         """Delete this experiment plot."""
         url = self.get_url('self')
         self.session.delete(url)
+
+    def update(self, plot: Union[bytes, str]) -> Dict:
+        """Update an experiment plot.
+
+        Args:
+            plot: Plot file name or data to upload.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('self')
+        if isinstance(plot, str):
+            with open(plot, 'rb') as file:
+                data = {'plot': (self.plot_name, file)}
+                response = self.session.put(url, files=data).json()
+        else:
+            data = {'plot': (self.plot_name, plot)}  # type: ignore[dict-item]
+            response = self.session.put(url, files=data).json()
+
+        return response

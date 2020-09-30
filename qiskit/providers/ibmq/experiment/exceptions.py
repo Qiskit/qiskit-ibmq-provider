@@ -25,3 +25,11 @@ class ExperimentError(IBMQError):
 
 class ExperimentNotFoundError(ExperimentError):
     """Error raised when an experiment cannot be found."""
+
+
+class AnalysisResultNotFoundError(ExperimentError):
+    """Error raised when an analysis result cannot be found."""
+
+
+class PlotNotFoundError(ExperimentError):
+    """Error raised when a plot cannot be found."""

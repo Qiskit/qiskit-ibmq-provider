@@ -15,24 +15,27 @@
 """Utilities for working with IBM Quantum Experience experiments."""
 
 from functools import wraps
+from typing import Callable, Any
+
+from qiskit.providers.ibmq.experiment import experiment  # pylint: disable=unused-import
 
 from .exceptions import ExperimentError
 
 
-def requires_experiment_uuid(func):
+def requires_experiment_uuid(func: Callable) -> Callable:
     """Decorator that signals that the function requires an experiment UUID.
 
     Args:
-        func (callable): test function to be decorated.
+        func: test function to be decorated.
 
     Returns:
         callable: the decorated function.
     """
     @wraps(func)
-    def _wrapper(experiment, *args, **kwargs):
-        if not experiment.uuid:
+    def _wrapper(expr: 'experiment.Experiment', *args: Any, **kwargs: Any) -> Any:
+        if not expr.uuid:
             raise ExperimentError(
                 "{} requires the UUID of this experiment to be known.".format(func.__name__))
-        return func(experiment, *args, **kwargs)
+        return func(expr, *args, **kwargs)
 
     return _wrapper

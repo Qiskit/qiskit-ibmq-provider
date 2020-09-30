@@ -154,7 +154,7 @@ class Api(RestAdapterBase):
             experiment_type: Optional[str] = None,
             start_time: Optional[List] = None,
             device_components: Optional[List[str]] = None,
-            tags: Optional[str] = None
+            tags: Optional[List[str]] = None
     ) -> List:
         """Return experiment data.
 
@@ -169,7 +169,7 @@ class Api(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('experiments')
-        params = {}
+        params = {}  # type: Dict[str, Any]
         if backend_name:
             params['device_name'] = backend_name
         if experiment_type:
@@ -226,7 +226,7 @@ class Api(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('analysis_results')
-        params = {}
+        params = {}  # type: Dict[str, Any]
         if backend_name:
             params['device_name'] = backend_name
         if device_components:

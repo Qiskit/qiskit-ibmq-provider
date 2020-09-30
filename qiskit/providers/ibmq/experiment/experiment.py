@@ -21,7 +21,6 @@ from typing import Dict, Optional, List
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .analysis_result import AnalysisResult
-from .exceptions import ExperimentError
 from .utils import requires_experiment_uuid
 from ..utils.converters import str_to_utc, convert_tz
 from ..api.exceptions import RequestsApiError
@@ -78,11 +77,7 @@ class Experiment:
         self._creation_datetime = None
         self._updated_datetime = None
 
-        try:
-            self._api_client = provider.experiment._api_client
-        except AttributeError:
-            raise ExperimentError(
-                "Provider {} does not offer experiment services.".format(provider))
+        self._api_client = provider.experiment._api_client  # type: ignore[has-type]
 
     def update_from_remote_data(self, remote_data: Dict) -> None:
         """Update the attributes of this instance using remote data.
@@ -102,7 +97,7 @@ class Experiment:
         self._plot_names = remote_data.get('plot_names', [])
 
     @requires_experiment_uuid
-    def refresh(self):
+    def refresh(self) -> None:
         """Update this experiment instance with remote data."""
         self.update_from_remote_data(self._api_client.experiment_get(self.uuid))
 
@@ -208,7 +203,7 @@ class Experiment:
         experiment._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
         return experiment
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         attr_str = 'uuid="{}", backend_name="{}", type="{}"'.format(
             self.uuid, self.backend_name, self.type)
         for attr in ['extra', 'tags']:

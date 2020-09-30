@@ -22,9 +22,10 @@ from typing import Optional
 
 from qiskit.providers.ibmq.experiment.experiment import Experiment
 from qiskit.providers.ibmq.experiment.analysis_result import AnalysisResult, Fit, DeviceComponent
-from qiskit.providers.ibmq.experiment.exceptions import ExperimentNotFoundError
+from qiskit.providers.ibmq.experiment.exceptions import (ExperimentNotFoundError,
+                                                         AnalysisResultNotFoundError,
+                                                         PlotNotFoundError)
 from qiskit.providers.ibmq.experiment.constants import ResultQuality
-from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 
 
@@ -236,7 +237,7 @@ class TestExperiment(IBMQTestCase):
             deleted_exp = self.provider.experiment.delete_experiment(new_exp.uuid)
         self.assertEqual(deleted_exp.uuid, new_exp.uuid)
 
-        with self.assertRaises(RequestsApiError) as ex_cm:
+        with self.assertRaises(ExperimentNotFoundError) as ex_cm:
             self.provider.experiment.retrieve_experiment(new_exp.uuid)
         self.assertIn("Not Found for url", ex_cm.exception.message)
 
@@ -250,12 +251,10 @@ class TestExperiment(IBMQTestCase):
     def test_get_analysis_results(self):
         """Test retrieving all analysis results."""
         results = self.provider.experiment.analysis_results()
-        experiment_ids = [exp.uuid for exp in self.experiments]
         for res in results:
             self.assertTrue(isinstance(res, AnalysisResult))
             self.assertTrue(isinstance(res.fit, Fit))
             self.assertTrue(res.uuid, "{} does not have an uuid!".format(res))
-            self.assertIn(res.experiment_uuid, experiment_ids)
             for dt_attr in ['creation_datetime', 'updated_datetime']:
                 if getattr(res, dt_attr):
                     self.assertTrue(getattr(res, dt_attr).tzinfo)
@@ -454,8 +453,8 @@ class TestExperiment(IBMQTestCase):
         with mock.patch('builtins.input', lambda _: 'y'):
             self.provider.experiment.delete_analysis_result(result.uuid)
 
-        self.assertRaises(ExperimentNotFoundError,
-                          self.provider.experiment.retrieve_analysis_result, result.uuid)
+        with self.assertRaises(AnalysisResultNotFoundError):
+            self.provider.experiment.retrieve_analysis_result(result.uuid)
 
     def test_backend_components(self):
         """Test retrieving all device components."""
@@ -497,16 +496,17 @@ class TestExperiment(IBMQTestCase):
         # Delete plot.
         with mock.patch('builtins.input', lambda _: 'y'):
             self.provider.experiment.delete_plot(new_exp.uuid, plot_name)
-        with self.assertRaises(RequestsApiError) as manager:
+        with self.assertRaises(PlotNotFoundError) as manager:
             self.provider.experiment.retrieve_plot(new_exp.uuid, plot_name)
         self.assertIn("not found", manager.exception.message)
 
-    def test_upload_plot_data(self):
-        """Test uploading plot data."""
+    def test_upload_update_plot_data(self):
+        """Test uploading and updating plot data."""
         new_exp = self._create_experiment()
         # Upload a new plot.
+        plot_name = "batman.svg"
         hello_bytes = str.encode("hello world")
-        plot_names = ["batman.svg", None]
+        plot_names = [plot_name, None]
         for name in plot_names:
             with self.subTest(name=name):
                 response = self.provider.experiment.upload_plot(new_exp.uuid, hello_bytes, name)
@@ -516,6 +516,13 @@ class TestExperiment(IBMQTestCase):
                     name = response['name']
                 new_exp.refresh()
                 self.assertIn(name, new_exp.plot_names)
+
+        # Update the plot we just uploaded.
+        friend_bytes = str.encode("hello friend!")
+        response = self.provider.experiment.update_plot(new_exp.uuid, friend_bytes, plot_name)
+        self.assertEqual(response['name'], plot_name)
+        rplot = self.provider.experiment.retrieve_plot(new_exp.uuid, plot_name)
+        self.assertEqual(rplot, friend_bytes, "Retrieved plot not equal updated plot.")
 
     def _create_experiment(
             self,

@@ -133,8 +133,8 @@ def str_to_utc(utc_dt: Optional[str]) -> Optional[datetime]:
     """
     if not utc_dt:
         return None
-    utc_dt = dateutil.parser.isoparse(utc_dt)
-    return utc_dt.replace(tzinfo=timezone.utc)
+    parsed_dt = dateutil.parser.isoparse(utc_dt)
+    return parsed_dt.replace(tzinfo=timezone.utc)
 
 
 def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
