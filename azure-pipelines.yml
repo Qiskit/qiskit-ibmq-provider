@@ -8,9 +8,8 @@ trigger:
 - stable
 
 jobs:
-- job: 'Windows_PR_Tests'
+- job: 'Windows_Python_Tests'
   pool: {vmImage: 'vs2017-win2016'}
-#  condition: eq(variables['Build.Reason'], 'PullRequest')
   strategy:
     matrix:
       Python36:
@@ -28,17 +27,16 @@ jobs:
       displayName: 'Use Python $(python.version)'
     - script: |
         python -m pip install --upgrade pip
-        pip install -U -r requirements.txt
-        pip install -U -r requirements-dev.txt
+        pip install -U -r requirements.txt -r requirements-dev.txt -c constraints.txt
+        pip install -c constraints.txt .
       displayName: 'Install dependencies'
     - script: |
         pip install pytest pytest-azurepipelines
         pytest -s -v
       displayName: 'pytest'
 
-- job: 'Windows_Merge_Tests'
+- job: 'Windows_Scheduled_Tests'
   pool: {vmImage: 'vs2017-win2016'}
-#  condition: not(eq(variables['Build.Reason'], 'PullRequest'))
   condition: eq(variables['Build.Reason'], 'Schedule')
   strategy:
     matrix:
@@ -53,8 +51,8 @@ jobs:
       displayName: 'Use Python $(python.version)'
     - script: |
         python -m pip install --upgrade pip
-        pip install -U -r requirements.txt
-        pip install -U -r requirements-dev.txt
+        pip install -U -r requirements.txt -r requirements-dev.txt -c constraints.txt
+        pip install -c constraints.txt .
       displayName: 'Install dependencies'
     - script: |
         pip install pytest pytest-azurepipelines
