@@ -20,7 +20,7 @@ import json
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Union, Optional, Any
+from typing import Dict, Union, Generator, Optional, Any
 from concurrent import futures
 from ssl import SSLError
 import warnings
@@ -57,6 +57,10 @@ try:
 except RuntimeError:
     LOOP = asyncio.new_event_loop()
 nest_asyncio.apply(LOOP)
+# TODO Replace coroutine with async def once Python 3.5 is dropped.
+# Also can upgrade to websocket 8 to avoid other deprecation warning.
+warnings.filterwarnings("ignore", category=DeprecationWarning,
+                        message="\"@coroutine\" decorator is deprecated")
 
 
 class WebsocketMessage(ABC):
@@ -147,7 +151,8 @@ class WebsocketClient(BaseClient):
         self.websocket_url = websocket_url.rstrip('/')
         self.access_token = access_token
 
-    async def _connect(self, url: str) -> WebSocketClientProtocol:
+    @asyncio.coroutine
+    def _connect(self, url: str) -> Generator[Any, None, WebSocketClientProtocol]:
         """Authenticate with the websocket server and return the connection.
 
         Returns:
@@ -164,7 +169,9 @@ class WebsocketClient(BaseClient):
         try:
             logger.debug('Starting new websocket connection: %s', url)
             with warnings.catch_warnings():
-                websocket = await connect(url)
+                # Suppress websockets deprecation warnings until the fix is available
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                websocket = yield from connect(url)
 
         # Isolate specific exceptions, so they are not retried in `get_job_status`.
         except (SSLError, InvalidURI) as ex:
@@ -182,19 +189,20 @@ class WebsocketClient(BaseClient):
             # Authenticate against the server.
             auth_request = self._authentication_message()
             with warnings.catch_warnings():
-                await websocket.send(auth_request.as_json())
+                # Suppress websockets deprecation warnings until the fix is available
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                yield from websocket.send(auth_request.as_json())
 
                 # Verify that the server acknowledged our authentication.
-                auth_response_raw = await websocket.recv()
+                auth_response_raw = yield from websocket.recv()
 
-            auth_response = WebsocketResponseMethod.from_bytes(
-                auth_response_raw)  # type: ignore[arg-type]
+            auth_response = WebsocketResponseMethod.from_bytes(auth_response_raw)
 
             if auth_response.type_ != 'authenticated':
                 raise WebsocketIBMQProtocolError('Failed to authenticate against the server: {}'
                                                  .format(auth_response.as_json()))
         except ConnectionClosed as ex:
-            await websocket.close()
+            yield from websocket.close()
             exception_to_raise = WebsocketAuthenticationError(
                 'Unexpected error occurred when authenticating against the server.')
 
@@ -204,14 +212,15 @@ class WebsocketClient(BaseClient):
 
         return websocket
 
-    async def get_job_status(
+    @asyncio.coroutine
+    def get_job_status(
             self,
             job_id: str,
             timeout: Optional[float] = None,
             retries: int = 5,
             backoff_factor: float = 0.5,
             status_queue: Optional[RefreshQueue] = None
-    ) -> Dict[str, str]:
+    ) -> Generator[Any, None, Dict[str, str]]:
         """Return the status of a job.
 
         Read status messages from the server, which are issued at regular
@@ -260,23 +269,24 @@ class WebsocketClient(BaseClient):
 
         while current_retry_attempt <= retries:
             try:
-                websocket = await self._connect(url)
+                websocket = yield from self._connect(url)
                 # Read messages from the server until the connection is closed or
                 # a timeout has been reached.
                 while True:
                     try:
                         with warnings.catch_warnings():
+                            # Suppress websockets deprecation warnings until the fix is available
+                            warnings.filterwarnings("ignore", category=DeprecationWarning)
                             if timeout:
-                                response_raw = await asyncio.wait_for(
+                                response_raw = yield from asyncio.wait_for(
                                     websocket.recv(), timeout=timeout)
 
                                 # Decrease the timeout.
                                 timeout = original_timeout - (time.time() - start_time)
                             else:
-                                response_raw = await websocket.recv()
+                                response_raw = yield from websocket.recv()
 
-                        response = WebsocketResponseMethod.from_bytes(
-                            response_raw)  # type: ignore[arg-type]
+                        response = WebsocketResponseMethod.from_bytes(response_raw)
                         if logger.getEffectiveLevel() is logging.DEBUG:
                             logger.debug('Received message from websocket: %s',
                                          filter_data(response.get_data()))
@@ -346,14 +356,16 @@ class WebsocketClient(BaseClient):
                 backoff_time = self._backoff_time(backoff_factor, current_retry_attempt)
                 logger.info('Retrying get_job_status via websocket after %s seconds: '
                             'Attempt #%s', backoff_time, current_retry_attempt)
-                await asyncio.sleep(backoff_time)  # Block asyncio loop for given backoff time.
+                yield from asyncio.sleep(backoff_time)  # Block asyncio loop for given backoff time.
 
                 continue  # Continues next iteration after `finally` block.
 
             finally:
                 with warnings.catch_warnings():
+                    # Suppress websockets deprecation warnings until the fix is available
+                    warnings.filterwarnings("ignore", category=DeprecationWarning)
                     if websocket is not None:
-                        await websocket.close()
+                        yield from websocket.close()
 
         # Execution should not reach here, sanity check.
         exception_message = 'Max retries exceeded: Failed to establish a websocket ' \

@@ -58,7 +58,7 @@ def requires_submit(func: Callable) -> Callable:
             return value of the decorated function.
         """
         futures = [managed_job.future for managed_job
-                   in job_set._managed_jobs if managed_job.future]  # type: ignore[unreachable]
+                   in job_set._managed_jobs if managed_job.future]
         wait(futures)
         return func(job_set, *args, **kwargs)
 
