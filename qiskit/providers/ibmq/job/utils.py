@@ -14,33 +14,11 @@
 
 """Utilities for working with IBM Quantum Experience jobs."""
 
-from typing import Dict, List, Generator, Any, Union
+from typing import Dict, List, Generator, Any
 from contextlib import contextmanager
 
-from qiskit.providers.jobstatus import JobStatus
-
-from ..apiconstants import ApiJobStatus
 from ..api.exceptions import ApiError
 from .exceptions import IBMQJobApiError
-
-
-API_TO_JOB_STATUS = {
-    ApiJobStatus.CREATING: JobStatus.INITIALIZING,
-    ApiJobStatus.CREATED: JobStatus.INITIALIZING,
-    ApiJobStatus.TRANSPILING: JobStatus.INITIALIZING,
-    ApiJobStatus.TRANSPILED: JobStatus.INITIALIZING,
-    ApiJobStatus.VALIDATING: JobStatus.VALIDATING,
-    ApiJobStatus.VALIDATED: JobStatus.VALIDATING,
-    ApiJobStatus.RUNNING: JobStatus.RUNNING,
-    ApiJobStatus.PENDING_IN_QUEUE: JobStatus.QUEUED,
-    ApiJobStatus.QUEUED: JobStatus.QUEUED,
-    ApiJobStatus.COMPLETED: JobStatus.DONE,
-    ApiJobStatus.CANCELLED: JobStatus.CANCELLED,
-    ApiJobStatus.ERROR_CREATING_JOB: JobStatus.ERROR,
-    ApiJobStatus.ERROR_VALIDATING_JOB: JobStatus.ERROR,
-    ApiJobStatus.ERROR_RUNNING_JOB: JobStatus.ERROR,
-    ApiJobStatus.ERROR_TRANSPILING_JOB: JobStatus.ERROR
-}
 
 
 def build_error_report(results: List[Dict[str, Any]]) -> str:
@@ -59,20 +37,6 @@ def build_error_report(results: List[Dict[str, Any]]) -> str:
 
     error_report = 'The following experiments failed:\n{}'.format('\n'.join(error_list))
     return error_report
-
-
-def api_status_to_job_status(api_status: Union[str, ApiJobStatus]) -> JobStatus:
-    """Return the corresponding job status for the input server job status.
-
-    Args:
-        api_status: Server job status.
-
-    Returns:
-        Job status.
-    """
-    if isinstance(api_status, str):
-        api_status = ApiJobStatus(api_status)
-    return API_TO_JOB_STATUS[api_status]
 
 
 def get_cancel_status(cancel_response: Dict[str, Any]) -> bool:
