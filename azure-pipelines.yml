@@ -13,6 +13,8 @@ jobs:
 #  condition: eq(variables['Build.Reason'], 'PullRequest')
   strategy:
     matrix:
+      Python35:
+        python.version: '3.5'
       Python36:
         python.version: '3.6'
       Python37:
@@ -42,8 +44,10 @@ jobs:
   condition: eq(variables['Build.Reason'], 'Schedule')
   strategy:
     matrix:
-      Python36:
-        python.version: '3.6'
+      Python35:
+        python.version: '3.5'
+#      Python36:
+#        python.version: '3.6'
 #      Python37:
 #        python.version: '3.7'
   steps:
