@@ -22,11 +22,9 @@ from .constants import ResultQuality
 from ..exceptions import IBMQInputValueError
 
 
-class DeviceComponent(NamedTuple):
-    """Named tuple representing a device component."""
-    backend_name: str
-    type: str
-    uuid: str
+# TODO Use variable annotation syntax when Python 3.5 support is dropped.
+DeviceComponent = NamedTuple('DeviceComponent', [('backend_name', str), ('type', str), ('uuid', str)])
+"""Named tuple representing a device component."""
 
 
 class Fit:
