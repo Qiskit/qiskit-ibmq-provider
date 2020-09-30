@@ -45,7 +45,7 @@ stage_linux: &stage_linux
   <<: *stage_generic
   os: linux
   language: python
-  python: 3.6
+  python: 3.5
 
 stage_osx: &stage_osx
   <<: *stage_generic
@@ -82,6 +82,9 @@ stage_win: &stage_win
     |
     export PATH="/c/Python${PYTHON_VERSION}:/c/Python${PYTHON_VERSION}/Scripts:${PATH}"
     case $PYTHON_VERSION in
+      35)
+        choco install python --version 3.5.4
+        ;;
       36)
         choco install python --version 3.6.5
         ;;
@@ -112,7 +115,7 @@ jobs:
   include:
     # "lint and and pure python test" stage
     ###########################################################################
-    # Linter and style check (GNU/Linux, Python 3.7)
+    # Linter and style check (GNU/Linux, Python 3.5)
     - stage: lint and pure python test
       <<: *stage_linux
       if: type != cron
@@ -126,7 +129,7 @@ jobs:
       if: type != cron
       script: make mypy
 
-    # Run the tests against without compilation (GNU/Linux, Python 3.6)
+    # Run the tests against without compilation (GNU/Linux, Python 3.5)
     - stage: lint and pure python test
       <<: *stage_linux
       if: type != cron
@@ -152,6 +155,14 @@ jobs:
       if: type != cron
       dist: xenial
       python: 3.8
+
+    # OSX, Python 3.5.6 (via pyenv)
+    - stage: test
+      <<: *stage_osx
+      if: type != cron
+      env:
+        - MPLBACKEND=ps
+        - PYTHON_VERSION=3.5.6
 
     # OSX, Python 3.6.5 (via pyenv)
     - stage: test
@@ -217,6 +228,11 @@ jobs:
       <<: *stage_win
       env:
         - PYTHON_VERSION=36
+    # Windows, Python 3.5
+    - if: type = cron
+      <<: *stage_win
+      env:
+        - PYTHON_VERSION=35
     - if: tag IS present
       language: python
       python: "3.6"

@@ -16,9 +16,14 @@
 
 import ipywidgets as wid
 
+from qiskit.providers.ibmq.utils.converters import duration_difference
+
 from ...visualization.interactive import iplot_gate_map
 from .provider_buttons import provider_buttons
 from .utils import BackendWithProviders
+from .constants import (RESERVATION_STR, RESERVATION_NONE, STAT_FONT_TITLE,
+                        STAT_FONT_VALUE, STAT_FONT_VALUE_COLOR)
+from ..utils import get_next_reservation
 
 
 def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
@@ -37,24 +42,26 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
     status = backend.status()
     config = backend.configuration()
     props = backend.properties().to_dict()
+    next_resrv = get_next_reservation(backend)
 
     name_str = "<font size='5' face='monospace'>%s</font>"
     backend_name = wid.HTML(value=name_str % backend.name())
 
-    qubits_wid = wid.HTML(value="<font size='3'>Qubits:</font>")
-    qubits_val_wid = wid.HTML(value="<font size='4' face='monospace'>%s</font>" % config.n_qubits)
+    qubits_wid = wid.HTML(value=STAT_FONT_TITLE.format("Qubits:"))
+    qubits_val_wid = wid.HTML(value=STAT_FONT_VALUE.format(config.n_qubits))
 
-    status_wid = wid.HTML(value="<font size='3'>Status:</font>")
+    status_wid = wid.HTML(value=STAT_FONT_TITLE.format("Status:"))
 
     color = '#000000'
-    if status.status_msg == 'active':
+    status_msg = status.status_msg
+    if status_msg == 'active':
         color = '#34BC6E'
-    if status.status_msg in ['maintenance', 'internal']:
+        if next_resrv:
+            status_msg += ' [R]'
+    if status_msg in ['maintenance', 'internal']:
         color = '#FFB000'
 
-    status_str = "<font size='4' style='color:{color}' face='monospace'>{msg}</font>"
-    status_val_wid = wid.HTML(value=status_str.format(color=color,
-                                                      msg=status.status_msg))
+    status_val_wid = wid.HTML(value=STAT_FONT_VALUE_COLOR.format(color=color, msg=status_msg))
 
     left_labels = wid.VBox(children=[qubits_wid, status_wid])
     left_values = wid.VBox(children=[qubits_val_wid, status_val_wid],
@@ -64,14 +71,12 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
                           layout=wid.Layout(width='175px')
                           )
 
-    version_wid = wid.HTML(value="<font size='3'>Version:</font>")
-    ver_str = "<font size='4' face='monospace'>%s</font>"
-    version_val_wid = wid.HTML(value=ver_str % config.backend_version,
+    version_wid = wid.HTML(value=STAT_FONT_TITLE.format("Version:"))
+    version_val_wid = wid.HTML(value=STAT_FONT_VALUE.format(config.backend_version),
                                layout=wid.Layout(margin="3px 0px 0px 0px"))
 
-    queue_wid = wid.HTML(value="<font size='3'>Queue:</font>")
-    queue_str = "<font size='4' face='monospace'>%s</font>"
-    queue_val_wid = wid.HTML(value=queue_str % status.pending_jobs,
+    queue_wid = wid.HTML(value=STAT_FONT_TITLE.format("Queue:"))
+    queue_val_wid = wid.HTML(value=STAT_FONT_VALUE.format(status.pending_jobs),
                              layout=wid.Layout(margin="5px 0px 0px 0px"))
 
     right_labels = wid.VBox(children=[version_wid, queue_wid])
@@ -83,13 +88,23 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
 
     stats = wid.HBox(children=[left_stats, right_stats])
 
-    providers_label = wid.HTML(value="<font size='3'>Providers:</font>")
+    # Backend reservation.
+    reservation_title = wid.HTML(value=STAT_FONT_TITLE.format("Reservation:"))
+    if next_resrv:
+        start_dt_str = duration_difference(next_resrv.start_datetime)
+        reservation_val = RESERVATION_STR.format(
+            start_dt=start_dt_str, duration=next_resrv.duration)
+    else:
+        reservation_val = RESERVATION_NONE
+    reservation_val_wid = wid.HTML(value=reservation_val)
+    reservation_wid = wid.HBox(children=[reservation_title, reservation_val_wid])
+
+    providers_label = wid.HTML(value=STAT_FONT_TITLE.format("Providers:"))
 
     providers_list = provider_buttons(backend_providers)
 
-    device_stats = wid.VBox(children=[backend_name, stats,
-                                      providers_label,
-                                      providers_list],
+    device_stats = wid.VBox(children=[backend_name, stats, reservation_wid,
+                                      providers_label, providers_list],
                             layout=wid.Layout(width='auto',
                                               margin="0px 20px 0px 0px"))
 
@@ -201,5 +216,9 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
                                      max_width='700px',
                                      border='1px solid #212121'))
 
+    # Attach information to the backend panel for later updates.
     out._backend = backend  # pylint: disable=protected-access
+    out._status_val_wid = status_val_wid
+    out._queue_val_wid = queue_val_wid
+    out._reservation_val_wid = reservation_val_wid
     return out
