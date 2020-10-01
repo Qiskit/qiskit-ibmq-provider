@@ -16,7 +16,7 @@
 
 import os
 import uuid
-from unittest import mock
+from unittest import mock, SkipTest
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -42,10 +42,14 @@ class TestExperiment(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.saved_environ = os.environ.get('USE_STAGING_CREDENTIALS')
-        os.environ['USE_STAGING_CREDENTIALS'] = 'true'
+        # os.environ['USE_STAGING_CREDENTIALS'] = 'true'
         cls.provider = cls._setup_provider()    # pylint: disable=no-value-for-parameter
-        cls.experiments = cls.provider.experiment.experiments()
-        cls.device_components = cls.provider.experiment.device_components()
+        try:
+            cls.experiments = cls.provider.experiment.experiments()
+            cls.device_components = cls.provider.experiment.device_components()
+        except Exception:
+            # TODO switch to IBMQNotAuthorizedError when API is fixed.
+            raise SkipTest("Not authorized to use experiment service.")
 
     @classmethod
     @requires_provider
