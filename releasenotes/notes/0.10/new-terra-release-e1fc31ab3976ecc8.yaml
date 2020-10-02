@@ -1,0 +1,6 @@
+---
+upgrade:
+  - |
+    ``qiskit-ibmq-provider`` release 0.10 requires ``qiskit-terra``
+    release 0.15 or above. The package metadata has been updated to reflect
+    the new dependency.

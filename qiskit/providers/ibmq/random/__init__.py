@@ -32,6 +32,10 @@ and a set of parameters for the extractor. See
 `qiskit_rng <https://github.com/qiskit-community/qiskit_rng>`_ for more
 details.
 
+.. note::
+
+  The CQC extractor service is not available to all accounts.
+
 Classes
 ==========================
 .. autosummary::
