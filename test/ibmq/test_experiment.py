@@ -85,7 +85,7 @@ class TestExperiment(IBMQTestCase):
                 self.log.info("Unable to delete experiment %s: %s", expr_uuid, err)
         super().tearDown()
 
-    def test_unathorized(self):
+    def test_unauthorized(self):
         """Test unauthorized access."""
         saved_experiment = self.provider._experiment
         try:
