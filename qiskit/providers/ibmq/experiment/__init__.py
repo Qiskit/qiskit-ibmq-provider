@@ -47,6 +47,7 @@ Classes
 .. autosummary::
     :toctree: ../stubs/
 
+    ExperimentService
     Experiment
     AnalysisResult
 """
