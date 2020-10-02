@@ -1,0 +1,8 @@
+---
+upgrade:
+    Starting from this release, the `basis_gates` returned by
+    :meth:`qiskit.providers.ibmq.IBMQBackend.configuration` may differ for
+    each backend. You should update your program if it relies on the
+    basis gates being ``['id','u1','u2','u3','cx']``. We recommend always
+    using the :meth:`~qiskit.providers.ibmq.IBMQBackend.configuration`
+    method to find backend configuration values instead of hard coding them.
