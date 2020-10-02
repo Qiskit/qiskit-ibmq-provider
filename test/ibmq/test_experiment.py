@@ -41,27 +41,23 @@ class TestExperiment(IBMQTestCase):
         """Initial class level setup."""
         # pylint: disable=arguments-differ
         super().setUpClass()
-        cls.saved_environ = os.environ.get('USE_STAGING_CREDENTIALS')
-        os.environ['USE_STAGING_CREDENTIALS'] = 'true'
-        cls.provider = cls._setup_provider()    # pylint: disable=no-value-for-parameter
+        saved_environ = os.environ.get('USE_STAGING_CREDENTIALS') or ""
         try:
+            os.environ['USE_STAGING_CREDENTIALS'] = 'true'
+            cls.provider = cls._setup_provider()    # pylint: disable=no-value-for-parameter
             cls.experiments = cls.provider.experiment.experiments()
             cls.device_components = cls.provider.experiment.device_components()
         except Exception:
             # TODO switch to IBMQNotAuthorizedError when API is fixed.
             raise SkipTest("Not authorized to use experiment service.")
+        finally:
+            os.environ['USE_STAGING_CREDENTIALS'] = saved_environ
 
     @classmethod
     @requires_provider
     def _setup_provider(cls, provider):
         """Get the provider for the class."""
         return provider
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        """Class level tear down."""
-        os.environ['USE_STAGING_CREDENTIALS'] = cls.saved_environ
-        super().tearDownClass()
 
     def setUp(self) -> None:
         """Test level setup."""
