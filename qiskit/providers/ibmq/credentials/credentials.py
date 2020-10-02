@@ -80,6 +80,7 @@ class Credentials:
         # Initialize additional service URLs.
         services = services or {}
         self.extractor_url = services.get('extractorsService', None)
+        self.experiment_url = services.get('resultsDB', None)
 
     def is_ibmq(self) -> bool:
         """Return whether the credentials represent an IBM Quantum Experience account."""

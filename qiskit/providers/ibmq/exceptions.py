@@ -84,3 +84,12 @@ class IBMQBackendValueError(IBMQBackendError, ValueError):
 class IBMQBackendJobLimitError(IBMQBackendError):
     """Errors raised when job limit is reached."""
     pass
+
+
+class IBMQInputValueError(IBMQError):
+    """Error raised due to invalid input value."""
+    pass
+
+
+class IBMQNotAuthorizedError(IBMQError):
+    """Error raised when a service is invoked from an unauthorized account."""

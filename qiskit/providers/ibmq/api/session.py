@@ -276,7 +276,9 @@ class RetrySession(Session):
             # Wrap the requests exceptions into a IBM Q custom one, for
             # compatibility.
             message = str(ex)
+            status_code = -1
             if ex.response is not None:
+                status_code = ex.response.status_code
                 try:
                     error_json = ex.response.json()['error']
                     message += ". {}, Error code: {}.".format(
@@ -291,7 +293,7 @@ class RetrySession(Session):
                 # Modify the original message on the chained exceptions.
                 self._modify_chained_exception_messages(ex)
 
-            raise RequestsApiError(message) from ex
+            raise RequestsApiError(message, status_code) from ex
 
         return response
 
