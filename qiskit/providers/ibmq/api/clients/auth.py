@@ -105,6 +105,7 @@ class AuthClient(BaseClient):
 
                 * ``http``: The API URL for HTTP communication.
                 * ``ws``: The API URL for websocket communication.
+                * ``services`: The API URL for additional services.
         """
         response = self.auth_api.user_info()
         return response['urls']

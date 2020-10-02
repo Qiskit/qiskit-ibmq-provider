@@ -148,8 +148,12 @@ def least_busy(
                 continue
             if reservation_lookahead and isinstance(back, IBMQBackend):
                 end_time = now + timedelta(minutes=reservation_lookahead)
-                if back.reservations(now, end_time):
-                    continue
+                try:
+                    if back.reservations(now, end_time):
+                        continue
+                except Exception as err:  # pylint: disable=broad-except
+                    logger.warning("Unable to find backend reservation information. "
+                                   "It will not be taken into consideration. %s", str(err))
             candidates.append(back)
         if not candidates:
             raise IBMQError('No backend matches the criteria.')

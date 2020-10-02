@@ -14,7 +14,7 @@
 
 """Utilities related to conversion."""
 
-from typing import Union, Tuple, Any
+from typing import Union, Tuple, Any, Optional
 from datetime import datetime, timedelta, timezone
 from math import ceil
 
@@ -47,7 +47,7 @@ def local_to_utc(local_dt: Union[datetime, str]) -> datetime:
     """Convert a local ``datetime`` object or string to a UTC ``datetime``.
 
     Args:
-        local_dt: Input local `datetime` or string.
+        local_dt: Input local ``datetime`` or string.
 
     Returns:
         A ``datetime`` in UTC.
@@ -65,6 +65,40 @@ def local_to_utc(local_dt: Union[datetime, str]) -> datetime:
         local_dt = local_dt.replace(tzinfo=tz.tzlocal())
         return local_dt.astimezone(tz.UTC)
     return local_dt  # Already in UTC.
+
+
+def local_to_utc_str(local_dt: Union[datetime, str], suffix: str = 'Z') -> str:
+    """Convert a local ``datetime`` object or string to a UTC string.
+
+    Args:
+        local_dt: Input local ``datetime`` or string.
+        suffix: ``Z`` or ``+``, indicating whether the suffix should be ``Z`` or
+            ``+00:00``.
+
+    Returns:
+        UTC datetime in ISO format.
+    """
+    utc_dt_str = local_to_utc(local_dt).isoformat()
+    if suffix == 'Z':
+        utc_dt_str = utc_dt_str.replace('+00:00', 'Z')
+    return utc_dt_str
+
+
+def convert_tz(input_dt: Optional[datetime], to_utc: bool) -> Optional[datetime]:
+    """Convert input timestamp timezone.
+
+    Args:
+        input_dt: Timestamp to be converted.
+        to_utc: True if to convert to UTC, otherwise to local timezone.
+
+    Returns:
+        Converted timestamp, or ``None`` if input is ``None``.
+    """
+    if input_dt is None:
+        return None
+    if to_utc:
+        return local_to_utc(input_dt)
+    return utc_to_local(input_dt)
 
 
 def utc_to_local_all(data: Any) -> Any:
@@ -86,6 +120,21 @@ def utc_to_local_all(data: Any) -> Any:
     elif isinstance(data, dict):
         return {key: utc_to_local_all(elem) for key, elem in data.items()}
     return data
+
+
+def str_to_utc(utc_dt: Optional[str]) -> Optional[datetime]:
+    """Convert a UTC string to a ``datetime`` object with UTC timezone.
+
+    Args:
+        utc_dt: Input UTC string in ISO format.
+
+    Returns:
+        A ``datetime`` with the UTC timezone, or ``None`` if the input is ``None``.
+    """
+    if not utc_dt:
+        return None
+    parsed_dt = dateutil.parser.isoparse(utc_dt)
+    return parsed_dt.replace(tzinfo=timezone.utc)
 
 
 def seconds_to_duration(seconds: float) -> Tuple[int, int, int, int, int]:
