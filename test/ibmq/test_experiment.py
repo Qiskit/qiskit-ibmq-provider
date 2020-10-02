@@ -41,7 +41,7 @@ class TestExperiment(IBMQTestCase):
         """Initial class level setup."""
         # pylint: disable=arguments-differ
         super().setUpClass()
-        saved_environ = os.environ.get('USE_STAGING_CREDENTIALS')
+        saved_environ = os.environ.get('USE_STAGING_CREDENTIALS') or ""
         try:
             os.environ['USE_STAGING_CREDENTIALS'] = 'true'
             cls.provider = cls._setup_provider()    # pylint: disable=no-value-for-parameter
