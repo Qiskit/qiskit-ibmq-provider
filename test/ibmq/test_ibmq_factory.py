@@ -225,7 +225,9 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
                                       group=non_default_provider.credentials.group,
                                       project=non_default_provider.credentials.project)
             saved_provider = self.factory.load_account()
-            self.assertEqual(saved_provider, non_default_provider)
+            self.assertEqual(saved_provider, non_default_provider,
+                             "loaded default provider ({}) != expected ({})".format(
+                                 saved_provider.__dict__, non_default_provider.__dict__))
 
         self.assertEqual(self.factory._credentials.token, qe_token)
         self.assertEqual(self.factory._credentials.url, qe_url)
