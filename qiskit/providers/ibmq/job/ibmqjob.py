@@ -566,8 +566,9 @@ class IBMQJob(BaseJob):
         :class:`QueueInfo` for more information.
 
         Note:
-            Even if the job is queued, some of its queue information may not
-            be immediately available.
+            The queue information is calculated after the job enters the queue.
+            Therefore, some or all of the information may not be immediately
+            available, and this method may return ``None``.
 
         Returns:
             A :class:`QueueInfo` instance that contains queue information for
