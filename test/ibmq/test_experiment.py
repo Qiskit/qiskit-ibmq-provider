@@ -47,8 +47,7 @@ class TestExperiment(IBMQTestCase):
             cls.provider = cls._setup_provider()    # pylint: disable=no-value-for-parameter
             cls.experiments = cls.provider.experiment.experiments()
             cls.device_components = cls.provider.experiment.device_components()
-        except Exception:
-            # TODO switch to IBMQNotAuthorizedError when API is fixed.
+        except IBMQNotAuthorizedError:
             raise SkipTest("Not authorized to use experiment service.")
         finally:
             os.environ['USE_STAGING_CREDENTIALS'] = saved_environ

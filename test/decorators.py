@@ -278,8 +278,13 @@ def _get_custom_provider(ibmq_factory: IBMQFactory) -> Optional[AccountProvider]
 def _enable_account(qe_token: str, qe_url: str) -> None:
     """Enable the account if one is not already active.
 
-    :param qe_token: API token.
-    :param qe_url: API URL.
+    Args:
+        qe_token: API token.
+        qe_url: API URL.
     """
-    if not IBMQ.active_account():
-        IBMQ.enable_account(qe_token, qe_url)
+    active_account = IBMQ.active_account()
+    if active_account:
+        if active_account.get('token', '') == qe_token:
+            return
+        IBMQ.disable_account()
+    IBMQ.enable_account(qe_token, qe_url)
