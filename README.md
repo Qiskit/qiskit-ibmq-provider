@@ -46,6 +46,10 @@ Once the package is installed, you can access the provider from Qiskit.
    from qiskit import IBMQ
    IBMQ.save_account('MY_API_TOKEN')
    ```
+   
+   The command above stores your credentials locally in a configuration file called `qiskitrc`. 
+   By default, this file is located in `$HOME/.qiskit`, where `$HOME` is your home directory. If 
+   you are still using `Qconfig.py`, please delete that file and run the command above.  
 
 ### Accessing your IBM Quantum Experience backends
 

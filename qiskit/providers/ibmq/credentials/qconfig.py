@@ -43,10 +43,11 @@ def read_credentials_from_qconfig() -> Dict[HubGroupProject, Credentials]:
     if not os.path.isfile(DEFAULT_QCONFIG_FILE):
         return OrderedDict()
     else:
-        # TODO: remove in 0.9.
+        # TODO: remove after 11/06/2020.
         warnings.warn(
             "Using 'Qconfig.py' for storing credentials is deprecated and will "
-            "be removed in the next release. Please use .qiskitrc instead.",
+            "be removed in the near future. Please use qiskitrc instead. "
+            "See README for more information.",
             category=DeprecationWarning, stacklevel=4)
 
     try:
