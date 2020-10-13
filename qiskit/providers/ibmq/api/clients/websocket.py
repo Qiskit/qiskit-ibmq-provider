@@ -23,7 +23,6 @@ from abc import ABC, abstractmethod
 from typing import Dict, Union, Optional, Any
 from concurrent import futures
 from ssl import SSLError
-import warnings
 
 import nest_asyncio
 from websockets import connect, ConnectionClosed
