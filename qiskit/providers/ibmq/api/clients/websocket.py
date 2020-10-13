@@ -163,8 +163,7 @@ class WebsocketClient(BaseClient):
         """
         try:
             logger.debug('Starting new websocket connection: %s', url)
-            with warnings.catch_warnings():
-                websocket = await connect(url)
+            websocket = await connect(url)
 
         # Isolate specific exceptions, so they are not retried in `get_job_status`.
         except (SSLError, InvalidURI) as ex:
@@ -181,11 +180,10 @@ class WebsocketClient(BaseClient):
         try:
             # Authenticate against the server.
             auth_request = self._authentication_message()
-            with warnings.catch_warnings():
-                await websocket.send(auth_request.as_json())
+            await websocket.send(auth_request.as_json())
 
-                # Verify that the server acknowledged our authentication.
-                auth_response_raw = await websocket.recv()
+            # Verify that the server acknowledged our authentication.
+            auth_response_raw = await websocket.recv()
 
             auth_response = WebsocketResponseMethod.from_bytes(
                 auth_response_raw)  # type: ignore[arg-type]
@@ -265,15 +263,14 @@ class WebsocketClient(BaseClient):
                 # a timeout has been reached.
                 while True:
                     try:
-                        with warnings.catch_warnings():
-                            if timeout:
-                                response_raw = await asyncio.wait_for(
-                                    websocket.recv(), timeout=timeout)
+                        if timeout:
+                            response_raw = await asyncio.wait_for(
+                                websocket.recv(), timeout=timeout)
 
-                                # Decrease the timeout.
-                                timeout = original_timeout - (time.time() - start_time)
-                            else:
-                                response_raw = await websocket.recv()
+                            # Decrease the timeout.
+                            timeout = original_timeout - (time.time() - start_time)
+                        else:
+                            response_raw = await websocket.recv()
 
                         response = WebsocketResponseMethod.from_bytes(
                             response_raw)  # type: ignore[arg-type]
@@ -351,9 +348,8 @@ class WebsocketClient(BaseClient):
                 continue  # Continues next iteration after `finally` block.
 
             finally:
-                with warnings.catch_warnings():
-                    if websocket is not None:
-                        await websocket.close()
+                if websocket is not None:
+                    await websocket.close()
 
         # Execution should not reach here, sanity check.
         exception_message = 'Max retries exceeded: Failed to establish a websocket ' \
