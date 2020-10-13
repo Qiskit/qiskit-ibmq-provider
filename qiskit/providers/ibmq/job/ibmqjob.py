@@ -97,7 +97,7 @@ class IBMQJob(BaseJob):
     which is a supported attribute.
     """
 
-    _data = {}
+    _data = {}  # type: Dict
 
     _executor = futures.ThreadPoolExecutor()
     """Threads used for asynchronous processing."""
@@ -890,7 +890,7 @@ class IBMQJob(BaseJob):
 
         return self._status in required_status
 
-    def _retrieve_result(self, refresh: bool = False):
+    def _retrieve_result(self, refresh: bool = False) -> None:
         """Retrieve the job result response.
 
         Args:

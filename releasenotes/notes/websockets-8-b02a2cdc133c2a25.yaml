@@ -1,0 +1,6 @@
+---
+upgrade:
+  - |
+    Prior to this release, ``websockets`` 7.0 was used for Python 3.6.
+    With this release, ``websockets`` 8.0 or above is required for all Python versions.
+    The package requirements have been updated to reflect this.

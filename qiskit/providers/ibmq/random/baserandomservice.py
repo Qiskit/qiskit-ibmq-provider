@@ -15,7 +15,7 @@
 """Module for interfacing with a remote extractor."""
 
 import logging
-from typing import List
+from typing import List, Any
 from abc import ABC, abstractmethod
 
 
@@ -49,6 +49,6 @@ class BaseRandomService(ABC):
         self.methods = methods
 
     @abstractmethod
-    def run(self, *args, **kwargs):
+    def run(self, *args: Any, **kwargs: Any) -> Any:
         """Execute the service."""
         pass

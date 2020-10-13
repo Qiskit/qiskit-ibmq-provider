@@ -14,7 +14,7 @@
 
 """Queue information for a job."""
 
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Dict
 from datetime import datetime
 import warnings
 
@@ -27,7 +27,7 @@ from ..utils.utils import api_status_to_job_status
 class QueueInfo:
     """Queue information for a job."""
 
-    _data = {}
+    _data = {}  # type: Dict
 
     def __init__(
             self,
