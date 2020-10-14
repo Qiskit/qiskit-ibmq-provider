@@ -47,7 +47,7 @@ class CQCExtractor(BaseRandomService):
     output of extractor 1 as its seed, so it must wait for extractor 1 to finish first.
     """
 
-    def run(
+    def run(  # type: ignore[override]
             self,
             ext1_input_num_bits: int,
             ext1_output_num_bits: int,
@@ -55,7 +55,8 @@ class CQCExtractor(BaseRandomService):
             ext1_wsr_bytes: bytes,
             ext2_seed_num_bits: int,
             ext2_wsr_multiplier: int,
-            ext2_wsr_generator: Optional[Callable] = None) -> List[int]:
+            ext2_wsr_generator: Optional[Callable] = None
+    ) -> List[int]:
         """Process input data synchronously.
 
         Args:
@@ -158,7 +159,7 @@ class CQCExtractor(BaseRandomService):
                              "ext2_wsr_multiplier must be non-zero.")
 
         logger.info("Starting second extraction.")
-        ext2_seed = bitarray_to_bytes(ext2_seed[:ext2_seed_num_bits])
+        ext2_seed = bitarray_to_bytes(ext2_seed[:ext2_seed_num_bits])  # type: ignore[assignment]
         if ext2_wsr_generator is None:
             ext2_wsr_generator = generate_wsr
         ext2_wsr = ext2_wsr_generator(ext2_seed_num_bits*ext2_wsr_multiplier)
@@ -186,7 +187,7 @@ class CQCExtractor(BaseRandomService):
         """
         return CQCExtractorJob(job_id, self._client)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<{}('{}') from {}>".format(self.__class__.__name__,
                                            self.name,
                                            self._provider)

@@ -21,7 +21,8 @@ import copy
 from typing import Dict, List, Callable, Optional, Any, Union
 from datetime import datetime
 
-from qiskit.providers import JobStatus, QiskitBackendNotFoundError  # type: ignore[attr-defined]
+from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.providerutils import filter_backends
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
@@ -359,13 +360,13 @@ class IBMQBackendService:
                 lt_list.append(cur_dt_filter.pop('between')[1])
             lte_dt = min(lt_list) if lt_list else None
 
-        new_dt_filter = {}
+        new_dt_filter = {}  # type: Dict[str, Union[str, List[str]]]
         if gte_dt and lte_dt:
             new_dt_filter['between'] = [gte_dt, lte_dt]
         elif gte_dt:
-            new_dt_filter['gte'] = gte_dt  # type: ignore[assignment]
+            new_dt_filter['gte'] = gte_dt
         elif lte_dt:
-            new_dt_filter['lte'] = lte_dt  # type: ignore[assignment]
+            new_dt_filter['lte'] = lte_dt
 
         return new_dt_filter
 
@@ -431,7 +432,7 @@ class IBMQBackendService:
         elif status == JobStatus.DONE:
             _status_filter = {'status': ApiJobStatus.COMPLETED.value}
         elif status == JobStatus.ERROR:
-            _status_filter = {'status': {'regexp': '^ERROR'}}  # type: ignore[assignment]
+            _status_filter = {'status': {'regexp': '^ERROR'}}
         else:
             raise IBMQBackendValueError(
                 '"{}" is not a valid status value. Valid values are {}'.format(

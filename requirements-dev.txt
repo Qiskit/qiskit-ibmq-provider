@@ -3,9 +3,8 @@ pycodestyle
 pylint>=2.4
 pylintfileheader>=0.0.2
 vcrpy
-pproxy==1.2.2; python_version <= '3.5'
-pproxy==2.1.8; python_version > '3.5'
-Sphinx>=1.8.3,<3.1.0
+pproxy==2.1.8
+Sphinx>=1.8.3
 sphinx-rtd-theme>=0.4.0
 sphinx-tabs>=1.1.11 
 sphinx-automodapi
@@ -22,4 +21,4 @@ reno>=2.11.0
 scipy>=1.0
 nbformat>=4.4.0
 nbconvert>=5.3.1
-qiskit_rng;python_version >= '3.6'
+qiskit_rng
