@@ -1,0 +1,7 @@
+---
+upgrade:
+  - |
+    The deprecated support for running qiskit-ibmq-provider with Python 3.5 has
+    been removed. To use qiskit-ibmq-provider >=0.11.0 you will now need at
+    least Python 3.6. If you are using Python 3.5 the last version which will
+    work is qiskit-ibmq-provider 0.10.x.

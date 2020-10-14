@@ -19,8 +19,7 @@ import logging
 import time
 
 from typing import List, Dict, Any, Optional, Union
-# Disabled unused-import because datetime is used only for type hints.
-from datetime import datetime  # pylint: disable=unused-import
+from datetime import datetime
 
 from qiskit.providers.ibmq.apiconstants import (API_JOB_FINAL_STATES, ApiJobStatus,
                                                 ApiJobShareLevel)

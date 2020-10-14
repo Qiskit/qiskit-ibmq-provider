@@ -14,7 +14,7 @@
 
 """Client for accessing IBM Quantum Experience authentication services."""
 
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
 from requests.exceptions import RequestException
 
 from ..exceptions import AuthenticationLicenseError, RequestsApiError
@@ -141,7 +141,7 @@ class AuthClient(BaseClient):
 
     # Miscellaneous public functions.
 
-    def api_version(self) -> Dict[str, str]:
+    def api_version(self) -> Dict[str, Union[str, bool]]:
         """Return the version of the API.
 
         Returns:
