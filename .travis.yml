@@ -114,9 +114,11 @@ jobs:
     ###########################################################################
     # Linter and style check (GNU/Linux, Python 3.7)
     - stage: lint and pure python test
-      <<: *stage_linux
+      <<: *stage_osx
       if: type != cron
-      python: 3.6.5
+      env:
+        - MPLBACKEND=ps
+        - PYTHON_VERSION=3.6.5
       script: make style && make lint
 
     # Type checking using mypy
@@ -133,12 +135,6 @@ jobs:
 
     # "test" stage
     ###########################################################################
-
-    # GNU/Linux, Python 3.6
-    - stage: test
-      <<: *stage_linux
-      if: type != cron
-      python: 3.6
 
     # GNU/Linux, Python 3.7
     - stage: test
