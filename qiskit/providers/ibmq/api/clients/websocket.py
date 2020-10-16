@@ -42,7 +42,6 @@ logger = logging.getLogger(__name__)
 
 # WindowsProactorEventLoopPolicy raises an exception in tornado (used by Jupyter)
 # and causes a hang with websockets.
-# pylint: disable=no-member
 if sys.platform.startswith('win') and sys.version_info[:3] >= (3, 8, 0) and \
         isinstance(asyncio.get_event_loop_policy(), asyncio.WindowsProactorEventLoopPolicy):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
