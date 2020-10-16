@@ -116,7 +116,7 @@ jobs:
     - stage: lint and pure python test
       <<: *stage_linux
       if: type != cron
-      python: 3.6
+      python: 3.6.5
       script: make style && make lint
 
     # Type checking using mypy
