@@ -88,7 +88,7 @@ setup(
     extras_require={'visualization': ['matplotlib>=2.1', 'ipywidgets>=7.3.0',
                                       "seaborn>=0.9.0", "plotly>=4.4",
                                       "ipyvuetify>=1.1", "pyperclip>=1.7",
-                                      "ipython>=5.0.0"]},
+                                      "ipython>=5.0.0", "traitlets!=5.0.5"]},
     project_urls={
         "Bug Tracker": "https://github.com/Qiskit/qiskit-ibmq-provider/issues",
         "Documentation": "https://qiskit.org/documentation/",

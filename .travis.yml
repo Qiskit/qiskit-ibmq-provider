@@ -134,12 +134,6 @@ jobs:
     # "test" stage
     ###########################################################################
 
-    # GNU/Linux, Python 3.6
-    - stage: test
-      <<: *stage_linux
-      if: type != cron
-      python: 3.6
-
     # GNU/Linux, Python 3.7
     - stage: test
       <<: *stage_linux
