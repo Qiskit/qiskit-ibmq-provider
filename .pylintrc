@@ -75,7 +75,9 @@ disable=no-self-use,        # disabled as it is too verbose
     missing-yield-doc,      # in coroutines, these checks can yield false
     missing-yield-type-doc,  # positives (pun intended)
     import-outside-toplevel,
-    docstring-first-line-empty
+    docstring-first-line-empty,
+    no-name-in-module,  # remove when pylint behaves
+    import-error    # remove when pylint behaves
 
 
 [REPORTS]
