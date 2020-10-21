@@ -309,7 +309,7 @@ class IBMQBackend(BaseBackend):
     def defaults(self, refresh: bool = False) -> Optional[PulseDefaults]:
         """Return the pulse defaults for the backend.
 
-        The schema for backend pulse defaults can be found in
+        The schema for backend pulse     defaults can be found in
         `Qiskit/ibm-quantum-schemas <https://github.com/Qiskit/ibm-quantum-schemas>`_.
 
         Args:
@@ -548,16 +548,16 @@ class IBMQBackend(BaseBackend):
             self.name(), start_datetime, end_datetime)
         return convert_reservation_data(raw_response, self.name())
 
-    def configuration(self):
+    def configuration(self) -> Union[QasmBackendConfiguration, PulseBackendConfiguration]:
         """Return the backend configuration.
 
         The schema for backend configuration can be found in
         `Qiskit/ibm-quantum-schemas <https://github.com/Qiskit/ibm-quantum-schemas>`_.
 
         Returns:
-            BackendConfiguration: the configuration for the backend.
+            The configuration for the backend.
         """
-        return super().configuration()
+        return self._configuration
 
     def __repr__(self) -> str:
         credentials_info = ''
