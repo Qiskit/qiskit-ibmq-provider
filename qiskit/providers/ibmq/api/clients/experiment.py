@@ -64,8 +64,9 @@ class ExperimentClient(BaseClient):
         Returns:
             A list of experiments.
         """
-        return self.base_api.experiments(
+        resp = self.base_api.experiments(
             backend_name, experiment_type, start_time, device_components, tags)
+        return resp['experiments']
 
     def experiment_get(self, experiment_id: str) -> Dict:
         """Get a specific experiment.
@@ -175,7 +176,7 @@ class ExperimentClient(BaseClient):
         Returns:
             A list of experiment devices.
         """
-        return self.base_api.experiment_devices()
+        return self.base_api.experiment_devices()['devices']
 
     def analysis_results(
             self,
@@ -197,8 +198,9 @@ class ExperimentClient(BaseClient):
         Returns:
             A list of analysis results.
         """
-        return self.base_api.analysis_results(
+        resp = self.base_api.analysis_results(
             backend_name, device_components, experiment_uuid, result_type, quality)
+        return resp['analysis_results']
 
     def analysis_result_upload(self, result: Dict) -> Dict:
         """Upload an analysis result.
@@ -254,4 +256,5 @@ class ExperimentClient(BaseClient):
         Returns:
             A list of device components.
         """
-        return self.base_api.device_components(backend_name)
+        resp = self.base_api.device_components(backend_name)
+        return resp['device_components']
