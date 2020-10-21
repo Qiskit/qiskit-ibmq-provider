@@ -247,6 +247,9 @@ class IBMQBackend(BaseBackend):
     ) -> Optional[BackendProperties]:
         """Return the backend properties, subject to optional filtering.
 
+        The schema for backend properties can be found in
+        `Qiskit/ibm-quantum-schemas <https://github.com/Qiskit/ibm-quantum-schemas>`_.
+
         Args:
             refresh: If ``True``, re-query the server for the backend properties.
                 Otherwise, return a cached version.
@@ -305,6 +308,9 @@ class IBMQBackend(BaseBackend):
 
     def defaults(self, refresh: bool = False) -> Optional[PulseDefaults]:
         """Return the pulse defaults for the backend.
+
+        The schema for backend pulse defaults can be found in
+        `Qiskit/ibm-quantum-schemas <https://github.com/Qiskit/ibm-quantum-schemas>`_.
 
         Args:
             refresh: If ``True``, re-query the server for the backend pulse defaults.
@@ -541,6 +547,17 @@ class IBMQBackend(BaseBackend):
         raw_response = self._api_client.backend_reservations(
             self.name(), start_datetime, end_datetime)
         return convert_reservation_data(raw_response, self.name())
+
+    def configuration(self):
+        """Return the backend configuration.
+
+        The schema for backend configuration can be found in
+        `Qiskit/ibm-quantum-schemas <https://github.com/Qiskit/ibm-quantum-schemas>`_.
+
+        Returns:
+            BackendConfiguration: the configuration for the backend.
+        """
+        return super().configuration()
 
     def __repr__(self) -> str:
         credentials_info = ''
