@@ -46,6 +46,7 @@ from .utils.json_decoder import decode_pulse_defaults, decode_backend_properties
 from .utils.backend import convert_reservation_data
 from .utils.utils import api_status_to_job_status
 
+
 logger = logging.getLogger(__name__)
 
 

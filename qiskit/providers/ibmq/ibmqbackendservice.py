@@ -36,6 +36,8 @@ from .utils.utils import to_python_identifier, validate_job_tags, filter_data
 from .utils.converters import local_to_utc
 from .utils.backend import convert_reservation_data
 
+from .collections.backend import BackendCollection
+
 logger = logging.getLogger(__name__)
 
 
@@ -120,7 +122,7 @@ class IBMQBackendService:
             name = aliases.get(name, name)
             kwargs['backend_name'] = name
 
-        return filter_backends(backends, filters=filters, **kwargs)
+        return BackendCollection(filter_backends(backends, filters=filters, **kwargs))
 
     def jobs(
             self,
