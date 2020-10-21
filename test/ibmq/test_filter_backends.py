@@ -75,6 +75,25 @@ class TestBackendFilters(IBMQTestCase):
                 self.assertFalse(backend.configuration().simulator)
                 self.assertGreaterEqual(backend.configuration().n_qubits, 5)
 
+    def test_filter_collection(self):
+        """Test filtering by using BackendCollection configuration properties."""
+        filtered_backends = self.provider.backends().real.num_qubits >= 5
+
+        self.assertTrue(filtered_backends)
+        for backend in filtered_backends[:5]:
+            with self.subTest(backend=backend):
+                self.assertFalse(backend.configuration().simulator)
+                self.assertGreaterEqual(backend.configuration().n_qubits, 5)
+
+    def test_filter_collection2(self):
+        """Test filtering (#2) by using BackendCollection configuration properties."""
+        filtered_backends = self.provider.backends().quantum_volume > 16
+
+        self.assertTrue(filtered_backends)
+        for backend in filtered_backends:
+            with self.subTest(backend=backend):
+                self.assertGreater(backend.configuration().quantum_volume, 16)
+
     def test_filter_least_busy(self):
         """Test filtering by least busy function."""
         backends = self.provider.backends()
