@@ -13,8 +13,6 @@ assignees: ''
 ### Information
 
 - **Qiskit IBMQ Provider version**:
-- **API URL or version**:
-
 - **Python version**:
 - **Operating system**:
 
