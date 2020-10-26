@@ -214,6 +214,8 @@ class TestExperiment(IBMQTestCase):
         )
         self.provider.experiment.upload_experiment(new_exp)
         self.experiments_to_delete.append(new_exp.uuid)
+        # TODO: assert the experiment has the expected hub_id/group_id/project_id
+        # once those are returned from the server
         self.assertTrue(new_exp.uuid)
         self.assertTrue(new_exp.creation_datetime)
         for dt_attr in ['start_datetime', 'creation_datetime', 'end_datetime', 'updated_datetime']:

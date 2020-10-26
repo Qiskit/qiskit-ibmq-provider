@@ -95,6 +95,7 @@ class Experiment:
         self._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
         self._uuid = remote_data['uuid']
         self._plot_names = remote_data.get('plot_names', [])
+        # Should we set hub_id/group_id/project_id in here?
 
     @requires_experiment_uuid
     def refresh(self) -> None:
