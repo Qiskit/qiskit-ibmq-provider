@@ -247,6 +247,14 @@ class IBMQBackend(BaseBackend):
     ) -> Optional[BackendProperties]:
         """Return the backend properties, subject to optional filtering.
 
+        This data describes qubits properties (such as T1 and T2),
+        gates properties (such as gate length and error), and other general
+        properties of the backend.
+
+        The schema for backend properties can be found in
+        `Qiskit/ibm-quantum-schemas
+        <https://github.com/Qiskit/ibm-quantum-schemas/blob/main/schemas/backend_properties_schema.json>`_.
+
         Args:
             refresh: If ``True``, re-query the server for the backend properties.
                 Otherwise, return a cached version.
@@ -305,6 +313,10 @@ class IBMQBackend(BaseBackend):
 
     def defaults(self, refresh: bool = False) -> Optional[PulseDefaults]:
         """Return the pulse defaults for the backend.
+
+        The schema for default pulse configuration can be found in
+        `Qiskit/ibm-quantum-schemas
+        <https://github.com/Qiskit/ibm-quantum-schemas/blob/main/schemas/default_pulse_configuration_schema.json>`_.
 
         Args:
             refresh: If ``True``, re-query the server for the backend pulse defaults.
@@ -541,6 +553,21 @@ class IBMQBackend(BaseBackend):
         raw_response = self._api_client.backend_reservations(
             self.name(), start_datetime, end_datetime)
         return convert_reservation_data(raw_response, self.name())
+
+    def configuration(self) -> Union[QasmBackendConfiguration, PulseBackendConfiguration]:
+        """Return the backend configuration.
+
+        Backend configuration contains fixed information about the backend, such
+        as its name, number of qubits, basis gates, coupling map, quantum volume, etc.
+
+        The schema for backend configuration can be found in
+        `Qiskit/ibm-quantum-schemas
+        <https://github.com/Qiskit/ibm-quantum-schemas/blob/main/schemas/backend_configuration_schema.json>`_.
+
+        Returns:
+            The configuration for the backend.
+        """
+        return self._configuration
 
     def __repr__(self) -> str:
         credentials_info = ''
