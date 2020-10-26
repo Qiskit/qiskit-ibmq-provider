@@ -155,7 +155,7 @@ class Api(RestAdapterBase):
             start_time: Optional[List] = None,
             device_components: Optional[List[str]] = None,
             tags: Optional[List[str]] = None
-    ) -> List:
+    ) -> Dict:
         """Return experiment data.
 
         Args:
@@ -182,7 +182,7 @@ class Api(RestAdapterBase):
             params['tags'] = tags
         return self.session.get(url, params=params).json()
 
-    def experiment_devices(self) -> List:
+    def experiment_devices(self) -> Dict:
         """Return experiment devices.
 
         Returns:
@@ -212,7 +212,7 @@ class Api(RestAdapterBase):
             experiment_uuid: Optional[str] = None,
             result_type: Optional[str] = None,
             quality: Optional[List[str]] = None
-    ) -> List:
+    ) -> Dict:
         """Return all analysis results.
 
         Args:
@@ -251,7 +251,7 @@ class Api(RestAdapterBase):
         url = self.get_url('analysis_results')
         return self.session.post(url, json=result).json()
 
-    def device_components(self, backend_name: Optional[str] = None) -> List[Dict]:
+    def device_components(self, backend_name: Optional[str] = None) -> Dict:
         """Return a list of device components for the backend.
 
         Args:
