@@ -73,6 +73,9 @@ class Experiment:
         self._analysis_results = analysis_results
         self._plot_names = plot_names or []
         self._retrieved_plots = False
+        self._hub = provider.credentials.hub
+        self._group = provider.credentials.group
+        self._project = provider.credentials.project
 
         self._creation_datetime = None
         self._updated_datetime = None
@@ -111,6 +114,21 @@ class Experiment:
     def uuid(self) -> str:
         """Return the experiment's uuid."""
         return self._uuid
+
+    @property
+    def hub(self) -> str:
+        """Return the experiment's hub."""
+        return self._hub
+
+    @property
+    def group(self) -> str:
+        """Return the experiment's group."""
+        return self._group
+
+    @property
+    def project(self) -> str:
+        """Return the experiment's project."""
+        return self._project
 
     @property
     def start_datetime(self) -> datetime:

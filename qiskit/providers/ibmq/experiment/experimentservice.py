@@ -166,16 +166,13 @@ class ExperimentService:
         Args:
             experiment: The experiment to upload.
         """
-        credentials = self._provider.credentials
         data = {
             'device_name': experiment.backend_name,
             'type': experiment.type,
             'extra': experiment.extra,
-            # Should we get hub_id/group_id/project_id from the Experiment
-            # object or the credentials on the provider?
-            'hub_id': credentials.hub,
-            'group_id': credentials.group,
-            'project_id': credentials.project,
+            'hub_id': experiment.hub,
+            'group_id': experiment.group,
+            'project_id': experiment.project,
         }
         if experiment.start_datetime:
             data['start_time'] = local_to_utc_str(experiment.start_datetime)
