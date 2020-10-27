@@ -34,7 +34,6 @@ from ..utils import get_provider
 
 API_URL = 'https://api.quantum-computing.ibm.com/api'
 AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
-API1_URL = 'https://quantumexperience.ng.bluemix.net/api'
 
 
 class TestIBMQFactoryEnableAccount(IBMQTestCase):
@@ -50,16 +49,6 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
         """Test login into an auth account."""
         provider = self.factory.enable_account(qe_token, qe_url)
         self.assertIsInstance(provider, AccountProvider)
-
-    def test_old_api_url(self):
-        """Test login into an API v1 auth account."""
-        qe_token = 'invalid'
-        qe_url = API1_URL
-
-        with self.assertRaises(IBMQAccountCredentialsInvalidUrl) as context_manager:
-            self.factory.enable_account(qe_token, qe_url)
-
-        self.assertIn('authentication URL', str(context_manager.exception))
 
     def test_non_auth_url(self):
         """Test login into a non-auth account."""
@@ -88,18 +77,6 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
 
         with self.assertRaises(IBMQAccountError) as context_manager:
             self.factory.enable_account(qe_token, qe_url)
-
-        self.assertIn('already', str(context_manager.exception))
-
-    @requires_qe_access
-    def test_enable_twice_invalid(self, qe_token, qe_url):
-        """Test login into an invalid account during an already logged-in account."""
-        self.factory.enable_account(qe_token, qe_url)
-
-        with self.assertRaises(IBMQAccountError) as context_manager:
-            qe_token_api1 = 'invalid'
-            qe_url_api1 = API1_URL
-            self.factory.enable_account(qe_token_api1, qe_url_api1)
 
         self.assertIn('already', str(context_manager.exception))
 
