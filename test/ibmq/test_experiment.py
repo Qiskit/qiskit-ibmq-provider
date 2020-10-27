@@ -16,7 +16,7 @@
 
 import os
 import uuid
-from unittest import mock, SkipTest
+from unittest import mock, SkipTest, skipIf
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -33,6 +33,7 @@ from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
 
 
+@skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
 class TestExperiment(IBMQTestCase):
     """Test experiment modules."""
 
@@ -41,16 +42,12 @@ class TestExperiment(IBMQTestCase):
         """Initial class level setup."""
         # pylint: disable=arguments-differ
         super().setUpClass()
-        saved_environ = os.environ.get('USE_STAGING_CREDENTIALS') or ""
         try:
-            os.environ['USE_STAGING_CREDENTIALS'] = 'true'
             cls.provider = cls._setup_provider()    # pylint: disable=no-value-for-parameter
             cls.experiments = cls.provider.experiment.experiments()
             cls.device_components = cls.provider.experiment.device_components()
         except Exception:
             raise SkipTest("Not authorized to use experiment service.")
-        finally:
-            os.environ['USE_STAGING_CREDENTIALS'] = saved_environ
 
     @classmethod
     @requires_provider
