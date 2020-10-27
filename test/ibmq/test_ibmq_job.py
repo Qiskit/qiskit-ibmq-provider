@@ -632,8 +632,8 @@ class TestIBMQJob(JobTestCase):
                 thread.join(0.1)
             cancel_job(job)
 
-    def test_job_upload_fail(self):
-        """Test job upload fails."""
+    def test_job_submit_partial_fail(self):
+        """Test job submit partial fail."""
         qobj = bell_in_qobj(backend=self.sim_backend)
         job_id = []
 
@@ -642,32 +642,16 @@ class TestIBMQJob(JobTestCase):
             job_id.append(self.job_id)
             raise RequestsApiError('Kaboom')
 
-        with mock.patch.object(RestJob, 'put_object_storage',
-                               side_effect=_side_effect, autospec=True):
-            with self.assertRaises(IBMQBackendApiError):
-                self.sim_backend.run(qobj)
+        fail_points = ['put_object_storage', 'callback_upload']
 
-        self.assertTrue(job_id, "Job ID not saved.")
-        job = self.sim_backend.retrieve_job(job_id[0])
-        self.assertEqual(job.status(), JobStatus.CANCELLED,
-                         f"Job {job.job_id()} status is {job.status()} and not cancelled!")
+        for fail_method in fail_points:
+            with self.subTest(fail_method=fail_method):
+                with mock.patch.object(RestJob, fail_method,
+                                       side_effect=_side_effect, autospec=True):
+                    with self.assertRaises(IBMQBackendApiError):
+                        self.sim_backend.run(qobj)
 
-    def test_job_ack_fail(self):
-        """Test job upload ack fails."""
-        qobj = bell_in_qobj(backend=self.sim_backend)
-        job_id = []
-
-        def _side_effect(self, *args, **kwargs):
-            # pylint: disable=unused-argument
-            job_id.append(self.job_id)
-            raise RequestsApiError('Kaboom')
-
-        with mock.patch.object(RestJob, 'callback_upload',
-                               side_effect=_side_effect, autospec=True):
-            with self.assertRaises(IBMQBackendApiError):
-                self.sim_backend.run(qobj)
-
-        self.assertTrue(job_id, "Job ID not saved.")
-        job = self.sim_backend.retrieve_job(job_id[0])
-        self.assertEqual(job.status(), JobStatus.CANCELLED,
-                         f"Job {job.job_id()} status is {job.status()} and not cancelled!")
+                self.assertTrue(job_id, "Job ID not saved.")
+                job = self.sim_backend.retrieve_job(job_id[0])
+                self.assertEqual(job.status(), JobStatus.CANCELLED,
+                                 f"Job {job.job_id()} status is {job.status()} and not cancelled!")
