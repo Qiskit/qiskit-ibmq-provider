@@ -198,6 +198,9 @@ class AccountClient(BaseClient):
 
         Returns:
             Job data.
+
+        Raises:
+            RequestsApiError: If an error occurred communicating with the server.
         """
         # Check for the job share level.
         _job_share_level = job_share_level.value if job_share_level else None
@@ -214,13 +217,18 @@ class AccountClient(BaseClient):
         upload_url = job_info['objectStorageInfo']['uploadUrl']
         job_api = self.account_api.job(job_id)
 
-        # Upload the Qobj to object storage.
-        _ = job_api.put_object_storage(upload_url, qobj_dict)
-
-        # Notify the API via the callback.
-        response = job_api.callback_upload()
-
-        return response['job']
+        try:
+            # Upload the Qobj to object storage.
+            _ = job_api.put_object_storage(upload_url, qobj_dict)
+            # Notify the API via the callback.
+            response = job_api.callback_upload()
+            return response['job']
+        except RequestsApiError:
+            try:
+                job_api.cancel()    # Cancel the job so it doesn't become a phantom job.
+            except RequestsApiError:
+                pass
+            raise
 
     def job_download_qobj(self, job_id: str, use_object_storage: bool) -> Dict:
         """Retrieve and return a ``Qobj``.
