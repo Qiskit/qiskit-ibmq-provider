@@ -200,7 +200,7 @@ class TestExperiment(IBMQTestCase):
         rexp = self.provider.experiment.retrieve_experiment(exp.uuid)
         self.assertEqual(exp.uuid, rexp.uuid)
         for attr in ['hub', 'group', 'project']:
-            self.assertIsNotNone(getattr(rexp, attr), "{} does not have a {}}".format(rexp, attr))
+            self.assertIsNotNone(getattr(rexp, attr), "{} does not have a {}".format(rexp, attr))
 
     def test_upload_experiment(self):
         """Test uploading an experiment."""
