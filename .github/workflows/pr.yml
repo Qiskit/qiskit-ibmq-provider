@@ -1,0 +1,71 @@
+name: PR-Test
+on: [push, pull_request]  # TODO delete push
+jobs:
+  tests:
+    name: tests-python${{ matrix.python-version }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+        os: ["macOS-latest", "ubuntu-latest", "windows-latest"]
+    env:
+      QE_TOKEN: ${{ secrets.QE_TOKEN }}
+      QE_URL: https://auth.quantum-computing.ibm.com/api
+      QE_HGP: ${{ secrets.QE_HGP }}
+      QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_TESTS: skip_online
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -c constraints.txt -r requirements-dev.txt
+          pip install -c constraints.txt -e .
+      - name: Run Tests
+        run: make test
+  lint:
+    name: lint & mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -c constraints.txt -r requirements-dev.txt
+      - name: Run lint
+        run: make style && make lint
+      - name: Run mypy
+        run: make mypy
+        if: ${{ !cancelled() }}
+  doc:
+    name: doc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U tox
+          sudo apt install -y graphviz
+      - name: Run Docs build
+        run: tox -edocs
+      - uses: actions/upload-artifact@v2
+        with:
+          name: html_docs
+          path: docs/_build/html

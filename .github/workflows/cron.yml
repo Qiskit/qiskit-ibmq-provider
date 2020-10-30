@@ -1,0 +1,54 @@
+name: PR-Test
+on:
+  schedule:
+    - cron: '0 2 * * *'
+jobs:
+  slow-test:
+    name: slow-test
+    runs-on: macOS-latest
+    env:
+      QE_TOKEN: ${{ secrets.QE_TOKEN }}
+      QE_URL: https://auth.quantum-computing.ibm.com/api
+      QE_HGP: ${{ secrets.QE_HGP }}
+      QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_TESTS: run_slow
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -c constraints.txt -r requirements-dev.txt
+          pip install -c constraints.txt -e .
+      - name: Run Tests
+        run: make test
+  terra-master:
+    name: terra-master
+    runs-on: macOS-latest
+    env:
+      QE_TOKEN: ${{ secrets.QE_TOKEN }}
+      QE_URL: https://auth.quantum-computing.ibm.com/api
+      QE_HGP: ${{ secrets.QE_HGP }}
+      QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_TESTS: run_slow
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -c constraints.txt -r requirements-dev.txt
+          pip install -c constraints.txt -e .
+          pip install -U git+https://github.com/Qiskit/qiskit-terra.git
+      - name: Run Tests
+        run: make test
