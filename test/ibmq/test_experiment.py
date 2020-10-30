@@ -199,6 +199,8 @@ class TestExperiment(IBMQTestCase):
         exp = self.experiments[0]
         rexp = self.provider.experiment.retrieve_experiment(exp.uuid)
         self.assertEqual(exp.uuid, rexp.uuid)
+        for attr in ['hub', 'group', 'project']:
+            self.assertIsNotNone(getattr(rexp, attr), "{} does not have a {}".format(rexp, attr))
 
     def test_upload_experiment(self):
         """Test uploading an experiment."""
@@ -211,6 +213,10 @@ class TestExperiment(IBMQTestCase):
         )
         self.provider.experiment.upload_experiment(new_exp)
         self.experiments_to_delete.append(new_exp.uuid)
+        credentials = self.provider.credentials
+        self.assertEqual(credentials.hub, new_exp.hub)
+        self.assertEqual(credentials.group, new_exp.group)
+        self.assertEqual(credentials.project, new_exp.project)
         self.assertTrue(new_exp.uuid)
         self.assertTrue(new_exp.creation_datetime)
         for dt_attr in ['start_datetime', 'creation_datetime', 'end_datetime', 'updated_datetime']:

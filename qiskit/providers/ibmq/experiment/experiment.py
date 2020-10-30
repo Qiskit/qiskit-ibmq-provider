@@ -42,7 +42,10 @@ class Experiment:
             end_datetime: Optional[datetime] = None,
             experiment_uuid: Optional[str] = None,
             plot_names: Optional[List[str]] = None,
-            analysis_results: Optional[List[AnalysisResult]] = None
+            analysis_results: Optional[List[AnalysisResult]] = None,
+            hub: Optional[str] = None,
+            group: Optional[str] = None,
+            project: Optional[str] = None
     ):
         """Experiment constructor.
 
@@ -59,6 +62,12 @@ class Experiment:
             experiment_uuid: Unique identifier of the experiment.
             plot_names: A list of plot names for this experiment.
             analysis_results: A list of analysis results associated with this experiment.
+            hub: The hub to which this experiment belongs. If not specified the
+                hub from the provider is used.
+            group: The group to which this experiment belongs. If not specified the
+                group from the provider is used.
+            project: The project to which this experiment belongs. If not specified the
+                project from the provider is used.
 
         Raises:
             ExperimentError: If the provider does not offer experiment services.
@@ -73,6 +82,9 @@ class Experiment:
         self._analysis_results = analysis_results
         self._plot_names = plot_names or []
         self._retrieved_plots = False
+        self._hub = hub or provider.credentials.hub
+        self._group = group or provider.credentials.group
+        self._project = project or provider.credentials.project
 
         self._creation_datetime = None
         self._updated_datetime = None
@@ -95,6 +107,9 @@ class Experiment:
         self._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
         self._uuid = remote_data['uuid']
         self._plot_names = remote_data.get('plot_names', [])
+        self._hub = remote_data.get('hub_id')
+        self._group = remote_data.get('group_id')
+        self._project = remote_data.get('project_id')
 
     @requires_experiment_uuid
     def refresh(self) -> None:
@@ -110,6 +125,21 @@ class Experiment:
     def uuid(self) -> str:
         """Return the experiment's uuid."""
         return self._uuid
+
+    @property
+    def hub(self) -> str:
+        """Return the experiment's hub."""
+        return self._hub
+
+    @property
+    def group(self) -> str:
+        """Return the experiment's group."""
+        return self._group
+
+    @property
+    def project(self) -> str:
+        """Return the experiment's project."""
+        return self._project
 
     @property
     def start_datetime(self) -> datetime:
@@ -198,7 +228,10 @@ class Experiment:
             start_datetime=str_to_utc(remote_data.get('start_time', None)),
             end_datetime=str_to_utc(remote_data.get('end_time', None)),
             experiment_uuid=remote_data['uuid'],
-            plot_names=remote_data.get('plot_names', []))
+            plot_names=remote_data.get('plot_names', []),
+            hub=remote_data.get('hub_id'),
+            group=remote_data.get('group_id'),
+            project=remote_data.get('project_id'))
         experiment._creation_datetime = str_to_utc(remote_data['created_at'])
         experiment._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
         return experiment
