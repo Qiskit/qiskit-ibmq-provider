@@ -170,6 +170,9 @@ class ExperimentService:
             'device_name': experiment.backend_name,
             'type': experiment.type,
             'extra': experiment.extra,
+            'hub_id': experiment.hub,
+            'group_id': experiment.group,
+            'project_id': experiment.project,
         }
         if experiment.start_datetime:
             data['start_time'] = local_to_utc_str(experiment.start_datetime)
