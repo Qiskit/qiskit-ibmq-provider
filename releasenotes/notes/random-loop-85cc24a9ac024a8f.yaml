@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fixes the infinite loop raised when passing an ``IBMQRandomService`` instance
+    to a child process.
