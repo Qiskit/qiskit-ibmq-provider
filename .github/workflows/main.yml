@@ -15,6 +15,7 @@ jobs:
       QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
       LOG_LEVEL: DEBUG
       STREAM_LOG: True
+      QISKIT_IN_PARALLEL: True
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
