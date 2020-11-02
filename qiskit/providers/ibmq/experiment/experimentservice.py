@@ -137,7 +137,7 @@ class ExperimentService:
         Raises:
             ValueError: If an invalid parameter value is specified.
         """
-        if limit is not None and (not isinstance(limit, int) or limit <= 0):
+        if limit is not None and (not isinstance(limit, int) or limit <= 0):  # type: ignore
             raise ValueError(f"{limit} is not a valid `limit`, which has to be a positive integer.")
 
         start_time_filters = []
@@ -291,7 +291,7 @@ class ExperimentService:
         Raises:
             ValueError: If an invalid parameter value is specified.
         """
-        if limit is not None and (not isinstance(limit, int) or limit <= 0):
+        if limit is not None and (not isinstance(limit, int) or limit <= 0):  # type: ignore
             raise ValueError(f"{limit} is not a valid `limit`, which has to be a positive integer.")
 
         qualit_list = []

@@ -17,7 +17,7 @@ lint:
 	pylint -rn qiskit/providers/ibmq test
 
 mypy:
-	mypy --module qiskit.providers.ibmq --show-error-codes --no-site-packages
+	mypy --module qiskit.providers.ibmq --show-error-codes --no-site-packages --python-version 3.6
 
 style:
 	pycodestyle qiskit test
