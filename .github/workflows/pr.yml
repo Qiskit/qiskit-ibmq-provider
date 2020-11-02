@@ -16,6 +16,7 @@ jobs:
       LOG_LEVEL: DEBUG
       STREAM_LOG: True
       QISKIT_TESTS: skip_online
+      QISKIT_IN_PARALLEL: True
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
