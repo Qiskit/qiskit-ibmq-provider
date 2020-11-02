@@ -526,6 +526,33 @@ class TestExperiment(IBMQTestCase):
         rplot = self.provider.experiment.retrieve_plot(new_exp.uuid, plot_name)
         self.assertEqual(rplot, friend_bytes, "Retrieved plot not equal updated plot.")
 
+    def test_experiments_limit(self):
+        """Test getting experiments with a limit."""
+        limits = [10, 1000, 1001]
+
+        for limit in limits:
+            with self.subTest(limit=limit):
+                experiments = self.provider.experiment.experiments(limit=limit)
+                self.assertEqual(len(experiments), limit)
+                self.assertEqual(len({expr.uuid for expr in experiments}), len(experiments))
+
+        with self.assertRaises(ValueError) as context_manager:
+            self.provider.experiment.experiments(limit=-1)
+        self.assertIn("limit", str(context_manager.exception))
+
+    def test_analysis_results_limit(self):
+        """Test getting analysis results with a limit."""
+        limits = [10, 1000, 1001]
+        for limit in limits:
+            with self.subTest(limit=limit):
+                results = self.provider.experiment.analysis_results(limit=limit)
+                self.assertEqual(len(results), limit)
+                self.assertEqual(len({res.uuid for res in results}), len(results))
+
+        with self.assertRaises(ValueError) as context_manager:
+            self.provider.experiment.analysis_results(limit=-1)
+        self.assertIn("limit", str(context_manager.exception))
+
     def _create_experiment(
             self,
             backend_name: Optional[str] = None,
