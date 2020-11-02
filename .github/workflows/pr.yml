@@ -1,5 +1,5 @@
 name: PR-Test
-on: [push, pull_request]  # TODO delete PR
+on: [push, pull_request]  # TODO delete push
 jobs:
   tests:
     name: tests-python${{ matrix.python-version }}-${{ matrix.os }}
@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
-        os: ["macOS-latest"]
+        os: ["macOS-latest", "ubuntu-latest", "windows-latest"]
     env:
       QE_TOKEN: ${{ secrets.QE_TOKEN }}
       QE_URL: https://auth.quantum-computing.ibm.com/api
@@ -15,6 +15,7 @@ jobs:
       QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
       LOG_LEVEL: DEBUG
       STREAM_LOG: True
+      QISKIT_TESTS: skip_online
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -62,9 +63,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -U tox
           sudo apt install -y graphviz
-      - name: Run Docs build
+      - name: Build docs
         run: tox -edocs
-      - uses: actions/upload-artifact@v2
+      - name: Upload docs
+        uses: actions/upload-artifact@v2
         with:
           name: html_docs
           path: docs/_build/html
