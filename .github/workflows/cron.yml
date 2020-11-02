@@ -1,4 +1,4 @@
-name: PR-Test
+name: Slow-test
 on:
   schedule:
     - cron: '0 2 * * *'

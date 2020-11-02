@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python
+      - name: Set up Python 3.7
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Set up Python
+      - name: Set up Python 3.7
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
@@ -63,9 +63,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -U tox
           sudo apt install -y graphviz
-      - name: Run Docs build
+      - name: Build docs
         run: tox -edocs
-      - uses: actions/upload-artifact@v2
+      - name: Upload docs
+        uses: actions/upload-artifact@v2
         with:
           name: html_docs
           path: docs/_build/html
