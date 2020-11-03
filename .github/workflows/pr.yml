@@ -1,5 +1,5 @@
 name: PR-Test
-on: [push, pull_request]  # TODO delete push
+on: pull_request
 jobs:
   tests:
     name: tests-python${{ matrix.python-version }}-${{ matrix.os }}
