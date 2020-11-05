@@ -1,34 +1,6 @@
 name: Push-Test
 on: push
 jobs:
-  tests:
-    name: tests-python${{ matrix.python-version }}-${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python-version: [3.6, 3.7, 3.8]
-        os: ["windows-latest"]
-    env:
-      QE_TOKEN: ${{ secrets.QE_TOKEN }}
-      QE_URL: https://auth.quantum-computing.ibm.com/api
-      QE_HGP: ${{ secrets.QE_HGP }}
-      QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
-      LOG_LEVEL: DEBUG
-      STREAM_LOG: True
-      QISKIT_IN_PARALLEL: True
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install Deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install -U -c constraints.txt -r requirements-dev.txt
-          pip install -c constraints.txt -e .
-      - name: Run Tests
-        run: make test
   lint:
     name: lint & mypy
     runs-on: ubuntu-latest
@@ -63,9 +35,121 @@ jobs:
           python -m pip install --upgrade pip
           pip install -U tox
           sudo apt install -y graphviz
-      - name: Run Docs build
+      - name: Build docs
         run: tox -edocs
-      - uses: actions/upload-artifact@v2
+      - name: Upload docs
+        uses: actions/upload-artifact@v2
         with:
           name: html_docs
           path: docs/_build/html
+  tests-mac:
+    name: tests-mac-python${{ matrix.python-version }}
+    runs-on: macOS-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+    env:
+      QE_TOKEN: ${{ secrets.QE_TOKEN }}
+      QE_URL: https://auth.quantum-computing.ibm.com/api
+      QE_HGP: ${{ secrets.QE_HGP }}
+      QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_IN_PARALLEL: True
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -c constraints.txt -r requirements-dev.txt
+          pip install -c constraints.txt -e .
+      - name: Run Tests
+        run: make test
+  test1:
+    name: tests1-python${{ matrix.python-version }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+        os: ["windows-latest", "ubuntu-latest"]
+    env:
+      QE_TOKEN: ${{ secrets.QE_TOKEN }}
+      QE_URL: https://auth.quantum-computing.ibm.com/api
+      QE_HGP: ${{ secrets.QE_HGP }}
+      QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_IN_PARALLEL: True
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -c constraints.txt -r requirements-dev.txt
+          pip install -c constraints.txt -e .
+      - name: Run Tests
+        run: make test1
+  test2:
+    name: tests2-python${{ matrix.python-version }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+        os: ["windows-latest", "ubuntu-latest"]
+    env:
+      QE_TOKEN: ${{ secrets.QE_TOKEN }}
+      QE_URL: https://auth.quantum-computing.ibm.com/api
+      QE_HGP: ${{ secrets.QE_HGP }}
+      QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_IN_PARALLEL: True
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -c constraints.txt -r requirements-dev.txt
+          pip install -c constraints.txt -e .
+      - name: Run Tests
+        run: make test2
+  test3:
+    name: tests3-python${{ matrix.python-version }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+        os: ["windows-latest", "ubuntu-latest"]
+    env:
+      QE_TOKEN: ${{ secrets.QE_TOKEN }}
+      QE_URL: https://auth.quantum-computing.ibm.com/api
+      QE_HGP: ${{ secrets.QE_HGP }}
+      QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_IN_PARALLEL: True
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -c constraints.txt -r requirements-dev.txt
+          pip install -c constraints.txt -e .
+      - name: Run Tests
+        run: make test3
