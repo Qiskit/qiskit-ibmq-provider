@@ -18,7 +18,7 @@ import logging
 from typing import Dict, List, Optional, Any
 from collections import OrderedDict
 
-from qiskit.providers import BaseProvider  # type: ignore[attr-defined]
+from qiskit.providers import ProviderV1 as Provider  # type: ignore[attr-defined]
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 
@@ -34,7 +34,7 @@ from .exceptions import IBMQNotAuthorizedError
 logger = logging.getLogger(__name__)
 
 
-class AccountProvider(BaseProvider):
+class AccountProvider(Provider):
     """Provider for a single IBM Quantum Experience account.
 
     The account provider class provides access to the IBM Quantum Experience

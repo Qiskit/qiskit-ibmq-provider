@@ -23,7 +23,7 @@ from threading import Event
 from queue import Empty
 import dateutil.parser
 
-from qiskit.providers import BaseJob  # type: ignore[attr-defined]
+from qiskit.providers.job import JobV1 as Job
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import QasmQobj, PulseQobj
@@ -45,7 +45,7 @@ from .utils import build_error_report, api_to_job_error, get_cancel_status
 logger = logging.getLogger(__name__)
 
 
-class IBMQJob(BaseJob):
+class IBMQJob(Job):
     """Representation of a job that executes on an IBM Quantum Experience backend.
 
     The job may be executed on a simulator or a real device. A new ``IBMQJob``
@@ -911,6 +911,9 @@ class IBMQJob(BaseJob):
             try:
                 result_response = self._api_client.job_result(
                     self.job_id(), self._use_object_storage)
+                import pprint
+                pprint.pprint(result_response)
+                # print(f">>>>>>>>> result response {result_response}")
                 self._set_result(result_response)
                 if self._status is JobStatus.ERROR:
                     # Look for error message in result response.
