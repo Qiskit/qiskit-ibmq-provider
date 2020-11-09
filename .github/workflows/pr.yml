@@ -14,7 +14,7 @@ name: PR-Test
 on: pull_request
 jobs:
   tests:
-    name: tests-python${{ matrix.python-version }}-${{ matrix.os }}
+    name: pr-tests-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
