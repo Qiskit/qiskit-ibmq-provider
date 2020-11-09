@@ -55,7 +55,7 @@ jobs:
           name: html_docs
           path: docs/_build/html
   tests-mac:
-    name: tests-mac-python${{ matrix.python-version }}
+    name: push-tests-mac-python${{ matrix.python-version }}
     runs-on: macOS-latest
     strategy:
       matrix:
@@ -82,7 +82,7 @@ jobs:
       - name: Run Tests
         run: make test
   test1:
-    name: tests1-python${{ matrix.python-version }}-${{ matrix.os }}
+    name: push-tests1-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -110,7 +110,7 @@ jobs:
       - name: Run Tests
         run: make test1
   test2:
-    name: tests2-python${{ matrix.python-version }}-${{ matrix.os }}
+    name: push-tests2-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -138,7 +138,7 @@ jobs:
       - name: Run Tests
         run: make test2
   test3:
-    name: tests3-python${{ matrix.python-version }}-${{ matrix.os }}
+    name: push-tests3-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
