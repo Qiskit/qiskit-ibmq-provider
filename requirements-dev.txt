@@ -1,6 +1,6 @@
 mypy
 pycodestyle
-pylint>=2.4
+pylint==2.4.4
 pylintfileheader>=0.0.2
 vcrpy
 pproxy==2.1.8
