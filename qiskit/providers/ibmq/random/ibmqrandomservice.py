@@ -110,7 +110,8 @@ class IBMQRandomService:
         return self.__dict__
 
     def __getattr__(self, item: str) -> Any:
-        self._discover_services()
+        if not self.__getattribute__('_initialized'):
+            self._discover_services()
         try:
             return self._services[item]
         except KeyError:
