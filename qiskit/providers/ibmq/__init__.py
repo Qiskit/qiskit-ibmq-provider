@@ -85,7 +85,7 @@ from typing import List, Optional, Union
 from datetime import datetime, timedelta
 
 from qiskit.providers.backend import Backend
-from qiskit.providers import BaseBackend
+from qiskit.providers import BaseBackend  # type: ignore[attr-defined]
 
 from .ibmqfactory import IBMQFactory
 from .ibmqbackend import IBMQBackend

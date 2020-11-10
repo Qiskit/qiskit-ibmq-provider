@@ -22,7 +22,7 @@ from typing import Dict, List, Union, Optional, Any
 from datetime import datetime as python_datetime
 
 from qiskit.compiler import assemble
-from qiskit.circuit import QuantumCircuit, Parameter
+from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 from qiskit.pulse.channels import PulseChannel
 from qiskit.pulse import LoConfig
@@ -48,7 +48,7 @@ from .exceptions import (IBMQBackendError, IBMQBackendValueError,
                          IBMQBackendApiError, IBMQBackendApiProtocolError,
                          IBMQBackendJobLimitError)
 from .job import IBMQJob
-from .utils import update_qobj_config, validate_job_tags
+from .utils import validate_job_tags
 from .utils.converters import utc_to_local_all, local_to_utc
 from .utils.json_decoder import decode_pulse_defaults, decode_backend_properties
 from .utils.backend import convert_reservation_data
@@ -60,9 +60,10 @@ logger = logging.getLogger(__name__)
 class IBMQBackend(Backend):
     """Backend class interfacing with an IBM Quantum Experience device.
 
-    You can run experiments on a backend using the :meth:`run()` method after
-    assembling them into the :class:`Qobj<qiskit.qobj.Qobj>` format. The
-    :meth:`run()` method returns an :class:`IBMQJob<qiskit.providers.ibmq.job.IBMQJob>`
+    You can run experiments on a backend using the :meth:`run()` method. The
+    :meth:`run()` method takes one or more :class:`~qiskit.circuit.QuantumCircuit`
+    or :class:`~qiskit.pulse.Schedule` and returns
+    an :class:`~qiskit.providers.ibmq.job.IBMQJob`
     instance that represents the submitted job. Each job has a unique job ID, which
     can later be used to retrieve the job. An example of this flow::
 
@@ -72,14 +73,18 @@ class IBMQBackend(Backend):
         provider = IBMQ.load_account()
         backend = provider.backends.ibmq_vigo
         qx = random_circuit(n_qubits=5, depth=4)
-        qobj = assemble(transpile(qx, backend=backend), backend=backend)
-        job = backend.run(qobj)
+        transpiled = transpile(qx, backend=backend)
+        job = backend.run(transpiled)
         retrieved_job = backend.retrieve_job(job.job_id())
 
     Note:
-        You should not instantiate the ``IBMQBackend`` class directly. Instead, use
-        the methods provided by an :class:`AccountProvider` instance to retrieve and handle
-        backends.
+
+        * Unlike :meth:`qiskit.execute`, the :meth:`run` method does not transpile
+          the circuits/schedules for you, so be sure to do so before submitting them.
+
+        * You should not instantiate the ``IBMQBackend`` class directly. Instead, use
+          the methods provided by an :class:`AccountProvider` instance to retrieve and handle
+          backends.
 
     Other methods return information about the backend. For example, the :meth:`status()` method
     returns a :class:`BackendStatus<qiskit.providers.models.BackendStatus>` instance.
@@ -126,7 +131,7 @@ class IBMQBackend(Backend):
         self._defaults = None
 
     @classmethod
-    def _default_options(cls):
+    def _default_options(cls) -> Options:
         """Default runtime options."""
         return Options(shots=1024, memory=False,
                        qubit_lo_freq=None, meas_lo_freq=None,
@@ -135,7 +140,6 @@ class IBMQBackend(Backend):
                        meas_return=MeasReturnType.AVERAGE,
                        memory_slot_size=100,
                        rep_time=None, rep_delay=None,
-                       parameter_binds=None,
                        init_qubits=True)
 
     def run(
@@ -149,20 +153,19 @@ class IBMQBackend(Backend):
             qobj_id: Optional[str] = None,
             qobj_header: Optional[Union[QobjHeader, Dict]] = None,
             shots: Optional[int] = None,
-            memory: Optional[bool] = False,
+            memory: Optional[bool] = None,
             qubit_lo_freq: Optional[List[int]] = None,
             meas_lo_freq: Optional[List[int]] = None,
             qubit_lo_range: Optional[List[int]] = None,
             meas_lo_range: Optional[List[int]] = None,
             schedule_los: Optional[Union[List[Union[Dict[PulseChannel, float], LoConfig]],
                                          Union[Dict[PulseChannel, float], LoConfig]]] = None,
-            meas_level: Union[int, MeasLevel] = MeasLevel.CLASSIFIED,
-            meas_return: Union[str, MeasReturnType] = MeasReturnType.AVERAGE,
-            memory_slot_size: int = 100,
+            meas_level: Optional[Union[int, MeasLevel]] = None,
+            meas_return: Optional[Union[str, MeasReturnType]] = None,
+            memory_slot_size: Optional[int] = None,
             rep_time: Optional[int] = None,
             rep_delay: Optional[float] = None,
-            parameter_binds: Optional[List[Dict[Parameter, float]]] = None,
-            init_qubits: bool = True,
+            init_qubits: Optional[bool] = None,
             **run_config: Dict
     ) -> IBMQJob:
         """Run on the backend.
@@ -176,7 +179,7 @@ class IBMQBackend(Backend):
                 :class:`~qiskit.pulse.Schedule` objects to run on the backend.
                 A :class:`~qiskit.qobj.QasmQobj` or a
                 :class:`~qiskit.qobj.PulseQobj` object is also supported but
-                is deprecated. The name remains unchanged for backward compatibility.
+                is deprecated.
             job_name: Custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 :meth:`jobs()` method. Job names do not need to be unique.
@@ -194,9 +197,9 @@ class IBMQBackend(Backend):
             job_tags: Tags to be assigned to the jobs. The tags can subsequently be used
                 as a filter in the :meth:`jobs()` function call.
             validate_qobj: If ``True``, run JSON schema validation against the
-                submitted payload.
+                submitted payload. Only applicable if a Qobj is passed in.
 
-            The following arguments are not applicable if a Qobj is passed in.
+            The following arguments are NOT applicable if a Qobj is passed in.
 
             qobj_id: String identifier to annotate the ``Qobj``.
             qobj_header: User input that will be inserted in ``Qobj`` header, and will also be
@@ -231,18 +234,12 @@ class IBMQBackend(Backend):
                 from the range supplied
                 by the backend (``backend.configuration().rep_delay_range``). Default is given by
                 ``backend.configuration().default_rep_delay``.
-            parameter_binds: List of Parameter bindings over which the set of experiments will be
-                executed. Each list element (bind) should be of the form
-                {Parameter1: value1, Parameter2: value2, ...}. All binds will be
-                executed across all experiments; e.g., if parameter_binds is a
-                length-n list, and there are m experiments, a total of m x n
-                experiments will be run (one for each experiment/bind pair).
             init_qubits: Whether to reset the qubits to the ground state for each shot.
                 Default: ``True``.
             **run_config: Extra arguments used to configure the run.
 
         Returns:
-            The job to be executed, an instance derived from BaseJob.
+            The job to be executed.
 
         Raises:
             IBMQBackendApiError: If an unexpected error occurred while submitting
@@ -268,14 +265,16 @@ class IBMQBackend(Backend):
 
         if isinstance(qobj, (QasmQobj, PulseQobj)):
             warnings.warn("Passing a Qobj to Backend.run is deprecated and will "
-                          "be removed in a future release", DeprecationWarning,
+                          "be removed in a future release. Please pass in circuits "
+                          "or pulse schedules instead. The 'qobj' parameter name will also be "
+                          "changed when the support is removed.", DeprecationWarning,
                           stacklevel=2)
         else:
-            run_config_dict = copy.copy(self.options.__dict__)
-            run_config_dict.update(dict(
+            run_config_dict = self._get_run_config(
                 qobj_id=qobj_id,
                 qobj_header=qobj_header,
                 shots=shots,
+                memory=memory,
                 qubit_lo_freq=qubit_lo_freq,
                 meas_lo_freq=meas_lo_freq,
                 qubit_lo_range=qubit_lo_range,
@@ -286,14 +285,21 @@ class IBMQBackend(Backend):
                 memory_slot_size=memory_slot_size,
                 rep_time=rep_time,
                 rep_delay=rep_delay,
-                parameter_binds=parameter_binds,
                 init_qubits=init_qubits,
-                **run_config))
+                **run_config)
             qobj = assemble(qobj, self, **run_config_dict)
 
         if validate_qobj:
             validate_qobj_against_schema(qobj)
         return self._submit_job(qobj, job_name, api_job_share_level, job_tags)
+
+    def _get_run_config(self, **kwargs: Any) -> Dict:
+        """Return the consolidated runtime configuration."""
+        run_config_dict = copy.copy(self.options.__dict__)
+        for key, val in kwargs.items():
+            if val:
+                run_config_dict[key] = val
+        return run_config_dict
 
     def _submit_job(
             self,
@@ -314,7 +320,7 @@ class IBMQBackend(Backend):
             job_tags: Tags to be assigned to the job.
 
         Returns:
-            The job to be executed, an instance derived from BaseJob.
+            The job to be executed.
 
         Events:
             ibmq.job.start: The job has started.
@@ -701,7 +707,7 @@ class IBMQSimulator(IBMQBackend):
     """Backend class interfacing with an IBM Quantum Experience simulator."""
 
     @classmethod
-    def _default_options(cls):
+    def _default_options(cls) -> Options:
         """Default runtime options."""
         options = super()._default_options()
         options.update_options(noise_model=None, seed_simulator=None)
@@ -715,9 +721,10 @@ class IBMQSimulator(IBMQBackend):
         """Return ``None``, simulators do not have backend properties."""
         return None
 
-    def run(
+    def run(    # type: ignore[override]
             self,
-            qobj: Union[QasmQobj, PulseQobj],
+            qobj: Union[QasmQobj, PulseQobj, QuantumCircuit, Schedule,
+                        List[Union[QuantumCircuit, Schedule]]],
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
@@ -729,7 +736,12 @@ class IBMQSimulator(IBMQBackend):
         """Run a Qobj asynchronously.
 
         Args:
-            qobj: The Qobj to be executed.
+            qobj: An individual or a
+                list of :class:`~qiskit.circuits.QuantumCircuit` or
+                :class:`~qiskit.pulse.Schedule` objects to run on the backend.
+                A :class:`~qiskit.qobj.QasmQobj` or a
+                :class:`~qiskit.qobj.PulseQobj` object is also supported but
+                is deprecated. The name remains unchanged for backward compatibility.
             job_name: Custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 :meth:`jobs` method. Job names do not need to be unique.
@@ -744,12 +756,15 @@ class IBMQSimulator(IBMQBackend):
             kwargs: Additional runtime configuration options.
 
         Returns:
-            The job to be executed, an instance derived from ``BaseJob``.
+            The job to be executed.
         """
         # pylint: disable=arguments-differ
-        qobj = update_qobj_config(qobj, backend_options.update(kwargs), noise_model)
-        return super(IBMQSimulator, self).run(qobj, job_name, job_share_level, job_tags,
-                                              validate_qobj)
+        run_config = copy.copy(kwargs)
+        if backend_options:
+            run_config.update(backend_options)
+        return super().run(qobj, job_name=job_name, job_share_level=job_share_level,
+                           job_tags=job_tags, validate_qobj=validate_qobj,
+                           noise_model=noise_model, **run_config)
 
 
 class IBMQRetiredBackend(IBMQBackend):
@@ -779,7 +794,7 @@ class IBMQRetiredBackend(IBMQBackend):
             status_msg='This backend is no longer available.')
 
     @classmethod
-    def _default_options(cls):
+    def _default_options(cls) -> Options:
         """Default runtime options."""
         return Options()
 
@@ -818,16 +833,12 @@ class IBMQRetiredBackend(IBMQBackend):
     ) -> List[BackendReservation]:
         return []
 
-    def run(
+    def run(    # type: ignore[override]
             self,
-            qobj: Union[QasmQobj, PulseQobj],
-            job_name: Optional[str] = None,
-            job_share_level: Optional[str] = None,
-            job_tags: Optional[List[str]] = None,
-            validate_qobj: bool = False,
             **kwargs: Dict
     ) -> None:
         """Run a Qobj."""
+        # pylint: disable=arguments-differ
         raise IBMQBackendError('This backend ({}) is no longer available.'.format(self.name()))
 
     @classmethod

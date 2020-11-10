@@ -911,9 +911,6 @@ class IBMQJob(Job):
             try:
                 result_response = self._api_client.job_result(
                     self.job_id(), self._use_object_storage)
-                import pprint
-                pprint.pprint(result_response)
-                # print(f">>>>>>>>> result response {result_response}")
                 self._set_result(result_response)
                 if self._status is JobStatus.ERROR:
                     # Look for error message in result response.

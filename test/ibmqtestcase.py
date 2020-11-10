@@ -16,7 +16,6 @@
 
 import os
 import logging
-from unittest import TestCase
 
 from qiskit.test import QiskitTestCase
 
@@ -24,13 +23,12 @@ from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
 from qiskit.providers.ibmq.exceptions import IBMQAccountCredentialsNotFound
 
 
-class IBMQTestCase(TestCase):
+class IBMQTestCase(QiskitTestCase):
     """Custom TestCase for use with the IBMQProvider."""
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.log = logging.getLogger(cls.__name__)
         if os.getenv('LOG_LEVEL'):
             cls._set_logging_level(logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME))
 
