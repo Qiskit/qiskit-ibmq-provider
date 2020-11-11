@@ -1,8 +1,0 @@
----
-features:
-  - |
-    Methods :meth:`qiskit.providers.ibmq.experiment.ExperimentService.experiments` and
-    :meth:`qiskit.providers.ibmq.experiment.ExperimentService.analysis_results` now
-    support a new parameter `limit` that can be used to limit the number of records
-    returned. The default value is 10, meaning by default only 10 records will be
-    returned. You can specify ``limit=None`` for no limit.
