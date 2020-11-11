@@ -184,7 +184,7 @@ class Api(RestAdapterBase):
             params['device_components'] = device_components
         if tags:
             params['tags'] = tags
-        if limit is not None:
+        if limit:
             params['limit'] = limit
         if marker:
             params['marker'] = marker

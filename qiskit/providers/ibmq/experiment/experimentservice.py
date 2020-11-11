@@ -160,15 +160,17 @@ class ExperimentService:
 
         experiments = []
         marker = None
-        while limit and limit > 0:
+        while limit is None or limit > 0:
             raw_data = self._api_client.experiments(
                 limit, marker, backend_name, type, start_time_filters,
                 device_components, tags_filter)
+            marker = raw_data.get('marker')
             for exp in raw_data['experiments']:
                 experiments.append(Experiment.from_remote_data(self._provider, exp))
-            marker = raw_data.get('marker')
             if limit:
                 limit -= len(raw_data['experiments'])
+            if not marker:  # No more experiments to return.
+                break
         return experiments
 
     def upload_experiment(self, experiment: Experiment) -> None:
@@ -303,16 +305,18 @@ class ExperimentService:
                 qualit_list.append(qual_str)
         results = []
         marker = None
-        while limit and limit > 0:
+        while limit is None or limit > 0:
             raw_data = self._api_client.analysis_results(
                 limit=limit, marker=marker,
                 backend_name=backend_name, device_components=device_components,
                 experiment_uuid=experiment_id, result_type=result_type, quality=qualit_list)
+            marker = raw_data.get('marker')
             for result in raw_data['analysis_results']:
                 results.append(AnalysisResult.from_remote_data(result))
-            marker = raw_data.get('marker')
             if limit:
                 limit -= len(raw_data['analysis_results'])
+            if not marker:  # No more experiments to return.
+                break
         return results
 
     def upload_analysis_result(self, result: AnalysisResult) -> None:
