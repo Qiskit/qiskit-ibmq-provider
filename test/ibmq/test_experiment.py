@@ -343,7 +343,8 @@ class TestExperiment(IBMQTestCase):
                                      "does not match {}.".format(
                                          result.uuid, result.device_components, dev_comp))
 
-                f_experiments = self.provider.experiment.experiments(device_components=dev_comp)
+                f_experiments = self.provider.experiment.experiments(
+                    device_components=dev_comp, limit=None)
                 for exp in f_experiments[:5]:
                     found = False
                     result_dev_comp = []
