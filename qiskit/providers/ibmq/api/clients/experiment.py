@@ -46,15 +46,19 @@ class ExperimentClient(BaseClient):
 
     def experiments(
             self,
+            limit: Optional[int],
+            marker: Optional[str],
             backend_name: Optional[str],
             experiment_type: Optional[str] = None,
             start_time: Optional[List] = None,
             device_components: Optional[List[str]] = None,
             tags: Optional[List[str]] = None
-    ) -> List[Dict]:
+    ) -> Dict:
         """Retrieve experiments, with optional filtering.
 
         Args:
+            limit: Number of experiments to retrieve.
+            marker: Marker used to indicate where to start the next query.
             backend_name: Name of the backend.
             experiment_type: Experiment type.
             start_time: A list of timestamps used to filter by experiment start time.
@@ -62,11 +66,11 @@ class ExperimentClient(BaseClient):
             tags: Tags used for filtering.
 
         Returns:
-            A list of experiments.
+            A list of experiments and the marker, if applicable.
         """
         resp = self.base_api.experiments(
-            backend_name, experiment_type, start_time, device_components, tags)
-        return resp['experiments']
+            limit, marker, backend_name, experiment_type, start_time, device_components, tags)
+        return resp
 
     def experiment_get(self, experiment_id: str) -> Dict:
         """Get a specific experiment.
@@ -180,15 +184,19 @@ class ExperimentClient(BaseClient):
 
     def analysis_results(
             self,
+            limit: Optional[int],
+            marker: Optional[str],
             backend_name: Optional[str] = None,
             device_components: Optional[List[str]] = None,
             experiment_uuid: Optional[str] = None,
             result_type: Optional[str] = None,
             quality: Optional[List[str]] = None
-    ) -> List[Dict]:
+    ) -> Dict:
         """Return a list of analysis results.
 
         Args:
+            limit: Number of analysis results to retrieve.
+            marker: Marker used to indicate where to start the next query.
             backend_name: Name of the backend.
             device_components: A list of device components used for filtering.
             experiment_uuid: Experiment UUID used for filtering.
@@ -196,11 +204,12 @@ class ExperimentClient(BaseClient):
             quality: Quality value used for filtering.
 
         Returns:
-            A list of analysis results.
+            A list of analysis results and the marker, if applicable.
         """
         resp = self.base_api.analysis_results(
-            backend_name, device_components, experiment_uuid, result_type, quality)
-        return resp['analysis_results']
+            limit, marker, backend_name, device_components, experiment_uuid,
+            result_type, quality)
+        return resp
 
     def analysis_result_upload(self, result: Dict) -> Dict:
         """Upload an analysis result.
