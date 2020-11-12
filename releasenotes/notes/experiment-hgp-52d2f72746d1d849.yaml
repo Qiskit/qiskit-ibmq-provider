@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    :class:`qiskit.providers.ibmq.experiment.Experiment` now has three
+    additional attributes, `hub`, `group`, and `project`, that identify
+    the provider used to create the experiment.
