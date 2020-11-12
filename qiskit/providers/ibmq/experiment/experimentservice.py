@@ -99,6 +99,7 @@ class ExperimentService:
 
     def experiments(
             self,
+            limit: Optional[int] = 10,
             backend_name: Optional[str] = None,
             type: Optional[str] = None,  # pylint: disable=redefined-builtin
             start_datetime: Optional[datetime] = None,
@@ -110,6 +111,7 @@ class ExperimentService:
         """Retrieve all experiments, with optional filtering.
 
         Args:
+            limit: Number of experiments to retrieve. ``None`` indicates no limit.
             backend_name: Backend name used for filtering.
             type: Experiment type used for filtering.
             start_datetime: Filter by the given start timestamp, in local time. This is used to
@@ -133,8 +135,11 @@ class ExperimentService:
             A list of experiments.
 
         Raises:
-            ValueError: If an invalid `tags_operator` value is specified.
+            ValueError: If an invalid parameter value is specified.
         """
+        if limit is not None and (not isinstance(limit, int) or limit <= 0):  # type: ignore
+            raise ValueError(f"{limit} is not a valid `limit`, which has to be a positive integer.")
+
         start_time_filters = []
         if start_datetime:
             st_filter = 'ge:{}'.format(local_to_utc_str(start_datetime))
@@ -153,11 +158,19 @@ class ExperimentService:
                 raise ValueError('{} is not a valid `tags_operator`. Valid values are '
                                  '"AND" and "OR".'.format(tags_operator))
 
-        raw_data = self._api_client.experiments(
-            backend_name, type, start_time_filters, device_components, tags_filter)
         experiments = []
-        for exp in raw_data:
-            experiments.append(Experiment.from_remote_data(self._provider, exp))
+        marker = None
+        while limit is None or limit > 0:
+            raw_data = self._api_client.experiments(
+                limit, marker, backend_name, type, start_time_filters,
+                device_components, tags_filter)
+            marker = raw_data.get('marker')
+            for exp in raw_data['experiments']:
+                experiments.append(Experiment.from_remote_data(self._provider, exp))
+            if limit:
+                limit -= len(raw_data['experiments'])
+            if not marker:  # No more experiments to return.
+                break
         return experiments
 
     def upload_experiment(self, experiment: Experiment) -> None:
@@ -250,6 +263,7 @@ class ExperimentService:
 
     def analysis_results(
             self,
+            limit: Optional[int] = 10,
             backend_name: Optional[str] = None,
             device_components: Optional[List[str]] = None,
             experiment_id: Optional[str] = None,
@@ -259,6 +273,7 @@ class ExperimentService:
         """Retrieve all analysis results, with optional filtering.
 
         Args:
+            limit: Number of analysis results to retrieve.
             backend_name: Backend name used for filtering.
             device_components: Filter by device components. An analysis result's
                 device components must match this list exactly for it to be included.
@@ -274,7 +289,13 @@ class ExperimentService:
 
         Returns:
             A list of analysis results.
+
+        Raises:
+            ValueError: If an invalid parameter value is specified.
         """
+        if limit is not None and (not isinstance(limit, int) or limit <= 0):  # type: ignore
+            raise ValueError(f"{limit} is not a valid `limit`, which has to be a positive integer.")
+
         qualit_list = []
         if quality:
             for op, qual in quality:
@@ -282,12 +303,20 @@ class ExperimentService:
                     qual = qual.value
                 qual_str = qual if op == 'eq' else "{}:{}".format(op, qual)
                 qualit_list.append(qual_str)
-        response = self._api_client.analysis_results(
-            backend_name=backend_name, device_components=device_components,
-            experiment_uuid=experiment_id, result_type=result_type, quality=qualit_list)
         results = []
-        for result in response:
-            results.append(AnalysisResult.from_remote_data(result))
+        marker = None
+        while limit is None or limit > 0:
+            raw_data = self._api_client.analysis_results(
+                limit=limit, marker=marker,
+                backend_name=backend_name, device_components=device_components,
+                experiment_uuid=experiment_id, result_type=result_type, quality=qualit_list)
+            marker = raw_data.get('marker')
+            for result in raw_data['analysis_results']:
+                results.append(AnalysisResult.from_remote_data(result))
+            if limit:
+                limit -= len(raw_data['analysis_results'])
+            if not marker:  # No more experiments to return.
+                break
         return results
 
     def upload_analysis_result(self, result: AnalysisResult) -> None:

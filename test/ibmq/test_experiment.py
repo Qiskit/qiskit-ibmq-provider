@@ -89,7 +89,7 @@ class TestExperiment(IBMQTestCase):
             self.provider._experiment = saved_experiment
 
     def test_experiments(self):
-        """Test retrieving all experiments."""
+        """Test retrieving experiments."""
         self.assertTrue(self.experiments, "No experiments found.")
         for exp in self.experiments:
             self.assertTrue(isinstance(exp, Experiment))
@@ -103,7 +103,8 @@ class TestExperiment(IBMQTestCase):
         """Test retrieving all experiments for a specific backend."""
         backend_name = self.experiments[0].backend_name
         ref_uuid = self.experiments[0].uuid
-        backend_experiments = self.provider.experiment.experiments(backend_name=backend_name)
+        backend_experiments = self.provider.experiment.experiments(
+            backend_name=backend_name, limit=None)
 
         found = False
         for exp in backend_experiments:
@@ -117,7 +118,7 @@ class TestExperiment(IBMQTestCase):
         """Test retrieving all experiments for a specific type."""
         expr_type = self.experiments[0].type
         ref_uuid = self.experiments[0].uuid
-        backend_experiments = self.provider.experiment.experiments(type=expr_type)
+        backend_experiments = self.provider.experiment.experiments(type=expr_type, limit=None)
 
         found = False
         for exp in backend_experiments:
@@ -145,7 +146,7 @@ class TestExperiment(IBMQTestCase):
         for start_dt, end_dt, expected, title in sub_tests:
             with self.subTest(title=title):
                 backend_experiments = self.provider.experiment.experiments(
-                    start_datetime=start_dt, end_datetime=end_dt)
+                    start_datetime=start_dt, end_datetime=end_dt, limit=None)
                 found = False
                 for exp in backend_experiments:
                     if start_dt:
@@ -180,7 +181,7 @@ class TestExperiment(IBMQTestCase):
         for tags, operator, found in sub_tests:
             with self.subTest(tags=tags, operator=operator):
                 experiments = self.provider.experiment.experiments(
-                    tags=tags, tags_operator=operator)
+                    tags=tags, tags_operator=operator, limit=None)
                 ref_expr_found = False
                 for expr in experiments:
                     msg = "Tags {} not fond in experiment tags {}".format(tags, expr.tags)
@@ -329,7 +330,8 @@ class TestExperiment(IBMQTestCase):
 
         for dev_comp, found in sub_tests:
             with self.subTest(dev_comp=dev_comp):
-                f_results = self.provider.experiment.analysis_results(device_components=dev_comp)
+                f_results = self.provider.experiment.analysis_results(
+                    device_components=dev_comp, limit=None)
                 self.assertEqual(ref_result.uuid in [res.uuid for res in f_results], found,
                                  "Analysis result {} with device component {} (not)found "
                                  "unexpectedly when filter using device component={}. "
@@ -341,7 +343,8 @@ class TestExperiment(IBMQTestCase):
                                      "does not match {}.".format(
                                          result.uuid, result.device_components, dev_comp))
 
-                f_experiments = self.provider.experiment.experiments(device_components=dev_comp)
+                f_experiments = self.provider.experiment.experiments(
+                    device_components=dev_comp, limit=None)
                 for exp in f_experiments[:5]:
                     found = False
                     result_dev_comp = []
@@ -366,7 +369,7 @@ class TestExperiment(IBMQTestCase):
         for expr_uuid, found in sub_tests:
             with self.subTest(expr_uuid=expr_uuid):
                 f_results = self.provider.experiment.analysis_results(
-                    experiment_id=expr_uuid)
+                    experiment_id=expr_uuid, limit=None)
                 self.assertEqual(ref_result.uuid in [res.uuid for res in f_results], found,
                                  "Analysis result {} with experiment uuid {} (not)found "
                                  "unexpectedly when filter using experiment uuid={}. "
@@ -390,7 +393,8 @@ class TestExperiment(IBMQTestCase):
 
         for res_type, found in sub_tests:
             with self.subTest(res_type=res_type):
-                f_results = self.provider.experiment.analysis_results(result_type=res_type)
+                f_results = self.provider.experiment.analysis_results(
+                    result_type=res_type, limit=None)
                 self.assertEqual(ref_result.uuid in [res.uuid for res in f_results], found,
                                  "Analysis result {} with type {} (not)found unexpectedly "
                                  "when filter using type={}. Found={}.".format(
@@ -436,7 +440,7 @@ class TestExperiment(IBMQTestCase):
 
         for quality, found in sub_tests:
             with self.subTest(quality=quality):
-                f_results = self.provider.experiment.analysis_results(quality=quality)
+                f_results = self.provider.experiment.analysis_results(quality=quality, limit=None)
                 self.assertEqual(ref_result.uuid in [res.uuid for res in f_results], found,
                                  "Analysis result {} with quality {} (not)found unexpectedly "
                                  "when filter using quality={}. Found={}.".format(
@@ -525,6 +529,33 @@ class TestExperiment(IBMQTestCase):
         self.assertEqual(response['name'], plot_name)
         rplot = self.provider.experiment.retrieve_plot(new_exp.uuid, plot_name)
         self.assertEqual(rplot, friend_bytes, "Retrieved plot not equal updated plot.")
+
+    def test_experiments_limit(self):
+        """Test getting experiments with a limit."""
+        limits = [10, 1000, 1001]
+
+        for limit in limits:
+            with self.subTest(limit=limit):
+                experiments = self.provider.experiment.experiments(limit=limit)
+                self.assertEqual(len(experiments), limit)
+                self.assertEqual(len({expr.uuid for expr in experiments}), len(experiments))
+
+        with self.assertRaises(ValueError) as context_manager:
+            self.provider.experiment.experiments(limit=-1)
+        self.assertIn("limit", str(context_manager.exception))
+
+    def test_analysis_results_limit(self):
+        """Test getting analysis results with a limit."""
+        limits = [10, 1000, 1001]
+        for limit in limits:
+            with self.subTest(limit=limit):
+                results = self.provider.experiment.analysis_results(limit=limit)
+                self.assertEqual(len(results), limit)
+                self.assertEqual(len({res.uuid for res in results}), len(results))
+
+        with self.assertRaises(ValueError) as context_manager:
+            self.provider.experiment.analysis_results(limit=-1)
+        self.assertIn("limit", str(context_manager.exception))
 
     def _create_experiment(
             self,
