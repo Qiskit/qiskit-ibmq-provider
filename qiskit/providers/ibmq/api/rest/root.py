@@ -150,6 +150,8 @@ class Api(RestAdapterBase):
 
     def experiments(
             self,
+            limit: Optional[int],
+            marker: Optional[str],
             backend_name: Optional[str] = None,
             experiment_type: Optional[str] = None,
             start_time: Optional[List] = None,
@@ -159,6 +161,8 @@ class Api(RestAdapterBase):
         """Return experiment data.
 
         Args:
+            limit: Number of experiments to retrieve.
+            marker: Marker used to indicate where to start the next query.
             backend_name: Name of the backend.
             experiment_type: Experiment type.
             start_time: A list of timestamps used to filter by experiment start time.
@@ -180,6 +184,10 @@ class Api(RestAdapterBase):
             params['device_components'] = device_components
         if tags:
             params['tags'] = tags
+        if limit:
+            params['limit'] = limit
+        if marker:
+            params['marker'] = marker
         return self.session.get(url, params=params).json()
 
     def experiment_devices(self) -> Dict:
@@ -207,6 +215,8 @@ class Api(RestAdapterBase):
 
     def analysis_results(
             self,
+            limit: Optional[int],
+            marker: Optional[str],
             backend_name: Optional[str] = None,
             device_components: Optional[List[str]] = None,
             experiment_uuid: Optional[str] = None,
@@ -216,6 +226,8 @@ class Api(RestAdapterBase):
         """Return all analysis results.
 
         Args:
+            limit: Number of analysis results to retrieve.
+            marker: Marker used to indicate where to start the next query.
             backend_name: Name of the backend.
             device_components: A list of device components used for filtering.
             experiment_uuid: Experiment UUID used for filtering.
@@ -237,6 +249,10 @@ class Api(RestAdapterBase):
             params['quality'] = quality
         if result_type:
             params['type'] = result_type
+        if limit:
+            params['limit'] = limit
+        if marker:
+            params['marker'] = marker
         return self.session.get(url, params=params).json()
 
     def analysis_result_upload(self, result: Dict) -> Dict:

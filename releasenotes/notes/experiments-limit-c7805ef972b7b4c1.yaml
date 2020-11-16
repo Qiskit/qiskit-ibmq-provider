@@ -1,0 +1,15 @@
+---
+features:
+  - |
+    Methods
+    :meth:`qiskit.providers.ibmq.experiment.ExperimentService.experiments` and
+    :meth:`qiskit.providers.ibmq.experiment.ExperimentService.analysis_results`
+    now support a ``limit`` parameter that allows you to limit the number of
+    experiments and analysis results returned.
+upgrade:
+  - |
+    A new parameter, ``limit`` is now the first parameter for both
+    :meth:`qiskit.providers.ibmq.experiment.ExperimentService.experiments` and
+    :meth:`qiskit.providers.ibmq.experiment.ExperimentService.analysis_results`
+    methods. This ``limit`` has a default value of 10, meaning by deafult only
+    10 experiments and analysis results will be returned.

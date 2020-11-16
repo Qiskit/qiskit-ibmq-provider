@@ -90,6 +90,7 @@ class Experiment:
         self._updated_datetime = None
 
         self._api_client = provider.experiment._api_client  # type: ignore[has-type]
+        self._provider = provider
 
     def update_from_remote_data(self, remote_data: Dict) -> None:
         """Update the attributes of this instance using remote data.
@@ -184,10 +185,8 @@ class Experiment:
         """Return analysis results associated with this experiment."""
         if self._analysis_results is None:
             try:
-                response = self._api_client.analysis_results(experiment_uuid=self.uuid)
-                self._analysis_results = []
-                for result in response:
-                    self._analysis_results.append(AnalysisResult.from_remote_data(result))
+                self._analysis_results = self._provider.experiment.analysis_results(
+                    experiment_id=self.uuid, limit=None)
             except RequestsApiError as api_err:
                 logger.warning("Unable to retrieve analysis results for this experiment: %s",
                                str(api_err))
