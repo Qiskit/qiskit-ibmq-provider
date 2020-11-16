@@ -576,7 +576,8 @@ class TestIBMQJob(JobTestCase):
     def test_wait_for_final_state_timeout(self):
         """Test waiting for job to reach final state times out."""
         backend = most_busy_backend(self.provider)
-        job = backend.run(self.bell, validate_qobj=True)
+        job = backend.run(transpile(ReferenceCircuits.bell(), backend=backend),
+                          validate_qobj=True)
         try:
             self.assertRaises(IBMQJobTimeoutError, job.wait_for_final_state, timeout=0.1)
         finally:
