@@ -23,12 +23,11 @@ from datetime import datetime as python_datetime
 
 from qiskit.compiler import assemble
 from qiskit.circuit import QuantumCircuit
-from qiskit.pulse import Schedule
+from qiskit.pulse import Schedule, LoConfig
 from qiskit.pulse.channels import PulseChannel
-from qiskit.pulse import LoConfig
-from qiskit.qobj import QasmQobj, PulseQobj, validate_qobj_against_schema, QobjHeader
+from qiskit.qobj import QasmQobj, PulseQobj, QobjHeader, validate_qobj_against_schema
 from qiskit.qobj.utils import MeasLevel, MeasReturnType
-from qiskit.providers.backend import BackendV1 as Backend  # type: ignore[attr-defined]
+from qiskit.providers.backend import BackendV1 as Backend
 from qiskit.providers.options import Options
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.models import (BackendStatus, BackendProperties,
@@ -135,7 +134,7 @@ class IBMQBackend(Backend):
         """Default runtime options."""
         return Options(shots=1024, memory=False,
                        qubit_lo_freq=None, meas_lo_freq=None,
-                       qubit_lo_range=None, meas_lo_range=None, schedule_los=None,
+                       schedule_los=None,
                        meas_level=MeasLevel.CLASSIFIED,
                        meas_return=MeasReturnType.AVERAGE,
                        memory_slot_size=100,
@@ -156,8 +155,6 @@ class IBMQBackend(Backend):
             memory: Optional[bool] = None,
             qubit_lo_freq: Optional[List[int]] = None,
             meas_lo_freq: Optional[List[int]] = None,
-            qubit_lo_range: Optional[List[int]] = None,
-            meas_lo_range: Optional[List[int]] = None,
             schedule_los: Optional[Union[List[Union[Dict[PulseChannel, float], LoConfig]],
                                          Union[Dict[PulseChannel, float], LoConfig]]] = None,
             meas_level: Optional[Union[int, MeasLevel]] = None,
@@ -213,10 +210,6 @@ class IBMQBackend(Backend):
                 ``schedule_los`` if set.
             meas_lo_freq: List of default measurement LO frequencies in Hz. Will be overridden
                 by ``schedule_los`` if set.
-            qubit_lo_range: List of drive LO ranges each of form ``[range_min, range_max]`` in Hz.
-                Used to validate the supplied qubit frequencies.
-            meas_lo_range: List of measurement LO ranges each of form ``[range_min, range_max]``
-                in Hz. Used to validate the supplied qubit frequencies.
             schedule_los: Experiment LO configurations, frequencies are given in Hz.
             meas_level: Set the appropriate level of the measurement output for pulse experiments.
             meas_return: Level of measurement data for the backend to return.
@@ -277,8 +270,6 @@ class IBMQBackend(Backend):
                 memory=memory,
                 qubit_lo_freq=qubit_lo_freq,
                 meas_lo_freq=meas_lo_freq,
-                qubit_lo_range=qubit_lo_range,
-                meas_lo_range=meas_lo_range,
                 schedule_los=schedule_los,
                 meas_level=meas_level,
                 meas_return=meas_return,
@@ -751,17 +742,24 @@ class IBMQSimulator(IBMQBackend):
                 as a filter in the :meth:`IBMQBackend.jobs()<IBMQBackend.jobs>` method.
             validate_qobj: If ``True``, run JSON schema validation against the
                 submitted payload
-            backend_options: Backend options.
+            backend_options: DEPRECATED dictionary of backend options for the execution.
             noise_model: Noise model.
-            kwargs: Additional runtime configuration options.
+            kwargs: Additional runtime configuration options. They take
+                precedence over options of the same names specified in `backend_options`.
 
         Returns:
             The job to be executed.
         """
         # pylint: disable=arguments-differ
-        run_config = copy.copy(kwargs)
-        if backend_options:
-            run_config.update(backend_options)
+        if backend_options is not None:
+            warnings.warn("Use of `backend_options` is deprecated and will "
+                          "be removed in a future release."
+                          "You can now pass backend options as key-value pairs to the "
+                          "run() method. For example: backend.run(circs, shots=2048).",
+                          DeprecationWarning, stacklevel=2)
+        backend_options = backend_options or {}
+        run_config = copy.copy(backend_options)
+        run_config.update(kwargs)
         return super().run(qobj, job_name=job_name, job_share_level=job_share_level,
                            job_tags=job_tags, validate_qobj=validate_qobj,
                            noise_model=noise_model, **run_config)
