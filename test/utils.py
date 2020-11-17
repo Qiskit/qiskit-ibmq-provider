@@ -14,7 +14,9 @@
 
 """General utility functions for testing."""
 
+import os
 import time
+import logging
 from typing import List, Optional
 
 from qiskit import QuantumCircuit
@@ -27,6 +29,26 @@ from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.job import IBMQJob
+
+
+def setup_test_logging(logger: logging.Logger):
+    """Set logging to file and stdout for a logger.
+
+    Args:
+        logger: logger object to be updated.
+    """
+    # Set up formatter.
+    log_fmt = ('{}.%(funcName)s:%(levelname)s:%(asctime)s:'
+               ' %(message)s'.format(logger.name))
+    formatter = logging.Formatter(log_fmt)
+
+    if os.getenv('STREAM_LOG', True):
+        # Set up the stream handler.
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
+    logger.setLevel(os.getenv('LOG_LEVEL', 'DEBUG'))
 
 
 def most_busy_backend(provider: AccountProvider) -> IBMQBackend:
