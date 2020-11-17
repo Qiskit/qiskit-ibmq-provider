@@ -143,14 +143,13 @@ class IBMQBackend(Backend):
 
     def run(
             self,
-            qobj: Union[QasmQobj, PulseQobj, QuantumCircuit, Schedule,
-                        List[Union[QuantumCircuit, Schedule]]],
+            circuits: Union[QasmQobj, PulseQobj, QuantumCircuit, Schedule,
+                            List[Union[QuantumCircuit, Schedule]]],
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
             validate_qobj: bool = False,
-            qobj_id: Optional[str] = None,
-            qobj_header: Optional[Union[QobjHeader, Dict]] = None,
+            header: Optional[Dict] = None,
             shots: Optional[int] = None,
             memory: Optional[bool] = None,
             qubit_lo_freq: Optional[List[int]] = None,
@@ -171,7 +170,7 @@ class IBMQBackend(Backend):
         the value specified here will be used for this run.
 
         Args:
-            qobj: An individual or a
+            circuits: An individual or a
                 list of :class:`~qiskit.circuits.QuantumCircuit` or
                 :class:`~qiskit.pulse.Schedule` objects to run on the backend.
                 A :class:`~qiskit.qobj.QasmQobj` or a
@@ -191,16 +190,16 @@ class IBMQBackend(Backend):
                     * none: The job is not shared at any level.
 
                 If the job share level is not specified, the job is not shared at any level.
-            job_tags: Tags to be assigned to the jobs. The tags can subsequently be used
+            job_tags: Tags to be assigned to the job. The tags can subsequently be used
                 as a filter in the :meth:`jobs()` function call.
             validate_qobj: If ``True``, run JSON schema validation against the
                 submitted payload. Only applicable if a Qobj is passed in.
 
             The following arguments are NOT applicable if a Qobj is passed in.
 
-            qobj_id: String identifier to annotate the ``Qobj``.
-            qobj_header: User input that will be inserted in ``Qobj`` header, and will also be
-                copied to the corresponding Result header. Headers do not affect the run.
+            header: User input that will be attached to the job and will be
+                copied to the corresponding result header. Headers do not affect the run.
+                This replaces the old ``Qobj`` header.
             shots: Number of repetitions of each circuit, for sampling. Default: 1024
                 or ``max_shots`` from the backend configuration, whichever is smaller.
             memory: If ``True``, per-shot measurement bitstrings are returned as well
@@ -256,16 +255,18 @@ class IBMQBackend(Backend):
 
         validate_job_tags(job_tags, IBMQBackendValueError)
 
+        qobj = run_config.pop('qobj', circuits)
         if isinstance(qobj, (QasmQobj, PulseQobj)):
             warnings.warn("Passing a Qobj to Backend.run is deprecated and will "
                           "be removed in a future release. Please pass in circuits "
-                          "or pulse schedules instead. The 'qobj' parameter name will also be "
-                          "changed when the support is removed.", DeprecationWarning,
+                          "or pulse schedules instead. The `qobj` parameter has been "
+                          "renamed to `circuits`.", DeprecationWarning,
                           stacklevel=2)
         else:
+            qobj_header = run_config.pop('qobj_header', None)
+            header = header or qobj_header
             run_config_dict = self._get_run_config(
-                qobj_id=qobj_id,
-                qobj_header=qobj_header,
+                qobj_header=header,
                 shots=shots,
                 memory=memory,
                 qubit_lo_freq=qubit_lo_freq,
@@ -278,7 +279,7 @@ class IBMQBackend(Backend):
                 rep_delay=rep_delay,
                 init_qubits=init_qubits,
                 **run_config)
-            qobj = assemble(qobj, self, **run_config_dict)
+            qobj = assemble(circuits, self, **run_config_dict)
 
         if validate_qobj:
             validate_qobj_against_schema(qobj)

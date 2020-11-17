@@ -608,3 +608,16 @@ class TestIBMQJob(JobTestCase):
                 job = self.sim_backend.retrieve_job(job_id[0])
                 self.assertEqual(job.status(), JobStatus.CANCELLED,
                                  f"Job {job.job_id()} status is {job.status()} and not cancelled!")
+
+    def test_job_circuits(self):
+        """Test job circuits."""
+        self.assertEqual(str(self.bell), str(self.sim_job.circuits()[0]))
+
+    def test_job_backend_options(self):
+        """Test job backend options."""
+        run_config = {'shots': 2048, 'memory': True}
+        job = self.sim_backend.run(self.bell, validate_qobj=True, **run_config)
+        self.assertLessEqual(run_config.items(), job.backend_options().items())
+
+    def test_job_header(self):
+        """Test job header."""
