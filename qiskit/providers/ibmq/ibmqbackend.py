@@ -25,7 +25,7 @@ from qiskit.compiler import assemble
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule, LoConfig
 from qiskit.pulse.channels import PulseChannel
-from qiskit.qobj import QasmQobj, PulseQobj, QobjHeader, validate_qobj_against_schema
+from qiskit.qobj import QasmQobj, PulseQobj, validate_qobj_against_schema
 from qiskit.qobj.utils import MeasLevel, MeasReturnType
 from qiskit.providers.backend import BackendV1 as Backend
 from qiskit.providers.options import Options
@@ -35,6 +35,7 @@ from qiskit.providers.models import (BackendStatus, BackendProperties,
 from qiskit.tools.events.pubsub import Publisher
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
+from qiskit.util import deprecate_arguments
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from .apiconstants import ApiJobShareLevel, ApiJobStatus, API_JOB_FINAL_STATES
@@ -141,6 +142,7 @@ class IBMQBackend(Backend):
                        rep_time=None, rep_delay=None,
                        init_qubits=True)
 
+    @deprecate_arguments({'qobj': 'circuits'})
     def run(
             self,
             circuits: Union[QasmQobj, PulseQobj, QuantumCircuit, Schedule,
@@ -255,13 +257,13 @@ class IBMQBackend(Backend):
 
         validate_job_tags(job_tags, IBMQBackendValueError)
 
-        qobj = run_config.pop('qobj', circuits)
-        if isinstance(qobj, (QasmQobj, PulseQobj)):
+        if isinstance(circuits, (QasmQobj, PulseQobj)):
             warnings.warn("Passing a Qobj to Backend.run is deprecated and will "
                           "be removed in a future release. Please pass in circuits "
                           "or pulse schedules instead. The `qobj` parameter has been "
                           "renamed to `circuits`.", DeprecationWarning,
                           stacklevel=2)
+            qobj = circuits
         else:
             qobj_header = run_config.pop('qobj_header', None)
             header = header or qobj_header
@@ -713,10 +715,11 @@ class IBMQSimulator(IBMQBackend):
         """Return ``None``, simulators do not have backend properties."""
         return None
 
+    @deprecate_arguments({'qobj': 'circuits'})
     def run(    # type: ignore[override]
             self,
-            qobj: Union[QasmQobj, PulseQobj, QuantumCircuit, Schedule,
-                        List[Union[QuantumCircuit, Schedule]]],
+            circuits: Union[QasmQobj, PulseQobj, QuantumCircuit, Schedule,
+                            List[Union[QuantumCircuit, Schedule]]],
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
@@ -728,12 +731,12 @@ class IBMQSimulator(IBMQBackend):
         """Run a Qobj asynchronously.
 
         Args:
-            qobj: An individual or a
+            circuits: An individual or a
                 list of :class:`~qiskit.circuits.QuantumCircuit` or
                 :class:`~qiskit.pulse.Schedule` objects to run on the backend.
                 A :class:`~qiskit.qobj.QasmQobj` or a
                 :class:`~qiskit.qobj.PulseQobj` object is also supported but
-                is deprecated. The name remains unchanged for backward compatibility.
+                is deprecated.
             job_name: Custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 :meth:`jobs` method. Job names do not need to be unique.
@@ -761,7 +764,7 @@ class IBMQSimulator(IBMQBackend):
         backend_options = backend_options or {}
         run_config = copy.copy(backend_options)
         run_config.update(kwargs)
-        return super().run(qobj, job_name=job_name, job_share_level=job_share_level,
+        return super().run(circuits, job_name=job_name, job_share_level=job_share_level,
                            job_tags=job_tags, validate_qobj=validate_qobj,
                            noise_model=noise_model, **run_config)
 
