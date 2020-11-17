@@ -16,7 +16,8 @@
 
 import os
 import logging
-from unittest import TestCase
+
+from qiskit.test.base import BaseQiskitTestCase
 
 from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
 from qiskit.providers.ibmq.exceptions import IBMQAccountCredentialsNotFound
@@ -24,7 +25,7 @@ from qiskit.providers.ibmq.exceptions import IBMQAccountCredentialsNotFound
 from .utils import setup_test_logging
 
 
-class IBMQTestCase(TestCase):
+class IBMQTestCase(BaseQiskitTestCase):
     """Custom TestCase for use with the IBMQProvider."""
 
     @classmethod

@@ -42,7 +42,7 @@ def setup_test_logging(logger: logging.Logger):
                ' %(message)s'.format(logger.name))
     formatter = logging.Formatter(log_fmt)
 
-    if os.getenv('STREAM_LOG', True):
+    if os.getenv('STREAM_LOG', 'true'):
         # Set up the stream handler.
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
