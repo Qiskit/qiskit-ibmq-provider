@@ -16,6 +16,7 @@
 
 import os
 import logging
+import inspect
 
 from qiskit.test.base import BaseQiskitTestCase
 
@@ -32,7 +33,8 @@ class IBMQTestCase(BaseQiskitTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.log = logging.getLogger(cls.__name__)
-        setup_test_logging(cls.log)
+        filename = '%s.log' % os.path.splitext(inspect.getfile(cls))[0]
+        setup_test_logging(cls.log, filename)
         cls._set_logging_level(logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME))
 
     @classmethod

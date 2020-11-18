@@ -31,11 +31,12 @@ from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.job import IBMQJob
 
 
-def setup_test_logging(logger: logging.Logger):
+def setup_test_logging(logger: logging.Logger, filename: str):
     """Set logging to file and stdout for a logger.
 
     Args:
-        logger: logger object to be updated.
+        logger: Logger object to be updated.
+        filename: Name of the output file, if log to file is enabled.
     """
     # Set up formatter.
     log_fmt = ('{}.%(funcName)s:%(levelname)s:%(asctime)s:'
@@ -47,6 +48,11 @@ def setup_test_logging(logger: logging.Logger):
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
+
+    if os.getenv('FILE_LOG', 'false'):
+        file_handler = logging.FileHandler(filename)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
     logger.setLevel(os.getenv('LOG_LEVEL', 'DEBUG'))
 
