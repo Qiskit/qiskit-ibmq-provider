@@ -68,7 +68,6 @@ def requires_qe_access(func):
             raise SkipTest('Skipping online tests')
 
         credentials = _get_credentials()
-        obj.using_ibmq_credentials = credentials.is_ibmq()
         kwargs.update({'qe_token': credentials.token,
                        'qe_url': credentials.url})
 
