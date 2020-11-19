@@ -78,7 +78,7 @@ class TestBasicServerPaths(IBMQTestCase):
                 job = self._submit_job_with_retry(qobj, backend)
                 job_id = job.job_id()
 
-                retrieved_jobs = provider.backends.jobs(backend_name=backend_name)
+                retrieved_jobs = provider.backend.jobs(backend_name=backend_name)
                 self.assertGreaterEqual(len(retrieved_jobs), 1)
                 retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
                 self.assertIn(job_id, retrieved_job_ids)
