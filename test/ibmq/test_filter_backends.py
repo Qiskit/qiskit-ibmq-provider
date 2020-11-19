@@ -107,3 +107,15 @@ class TestBackendFilters(IBMQTestCase):
                 backs.append(back)
                 break
         self.assertTrue(least_busy(backs, window))
+
+    def test_filter_min_num_qubits(self):
+        """Test filtering by minimum number of qubits."""
+        filtered_backends = self.provider.backends(
+            min_num_qubits=10, simulator=False,
+            filters=lambda b: b.configuration().quantum_volume >= 10)
+
+        self.assertTrue(filtered_backends)
+        for backend in filtered_backends[:5]:
+            with self.subTest(backend=backend):
+                self.assertGreaterEqual(backend.configuration().n_qubits, 10)
+                self.assertTrue(backend.configuration().quantum_volume, 10)

@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    :meth:`qiskit.providers.ibmq.AccountProvider.backends` now has a new
+    parameter `min_num_qubits` that allows you to filter by the minimum number
+    of qubits.
