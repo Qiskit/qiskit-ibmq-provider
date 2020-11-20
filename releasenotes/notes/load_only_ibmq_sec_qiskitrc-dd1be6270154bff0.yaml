@@ -1,0 +1,8 @@
+---
+prelude: >
+    The qiskitrc file is a flexible way for saving multiple account credentials, among
+    other things.  However, this functionality was removed two years ago.  This
+    adds back that functionality.
+fixes:
+  - |
+    Loads IBM Quantum credentials from only the "ibmq" section of qiskitrc.
