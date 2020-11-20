@@ -121,17 +121,12 @@ def write_qiskit_rc(
 
         return credentials_dict
 
-    def _section_name() -> str:
-        """Return the ibmq sction name string"""
-        base_name = 'ibmq'
-        return base_name
-
     filename = filename or DEFAULT_QISKITRC_FILE
     # Create the directories and the file if not found.
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     unrolled_credentials = {
-        _section_name():
+        'ibmq':
             _credentials_object_to_dict(credentials_object, default_provider)
         for _, credentials_object in credentials.items()
     }
