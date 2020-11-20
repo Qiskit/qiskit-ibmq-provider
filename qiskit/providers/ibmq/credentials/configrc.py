@@ -65,8 +65,8 @@ def read_credentials_from_qiskitrc(
     # Build the credentials dictionary.
     credentials_dict = OrderedDict()  # type: ignore[var-annotated]
     default_provider_hgp = None
-    for name in config_parser.sections():
-        single_credentials = dict(config_parser.items(name))
+    if config_parser.has_section('ibmq'):
+        single_credentials = dict(config_parser.items('ibmq'))
 
         # Individually convert keys to their right types.
         # TODO: consider generalizing, moving to json configuration or a more
