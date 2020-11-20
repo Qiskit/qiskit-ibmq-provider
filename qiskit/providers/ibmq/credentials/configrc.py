@@ -121,8 +121,8 @@ def write_qiskit_rc(
 
         return credentials_dict
 
-    def _section_name(credentials_: Credentials) -> str:
-        """Return a string suitable for use as a unique section name."""
+    def _section_name() -> str:
+        """Return the ibmq sction name string"""
         base_name = 'ibmq'
         return base_name
 
