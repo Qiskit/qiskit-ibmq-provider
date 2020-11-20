@@ -131,7 +131,7 @@ def write_qiskit_rc(
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     unrolled_credentials = {
-        _section_name(credentials_object):
+        _section_name():
             _credentials_object_to_dict(credentials_object, default_provider)
         for _, credentials_object in credentials.items()
     }
