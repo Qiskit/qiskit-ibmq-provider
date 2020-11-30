@@ -384,3 +384,9 @@ class RetrySession(Session):
             return False
 
         return True
+
+    def __getstate__(self) -> Dict:
+        """Overwrite Session's getstate to include all attributes."""
+        state = super().__getstate__()  # type: ignore
+        state.update(self.__dict__)
+        return state
