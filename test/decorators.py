@@ -211,7 +211,7 @@ def requires_device(func):
                     break
         else:
             _backend = least_busy(provider.backends(
-                simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
+                simulator=False, min_num_qubits=5))
 
         if not _backend:
             raise Exception('Unable to find a suitable backend.')
