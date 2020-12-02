@@ -66,11 +66,10 @@ def read_credentials_from_qiskitrc(
     # Build the credentials dictionary.
     credentials_dict = OrderedDict()  # type: ignore[var-annotated]
     default_provider_hgp = None
-    credentials_count = 0
+
     for name in config_parser.sections():
         if name.startswith('ibmq'):
             single_credentials = dict(config_parser.items(name))
-            credentials_count += 1
             # Individually convert keys to their right types.
             # TODO: consider generalizing, moving to json configuration or a more
             # robust alternative.
@@ -91,10 +90,6 @@ def read_credentials_from_qiskitrc(
 
             credentials_dict[new_credentials.unique_id()] = new_credentials
 
-    if credentials_count > 1:
-        warnings.warn("Loading from multiple accounts is deprecated and "
-                      "will no longer be supported in future releases.",
-                      DeprecationWarning, stacklevel=4)
     return credentials_dict, default_provider_hgp
 
 
