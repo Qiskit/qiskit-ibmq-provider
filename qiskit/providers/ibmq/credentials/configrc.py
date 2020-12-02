@@ -16,7 +16,6 @@
 
 import logging
 import os
-import warnings
 from ast import literal_eval
 from collections import OrderedDict
 from configparser import ConfigParser, ParsingError
