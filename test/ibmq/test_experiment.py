@@ -221,7 +221,7 @@ class TestExperiment(IBMQTestCase):
         self.assertTrue(new_exp.uuid)
         self.assertTrue(new_exp.creation_datetime)
         self.assertEqual(ExperimentVisibility.PRIVATE, new_exp.visibility)
-        self.assertIsNotNone(new_exp.owner, 'Owner should be set')
+        self.assertIsNotNone(new_exp.owner, 'Owner should be set')  # pylint: disable=no-member
         for dt_attr in ['start_datetime', 'creation_datetime', 'end_datetime', 'updated_datetime']:
             if getattr(exp, dt_attr):
                 self.assertTrue(getattr(exp, dt_attr).tzinfo)
