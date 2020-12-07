@@ -16,11 +16,12 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Union
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .analysis_result import AnalysisResult
+from .constants import ExperimentVisibility
 from .utils import requires_experiment_uuid
 from ..utils.converters import str_to_utc, convert_tz
 from ..api.exceptions import RequestsApiError
@@ -45,7 +46,9 @@ class Experiment:
             analysis_results: Optional[List[AnalysisResult]] = None,
             hub: Optional[str] = None,
             group: Optional[str] = None,
-            project: Optional[str] = None
+            project: Optional[str] = None,
+            visibility: Union[ExperimentVisibility, str] = None,
+            owner: Optional[str] = None
     ):
         """Experiment constructor.
 
@@ -68,6 +71,9 @@ class Experiment:
                 group from the provider is used.
             project: The project to which this experiment belongs. If not specified the
                 project from the provider is used.
+            visibility: The visibility of the experiment which determines who can
+                see it when listing experiments.
+            owner: The user ID for the owner of the experiment.
 
         Raises:
             ExperimentError: If the provider does not offer experiment services.
@@ -79,6 +85,8 @@ class Experiment:
         self.extra = extra or {}
         self.tags = tags or []
         self.type = experiment_type
+        self.visibility = visibility  # type: ignore[assignment]
+        self._owner = owner
         self._analysis_results = analysis_results
         self._plot_names = plot_names or []
         self._retrieved_plots = False
@@ -105,6 +113,8 @@ class Experiment:
         self._start_datetime = str_to_utc(remote_data.get('start_time', None))
         self.tags = remote_data.get('tags', [])
         self.type = remote_data['type']
+        self.visibility = ExperimentVisibility(remote_data['visibility'])
+        self._owner = remote_data['owner']
         self._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
         self._uuid = remote_data['uuid']
         self._plot_names = remote_data.get('plot_names', [])
@@ -141,6 +151,27 @@ class Experiment:
     def project(self) -> str:
         """Return the experiment's project."""
         return self._project
+
+    @property
+    def visibility(self) -> ExperimentVisibility:
+        """Return the experiment visibility."""
+        return self._visibility
+
+    @quality.setter
+    def visibility(self, visibility: Union[ExperimentVisibility, str]) -> None:
+        """Update the experiment visibility.
+
+        Args:
+            visibility: Experiment visibility.
+        """
+        if isinstance(visibility, str):
+            visibility = ExperimentVisibility(visibility)
+        self._visibility = visibility
+
+    @property
+    def owner(self) -> str
+        """Return the experiment's owner."""
+        return self._owner
 
     @property
     def start_datetime(self) -> datetime:
@@ -230,14 +261,17 @@ class Experiment:
             plot_names=remote_data.get('plot_names', []),
             hub=remote_data.get('hub_id'),
             group=remote_data.get('group_id'),
-            project=remote_data.get('project_id'))
+            project=remote_data.get('project_id'),
+            visibility=remote_data['visibility'])
         experiment._creation_datetime = str_to_utc(remote_data['created_at'])
         experiment._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
         return experiment
 
     def __repr__(self) -> str:
-        attr_str = 'uuid="{}", backend_name="{}", type="{}"'.format(
-            self.uuid, self.backend_name, self.type)
+        attr_str = ('uuid="{}", backend_name="{}", type="{}", hub="{}", group="{}", '
+                    'project="{}", visibility="{}", owner="{}"').format(
+            self.uuid, self.backend_name, self.type, self.hub, self.group, self.project,
+            self.visibility, self.owner)
         for attr in ['extra', 'tags']:
             val = getattr(self, attr)
             if val is not None:

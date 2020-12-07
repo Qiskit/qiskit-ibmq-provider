@@ -53,3 +53,13 @@ class ResultQuality(enum.Enum):
     NO_INFORMATION = 'No Information', 3
     COMPUTER_GOOD = 'Computer Good', 4
     HUMAN_GOOD = 'Human Good', 5
+
+
+class ExperimentVisibility(enum.Enum):
+    """Possible values for experiment visibility."""
+
+    PRIVATE = 'private'  # The experiment is only visible to its owner
+    PROJECT = 'project'  # The experiment is shared within its project
+    GROUP = 'group'      # The experiment is shared within its group
+    HUB = 'hub'          # The experiment is shared within its hub
+    PUBLIC = 'public'    # The experiment is shared publicly regardless of provider
