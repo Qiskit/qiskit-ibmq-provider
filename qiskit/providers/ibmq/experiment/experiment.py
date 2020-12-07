@@ -157,7 +157,7 @@ class Experiment:
         """Return the experiment visibility."""
         return self._visibility
 
-    @quality.setter
+    @visibility.setter
     def visibility(self, visibility: Union[ExperimentVisibility, str]) -> None:
         """Update the experiment visibility.
 
@@ -268,10 +268,11 @@ class Experiment:
         return experiment
 
     def __repr__(self) -> str:
-        attr_str = ('uuid="{}", backend_name="{}", type="{}", hub="{}", group="{}", '
-                    'project="{}", visibility="{}", owner="{}"').format(
-            self.uuid, self.backend_name, self.type, self.hub, self.group, self.project,
-            self.visibility, self.owner)
+        attr_str = (
+            'uuid="{}", backend_name="{}", type="{}", hub="{}", group="{}", '
+            'project="{}", visibility="{}", owner="{}"').format(
+                self.uuid, self.backend_name, self.type, self.hub, self.group, self.project,
+                self.visibility, self.owner)
         for attr in ['extra', 'tags']:
             val = getattr(self, attr)
             if val is not None:
