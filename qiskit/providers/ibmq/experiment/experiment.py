@@ -169,7 +169,7 @@ class Experiment:
         self._visibility = visibility
 
     @property
-    def owner(self) -> str
+    def owner(self) -> str:
         """Return the experiment's owner."""
         return self._owner
 
