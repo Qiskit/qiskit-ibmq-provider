@@ -25,7 +25,7 @@ from qiskit.providers.ibmq.experiment.analysis_result import AnalysisResult, Fit
 from qiskit.providers.ibmq.experiment.exceptions import (ExperimentNotFoundError,
                                                          AnalysisResultNotFoundError,
                                                          PlotNotFoundError)
-from qiskit.providers.ibmq.experiment.constants import ResultQuality
+from qiskit.providers.ibmq.experiment.constants import ResultQuality, ExperimentVisibility
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 
 
@@ -200,7 +200,7 @@ class TestExperiment(IBMQTestCase):
         exp = self.experiments[0]
         rexp = self.provider.experiment.retrieve_experiment(exp.uuid)
         self.assertEqual(exp.uuid, rexp.uuid)
-        for attr in ['hub', 'group', 'project']:
+        for attr in ['hub', 'group', 'project', 'owner', 'visibility']:
             self.assertIsNotNone(getattr(rexp, attr), "{} does not have a {}".format(rexp, attr))
 
     def test_upload_experiment(self):
@@ -220,6 +220,8 @@ class TestExperiment(IBMQTestCase):
         self.assertEqual(credentials.project, new_exp.project)  # pylint: disable=no-member
         self.assertTrue(new_exp.uuid)
         self.assertTrue(new_exp.creation_datetime)
+        self.assertEqual(ExperimentVisibility.PRIVATE, new_exp.visibility)
+        self.assertIsNotNone(new_exp.owner, 'Owner should be set')
         for dt_attr in ['start_datetime', 'creation_datetime', 'end_datetime', 'updated_datetime']:
             if getattr(exp, dt_attr):
                 self.assertTrue(getattr(exp, dt_attr).tzinfo)
@@ -228,9 +230,11 @@ class TestExperiment(IBMQTestCase):
         """Test updating an experiment."""
         new_exp = self._create_experiment()
         new_exp.end_datetime = datetime.now()
+        new_exp.visibility = ExperimentVisibility.PROJECT
         self.provider.experiment.update_experiment(new_exp)
         rexp = self.provider.experiment.retrieve_experiment(new_exp.uuid)
         self.assertEqual(new_exp.end_datetime, rexp.end_datetime)
+        self.assertEqual(ExperimentVisibility.PROJECT, rexp.visibility)
 
     def test_delete_experiment(self):
         """Test deleting an experiment."""

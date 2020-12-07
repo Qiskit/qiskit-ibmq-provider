@@ -262,7 +262,8 @@ class Experiment:
             hub=remote_data.get('hub_id'),
             group=remote_data.get('group_id'),
             project=remote_data.get('project_id'),
-            visibility=remote_data['visibility'])
+            visibility=remote_data['visibility'],
+            owner=remote_data['owner'])
         experiment._creation_datetime = str_to_utc(remote_data['created_at'])
         experiment._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
         return experiment
