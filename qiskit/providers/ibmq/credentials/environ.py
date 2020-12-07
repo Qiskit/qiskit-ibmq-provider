@@ -16,7 +16,7 @@
 
 import os
 from collections import OrderedDict
-from typing import Dict, Tuple
+from typing import Dict
 
 from .credentials import Credentials
 from .hubgroupproject import HubGroupProject
