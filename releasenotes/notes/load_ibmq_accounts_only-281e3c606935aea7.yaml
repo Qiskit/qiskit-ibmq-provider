@@ -1,0 +1,8 @@
+---
+prelude: >
+    Loads IBM Quantum credentials only from those sections of the qiskitrc
+    file that start with 'ibmq'.
+upgrade:
+  - |
+    Loads credentials only from sections in qiskitrc starting with ibmq.
+    This allows the qiskitrc to be used for other functionality.

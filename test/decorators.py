@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2018, 2019.
@@ -68,7 +66,6 @@ def requires_qe_access(func):
             raise SkipTest('Skipping online tests')
 
         credentials = _get_credentials()
-        obj.using_ibmq_credentials = credentials.is_ibmq()
         kwargs.update({'qe_token': credentials.token,
                        'qe_url': credentials.url})
 
@@ -212,7 +209,7 @@ def requires_device(func):
                     break
         else:
             _backend = least_busy(provider.backends(
-                simulator=False, filters=lambda b: b.configuration().n_qubits >= 5))
+                simulator=False, min_num_qubits=5))
 
         if not _backend:
             raise Exception('Unable to find a suitable backend.')

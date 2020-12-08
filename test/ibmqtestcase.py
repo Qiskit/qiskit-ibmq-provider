@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2017, 2019.
@@ -16,11 +14,14 @@
 
 import os
 import logging
+import inspect
 
 from qiskit.test.base import BaseQiskitTestCase
 
 from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
 from qiskit.providers.ibmq.exceptions import IBMQAccountCredentialsNotFound
+
+from .utils import setup_test_logging
 
 
 class IBMQTestCase(BaseQiskitTestCase):
@@ -30,21 +31,18 @@ class IBMQTestCase(BaseQiskitTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.log = logging.getLogger(cls.__name__)
-        if os.getenv('LOG_LEVEL'):
-            cls._set_logging_level(logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME))
+        filename = '%s.log' % os.path.splitext(inspect.getfile(cls))[0]
+        setup_test_logging(cls.log, filename)
+        cls._set_logging_level(logging.getLogger(IBMQ_PROVIDER_LOGGER_NAME))
 
     @classmethod
     def tearDownClass(cls) -> None:
-        # Reset the default providers, as in practice they acts as a singleton
-        # due to importing the wrapper from qiskit.
+        super().tearDownClass()
         from qiskit.providers.ibmq import IBMQ
         try:
             IBMQ.disable_account()
         except IBMQAccountCredentialsNotFound:
             pass
-
-        from qiskit.providers.basicaer import BasicAer
-        BasicAer._backends = BasicAer._verify_backends()
 
     @classmethod
     def simple_job_callback(cls, job_id, job_status, job, **kwargs):
