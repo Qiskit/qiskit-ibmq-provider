@@ -21,7 +21,7 @@ from typing import Dict, Optional, List, Union
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .analysis_result import AnalysisResult
-from .constants import ExperimentVisibility
+from .constants import ExperimentShareLevel
 from .utils import requires_experiment_uuid
 from ..utils.converters import str_to_utc, convert_tz
 from ..api.exceptions import RequestsApiError
@@ -47,7 +47,7 @@ class Experiment:
             hub: Optional[str] = None,
             group: Optional[str] = None,
             project: Optional[str] = None,
-            visibility: Union[ExperimentVisibility, str] = None,
+            share_level: Union[ExperimentShareLevel, str] = None,
             owner: Optional[str] = None
     ):
         """Experiment constructor.
@@ -71,9 +71,18 @@ class Experiment:
                 group from the provider is used.
             project: The project to which this experiment belongs. If not specified the
                 project from the provider is used.
-            visibility: The visibility of the experiment which determines who can
-                see it when listing experiments.
-            owner: The user ID for the owner of the experiment.
+            share_level: The level at which the experiment is shared which determines who can
+                see it when listing experiments. This defaults to "private" for new
+                experiments. Possible values inclue:
+
+                - private: The experiment is only visible to its owner (default)
+                - project: The experiment is shared within its project
+                - group: The experiment is shared within its group
+                - hub: The experiment is shared within its hub
+                - public: The experiment is shared publicly regardless of provider
+
+            owner: The user ID for the owner of the experiment. This is set by the
+                server when the experiment is uploaded and should not be set by a user.
 
         Raises:
             ExperimentError: If the provider does not offer experiment services.
@@ -85,7 +94,7 @@ class Experiment:
         self.extra = extra or {}
         self.tags = tags or []
         self.type = experiment_type
-        self.visibility = visibility  # type: ignore[assignment]
+        self.share_level = share_level  # type: ignore[assignment]
         self._owner = owner
         self._analysis_results = analysis_results
         self._plot_names = plot_names or []
@@ -113,7 +122,7 @@ class Experiment:
         self._start_datetime = str_to_utc(remote_data.get('start_time', None))
         self.tags = remote_data.get('tags', [])
         self.type = remote_data['type']
-        self.visibility = ExperimentVisibility(remote_data['visibility'])
+        self.share_level = ExperimentShareLevel(remote_data['visibility'])
         self._owner = remote_data['owner']
         self._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
         self._uuid = remote_data['uuid']
@@ -153,20 +162,20 @@ class Experiment:
         return self._project
 
     @property
-    def visibility(self) -> ExperimentVisibility:
-        """Return the experiment visibility."""
-        return self._visibility
+    def share_level(self) -> ExperimentShareLevel:
+        """Return the experiment share_level."""
+        return self._share_level
 
-    @visibility.setter
-    def visibility(self, visibility: Union[ExperimentVisibility, str]) -> None:
-        """Update the experiment visibility.
+    @share_level.setter
+    def share_level(self, share_level: Union[ExperimentShareLevel, str]) -> None:
+        """Update the experiment share_level.
 
         Args:
-            visibility: Experiment visibility.
+            share_level: Experiment share_level.
         """
-        if isinstance(visibility, str):
-            visibility = ExperimentVisibility(visibility)
-        self._visibility = visibility
+        if isinstance(share_level, str):
+            share_level = ExperimentShareLevel(share_level)
+        self._share_level = share_level
 
     @property
     def owner(self) -> str:
@@ -262,7 +271,7 @@ class Experiment:
             hub=remote_data.get('hub_id'),
             group=remote_data.get('group_id'),
             project=remote_data.get('project_id'),
-            visibility=remote_data['visibility'],
+            share_level=remote_data['visibility'],
             owner=remote_data['owner'])
         experiment._creation_datetime = str_to_utc(remote_data['created_at'])
         experiment._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
@@ -271,9 +280,9 @@ class Experiment:
     def __repr__(self) -> str:
         attr_str = (
             'uuid="{}", backend_name="{}", type="{}", hub="{}", group="{}", '
-            'project="{}", visibility="{}", owner="{}"').format(
+            'project="{}", share_level="{}", owner="{}"').format(
                 self.uuid, self.backend_name, self.type, self.hub, self.group, self.project,
-                self.visibility, self.owner)
+                self.share_level, self.owner)
         for attr in ['extra', 'tags']:
             val = getattr(self, attr)
             if val is not None:

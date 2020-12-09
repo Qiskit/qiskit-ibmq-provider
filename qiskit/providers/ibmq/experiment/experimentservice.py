@@ -193,8 +193,8 @@ class ExperimentService:
             data['tags'] = experiment.tags
         if experiment.uuid:
             data['uuid'] = experiment.uuid
-        if experiment.visibility:
-            data['visibility'] = experiment.visibility.value
+        if experiment.share_level:
+            data['visibility'] = experiment.share_level.value
         response_data = self._api_client.experiment_upload(data)
         experiment.update_from_remote_data(response_data)
 
@@ -228,6 +228,7 @@ class ExperimentService:
             Only the following experiment attributes can be updated:
 
                 * end_datetime
+                * share_level (visibility)
 
         Args:
             experiment: Experiment to be updated.
@@ -235,8 +236,8 @@ class ExperimentService:
         data = {}
         if experiment.end_datetime:
             data['end_time'] = experiment.end_datetime.isoformat()
-        if experiment.visibility:
-            data['visibility'] = experiment.visibility.value
+        if experiment.share_level:
+            data['visibility'] = experiment.share_level.value
 
         if not data:    # Nothing to update.
             return
