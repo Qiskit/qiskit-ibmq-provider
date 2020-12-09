@@ -45,7 +45,7 @@ class Experiment:
             hub: Optional[str] = None,
             group: Optional[str] = None,
             project: Optional[str] = None,
-            share_level: Union[ExperimentShareLevel, str] = None,
+            share_level: Optional[Union[ExperimentShareLevel, str]] = None,
             owner: Optional[str] = None
     ):
         """Experiment constructor.
@@ -69,8 +69,8 @@ class Experiment:
                 group from the provider is used.
             project: The project to which this experiment belongs. If not specified the
                 project from the provider is used.
-            share_level: The level at which the experiment is shared which determines who can
-                see it when listing experiments. This defaults to "private" for new
+            share_level: The level at which the experiment is shared. This determines who can
+                access the experiment, including changing its data. This defaults to "private" for new
                 experiments. Possible values inclue:
 
                 - private: The experiment is only visible to its owner (default)
@@ -160,7 +160,7 @@ class Experiment:
         return self._project
 
     @property
-    def share_level(self) -> ExperimentShareLevel:
+    def share_level(self) -> Optional[ExperimentShareLevel]:
         """Return the experiment share_level."""
         return self._share_level
 
@@ -172,7 +172,7 @@ class Experiment:
             share_level: Experiment share_level.
         """
         if isinstance(share_level, str):
-            share_level = ExperimentShareLevel(share_level)
+            share_level = ExperimentShareLevel(share_level.lower())
         self._share_level = share_level
 
     @property
