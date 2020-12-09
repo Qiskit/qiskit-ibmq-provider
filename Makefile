@@ -15,6 +15,7 @@
 
 lint:
 	pylint -rn qiskit/providers/ibmq test
+	tools/verify_headers.py qiskit test
 
 mypy:
 	mypy --module qiskit.providers.ibmq --show-error-codes --no-site-packages --python-version 3.7
