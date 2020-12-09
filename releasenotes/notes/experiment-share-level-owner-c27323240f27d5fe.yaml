@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    :class:`qiskit.providers.ibmq.experiment.Experiment` now has two
+    additional attributes:
+
+    - share_level: The level at which the experiment is shared which determines
+      who can see it when listing experiments. This can be updated.
+    - owner: The ID of the user that uploaded the experiment. This is set by
+      the server and cannot be updated.
