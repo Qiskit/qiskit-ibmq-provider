@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2020.
@@ -17,6 +15,8 @@
 from typing import Dict, Union, List
 
 import dateutil.parser
+
+from .converters import utc_to_local
 
 
 def decode_pulse_qobj(pulse_qobj: Dict) -> None:
@@ -86,8 +86,10 @@ def decode_result(result: Dict) -> None:
     Args:
         result: A `Result` in dictionary format.
     """
-    if 'date' in result and isinstance(result['date'], str):
-        result['date'] = dateutil.parser.isoparse(result['date'])
+    if 'date' in result:
+        if isinstance(result['date'], str):
+            result['date'] = dateutil.parser.isoparse(result['date'])
+        result['date'] = utc_to_local(result['date'])
 
 
 def _to_complex(value: Union[List[float], complex]) -> complex:

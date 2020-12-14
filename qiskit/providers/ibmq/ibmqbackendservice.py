@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2019, 2020.
@@ -90,6 +88,7 @@ class IBMQBackendService:
             name: Optional[str] = None,
             filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
             timeout: Optional[float] = None,
+            min_num_qubits: Optional[int] = None,
             **kwargs: Any
     ) -> List[IBMQBackend]:
         """Return all backends accessible via this provider, subject to optional filtering.
@@ -99,9 +98,11 @@ class IBMQBackendService:
             filters: More complex filters, such as lambda functions.
                 For example::
 
-                    AccountProvider.backends(filters=lambda b: b.configuration().n_qubits > 5)
+                    AccountProvider.backends(
+                        filters=lambda b: b.configuration().quantum_volume > 16)
             timeout: Maximum number of seconds to wait for the discovery of
                 remote backends.
+            min_num_qubits: Minimum number of qubits the backend has to have.
             kwargs: Simple filters that specify a ``True``/``False`` criteria in the
                 backend configuration, backends status, or provider credentials.
                 An example to get the operational backends with 5 qubits::
@@ -116,7 +117,7 @@ class IBMQBackendService:
                           "be removed in a future release.",
                           DeprecationWarning, stacklevel=2)
 
-        backends = self._provider._backends.values()
+        backends = list(self._provider._backends.values())
 
         # Special handling of the `name` parameter, to support alias
         # resolution.
@@ -125,6 +126,10 @@ class IBMQBackendService:
             aliases.update(self._deprecated_backend_names())
             name = aliases.get(name, name)
             kwargs['backend_name'] = name
+
+        if min_num_qubits:
+            backends = list(filter(
+                lambda b: b.configuration().n_qubits > min_num_qubits, backends))
 
         return filter_backends(backends, filters=filters, **kwargs)
 

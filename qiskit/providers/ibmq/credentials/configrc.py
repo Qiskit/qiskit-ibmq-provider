@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2017, 2019.
@@ -65,28 +63,29 @@ def read_credentials_from_qiskitrc(
     # Build the credentials dictionary.
     credentials_dict = OrderedDict()  # type: ignore[var-annotated]
     default_provider_hgp = None
+
     for name in config_parser.sections():
-        single_credentials = dict(config_parser.items(name))
+        if name.startswith('ibmq'):
+            single_credentials = dict(config_parser.items(name))
+            # Individually convert keys to their right types.
+            # TODO: consider generalizing, moving to json configuration or a more
+            # robust alternative.
+            if 'proxies' in single_credentials.keys():
+                single_credentials['proxies'] = literal_eval(
+                    single_credentials['proxies'])
+            if 'verify' in single_credentials.keys():
+                single_credentials['verify'] = bool(  # type: ignore[assignment]
+                    single_credentials['verify'])
+            if 'default_provider' in single_credentials.keys():
+                default_provider_hgp = HubGroupProject.from_stored_format(
+                    single_credentials['default_provider'])
 
-        # Individually convert keys to their right types.
-        # TODO: consider generalizing, moving to json configuration or a more
-        # robust alternative.
-        if 'proxies' in single_credentials.keys():
-            single_credentials['proxies'] = literal_eval(
-                single_credentials['proxies'])
-        if 'verify' in single_credentials.keys():
-            single_credentials['verify'] = bool(  # type: ignore[assignment]
-                single_credentials['verify'])
-        if 'default_provider' in single_credentials.keys():
-            default_provider_hgp = HubGroupProject.from_stored_format(
-                single_credentials['default_provider'])
+                # Delete `default_provider`, since it's not used by the `Credentials` constructor.
+                del single_credentials['default_provider']
 
-            # Delete `default_provider`, since it's not used by the `Credentials` constructor.
-            del single_credentials['default_provider']
+            new_credentials = Credentials(**single_credentials)  # type: ignore[arg-type]
 
-        new_credentials = Credentials(**single_credentials)  # type: ignore[arg-type]
-
-        credentials_dict[new_credentials.unique_id()] = new_credentials
+            credentials_dict[new_credentials.unique_id()] = new_credentials
 
     return credentials_dict, default_provider_hgp
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2017, 2020.
@@ -23,12 +21,15 @@ from threading import Event
 from queue import Empty
 import dateutil.parser
 
-from qiskit.providers import BaseJob  # type: ignore[attr-defined]
+from qiskit.providers.job import JobV1 as Job
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.providers.models import BackendProperties
 from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.result import Result
 from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
+from qiskit.assembler.disassemble import disassemble
+from qiskit.circuit.quantumcircuit import QuantumCircuit
+from qiskit.pulse import Schedule
 
 from ..apiconstants import ApiJobStatus, ApiJobKind
 from ..api.clients import AccountClient
@@ -45,7 +46,7 @@ from .utils import build_error_report, api_to_job_error, get_cancel_status
 logger = logging.getLogger(__name__)
 
 
-class IBMQJob(BaseJob):
+class IBMQJob(Job):
     """Representation of a job that executes on an IBM Quantum Experience backend.
 
     The job may be executed on a simulator or a real device. A new ``IBMQJob``
@@ -182,17 +183,13 @@ class IBMQJob(BaseJob):
             IBMQJobApiError: If an unexpected error occurred when retrieving
                 job information from the server.
         """
-        if not self._kind:
-            return None
-
-        # pylint: disable=access-member-before-definition,attribute-defined-outside-init
-        if not self._qobj:  # type: ignore[has-type]
-            with api_to_job_error():
-                qobj = self._api_client.job_download_qobj(
-                    self.job_id(), self._use_object_storage)
-                self._qobj = dict_to_qobj(qobj)
-
-        return self._qobj
+        warnings.warn("The ``job.qobj()`` method is deprecated and will "
+                      "be removed in a future release. You can now pass circuits "
+                      "to ``backend.run()`` and use ``job.circuits()``, "
+                      "``job.backend_options()``, and ``job.header()`` to retrieve "
+                      "circuits, run configuration, and Qobj header, respectively.",
+                      DeprecationWarning, stacklevel=2)
+        return self._get_qobj()
 
     def properties(self) -> Optional[BackendProperties]:
         """Return the backend properties for this job.
@@ -765,6 +762,51 @@ class IBMQJob(BaseJob):
         for key, value in api_response.items():
             self._data[key + '_'] = value
 
+    def circuits(self) -> List[Union[QuantumCircuit, Schedule]]:
+        """Return the circuits or pulse schedules for this job.
+
+        Returns:
+            The circuits or pulse schedules for this job. An empty list
+            is returned if the circuits cannot be retrieved (for example, if
+            the job uses an old format that is no longer supported).
+        """
+        qobj = self._get_qobj()
+        if not qobj:
+            return []
+        circuits, _, _ = disassemble(qobj)
+        return circuits
+
+    def backend_options(self) -> Dict[str, Any]:
+        """Return the backend configuration options used for this job.
+
+        Options that are not applicable to the job execution are not returned.
+        Some but not all of the options with default values are returned.
+        You can use :attr:`qiskit.providers.ibmq.IBMQBackend.options` to see
+        all backend options.
+
+        Returns:
+            Backend options used for this job. An empty dictionary
+            is returned if the options cannot be retrieved.
+        """
+        qobj = self._get_qobj()
+        if not qobj:
+            return {}
+        _, options, _ = disassemble(qobj)
+        return options
+
+    def header(self) -> Dict:
+        """Return the user header specified for this job.
+
+        Returns:
+            User header specified for this job. An empty dictionary
+            is returned if the header cannot be retrieved.
+        """
+        qobj = self._get_qobj()
+        if not qobj:
+            return {}
+        _, _, header = disassemble(qobj)
+        return header
+
     def to_dict(self) -> Dict:
         """Serialize the model into a Python dict of simple types.
 
@@ -936,16 +978,9 @@ class IBMQJob(BaseJob):
             self._result = None
             return
         raw_data['client_version'] = self.client_version
-        # TODO Stop checking Terra version when it's released.
-        from qiskit.version import __version__ as terra_version
-        if terra_version >= '0.15.0':
-            decode_result(raw_data)
-        # if 'date' in raw_data:
-        #     raw_data['date'] = utc_to_local(raw_data['date'])
+        decode_result(raw_data)
         try:
             self._result = Result.from_dict(raw_data)
-            if hasattr(self._result, 'date'):
-                self._result.date = utc_to_local(self._result.date)
         except (KeyError, TypeError) as err:
             if not self._kind:
                 raise IBMQJobInvalidStateError(
@@ -1061,6 +1096,27 @@ class IBMQJob(BaseJob):
             queue_info = None
 
         return status, queue_info
+
+    def _get_qobj(self) -> Optional[Union[QasmQobj, PulseQobj]]:
+        """Return the Qobj for this job.
+
+        Returns:
+            The Qobj for this job, or ``None`` if the job does not have a Qobj.
+
+        Raises:
+            IBMQJobApiError: If an unexpected error occurred when retrieving
+                job information from the server.
+        """
+        if not self._kind:
+            return None
+
+        if not self._qobj:
+            with api_to_job_error():
+                qobj = self._api_client.job_download_qobj(
+                    self.job_id(), self._use_object_storage)
+                self._qobj = dict_to_qobj(qobj)
+
+        return self._qobj
 
     def __getattr__(self, name: str) -> Any:
         try:

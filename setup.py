@@ -18,7 +18,7 @@ from setuptools import setup
 
 REQUIREMENTS = [
     "nest-asyncio>=1.0.0,!=1.1.0",
-    "qiskit-terra>=0.15",
+    "qiskit-terra>=0.16",
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
     "websockets>=8",

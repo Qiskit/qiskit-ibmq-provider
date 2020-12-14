@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2020.
@@ -185,7 +183,7 @@ class ExperimentService:
             'extra': experiment.extra,
             'hub_id': experiment.hub,
             'group_id': experiment.group,
-            'project_id': experiment.project,
+            'project_id': experiment.project
         }
         if experiment.start_datetime:
             data['start_time'] = local_to_utc_str(experiment.start_datetime)
@@ -193,6 +191,8 @@ class ExperimentService:
             data['tags'] = experiment.tags
         if experiment.uuid:
             data['uuid'] = experiment.uuid
+        if experiment.share_level:
+            data['visibility'] = experiment.share_level.value
         response_data = self._api_client.experiment_upload(data)
         experiment.update_from_remote_data(response_data)
 
@@ -226,6 +226,7 @@ class ExperimentService:
             Only the following experiment attributes can be updated:
 
                 * end_datetime
+                * share_level (visibility)
 
         Args:
             experiment: Experiment to be updated.
@@ -233,6 +234,8 @@ class ExperimentService:
         data = {}
         if experiment.end_datetime:
             data['end_time'] = experiment.end_datetime.isoformat()
+        if experiment.share_level:
+            data['visibility'] = experiment.share_level.value
 
         if not data:    # Nothing to update.
             return

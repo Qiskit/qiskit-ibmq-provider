@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2019.
@@ -17,12 +15,16 @@
 from inspect import getfullargspec
 from datetime import timedelta
 import warnings
+from unittest import SkipTest
 
+from qiskit import transpile, assemble
+from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_device, requires_provider
+from ..utils import get_pulse_schedule
 
 
 class TestIBMQBackend(IBMQTestCase):
@@ -135,6 +137,48 @@ class TestIBMQBackend(IBMQTestCase):
                     "Reservation {} found={}, used start datetime {}, end datetime {}".format(
                         reserv, found, start_dt, end_dt))
 
+    def test_run_qobj(self):
+        """Test running a Qobj."""
+        qobj = assemble(transpile(ReferenceCircuits.bell(), self.backend), self.backend)
+        with self.assertWarns(DeprecationWarning):
+            job = self.backend.run(qobj)
+        job.cancel()
+
+    def test_backend_options(self):
+        """Test backend options."""
+        provider = self.backend.provider()
+        backends = provider.backends(open_pulse=True, operational=True)
+        if not backends:
+            raise SkipTest('Skipping pulse test since no pulse backend found.')
+
+        backend = backends[0]
+        backend.options.shots = 2048
+        backend.set_options(qubit_lo_freq=[4.9e9, 5.0e9],
+                            meas_lo_freq=[6.5e9, 6.6e9],
+                            meas_level=2)
+        job = backend.run(get_pulse_schedule(backend), validate_qobj=True, meas_level=1, foo='foo')
+        qobj = backend.retrieve_job(job.job_id()).qobj()  # Use retrieved Qobj.
+        self.assertEqual(qobj.config.shots, 2048)
+        # Qobj config freq is in GHz.
+        self.assertEqual(qobj.config.qubit_lo_freq, [4.9, 5.0])
+        self.assertEqual(qobj.config.meas_lo_freq, [6.5, 6.6])
+        self.assertEqual(qobj.config.meas_level, 1)
+        self.assertEqual(qobj.config.foo, 'foo')
+        job.cancel()
+
+    def test_sim_backend_options(self):
+        """Test simulator backend options."""
+        provider = self.backend.provider()
+        backend = provider.get_backend('ibmq_qasm_simulator')
+        backend.options.shots = 2048
+        backend.set_options(memory=True)
+        job = backend.run(ReferenceCircuits.bell(), validate_qobj=True, shots=1024, foo='foo')
+        qobj = backend.retrieve_job(job.job_id()).qobj()
+        self.assertEqual(qobj.config.shots, 1024)
+        self.assertTrue(qobj.config.memory)
+        self.assertEqual(qobj.config.foo, 'foo')
+        job.cancel()
+
 
 class TestIBMQBackendService(IBMQTestCase):
     """Test ibmqbackendservice module."""
@@ -150,7 +194,6 @@ class TestIBMQBackendService(IBMQTestCase):
         """Test my_reservations method"""
         reservations = self.provider.backend.my_reservations()
         for reserv in reservations:
-            print(reserv)
             for attr in reserv.__dict__:
                 self.assertIsNotNone(
                     getattr(reserv, attr),

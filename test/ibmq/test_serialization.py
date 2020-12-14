@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2020.
@@ -14,17 +12,17 @@
 
 """Test serializing and deserializing data sent to the server."""
 
-from unittest import skipIf, SkipTest
+from unittest import SkipTest
 from typing import Any, Dict, Optional
 
 import dateutil.parser
-import qiskit
+from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.test import slow_test
 from qiskit.providers.ibmq import least_busy
-from qiskit import assemble, transpile, schedule, QuantumCircuit
+from qiskit import transpile, schedule, QuantumCircuit
 
 from ..decorators import requires_provider
-from ..utils import bell_in_qobj, cancel_job
+from ..utils import cancel_job
 from ..ibmqtestcase import IBMQTestCase
 
 
@@ -38,15 +36,15 @@ class TestSerialization(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.provider = provider
+        cls.sim_backend = provider.get_backend('ibmq_qasm_simulator')
+        cls.bell = transpile(ReferenceCircuits.bell(), backend=cls.sim_backend)
 
     def test_qasm_qobj(self):
         """Test serializing qasm qobj data."""
-        backend = self.provider.get_backend('ibmq_qasm_simulator')
-        qobj = bell_in_qobj(backend=backend)
-        job = backend.run(qobj, validate_qobj=True)
-        rqobj = backend.retrieve_job(job.job_id()).qobj()
+        job = self.sim_backend.run(self.bell, validate_qobj=True)
+        rqobj = self.sim_backend.retrieve_job(job.job_id()).qobj()
 
-        self.assertEqual(_array_to_list(qobj.to_dict()), rqobj.to_dict())
+        self.assertEqual(_array_to_list(job.qobj().to_dict()), rqobj.to_dict())
 
     def test_pulse_qobj(self):
         """Test serializing pulse qobj data."""
@@ -63,13 +61,12 @@ class TestSerialization(IBMQTestCase):
         measure = inst_map.get('measure', range(config.n_qubits)) << x.duration
         schedules = x | measure
 
-        qobj = assemble(schedules, backend, meas_level=1, shots=256)
-        job = backend.run(qobj, validate_qobj=True)
+        job = backend.run(schedules, validate_qobj=True, meas_level=1, shots=256)
         rqobj = backend.retrieve_job(job.job_id()).qobj()
 
         # Convert numpy arrays to lists since they now get converted right
         # before being sent to the server.
-        self.assertEqual(_array_to_list(qobj.to_dict()), rqobj.to_dict())
+        self.assertEqual(_array_to_list(job.qobj().to_dict()), rqobj.to_dict())
 
         cancel_job(job)
 
@@ -112,16 +109,12 @@ class TestSerialization(IBMQTestCase):
                 properties = backend.properties()
                 self._verify_data(properties.to_dict(), good_keys)
 
-    @skipIf(qiskit.__version__ < '0.15.0', 'Test requires terra 0.15.0')
     def test_qasm_job_result(self):
         """Test deserializing a QASM job result."""
-        backend = self.provider.get_backend('ibmq_qasm_simulator')
-        qobj = bell_in_qobj(backend=backend)
-        result = backend.run(qobj, validate_qobj=True).result()
+        result = self.sim_backend.run(self.bell, validate_qobj=True).result()
 
         self._verify_data(result.to_dict(), ())
 
-    @skipIf(qiskit.__version__ < '0.15.0', 'Test requires terra 0.15.0')
     @slow_test
     def test_pulse_job_result(self):
         """Test deserializing a pulse job result."""
@@ -134,7 +127,7 @@ class TestSerialization(IBMQTestCase):
         qc.x(0)
         qc.measure([0], [0])
         sched = schedule(transpile(qc, backend=backend), backend=backend)
-        job = backend.run(assemble(sched, backend=backend))
+        job = backend.run(sched, backend=backend)
         result = job.result()
 
         # Known keys that look like a serialized object.

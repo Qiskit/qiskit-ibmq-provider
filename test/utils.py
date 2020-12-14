@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2020.
@@ -23,6 +21,7 @@ from qiskit import QuantumCircuit
 from qiskit.qobj import QasmQobj
 from qiskit.compiler import assemble, transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
+from qiskit.pulse import Schedule
 from qiskit.providers.exceptions import JobError
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory
@@ -180,6 +179,21 @@ def submit_and_cancel(backend: IBMQBackend) -> IBMQJob:
     job = backend.run(qobj, validate_qobj=True)
     cancel_job(job, True)
     return job
+
+
+def get_pulse_schedule(backend: IBMQBackend) -> Schedule:
+    """Return a pulse schedule."""
+    config = backend.configuration()
+    defaults = backend.defaults()
+    inst_map = defaults.instruction_schedule_map
+
+    # Run 2 experiments - 1 with x pulse and 1 without
+    x = inst_map.get('x', 0)
+    measure = inst_map.get('measure', range(config.n_qubits)) << x.duration
+    ground_sched = measure
+    excited_sched = x | measure
+    schedules = [ground_sched, excited_sched]
+    return schedules
 
 
 def get_provider(

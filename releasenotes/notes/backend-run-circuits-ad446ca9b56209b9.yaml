@@ -1,0 +1,30 @@
+---
+features:
+  - |
+    :meth:`qiskit.providers.ibmq.IBMQBackend.run` method now takes one or more
+    :class:`~qiskit.circuit.QuantumCircuit` or :class:`~qiskit.pulse.Schedule`.
+    Runtime configuration options, such as the number of shots, can be set via
+    either the :meth:`~qiskit.providers.ibmq.IBMQBackend.run` method, or
+    the :meth:`qiskit.providers.ibmq.IBMQBackend.set_options` method. The former
+    is used as a one-time setting for the job, and the latter for all jobs
+    sent to the backend. If an option is set in both places, the value set
+    in :meth:`~qiskit.providers.ibmq.IBMQBackend.run` takes precedence. For
+    example::
+
+      from qiskit import IBMQ, transpile
+      from qiskit.test.reference_circuits import ReferenceCircuits
+
+      provider = IBMQ.load_account()
+      backend = provider.get_backend('ibmq_vigo')
+      circuits = transpile(ReferenceCircuits.bell(), backend=backend)
+      default_shots = backend.options.shots  # Returns the backend default of 1024 shots.
+      backend.set_options(shots=2048)        # All jobs will now have use 2048 shots.
+      backend.run(circuits)                  # This runs with 2048 shots.
+      backend.run(circuits, shots=8192)      # This runs with 8192 shots.
+      backend.run(circuits)                  # This again runs with 2048 shots.
+deprecations:
+  - |
+    Use of :class:`~qiskit.qobj.QasmQobj` and :class:`~qiskit.qobj.PulseQobj` in
+    the :meth:`qiskit.providers.ibmq.IBMQBackend.run` method is now deprecated.
+    :class:`~qiskit.circuit.QuantumCircuit` and :class:`~qiskit.pulse.Schedule`
+    should now be used instead.

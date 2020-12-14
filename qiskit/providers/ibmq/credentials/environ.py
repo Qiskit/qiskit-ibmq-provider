@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2017, 2018.
@@ -16,7 +14,7 @@
 
 import os
 from collections import OrderedDict
-from typing import Dict, Tuple
+from typing import Dict
 
 from .credentials import Credentials
 from .hubgroupproject import HubGroupProject

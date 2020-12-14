@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2020.
@@ -16,6 +14,8 @@
 
 from unittest import mock
 
+from qiskit import transpile
+from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.ibmq.jupyter.qubits_widget import qubits_tab
 from qiskit.providers.ibmq.jupyter.config_widget import config_tab
 from qiskit.providers.ibmq.jupyter.gates_widget import gates_tab
@@ -27,7 +27,6 @@ from qiskit.providers.ibmq.jupyter.dashboard.job_widgets import create_job_widge
 from qiskit.providers.ibmq.jupyter.dashboard.watcher_monitor import _job_checker
 
 from ..decorators import requires_provider
-from ..utils import bell_in_qobj
 from ..ibmqtestcase import IBMQTestCase
 
 
@@ -110,15 +109,13 @@ class TestIQXDashboard(IBMQTestCase):
     def test_job_widget(self):
         """Test jobs tab."""
         backend = self.provider.get_backend('ibmq_qasm_simulator')
-        qobj = bell_in_qobj(backend=backend)
-        job = backend.run(qobj)
+        job = backend.run(transpile(ReferenceCircuits.bell(), backend))
         create_job_widget(mock.MagicMock(), job, backend=backend.name(), status=job.status().value)
 
     def test_watcher_monitor(self):
         """Test job watcher."""
         backend = self.provider.get_backend('ibmq_qasm_simulator')
-        qobj = bell_in_qobj(backend=backend)
-        job = backend.run(qobj)
+        job = backend.run(transpile(ReferenceCircuits.bell(), backend))
         _job_checker(job=job, status=job.status(), watcher=mock.MagicMock())
 
 
