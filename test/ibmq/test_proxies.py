@@ -12,11 +12,8 @@
 
 """Tests for the AuthClient and VersionClient proxy support."""
 
-
-from unittest import skipIf
 import urllib
 import subprocess
-import sys
 
 from requests.exceptions import ProxyError
 
@@ -28,12 +25,6 @@ from qiskit.providers.ibmq.credentials import Credentials
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_qe_access
 
-# Fallback mechanism. Version variable is stored under __doc__ in new pproxy versions
-try:
-    from pproxy.__doc__ import __version__ as pproxy_version
-except ImportError:
-    from pproxy import __version__ as pproxy_version
-
 ADDRESS = '127.0.0.1'
 PORT = 8085
 VALID_PROXIES = {'https': 'http://{}:{}'.format(ADDRESS, PORT)}
@@ -41,18 +32,14 @@ INVALID_PORT_PROXIES = {'https': 'http://{}:{}'.format(ADDRESS, '6666')}
 INVALID_ADDRESS_PROXIES = {'https': 'http://{}:{}'.format('invalid', PORT)}
 
 
-@skipIf((sys.version_info > (3, 5) and pproxy_version == '1.2.2') or
-        (sys.version_info == (3, 5) and pproxy_version > '1.2.2'),
-        'pproxy version is not supported')
 class TestProxies(IBMQTestCase):
     """Tests for proxy capabilities."""
 
     def setUp(self):
         """Initial test setup."""
         super().setUp()
-        listen_flag = '-l' if pproxy_version >= '1.7.2' else '-i'
         # launch a mock server.
-        command = ['pproxy', '-v', listen_flag, 'http://{}:{}'.format(ADDRESS, PORT)]
+        command = ['pproxy', '-v', '-l', 'http://{}:{}'.format(ADDRESS, PORT)]
         self.proxy_process = subprocess.Popen(command, stdout=subprocess.PIPE)
 
     def tearDown(self):

@@ -17,7 +17,7 @@ import time
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.result import Result
 from qiskit.execute import execute
-from qiskit.compiler import assemble, transpile
+from qiskit.compiler import transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
 
@@ -96,9 +96,9 @@ class TestIBMQIntegration(IBMQTestCase):
         qc.measure(qubit_reg, clbit_reg)
         qc_extra = QuantumCircuit(qubit_reg, clbit_reg, name="extra")
         qc_extra.measure(qubit_reg, clbit_reg)
-        qobj = assemble(transpile([qc, qc_extra], backend=self.sim_backend,
-                                  seed_transpiler=self.seed), backend=self.sim_backend)
-        job = self.sim_backend.run(qobj, validate_qobj=True)
+        circs = transpile([qc, qc_extra], backend=self.sim_backend,
+                          seed_transpiler=self.seed)
+        job = self.sim_backend.run(circs, validate_qobj=True)
         result = job.result()
         self.assertIsInstance(result, Result)
 

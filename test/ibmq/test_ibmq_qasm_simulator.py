@@ -13,7 +13,7 @@
 """Test IBM Quantum online QASM simulator."""
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.compiler import assemble, transpile
+from qiskit.compiler import transpile
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
@@ -37,10 +37,9 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         qc = QuantumCircuit(qr, cr, name='qc')
         qc.h(qr[0])
         qc.measure(qr[0], cr[0])
-        qobj = assemble(transpile(qc, backend=self.sim_backend, seed_transpiler=73846087),
-                        backend=self.sim_backend)
-        shots = qobj.config.shots
-        job = self.sim_backend.run(qobj, validate_qobj=True)
+        circs = transpile(qc, backend=self.sim_backend, seed_transpiler=73846087)
+        shots = 1024
+        job = self.sim_backend.run(circs, validate_qobj=True, shots=shots)
         result = job.result()
         counts = result.get_counts(qc)
         target = {'0': shots / 2, '1': shots / 2}
@@ -61,9 +60,8 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         qcr2.measure(qr[0], cr[0])
         qcr2.measure(qr[1], cr[1])
         shots = 1024
-        qobj = assemble(transpile([qcr1, qcr2], backend=self.sim_backend, seed_transpiler=73846087),
-                        backend=self.sim_backend, shots=shots)
-        job = self.sim_backend.run(qobj, validate_qobj=True)
+        circs = transpile([qcr1, qcr2], backend=self.sim_backend, seed_transpiler=73846087)
+        job = self.sim_backend.run(circs, validate_qobj=True, shots=shots)
         result = job.result()
         counts1 = result.get_counts(qcr1)
         counts2 = result.get_counts(qcr2)
@@ -92,9 +90,8 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         qcr2.measure(qr1[1], cr1[1])
         qcr2.measure(qr2[0], cr2[0])
         qcr2.measure(qr2[1], cr2[1])
-        qobj = assemble(transpile([qcr1, qcr2], self.sim_backend, seed_transpiler=8458),
-                        backend=self.sim_backend, shots=1024)
-        job = self.sim_backend.run(qobj, validate_qobj=True)
+        circs = transpile([qcr1, qcr2], self.sim_backend, seed_transpiler=8458)
+        job = self.sim_backend.run(circs, validate_qobj=True, shots=1024)
         result = job.result()
         result1 = result.get_counts(qcr1)
         result2 = result.get_counts(qcr2)
@@ -111,7 +108,6 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         circuit.measure(qr[0], cr[0])
         circuit.x(qr[0]).c_if(cr, 1)
 
-        qobj = assemble(transpile(circuit, backend=self.sim_backend))
-        result = self.sim_backend.run(qobj, validate_qobj=True).result()
-
+        result = self.sim_backend.run(transpile(circuit, backend=self.sim_backend),
+                                      validate_qobj=True).result()
         self.assertEqual(result.get_counts(circuit), {'0001': 1024})

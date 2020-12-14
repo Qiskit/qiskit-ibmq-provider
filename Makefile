@@ -18,7 +18,7 @@ lint:
 	tools/verify_headers.py qiskit test
 
 mypy:
-	mypy --module qiskit.providers.ibmq --show-error-codes --no-site-packages --python-version 3.7
+	mypy --module qiskit.providers.ibmq
 
 style:
 	pycodestyle qiskit test
