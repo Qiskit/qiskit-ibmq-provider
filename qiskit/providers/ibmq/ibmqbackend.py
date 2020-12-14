@@ -258,9 +258,8 @@ class IBMQBackend(Backend):
         if isinstance(circuits, (QasmQobj, PulseQobj)):
             warnings.warn("Passing a Qobj to Backend.run is deprecated and will "
                           "be removed in a future release. Please pass in circuits "
-                          "or pulse schedules instead. The `qobj` parameter has been "
-                          "renamed to `circuits`.", DeprecationWarning,
-                          stacklevel=2)
+                          "or pulse schedules instead.", DeprecationWarning,
+                          stacklevel=3)  # need level 3 because of decorator
             qobj = circuits
         else:
             qobj_header = run_config.pop('qobj_header', None)
@@ -289,8 +288,11 @@ class IBMQBackend(Backend):
         """Return the consolidated runtime configuration."""
         run_config_dict = copy.copy(self.options.__dict__)
         for key, val in kwargs.items():
-            if val:
+            if val is not None:
                 run_config_dict[key] = val
+                if key not in self.options.__dict__ and not isinstance(self, IBMQSimulator):
+                    warnings.warn(f"{key} is not a recognized runtime"  # type: ignore[unreachable]
+                                  f" option and may be ignored by the backend.", stacklevel=4)
         return run_config_dict
 
     def _submit_job(
@@ -835,7 +837,8 @@ class IBMQRetiredBackend(IBMQBackend):
 
     def run(    # type: ignore[override]
             self,
-            **kwargs: Dict
+            *args: Any,
+            **kwargs: Any
     ) -> None:
         """Run a Qobj."""
         # pylint: disable=arguments-differ
