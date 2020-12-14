@@ -147,7 +147,7 @@ class ManagedJobSet:
         jobs = []  # type: List[IBMQJob]
         page_limit = 1000
         while True:
-            job_page = provider.backends.jobs(    # type: ignore[attr-defined]
+            job_page = provider.backend.jobs(    # type: ignore[attr-defined]
                 skip=len(jobs), limit=page_limit, job_tags=[self._id_long])
             jobs += job_page
             if len(job_page) < page_limit:

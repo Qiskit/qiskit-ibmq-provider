@@ -121,7 +121,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
 
     def test_aliases(self):
         """Test that display names of devices map the regular names."""
-        aliased_names = self.provider.backends._aliased_backend_names()
+        aliased_names = self.provider.backend._aliased_backend_names()
 
         for display_name, backend_name in aliased_names.items():
             with self.subTest(display_name=display_name,

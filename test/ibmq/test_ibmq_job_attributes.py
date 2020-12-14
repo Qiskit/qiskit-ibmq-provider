@@ -85,21 +85,21 @@ class TestIBMQJobAttributes(JobTestCase):
         job_name = str(time.time()).replace('.', '')
         job = self.sim_backend.run(self.bell, job_name=job_name, validate_qobj=True)
         job_id = job.job_id()
-        rjob = self.provider.backends.retrieve_job(job_id)
+        rjob = self.provider.backend.retrieve_job(job_id)
         self.assertEqual(rjob.name(), job_name)
 
         # Check using partial matching.
         job_name_partial = job_name[8:]
-        retrieved_jobs = self.provider.backends.jobs(backend_name=self.sim_backend.name(),
-                                                     job_name=job_name_partial)
+        retrieved_jobs = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
+                                                    job_name=job_name_partial)
         self.assertGreaterEqual(len(retrieved_jobs), 1)
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertIn(job_id, retrieved_job_ids)
 
         # Check using regular expressions.
         job_name_regex = '^{}$'.format(job_name)
-        retrieved_jobs = self.provider.backends.jobs(backend_name=self.sim_backend.name(),
-                                                     job_name=job_name_regex)
+        retrieved_jobs = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
+                                                    job_name=job_name_regex)
         self.assertEqual(len(retrieved_jobs), 1)
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
@@ -133,8 +133,8 @@ class TestIBMQJobAttributes(JobTestCase):
             job = self.sim_backend.run(self.bell, job_name=job_name, validate_qobj=True)
             job_ids.add(job.job_id())
 
-        retrieved_jobs = self.provider.backends.jobs(backend_name=self.sim_backend.name(),
-                                                     job_name=job_name)
+        retrieved_jobs = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
+                                                    job_name=job_name)
 
         self.assertEqual(len(retrieved_jobs), 2,
                          "More than 2 jobs retrieved: {}".format(retrieved_jobs))
@@ -170,7 +170,7 @@ class TestIBMQJobAttributes(JobTestCase):
         message = job.error_message()
         self.assertIn('Experiment 1: ERROR', message)
 
-        r_message = self.provider.backends.retrieve_job(job.job_id()).error_message()
+        r_message = self.provider.backend.retrieve_job(job.job_id()).error_message()
         self.assertIn('Experiment 1: ERROR', r_message)
 
     def test_error_message_validation(self):
@@ -194,7 +194,7 @@ class TestIBMQJobAttributes(JobTestCase):
         if 'COMPLETED' not in self.sim_job.time_per_step():
             self.sim_job.refresh()
 
-        rjob = self.provider.backends.jobs(db_filter={'id': self.sim_job.job_id()})[0]
+        rjob = self.provider.backend.jobs(db_filter={'id': self.sim_job.job_id()})[0]
         self.assertFalse(rjob._time_per_step)
         rjob.refresh()
         self.assertEqual(rjob._time_per_step, self.sim_job._time_per_step)
@@ -229,7 +229,7 @@ class TestIBMQJobAttributes(JobTestCase):
                             'between the start date time {} and end date time {}'
                             .format(step, time_data, start_datetime, end_datetime))
 
-        rjob = self.provider.backends.jobs(db_filter={'id': job.job_id()})[0]
+        rjob = self.provider.backend.jobs(db_filter={'id': job.job_id()})[0]
         self.assertTrue(rjob.time_per_step())
 
     def test_new_job_attributes(self):

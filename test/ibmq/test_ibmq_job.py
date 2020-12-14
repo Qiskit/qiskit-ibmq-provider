@@ -176,7 +176,7 @@ class TestIBMQJob(JobTestCase):
 
     def test_retrieve_jobs(self):
         """Test retrieving jobs."""
-        job_list = self.provider.backends.jobs(
+        job_list = self.provider.backend.jobs(
             backend_name=self.sim_backend.name(), limit=5, skip=0)
         self.assertLessEqual(len(job_list), 5)
         for job in job_list:
@@ -184,7 +184,7 @@ class TestIBMQJob(JobTestCase):
 
     def test_retrieve_job(self):
         """Test retrieving a single job."""
-        retrieved_job = self.provider.backends.retrieve_job(self.sim_job.job_id())
+        retrieved_job = self.provider.backend.retrieve_job(self.sim_job.job_id())
         self.assertEqual(self.sim_job.job_id(), retrieved_job.job_id())
         self.assertEqual(self.sim_job.qobj().to_dict(), retrieved_job.qobj().to_dict())
         self.assertEqual(self.sim_job.result().get_counts(), retrieved_job.result().get_counts())
@@ -229,7 +229,7 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_job_error(self):
         """Test retrieving an invalid job."""
         self.assertRaises(IBMQBackendError,
-                          self.provider.backends.retrieve_job, 'BAD_JOB_ID')
+                          self.provider.backend.retrieve_job, 'BAD_JOB_ID')
 
     def test_retrieve_jobs_status(self):
         """Test retrieving jobs filtered by status."""
@@ -346,8 +346,8 @@ class TestIBMQJob(JobTestCase):
         # Add local tz in order to compare to `creation_date` which is tz aware.
         past_month_tz_aware = past_month.replace(tzinfo=tz.tzlocal())
 
-        job_list = self.provider.backends.jobs(backend_name=self.sim_backend.name(),
-                                               limit=2, start_datetime=past_month)
+        job_list = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
+                                              limit=2, start_datetime=past_month)
         self.assertTrue(job_list)
         for job in job_list:
             self.assertGreaterEqual(job.creation_date(), past_month_tz_aware,
@@ -360,8 +360,8 @@ class TestIBMQJob(JobTestCase):
         # Add local tz in order to compare to `creation_date` which is tz aware.
         past_month_tz_aware = past_month.replace(tzinfo=tz.tzlocal())
 
-        job_list = self.provider.backends.jobs(backend_name=self.sim_backend.name(),
-                                               limit=2, end_datetime=past_month)
+        job_list = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
+                                              limit=2, end_datetime=past_month)
         self.assertTrue(job_list)
         for job in job_list:
             self.assertLessEqual(job.creation_date(), past_month_tz_aware,
@@ -384,7 +384,7 @@ class TestIBMQJob(JobTestCase):
 
         for db_filter in db_filters:
             with self.subTest(db_filter=db_filter):
-                job_list = self.provider.backends.jobs(
+                job_list = self.provider.backend.jobs(
                     backend_name=self.sim_backend.name(), limit=2,
                     start_datetime=past_two_month, end_datetime=past_month, db_filter=db_filter)
                 self.assertTrue(job_list)
@@ -407,8 +407,8 @@ class TestIBMQJob(JobTestCase):
                      'summaryData.summary.qobj_config.n_qubits': 3,
                      'status': 'COMPLETED'}
 
-        job_list = self.provider.backends.jobs(backend_name=self.sim_backend.name(),
-                                               limit=2, skip=0, db_filter=my_filter)
+        job_list = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
+                                              limit=2, skip=0, db_filter=my_filter)
         self.assertTrue(job_list)
 
         for job in job_list:
@@ -491,11 +491,11 @@ class TestIBMQJob(JobTestCase):
         saved_backends = copy.copy(self.provider._backends)
         try:
             del self.provider._backends[self.sim_backend.name()]
-            new_job = self.provider.backends.retrieve_job(self.sim_job.job_id())
+            new_job = self.provider.backend.retrieve_job(self.sim_job.job_id())
             self.assertTrue(isinstance(new_job.backend(), IBMQRetiredBackend))
             self.assertNotEqual(new_job.backend().name(), 'unknown')
 
-            new_job2 = self.provider.backends.jobs(db_filter={'id': self.sim_job.job_id()})[0]
+            new_job2 = self.provider.backend.jobs(db_filter={'id': self.sim_job.job_id()})[0]
             self.assertTrue(isinstance(new_job2.backend(), IBMQRetiredBackend))
             self.assertNotEqual(new_job2.backend().name(), 'unknown')
         finally:

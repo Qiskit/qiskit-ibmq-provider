@@ -13,7 +13,7 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable
 from collections import OrderedDict
 
 from qiskit.providers import ProviderV1 as Provider  # type: ignore[attr-defined]
@@ -23,7 +23,7 @@ from qiskit.providers.models import (QasmBackendConfiguration,
 from .api.clients import AccountClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
 from .credentials import Credentials
-from .ibmqbackendservice import IBMQBackendService
+from .ibmqbackendservice import IBMQBackendService, IBMQDeprecatedBackendService
 from .utils.json_decoder import decode_backend_configuration
 from .random.ibmqrandomservice import IBMQRandomService
 from .experiment.experimentservice import ExperimentService
@@ -59,15 +59,15 @@ class AccountProvider(Provider):
 
         simulator_backend = provider.get_backend('ibmq_qasm_simulator')
 
-    It is also possible to use the ``backends`` attribute to reference a backend.
+    It is also possible to use the ``backend`` attribute to reference a backend.
     As an example, to retrieve the same backend from the example above::
 
-        simulator_backend = provider.backends.ibmq_qasm_simulator
+        simulator_backend = provider.backend.ibmq_qasm_simulator
 
     Note:
-        The ``backends`` attribute can be used to autocomplete the names of
+        The ``backend`` attribute can be used to autocomplete the names of
         backends available to this provider. To autocomplete, press ``tab``
-        after ``provider.backends.``. This feature may not be available
+        after ``provider.backend.``. This feature may not be available
         if an error occurs during backend discovery. Also note that
         this feature is only available in interactive sessions, such as
         in Jupyter Notebook and the Python interpreter.
@@ -89,7 +89,8 @@ class AccountProvider(Provider):
 
         # Initialize the internal list of backends.
         self._backends = self._discover_remote_backends()
-        self.backends = IBMQBackendService(self)  # type: ignore[assignment]
+        self.backend = IBMQBackendService(self)
+        self.backends = IBMQDeprecatedBackendService(self.backend)  # type: ignore[assignment]
 
         # Initialize other services.
         self.random = IBMQRandomService(self, access_token)
@@ -97,9 +98,31 @@ class AccountProvider(Provider):
         self._experiment = ExperimentService(self, access_token) \
             if credentials.experiment_url else None
 
-    def backends(self, name: Optional[str] = None, **kwargs: Any) -> List[IBMQBackend]:
-        """Return all backends accessible via this provider, subject to optional filtering."""
+    def backends(
+            self,
+            name: Optional[str] = None,
+            filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
+            **kwargs: Any
+    ) -> List[IBMQBackend]:
+        """Return all backends accessible via this provider, subject to optional filtering.
+
+        Args:
+            name: Backend name to filter by.
+            filters: More complex filters, such as lambda functions.
+                For example::
+
+                    AccountProvider.backends(filters=lambda b: b.configuration().n_qubits > 5)
+            kwargs: Simple filters that specify a ``True``/``False`` criteria in the
+                backend configuration, backends status, or provider credentials.
+                An example to get the operational backends with 5 qubits::
+
+                    AccountProvider.backends(n_qubits=5, operational=True)
+
+        Returns:
+            The list of available backends that match the filter.
+        """
         # pylint: disable=method-hidden
+        # pylint: disable=arguments-differ
         # This method is only for faking the subclassing of `BaseProvider`, as
         # `.backends()` is an abstract method. Upon initialization, it is
         # replaced by a `IBMQBackendService` instance.

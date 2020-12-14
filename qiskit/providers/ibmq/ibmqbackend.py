@@ -69,7 +69,7 @@ class IBMQBackend(Backend):
         from qiskit.circuit.random import random_circuit
 
         provider = IBMQ.load_account()
-        backend = provider.backends.ibmq_vigo
+        backend = provider.backend.ibmq_vigo
         qx = random_circuit(n_qubits=5, depth=4)
         transpiled = transpile(qx, backend=backend)
         job = backend.run(transpiled)
@@ -595,7 +595,7 @@ class IBMQBackend(Backend):
         Raises:
             IBMQBackendValueError: If a keyword value is not recognized.
         """
-        return self._provider.backends.jobs(
+        return self._provider.backend.jobs(
             limit, skip, self.name(), status,
             job_name, start_datetime, end_datetime, job_tags, job_tags_operator,
             descending, db_filter)
@@ -633,7 +633,7 @@ class IBMQBackend(Backend):
         Raises:
             IBMQBackendError: If job retrieval failed.
         """
-        job = self._provider.backends.retrieve_job(job_id)
+        job = self._provider.backend.retrieve_job(job_id)
         job_backend = job.backend()
 
         if self.name() != job_backend.name():

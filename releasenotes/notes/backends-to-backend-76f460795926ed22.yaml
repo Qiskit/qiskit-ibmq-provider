@@ -1,0 +1,12 @@
+---
+deprecations:
+  - |
+    The ``backends`` attribute of :class:`qiskit.providers.ibmq.AccountProvider`
+    has been renamed to ``backend`` (sigular). For backward compatibility, you
+    can continue to use ``backends``, but it is deprecated and will be removed
+    in a future release. The :meth:`qiskit.providers.ibmq.AccountProvider.backends`
+    method remains unchanged. For example::
+
+      backend = provider.backend.ibmq_vigo   # This is the new syntax.
+      backend = provider.backends.ibmq_vigo  # This is deprecated.
+      backends = provider.backends()         # This continues to work as before.

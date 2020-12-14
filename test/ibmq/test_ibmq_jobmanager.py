@@ -62,7 +62,7 @@ class TestIBMQJobManager(IBMQTestCase):
         if self._fake_api_backend:
             self._fake_api_backend._api_client.tear_down()
         # Restore provider backends since we cannot deep copy provider.
-        self.provider.backends._provider = self.provider
+        self.provider.backend._provider = self.provider
 
     @property
     def fake_api_backend(self):
@@ -73,7 +73,7 @@ class TestIBMQJobManager(IBMQTestCase):
             self._fake_api_provider._api_client = self._fake_api_backend._api_client \
                 = BaseFakeAccountClient()
             self._fake_api_backend._provider = self._fake_api_provider
-            self._fake_api_provider.backends._provider = self._fake_api_provider
+            self._fake_api_provider.backend._provider = self._fake_api_provider
             self._fake_api_backend._configuration.max_experiments = 10
         return self._fake_api_backend
 
@@ -140,7 +140,7 @@ class TestIBMQJobManager(IBMQTestCase):
         jobs = job_set.jobs()
         job_set.results()
         for i, qobj in enumerate(job_set.qobjs()):
-            rjob = self.fake_api_provider.backends.retrieve_job(jobs[i].job_id())
+            rjob = self.fake_api_provider.backend.retrieve_job(jobs[i].job_id())
             self.maxDiff = None  # pylint: disable=invalid-name
             self.assertDictEqual(qobj.to_dict(), rjob.qobj().to_dict())
 
@@ -260,7 +260,7 @@ class TestIBMQJobManager(IBMQTestCase):
         while JobStatus.INITIALIZING in job_set.statuses():
             time.sleep(1)
 
-        rjobs = self.provider.backends.jobs(job_tags=job_tags)
+        rjobs = self.provider.backend.jobs(job_tags=job_tags)
         self.assertEqual({job.job_id() for job in job_set.jobs()},
                          {rjob.job_id() for rjob in rjobs},
                          "Unexpected jobs retrieved. Job tag used was {}".format(job_tags))
