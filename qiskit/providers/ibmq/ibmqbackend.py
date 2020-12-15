@@ -20,7 +20,7 @@ from typing import Dict, List, Union, Optional, Any
 from datetime import datetime as python_datetime
 
 from qiskit.compiler import assemble
-from qiskit.circuit import QuantumCircuit
+from qiskit.circuit import QuantumCircuit, Parameter
 from qiskit.pulse import Schedule, LoConfig
 from qiskit.pulse.channels import PulseChannel
 from qiskit.qobj import QasmQobj, PulseQobj, validate_qobj_against_schema
@@ -136,7 +136,7 @@ class IBMQBackend(Backend):
                        schedule_los=None,
                        meas_level=MeasLevel.CLASSIFIED,
                        meas_return=MeasReturnType.AVERAGE,
-                       memory_slot_size=100,
+                       memory_slots=None, memory_slot_size=100,
                        rep_time=None, rep_delay=None,
                        init_qubits=True)
 
@@ -158,10 +158,12 @@ class IBMQBackend(Backend):
                                          Union[Dict[PulseChannel, float], LoConfig]]] = None,
             meas_level: Optional[Union[int, MeasLevel]] = None,
             meas_return: Optional[Union[str, MeasReturnType]] = None,
+            memory_slots: Optional[int] = None,
             memory_slot_size: Optional[int] = None,
             rep_time: Optional[int] = None,
             rep_delay: Optional[float] = None,
             init_qubits: Optional[bool] = None,
+            parameter_binds: Optional[List[Dict[Parameter, float]]] = None,
             **run_config: Dict
     ) -> IBMQJob:
         """Run on the backend.
@@ -216,6 +218,7 @@ class IBMQBackend(Backend):
                 For ``meas_level`` 0 and 1:
                     * ``single`` returns information from every shot.
                     * ``avg`` returns average measurement output (averaged over number of shots).
+            memory_slots: Number of classical memory slots to use.
             memory_slot_size: Size of each memory slot if the output is Level 0.
             rep_time: Time per program execution in seconds. Must be from the list provided
                 by the backend (``backend.configuration().rep_times``).
@@ -228,6 +231,12 @@ class IBMQBackend(Backend):
                 ``backend.configuration().default_rep_delay``.
             init_qubits: Whether to reset the qubits to the ground state for each shot.
                 Default: ``True``.
+            parameter_binds: List of Parameter bindings over which the set of experiments will be
+                executed. Each list element (bind) should be of the form
+                {Parameter1: value1, Parameter2: value2, ...}. All binds will be
+                executed across all experiments; e.g., if parameter_binds is a
+                length-n list, and there are m experiments, a total of m x n
+                experiments will be run (one for each experiment/bind pair).
             **run_config: Extra arguments used to configure the run.
 
         Returns:
@@ -273,11 +282,14 @@ class IBMQBackend(Backend):
                 schedule_los=schedule_los,
                 meas_level=meas_level,
                 meas_return=meas_return,
+                memory_slots=memory_slots,
                 memory_slot_size=memory_slot_size,
                 rep_time=rep_time,
                 rep_delay=rep_delay,
                 init_qubits=init_qubits,
                 **run_config)
+            if parameter_binds:
+                run_config['parameter_binds'] = parameter_binds
             qobj = assemble(circuits, self, **run_config_dict)
 
         if validate_qobj:
