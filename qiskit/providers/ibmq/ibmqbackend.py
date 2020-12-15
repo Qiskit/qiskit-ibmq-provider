@@ -289,7 +289,7 @@ class IBMQBackend(Backend):
                 init_qubits=init_qubits,
                 **run_config)
             if parameter_binds:
-                run_config['parameter_binds'] = parameter_binds
+                run_config_dict['parameter_binds'] = parameter_binds
             qobj = assemble(circuits, self, **run_config_dict)
 
         if validate_qobj:
