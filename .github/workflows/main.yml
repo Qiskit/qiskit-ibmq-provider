@@ -79,6 +79,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -U -c constraints.txt -r requirements-dev.txt
           pip install -c constraints.txt -e .
+          pip install -U git+https://github.com/Qiskit/qiskit-terra.git
       - name: Run Tests
         run: make test
   test1:
