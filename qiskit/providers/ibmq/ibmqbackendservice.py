@@ -18,7 +18,7 @@ import copy
 from functools import wraps
 
 from typing import Dict, List, Callable, Optional, Any, Union
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
@@ -226,6 +226,11 @@ class IBMQBackendService:
                 cur_dt_filter={},
                 gte_dt=local_to_utc(start_datetime).isoformat() if start_datetime else None,
                 lte_dt=local_to_utc(end_datetime).isoformat() if end_datetime else None)
+        else:
+            start = datetime.now() - timedelta(days=30)
+            api_filter['creationDate'] = self._update_creation_date_filter(
+                cur_dt_filter={},
+                gte_dt=local_to_utc(start).isoformat())
 
         if job_tags:
             validate_job_tags(job_tags, IBMQBackendValueError)
