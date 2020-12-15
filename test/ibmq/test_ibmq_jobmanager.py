@@ -17,6 +17,7 @@ import time
 from inspect import getfullargspec, isfunction
 import uuid
 from concurrent.futures import wait
+from datetime import datetime, timedelta
 
 from qiskit import QuantumCircuit
 from qiskit.result import Result
@@ -47,6 +48,7 @@ class TestIBMQJobManager(IBMQTestCase):
         super().setUpClass()
         cls.provider = provider
         cls.sim_backend = provider.get_backend('ibmq_qasm_simulator')
+        cls.last_week = datetime.now() - timedelta(days=7)
 
     def setUp(self):
         """Initial test setup."""
@@ -260,7 +262,7 @@ class TestIBMQJobManager(IBMQTestCase):
         while JobStatus.INITIALIZING in job_set.statuses():
             time.sleep(1)
 
-        rjobs = self.provider.backend.jobs(job_tags=job_tags)
+        rjobs = self.provider.backend.jobs(job_tags=job_tags, start_datetime=self.last_week)
         self.assertEqual({job.job_id() for job in job_set.jobs()},
                          {rjob.job_id() for rjob in rjobs},
                          "Unexpected jobs retrieved. Job tag used was {}".format(job_tags))

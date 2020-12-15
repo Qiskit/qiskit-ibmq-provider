@@ -55,6 +55,7 @@ class TestIBMQJob(JobTestCase):
         cls.sim_backend = provider.get_backend('ibmq_qasm_simulator')
         cls.bell = transpile(ReferenceCircuits.bell(), cls.sim_backend)
         cls.sim_job = cls.sim_backend.run(cls.bell, validate_qobj=True)
+        cls.last_month = datetime.now() - timedelta(days=30)
 
     @slow_test
     @requires_device
@@ -177,7 +178,7 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_jobs(self):
         """Test retrieving jobs."""
         job_list = self.provider.backend.jobs(
-            backend_name=self.sim_backend.name(), limit=5, skip=0)
+            backend_name=self.sim_backend.name(), limit=5, skip=0, start_datetime=self.last_month)
         self.assertLessEqual(len(job_list), 5)
         for job in job_list:
             self.assertTrue(isinstance(job.job_id(), str))
@@ -237,7 +238,8 @@ class TestIBMQJob(JobTestCase):
         status_args = [JobStatus.DONE, 'DONE', [JobStatus.DONE], ['DONE']]
         for arg in status_args:
             with self.subTest(arg=arg):
-                backend_jobs = self.sim_backend.jobs(limit=5, skip=0, status=arg)
+                backend_jobs = self.sim_backend.jobs(limit=5, skip=0, status=arg,
+                                                     start_datetime=self.last_month)
                 self.assertTrue(backend_jobs)
 
                 for job in backend_jobs:
@@ -264,7 +266,8 @@ class TestIBMQJob(JobTestCase):
         for status_filter in status_filters:
             with self.subTest(status_filter=status_filter):
                 job_list = self.sim_backend.jobs(status=status_filter['status'],
-                                                 db_filter=status_filter['db_filter'])
+                                                 db_filter=status_filter['db_filter'],
+                                                 start_datetime=self.last_month)
                 job_list_ids = [_job.job_id() for _job in job_list]
                 if job_to_cancel.status() is JobStatus.CANCELLED:
                     self.assertIn(job_to_cancel.job_id(), job_list_ids)
@@ -307,7 +310,8 @@ class TestIBMQJob(JobTestCase):
             time.sleep(0.5)
 
         before_status = job._status
-        job_list_queued = backend.jobs(status=JobStatus.QUEUED, limit=5)
+        job_list_queued = backend.jobs(status=JobStatus.QUEUED, limit=5,
+                                       start_datetime=self.last_month)
         if before_status is JobStatus.QUEUED and job.status() is JobStatus.QUEUED:
             self.assertIn(job.job_id(), [queued_job.job_id() for queued_job in job_list_queued],
                           "job {} is queued but not retrieved when filtering for queued jobs."
@@ -331,7 +335,8 @@ class TestIBMQJob(JobTestCase):
             time.sleep(0.5)
 
         before_status = job._status
-        job_list_running = self.sim_backend.jobs(status=JobStatus.RUNNING, limit=5)
+        job_list_running = self.sim_backend.jobs(status=JobStatus.RUNNING, limit=5,
+                                                 start_datetime=self.last_month)
         if before_status is JobStatus.RUNNING and job.status() is JobStatus.RUNNING:
             self.assertIn(job.job_id(), [rjob.job_id() for rjob in job_list_running])
 
@@ -408,7 +413,8 @@ class TestIBMQJob(JobTestCase):
                      'status': 'COMPLETED'}
 
         job_list = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
-                                              limit=2, skip=0, db_filter=my_filter)
+                                              limit=2, skip=0, db_filter=my_filter,
+                                              start_datetime=self.last_month)
         self.assertTrue(job_list)
 
         for job in job_list:
@@ -420,7 +426,7 @@ class TestIBMQJob(JobTestCase):
 
     def test_pagination_filter(self):
         """Test db_filter that could conflict with pagination."""
-        jobs = self.sim_backend.jobs(limit=25)
+        jobs = self.sim_backend.jobs(limit=25, start_datetime=self.last_month)
         job = jobs[3]
         job_utc = local_to_utc(job.creation_date()).isoformat()
 
@@ -442,10 +448,12 @@ class TestIBMQJob(JobTestCase):
         """Test retrieving jobs with different orders."""
         job = self.sim_backend.run(self.bell, validate_qobj=True)
         job.wait_for_final_state()
-        newest_jobs = self.sim_backend.jobs(limit=10, status=JobStatus.DONE, descending=True)
+        newest_jobs = self.sim_backend.jobs(
+            limit=10, status=JobStatus.DONE, descending=True, start_datetime=self.last_month)
         self.assertIn(job.job_id(), [rjob.job_id() for rjob in newest_jobs])
 
-        oldest_jobs = self.sim_backend.jobs(limit=10, status=JobStatus.DONE, descending=False)
+        oldest_jobs = self.sim_backend.jobs(
+            limit=10, status=JobStatus.DONE, descending=False, start_datetime=self.last_month)
         self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in oldest_jobs])
 
     def test_double_submit_fails(self):
@@ -495,7 +503,8 @@ class TestIBMQJob(JobTestCase):
             self.assertTrue(isinstance(new_job.backend(), IBMQRetiredBackend))
             self.assertNotEqual(new_job.backend().name(), 'unknown')
 
-            new_job2 = self.provider.backend.jobs(db_filter={'id': self.sim_job.job_id()})[0]
+            new_job2 = self.provider.backend.jobs(
+                db_filter={'id': self.sim_job.job_id()}, start_datetime=self.last_month)[0]
             self.assertTrue(isinstance(new_job2.backend(), IBMQRetiredBackend))
             self.assertNotEqual(new_job2.backend().name(), 'unknown')
         finally:
