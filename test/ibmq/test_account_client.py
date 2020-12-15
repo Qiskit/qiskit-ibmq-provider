@@ -64,38 +64,6 @@ class TestAccountClient(IBMQTestCase):
         return AccountClient(self.access_token,
                              self.provider.credentials)
 
-    def test_job_submit_object_storage(self):
-        """Test running a job against a simulator using object storage."""
-        # Create a Qobj.
-        backend_name = 'ibmq_qasm_simulator'
-        backend = self.provider.get_backend(backend_name)
-        circuit = transpile(self.qc1, backend, seed_transpiler=self.seed)
-        qobj = assemble(circuit, backend, shots=1)
-
-        # Run the job through the AccountClient directly using object storage.
-        client = backend._api_client
-
-        job = client.job_submit(backend_name, qobj.to_dict())
-        job_id = job['job_id']
-        self.assertNotIn('shots', job)
-        self.assertEqual(job['kind'], 'q-object-external-storage')
-
-        # Wait for completion.
-        client.job_final_status(job_id)
-
-        # Fetch results and qobj via object storage.
-        result = client._job_result_object_storage(job_id)
-        qobj_downloaded = client._job_download_qobj_object_storage(job_id)
-
-        self.assertEqual(qobj_downloaded, qobj.to_dict())
-        self.assertEqual(result['status'], 'COMPLETED')
-
-    def test_list_jobs_statuses(self):
-        """Check get status jobs by user authenticated."""
-        client = self._get_client()
-        jobs = client.list_jobs_statuses(limit=2)
-        self.assertEqual(len(jobs), 2)
-
     def test_exception_message(self):
         """Check exception has proper message."""
         client = self._get_client()
@@ -208,36 +176,12 @@ class TestAccountClientJobs(IBMQTestCase):
         response = self.client.job_get(self.job_id)
         self.assertIn('status', response)
 
-    def test_job_status(self):
-        """Test getting job status."""
-        response = self.client.job_status(self.job_id)
-        self.assertIn('status', response)
-
-    def test_job_final_status_websocket(self):
-        """Test getting a job's final status via websocket."""
-        response = self.client._job_final_status_websocket(self.job_id)
-        self.assertEqual(response.pop('status', None), ApiJobStatus.COMPLETED.value)
-
     def test_job_final_status_polling(self):
         """Test getting a job's final status via polling."""
         status_queue = RefreshQueue(maxsize=1)
         response = self.client._job_final_status_polling(self.job_id, status_queue=status_queue)
         self.assertEqual(response.pop('status', None), ApiJobStatus.COMPLETED.value)
         self.assertNotEqual(status_queue.qsize(), 0)
-
-    def test_job_properties(self):
-        """Test getting job properties."""
-        # Force the job to finish.
-        _ = self.client._job_final_status_websocket(self.job_id)
-
-        response = self.client.job_properties(self.job_id)
-        # Since the job is against a simulator, it will have no properties.
-        self.assertFalse(response)
-
-    def test_list_jobs_statuses_limit(self):
-        """Test listing job statuses with a limit."""
-        jobs_raw = self.client.list_jobs_statuses(limit=1)
-        self.assertEqual(len(jobs_raw), 1)
 
     def test_list_jobs_statuses_skip(self):
         """Test listing job statuses with an offset."""
@@ -247,12 +191,6 @@ class TestAccountClientJobs(IBMQTestCase):
         # Ensure our job is skipped
         for job in jobs_raw:
             self.assertNotEqual(job['job_id'], self.job_id)
-
-    def test_list_jobs_statuses_filter(self):
-        """Test listing job statuses with a filter."""
-        jobs_raw = self.client.list_jobs_statuses(extra_filter={'id': self.job_id})
-        self.assertEqual(len(jobs_raw), 1)
-        self.assertEqual(jobs_raw[0]['job_id'], self.job_id)
 
 
 class TestAuthClient(IBMQTestCase):

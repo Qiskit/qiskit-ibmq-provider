@@ -13,6 +13,7 @@
 """Tests that hit all the basic server endpoints using both a public and premium provider."""
 
 import time
+from datetime import datetime, timedelta
 
 from qiskit import transpile
 from qiskit.test import slow_test
@@ -34,6 +35,7 @@ class TestBasicServerPaths(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.providers = providers  # Dict[str, AccountProvider]
+        cls.last_week = datetime.now() - timedelta(days=7)
 
     @slow_test
     def test_job_submission(self):
@@ -75,7 +77,8 @@ class TestBasicServerPaths(IBMQTestCase):
                 job = self._submit_job_with_retry(ReferenceCircuits.bell(), backend)
                 job_id = job.job_id()
 
-                retrieved_jobs = provider.backend.jobs(backend_name=backend_name)
+                retrieved_jobs = provider.backend.jobs(
+                    backend_name=backend_name, start_datetime=self.last_week)
                 self.assertGreaterEqual(len(retrieved_jobs), 1)
                 retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
                 self.assertIn(job_id, retrieved_job_ids)
