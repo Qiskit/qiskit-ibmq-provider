@@ -215,4 +215,4 @@ class TestIBMQBackendService(IBMQTestCase):
             self.provider.backends.retrieve_job(ref_job.job_id())
             self.provider.backends.jobs(limit=1, start_datetime=self.last_week)
             self.provider.backends.my_reservations()
-            self.assertEqual(len(w), 1)
+            self.assertGreaterEqual(len(w), 1)
