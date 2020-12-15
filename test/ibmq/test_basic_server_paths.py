@@ -110,7 +110,7 @@ class TestBasicServerPaths(IBMQTestCase):
         transpiled = transpile(circs, backend)
         for _ in range(max_retry):
             try:
-                job = backend.run(transpiled, validate_qobj=True)
+                job = backend.run(transpiled)
                 return job
             except IBMQBackendJobLimitError as err:
                 limit_error = err

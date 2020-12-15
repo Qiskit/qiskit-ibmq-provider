@@ -148,7 +148,7 @@ class IBMQBackend(Backend):
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
-            validate_qobj: bool = False,
+            validate_qobj: bool = None,
             header: Optional[Dict] = None,
             shots: Optional[int] = None,
             memory: Optional[bool] = None,
@@ -193,7 +193,8 @@ class IBMQBackend(Backend):
             job_tags: Tags to be assigned to the job. The tags can subsequently be used
                 as a filter in the :meth:`jobs()` function call.
             validate_qobj: If ``True``, run JSON schema validation against the
-                submitted payload. Only applicable if a Qobj is passed in.
+                submitted payload. Only applicable if a Qobj is passed in. This
+                keyword is deprecated.
 
             The following arguments are NOT applicable if a Qobj is passed in.
 
@@ -280,8 +281,14 @@ class IBMQBackend(Backend):
                 **run_config)
             qobj = assemble(circuits, self, **run_config_dict)
 
-        if validate_qobj:
-            validate_qobj_against_schema(qobj)
+        if validate_qobj is not None:
+            warnings.warn("The `validate_qobj` keyword is deprecated and will"
+                          "be removed in a future release. "
+                          "You can pull the schemas from the Qiskit/ibmq-schemas "
+                          "repo and directly validate your payloads with that.",
+                          DeprecationWarning, stacklevel=3)
+            if validate_qobj:
+                validate_qobj_against_schema(qobj)
         return self._submit_job(qobj, job_name, api_job_share_level, job_tags)
 
     def _get_run_config(self, **kwargs: Any) -> Dict:
