@@ -456,11 +456,6 @@ class TestIBMQJob(JobTestCase):
             limit=10, status=JobStatus.DONE, descending=False, start_datetime=self.last_month)
         self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in oldest_jobs])
 
-    def test_double_submit_fails(self):
-        """Test submitting a job twice."""
-        with self.assertRaises(IBMQJobInvalidStateError):
-            self.sim_job.submit()
-
     def test_retrieve_failed_job_simulator_partial(self):
         """Test retrieving partial results from a simulator backend."""
         job = submit_job_one_bad_instr(self.sim_backend)
