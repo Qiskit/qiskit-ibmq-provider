@@ -60,7 +60,7 @@ class TestWebsocketIntegration(IBMQTestCase):
 
     def test_websockets_simulator(self):
         """Test checking status of a job via websockets for a simulator."""
-        job = self.sim_backend.run(self.bell, validate_qobj=True, shots=1)
+        job = self.sim_backend.run(self.bell, shots=1)
 
         # Manually disable the non-websocket polling.
         job._api_client._job_final_status_polling = self._job_final_status_polling
@@ -84,7 +84,7 @@ class TestWebsocketIntegration(IBMQTestCase):
 
     def test_websockets_job_final_state(self):
         """Test checking status of a job in a final state via websockets."""
-        job = self.sim_backend.run(self.bell, validate_qobj=True)
+        job = self.sim_backend.run(self.bell)
 
         job._wait_for_completion()
 
@@ -99,7 +99,7 @@ class TestWebsocketIntegration(IBMQTestCase):
 
     def test_websockets_retry_bad_url(self):
         """Test http retry after websocket error due to an invalid URL."""
-        job = self.sim_backend.run(self.bell, validate_qobj=True)
+        job = self.sim_backend.run(self.bell)
 
         saved_websocket_url = job._api_client.client_ws.websocket_url
         try:
@@ -119,7 +119,7 @@ class TestWebsocketIntegration(IBMQTestCase):
                            type_='authentication', data='phantom_token'))
     def test_websockets_retry_bad_auth(self, _):
         """Test http retry after websocket error due to a failed authentication."""
-        job = self.sim_backend.run(self.bell, validate_qobj=True)
+        job = self.sim_backend.run(self.bell)
 
         with mock.patch.object(AccountClient, 'job_status',
                                side_effect=job._api_client.job_status) as mocked_wait:
@@ -136,7 +136,7 @@ class TestWebsocketIntegration(IBMQTestCase):
             job._job_id = saved_job_id
             return saved_job_status(saved_job_id)
 
-        job = self.sim_backend.run(self.bell, validate_qobj=True)
+        job = self.sim_backend.run(self.bell)
 
         # Save the originals.
         saved_job_id = job._job_id
@@ -169,7 +169,7 @@ class TestWebsocketIntegration(IBMQTestCase):
 
         def _run_job_get_result(q):
             """Run a job and get its result."""
-            job = self.sim_backend.run(self.bell, validate_qobj=True)
+            job = self.sim_backend.run(self.bell)
             # Manually disable the non-websocket polling.
             job._api_client._job_final_status_polling = self._job_final_status_polling
             job._wait_for_completion()

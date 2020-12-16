@@ -20,7 +20,7 @@ from typing import Dict, List, Union, Optional, Any
 from datetime import datetime as python_datetime
 
 from qiskit.compiler import assemble
-from qiskit.circuit import QuantumCircuit
+from qiskit.circuit import QuantumCircuit, Parameter
 from qiskit.pulse import Schedule, LoConfig
 from qiskit.pulse.channels import PulseChannel
 from qiskit.qobj import QasmQobj, PulseQobj, validate_qobj_against_schema
@@ -136,7 +136,7 @@ class IBMQBackend(Backend):
                        schedule_los=None,
                        meas_level=MeasLevel.CLASSIFIED,
                        meas_return=MeasReturnType.AVERAGE,
-                       memory_slot_size=100,
+                       memory_slots=None, memory_slot_size=100,
                        rep_time=None, rep_delay=None,
                        init_qubits=True)
 
@@ -148,7 +148,7 @@ class IBMQBackend(Backend):
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
-            validate_qobj: bool = False,
+            validate_qobj: bool = None,
             header: Optional[Dict] = None,
             shots: Optional[int] = None,
             memory: Optional[bool] = None,
@@ -158,10 +158,12 @@ class IBMQBackend(Backend):
                                          Union[Dict[PulseChannel, float], LoConfig]]] = None,
             meas_level: Optional[Union[int, MeasLevel]] = None,
             meas_return: Optional[Union[str, MeasReturnType]] = None,
+            memory_slots: Optional[int] = None,
             memory_slot_size: Optional[int] = None,
             rep_time: Optional[int] = None,
             rep_delay: Optional[float] = None,
             init_qubits: Optional[bool] = None,
+            parameter_binds: Optional[List[Dict[Parameter, float]]] = None,
             **run_config: Dict
     ) -> IBMQJob:
         """Run on the backend.
@@ -192,7 +194,7 @@ class IBMQBackend(Backend):
                 If the job share level is not specified, the job is not shared at any level.
             job_tags: Tags to be assigned to the job. The tags can subsequently be used
                 as a filter in the :meth:`jobs()` function call.
-            validate_qobj: If ``True``, run JSON schema validation against the
+            validate_qobj: DEPRECATED. If ``True``, run JSON schema validation against the
                 submitted payload. Only applicable if a Qobj is passed in.
 
             The following arguments are NOT applicable if a Qobj is passed in.
@@ -216,6 +218,7 @@ class IBMQBackend(Backend):
                 For ``meas_level`` 0 and 1:
                     * ``single`` returns information from every shot.
                     * ``avg`` returns average measurement output (averaged over number of shots).
+            memory_slots: Number of classical memory slots to use.
             memory_slot_size: Size of each memory slot if the output is Level 0.
             rep_time: Time per program execution in seconds. Must be from the list provided
                 by the backend (``backend.configuration().rep_times``).
@@ -228,6 +231,12 @@ class IBMQBackend(Backend):
                 ``backend.configuration().default_rep_delay``.
             init_qubits: Whether to reset the qubits to the ground state for each shot.
                 Default: ``True``.
+            parameter_binds: List of Parameter bindings over which the set of experiments will be
+                executed. Each list element (bind) should be of the form
+                {Parameter1: value1, Parameter2: value2, ...}. All binds will be
+                executed across all experiments; e.g., if parameter_binds is a
+                length-n list, and there are m experiments, a total of m x n
+                experiments will be run (one for each experiment/bind pair).
             **run_config: Extra arguments used to configure the run.
 
         Returns:
@@ -273,15 +282,24 @@ class IBMQBackend(Backend):
                 schedule_los=schedule_los,
                 meas_level=meas_level,
                 meas_return=meas_return,
+                memory_slots=memory_slots,
                 memory_slot_size=memory_slot_size,
                 rep_time=rep_time,
                 rep_delay=rep_delay,
                 init_qubits=init_qubits,
                 **run_config)
+            if parameter_binds:
+                run_config_dict['parameter_binds'] = parameter_binds
             qobj = assemble(circuits, self, **run_config_dict)
 
-        if validate_qobj:
-            validate_qobj_against_schema(qobj)
+        if validate_qobj is not None:
+            warnings.warn("The `validate_qobj` keyword is deprecated and will "
+                          "be removed in a future release. "
+                          "You can pull the schemas from the Qiskit/ibmq-schemas "
+                          "repo and directly validate your payloads with that.",
+                          DeprecationWarning, stacklevel=3)
+            if validate_qobj:
+                validate_qobj_against_schema(qobj)
         return self._submit_job(qobj, job_name, api_job_share_level, job_tags)
 
     def _get_run_config(self, **kwargs: Any) -> Dict:
@@ -742,8 +760,8 @@ class IBMQSimulator(IBMQBackend):
                 global level (see :meth:`IBMQBackend.run()<IBMQBackend.run>` for more details).
             job_tags: Tags to be assigned to the jobs. The tags can subsequently be used
                 as a filter in the :meth:`IBMQBackend.jobs()<IBMQBackend.jobs>` method.
-            validate_qobj: If ``True``, run JSON schema validation against the
-                submitted payload
+            validate_qobj: DEPRECATED. If ``True``, run JSON schema validation against the
+                submitted payload.
             backend_options: DEPRECATED dictionary of backend options for the execution.
             noise_model: Noise model.
             kwargs: Additional runtime configuration options. They take

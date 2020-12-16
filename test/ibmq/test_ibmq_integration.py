@@ -98,7 +98,7 @@ class TestIBMQIntegration(IBMQTestCase):
         qc_extra.measure(qubit_reg, clbit_reg)
         circs = transpile([qc, qc_extra], backend=self.sim_backend,
                           seed_transpiler=self.seed)
-        job = self.sim_backend.run(circs, validate_qobj=True)
+        job = self.sim_backend.run(circs)
         result = job.result()
         self.assertIsInstance(result, Result)
 

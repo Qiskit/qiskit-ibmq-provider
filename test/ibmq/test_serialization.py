@@ -41,7 +41,7 @@ class TestSerialization(IBMQTestCase):
 
     def test_qasm_qobj(self):
         """Test serializing qasm qobj data."""
-        job = self.sim_backend.run(self.bell, validate_qobj=True)
+        job = self.sim_backend.run(self.bell)
         rqobj = self.sim_backend.retrieve_job(job.job_id()).qobj()
 
         self.assertEqual(_array_to_list(job.qobj().to_dict()), rqobj.to_dict())
@@ -61,7 +61,7 @@ class TestSerialization(IBMQTestCase):
         measure = inst_map.get('measure', range(config.n_qubits)) << x.duration
         schedules = x | measure
 
-        job = backend.run(schedules, validate_qobj=True, meas_level=1, shots=256)
+        job = backend.run(schedules, meas_level=1, shots=256)
         rqobj = backend.retrieve_job(job.job_id()).qobj()
 
         # Convert numpy arrays to lists since they now get converted right
@@ -111,7 +111,7 @@ class TestSerialization(IBMQTestCase):
 
     def test_qasm_job_result(self):
         """Test deserializing a QASM job result."""
-        result = self.sim_backend.run(self.bell, validate_qobj=True).result()
+        result = self.sim_backend.run(self.bell).result()
 
         self._verify_data(result.to_dict(), ())
 
@@ -127,7 +127,7 @@ class TestSerialization(IBMQTestCase):
         qc.x(0)
         qc.measure([0], [0])
         sched = schedule(transpile(qc, backend=backend), backend=backend)
-        job = backend.run(sched, backend=backend)
+        job = backend.run(sched)
         result = job.result()
 
         # Known keys that look like a serialized object.
