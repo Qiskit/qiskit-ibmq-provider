@@ -192,9 +192,8 @@ class IBMQBackend(Backend):
                 If the job share level is not specified, the job is not shared at any level.
             job_tags: Tags to be assigned to the job. The tags can subsequently be used
                 as a filter in the :meth:`jobs()` function call.
-            validate_qobj: If ``True``, run JSON schema validation against the
-                submitted payload. Only applicable if a Qobj is passed in. This
-                keyword is deprecated.
+            validate_qobj: DEPRECATED. If ``True``, run JSON schema validation against the
+                submitted payload. Only applicable if a Qobj is passed in.
 
             The following arguments are NOT applicable if a Qobj is passed in.
 
@@ -751,8 +750,8 @@ class IBMQSimulator(IBMQBackend):
                 global level (see :meth:`IBMQBackend.run()<IBMQBackend.run>` for more details).
             job_tags: Tags to be assigned to the jobs. The tags can subsequently be used
                 as a filter in the :meth:`IBMQBackend.jobs()<IBMQBackend.jobs>` method.
-            validate_qobj: If ``True``, run JSON schema validation against the
-                submitted payload
+            validate_qobj: DEPRECATED. If ``True``, run JSON schema validation against the
+                submitted payload.
             backend_options: DEPRECATED dictionary of backend options for the execution.
             noise_model: Noise model.
             kwargs: Additional runtime configuration options. They take
