@@ -13,6 +13,7 @@
 """Tests for Jupyter tools."""
 
 from unittest import mock
+from datetime import datetime, timedelta
 
 from qiskit import transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -77,6 +78,7 @@ class TestBackendInfo(IBMQTestCase):
         """Test jobs tab."""
         def _limit_jobs(**kwargs):
             kwargs['limit'] = 5
+            kwargs['start_datetime'] = datetime.now() - timedelta(days=7)
             return original_backend_jobs(**kwargs)
 
         for backend in self.backends:

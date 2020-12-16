@@ -13,7 +13,7 @@
 """IBMQBackend Test."""
 
 from inspect import getfullargspec
-from datetime import timedelta
+from datetime import timedelta, datetime
 import warnings
 from unittest import SkipTest
 
@@ -189,6 +189,7 @@ class TestIBMQBackendService(IBMQTestCase):
         """Initial class level setup."""
         # pylint: disable=arguments-differ
         cls.provider = provider
+        cls.last_week = datetime.now() - timedelta(days=7)
 
     def test_my_reservations(self):
         """Test my_reservations method"""
@@ -201,7 +202,7 @@ class TestIBMQBackendService(IBMQTestCase):
 
     def test_deprecated_service(self):
         """Test deprecated backend service module."""
-        ref_job = self.provider.backend.jobs(limit=1)[0]
+        ref_job = self.provider.backend.jobs(limit=1, start_datetime=self.last_week)[0]
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always", category=DeprecationWarning)
@@ -212,6 +213,6 @@ class TestIBMQBackendService(IBMQTestCase):
             warnings.simplefilter("always", category=DeprecationWarning)
             _ = self.provider.backends.ibmq_qasm_simulator
             self.provider.backends.retrieve_job(ref_job.job_id())
-            self.provider.backends.jobs(limit=1)
+            self.provider.backends.jobs(limit=1, start_datetime=self.last_week)
             self.provider.backends.my_reservations()
-            self.assertEqual(len(w), 1)
+            self.assertGreaterEqual(len(w), 1)

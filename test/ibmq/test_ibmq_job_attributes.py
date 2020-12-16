@@ -49,6 +49,7 @@ class TestIBMQJobAttributes(JobTestCase):
         cls.sim_backend = provider.get_backend('ibmq_qasm_simulator')
         cls.bell = transpile(ReferenceCircuits.bell(), cls.sim_backend)
         cls.sim_job = cls.sim_backend.run(cls.bell)
+        cls.last_week = datetime.now() - timedelta(days=7)
 
     def setUp(self):
         """Initial test setup."""
@@ -90,16 +91,18 @@ class TestIBMQJobAttributes(JobTestCase):
 
         # Check using partial matching.
         job_name_partial = job_name[8:]
-        retrieved_jobs = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
-                                                    job_name=job_name_partial)
+        retrieved_jobs = self.provider.backend.jobs(
+            backend_name=self.sim_backend.name(), job_name=job_name_partial,
+            start_datetime=self.last_week)
         self.assertGreaterEqual(len(retrieved_jobs), 1)
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
         self.assertIn(job_id, retrieved_job_ids)
 
         # Check using regular expressions.
         job_name_regex = '^{}$'.format(job_name)
-        retrieved_jobs = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
-                                                    job_name=job_name_regex)
+        retrieved_jobs = self.provider.backend.jobs(
+            backend_name=self.sim_backend.name(), job_name=job_name_regex,
+            start_datetime=self.last_week)
         self.assertEqual(len(retrieved_jobs), 1)
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
@@ -133,8 +136,9 @@ class TestIBMQJobAttributes(JobTestCase):
             job = self.sim_backend.run(self.bell, job_name=job_name)
             job_ids.add(job.job_id())
 
-        retrieved_jobs = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
-                                                    job_name=job_name)
+        retrieved_jobs = self.provider.backend.jobs(
+            backend_name=self.sim_backend.name(), job_name=job_name,
+            start_datetime=self.last_week)
 
         self.assertEqual(len(retrieved_jobs), 2,
                          "More than 2 jobs retrieved: {}".format(retrieved_jobs))
@@ -194,7 +198,8 @@ class TestIBMQJobAttributes(JobTestCase):
         if 'COMPLETED' not in self.sim_job.time_per_step():
             self.sim_job.refresh()
 
-        rjob = self.provider.backend.jobs(db_filter={'id': self.sim_job.job_id()})[0]
+        rjob = self.provider.backend.jobs(
+            db_filter={'id': self.sim_job.job_id()}, start_datetime=self.last_week)[0]
         self.assertFalse(rjob._time_per_step)
         rjob.refresh()
         self.assertEqual(rjob._time_per_step, self.sim_job._time_per_step)
@@ -229,7 +234,8 @@ class TestIBMQJobAttributes(JobTestCase):
                             'between the start date time {} and end date time {}'
                             .format(step, time_data, start_datetime, end_datetime))
 
-        rjob = self.provider.backend.jobs(db_filter={'id': job.job_id()})[0]
+        rjob = self.provider.backend.jobs(
+            db_filter={'id': job.job_id()}, start_datetime=self.last_week)[0]
         self.assertTrue(rjob.time_per_step())
 
     def test_new_job_attributes(self):
@@ -301,7 +307,8 @@ class TestIBMQJobAttributes(JobTestCase):
         job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
         job = self.sim_backend.run(self.bell, job_tags=job_tags)
 
-        rjobs = self.sim_backend.jobs(job_tags=['phantom_tag'])
+        rjobs = self.sim_backend.jobs(
+            job_tags=['phantom_tag'], start_datetime=self.last_week)
         self.assertEqual(len(rjobs), 0,
                          "Expected job {}, got {}".format(job.job_id(), rjobs))
 
@@ -309,7 +316,7 @@ class TestIBMQJobAttributes(JobTestCase):
         tags_to_check = [job_tags, job_tags[1:2], job_tags[0:1]+['phantom_tag']]
         for tags in tags_to_check:
             with self.subTest(tags=tags):
-                rjobs = self.sim_backend.jobs(job_tags=tags)
+                rjobs = self.sim_backend.jobs(job_tags=tags, start_datetime=self.last_week)
                 self.assertEqual(len(rjobs), 1,
                                  "Expected job {}, got {}".format(job.job_id(), rjobs))
                 self.assertEqual(rjobs[0].job_id(), job.job_id())
@@ -323,14 +330,16 @@ class TestIBMQJobAttributes(JobTestCase):
 
         no_rjobs_tags = [job_tags[0:1]+['phantom_tags'], ['phantom_tag']]
         for tags in no_rjobs_tags:
-            rjobs = self.sim_backend.jobs(job_tags=tags, job_tags_operator="AND")
+            rjobs = self.sim_backend.jobs(
+                job_tags=tags, job_tags_operator="AND", start_datetime=self.last_week)
             self.assertEqual(len(rjobs), 0,
                              "Expected job {}, got {}".format(job.job_id(), rjobs))
 
         has_rjobs_tags = [job_tags, job_tags[1:3]]
         for tags in has_rjobs_tags:
             with self.subTest(tags=tags):
-                rjobs = self.sim_backend.jobs(job_tags=tags, job_tags_operator="AND")
+                rjobs = self.sim_backend.jobs(
+                    job_tags=tags, job_tags_operator="AND", start_datetime=self.last_week)
                 self.assertEqual(len(rjobs), 1,
                                  "Expected job {}, got {}".format(job.job_id(), rjobs))
                 self.assertEqual(rjobs[0].job_id(), job.job_id())
