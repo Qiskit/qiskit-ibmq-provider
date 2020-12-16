@@ -281,7 +281,7 @@ class IBMQBackend(Backend):
             qobj = assemble(circuits, self, **run_config_dict)
 
         if validate_qobj is not None:
-            warnings.warn("The `validate_qobj` keyword is deprecated and will"
+            warnings.warn("The `validate_qobj` keyword is deprecated and will "
                           "be removed in a future release. "
                           "You can pull the schemas from the Qiskit/ibmq-schemas "
                           "repo and directly validate your payloads with that.",
