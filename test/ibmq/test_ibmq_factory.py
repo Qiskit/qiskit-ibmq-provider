@@ -177,7 +177,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
             # .save_account() expects an auth production URL.
             self.skipTest('Test requires production auth URL')
 
-        with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
+        with custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             self.factory.save_account(qe_token, url=qe_url)
             self.factory.load_account()
 
@@ -194,7 +194,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
         # Get a non default provider.
         non_default_provider = get_provider(self.factory, qe_token, qe_url, default=False)
 
-        with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
+        with custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             self.factory.save_account(token=qe_token, url=qe_url,
                                       hub=non_default_provider.credentials.hub,
                                       group=non_default_provider.credentials.group,
@@ -220,7 +220,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
         # Hub, group, project in correct format but does not exists.
         invalid_hgp_to_store = 'invalid_hub/invalid_group/invalid_project'
-        with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
+        with custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             hgp = HubGroupProject.from_stored_format(invalid_hgp_to_store)
             self.factory.save_account(token=qe_token, url=qe_url,
                                       hub=hgp.hub, group=hgp.group, project=hgp.project)
@@ -240,7 +240,7 @@ class TestIBMQFactoryAccounts(IBMQTestCase):
 
         for invalid_hgp, error_message in invalid_hgps.items():
             with self.subTest(invalid_hgp=invalid_hgp):
-                with no_file('Qconfig.py'), custom_qiskitrc() as temp_qiskitrc, \
+                with custom_qiskitrc() as temp_qiskitrc, \
                         no_envs(CREDENTIAL_ENV_VARS):
                     # Save the account.
                     self.factory.save_account(token=self.token, url=AUTH_URL)

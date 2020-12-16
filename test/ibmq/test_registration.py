@@ -24,7 +24,7 @@ from requests_ntlm import HttpNtlmAuth
 
 from qiskit.providers.ibmq import IBMQ, IBMQFactory
 from qiskit.providers.ibmq.credentials import (
-    Credentials, discover_credentials, qconfig,
+    Credentials, discover_credentials,
     read_credentials_from_qiskitrc, store_credentials)
 from qiskit.providers.ibmq.credentials.updater import (
     update_credentials, QE2_AUTH_URL, QE2_URL, QE_URL)
@@ -49,9 +49,9 @@ PROXIES = {
 class TestCredentials(IBMQTestCase):
     """Tests for the credential modules."""
 
-    def test_autoregister_no_credentials(self):
-        """Test ``register()`` with no credentials available."""
-        with no_file('Qconfig.py'), custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
+    def test_load_account_no_credentials(self):
+        """Test ``load_account()`` with no credentials available."""
+        with custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             with self.assertRaises(IBMQAccountError) as context_manager:
                 IBMQ.load_account()
 
@@ -77,7 +77,7 @@ class TestCredentials(IBMQTestCase):
                 store_credentials(credentials)
                 self.assertIn('already present', log_records.output[0])
 
-            with no_file('Qconfig.py'), no_envs(CREDENTIAL_ENV_VARS), mock_ibmq_provider():
+            with no_envs(CREDENTIAL_ENV_VARS), mock_ibmq_provider():
                 # Attempt overwriting.
                 store_credentials(credentials2, overwrite=True)
                 factory.load_account()
@@ -86,32 +86,18 @@ class TestCredentials(IBMQTestCase):
         self.assertEqual(factory._credentials, credentials2)
 
     def test_environ_over_qiskitrc(self):
-        """Test order, without qconfig"""
+        """Test credential discovery order."""
         credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
 
         with custom_qiskitrc():
             # Prepare the credentials: both env and qiskitrc present
             store_credentials(credentials)
-            with no_file('Qconfig.py'), custom_envs({'QE_TOKEN': 'ENVIRON_TOKEN',
-                                                     'QE_URL': 'ENVIRON_URL'}):
+            with custom_envs({'QE_TOKEN': 'ENVIRON_TOKEN',
+                              'QE_URL': 'ENVIRON_URL'}):
                 credentials, _ = discover_credentials()
 
         self.assertEqual(len(credentials), 1)
         self.assertEqual(list(credentials.values())[0].token, 'ENVIRON_TOKEN')
-
-    def test_qconfig_over_all(self):
-        """Test order, with qconfig"""
-        credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
-
-        with custom_qiskitrc():
-            # Prepare the credentials: qconfig, env and qiskitrc present
-            store_credentials(credentials)
-            with custom_qconfig(b"APItoken='QCONFIG_TOKEN'"),\
-                    custom_envs({'QE_TOKEN': 'ENVIRON_TOKEN'}):
-                credentials, _ = discover_credentials()
-
-        self.assertEqual(len(credentials), 1)
-        self.assertEqual(list(credentials.values())[0].token, 'QCONFIG_TOKEN')
 
 
 class TestCredentialsKwargs(IBMQTestCase):
@@ -315,25 +301,6 @@ class TestIBMQAccountUpdater(IBMQTestCase):
 
 
 # Context managers
-
-
-@contextmanager
-def custom_qconfig(contents=b''):
-    """Context manager that uses a temporary qconfig.py."""
-    # Create a temporary file with the contents.
-    tmp_file = NamedTemporaryFile(suffix='.py')
-    tmp_file.write(contents)
-    tmp_file.flush()
-
-    # Temporarily modify the default location of the qiskitrc file.
-    default_qconfig_file_original = qconfig.DEFAULT_QCONFIG_FILE
-    qconfig.DEFAULT_QCONFIG_FILE = tmp_file.name
-    yield
-
-    # Delete the temporary file and restore the default location.
-    tmp_file.close()
-    qconfig.DEFAULT_QCONFIG_FILE = default_qconfig_file_original
-
 
 def _mocked_initialize_provider(self, credentials: Credentials):
     """Mock ``_initialize_provider()``, just storing the credentials."""

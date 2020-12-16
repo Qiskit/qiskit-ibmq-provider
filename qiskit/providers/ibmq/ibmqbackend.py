@@ -396,8 +396,6 @@ class IBMQBackend(Backend):
             raise TypeError("'{}' is not of type 'datetime'.")
 
         if datetime:
-            warnings.warn('Unless a UTC timezone information is present, the parameter `datetime`'
-                          'is now expected to be in local time instead of UTC.', stacklevel=2)
             datetime = local_to_utc(datetime)
 
         if datetime or refresh or self._properties is None:
