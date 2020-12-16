@@ -31,7 +31,7 @@ from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATE
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError, IBMQBackendApiError
 from qiskit.providers.ibmq.utils.utils import api_status_to_job_status
-from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, IBMQJobTimeoutError
+from qiskit.providers.ibmq.job.exceptions import IBMQJobTimeoutError
 from qiskit.providers.ibmq.utils.converters import local_to_utc
 from qiskit.providers.ibmq.api.rest.job import Job as RestJob
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
