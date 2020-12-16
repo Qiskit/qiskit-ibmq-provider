@@ -156,7 +156,7 @@ class TestIBMQBackend(IBMQTestCase):
         backend.set_options(qubit_lo_freq=[4.9e9, 5.0e9],
                             meas_lo_freq=[6.5e9, 6.6e9],
                             meas_level=2)
-        job = backend.run(get_pulse_schedule(backend), validate_qobj=True, meas_level=1, foo='foo')
+        job = backend.run(get_pulse_schedule(backend), meas_level=1, foo='foo')
         qobj = backend.retrieve_job(job.job_id()).qobj()  # Use retrieved Qobj.
         self.assertEqual(qobj.config.shots, 2048)
         # Qobj config freq is in GHz.
@@ -172,7 +172,7 @@ class TestIBMQBackend(IBMQTestCase):
         backend = provider.get_backend('ibmq_qasm_simulator')
         backend.options.shots = 2048
         backend.set_options(memory=True)
-        job = backend.run(ReferenceCircuits.bell(), validate_qobj=True, shots=1024, foo='foo')
+        job = backend.run(ReferenceCircuits.bell(), shots=1024, foo='foo')
         qobj = backend.retrieve_job(job.job_id()).qobj()
         self.assertEqual(qobj.config.shots, 1024)
         self.assertTrue(qobj.config.memory)

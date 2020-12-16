@@ -285,7 +285,7 @@ class TestIBMQJob(JobTestCase):
         active_job_statuses = {api_status_to_job_status(status) for status in ApiJobStatus
                                if status not in API_JOB_FINAL_STATES}
 
-        job = backend.run(transpile(ReferenceCircuits.bell(), backend), validate_qobj=True)
+        job = backend.run(transpile(ReferenceCircuits.bell(), backend))
 
         active_jobs = backend.active_jobs()
         if not job.in_final_state():    # Job is still active.
@@ -302,7 +302,7 @@ class TestIBMQJob(JobTestCase):
     def test_retrieve_jobs_queued(self):
         """Test retrieving jobs that are queued."""
         backend = most_busy_backend(self.provider)
-        job = backend.run(transpile(ReferenceCircuits.bell(), backend), validate_qobj=True)
+        job = backend.run(transpile(ReferenceCircuits.bell(), backend))
 
         # Wait for the job to queue, run, or reach a final state.
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.QUEUED, JobStatus.RUNNING]
@@ -327,7 +327,7 @@ class TestIBMQJob(JobTestCase):
 
     def test_retrieve_jobs_running(self):
         """Test retrieving jobs that are running."""
-        job = self.sim_backend.run(self.bell, validate_qobj=True)
+        job = self.sim_backend.run(self.bell)
 
         # Wait for the job to run, or reach a final state.
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
@@ -405,7 +405,7 @@ class TestIBMQJob(JobTestCase):
         qc = QuantumCircuit(3, 3)
         qc.h(0)
         qc.measure([0, 1, 2], [0, 1, 2])
-        job = self.sim_backend.run(transpile(qc, backend=self.sim_backend), validate_qobj=True)
+        job = self.sim_backend.run(transpile(qc, backend=self.sim_backend))
         job.wait_for_final_state()
 
         my_filter = {'backend.name': self.sim_backend.name(),
@@ -446,7 +446,7 @@ class TestIBMQJob(JobTestCase):
 
     def test_retrieve_jobs_order(self):
         """Test retrieving jobs with different orders."""
-        job = self.sim_backend.run(self.bell, validate_qobj=True)
+        job = self.sim_backend.run(self.bell)
         job.wait_for_final_state()
         newest_jobs = self.sim_backend.jobs(
             limit=10, status=JobStatus.DONE, descending=True, start_datetime=self.last_month)
@@ -489,7 +489,7 @@ class TestIBMQJob(JobTestCase):
         excited_sched = x | measure
         schedules = [ground_sched, excited_sched]
 
-        job = backend.run(schedules, validate_qobj=True, meas_level=1, shots=256)
+        job = backend.run(schedules, meas_level=1, shots=256)
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         self.assertTrue(job.done(), "Job {} didn't complete successfully.".format(job.job_id()))
         self.assertIsNotNone(job.result(), "Job {} has no result.".format(job.job_id()))
@@ -566,7 +566,7 @@ class TestIBMQJob(JobTestCase):
                 # Put callback data in a dictionary to make it mutable.
                 callback_info = {'called': False, 'last call time': 0.0, 'last data': {}}
                 cancel_event = Event()
-                job = backend.run(transpile(qc, backend=backend), validate_qobj=True)
+                job = backend.run(transpile(qc, backend=backend))
                 # Cancel the job after a while.
                 Thread(target=job_canceller, args=(job, cancel_event, 60), daemon=True).start()
                 try:
@@ -623,7 +623,7 @@ class TestIBMQJob(JobTestCase):
     def test_job_backend_options(self):
         """Test job backend options."""
         run_config = {'shots': 2048, 'memory': True}
-        job = self.sim_backend.run(self.bell, validate_qobj=True, **run_config)
+        job = self.sim_backend.run(self.bell, **run_config)
         self.assertLessEqual(run_config.items(), job.backend_options().items())
 
     def test_job_header(self):
