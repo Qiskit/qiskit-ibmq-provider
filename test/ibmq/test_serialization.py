@@ -127,7 +127,7 @@ class TestSerialization(IBMQTestCase):
         qc.x(0)
         qc.measure([0], [0])
         sched = schedule(transpile(qc, backend=backend), backend=backend)
-        job = backend.run(sched, backend=backend)
+        job = backend.run(sched)
         result = job.result()
 
         # Known keys that look like a serialized object.
