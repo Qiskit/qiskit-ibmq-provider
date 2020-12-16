@@ -36,13 +36,13 @@ from qiskit.providers.ibmq.utils.converters import local_to_utc
 from qiskit.providers.ibmq.api.rest.job import Job as RestJob
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 
-from ..jobtestcase import JobTestCase
+from ..ibmqtestcase import IBMQTestCase
 from ..decorators import (requires_provider, requires_device)
 from ..utils import (most_busy_backend, get_large_circuit, cancel_job,
                      submit_job_bad_shots, submit_and_cancel, submit_job_one_bad_instr)
 
 
-class TestIBMQJob(JobTestCase):
+class TestIBMQJob(IBMQTestCase):
     """Test ibmqjob module."""
 
     @classmethod

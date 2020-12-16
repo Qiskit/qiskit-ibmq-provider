@@ -188,6 +188,7 @@ class TestIBMQBackendService(IBMQTestCase):
     def setUpClass(cls, provider):
         """Initial class level setup."""
         # pylint: disable=arguments-differ
+        super().setUpClass()
         cls.provider = provider
         cls.last_week = datetime.now() - timedelta(days=7)
 

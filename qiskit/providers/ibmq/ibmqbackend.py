@@ -741,7 +741,7 @@ class IBMQSimulator(IBMQBackend):
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
-            validate_qobj: bool = False,
+            validate_qobj: bool = None,
             backend_options: Optional[Dict] = None,
             noise_model: Any = None,
             **kwargs: Dict

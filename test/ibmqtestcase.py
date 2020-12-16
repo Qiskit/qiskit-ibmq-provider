@@ -15,11 +15,13 @@
 import os
 import logging
 import inspect
+from functools import partialmethod
 
 from qiskit.test.base import BaseQiskitTestCase
 
 from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
 from qiskit.providers.ibmq.exceptions import IBMQAccountCredentialsNotFound
+from qiskit.providers.ibmq.api.clients.account import AccountClient
 
 from .utils import setup_test_logging
 
@@ -68,3 +70,34 @@ class IBMQTestCase(BaseQiskitTestCase):
         if not any(isinstance(handler, logging.StreamHandler) for handler in logger.handlers):
             logger.addHandler(logging.StreamHandler())
             logger.propagate = False
+
+    def setUp(self) -> None:
+        """Test level setup."""
+        super().setUp()
+        # Record submitted jobs.
+        self._jobs = []
+        self._saved_submit = AccountClient.job_submit
+        AccountClient.job_submit = partialmethod(self._recorded_submit)
+
+    def tearDown(self) -> None:
+        """Test level tear down."""
+        super().tearDown()
+        failed = False
+        # It's surprisingly difficult to find out whether the test failed.
+        # Using a private attribute is not ideal but it'll have to do.
+        for test, exc_info in self._outcome.errors:
+            if exc_info is not None:
+                failed = True
+
+        if not failed:
+            for client, job_id in self._jobs:
+                try:
+                    client.job_delete(job_id)
+                except:
+                    pass
+
+    def _recorded_submit(self, client, *args, **kwargs):
+        """Record submitted jobs."""
+        submit_info = self._saved_submit(client, *args, **kwargs)
+        self._jobs.append((client, submit_info['job_id']))
+        return submit_info
