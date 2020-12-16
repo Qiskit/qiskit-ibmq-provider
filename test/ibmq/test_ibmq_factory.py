@@ -26,8 +26,7 @@ from qiskit.providers.ibmq.credentials.hubgroupproject import HubGroupProject
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_qe_access
-from ..contextmanagers import (custom_qiskitrc, no_file, no_envs,
-                               CREDENTIAL_ENV_VARS)
+from ..contextmanagers import custom_qiskitrc, no_envs, CREDENTIAL_ENV_VARS
 from ..utils import get_provider
 
 API_URL = 'https://api.quantum-computing.ibm.com/api'

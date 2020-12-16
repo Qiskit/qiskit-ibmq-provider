@@ -17,7 +17,6 @@ import os
 import warnings
 from io import StringIO
 from contextlib import contextmanager
-from tempfile import NamedTemporaryFile
 from unittest import skipIf
 from unittest.mock import patch
 from requests_ntlm import HttpNtlmAuth
@@ -31,7 +30,7 @@ from qiskit.providers.ibmq.credentials.updater import (
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
 
 from ..ibmqtestcase import IBMQTestCase
-from ..contextmanagers import custom_envs, no_envs, custom_qiskitrc, no_file, CREDENTIAL_ENV_VARS
+from ..contextmanagers import custom_envs, no_envs, custom_qiskitrc, CREDENTIAL_ENV_VARS
 
 
 IBMQ_TEMPLATE = 'https://localhost/api/Hubs/{}/Groups/{}/Projects/{}'

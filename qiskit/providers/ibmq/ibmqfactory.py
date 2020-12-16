@@ -13,7 +13,6 @@
 """Factory and Account manager for IBM Quantum Experience."""
 
 import logging
-import warnings
 from typing import Dict, List, Union, Callable, Optional, Any
 from collections import OrderedDict
 

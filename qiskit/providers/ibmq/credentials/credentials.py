@@ -13,7 +13,6 @@
 """Represent IBM Quantum Experience account credentials."""
 
 import re
-import warnings
 
 from typing import Dict, Tuple, Optional, Any
 from requests_ntlm import HttpNtlmAuth
@@ -118,6 +117,7 @@ class Credentials:
                 )
 
         return request_kwargs
+
 
 def _unify_ibmq_url(
         url: str,
