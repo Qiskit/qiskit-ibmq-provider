@@ -234,11 +234,10 @@ class TestIBMQJob(IBMQTestCase):
 
     def test_retrieve_jobs_status(self):
         """Test retrieving jobs filtered by status."""
-        # Get the most recent jobs that are done.
         status_args = [JobStatus.DONE, 'DONE', [JobStatus.DONE], ['DONE']]
         for arg in status_args:
             with self.subTest(arg=arg):
-                backend_jobs = self.sim_backend.jobs(limit=5, skip=0, status=arg,
+                backend_jobs = self.sim_backend.jobs(limit=5, skip=5, status=arg,
                                                      start_datetime=self.last_month)
                 self.assertTrue(backend_jobs)
 
@@ -265,9 +264,11 @@ class TestIBMQJob(IBMQTestCase):
 
         for status_filter in status_filters:
             with self.subTest(status_filter=status_filter):
-                job_list = self.sim_backend.jobs(status=status_filter['status'],
-                                                 db_filter=status_filter['db_filter'],
-                                                 start_datetime=self.last_month)
+                job_list = self.sim_backend.jobs(
+                    limit=5, skip=5,
+                    status=status_filter['status'],
+                    db_filter=status_filter['db_filter'],
+                    start_datetime=self.last_month)
                 job_list_ids = [_job.job_id() for _job in job_list]
                 if job_to_cancel.status() is JobStatus.CANCELLED:
                     self.assertIn(job_to_cancel.job_id(), job_list_ids)
@@ -413,7 +414,7 @@ class TestIBMQJob(IBMQTestCase):
                      'status': 'COMPLETED'}
 
         job_list = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
-                                              limit=2, skip=0, db_filter=my_filter,
+                                              limit=2, skip=5, db_filter=my_filter,
                                               start_datetime=self.last_month)
         self.assertTrue(job_list)
 

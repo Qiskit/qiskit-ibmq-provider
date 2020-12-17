@@ -85,7 +85,7 @@ class IBMQTestCase(BaseQiskitTestCase):
         failed = False
         # It's surprisingly difficult to find out whether the test failed.
         # Using a private attribute is not ideal but it'll have to do.
-        for test, exc_info in self._outcome.errors:
+        for _, exc_info in self._outcome.errors:
             if exc_info is not None:
                 failed = True
 
@@ -93,7 +93,7 @@ class IBMQTestCase(BaseQiskitTestCase):
             for client, job_id in self._jobs:
                 try:
                     client.job_delete(job_id)
-                except:
+                except Exception:  # pylint: disable=broad-except
                     pass
 
     def _recorded_submit(self, client, *args, **kwargs):
