@@ -47,7 +47,6 @@ from .exceptions import (CredentialsError, InvalidCredentialsFormatError,
                          CredentialsNotFoundError, HubGroupProjectInvalidStateError)
 from .configrc import read_credentials_from_qiskitrc, store_credentials
 from .environ import read_credentials_from_environ
-from .qconfig import read_credentials_from_qconfig
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +59,8 @@ def discover_credentials(
     This method looks for credentials in the following places in order and
     returns the first ones found:
 
-        1. The ``Qconfig.py`` file in the current working directory.
-        2. The the environment variables.
-        3. The ``qiskitrc`` configuration file
+        1. The the environment variables.
+        2. The ``qiskitrc`` configuration file
 
     Args:
         qiskitrc_filename: Full path to the ``qiskitrc`` configuration
@@ -83,7 +81,6 @@ def discover_credentials(
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.
     readers = OrderedDict([
-        ('qconfig', (read_credentials_from_qconfig, {})),
         ('environment variables', (read_credentials_from_environ, {})),
         ('qiskitrc', (read_credentials_from_qiskitrc,
                       {'filename': qiskitrc_filename}))
