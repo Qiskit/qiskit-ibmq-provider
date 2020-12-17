@@ -22,6 +22,7 @@ from qiskit.test.base import BaseQiskitTestCase
 from qiskit.providers.ibmq import IBMQ_PROVIDER_LOGGER_NAME
 from qiskit.providers.ibmq.exceptions import IBMQAccountCredentialsNotFound
 from qiskit.providers.ibmq.api.clients.account import AccountClient
+from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 
 from .utils import setup_test_logging
 
@@ -92,6 +93,9 @@ class IBMQTestCase(BaseQiskitTestCase):
         if not failed:
             for client, job_id in self._jobs:
                 try:
+                    job_status = client.job_get(job_id)['status']
+                    if ApiJobStatus(job_status) not in API_JOB_FINAL_STATES:
+                        client.job_cancel(job_id)
                     client.job_delete(job_id)
                 except Exception:  # pylint: disable=broad-except
                     pass
