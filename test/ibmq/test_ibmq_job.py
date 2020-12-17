@@ -31,7 +31,7 @@ from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATE
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError, IBMQBackendApiError
 from qiskit.providers.ibmq.utils.utils import api_status_to_job_status
-from qiskit.providers.ibmq.job.exceptions import IBMQJobInvalidStateError, IBMQJobTimeoutError
+from qiskit.providers.ibmq.job.exceptions import IBMQJobTimeoutError
 from qiskit.providers.ibmq.utils.converters import local_to_utc
 from qiskit.providers.ibmq.api.rest.job import Job as RestJob
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
@@ -455,11 +455,6 @@ class TestIBMQJob(IBMQTestCase):
         oldest_jobs = self.sim_backend.jobs(
             limit=10, status=JobStatus.DONE, descending=False, start_datetime=self.last_month)
         self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in oldest_jobs])
-
-    def test_double_submit_fails(self):
-        """Test submitting a job twice."""
-        with self.assertRaises(IBMQJobInvalidStateError):
-            self.sim_job.submit()
 
     def test_retrieve_failed_job_simulator_partial(self):
         """Test retrieving partial results from a simulator backend."""

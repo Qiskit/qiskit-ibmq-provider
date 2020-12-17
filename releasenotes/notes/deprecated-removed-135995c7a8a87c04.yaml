@@ -1,0 +1,11 @@
+---
+upgrade:
+  - |
+    A number of previously deprecated methods and features have been removed,
+    including:
+
+      * :meth:`qiskit.providers.ibmq.job.IBMQJob.submit`
+      * :meth:`qiskit.providers.ibmq.job.IBMQJob.to_dict`
+      * :meth:`qiskit.providers.ibmq.job.IBMQJob.from_dict`
+      * `Qconfig.py` support
+      * Use of proxy URLs that do not include protocols
