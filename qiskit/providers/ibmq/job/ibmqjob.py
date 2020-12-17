@@ -705,22 +705,18 @@ class IBMQJob(Job):
             self._client_version = {}
 
     def submit(self) -> None:
-        """Submit this job to an IBM Quantum Experience backend.
+        """Unsupported method.
 
         Note:
-            This function is deprecated, please use
-            :meth:`IBMQBackend.run()<qiskit.providers.ibmq.ibmqbackend.IBMQBackend.run()>`
+            This method is not supported, please use
+            :meth:`~qiskit.providers.ibmq.ibmqbackend.IBMQBackend.run`
             to submit a job.
 
         Raises:
-            IBMQJobInvalidStateError: If the job has already been submitted.
+            NotImplementedError: Upon invocation.
         """
-        if self.job_id() is not None:
-            raise IBMQJobInvalidStateError(
-                'The job {} has already been submitted.'.format(self.job_id()))
-
-        warnings.warn("job.submit() is deprecated. Please use "
-                      "IBMQBackend.run() to submit a job.", DeprecationWarning, stacklevel=2)
+        raise NotImplementedError("job.submit() is not supported. Please use "
+                                  "IBMQBackend.run() to submit a job.")
 
     def refresh(self) -> None:
         """Obtain the latest job information from the server.
@@ -806,34 +802,6 @@ class IBMQJob(Job):
             return {}
         _, _, header = disassemble(qobj)
         return header
-
-    def to_dict(self) -> Dict:
-        """Serialize the model into a Python dict of simple types.
-
-        Note:
-            This is a unsupported method and will be removed in the next release.
-
-        Returns:
-            An empty dictionary.
-        """
-        warnings.warn("IBMQJob.to_dict() is not supported and may not work properly. "
-                      "It will be removed in the next release.",
-                      DeprecationWarning, stacklevel=2)
-        return {}
-
-    @classmethod
-    def from_dict(cls, data: Any) -> 'IBMQJob':
-        """Deserialize a dictionary of simple types into an instance of this class.
-
-        Args:
-            data: Data to be deserialized.
-
-        Returns:
-            An instance of this class.
-        """
-        warnings.warn("IBMQJob.from_dict() is deprecated and will be removed in the next release. ",
-                      DeprecationWarning, stacklevel=2)
-        return cls(**data)
 
     def wait_for_final_state(
             self,

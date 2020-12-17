@@ -50,7 +50,7 @@ def requires_qe_access(func):
           set, it reads the credentials from an alternative set of environment
           variables.
         * if the test is not skipped, it reads `qe_token` and `qe_url` from
-            `Qconfig.py`, environment variables or qiskitrc.
+            environment variables or qiskitrc.
         * if the test is not skipped, it appends `qe_token` and `qe_url` as
             arguments to the test function.
 

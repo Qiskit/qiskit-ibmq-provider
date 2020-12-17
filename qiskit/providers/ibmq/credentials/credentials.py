@@ -13,7 +13,6 @@
 """Represent IBM Quantum Experience account credentials."""
 
 import re
-import warnings
 
 from typing import Dict, Tuple, Optional, Any
 from requests_ntlm import HttpNtlmAuth
@@ -72,9 +71,6 @@ class Credentials:
         self.proxies = proxies or {}
         self.verify = verify
 
-        # Normalize proxy urls.
-        self._prepend_protocol_if_needed()
-
         # Initialize additional service URLs.
         services = services or {}
         self.extractor_url = services.get('extractorsService', None)
@@ -121,26 +117,6 @@ class Credentials:
                 )
 
         return request_kwargs
-
-    def _prepend_protocol_if_needed(self) -> None:
-        """Prepend the proxy URLs with protocol if needed."""
-        if 'urls' not in self.proxies:
-            return
-
-        warning_issued = False
-        for key, url in self.proxies['urls'].items():
-            colon_pos = url.find(':')
-            if colon_pos < 0 or re.match(r'[0-9]*$', url[colon_pos+1:]):
-                # If colon not found OR everything after colon are digits (i.e. port number).
-                if not warning_issued:
-                    warnings.warn("Proxy URLs without protocols (e.g. 'http://') "
-                                  "will no longer be supported in the future release.",
-                                  DeprecationWarning, stacklevel=4)
-                    warning_issued = True
-                prepend_str = 'http:'
-                if url[:2] != '//':
-                    prepend_str += '//'
-                self.proxies['urls'][key] = prepend_str + url
 
 
 def _unify_ibmq_url(

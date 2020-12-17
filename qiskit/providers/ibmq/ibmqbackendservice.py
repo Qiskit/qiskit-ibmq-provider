@@ -216,12 +216,7 @@ class IBMQBackendService:
         if job_name:
             api_filter['name'] = {"regexp": job_name}
 
-        # TODO: Remove when decided the warning is no longer needed.
         if start_datetime or end_datetime:
-            warnings.warn('Unless a UTC timezone information is present, the parameters '
-                          '`start_datetime` and `end_datetime` are now expected to be in '
-                          'local time instead of UTC.', stacklevel=2)
-
             api_filter['creationDate'] = self._update_creation_date_filter(
                 cur_dt_filter={},
                 gte_dt=local_to_utc(start_datetime).isoformat() if start_datetime else None,
