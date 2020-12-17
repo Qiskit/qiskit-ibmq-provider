@@ -265,7 +265,6 @@ class TestIBMQJob(IBMQTestCase):
         for status_filter in status_filters:
             with self.subTest(status_filter=status_filter):
                 job_list = self.sim_backend.jobs(
-                    limit=5, skip=5,
                     status=status_filter['status'],
                     db_filter=status_filter['db_filter'],
                     start_datetime=self.last_month)
