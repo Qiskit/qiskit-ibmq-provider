@@ -161,10 +161,10 @@ class AccountProvider(Provider):
                     api_client=self._api_client)
             except Exception as ex:  # pylint: disable=broad-except
                 logger.warning(
-                    'Remote backend "%s" could not be instantiated due to an '
+                    'Remote backend "%s" for provider %s could not be instantiated due to an '
                     'invalid config: %s: %s',
                     raw_config.get('backend_name', raw_config.get('name', 'unknown')),
-                    type(ex).__name__, ex)
+                    repr(self), type(ex).__name__, ex)
 
         return ret
 

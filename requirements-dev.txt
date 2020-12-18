@@ -12,6 +12,7 @@ matplotlib>=2.1
 jupyter
 plotly>=4.4
 ipyvuetify>=1.1
+ipyvue>=1.4.1
 ipython>=5.0.0
 seaborn>=0.9.0
 pyperclip>=1.7
