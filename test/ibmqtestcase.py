@@ -15,6 +15,7 @@
 import os
 import logging
 import inspect
+import time
 from functools import partialmethod
 
 from qiskit.test.base import BaseQiskitTestCase
@@ -96,6 +97,7 @@ class IBMQTestCase(BaseQiskitTestCase):
                     job_status = client.job_get(job_id)['status']
                     if ApiJobStatus(job_status) not in API_JOB_FINAL_STATES:
                         client.job_cancel(job_id)
+                        time.sleep(1)
                     client.job_delete(job_id)
                 except Exception:  # pylint: disable=broad-except
                     pass
