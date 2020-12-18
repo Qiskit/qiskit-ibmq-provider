@@ -78,6 +78,7 @@ class TestBackendInfo(IBMQTestCase):
         """Test jobs tab."""
         def _limit_jobs(**kwargs):
             kwargs['limit'] = 5
+            kwargs['skip'] = 5
             kwargs['start_datetime'] = datetime.now() - timedelta(days=7)
             return original_backend_jobs(**kwargs)
 

@@ -41,7 +41,8 @@ class Job(RestAdapterBase):
         'status': '/status/v/1',
         'properties': '/properties',
         'result_url': '/resultDownloadUrl',
-        'upload_url': '/jobUploadUrl'
+        'upload_url': '/jobUploadUrl',
+        'delete': ''
     }
 
     def __init__(self, session: RetrySession, job_id: str, url_prefix: str = '') -> None:
@@ -202,3 +203,8 @@ class Job(RestAdapterBase):
         logger.debug('Downloading from object storage.')
         response = self.session.get(url, bare=True, timeout=600).json()
         return response
+
+    def delete(self) -> None:
+        """Mark job for deletion."""
+        url = self.get_url('delete')
+        self.session.delete(url)

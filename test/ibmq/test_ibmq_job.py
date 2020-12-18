@@ -36,13 +36,13 @@ from qiskit.providers.ibmq.utils.converters import local_to_utc
 from qiskit.providers.ibmq.api.rest.job import Job as RestJob
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 
-from ..jobtestcase import JobTestCase
+from ..ibmqtestcase import IBMQTestCase
 from ..decorators import (requires_provider, requires_device)
 from ..utils import (most_busy_backend, get_large_circuit, cancel_job,
                      submit_job_bad_shots, submit_and_cancel, submit_job_one_bad_instr)
 
 
-class TestIBMQJob(JobTestCase):
+class TestIBMQJob(IBMQTestCase):
     """Test ibmqjob module."""
 
     @classmethod
@@ -234,11 +234,10 @@ class TestIBMQJob(JobTestCase):
 
     def test_retrieve_jobs_status(self):
         """Test retrieving jobs filtered by status."""
-        # Get the most recent jobs that are done.
         status_args = [JobStatus.DONE, 'DONE', [JobStatus.DONE], ['DONE']]
         for arg in status_args:
             with self.subTest(arg=arg):
-                backend_jobs = self.sim_backend.jobs(limit=5, skip=0, status=arg,
+                backend_jobs = self.sim_backend.jobs(limit=5, skip=5, status=arg,
                                                      start_datetime=self.last_month)
                 self.assertTrue(backend_jobs)
 
@@ -265,9 +264,10 @@ class TestIBMQJob(JobTestCase):
 
         for status_filter in status_filters:
             with self.subTest(status_filter=status_filter):
-                job_list = self.sim_backend.jobs(status=status_filter['status'],
-                                                 db_filter=status_filter['db_filter'],
-                                                 start_datetime=self.last_month)
+                job_list = self.sim_backend.jobs(
+                    status=status_filter['status'],
+                    db_filter=status_filter['db_filter'],
+                    start_datetime=self.last_month)
                 job_list_ids = [_job.job_id() for _job in job_list]
                 if job_to_cancel.status() is JobStatus.CANCELLED:
                     self.assertIn(job_to_cancel.job_id(), job_list_ids)
@@ -413,7 +413,7 @@ class TestIBMQJob(JobTestCase):
                      'status': 'COMPLETED'}
 
         job_list = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
-                                              limit=2, skip=0, db_filter=my_filter,
+                                              limit=2, skip=5, db_filter=my_filter,
                                               start_datetime=self.last_month)
         self.assertTrue(job_list)
 

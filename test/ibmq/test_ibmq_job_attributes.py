@@ -28,7 +28,7 @@ from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import IBMQBackendValueError, IBMQBackendApiProtocolError
 from qiskit.compiler import transpile
 
-from ..jobtestcase import JobTestCase
+from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider, requires_device
 from ..utils import (most_busy_backend, cancel_job, get_large_circuit,
                      update_job_tags_and_verify, submit_job_bad_shots,
@@ -36,7 +36,7 @@ from ..utils import (most_busy_backend, cancel_job, get_large_circuit,
 from ..fake_account_client import BaseFakeAccountClient, MissingFieldFakeJob
 
 
-class TestIBMQJobAttributes(JobTestCase):
+class TestIBMQJobAttributes(IBMQTestCase):
     """Test IBMQJob instance attributes."""
 
     @classmethod

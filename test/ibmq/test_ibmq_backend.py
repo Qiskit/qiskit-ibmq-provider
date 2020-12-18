@@ -188,6 +188,7 @@ class TestIBMQBackendService(IBMQTestCase):
     def setUpClass(cls, provider):
         """Initial class level setup."""
         # pylint: disable=arguments-differ
+        super().setUpClass()
         cls.provider = provider
         cls.last_week = datetime.now() - timedelta(days=7)
 
@@ -202,7 +203,7 @@ class TestIBMQBackendService(IBMQTestCase):
 
     def test_deprecated_service(self):
         """Test deprecated backend service module."""
-        ref_job = self.provider.backend.jobs(limit=1, start_datetime=self.last_week)[0]
+        ref_job = self.provider.backend.jobs(limit=10, start_datetime=self.last_week)[-1]
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always", category=DeprecationWarning)
