@@ -75,13 +75,13 @@ tr:nth-child(even) {background-color: #f6f6f6 !important;}
                 continue
             for gd_param in gd.parameters:
                 if gd_param.name == 'gate_error':
-                    gate_names.append(gd.gate)
+                    gate_names.append(gd.gate.upper())
                     gate_error.append(str(round(gd_param.value*100, 3)))
 
         if not gate_error_title:
             for gname in gate_names:
                 gate_error_title += f"<th>{gname}</th>"
-            qubit_html += gate_error_title + "<th>Readout error (e-2)</th></tr>"
+            qubit_html += gate_error_title + "<th>Readout error</th></tr>"
 
         qubit_html += f"<tr><td><font style='font-weight:bold'>{name}</font></td>"
         qubit_html += f"<td>{cali_data['frequency']}</td>" \
