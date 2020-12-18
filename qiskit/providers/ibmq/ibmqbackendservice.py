@@ -129,7 +129,7 @@ class IBMQBackendService:
 
         if min_num_qubits:
             backends = list(filter(
-                lambda b: b.configuration().n_qubits > min_num_qubits, backends))
+                lambda b: b.configuration().n_qubits >= min_num_qubits, backends))
 
         return filter_backends(backends, filters=filters, **kwargs)
 
