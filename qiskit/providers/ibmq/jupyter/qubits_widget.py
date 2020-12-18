@@ -71,7 +71,7 @@ tr:nth-child(even) {background-color: #f6f6f6 !important;}
         gate_names = []
         gate_error = []
         for gd in gate_data:
-            if gd.gate == 'id':
+            if gd.gate in ['rz', 'id']:
                 continue
             for gd_param in gd.parameters:
                 if gd_param.name == 'gate_error':
