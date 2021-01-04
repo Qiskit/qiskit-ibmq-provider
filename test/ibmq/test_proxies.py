@@ -137,7 +137,6 @@ class TestProxies(IBMQTestCase):
     def test_proxy_urls(self, qe_token, qe_url):
         """Test different forms of the proxy urls."""
         test_urls = [
-            '{}:{}'.format(ADDRESS, PORT),
             'http://{}:{}'.format(ADDRESS, PORT),
             '//{}:{}'.format(ADDRESS, PORT),
             'http:{}:{}'.format(ADDRESS, PORT),
