@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    The :meth:`qiskit.providers.ibmq.IBMQBackend.reservations` method
+    now always returns the reservation scheduling modes even for
+    reservations that you don't own.

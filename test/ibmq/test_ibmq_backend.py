@@ -106,18 +106,18 @@ class TestIBMQBackend(IBMQTestCase):
 
         reserv = reservations[0]
         self.assertGreater(reserv.duration, 0)
+        self.assertTrue(reserv.mode)
         before_start = reserv.start_datetime - timedelta(seconds=30)
-        # after_start = reserv.start_datetime + timedelta(seconds=30)
+        after_start = reserv.start_datetime + timedelta(seconds=30)
         before_end = reserv.end_datetime - timedelta(seconds=30)
         after_end = reserv.end_datetime + timedelta(seconds=30)
 
         # Each tuple contains the start datetime, end datetime, whether a
         # reservation should be found, and the description.
-        # TODO re-enable sub test 3 after API is updated.
         sub_tests = [
             (before_start, after_end, True, 'before start, after end'),
             (before_start, before_end, True, 'before start, before end'),
-            # (after_start, before_end, True, 'after start, before end'),
+            (after_start, before_end, True, 'after start, before end'),
             (before_start, None, True, 'before start, None'),
             (None, after_end, True, 'None, after end'),
             (before_start, before_start, False, 'before start, before start'),
