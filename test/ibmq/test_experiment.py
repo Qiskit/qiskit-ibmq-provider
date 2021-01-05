@@ -91,7 +91,7 @@ class TestExperiment(IBMQTestCase):
         """Test retrieving experiments."""
         self.assertTrue(self.experiments, "No experiments found.")
         providers = ['/'.join([provider.credentials.hub, provider.credentials.group,
-                              provider.credentials.project]) for provider in IBMQ.providers()]
+                               provider.credentials.project]) for provider in IBMQ.providers()]
         for exp in self.experiments:
             self.assertTrue(isinstance(exp, Experiment))
             self.assertTrue(exp.uuid, "{} does not have an uuid!".format(exp))
