@@ -50,7 +50,10 @@ class ExperimentClient(BaseClient):
             experiment_type: Optional[str] = None,
             start_time: Optional[List] = None,
             device_components: Optional[List[str]] = None,
-            tags: Optional[List[str]] = None
+            tags: Optional[List[str]] = None,
+            hub: Optional[str] = None,
+            group: Optional[str] = None,
+            project: Optional[str] = None
     ) -> Dict:
         """Retrieve experiments, with optional filtering.
 
@@ -62,12 +65,16 @@ class ExperimentClient(BaseClient):
             start_time: A list of timestamps used to filter by experiment start time.
             device_components: A list of device components used for filtering.
             tags: Tags used for filtering.
+            hub: Filter by hub.
+            group: Filter by hub and group.
+            project: Filter by hub, group, and project.
 
         Returns:
             A list of experiments and the marker, if applicable.
         """
         resp = self.base_api.experiments(
-            limit, marker, backend_name, experiment_type, start_time, device_components, tags)
+            limit, marker, backend_name, experiment_type, start_time, device_components, tags,
+            hub, group, project)
         return resp
 
     def experiment_get(self, experiment_id: str) -> Dict:

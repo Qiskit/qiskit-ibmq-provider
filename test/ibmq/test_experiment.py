@@ -25,6 +25,7 @@ from qiskit.providers.ibmq.experiment.exceptions import (ExperimentNotFoundError
                                                          PlotNotFoundError)
 from qiskit.providers.ibmq.experiment.constants import ResultQuality, ExperimentShareLevel
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
+from qiskit.providers.ibmq import IBMQ
 
 
 from ..ibmqtestcase import IBMQTestCase
@@ -89,6 +90,8 @@ class TestExperiment(IBMQTestCase):
     def test_experiments(self):
         """Test retrieving experiments."""
         self.assertTrue(self.experiments, "No experiments found.")
+        providers = ['/'.join([provider.credentials.hub, provider.credentials.group,
+                              provider.credentials.project]) for provider in IBMQ.providers()]
         for exp in self.experiments:
             self.assertTrue(isinstance(exp, Experiment))
             self.assertTrue(exp.uuid, "{} does not have an uuid!".format(exp))
@@ -96,6 +99,9 @@ class TestExperiment(IBMQTestCase):
                             'end_datetime', 'updated_datetime']:
                 if getattr(exp, dt_attr):
                     self.assertTrue(getattr(exp, dt_attr).tzinfo)
+            if exp.share_level is not ExperimentShareLevel.PUBLIC:
+                self.assertIn('/'.join([exp.hub, exp.group, exp.project]),
+                              providers)
 
     def test_experiments_with_backend(self):
         """Test retrieving all experiments for a specific backend."""
@@ -192,6 +198,42 @@ class TestExperiment(IBMQTestCase):
                 self.assertTrue(ref_expr_found == found,
                                 "Experiment tags {} unexpectedly (not)found. Found={}".format(
                                     ref_expr.tags, found))
+
+    def test_experiments_with_hgp(self):
+        """Test retrieving all experiments for a specific h/g/p."""
+        ref_exp = self.experiments[0]
+        hgp = [ref_exp.hub, ref_exp.group, ref_exp.project]
+        sub_tests = [
+            {'hub': hgp[0]},
+            {'hub': hgp[0], 'group': hgp[1]},
+            {'hub': hgp[0], 'group': hgp[1], 'project': hgp[2]}
+        ]
+
+        for hgp_kwargs in sub_tests:
+            with self.subTest(kwargs=hgp_kwargs.keys()):
+                hgp_experiments = self.provider.experiment.experiments(**hgp_kwargs)
+                expr_ids = []
+                for expr in hgp_experiments:
+                    for hgp_key, hgp_val in hgp_kwargs.items():
+                        self.assertEqual(getattr(expr, hgp_key), hgp_val, repr(expr))
+                    expr_ids.append(expr.uuid)
+                self.assertIn(ref_exp.uuid, expr_ids)
+
+    def test_experiments_with_hgp_error(self):
+        """Test retrieving experiments with bad h/g/p specification."""
+        sub_tests = [
+            ({'project': 'test_project'}, ['hub', 'group']),
+            ({'project': 'test_project', 'group': 'test_group'}, ['hub']),
+            ({'project': 'test_project', 'hub': 'test_hub'}, ['group']),
+            ({'group': 'test_group'}, ['hub'])
+        ]
+
+        for hgp_kwargs, missing_keys in sub_tests:
+            with self.subTest(kwargs=hgp_kwargs.keys()):
+                with self.assertRaises(ValueError) as ex_cm:
+                    self.provider.experiment.experiments(**hgp_kwargs)
+                for key in missing_keys:
+                    self.assertIn(key, str(ex_cm.exception))
 
     def test_retrieve_experiment(self):
         """Test retrieving an experiment by its ID."""

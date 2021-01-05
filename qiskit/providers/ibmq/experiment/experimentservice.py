@@ -105,8 +105,17 @@ class ExperimentService:
             device_components: Optional[List[str]] = None,
             tags: Optional[List[str]] = None,
             tags_operator: Optional[str] = "OR",
+            hub: Optional[str] = None,
+            group: Optional[str] = None,
+            project: Optional[str] = None
     ) -> List[Experiment]:
         """Retrieve all experiments, with optional filtering.
+
+        By default, results returned are as inclusive as possible. For example,
+        if you don't specify any filters, all experiments visible to you
+        are returned. This includes your own experiments as well as
+        those shared with you, from all providers you have access to
+        (not just from the provider you used to invoke this experiment service).
 
         Args:
             limit: Number of experiments to retrieve. ``None`` indicates no limit.
@@ -128,6 +137,10 @@ class ExperimentService:
                       specified in `tags` to be included.
                     * If "OR" is specified, then an experiment only needs to have any
                       of the tags specified in `tags` to be included.
+            hub: Filter by hub.
+            group: Filter by hub and group. `hub` must also be specified if `group` is.
+            project: Filter by hub, group, and project. `hub` and `group` must also be
+                specified if `project` is.
 
         Returns:
             A list of experiments.
@@ -137,6 +150,13 @@ class ExperimentService:
         """
         if limit is not None and (not isinstance(limit, int) or limit <= 0):  # type: ignore
             raise ValueError(f"{limit} is not a valid `limit`, which has to be a positive integer.")
+
+        pgh_text = ['project', 'group', 'hub']
+        pgh_val = [project, group, hub]
+        for idx, val in enumerate(pgh_val):
+            if val is not None and None in pgh_val[idx+1:]:
+                raise ValueError(f"If {pgh_text[idx]} is specified, "
+                                 f"{' and '.join(pgh_text[idx+1:])} must also be specified.")
 
         start_time_filters = []
         if start_datetime:
@@ -161,7 +181,7 @@ class ExperimentService:
         while limit is None or limit > 0:
             raw_data = self._api_client.experiments(
                 limit, marker, backend_name, type, start_time_filters,
-                device_components, tags_filter)
+                device_components, tags_filter, hub, group, project)
             marker = raw_data.get('marker')
             for exp in raw_data['experiments']:
                 experiments.append(Experiment.from_remote_data(self._provider, exp))
