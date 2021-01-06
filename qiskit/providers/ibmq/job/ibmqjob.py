@@ -280,7 +280,7 @@ class IBMQJob(Job):
             if not partial or not self._result or not self._result.results:
                 error_message = self.error_message()
                 if '\n' in error_message:
-                    error_message = ". Use job.error_message() to get more details"
+                    error_message = ". Use the error_message() method to get more details"
                 else:
                     error_message = ": " + error_message
                 raise IBMQJobFailureError(
