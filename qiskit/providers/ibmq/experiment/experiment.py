@@ -70,7 +70,7 @@ class Experiment:
             project: The project to which this experiment belongs. If not specified the
                 project from the provider is used.
             share_level: The level at which the experiment is shared. This determines who can
-                access the experiment, including changing its data. This defaults to "private"
+                view the experiment (but not update it). This defaults to "private"
                 for new experiments. Possible values include:
 
                 - private: The experiment is only visible to its owner (default)

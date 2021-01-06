@@ -154,7 +154,10 @@ class Api(RestAdapterBase):
             experiment_type: Optional[str] = None,
             start_time: Optional[List] = None,
             device_components: Optional[List[str]] = None,
-            tags: Optional[List[str]] = None
+            tags: Optional[List[str]] = None,
+            hub: Optional[str] = None,
+            group: Optional[str] = None,
+            project: Optional[str] = None
     ) -> Dict:
         """Return experiment data.
 
@@ -166,6 +169,9 @@ class Api(RestAdapterBase):
             start_time: A list of timestamps used to filter by experiment start time.
             device_components: A list of device components used for filtering.
             tags: Tags used for filtering.
+            hub: Filter by hub.
+            group: Filter by hub and group.
+            project: Filter by hub, group, and project.
 
         Returns:
             JSON response.
@@ -186,6 +192,12 @@ class Api(RestAdapterBase):
             params['limit'] = limit
         if marker:
             params['marker'] = marker
+        if hub:
+            params['hub_id'] = hub
+        if group:
+            params['group_id'] = group
+        if project:
+            params['project_id'] = project
         return self.session.get(url, params=params).json()
 
     def experiment_devices(self) -> Dict:
