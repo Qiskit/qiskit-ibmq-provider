@@ -86,7 +86,7 @@ class IBMQJobManager:
 
     def run(
             self,
-            experiments: Union[List[QuantumCircuit], List[Schedule]],
+            experiments: Union[QuantumCircuit, Schedule, List[QuantumCircuit], List[Schedule]],
             backend: IBMQBackend,
             name: Optional[str] = None,
             max_experiments_per_job: Optional[int] = None,
