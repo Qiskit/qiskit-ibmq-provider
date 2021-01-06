@@ -132,10 +132,14 @@ class IBMQJobManager:
         Returns:
             A :class:`ManagedJobSet` instance representing the set of jobs for
             the experiments.
-
+       
         Raises:
             IBMQJobManagerInvalidStateError: If an input parameter value is not valid.
         """
+        
+        if not isinstance(experiments, list): 
+                 experiments = list(experiments)
+
         if (any(isinstance(exp, Schedule) for exp in experiments) and
                 not backend.configuration().open_pulse):
             raise IBMQJobManagerInvalidStateError(
