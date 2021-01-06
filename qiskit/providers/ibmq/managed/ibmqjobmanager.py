@@ -86,7 +86,7 @@ class IBMQJobManager:
 
     def run(
             self,
-            experiments: Union[List[QuantumCircuit], List[Schedule]],
+            experiments: Union[QuantumCircuit, Schedule, List[QuantumCircuit], List[Schedule]],
             backend: IBMQBackend,
             name: Optional[str] = None,
             max_experiments_per_job: Optional[int] = None,
@@ -136,6 +136,10 @@ class IBMQJobManager:
         Raises:
             IBMQJobManagerInvalidStateError: If an input parameter value is not valid.
         """
+
+        if not isinstance(experiments, list):
+            experiments = list(experiments)
+
         if (any(isinstance(exp, Schedule) for exp in experiments) and
                 not backend.configuration().open_pulse):
             raise IBMQJobManagerInvalidStateError(
