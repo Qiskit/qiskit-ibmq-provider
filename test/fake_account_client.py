@@ -254,7 +254,7 @@ class BaseFakeAccountClient:
         while status not in API_JOB_FINAL_STATES:
             time.sleep(0.5)
             status = job.status()
-            if 'status_queue' in _kwargs:
+            if _kwargs.get('status_queue', None):
                 data = {'status': status.value}
                 if status is ApiJobStatus.QUEUED:
                     data['infoQueue'] = {'status': 'PENDING_IN_QUEUE',
