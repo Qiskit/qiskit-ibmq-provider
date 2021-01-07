@@ -16,7 +16,7 @@ import os
 import uuid
 from unittest import mock, SkipTest, skipIf
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Union
 
 from qiskit.providers.ibmq.experiment.experiment import Experiment
 from qiskit.providers.ibmq.experiment.analysis_result import AnalysisResult, Fit, DeviceComponent
@@ -234,6 +234,47 @@ class TestExperiment(IBMQTestCase):
                     self.provider.experiment.experiments(**hgp_kwargs)
                 for key in missing_keys:
                     self.assertIn(key, str(ex_cm.exception))
+
+    def test_experiments_with_public_filters(self):
+        """Tests that the exclude_public and public_only filters are applied properly."""
+        # Make sure that we have at least one public experiment and one non-public
+        # experiment.
+        public_exp = self._create_experiment(share_level=ExperimentShareLevel.PUBLIC)
+        non_public_exp = self._create_experiment()
+        # First list non-public experiments.
+        experiments = self.provider.experiment.experiments(exclude_public=True)
+        # The public experiment we just created should not be in the set.
+        non_public_experiment_uuids = []
+        for experiment in experiments:
+            self.assertNotEqual(
+                experiment.share_level, ExperimentShareLevel.PUBLIC,
+                'Public experiment should not be returned with exclude_public filter: %s' %
+                experiment)
+            non_public_experiment_uuids.append(experiment.uuid)
+        self.assertIn(
+            non_public_exp.uuid, non_public_experiment_uuids,
+            'Non-public experiment not returned with exclude_public filter: %s' %
+            public_exp)
+        # Now list only public experiments.
+        experiments = self.provider.experiment.experiments(public_only=True)
+        public_experiment_uuids = []
+        for experiment in experiments:
+            self.assertEqual(
+                experiment.share_level, ExperimentShareLevel.PUBLIC,
+                'Only public experiments should be returned with public_only filter: %s' %
+                experiment)
+            public_experiment_uuids.append(experiment.uuid)
+        self.assertIn(
+            public_exp.uuid, public_experiment_uuids,
+            'Public experiment not returned with public_only filter: %s' %
+            public_exp)
+
+    def test_experiments_with_public_filters_error(self):
+        """Tests that exclude_public and public_only cannot both be True."""
+        with self.assertRaisesRegex(
+                ValueError,
+                'exclude_public and public_only cannot both be True'):
+            self.provider.experiment.experiments(exclude_public=True, public_only=True)
 
     def test_retrieve_experiment(self):
         """Test retrieving an experiment by its ID."""
@@ -604,7 +645,8 @@ class TestExperiment(IBMQTestCase):
     def _create_experiment(
             self,
             backend_name: Optional[str] = None,
-            start_dt: Optional[datetime] = None
+            start_dt: Optional[datetime] = None,
+            share_level: Optional[Union[ExperimentShareLevel, str]] = None
     ) -> Experiment:
         backend_name = backend_name or self.experiments[0].backend_name
         new_exp = Experiment(
@@ -612,7 +654,8 @@ class TestExperiment(IBMQTestCase):
             backend_name=backend_name,
             experiment_type='test',
             tags=['qiskit-test'],
-            start_datetime=start_dt
+            start_datetime=start_dt,
+            share_level=share_level
         )
         self.provider.experiment.upload_experiment(new_exp)
         self.experiments_to_delete.append(new_exp.uuid)
