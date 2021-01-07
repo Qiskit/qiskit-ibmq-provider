@@ -649,7 +649,7 @@ class TestExperiment(IBMQTestCase):
             share_level: Optional[Union[ExperimentShareLevel, str]] = None
     ) -> Experiment:
         backend_name = backend_name or self.experiments[0].backend_name
-        new_exp = Experiment(
+        new_exp = Experiment(  # pylint: disable=unexpected-keyword-arg
             provider=self.provider,
             backend_name=backend_name,
             experiment_type='test',
