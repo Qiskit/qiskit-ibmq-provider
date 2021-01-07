@@ -107,7 +107,8 @@ class ExperimentService:
             tags_operator: Optional[str] = "OR",
             hub: Optional[str] = None,
             group: Optional[str] = None,
-            project: Optional[str] = None
+            project: Optional[str] = None,
+            is_public: Optional[bool] = None
     ) -> List[Experiment]:
         """Retrieve all experiments, with optional filtering.
 
@@ -141,6 +142,10 @@ class ExperimentService:
             group: Filter by hub and group. `hub` must also be specified if `group` is.
             project: Filter by hub, group, and project. `hub` and `group` must also be
                 specified if `project` is.
+            is_public: Filter by public visibility. If True only public experiments
+                will be returned. If False only experiments that are not public will
+                be returned. If None (the default), then a visibility filter is not
+                applied.
 
         Returns:
             A list of experiments.
@@ -181,7 +186,7 @@ class ExperimentService:
         while limit is None or limit > 0:
             raw_data = self._api_client.experiments(
                 limit, marker, backend_name, type, start_time_filters,
-                device_components, tags_filter, hub, group, project)
+                device_components, tags_filter, hub, group, project, is_public)
             marker = raw_data.get('marker')
             for exp in raw_data['experiments']:
                 experiments.append(Experiment.from_remote_data(self._provider, exp))

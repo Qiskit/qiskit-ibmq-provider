@@ -53,7 +53,8 @@ class ExperimentClient(BaseClient):
             tags: Optional[List[str]] = None,
             hub: Optional[str] = None,
             group: Optional[str] = None,
-            project: Optional[str] = None
+            project: Optional[str] = None,
+            is_public: Optional[bool] = None
     ) -> Dict:
         """Retrieve experiments, with optional filtering.
 
@@ -68,13 +69,14 @@ class ExperimentClient(BaseClient):
             hub: Filter by hub.
             group: Filter by hub and group.
             project: Filter by hub, group, and project.
+            is_public: Filter experiments by public visibility.
 
         Returns:
             A list of experiments and the marker, if applicable.
         """
         resp = self.base_api.experiments(
             limit, marker, backend_name, experiment_type, start_time, device_components, tags,
-            hub, group, project)
+            hub, group, project, is_public)
         return resp
 
     def experiment_get(self, experiment_id: str) -> Dict:

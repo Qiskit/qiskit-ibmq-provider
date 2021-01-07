@@ -157,7 +157,8 @@ class Api(RestAdapterBase):
             tags: Optional[List[str]] = None,
             hub: Optional[str] = None,
             group: Optional[str] = None,
-            project: Optional[str] = None
+            project: Optional[str] = None,
+            is_public: Optional[bool] = None
     ) -> Dict:
         """Return experiment data.
 
@@ -172,6 +173,7 @@ class Api(RestAdapterBase):
             hub: Filter by hub.
             group: Filter by hub and group.
             project: Filter by hub, group, and project.
+            is_public: Filter experiments by public visibility.
 
         Returns:
             JSON response.
@@ -198,6 +200,8 @@ class Api(RestAdapterBase):
             params['group_id'] = group
         if project:
             params['project_id'] = project
+        if is_public is not None:
+            params['visibility'] = 'public' if is_public else '!public'
         return self.session.get(url, params=params).json()
 
     def experiment_devices(self) -> Dict:
