@@ -235,13 +235,13 @@ class TestExperiment(IBMQTestCase):
                 for key in missing_keys:
                     self.assertIn(key, str(ex_cm.exception))
 
-    def test_experiments_with_public_filters(self):
-        """Tests that the exclude_public and public_only filters are applied properly."""
+    def test_experiments_with_exclude_public(self):
+        """Tests retrieving experiments with exclude_public filter."""
         # Make sure that we have at least one public experiment and one non-public
         # experiment.
         public_exp = self._create_experiment(share_level=ExperimentShareLevel.PUBLIC)
         non_public_exp = self._create_experiment()
-        # First list non-public experiments.
+
         experiments = self.provider.experiment.experiments(exclude_public=True)
         # The public experiment we just created should not be in the set.
         non_public_experiment_uuids = []
@@ -254,8 +254,19 @@ class TestExperiment(IBMQTestCase):
         self.assertIn(
             non_public_exp.uuid, non_public_experiment_uuids,
             'Non-public experiment not returned with exclude_public filter: %s' %
+            non_public_exp)
+        self.assertNotIn(
+            public_exp.uuid, non_public_experiment_uuids,
+            'Public experiment returned with exclude_public filter: %s' %
             public_exp)
-        # Now list only public experiments.
+
+    def test_experiments_with_public_only(self):
+        """Tests retrieving experiments with public_only filter."""
+        # Make sure that we have at least one public experiment and one non-public
+        # experiment.
+        public_exp = self._create_experiment(share_level=ExperimentShareLevel.PUBLIC)
+        non_public_exp = self._create_experiment()
+
         experiments = self.provider.experiment.experiments(public_only=True)
         public_experiment_uuids = []
         for experiment in experiments:
@@ -268,6 +279,10 @@ class TestExperiment(IBMQTestCase):
             public_exp.uuid, public_experiment_uuids,
             'Public experiment not returned with public_only filter: %s' %
             public_exp)
+        self.assertNotIn(
+            non_public_exp.uuid, public_experiment_uuids,
+            'Non-public experiment returned with public_only filter: %s' %
+            non_public_exp)
 
     def test_experiments_with_public_filters_error(self):
         """Tests that exclude_public and public_only cannot both be True."""

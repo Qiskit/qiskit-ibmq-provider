@@ -143,14 +143,12 @@ class ExperimentService:
             group: Filter by hub and group. `hub` must also be specified if `group` is.
             project: Filter by hub, group, and project. `hub` and `group` must also be
                 specified if `project` is.
-            exclude_public: If False (the default), experiments with a `public`
-                `share_level` may be returned. If True, experiments with a `public`
-                `share_level` will not be returned. Cannot be True if `public_only`
-                is True.
-            public_only: If False (the default), experiments with a `public`
-                `share_level` may be returned. If True, only experiments with a
-                `public` `share_level` will be returned. Cannot be True if
-                `exclude_public` is True.
+            exclude_public: If ``True``, experiments with ``share_level=public``
+                (that is, experiments visible to all users) will not be returned.
+                Cannot be ``True`` if `public_only` is ``True``.
+            public_only: If ``True``, only experiments with ``share_level=public``
+                (that is, experiments visible to all users) will be returned.
+                Cannot be ``True`` if `public_only` is ``True``.
 
         Returns:
             A list of experiments.
