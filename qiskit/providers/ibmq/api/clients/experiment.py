@@ -13,7 +13,7 @@
 """Client for accessing IBM Quantum Experience experiment services."""
 
 import logging
-from typing import List, Dict, Optional, Union, Tuple
+from typing import List, Dict, Optional, Union
 
 from qiskit.providers.ibmq.credentials import Credentials
 

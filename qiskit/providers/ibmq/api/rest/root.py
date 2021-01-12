@@ -13,7 +13,7 @@
 """Root REST adapter."""
 
 import logging
-from typing import Dict, List, Any, Union, Optional, Tuple
+from typing import Dict, List, Any, Union, Optional
 import json
 
 from .base import RestAdapterBase
