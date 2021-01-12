@@ -38,8 +38,9 @@ from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import (requires_provider, requires_device)
-from ..utils import (most_busy_backend, get_large_circuit, cancel_job,
+from ..utils import (most_busy_backend, cancel_job,
                      submit_job_bad_shots, submit_and_cancel, submit_job_one_bad_instr)
+from ..fake_account_client import BaseFakeAccountClient, CancelableFakeJob
 
 
 class TestIBMQJob(IBMQTestCase):
@@ -523,8 +524,7 @@ class TestIBMQJob(IBMQTestCase):
         self.assertDictEqual(cached_result, result.to_dict())
         self.assertNotEqual(result.results[0].header.name, 'modified_result')
 
-    @requires_device
-    def test_wait_for_final_state(self, backend):
+    def test_wait_for_final_state(self):
         """Test waiting for job to reach final state."""
 
         def final_state_callback(c_job_id, c_status, c_job, **kwargs):
@@ -553,27 +553,31 @@ class TestIBMQJob(IBMQTestCase):
             exit_event.wait(wait)
             cancel_job(job_)
 
-        qc = get_large_circuit(backend)
+        wait_args = [2, None]
 
-        wait_args = [5, None]
-        for wait_time in wait_args:
-            with self.subTest(wait_time=wait_time):
-                # Put callback data in a dictionary to make it mutable.
-                callback_info = {'called': False, 'last call time': 0.0, 'last data': {}}
-                cancel_event = Event()
-                job = backend.run(transpile(qc, backend=backend))
-                # Cancel the job after a while.
-                Thread(target=job_canceller, args=(job, cancel_event, 60), daemon=True).start()
-                try:
-                    job.wait_for_final_state(timeout=90, wait=wait_time,
-                                             callback=final_state_callback)
-                    self.assertTrue(job.in_final_state())
-                    self.assertTrue(callback_info['called'])
-                    cancel_event.set()
-                finally:
-                    # Ensure all threads ended.
-                    for thread in job._executor._threads:
-                        thread.join(0.1)
+        saved_api = self.sim_backend._api_client
+        try:
+            self.sim_backend._api_client = BaseFakeAccountClient(job_class=CancelableFakeJob)
+            for wait_time in wait_args:
+                with self.subTest(wait_time=wait_time):
+                    # Put callback data in a dictionary to make it mutable.
+                    callback_info = {'called': False, 'last call time': 0.0, 'last data': {}}
+                    cancel_event = Event()
+                    job = self.sim_backend.run(self.bell)
+                    # Cancel the job after a while.
+                    Thread(target=job_canceller, args=(job, cancel_event, 7), daemon=True).start()
+                    try:
+                        job.wait_for_final_state(timeout=10, wait=wait_time,
+                                                 callback=final_state_callback)
+                        self.assertTrue(job.in_final_state())
+                        self.assertTrue(callback_info['called'])
+                        cancel_event.set()
+                    finally:
+                        # Ensure all threads ended.
+                        for thread in job._executor._threads:
+                            thread.join(0.1)
+        finally:
+            self.sim_backend._api_client = saved_api
 
     def test_wait_for_final_state_timeout(self):
         """Test waiting for job to reach final state times out."""

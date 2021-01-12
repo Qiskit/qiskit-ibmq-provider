@@ -25,6 +25,7 @@ import websockets
 from qiskit.providers.ibmq.api.exceptions import (
     WebsocketError, WebsocketTimeoutError, WebsocketIBMQProtocolError)
 from qiskit.providers.ibmq.api.clients.websocket import WebsocketClient
+from qiskit.providers.ibmq.utils.utils import RefreshQueue
 
 from ...ibmqtestcase import IBMQTestCase
 
@@ -88,6 +89,7 @@ class TestWebsocketClientMock(IBMQTestCase):
         with warnings.catch_warnings():
             # Suppress websockets deprecation warning
             warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
             # Manually cancel any pending asyncio tasks.
             pending = asyncio.Task.all_tasks()
         for task in pending:
@@ -161,3 +163,12 @@ class TestWebsocketClientMock(IBMQTestCase):
         with self.assertRaises(WebsocketError):
             _ = asyncio.get_event_loop().run_until_complete(
                 client.get_job_status('job_id'))
+
+    def test_websocket_status_queue(self):
+        """Test status queue used by websocket client."""
+        client = WebsocketClient('ws://{}:{}'.format(
+            TEST_IP_ADDRESS, VALID_PORT), TOKEN_JOB_TRANSITION)
+        status_queue = RefreshQueue(maxsize=10)
+        _ = asyncio.get_event_loop().run_until_complete(
+            client.get_job_status('job_id', status_queue=status_queue))
+        self.assertEqual(status_queue.qsize(), 2)
