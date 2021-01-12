@@ -148,7 +148,7 @@ class ExperimentService:
                 Cannot be ``True`` if `public_only` is ``True``.
             public_only: If ``True``, only experiments with ``share_level=public``
                 (that is, experiments visible to all users) will be returned.
-                Cannot be ``True`` if `public_only` is ``True``.
+                Cannot be ``True`` if `exclude_public` is ``True``.
 
         Returns:
             A list of experiments.
