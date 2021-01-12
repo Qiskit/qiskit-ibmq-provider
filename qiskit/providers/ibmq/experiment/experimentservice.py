@@ -107,7 +107,9 @@ class ExperimentService:
             tags_operator: Optional[str] = "OR",
             hub: Optional[str] = None,
             group: Optional[str] = None,
-            project: Optional[str] = None
+            project: Optional[str] = None,
+            exclude_public: Optional[bool] = False,
+            public_only: Optional[bool] = False
     ) -> List[Experiment]:
         """Retrieve all experiments, with optional filtering.
 
@@ -141,6 +143,12 @@ class ExperimentService:
             group: Filter by hub and group. `hub` must also be specified if `group` is.
             project: Filter by hub, group, and project. `hub` and `group` must also be
                 specified if `project` is.
+            exclude_public: If ``True``, experiments with ``share_level=public``
+                (that is, experiments visible to all users) will not be returned.
+                Cannot be ``True`` if `public_only` is ``True``.
+            public_only: If ``True``, only experiments with ``share_level=public``
+                (that is, experiments visible to all users) will be returned.
+                Cannot be ``True`` if `exclude_public` is ``True``.
 
         Returns:
             A list of experiments.
@@ -176,12 +184,16 @@ class ExperimentService:
                 raise ValueError('{} is not a valid `tags_operator`. Valid values are '
                                  '"AND" and "OR".'.format(tags_operator))
 
+        if exclude_public and public_only:
+            raise ValueError('exclude_public and public_only cannot both be True')
+
         experiments = []
         marker = None
         while limit is None or limit > 0:
             raw_data = self._api_client.experiments(
                 limit, marker, backend_name, type, start_time_filters,
-                device_components, tags_filter, hub, group, project)
+                device_components, tags_filter, hub, group, project,
+                exclude_public, public_only)
             marker = raw_data.get('marker')
             for exp in raw_data['experiments']:
                 experiments.append(Experiment.from_remote_data(self._provider, exp))
