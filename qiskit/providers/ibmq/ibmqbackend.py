@@ -148,6 +148,7 @@ class IBMQBackend(Backend):
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
+            experiment_id: Optional[str] = None,
             validate_qobj: bool = None,
             header: Optional[Dict] = None,
             shots: Optional[int] = None,
@@ -194,6 +195,8 @@ class IBMQBackend(Backend):
                 If the job share level is not specified, the job is not shared at any level.
             job_tags: Tags to be assigned to the job. The tags can subsequently be used
                 as a filter in the :meth:`jobs()` function call.
+            experiment_id: Used to add a job to an "experiment", which is a collection
+                of jobs and additional metadata.
             validate_qobj: DEPRECATED. If ``True``, run JSON schema validation against the
                 submitted payload. Only applicable if a Qobj is passed in.
 
@@ -300,7 +303,7 @@ class IBMQBackend(Backend):
                           DeprecationWarning, stacklevel=3)
             if validate_qobj:
                 validate_qobj_against_schema(qobj)
-        return self._submit_job(qobj, job_name, api_job_share_level, job_tags)
+        return self._submit_job(qobj, job_name, api_job_share_level, job_tags, experiment_id)
 
     def _get_run_config(self, **kwargs: Any) -> Dict:
         """Return the consolidated runtime configuration."""
@@ -318,7 +321,8 @@ class IBMQBackend(Backend):
             qobj: Union[QasmQobj, PulseQobj],
             job_name: Optional[str] = None,
             job_share_level: Optional[ApiJobShareLevel] = None,
-            job_tags: Optional[List[str]] = None
+            job_tags: Optional[List[str]] = None,
+            experiment_id: Optional[str] = None
     ) -> IBMQJob:
         """Submit the Qobj to the backend.
 
@@ -330,6 +334,7 @@ class IBMQBackend(Backend):
                 Job names do not need to be unique.
             job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
+            experiment_id: Used to add a job to an experiment.
 
         Returns:
             The job to be executed.
@@ -354,7 +359,8 @@ class IBMQBackend(Backend):
                 qobj_dict=qobj_dict,
                 job_name=job_name,
                 job_share_level=job_share_level,
-                job_tags=job_tags)
+                job_tags=job_tags,
+                experiment_id=experiment_id)
         except ApiError as ex:
             if 'Error code: 3458' in str(ex):
                 raise IBMQBackendJobLimitError('Error submitting job: {}'.format(str(ex))) from ex
@@ -739,6 +745,7 @@ class IBMQSimulator(IBMQBackend):
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
+            experiment_id: Optional[str] = None,
             validate_qobj: bool = None,
             backend_options: Optional[Dict] = None,
             noise_model: Any = None,
@@ -760,6 +767,8 @@ class IBMQSimulator(IBMQBackend):
                 global level (see :meth:`IBMQBackend.run()<IBMQBackend.run>` for more details).
             job_tags: Tags to be assigned to the jobs. The tags can subsequently be used
                 as a filter in the :meth:`IBMQBackend.jobs()<IBMQBackend.jobs>` method.
+            experiment_id: Used to add a job to an "experiment", which is a collection
+                of jobs and additional metadata.
             validate_qobj: DEPRECATED. If ``True``, run JSON schema validation against the
                 submitted payload.
             backend_options: DEPRECATED dictionary of backend options for the execution.
@@ -781,7 +790,8 @@ class IBMQSimulator(IBMQBackend):
         run_config = copy.copy(backend_options)
         run_config.update(kwargs)
         return super().run(circuits, job_name=job_name, job_share_level=job_share_level,
-                           job_tags=job_tags, validate_qobj=validate_qobj,
+                           job_tags=job_tags, experiment_id=experiment_id,
+                           validate_qobj=validate_qobj,
                            noise_model=noise_model, **run_config)
 
 
