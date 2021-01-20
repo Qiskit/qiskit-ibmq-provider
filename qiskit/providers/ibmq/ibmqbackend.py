@@ -560,6 +560,7 @@ class IBMQBackend(Backend):
             end_datetime: Optional[python_datetime] = None,
             job_tags: Optional[List[str]] = None,
             job_tags_operator: Optional[str] = "OR",
+            experiment_id: Optional[str] = None,
             descending: bool = True,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
@@ -595,6 +596,7 @@ class IBMQBackend(Backend):
                       specified in ``job_tags`` to be included.
                     * If "OR" is specified, then a job only needs to have any
                       of the tags specified in ``job_tags`` to be included.
+            experiment_id: Filter by job experiment ID.
             descending: If ``True``, return the jobs in descending order of the job
                 creation date (newest first). If ``False``, return in ascending order.
             db_filter: A `loopback-based filter
@@ -618,9 +620,10 @@ class IBMQBackend(Backend):
             IBMQBackendValueError: If a keyword value is not recognized.
         """
         return self._provider.backend.jobs(
-            limit, skip, self.name(), status,
-            job_name, start_datetime, end_datetime, job_tags, job_tags_operator,
-            descending, db_filter)
+            limit=limit, skip=skip, backend_name=self.name(), status=status,
+            job_name=job_name, start_datetime=start_datetime, end_datetime=end_datetime,
+            job_tags=job_tags, job_tags_operator=job_tags_operator,
+            experiment_id=experiment_id, descending=descending, db_filter=db_filter)
 
     def active_jobs(self, limit: int = 10) -> List[IBMQJob]:
         """Return the unfinished jobs submitted to this backend.
