@@ -304,7 +304,7 @@ class TestExperiment(IBMQTestCase):
         not_mine_experiment_uuids = []
         for experiment in not_my_experiments:
             self.assertNotEqual(
-                experiment.owner, my_exp.owner,
+                experiment.owner, my_exp.owner,  # pylint: disable=no-member
                 'Experiment should not be returned with exclude_mine filter: %s' %
                 experiment)
             not_mine_experiment_uuids.append(experiment.uuid)
@@ -325,7 +325,7 @@ class TestExperiment(IBMQTestCase):
         my_experiment_uuids = []
         for experiment in my_experiments:
             self.assertEqual(
-                experiment.owner, my_exp.owner,
+                experiment.owner, my_exp.owner,  # pylint: disable=no-member
                 'Only my experiments should be returned with mine_only filter: %s' %
                 experiment)
             my_experiment_uuids.append(experiment.uuid)
