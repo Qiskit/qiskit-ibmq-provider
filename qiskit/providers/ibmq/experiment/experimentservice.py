@@ -109,7 +109,9 @@ class ExperimentService:
             group: Optional[str] = None,
             project: Optional[str] = None,
             exclude_public: Optional[bool] = False,
-            public_only: Optional[bool] = False
+            public_only: Optional[bool] = False,
+            exclude_mine: Optional[bool] = False,
+            mine_only: Optional[bool] = False
     ) -> List[Experiment]:
         """Retrieve all experiments, with optional filtering.
 
@@ -149,6 +151,10 @@ class ExperimentService:
             public_only: If ``True``, only experiments with ``share_level=public``
                 (that is, experiments visible to all users) will be returned.
                 Cannot be ``True`` if `exclude_public` is ``True``.
+            exclude_mine: If ``True``, experiments where I am the owner will not be returned.
+                Cannot be ``True`` if `mine_only` is ``True``.
+            mine_only: If ``True``, only experiments where I am the owner will be returned.
+                Cannot be ``True`` if `exclude_mine` is ``True``.
 
         Returns:
             A list of experiments.
@@ -187,13 +193,16 @@ class ExperimentService:
         if exclude_public and public_only:
             raise ValueError('exclude_public and public_only cannot both be True')
 
+        if exclude_mine and mine_only:
+            raise ValueError('exclude_mine and mine_only cannot both be True')
+
         experiments = []
         marker = None
         while limit is None or limit > 0:
             raw_data = self._api_client.experiments(
                 limit, marker, backend_name, type, start_time_filters,
                 device_components, tags_filter, hub, group, project,
-                exclude_public, public_only)
+                exclude_public, public_only, exclude_mine, mine_only)
             marker = raw_data.get('marker')
             for exp in raw_data['experiments']:
                 experiments.append(Experiment.from_remote_data(self._provider, exp))

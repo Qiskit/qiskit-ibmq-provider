@@ -291,6 +291,56 @@ class TestExperiment(IBMQTestCase):
                 'exclude_public and public_only cannot both be True'):
             self.provider.experiment.experiments(exclude_public=True, public_only=True)
 
+    def test_experiments_with_exclude_mine(self):
+        """Tests retrieving experiments with exclude_mine filter."""
+        # Note that we cannot specify the owner when creating the experiment, the value comes
+        # from the user profile via the token so we would have to use different test accounts
+        # to explicitly create separately-owned epxeriments. We should be able to assume that
+        # there is at least one experiment owned by another user in the integration test
+        # environment though.
+        my_exp = self._create_experiment()
+        not_my_experiments = self.provider.experiment.experiments(exclude_mine=True)
+        # The experiment we just created should not be in the set.
+        not_mine_experiment_uuids = []
+        for experiment in not_my_experiments:
+            self.assertNotEqual(
+                experiment.owner, my_exp.owner,
+                'Experiment should not be returned with exclude_mine filter: %s' %
+                experiment)
+            not_mine_experiment_uuids.append(experiment.uuid)
+        self.assertNotIn(
+            my_exp.uuid, not_mine_experiment_uuids,
+            'Not my experiment returned with exclude_mine filter: %s' %
+            my_exp)
+
+    def test_experiments_with_mine_only(self):
+        """Tests retrieving experiments with mine_only filter."""
+        # Note that we cannot specify the owner when creating the experiment, the value comes
+        # from the user profile via the token so we would have to use different test accounts
+        # to explicitly create separately-owned epxeriments. We should be able to assume that
+        # there is at least one experiment owned by another user in the integration test
+        # environment though.
+        my_exp = self._create_experiment()
+        my_experiments = self.provider.experiment.experiments(mine_only=True)
+        my_experiment_uuids = []
+        for experiment in my_experiments:
+            self.assertEqual(
+                experiment.owner, my_exp.owner,
+                'Only my experiments should be returned with mine_only filter: %s' %
+                experiment)
+            my_experiment_uuids.append(experiment.uuid)
+        self.assertIn(
+            my_exp.uuid, my_experiment_uuids,
+            'My experiment not returned with mine_only filter: %s' %
+            my_exp)
+
+    def test_experiments_with_owner_filters_error(self):
+        """Tests that exclude_mine and mine_only cannot both be True."""
+        with self.assertRaisesRegex(
+                ValueError,
+                'exclude_mine and mine_only cannot both be True'):
+            self.provider.experiment.experiments(exclude_mine=True, mine_only=True)
+
     def test_retrieve_experiment(self):
         """Test retrieving an experiment by its ID."""
         exp = self.experiments[0]
