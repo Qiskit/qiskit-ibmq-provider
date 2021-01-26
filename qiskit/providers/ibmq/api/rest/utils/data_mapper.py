@@ -34,7 +34,8 @@ def map_job_response(data: Dict[str, Any]) -> Dict[str, Any]:
         'qObjectResult': 'result',
         'timePerStep': 'time_per_step',
         'shots': '_api_shots',
-        'runMode': 'run_mode'
+        'runMode': 'run_mode',
+        'experimentTag': 'experiment_id'
     }
     info_queue = map_info_queue(data.pop('infoQueue', {}))
     dict_to_identifier(data, field_map)

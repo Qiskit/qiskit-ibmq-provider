@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    You can now assign an ``experiment_id`` to a job when submitting it using
+    :meth:`qiskit.providers.ibmq.IBMQBackend.run`. You can use this new field
+    to group together a collection of jobs that belong to the same experiment.
+    The :meth:`qiskit.providers.ibmq.IBMQBackendService.jobs` method was also
+    updated to allow filtering by ``experiment_id``.

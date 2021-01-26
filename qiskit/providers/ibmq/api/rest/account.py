@@ -134,7 +134,8 @@ class Account(RestAdapterBase):
             backend_name: str,
             job_name: Optional[str] = None,
             job_share_level: Optional[str] = None,
-            job_tags: Optional[List[str]] = None
+            job_tags: Optional[List[str]] = None,
+            experiment_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """Create a job instance on the remote server.
 
@@ -143,6 +144,7 @@ class Account(RestAdapterBase):
             job_name: Custom name to be assigned to the job.
             job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
+            experiment_id: Used to add a job to an experiment.
 
         Returns:
             JSON response.
@@ -162,6 +164,9 @@ class Account(RestAdapterBase):
 
         if job_tags:
             payload['tags'] = job_tags
+
+        if experiment_id:
+            payload['experimentTag'] = experiment_id
 
         return self.session.post(url, json=payload).json()
 
