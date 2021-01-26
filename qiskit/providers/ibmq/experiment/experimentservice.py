@@ -344,7 +344,7 @@ class ExperimentService:
         if quality:
             for op, qual in quality:
                 if isinstance(qual, ResultQuality):
-                    qual = qual.value
+                    qual = qual.value  # type: ignore[assignment]
                 qual_str = qual if op == 'eq' else "{}:{}".format(op, qual)
                 qualit_list.append(qual_str)
         results = []
