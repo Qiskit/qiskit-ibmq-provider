@@ -94,7 +94,7 @@ class TestWebsocketClientMock(IBMQTestCase):
             if sys.version_info[0:2] < (3, 9):
                 pending = asyncio.Task.all_tasks()
             else:
-                pending = asyncio.all_tasks()
+                pending = asyncio.all_tasks(loop)
         for task in pending:
             task.cancel()
             try:
