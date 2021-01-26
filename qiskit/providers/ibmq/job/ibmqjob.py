@@ -120,6 +120,7 @@ class IBMQJob(Job):
             run_mode: Optional[str] = None,
             share_level: Optional[str] = None,
             client_info: Optional[Dict[str, str]] = None,
+            experiment_id: Optional[str] = None,
             **kwargs: Any
     ) -> None:
         """IBMQJob constructor.
@@ -140,6 +141,7 @@ class IBMQJob(Job):
             run_mode: Scheduling mode the job runs in.
             share_level: Level the job can be shared with.
             client_info: Client version.
+            experiment_id: ID of the experiment this job is part of.
             kwargs: Additional job attributes.
         """
         self._backend = backend
@@ -161,6 +163,7 @@ class IBMQJob(Job):
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
         self._share_level = share_level
         self.client_version = client_info
+        self._experiment_id = experiment_id
         self._set_result(result)
 
         self._data = {}
@@ -172,6 +175,7 @@ class IBMQJob(Job):
         # Properties used for caching.
         self._cancelled = False
         self._job_error_msg = None  # type: Optional[str]
+        self._refreshed = False
 
     def qobj(self) -> Optional[Union[QasmQobj, PulseQobj]]:
         """Return the Qobj for this job.
@@ -623,7 +627,7 @@ class IBMQJob(Job):
         Returns:
             The share level of the job.
         """
-        if not self._share_level:
+        if not self._share_level and not self._refreshed:
             self.refresh()
         return self._share_level
 
@@ -683,7 +687,7 @@ class IBMQJob(Job):
             Client version in dictionary format, where the key is the name
                 of the client and the value is the version.
         """
-        if not self._client_version:
+        if not self._client_version and not self._refreshed:
             self.refresh()
         return self._client_version
 
@@ -703,6 +707,17 @@ class IBMQJob(Job):
                     {data.get('name', 'unknown'): data.get('version', 'unknown')}
         else:
             self._client_version = {}
+
+    @property
+    def experiment_id(self) -> str:
+        """Return the experiment ID.
+
+        Returns:
+            ID of the experiment this job is part of.
+        """
+        if not self._experiment_id and not self._refreshed:
+            self.refresh()
+        return self._experiment_id
 
     def submit(self) -> None:
         """Unsupported method.
@@ -754,9 +769,11 @@ class IBMQJob(Job):
         self._share_level = api_response.pop('share_level', 'none')
         self.client_version = api_response.pop('client_info', None)
         self._set_result(api_response.pop('result', None))
+        self._experiment_id = api_response.pop('experiment_id', None)
 
         for key, value in api_response.items():
             self._data[key + '_'] = value
+        self._refreshed = True
 
     def circuits(self) -> List[Union[QuantumCircuit, Schedule]]:
         """Return the circuits or pulse schedules for this job.
