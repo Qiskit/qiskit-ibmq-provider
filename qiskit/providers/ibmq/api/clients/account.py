@@ -183,7 +183,8 @@ class AccountClient(BaseClient):
             qobj_dict: Dict[str, Any],
             job_name: Optional[str] = None,
             job_share_level: Optional[ApiJobShareLevel] = None,
-            job_tags: Optional[List[str]] = None
+            job_tags: Optional[List[str]] = None,
+            experiment_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """Submit a ``Qobj`` to the backend.
 
@@ -193,6 +194,7 @@ class AccountClient(BaseClient):
             job_name: Custom name to be assigned to the job.
             job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
+            experiment_id: Used to add a job to an experiment.
 
         Returns:
             Job data.
@@ -208,7 +210,8 @@ class AccountClient(BaseClient):
             backend_name,
             job_name=job_name,
             job_share_level=_job_share_level,
-            job_tags=job_tags)
+            job_tags=job_tags,
+            experiment_id=experiment_id)
 
         # Get the upload URL.
         job_id = job_info['id']

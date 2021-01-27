@@ -144,6 +144,7 @@ class IBMQBackendService:
             end_datetime: Optional[datetime] = None,
             job_tags: Optional[List[str]] = None,
             job_tags_operator: Optional[str] = "OR",
+            experiment_id: Optional[str] = None,
             descending: bool = True,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
@@ -179,6 +180,7 @@ class IBMQBackendService:
                       specified in ``job_tags`` to be included.
                     * If "OR" is specified, then a job only needs to have any
                       of the tags specified in ``job_tags`` to be included.
+            experiment_id: Filter by job experiment ID.
             descending: If ``True``, return the jobs in descending order of the job
                 creation date (i.e. newest first) until the limit is reached.
             db_filter: A `loopback-based filter
@@ -236,6 +238,9 @@ class IBMQBackendService:
                 raise IBMQBackendValueError(
                     '"{}" is not a valid job_tags_operator value. '
                     'Valid values are "AND" and "OR"'.format(job_tags_operator))
+
+        if experiment_id:
+            api_filter['experimentTag'] = experiment_id
 
         if db_filter:
             # Rather than overriding the logical operators `and`/`or`, first

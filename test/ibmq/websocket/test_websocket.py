@@ -91,7 +91,10 @@ class TestWebsocketClientMock(IBMQTestCase):
             warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             # Manually cancel any pending asyncio tasks.
-            pending = asyncio.Task.all_tasks()
+            if sys.version_info[0:2] < (3, 9):
+                pending = asyncio.Task.all_tasks()
+            else:
+                pending = asyncio.all_tasks(loop)
         for task in pending:
             task.cancel()
             try:
