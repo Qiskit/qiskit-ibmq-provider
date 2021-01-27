@@ -310,7 +310,7 @@ class TestExperiment(IBMQTestCase):
             not_mine_experiment_uuids.append(experiment.uuid)
         self.assertNotIn(
             my_exp.uuid, not_mine_experiment_uuids,
-            'Not my experiment returned with exclude_mine filter: %s' %
+            'My experiment returned with exclude_mine filter: %s' %
             my_exp)
 
     def test_experiments_with_mine_only(self):
