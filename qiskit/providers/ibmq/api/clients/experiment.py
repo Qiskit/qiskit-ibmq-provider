@@ -55,7 +55,9 @@ class ExperimentClient(BaseClient):
             group: Optional[str] = None,
             project: Optional[str] = None,
             exclude_public: Optional[bool] = False,
-            public_only: Optional[bool] = False
+            public_only: Optional[bool] = False,
+            exclude_mine: Optional[bool] = False,
+            mine_only: Optional[bool] = False
     ) -> Dict:
         """Retrieve experiments, with optional filtering.
 
@@ -72,13 +74,15 @@ class ExperimentClient(BaseClient):
             project: Filter by hub, group, and project.
             exclude_public: Whether or not to exclude experiments with a public share level.
             public_only: Whether or not to only return experiments with a public share level.
+            exclude_mine: Whether or not to exclude experiments where I am the owner.
+            mine_only: Whether or not to only return experiments where I am the owner.
 
         Returns:
             A list of experiments and the marker, if applicable.
         """
         resp = self.base_api.experiments(
             limit, marker, backend_name, experiment_type, start_time, device_components, tags,
-            hub, group, project, exclude_public, public_only)
+            hub, group, project, exclude_public, public_only, exclude_mine, mine_only)
         return resp
 
     def experiment_get(self, experiment_id: str) -> Dict:

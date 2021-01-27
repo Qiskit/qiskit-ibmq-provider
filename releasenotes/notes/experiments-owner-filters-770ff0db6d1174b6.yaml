@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    The method
+    :meth:`qiskit.providers.ibmq.experimentservice.ExperimentService.experiments`
+    now accepts ``exclude_mine`` and ``mine_only`` as filtering keywords.

@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2017, 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -15,12 +15,15 @@
 from datetime import datetime
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.providers.exceptions import QiskitBackendNotFoundError
-from qiskit.providers.ibmq.accountprovider import AccountProvider
-from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator, IBMQBackend
 from qiskit.test import providers, slow_test
 from qiskit.compiler import transpile
+from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.models.backendproperties import BackendProperties
+from qiskit.providers.ibmq.accountprovider import AccountProvider
+from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator, IBMQBackend
+from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
+from qiskit.providers.ibmq.experiment.experimentservice import ExperimentService
+from qiskit.providers.ibmq.random.ibmqrandomservice import IBMQRandomService
 
 from ..decorators import requires_provider, requires_device
 from ..ibmqtestcase import IBMQTestCase
@@ -158,3 +161,18 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
                              if isinstance(getattr(self.provider.backends, back), IBMQBackend)}
         backends = {back.name().lower() for back in self.provider._backends.values()}
         self.assertEqual(provider_backends, backends)
+
+    def test_provider_services(self):
+        """Test provider services."""
+        services = self.provider.services()
+        self.assertIn('backend', services)
+        self.assertIsInstance(services['backend'], IBMQBackendService)
+        self.assertIsInstance(self.provider.service('backend'), IBMQBackendService)
+        self.assertIsInstance(self.provider.backend, IBMQBackendService)
+
+        if 'experiment' in services:
+            self.assertIsInstance(self.provider.service('experiment'), ExperimentService)
+            self.assertIsInstance(self.provider.experiment, ExperimentService)
+        if 'random' in services:
+            self.assertIsInstance(self.provider.service('random'), IBMQRandomService)
+            self.assertIsInstance(self.provider.random, IBMQRandomService)
