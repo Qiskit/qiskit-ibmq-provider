@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    You can now use the two new methods,
+    :meth:`qiskit.providers.ibmq.AccountProvider.services` and
+    :meth:`qiskit.providers.ibmq.AccountProvider.service` to find out what
+    services are available to your account and get an instance of a
+    particular service.

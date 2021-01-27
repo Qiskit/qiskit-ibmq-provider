@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2020.
+# (C) Copyright IBM 2017, 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -27,7 +27,7 @@ from .ibmqbackendservice import IBMQBackendService, IBMQDeprecatedBackendService
 from .utils.json_decoder import decode_backend_configuration
 from .random.ibmqrandomservice import IBMQRandomService
 from .experiment.experimentservice import ExperimentService
-from .exceptions import IBMQNotAuthorizedError
+from .exceptions import IBMQNotAuthorizedError, IBMQInputValueError
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class AccountProvider(Provider):
     """Provider for a single IBM Quantum Experience account.
 
     The account provider class provides access to the IBM Quantum Experience
-    backends available to this account.
+    services available to this account.
 
     You can access a provider by enabling an account with the
     :meth:`IBMQ.enable_account()<IBMQFactory.enable_account>` method, which
@@ -48,6 +48,21 @@ class AccountProvider(Provider):
     To select a different provider, use the
     :meth:`IBMQ.get_provider()<IBMQFactory.get_provider>` method and specify the hub,
     group, or project name of the desired provider.
+
+    Each provider may offer different services. The main service,
+    :class:`~qiskit.providers.ibmq.ibmqbackendservice.IBMQBackendService`, is
+    available to all providers and gives access to IBM Quantum Experience
+    devices and simulators.
+
+    You can obtain an instance of a service using the :meth:`service()` method
+    or as an attribute of this ``AccountProvider`` instance. For example::
+
+        backend_service = provider.service('backend')
+        backend_service = provider.service.backend
+
+    Since :class:`~qiskit.providers.ibmq.ibmqbackendservice.IBMQBackendService`
+    is the main service, some of the backend-related methods are available
+    through this class for convenience.
 
     The :meth:`backends()` method returns all the backends available to this account::
 
@@ -89,14 +104,18 @@ class AccountProvider(Provider):
 
         # Initialize the internal list of backends.
         self._backends = self._discover_remote_backends()
-        self.backend = IBMQBackendService(self)
+        self._backend = IBMQBackendService(self)
         self.backends = IBMQDeprecatedBackendService(self.backend)  # type: ignore[assignment]
 
         # Initialize other services.
-        self.random = IBMQRandomService(self, access_token)
-
+        self._random = IBMQRandomService(self, access_token) \
+            if credentials.extractor_url else None
         self._experiment = ExperimentService(self, access_token) \
             if credentials.experiment_url else None
+
+        self._services = {'backend': self._backend,
+                          'random': self._random,
+                          'experiment': self._experiment}
 
     def backends(
             self,
@@ -168,6 +187,45 @@ class AccountProvider(Provider):
 
         return ret
 
+    def service(self, name: str) -> Any:
+        """Return the specified service.
+
+        Args:
+            name: Name of the service.
+
+        Returns:
+            The specified service.
+
+        Raises:
+            IBMQInputValueError: If an unknown service name is specified.
+            IBMQNotAuthorizedError: If the account is not authorized to use
+                the service.
+        """
+        if name not in self._services:
+            raise IBMQInputValueError(f"Unknown service {name} specified.")
+
+        if self._services[name] is None:
+            raise IBMQNotAuthorizedError("You are not authorized to use this service.")
+
+        return self._services[name]
+
+    def services(self) -> Dict:
+        """Return all available services.
+
+        Returns:
+            All services available to this provider.
+        """
+        return self._services
+
+    @property
+    def backend(self) -> IBMQBackendService:
+        """Return the backend service.
+
+        Returns:
+            The backend service instance.
+        """
+        return self._backend
+
     @property
     def experiment(self) -> ExperimentService:
         """Return the experiment service.
@@ -183,6 +241,22 @@ class AccountProvider(Provider):
             return self._experiment
         else:
             raise IBMQNotAuthorizedError("You are not authorized to use the experiment service.")
+
+    @property
+    def random(self) -> IBMQRandomService:
+        """Return the random number service.
+
+        Returns:
+            The random number service instance.
+
+        Raises:
+            IBMQNotAuthorizedError: If the account is not authorized to use
+                the service.
+        """
+        if self._random:
+            return self._random
+        else:
+            raise IBMQNotAuthorizedError("You are not authorized to use the random number service.")
 
     def __eq__(
             self,
