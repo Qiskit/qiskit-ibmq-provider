@@ -215,7 +215,7 @@ class AccountProvider(Provider):
         Returns:
             All services available to this provider.
         """
-        return self._services
+        return {key: val for key, val in self._services.items() if val is not None}
 
     @property
     def backend(self) -> IBMQBackendService:
