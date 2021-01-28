@@ -24,7 +24,7 @@ from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_device, requires_provider
-from ..utils import get_pulse_schedule
+from ..utils import get_pulse_schedule, cancel_job
 
 
 class TestIBMQBackend(IBMQTestCase):
@@ -142,7 +142,7 @@ class TestIBMQBackend(IBMQTestCase):
         qobj = assemble(transpile(ReferenceCircuits.bell(), self.backend), self.backend)
         with self.assertWarns(DeprecationWarning):
             job = self.backend.run(qobj)
-        job.cancel()
+        cancel_job(job)
 
     def test_backend_options(self):
         """Test backend options."""
@@ -164,7 +164,7 @@ class TestIBMQBackend(IBMQTestCase):
         self.assertEqual(qobj.config.meas_lo_freq, [6.5, 6.6])
         self.assertEqual(qobj.config.meas_level, 1)
         self.assertEqual(qobj.config.foo, 'foo')
-        job.cancel()
+        cancel_job(job)
 
     def test_sim_backend_options(self):
         """Test simulator backend options."""
@@ -177,7 +177,6 @@ class TestIBMQBackend(IBMQTestCase):
         self.assertEqual(qobj.config.shots, 1024)
         self.assertTrue(qobj.config.memory)
         self.assertEqual(qobj.config.foo, 'foo')
-        job.cancel()
 
 
 class TestIBMQBackendService(IBMQTestCase):
