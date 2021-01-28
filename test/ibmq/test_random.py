@@ -21,6 +21,8 @@ import numpy as np
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.random.cqcextractor import CQCExtractor
 from qiskit.providers.ibmq.random.utils import bitarray_to_bytes
+from qiskit.providers.ibmq.random.ibmqrandomservice import IBMQRandomService
+from qiskit.providers.ibmq.exceptions import IBMQError
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
@@ -46,7 +48,11 @@ class TestRandomIntegration(IBMQTestCase):
 
     def can_access_extractor(self):
         """Return whether there is access to the CQC extractors."""
-        return len(self.provider.random.services()) > 0
+        try:
+            self.provider.random.get_service('cqc_extractor')
+            return True
+        except IBMQError:
+            return False
 
     def test_cqc_extractor(self):
         """Test invoking the CQC extractors."""
@@ -97,8 +103,10 @@ class TestRandom(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.provider = provider
-        cls.provider.random._random_client = FakeRandomClient()
-        cls.provider.random._initialized = False
+        random_service = IBMQRandomService(provider, None)
+        random_service._random_client = FakeRandomClient()
+        random_service._initialized = False
+        cls.provider._random = random_service
 
     def test_list_random_services(self):
         """Test listing random number services."""
