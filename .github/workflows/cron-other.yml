@@ -16,7 +16,7 @@ on:
     - cron: '0 5 * * *'
 jobs:
   test1:
-    name: push-tests1-python${{ matrix.python-version }}-${{ matrix.os }}
+    name: tests1-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -44,7 +44,7 @@ jobs:
       - name: Run Tests
         run: make test1
   test2:
-    name: push-tests2-python${{ matrix.python-version }}-${{ matrix.os }}
+    name: tests2-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -72,7 +72,7 @@ jobs:
       - name: Run Tests
         run: make test2
   test3:
-    name: push-tests3-python${{ matrix.python-version }}-${{ matrix.os }}
+    name: tests3-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
