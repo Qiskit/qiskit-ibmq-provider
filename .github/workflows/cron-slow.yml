@@ -1,0 +1,68 @@
+# This code is part of Qiskit.
+#
+# (C) Copyright IBM 2020.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+name: Slow-test
+on:
+  schedule:
+    - cron: '0 7 * * *'
+jobs:
+  slow-test:
+    name: slow-test
+    runs-on: macOS-latest
+    env:
+      QE_TOKEN: ${{ secrets.QE_TOKEN }}
+      QE_URL: https://auth.quantum-computing.ibm.com/api
+      QE_HGP: ${{ secrets.QE_HGP }}
+      QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_TESTS: run_slow
+      QISKIT_IN_PARALLEL: True
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -c constraints.txt -r requirements-dev.txt
+          pip install -c constraints.txt -e .
+      - name: Run Tests
+        run: make test
+  terra-master:
+    name: terra-master
+    runs-on: macOS-latest
+    env:
+      QE_TOKEN: ${{ secrets.QE_TOKEN }}
+      QE_URL: https://auth.quantum-computing.ibm.com/api
+      QE_HGP: ${{ secrets.QE_HGP }}
+      QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_TESTS: run_slow
+      QISKIT_IN_PARALLEL: True
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -c constraints.txt -r requirements-dev.txt
+          pip install -c constraints.txt -e .
+          pip install -U git+https://github.com/Qiskit/qiskit-terra.git
+      - name: Run Tests
+        run: make test
