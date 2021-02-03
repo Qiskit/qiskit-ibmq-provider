@@ -14,9 +14,8 @@
 
 import time
 
-from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
+from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister, execute
 from qiskit.result import Result
-from qiskit.execute import execute
 from qiskit.compiler import transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
