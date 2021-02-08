@@ -165,10 +165,10 @@ class TestSerialization(IBMQTestCase):
 
     def test_convert_complex(self):
         """Verify that real and complex ParameterExpressions are supported."""
-        pe = Parameter('test')
-        self.assertEquals(IQXJsonEncoder().default(pe.bind({pe: 0.2})), 0.2)
+        param = Parameter('test')
+        self.assertEquals(IQXJsonEncoder().default(param.bind({param: 0.2})), 0.2)
 
-        val = IQXJsonEncoder().default(pe.bind({pe: 0.2+0.1j}))
+        val = IQXJsonEncoder().default(param.bind({param: 0.2+0.1j}))
         self.assertEquals(val[0], 0.2)
         self.assertEquals(val[1], 0.1)
 
