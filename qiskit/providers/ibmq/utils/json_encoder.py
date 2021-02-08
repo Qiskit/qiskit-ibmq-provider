@@ -31,5 +31,9 @@ class IQXJsonEncoder(json.JSONEncoder):
         if isinstance(o, complex):
             return (o.real, o.imag)
         if isinstance(o, ParameterExpression):
-            return float(o)
+            try:
+                return float(o)
+            except TypeError:
+                val = complex(o)
+                return val.real, val.imag
         return json.JSONEncoder.default(self, o)

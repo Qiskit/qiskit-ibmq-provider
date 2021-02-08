@@ -20,6 +20,8 @@ from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.test import slow_test
 from qiskit.providers.ibmq import least_busy
 from qiskit import transpile, schedule, QuantumCircuit
+from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder
+from qiskit.circuit import Parameter
 
 from ..decorators import requires_provider
 from ..utils import cancel_job
@@ -160,6 +162,15 @@ class TestSerialization(IBMQTestCase):
             for gkey in good_key_prefixes:
                 suspect_keys = {ckey for ckey in suspect_keys if not ckey.startswith(gkey)}
         self.assertFalse(suspect_keys)
+
+    def test_convert_complex(self):
+        """Verify that real and complex ParameterExpressions are supported."""
+        param = Parameter('test')
+        self.assertEqual(IQXJsonEncoder().default(param.bind({param: 0.2})), 0.2)
+
+        val = IQXJsonEncoder().default(param.bind({param: 0.2+0.1j}))
+        self.assertEqual(val[0], 0.2)
+        self.assertEqual(val[1], 0.1)
 
 
 def _find_potential_encoded(data: Any, c_key: str, tally: set) -> None:
