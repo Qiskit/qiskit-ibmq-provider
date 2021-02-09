@@ -12,7 +12,7 @@
 
 """Test serializing and deserializing data sent to the server."""
 
-from unittest import SkipTest
+from unittest import SkipTest, skipIf
 from typing import Any, Dict, Optional
 
 import dateutil.parser
@@ -22,6 +22,7 @@ from qiskit.providers.ibmq import least_busy
 from qiskit import transpile, schedule, QuantumCircuit
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder
 from qiskit.circuit import Parameter
+from qiskit.version import VERSION as terra_version
 
 from ..decorators import requires_provider
 from ..utils import cancel_job
@@ -163,6 +164,7 @@ class TestSerialization(IBMQTestCase):
                 suspect_keys = {ckey for ckey in suspect_keys if not ckey.startswith(gkey)}
         self.assertFalse(suspect_keys)
 
+    @skipIf(terra_version < '0.17', "Need Terra >= 0.17")
     def test_convert_complex(self):
         """Verify that real and complex ParameterExpressions are supported."""
         param = Parameter('test')
