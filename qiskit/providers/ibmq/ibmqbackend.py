@@ -267,12 +267,18 @@ class IBMQBackend(Backend):
 
         validate_job_tags(job_tags, IBMQBackendValueError)
 
+        sim_method = None
+        if self.configuration().simulator:
+            sim_method = getattr(self.configuration(), 'simulator_method', None)
+
         if isinstance(circuits, (QasmQobj, PulseQobj)):
             warnings.warn("Passing a Qobj to Backend.run is deprecated and will "
                           "be removed in a future release. Please pass in circuits "
                           "or pulse schedules instead.", DeprecationWarning,
                           stacklevel=3)  # need level 3 because of decorator
             qobj = circuits
+            if sim_method and not hasattr(qobj.config, 'method'):
+                qobj.config.method = sim_method
         else:
             qobj_header = run_config.pop('qobj_header', None)
             header = header or qobj_header
@@ -293,6 +299,8 @@ class IBMQBackend(Backend):
                 **run_config)
             if parameter_binds:
                 run_config_dict['parameter_binds'] = parameter_binds
+            if sim_method and 'method' not in run_config_dict:
+                run_config_dict['method'] = sim_method
             qobj = assemble(circuits, self, **run_config_dict)
 
         if validate_qobj is not None:
