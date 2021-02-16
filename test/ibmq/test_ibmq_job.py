@@ -31,7 +31,7 @@ from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATE
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.exceptions import IBMQBackendError, IBMQBackendApiError
 from qiskit.providers.ibmq.utils.utils import api_status_to_job_status
-from qiskit.providers.ibmq.job.exceptions import IBMQJobTimeoutError
+from qiskit.providers.ibmq.job.exceptions import IBMQJobTimeoutError, IBMQJobNotFoundError
 from qiskit.providers.ibmq.utils.converters import local_to_utc
 from qiskit.providers.ibmq.api.rest.job import Job as RestJob
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
@@ -230,7 +230,7 @@ class TestIBMQJob(IBMQTestCase):
 
     def test_retrieve_job_error(self):
         """Test retrieving an invalid job."""
-        self.assertRaises(IBMQBackendError,
+        self.assertRaises(IBMQJobNotFoundError,
                           self.provider.backend.retrieve_job, 'BAD_JOB_ID')
 
     def test_retrieve_jobs_status(self):

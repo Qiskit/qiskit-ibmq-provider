@@ -45,7 +45,7 @@ from .credentials import Credentials
 from .exceptions import (IBMQBackendError, IBMQBackendValueError,
                          IBMQBackendApiError, IBMQBackendApiProtocolError,
                          IBMQBackendJobLimitError)
-from .job import IBMQJob
+from .job import IBMQJob, IBMQCircuitJob, IBMQCompositeJob
 from .utils import validate_job_tags
 from .utils.converters import utc_to_local_all, local_to_utc
 from .utils.json_decoder import decode_pulse_defaults, decode_backend_properties
@@ -149,6 +149,7 @@ class IBMQBackend(Backend):
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
             experiment_id: Optional[str] = None,
+            max_circuits_per_job: Optional[int] = None,
             validate_qobj: bool = None,
             header: Optional[Dict] = None,
             shots: Optional[int] = None,
@@ -171,6 +172,12 @@ class IBMQBackend(Backend):
 
         If a keyword specified here is also present in the ``options`` attribute/object,
         the value specified here will be used for this run.
+
+        If the length of the input circuits exceeds the maximum allowed by
+        the backend, or if `max_circuits_per_job` is not ``None``, then the
+        input circuits will be divided into multiple jobs, and an
+        :class:`~qiskit.providers.ibmq.job.IBMQCompositeJob` instance is
+        returned.
 
         Args:
             circuits: An individual or a
@@ -197,6 +204,7 @@ class IBMQBackend(Backend):
                 as a filter in the :meth:`jobs()` function call.
             experiment_id: Used to add a job to an "experiment", which is a collection
                 of jobs and additional metadata.
+            max_circuits_per_job: Maximum number of circuits to have in a single job.
             validate_qobj: DEPRECATED. If ``True``, run JSON schema validation against the
                 submitted payload. Only applicable if a Qobj is passed in.
 
@@ -267,6 +275,14 @@ class IBMQBackend(Backend):
 
         validate_job_tags(job_tags, IBMQBackendValueError)
 
+        if validate_qobj is not None:
+            warnings.warn("The `validate_qobj` keyword is deprecated and will "
+                          "be removed in a future release. "
+                          "You can pull the schemas from the Qiskit/ibmq-schemas "
+                          "repo and directly validate your payloads with that.",
+                          DeprecationWarning, stacklevel=3)
+            validate_qobj = False
+
         if isinstance(circuits, (QasmQobj, PulseQobj)):
             warnings.warn("Passing a Qobj to Backend.run is deprecated and will "
                           "be removed in a future release. Please pass in circuits "
@@ -293,16 +309,29 @@ class IBMQBackend(Backend):
                 **run_config)
             if parameter_binds:
                 run_config_dict['parameter_binds'] = parameter_binds
+
+            if isinstance(circuits, list):
+                chunk_size = None
+                if hasattr(self.configuration(), 'max_experiments'):
+                    backend_max = self.configuration().max_experiments
+                    chunk_size = backend_max if max_circuits_per_job is None \
+                        else min(backend_max, max_circuits_per_job)
+                elif max_circuits_per_job:
+                    chunk_size = max_circuits_per_job
+
+                if chunk_size and len(circuits) > chunk_size:
+                    circuits_list = [circuits[x:x + chunk_size]
+                                     for x in range(0, len(circuits), chunk_size)]
+                    return IBMQCompositeJob(backend=self, api_client=self._api_client,
+                                            circuits_list=circuits_list,
+                                            run_config=run_config_dict,
+                                            name=job_name, share_level=api_job_share_level,
+                                            tags=job_tags, experiment_id=experiment_id)
+
             qobj = assemble(circuits, self, **run_config_dict)
 
-        if validate_qobj is not None:
-            warnings.warn("The `validate_qobj` keyword is deprecated and will "
-                          "be removed in a future release. "
-                          "You can pull the schemas from the Qiskit/ibmq-schemas "
-                          "repo and directly validate your payloads with that.",
-                          DeprecationWarning, stacklevel=3)
-            if validate_qobj:
-                validate_qobj_against_schema(qobj)
+        if validate_qobj:
+            validate_qobj_against_schema(qobj)
         return self._submit_job(qobj, job_name, api_job_share_level, job_tags, experiment_id)
 
     def _get_run_config(self, **kwargs: Any) -> Dict:
@@ -374,7 +403,8 @@ class IBMQBackend(Backend):
 
         # Submission success.
         try:
-            job = IBMQJob(backend=self, api_client=self._api_client, qobj=qobj, **submit_info)
+            job = IBMQCircuitJob(backend=self, api_client=self._api_client,
+                                 qobj=qobj, **submit_info)
             logger.debug('Job %s was successfully submitted.', job.job_id())
         except TypeError as err:
             logger.debug("Invalid job data received: %s", submit_info)

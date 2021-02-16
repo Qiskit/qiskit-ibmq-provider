@@ -40,3 +40,8 @@ class IBMQJobInvalidStateError(IBMQJobError):
 class IBMQJobTimeoutError(JobTimeoutError, IBMQJobError):
     """Errors raised when a job operation times out."""
     pass
+
+
+class IBMQJobNotFoundError(IBMQJobError):
+    """Errors raised when a job cannot be found."""
+    pass
