@@ -146,6 +146,7 @@ class IBMQBackendService:
             job_tags_operator: Optional[str] = "OR",
             experiment_id: Optional[str] = None,
             descending: bool = True,
+            ignore_composite_jobs: bool = False,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return a list of jobs, subject to optional filtering.
@@ -183,6 +184,9 @@ class IBMQBackendService:
             experiment_id: Filter by job experiment ID.
             descending: If ``True``, return the jobs in descending order of the job
                 creation date (i.e. newest first) until the limit is reached.
+            ignore_composite_jobs: If ``True``, sub-jobs of a single
+                :class:`~qiskit.providers.ibmq.job.IBMQCompositeJob` will be
+                returned as individual jobs instead of merged together.
             db_filter: A `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter.
@@ -308,6 +312,7 @@ class IBMQBackendService:
         composit_ids = set()
         for job_info in job_responses:
             job = self._restore_circuit_job(job_info, raise_error=False)
+            # TODO check tags before restoring
             # job_id = job_info.get('job_id', "")
             # # Recreate the backend used for this job.
             # backend_name = job_info.get('_backend_info', {}).get('name', 'unknown')
@@ -331,10 +336,12 @@ class IBMQBackendService:
 
             composite_job_id = [tag for tag in job.tags()
                                 if tag.startswith(IBMQCompositeJob._id_prefix)]
-            if composite_job_id:
+            if composite_job_id and not ignore_composite_jobs:
                 if composite_job_id[0] not in composit_ids:
                     composit_ids.add(composite_job_id[0])
+                    print(f">>>>>>> IBMQBackendservice.jobs() retriving composite job")
                     job_list.append(self.retrieve_job(composite_job_id[0]))
+                    print(f">>>>>>> IBMQBackendservice.jobs() got composite job")
             else:
                 job_list.append(job)
 
@@ -588,7 +595,7 @@ class IBMQBackendService:
                  from the server.
         """
         if job_id.startswith(IBMQCompositeJob._id_prefix):
-            print(f">>>>>> getting subjobs for job {job_id}")
+            print(f">>>>>> IBMQBackendService.retrieve_job: getting subjobs for job {job_id}")
             job_responses = self._get_jobs(api_filter={'tags': job_id}, limit=None)
             sub_jobs = []
             for job_info in job_responses:
@@ -598,6 +605,7 @@ class IBMQBackendService:
 
             if not sub_jobs:
                 raise IBMQJobNotFoundError(f"Job {job_id} not found.")
+            print(f">>>>>> IBMQBackendService.retrieve_job: returning composite job subjobs")
             return IBMQCompositeJob.from_jobs(job_id=job_id, jobs=sub_jobs,
                                               api_client=self._provider._api_client)
 

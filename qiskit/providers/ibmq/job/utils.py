@@ -26,9 +26,9 @@ JOB_STATUS_TO_INT = {
     JobStatus.VALIDATING: 1,
     JobStatus.QUEUED: 2,
     JobStatus.RUNNING: 3,
-    JobStatus.DONE: 4,
-    JobStatus.CANCELLED: 4,
-    JobStatus.ERROR: 4
+    JobStatus.ERROR: 4,
+    JobStatus.CANCELLED: 5,
+    JobStatus.DONE: 6
 }
 
 

@@ -392,6 +392,7 @@ class IBMQBackend(Backend):
                 experiment_id=experiment_id)
         except ApiError as ex:
             if 'Error code: 3458' in str(ex):
+                print(f">>>>>>  IBMQBackend raising job limit error")
                 raise IBMQBackendJobLimitError('Error submitting job: {}'.format(str(ex))) from ex
             raise IBMQBackendApiError('Error submitting job: {}'.format(str(ex))) from ex
 
@@ -592,6 +593,7 @@ class IBMQBackend(Backend):
             job_tags_operator: Optional[str] = "OR",
             experiment_id: Optional[str] = None,
             descending: bool = True,
+            ignore_composite_jobs: bool = False,
             db_filter: Optional[Dict[str, Any]] = None
     ) -> List[IBMQJob]:
         """Return the jobs submitted to this backend, subject to optional filtering.
@@ -629,6 +631,9 @@ class IBMQBackend(Backend):
             experiment_id: Filter by job experiment ID.
             descending: If ``True``, return the jobs in descending order of the job
                 creation date (newest first). If ``False``, return in ascending order.
+            ignore_composite_jobs: If ``True``, sub-jobs of a single
+                :class:`~qiskit.providers.ibmq.job.IBMQCompositeJob` will be
+                returned as individual jobs instead of merged together.
             db_filter: A `loopback-based filter
                 <https://loopback.io/doc/en/lb2/Querying-data.html>`_.
                 This is an interface to a database ``where`` filter. Some
@@ -653,7 +658,8 @@ class IBMQBackend(Backend):
             limit=limit, skip=skip, backend_name=self.name(), status=status,
             job_name=job_name, start_datetime=start_datetime, end_datetime=end_datetime,
             job_tags=job_tags, job_tags_operator=job_tags_operator,
-            experiment_id=experiment_id, descending=descending, db_filter=db_filter)
+            experiment_id=experiment_id, descending=descending,
+            ignore_composite_jobs=ignore_composite_jobs, db_filter=db_filter)
 
     def active_jobs(self, limit: int = 10) -> List[IBMQJob]:
         """Return the unfinished jobs submitted to this backend.
