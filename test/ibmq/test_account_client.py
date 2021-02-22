@@ -28,7 +28,7 @@ from qiskit.providers.ibmq.utils.utils import RefreshQueue
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_qe_access, requires_provider
 from ..contextmanagers import custom_envs, no_envs
-from ..http_server import SimpleServer, ServerErrorOnceHandler
+from ..http_server import SimpleServer, ServerErrorOnceHandler, ClientErrorHandler
 
 
 class TestAccountClient(IBMQTestCase):
@@ -58,6 +58,14 @@ class TestAccountClient(IBMQTestCase):
         self.qc2.measure(qr[0], cr[0])
         self.qc2.measure(qr[1], cr[1])
         self.seed = 73846087
+
+        self.fake_server = None
+
+    def tearDown(self) -> None:
+        """Test level tear down."""
+        super().tearDown()
+        if self.fake_server:
+            self.fake_server.stop()
 
     def _get_client(self):
         """Helper for instantiating an AccountClient."""
@@ -119,18 +127,37 @@ class TestAccountClient(IBMQTestCase):
 
     def test_job_submit_retry(self):
         """Test job submit requests get retried."""
-        backend_name = 'ibmq_qasm_simulator'
-        backend = self.provider.get_backend(backend_name)
-        client = backend._api_client
+        client = self._get_client()
 
         # Send request to local server.
         valid_data = {'id': 'fake_id',
                       'objectStorageInfo': {'uploadUrl': SimpleServer.URL},
                       'job': {'id': 'fake_id'}}
-        SimpleServer(handler_class=ServerErrorOnceHandler, valid_data=valid_data).start()
+        self.fake_server = SimpleServer(handler_class=ServerErrorOnceHandler, valid_data=valid_data)
+        self.fake_server.start()
         client.account_api.session.base_url = SimpleServer.URL
 
-        client.job_submit(backend_name, {})
+        client.job_submit('ibmq_qasm_simulator', {})
+
+    def test_client_error(self):
+        """Test client error."""
+        client = self._get_client()
+        self.fake_server = SimpleServer(handler_class=ClientErrorHandler)
+        self.fake_server.start()
+        client.account_api.session.base_url = SimpleServer.URL
+
+        sub_tests = [{'Error': 'Bad client input'},
+                     {},
+                     {'Bad request': 'Bad client input'},
+                     'Bad client input']
+
+        for err_resp in sub_tests:
+            with self.subTest(response=err_resp):
+                self.fake_server.set_error_response(err_resp)
+                with self.assertRaises(RequestsApiError) as err_cm:
+                    client.backend_status('ibmq_qasm_simulator')
+                if err_resp:
+                    self.assertIn('Bad client input', str(err_cm.exception))
 
 
 class TestAccountClientJobs(IBMQTestCase):

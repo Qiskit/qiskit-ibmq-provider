@@ -166,8 +166,7 @@ class AccountProvider(Provider):
                 logger.warning("An error occurred when retrieving backend "
                                "information. Some backends might not be available.")
                 continue
-            if raw_config['backend_name'] == 'ibmqx2':
-                raw_config['online_date'] = 'foo'
+
             try:
                 decode_backend_configuration(raw_config)
                 if raw_config.get('open_pulse', False):
