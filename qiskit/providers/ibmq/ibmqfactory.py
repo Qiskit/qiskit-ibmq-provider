@@ -15,6 +15,7 @@
 import logging
 from typing import Dict, List, Union, Callable, Optional, Any
 from collections import OrderedDict
+import traceback
 
 from .accountprovider import AccountProvider
 from .api.clients import AuthClient, VersionClient
@@ -472,7 +473,7 @@ class IBMQFactory:
                 provider = AccountProvider(provider_credentials,
                                            auth_client.current_access_token())
                 self._providers[provider_credentials.unique_id()] = provider
-            except Exception as ex:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 # Catch-all for errors instantiating the provider.
                 logger.warning('Unable to instantiate provider for %s: %s',
-                               hub_info, ex)
+                               hub_info, traceback.format_exc())
