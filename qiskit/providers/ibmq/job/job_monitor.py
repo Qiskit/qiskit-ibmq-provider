@@ -24,7 +24,8 @@ from ..utils.converters import duration_difference
 def _text_checker(job: IBMQJob,
                   interval: float,
                   _interval_set: bool = False,
-                  output: TextIO = sys.stdout) -> None:
+                  output: TextIO = sys.stdout,
+                  line_discipline: string = '\r') -> None:
     """A text-based job status checker.
 
     Args:
@@ -33,6 +34,8 @@ def _text_checker(job: IBMQJob,
         _interval_set: Was interval time set by user?
         output: The file like object to write status messages to.
             By default this is sys.stdout.
+        line_discipline (string): character emitted at start of a line of job monitor output,
+            This defaults to \\r.
 
     """
     status = job.status()
@@ -41,7 +44,7 @@ def _text_checker(job: IBMQJob,
     msg_len = len(msg)
     prev_time_str = ''
 
-    print('\r%s: %s' % ('Job Status', msg), end='', file=output)
+    print('%s%s: %s' % (line_discipline, 'Job Status', msg), end='', file=output)
     while status.name not in ['DONE', 'CANCELLED', 'ERROR']:
         time.sleep(interval)
         status = job.status()
@@ -87,7 +90,7 @@ def _text_checker(job: IBMQJob,
             msg_len = len(msg)
 
         if msg != prev_msg:
-            print('\r%s: %s' % ('Job Status', msg), end='', file=output)
+            print('%s%s: %s' % (line_discipline, 'Job Status', msg), end='', file=output)
             prev_msg = msg
 
     print('', file=output)
@@ -95,7 +98,8 @@ def _text_checker(job: IBMQJob,
 
 def job_monitor(job: IBMQJob,
                 interval: Optional[float] = None,
-                output: TextIO = sys.stdout) -> None:
+                output: TextIO = sys.stdout,
+                line_discipline: string = '\r') -> None:
     """Monitor the status of an ``IBMQJob`` instance.
 
     Args:
@@ -103,6 +107,8 @@ def job_monitor(job: IBMQJob,
         interval: Time interval between status queries.
         output: The file like object to write status messages to.
             By default this is sys.stdout.
+        line_discipline (string): character emitted at start of a line of job monitor output,
+            This defaults to \\r.
     """
     if interval is None:
         _interval_set = False
@@ -111,4 +117,4 @@ def job_monitor(job: IBMQJob,
         _interval_set = True
 
     _text_checker(job, interval, _interval_set,
-                  output=output)
+                  output=output, line_discipline=line_discipline)
