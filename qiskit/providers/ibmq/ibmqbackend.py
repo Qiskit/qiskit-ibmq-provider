@@ -437,6 +437,10 @@ class IBMQBackend(Backend):
     def status(self) -> BackendStatus:
         """Return the backend status.
 
+        Note:
+            If a backend is operational but has a ``status_msg`` of ``internal``,
+            then the backend is accepting jobs but not processing them.
+
         Returns:
             The status of the backend.
 
