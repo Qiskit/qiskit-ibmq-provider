@@ -146,9 +146,9 @@ class TestAccountClient(IBMQTestCase):
         self.fake_server.start()
         client.account_api.session.base_url = SimpleServer.URL
 
-        sub_tests = [{'Error': 'Bad client input'},
+        sub_tests = [{'error': 'Bad client input'},
                      {},
-                     {'Bad request': 'Bad client input'},
+                     {'bad request': 'Bad client input'},
                      'Bad client input']
 
         for err_resp in sub_tests:
