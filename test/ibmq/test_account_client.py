@@ -133,7 +133,8 @@ class TestAccountClient(IBMQTestCase):
         valid_data = {'id': 'fake_id',
                       'objectStorageInfo': {'uploadUrl': SimpleServer.URL},
                       'job': {'id': 'fake_id'}}
-        self.fake_server = SimpleServer(handler_class=ServerErrorOnceHandler, valid_data=valid_data)
+        self.fake_server = SimpleServer(handler_class=ServerErrorOnceHandler)
+        self.fake_server.set_good_response(valid_data)
         self.fake_server.start()
         client.account_api.session.base_url = SimpleServer.URL
 

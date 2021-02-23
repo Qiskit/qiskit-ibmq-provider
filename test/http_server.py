@@ -21,17 +21,20 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 class BaseHandler(BaseHTTPRequestHandler):
     """Base request handler for testing."""
 
+    good_response = {}
+    error_response = {}
+
     def _get_code(self):
         """Get the status code to be returned."""
         return 200
 
     def _get_response_data(self):
         """Get the response data to be returned."""
-        return {}
+        return self.good_response
 
     def _get_error_data(self):
         """Get the error data to be returned."""
-        return {}
+        return self.error_response
 
     def _respond(self):
         """Respond to the client."""
@@ -62,7 +65,6 @@ class BaseHandler(BaseHTTPRequestHandler):
 class ServerErrorOnceHandler(BaseHandler):
     """Request handler that returns a server error once then a good response."""
 
-    valid_data = {}
     bad_status_given = {}
 
     def _get_code(self):
@@ -72,23 +74,13 @@ class ServerErrorOnceHandler(BaseHandler):
         self.bad_status_given[self.path] = True
         return 504
 
-    def _get_response_data(self):
-        """Return valid response data."""
-        return self.valid_data
-
 
 class ClientErrorHandler(BaseHandler):
     """Request handler that returns a client error."""
 
-    error_response = {}
-
     def _get_code(self):
         """Return 400."""
         return 400
-
-    def _get_error_data(self):
-        """Return valid response data."""
-        return self.error_response
 
 
 class SimpleServer:
@@ -98,14 +90,12 @@ class SimpleServer:
     PORT = 8123
     URL = "http://{}:{}".format(IP_ADDRESS, PORT)
 
-    def __init__(self, handler_class: BaseHandler, valid_data: Optional[Dict] = None):
+    def __init__(self, handler_class: BaseHandler):
         """SimpleServer constructor.
 
         Args:
             handler_class: Request handler class.
-            valid_data: Data to be returned for a valid request.
         """
-        setattr(handler_class, 'valid_data', valid_data)
         self.httpd = HTTPServer((self.IP_ADDRESS, self.PORT), handler_class)
         self.server = threading.Thread(target=self.httpd.serve_forever, daemon=True)
 
@@ -122,3 +112,7 @@ class SimpleServer:
     def set_error_response(self, error_response: Dict):
         """Set the error response."""
         setattr(self.httpd.RequestHandlerClass, 'error_response', error_response)
+
+    def set_good_response(self, response: Dict):
+        """Set good response."""
+        setattr(self.httpd.RequestHandlerClass, 'good_response', response)
