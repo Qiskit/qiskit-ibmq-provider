@@ -12,9 +12,10 @@
 
 """Backends Filtering Test."""
 
+from unittest import mock
 from datetime import datetime
-from dateutil import tz
 
+from dateutil import tz
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq import IBMQError
 
@@ -105,6 +106,22 @@ class TestBackendFilters(IBMQTestCase):
                 backs.append(back)
                 break
         self.assertTrue(least_busy(backs, window))
+
+    def test_filter_least_busy_paused(self):
+        """Test filtering by least busy function, with paused backend."""
+        backends = self.provider.backends()
+        if len(backends) < 2:
+            self.skipTest("Test needs at least 2 backends.")
+        paused_backend = backends[0]
+        paused_status = paused_backend.status()
+        paused_status.status_msg = 'internal'
+        paused_status.pending_jobs = 0
+        paused_backend.status = mock.MagicMock(return_value=paused_status)
+
+        least_busy_backend = least_busy(backends)
+        self.assertTrue(least_busy_backend)
+        self.assertNotEqual(least_busy_backend.name(), paused_backend.name())
+        self.assertEqual(least_busy_backend.status().status_msg, 'active')
 
     def test_filter_min_num_qubits(self):
         """Test filtering by minimum number of qubits."""

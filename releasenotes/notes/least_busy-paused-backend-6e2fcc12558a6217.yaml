@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    The :func:`~qiskit.providers.ibmq.least_busy` function now skips backends
+    that are operational but ``paused``, meaning they are accepting but not
+    processing jobs.
