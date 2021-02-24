@@ -15,6 +15,7 @@
 import logging
 from typing import Dict, List, Optional, Any, Callable
 from collections import OrderedDict
+import traceback
 
 from qiskit.providers import ProviderV1 as Provider  # type: ignore[attr-defined]
 from qiskit.providers.models import (QasmBackendConfiguration,
@@ -178,12 +179,12 @@ class AccountProvider(Provider):
                     provider=self,
                     credentials=self.credentials,
                     api_client=self._api_client)
-            except Exception as ex:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     'Remote backend "%s" for provider %s could not be instantiated due to an '
-                    'invalid config: %s: %s',
+                    'invalid config: %s',
                     raw_config.get('backend_name', raw_config.get('name', 'unknown')),
-                    repr(self), type(ex).__name__, ex)
+                    repr(self), traceback.format_exc())
 
         return ret
 

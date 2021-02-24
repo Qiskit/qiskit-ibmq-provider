@@ -14,12 +14,15 @@
 
 import threading
 import json
-from typing import Optional
+from typing import Optional, Dict
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
 class BaseHandler(BaseHTTPRequestHandler):
     """Base request handler for testing."""
+
+    good_response = {}
+    error_response = {}
 
     def _get_code(self):
         """Get the status code to be returned."""
@@ -27,7 +30,11 @@ class BaseHandler(BaseHTTPRequestHandler):
 
     def _get_response_data(self):
         """Get the response data to be returned."""
-        return {}
+        return self.good_response
+
+    def _get_error_data(self):
+        """Get the error data to be returned."""
+        return self.error_response
 
     def _respond(self):
         """Respond to the client."""
@@ -36,8 +43,8 @@ class BaseHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'application/json')
         self.end_headers()
         self.rfile.read(int(self.headers.get('Content-Length', 0)))
-        if code == 200:
-            self.wfile.write(json.dumps(self._get_response_data()).encode(encoding='utf_8'))
+        data = self._get_response_data() if code == 200 else self._get_error_data()
+        self.wfile.write(json.dumps(data).encode(encoding='utf_8'))
 
     def do_GET(self):
         """Process a GET request."""
@@ -58,7 +65,6 @@ class BaseHandler(BaseHTTPRequestHandler):
 class ServerErrorOnceHandler(BaseHandler):
     """Request handler that returns a server error once then a good response."""
 
-    valid_data = {}
     bad_status_given = {}
 
     def _get_code(self):
@@ -68,9 +74,13 @@ class ServerErrorOnceHandler(BaseHandler):
         self.bad_status_given[self.path] = True
         return 504
 
-    def _get_response_data(self):
-        """Return valid response data."""
-        return self.valid_data
+
+class ClientErrorHandler(BaseHandler):
+    """Request handler that returns a client error."""
+
+    def _get_code(self):
+        """Return 400."""
+        return 400
 
 
 class SimpleServer:
@@ -80,17 +90,29 @@ class SimpleServer:
     PORT = 8123
     URL = "http://{}:{}".format(IP_ADDRESS, PORT)
 
-    def __init__(self, handler_class: BaseHandler, valid_data: Optional[dict] = None):
+    def __init__(self, handler_class: BaseHandler):
         """SimpleServer constructor.
 
         Args:
             handler_class: Request handler class.
-            valid_data: Data to be returned for a valid request.
         """
-        setattr(handler_class, 'valid_data', valid_data)
-        httpd = HTTPServer((self.IP_ADDRESS, self.PORT), handler_class)
-        self.server = threading.Thread(target=httpd.serve_forever, daemon=True)
+        self.httpd = HTTPServer((self.IP_ADDRESS, self.PORT), handler_class)
+        self.server = threading.Thread(target=self.httpd.serve_forever, daemon=True)
 
     def start(self):
         """Start the server."""
         self.server.start()
+
+    def stop(self):
+        """Stop the server."""
+        self.httpd.shutdown()
+        self.server.join(3)
+        self.httpd.server_close()
+
+    def set_error_response(self, error_response: Dict):
+        """Set the error response."""
+        setattr(self.httpd.RequestHandlerClass, 'error_response', error_response)
+
+    def set_good_response(self, response: Dict):
+        """Set good response."""
+        setattr(self.httpd.RequestHandlerClass, 'good_response', response)

@@ -13,14 +13,17 @@
 """Tests for the IBMQFactory class."""
 
 import os
-from unittest import skipIf
+from unittest import skipIf, mock
 from configparser import ConfigParser
 
 from qiskit.providers.ibmq.accountprovider import AccountProvider
+from qiskit.providers.ibmq import accountprovider
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
+from qiskit.providers.ibmq.api.clients import AccountClient
 from qiskit.providers.ibmq.exceptions import (IBMQAccountError, IBMQAccountValueError,
                                               IBMQAccountCredentialsInvalidUrl,
                                               IBMQAccountCredentialsInvalidToken)
+from qiskit.providers.ibmq import ibmqfactory
 from qiskit.providers.ibmq.ibmqfactory import IBMQFactory, QX_AUTH_URL
 from qiskit.providers.ibmq.credentials.hubgroupproject import HubGroupProject
 
@@ -100,6 +103,24 @@ class TestIBMQFactoryEnableAccount(IBMQTestCase):
             group=non_default_provider.credentials.group,
             project=non_default_provider.credentials.project)
         self.assertEqual(non_default_provider, enabled_provider)
+
+    @requires_qe_access
+    def test_provider_init_failed(self, qe_token, qe_url):
+        """Test initializing providers failed."""
+        with mock.patch.object(AccountProvider, '__init__',
+                               return_value=Exception('Kaboom!')):
+            with self.assertLogs(ibmqfactory.logger, level='WARNING') as log_cm:
+                self.factory.enable_account(qe_token, qe_url)
+            self.assertIn('Unable to instantiate provider', str(log_cm.output))
+
+    @requires_qe_access
+    def test_discover_backend_failed(self, qe_token, qe_url):
+        """Test discovering backends failed."""
+        with mock.patch.object(AccountClient, 'list_backends',
+                               return_value=[{'backend_name': 'bad_backend'}]):
+            with self.assertLogs(accountprovider.logger, level='WARNING') as context_manager:
+                self.factory.enable_account(qe_token, qe_url)
+        self.assertIn('bad_backend', str(context_manager.output))
 
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
