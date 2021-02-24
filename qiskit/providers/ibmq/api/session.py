@@ -282,7 +282,7 @@ class RetrySession(Session):
                     message += ". {}, Error code: {}.".format(
                         error_json['message'], error_json['code'])
                     logger.debug("Response uber-trace-id: %s", ex.response.headers['uber-trace-id'])
-                except (ValueError, KeyError):
+                except Exception:  # pylint: disable=broad-except
                     # the response did not contain the expected json.
                     message += ". {}".format(ex.response.text)
 
