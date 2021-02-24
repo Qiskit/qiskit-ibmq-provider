@@ -438,7 +438,8 @@ class IBMQBackend(Backend):
         """Return the backend status.
 
         Note:
-            If a backend is operational but has a ``status_msg`` of ``internal``,
+            If the returned :class:`~qiskit.providers.models.BackendStatus`
+            instance has ``operational=True`` but ``status_msg="internal"``,
             then the backend is accepting jobs but not processing them.
 
         Returns:
