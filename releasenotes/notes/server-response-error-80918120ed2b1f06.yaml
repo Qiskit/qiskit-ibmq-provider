@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fixes the issue wherein a ``TypeError`` is raised if the server returns
+    an error code but the response data is not in the expected format.
