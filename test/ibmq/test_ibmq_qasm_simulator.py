@@ -126,7 +126,7 @@ class TestIbmqQasmSimulator(IBMQTestCase):
             return mock.MagicMock()
 
         backend = copy.copy(self.sim_backend)
-        backend._configuration._data['simulator_method'] = 'extended_stabilizer'
+        backend._configuration._data['simulation_method'] = 'extended_stabilizer'
         backend._submit_job = _new_submit
 
         circ = transpile(ReferenceCircuits.bell(), backend=backend)
@@ -142,7 +142,7 @@ class TestIbmqQasmSimulator(IBMQTestCase):
             return mock.MagicMock()
 
         backend = copy.copy(self.sim_backend)
-        backend._configuration._data['simulator_method'] = 'extended_stabilizer'
+        backend._configuration._data['simulation_method'] = 'extended_stabilizer'
         backend._submit_job = _new_submit
 
         circ = transpile(ReferenceCircuits.bell(), backend=backend)

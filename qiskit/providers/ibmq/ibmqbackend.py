@@ -269,7 +269,7 @@ class IBMQBackend(Backend):
 
         sim_method = None
         if self.configuration().simulator:
-            sim_method = getattr(self.configuration(), 'simulator_method', None)
+            sim_method = getattr(self.configuration(), 'simulation_method', None)
 
         if isinstance(circuits, (QasmQobj, PulseQobj)):
             warnings.warn("Passing a Qobj to Backend.run is deprecated and will "
