@@ -2,6 +2,8 @@
 prelude: >
   :meth:`qiskit.providers.ibmq.IBMQBackend.run` method now takes one or more
   :class:`~qiskit.circuit.QuantumCircuit` or :class:`~qiskit.pulse.Schedule`.
+  Use of :class:`~qiskit.qobj.QasmQobj` and :class:`~qiskit.qobj.PulseQobj`
+  is now deprecated.
   Runtime configuration options, such as the number of shots, can be set via
   either the :meth:`~qiskit.providers.ibmq.IBMQBackend.run` method, or
   the :meth:`qiskit.providers.ibmq.IBMQBackend.set_options` method. The former
