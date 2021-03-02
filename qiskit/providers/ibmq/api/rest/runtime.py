@@ -56,7 +56,8 @@ class Runtime(RestAdapterBase):
         url = self.get_url('self')
         # return self.session.get(url).json()
         # temporary code
-        with open('runtime/qka_doc.json', 'r') as file:
+        doc_file = os.getenv('NTC_DOC_FILE', '../runtime/qka_doc.json')
+        with open(doc_file, 'r') as file:
             data = json.load(file)
         return [data]
 
@@ -137,10 +138,10 @@ class Program(RestAdapterBase):
         # data = json.dumps(payload, cls=json_encoder.IQXJsonEncoder)
         # temporary code
         python_bin = os.getenv('PYTHON_EXEC', 'python3')
+        program_file = os.getenv('NTC_PROGRAM_FILE', '../runtime/qka_program.py')
         data = json.dumps(params, cls=json_encoder.NumpyEncoder)
         global process
-        process = subprocess.Popen([python_bin,
-                                    "runtime/qka_program.py", data],
+        process = subprocess.Popen([python_bin, program_file, data],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    universal_newlines=True)
         import uuid

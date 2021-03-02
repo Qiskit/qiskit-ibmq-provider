@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Quantum Experience runtime service."""
+"""IBM Quantum runtime service."""
 
 import logging
 from typing import Dict
@@ -26,15 +26,14 @@ logger = logging.getLogger(__name__)
 
 
 class IBMRuntimeService:
-    """Backend namespace for an IBM Quantum Experience account provider.
-    """
+    """IBM Quantum runtime service."""
 
     def __init__(self, provider: 'accountprovider.AccountProvider', access_token: str) -> None:
-        """IBMQRandomService constructor.
+        """IBMRuntimeService constructor.
 
         Args:
-            provider: IBM Quantum Experience account provider.
-            access_token: IBM Quantum Experience access token.
+            provider: IBM Quantum account provider.
+            access_token: IBM Quantum access token.
         """
         self._provider = provider
         self._api_client = RuntimeClient(access_token, provider.credentials)
