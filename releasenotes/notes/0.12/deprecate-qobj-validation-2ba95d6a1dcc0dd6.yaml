@@ -1,0 +1,6 @@
+---
+deprecations:
+  - |
+    If you're relying on this schema validation you should pull the schemas
+    from the `Qiskit/ibmq-schemas<https://github.com/Qiskit/ibm-quantum-schemas>`_
+    and directly validate your payloads with that.

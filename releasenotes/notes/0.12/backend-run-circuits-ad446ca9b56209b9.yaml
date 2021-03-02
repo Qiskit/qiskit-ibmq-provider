@@ -1,4 +1,13 @@
 ---
+prelude: >
+  :meth:`qiskit.providers.ibmq.IBMQBackend.run` method now takes one or more
+  :class:`~qiskit.circuit.QuantumCircuit` or :class:`~qiskit.pulse.Schedule`.
+  Runtime configuration options, such as the number of shots, can be set via
+  either the :meth:`~qiskit.providers.ibmq.IBMQBackend.run` method, or
+  the :meth:`qiskit.providers.ibmq.IBMQBackend.set_options` method. The former
+  is used as a one-time setting for the job, and the latter for all jobs
+  sent to the backend. If an option is set in both places, the value set
+  in :meth:`~qiskit.providers.ibmq.IBMQBackend.run` takes precedence.
 features:
   - |
     :meth:`qiskit.providers.ibmq.IBMQBackend.run` method now takes one or more

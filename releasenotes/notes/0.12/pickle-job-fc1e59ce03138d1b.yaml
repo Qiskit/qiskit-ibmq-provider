@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    You can now pickle an :class:`~qiskit.providers.ibmq.job.IBMQJob` instance,
+    as long as it doesn't contain custom data that is not picklable (e.g.
+    in Qobj header).
