@@ -37,7 +37,7 @@ class RuntimeClient:
             access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
         """
-        url = 'https://api.atabey-01bb92749871351d190eb4b7dadc92fb-0000.us-east.containers.appdomain.cloud'
+        url = ''
         self._session = RetrySession(url, access_token,
                                      **credentials.connection_parameters())
         self.api = Runtime(self._session)

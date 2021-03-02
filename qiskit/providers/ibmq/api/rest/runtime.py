@@ -16,6 +16,7 @@ import logging
 from typing import Dict, List, Any
 import json
 import subprocess
+import os
 
 from qiskit.providers.ibmq.utils import json_encoder
 from .base import RestAdapterBase
@@ -55,7 +56,7 @@ class Runtime(RestAdapterBase):
         url = self.get_url('self')
         # return self.session.get(url).json()
         # temporary code
-        with open('qka_doc.json', 'r') as file:
+        with open('runtime/qka_doc.json', 'r') as file:
             data = json.load(file)
         return [data]
 
@@ -134,10 +135,12 @@ class Program(RestAdapterBase):
             'params': params
         }
         # data = json.dumps(payload, cls=json_encoder.IQXJsonEncoder)
+        # temporary code
+        python_bin = os.getenv('PYTHON_EXEC', 'python3')
         data = json.dumps(params, cls=json_encoder.NumpyEncoder)
         global process
-        process = subprocess.Popen(["/Users/jessieyu/.pyenv/versions/provider-dev-3.8.1/bin/python3",
-                                    "qka_program.py", data],
+        process = subprocess.Popen([python_bin,
+                                    "runtime/qka_program.py", data],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    universal_newlines=True)
         import uuid
@@ -224,7 +227,6 @@ class ProgramJob(RestAdapterBase):
                         return parsed['results']
                 except:
                     print(line)
-            print(f">>>>> errs: {errs}")
 
         return {}
         # return self.session.get(self.get_url('results')).json()
