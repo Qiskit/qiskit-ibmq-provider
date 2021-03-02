@@ -28,6 +28,7 @@ from .ibmqbackendservice import IBMQBackendService, IBMQDeprecatedBackendService
 from .utils.json_decoder import decode_backend_configuration
 from .random.ibmqrandomservice import IBMQRandomService
 from .experiment.experimentservice import ExperimentService
+from .runtime.ibm_runtime_service import IBMRuntimeService
 from .exceptions import IBMQNotAuthorizedError, IBMQInputValueError
 
 logger = logging.getLogger(__name__)
@@ -113,6 +114,7 @@ class AccountProvider(Provider):
             if credentials.extractor_url else None
         self._experiment = ExperimentService(self, access_token) \
             if credentials.experiment_url else None
+        self._runtime = IBMRuntimeService(self, access_token)
 
         self._services = {'backend': self._backend,
                           'random': self._random,
@@ -258,6 +260,15 @@ class AccountProvider(Provider):
             return self._random
         else:
             raise IBMQNotAuthorizedError("You are not authorized to use the random number service.")
+
+    @property
+    def runtime(self) -> IBMRuntimeService:
+        """Return the runtime service.
+
+        Returns:
+            The runtime service instance.
+        """
+        return self._runtime
 
     def __eq__(
             self,

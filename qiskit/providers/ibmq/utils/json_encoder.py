@@ -37,3 +37,14 @@ class IQXJsonEncoder(json.JSONEncoder):
                 val = complex(o)
                 return val.real, val.imag
         return json.JSONEncoder.default(self, o)
+
+
+class NumpyEncoder(json.JSONEncoder):
+    """JSON Encoder for Numpy arrays and complex numbers."""
+
+    def default(self, obj: Any) -> Any:
+        if hasattr(obj, 'tolist'):
+            return {'type': 'array', 'value': obj.tolist()}
+        if isinstance(obj, complex):
+            return {'type': 'complex', 'value': [obj.real, obj.imag]}
+        return super().default(obj)
