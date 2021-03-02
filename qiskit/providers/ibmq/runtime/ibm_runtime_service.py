@@ -13,7 +13,9 @@
 """IBM Quantum runtime service."""
 
 import logging
-from typing import Dict
+from typing import Dict, Callable
+import queue
+from concurrent import futures
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
@@ -27,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 class IBMRuntimeService:
     """IBM Quantum runtime service."""
+
+    _executor = futures.ThreadPoolExecutor()
 
     def __init__(self, provider: 'accountprovider.AccountProvider', access_token: str) -> None:
         """IBMRuntimeService constructor.
@@ -65,10 +69,29 @@ class IBMRuntimeService:
             self._programs[program.name] = program
             program.pprint()
 
-    def run(self, program_name: str, backend: IBMQBackend, params: Dict) -> RuntimeJob:
+    def run(
+            self,
+            program_name: str,
+            backend: IBMQBackend,
+            params: Dict,
+            callback: Callable
+    ) -> RuntimeJob:
+        interim_queue = None
+        if callback:
+            interim_queue = queue.Queue()
+            self._executor.submit(self._get_interim_result, interim_queue, callback)
         response = self._api_client.program_run(program_id=program_name,
                                                 credentials=self._provider.credentials,
                                                 backend_name=backend.name(),
-                                                params=params)
+                                                params=params, interim_queue=interim_queue)
         job = RuntimeJob(backend=backend, api_client=self._api_client, job_id=response['id'])
         return job
+
+    def _get_interim_result(self, result_queue: queue.Queue, user_callback):
+        try:
+            interim_result = result_queue.get(block=True, timeout=5)
+            if interim_result == 'poison_pill':
+                return
+            user_callback(interim_result)
+        except queue.Empty:
+            pass

@@ -77,7 +77,8 @@ class RuntimeClient:
             program_id: str,
             credentials: Credentials,
             backend_name: str,
-            params: Dict
+            params: Dict,
+            interim_queue
     ) -> Dict:
         """Run the specified program.
 
@@ -92,7 +93,7 @@ class RuntimeClient:
         """
         return self.api.program(program_id).run(
             hub=credentials.hub, group=credentials.group, project=credentials.project,
-            backend_name=backend_name, params=params)
+            backend_name=backend_name, params=params, interim_queue=interim_queue)
 
     def program_delete(self, program_id: str):
         """Delete the specified program.

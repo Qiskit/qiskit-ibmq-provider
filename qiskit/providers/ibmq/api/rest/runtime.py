@@ -13,10 +13,13 @@
 """Random REST adapter."""
 
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import json
 import subprocess
 import os
+import queue
+from concurrent import futures
+import uuid
 
 from qiskit.providers.ibmq.utils import json_encoder
 from .base import RestAdapterBase
@@ -56,7 +59,7 @@ class Runtime(RestAdapterBase):
         url = self.get_url('self')
         # return self.session.get(url).json()
         # temporary code
-        doc_file = os.getenv('NTC_DOC_FILE', '../runtime/qka_doc.json')
+        doc_file = os.getenv('NTC_DOC_FILE', 'runtime/qka_doc.json')
         with open(doc_file, 'r') as file:
             data = json.load(file)
         return [data]
@@ -86,6 +89,8 @@ class Program(RestAdapterBase):
         'run': '/jobs'
     }
 
+    _executor = futures.ThreadPoolExecutor()
+
     def __init__(self, session: RetrySession, program_id: str, url_prefix: str = '') -> None:
         """Job constructor.
 
@@ -114,7 +119,15 @@ class Program(RestAdapterBase):
         url = self.get_url('data')
         return self.session.get(url).json()
 
-    def run(self, hub: str, group: str, project: str, backend_name: str, params: Dict) -> Dict:
+    def run(
+            self,
+            hub: str,
+            group: str,
+            project: str,
+            backend_name: str,
+            params: Dict,
+            interim_queue: Optional[queue.Queue] = None
+    ) -> Dict:
         """Execute the program.
 
         Args:
@@ -138,15 +151,30 @@ class Program(RestAdapterBase):
         # data = json.dumps(payload, cls=json_encoder.IQXJsonEncoder)
         # temporary code
         python_bin = os.getenv('PYTHON_EXEC', 'python3')
-        program_file = os.getenv('NTC_PROGRAM_FILE', '../runtime/qka_program.py')
+        program_file = os.getenv('NTC_PROGRAM_FILE', 'runtime/qka_program.py')
         data = json.dumps(params, cls=json_encoder.NumpyEncoder)
         global process
         process = subprocess.Popen([python_bin, program_file, data],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    universal_newlines=True)
-        import uuid
+        if interim_queue:
+            self._executor.submit(self._interim_result, interim_queue)
+
         return {'id': uuid.uuid4().hex}
         # return self.session.post(url, data=data).json()
+
+    def _interim_result(self, interim_queue: queue.Queue):
+        global process
+        if process is None:
+            return
+        while True:
+            nextline = process.stdout.readline()
+            if nextline == '' and process.poll() is not None:
+                break
+            parsed = json.loads(nextline)
+            if any(word in parsed for word in ['post', 'results']):
+                interim_queue.put_nowait(parsed)
+        interim_queue.put_nowait('poison_pill')
 
     def delete(self) -> Dict:
         """Delete this program.
