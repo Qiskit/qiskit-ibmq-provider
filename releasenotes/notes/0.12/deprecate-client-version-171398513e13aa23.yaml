@@ -1,0 +1,6 @@
+---
+deprecations:
+  - |
+    Setting of the :class:`~qiskit.providers.ibmq.job.IBMQJob`
+    ``client_version`` attribute has been deprecated. You can, however, continue
+    to read the value of attribute.

@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    :meth:`qiskit.providers.ibmq.managed.IBMQJobManager.run` now accepts a
+    single :class:`~qiskit.circuit.QuantumCircuit` or
+    :class:`~qiskit.pulse.Schedule` in addition to a list of them.

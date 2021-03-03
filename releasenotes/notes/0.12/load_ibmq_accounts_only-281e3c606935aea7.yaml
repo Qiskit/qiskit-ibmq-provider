@@ -1,0 +1,9 @@
+---
+prelude: >
+    IBM Quantum credentials are now loaded only from sections of the ``qiskitrc``
+    file that start with 'ibmq'.
+upgrade:
+  - |
+    IBM Quantum credentials are now loaded only from sections of the ``qiskitrc``
+    file that start with 'ibmq'.
+    This allows the ``qiskitrc`` file to be used for other functionality.

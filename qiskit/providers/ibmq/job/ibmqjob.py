@@ -162,7 +162,7 @@ class IBMQJob(Job):
             self._get_status_position(status, kwargs.pop('info_queue', None))
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
         self._share_level = share_level
-        self.client_version = client_info
+        self._set_client_version(client_info)
         self._experiment_id = experiment_id
         self._set_result(result)
 
@@ -187,10 +187,10 @@ class IBMQJob(Job):
             IBMQJobApiError: If an unexpected error occurred when retrieving
                 job information from the server.
         """
-        warnings.warn("The ``job.qobj()`` method is deprecated and will "
+        warnings.warn("The ``IBMQJob.qobj()`` method is deprecated and will "
                       "be removed in a future release. You can now pass circuits "
-                      "to ``backend.run()`` and use ``job.circuits()``, "
-                      "``job.backend_options()``, and ``job.header()`` to retrieve "
+                      "to ``IBMQBackend.run()`` and use ``IBMQJob.circuits()``, "
+                      "``IBMQJob.backend_options()``, and ``IBMQJob.header()`` to retrieve "
                       "circuits, run configuration, and Qobj header, respectively.",
                       DeprecationWarning, stacklevel=2)
         return self._get_qobj()
@@ -698,6 +698,17 @@ class IBMQJob(Job):
         Args:
             data: Client version.
         """
+        warnings.warn("The ``IBMQJob.client_version()`` method is deprecated and will "
+                      "be removed in a future release.",
+                      DeprecationWarning, stacklevel=2)
+        self._set_client_version(data)
+
+    def _set_client_version(self, data: Dict[str, str]) -> None:
+        """Set client version.
+
+        Args:
+            data: Client version.
+        """
         if data:
             if data.get('name', '').startswith('qiskit'):
                 self._client_version = dict(
@@ -767,7 +778,7 @@ class IBMQJob(Job):
         self._status, self._queue_info = \
             self._get_status_position(self._api_status, api_response.pop('info_queue', None))
         self._share_level = api_response.pop('share_level', 'none')
-        self.client_version = api_response.pop('client_info', None)
+        self._set_client_version(api_response.pop('client_info', None))
         self._set_result(api_response.pop('result', None))
         self._experiment_id = api_response.pop('experiment_id', None)
 

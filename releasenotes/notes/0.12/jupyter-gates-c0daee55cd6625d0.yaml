@@ -3,3 +3,4 @@ fixes:
   - |
     Fixes the issue wherein using Jupyter backend widget would fail if the
     backend's basis gates do not include the traditional u1, u2, and u3.
+    Fixes `#844 <https://github.com/Qiskit/qiskit-ibmq-provider/issues/844>`_
