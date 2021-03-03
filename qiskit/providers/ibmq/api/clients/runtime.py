@@ -13,7 +13,8 @@
 """Client for accessing Random Number Generator (RNG) services."""
 
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Optional
+import queue
 
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.session import RetrySession
@@ -78,7 +79,7 @@ class RuntimeClient:
             credentials: Credentials,
             backend_name: str,
             params: Dict,
-            interim_queue
+            interim_queue: Optional[queue.Queue] = None
     ) -> Dict:
         """Run the specified program.
 

@@ -20,6 +20,7 @@ import os
 import queue
 from concurrent import futures
 import uuid
+import numpy as np
 
 from qiskit.providers.ibmq.utils import json_encoder
 from .base import RestAdapterBase
@@ -158,22 +159,22 @@ class Program(RestAdapterBase):
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    universal_newlines=True)
         if interim_queue:
-            self._executor.submit(self._interim_result, interim_queue)
+            self._executor.submit(self._interim_result, interim_queue, process)
 
         return {'id': uuid.uuid4().hex}
         # return self.session.post(url, data=data).json()
 
-    def _interim_result(self, interim_queue: queue.Queue):
-        global process
-        if process is None:
-            return
+    def _interim_result(self, interim_queue: queue.Queue, pgm_process):
         while True:
-            nextline = process.stdout.readline()
-            if nextline == '' and process.poll() is not None:
+            nextline = pgm_process.stdout.readline()
+            if nextline == '' and pgm_process.poll() is not None:
                 break
-            parsed = json.loads(nextline)
-            if any(word in parsed for word in ['post', 'results']):
-                interim_queue.put_nowait(parsed)
+            try:
+                parsed = json.loads(nextline, cls=NumpyDecoder)
+                if any(text in parsed for text in ['post', 'results']):
+                    interim_queue.put_nowait(parsed)
+            except:
+                print(nextline)
         interim_queue.put_nowait('poison_pill')
 
     def delete(self) -> Dict:
@@ -259,3 +260,19 @@ class ProgramJob(RestAdapterBase):
 
         return {}
         # return self.session.get(self.get_url('results')).json()
+
+
+class NumpyDecoder(json.JSONDecoder):
+    """JSON Decoder for Numpy arrays and complex numbers."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):
+        if 'type' in obj:
+            if obj['type'] == 'complex':
+                val = obj['value']
+                return val[0] + 1j * val[1]
+            if obj['type'] == 'array':
+                return np.array(obj['value'])
+        return obj

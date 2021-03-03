@@ -13,7 +13,7 @@
 """IBM Quantum runtime service."""
 
 import logging
-from typing import Dict, Callable
+from typing import Dict, Callable, Optional
 import queue
 from concurrent import futures
 
@@ -74,24 +74,13 @@ class IBMRuntimeService:
             program_name: str,
             backend: IBMQBackend,
             params: Dict,
-            callback: Callable
+            callback: Optional[Callable] = None
     ) -> RuntimeJob:
-        interim_queue = None
-        if callback:
-            interim_queue = queue.Queue()
-            self._executor.submit(self._get_interim_result, interim_queue, callback)
+        interim_queue = queue.Queue() if callback else None
         response = self._api_client.program_run(program_id=program_name,
                                                 credentials=self._provider.credentials,
                                                 backend_name=backend.name(),
                                                 params=params, interim_queue=interim_queue)
-        job = RuntimeJob(backend=backend, api_client=self._api_client, job_id=response['id'])
+        job = RuntimeJob(backend=backend, api_client=self._api_client, job_id=response['id'],
+                         interim_queue=interim_queue, user_callback=callback)
         return job
-
-    def _get_interim_result(self, result_queue: queue.Queue, user_callback):
-        try:
-            interim_result = result_queue.get(block=True, timeout=5)
-            if interim_result == 'poison_pill':
-                return
-            user_callback(interim_result)
-        except queue.Empty:
-            pass

@@ -12,7 +12,9 @@
 
 """IBM Quantum Experience Runtime job."""
 
-from typing import Any, Optional
+from typing import Any, Optional, Callable
+import queue
+from concurrent import futures
 
 from qiskit.providers.job import JobV1 as Job
 from qiskit.providers.jobstatus import JobStatus
@@ -22,11 +24,15 @@ from ..api.clients import RuntimeClient
 
 class RuntimeJob(Job):
 
+    _executor = futures.ThreadPoolExecutor()
+
     def __init__(
             self,
             backend: 'ibmqbackend.IBMQBackend',
             api_client: RuntimeClient,
             job_id: str,
+            interim_queue: Optional[queue.Queue] = None,
+            user_callback: Optional[Callable] = None
     ) -> None:
         """RuntimeJob constructor.
 
@@ -37,6 +43,24 @@ class RuntimeJob(Job):
         """
         super().__init__(backend, job_id)
         self._api_client = api_client
+        self._result = None
+
+        self._user_callback = user_callback
+        self._interim_queue = interim_queue
+
+    def _interim_results(self):
+        while True:
+            try:
+                interim_result = self._interim_queue.get(block=True, timeout=5)
+                if interim_result == 'poison_pill':
+                    return
+                if 'post' in interim_result:
+                    self._user_callback(interim_result['post'])
+                elif 'results' in interim_result:
+                    self._result = interim_result['results']
+                    return
+            except queue.Empty:
+                pass
 
     def submit(self):
         """Unsupported method.
@@ -57,8 +81,14 @@ class RuntimeJob(Job):
             timeout: Optional[float] = None
     ) -> Any:
         """Return the results of the job."""
+        if self._user_callback:
+            future = self._executor.submit(self._interim_results)
+            futures.wait([future])
         self.wait_for_final_state(timeout=timeout)
-        return self._api_client.program_job_results(program_id='123', job_id=self.job_id())
+        if not self._result:
+            self._result = self._api_client.program_job_results(
+                program_id='123', job_id=self.job_id())
+        return self._result
 
     def cancel(self):
         """Attempt to cancel the job."""

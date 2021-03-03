@@ -10,16 +10,9 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Tests for random number services."""
+"""Tests for runtime service."""
 
-import time
-import uuid
-from unittest import skipIf
-from concurrent.futures import ThreadPoolExecutor
-
-import numpy as np
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.ibmq.exceptions import IBMQError
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
@@ -49,3 +42,11 @@ class TestRuntime(IBMQTestCase):
         job.wait_for_final_state()
         self.assertEqual(job.status(), JobStatus.DONE)
         self.assertTrue(job.result())
+
+    def test_interim_results(self):
+        def _callback(interim_result):
+            print(f"interim result {interim_result}")
+        params = {'param1': 'foo'}
+        backend = self.provider.backend.ibmq_qasm_simulator
+        job = self.provider.runtime.run("QKA", backend=backend, params=params, callback=_callback)
+        job.result()
