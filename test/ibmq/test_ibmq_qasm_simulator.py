@@ -125,7 +125,7 @@ class TestIbmqQasmSimulator(IBMQTestCase):
                              f"qobj header={qobj.header}")
             return mock.MagicMock()
 
-        backend = copy.copy(self.sim_backend)
+        backend = copy.deepcopy(self.sim_backend)
         backend._configuration._data['simulation_method'] = 'extended_stabilizer'
         backend._submit_job = _new_submit
 
@@ -141,7 +141,7 @@ class TestIbmqQasmSimulator(IBMQTestCase):
             self.assertEqual(qobj.config.method, 'my_method', f"qobj header={qobj.header}")
             return mock.MagicMock()
 
-        backend = copy.copy(self.sim_backend)
+        backend = copy.deepcopy(self.sim_backend)
         backend._configuration._data['simulation_method'] = 'extended_stabilizer'
         backend._submit_job = _new_submit
 
