@@ -12,8 +12,13 @@
 
 """Test IBM Quantum online QASM simulator."""
 
+from unittest import mock
+import copy
+
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.compiler import transpile
+from qiskit.compiler import transpile, assemble
+from qiskit.test.reference_circuits import ReferenceCircuits
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
@@ -111,3 +116,36 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         result = self.sim_backend.run(transpile(circuit, backend=self.sim_backend),
                                       validate_qobj=True).result()
         self.assertEqual(result.get_counts(circuit), {'0001': 1024})
+
+    def test_new_sim_method(self):
+        """Test new simulator methods."""
+        def _new_submit(qobj, *args, **kwargs):
+            # pylint: disable=unused-argument
+            self.assertEqual(qobj.config.method, 'extended_stabilizer',
+                             f"qobj header={qobj.header}")
+            return mock.MagicMock()
+
+        backend = copy.copy(self.sim_backend)
+        backend._configuration._data['simulation_method'] = 'extended_stabilizer'
+        backend._submit_job = _new_submit
+
+        circ = transpile(ReferenceCircuits.bell(), backend=backend)
+        backend.run(circ, header={'test': 'circuits'})
+        qobj = assemble(circ, backend=backend, header={'test': 'qobj'})
+        backend.run(qobj)
+
+    def test_new_sim_method_no_overwrite(self):
+        """Test custom method option is not overwritten."""
+        def _new_submit(qobj, *args, **kwargs):
+            # pylint: disable=unused-argument
+            self.assertEqual(qobj.config.method, 'my_method', f"qobj header={qobj.header}")
+            return mock.MagicMock()
+
+        backend = copy.copy(self.sim_backend)
+        backend._configuration._data['simulation_method'] = 'extended_stabilizer'
+        backend._submit_job = _new_submit
+
+        circ = transpile(ReferenceCircuits.bell(), backend=backend)
+        backend.run(circ, method='my_method', header={'test': 'circuits'})
+        qobj = assemble(circ, backend=backend, method='my_method', header={'test': 'qobj'})
+        backend.run(qobj)
