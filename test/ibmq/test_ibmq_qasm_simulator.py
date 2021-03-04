@@ -18,10 +18,10 @@ import copy
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.compiler import transpile, assemble
 from qiskit.test.reference_circuits import ReferenceCircuits
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.aer.noise import NoiseModel
 
 from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_provider
+from ..decorators import requires_provider, requires_device
 
 
 class TestIbmqQasmSimulator(IBMQTestCase):
@@ -125,7 +125,7 @@ class TestIbmqQasmSimulator(IBMQTestCase):
                              f"qobj header={qobj.header}")
             return mock.MagicMock()
 
-        backend = copy.copy(self.sim_backend)
+        backend = copy.deepcopy(self.sim_backend)
         backend._configuration._data['simulation_method'] = 'extended_stabilizer'
         backend._submit_job = _new_submit
 
@@ -141,7 +141,7 @@ class TestIbmqQasmSimulator(IBMQTestCase):
             self.assertEqual(qobj.config.method, 'my_method', f"qobj header={qobj.header}")
             return mock.MagicMock()
 
-        backend = copy.copy(self.sim_backend)
+        backend = copy.deepcopy(self.sim_backend)
         backend._configuration._data['simulation_method'] = 'extended_stabilizer'
         backend._submit_job = _new_submit
 
@@ -149,3 +149,12 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         backend.run(circ, method='my_method', header={'test': 'circuits'})
         qobj = assemble(circ, backend=backend, method='my_method', header={'test': 'qobj'})
         backend.run(qobj)
+
+    @requires_device
+    def test_simulator_with_noise_model(self, backend):
+        """Test using simulator with a noise model."""
+        noise_model = NoiseModel.from_backend(backend)
+        result = self.sim_backend.run(
+            transpile(ReferenceCircuits.bell(), backend=self.sim_backend),
+            noise_model=noise_model).result()
+        self.assertTrue(result)
