@@ -698,8 +698,8 @@ class IBMQJob(Job):
         Args:
             data: Client version.
         """
-        warnings.warn("The ``IBMQJob.client_version()`` method is deprecated and will "
-                      "be removed in a future release.",
+        warnings.warn('The ``client_version`` setter method is deprecated and '
+                      'will be removed in a future release.',
                       DeprecationWarning, stacklevel=2)
         self._set_client_version(data)
 
