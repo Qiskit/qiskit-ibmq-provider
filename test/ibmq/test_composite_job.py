@@ -15,24 +15,16 @@
 import re
 import copy
 import time
-from inspect import getfullargspec, isfunction
+import random
 import uuid
-from concurrent.futures import wait
 from datetime import datetime, timedelta, timezone
 from dateutil import tz
 
-from qiskit import QuantumCircuit
 from qiskit import transpile
-from qiskit.result import Result
 from qiskit.exceptions import QiskitError
 from qiskit.circuit.random import random_circuit
 from qiskit.providers.models import BackendProperties
 
-from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
-from qiskit.providers.ibmq.managed.managedresults import ManagedResults
-from qiskit.providers.ibmq.managed import managedjob
-from qiskit.providers.ibmq.managed.exceptions import (
-    IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.ibmq.job.exceptions import (IBMQJobFailureError, IBMQJobInvalidStateError,
@@ -75,8 +67,6 @@ class TestIBMQCompositeJob(IBMQTestCase):
         """Tear down."""
         super().tearDown()
         self.fake_backend._api_client.tear_down()
-        # Restore provider backends since we cannot deep copy provider.
-        # self.provider.backend._provider = self.provider
 
     def _set_fake_client(self, fake_client):
         self.fake_backend._api_client = fake_client
@@ -150,7 +140,7 @@ class TestIBMQCompositeJob(IBMQTestCase):
                 stat_job = job_set.sub_jobs()[1]
                 while stat_job.status() != job_status:
                     time.sleep(1)
-                time.sleep(0.5)  # Wait for other job to advance.
+                time.sleep(1)  # Let the other job advance.
                 self.assertEqual(job_set.status(), job_status)
                 self.assertNotEqual(job_set.sub_jobs()[0].status(), job_status)
                 self.assertEqual(stat_job.status(), job_status)
@@ -283,7 +273,7 @@ class TestIBMQCompositeJob(IBMQTestCase):
 
     def test_async_submit_exception(self):
         """Test asynchronous job submit failed."""
-        self.fake_backend._api_client = JobSubmitFailClient(failed_indexes=1)
+        self.fake_backend._api_client = JobSubmitFailClient(failed_indexes=0)
 
         job_set = self.fake_backend.run([self._qc] * 2, max_circuits_per_job=1)
         job_set.wait_for_final_state()
@@ -370,6 +360,13 @@ class TestIBMQCompositeJob(IBMQTestCase):
             self.assertIn(job_set.job_id(), job_set_tags, job.tags())
             self.assertEqual(len(job_set_tags), 2, job.tags())
 
+    def test_sub_job_tags_replace(self):
+        """Test updating subjob tags."""
+        job_set = self.fake_backend.run([self._qc] * 2, max_circuits_per_job=1)
+        job = job_set.sub_jobs()[0]
+        job.update_tags(replacement_tags=[])
+        self.assertIn(job_set.job_id(), job.tags())
+
     def test_skipped_result(self):
         """Test one of the jobs has no result."""
         sub_tests = [CancelableFakeJob, FailedFakeJob]
@@ -430,13 +427,10 @@ class TestIBMQCompositeJob(IBMQTestCase):
         with self.assertRaises(IBMQJobInvalidStateError):
             job_set.result(partial=False)
 
-    def test_refresh(self):
-        """Test refreshing job data."""
-        pass
-
     def test_creation_date(self):
         """Test retrieving creation date."""
         job_set = self.fake_backend.run([self._qc] * 2, max_circuits_per_job=1)
+        job_set.block_for_submit()
         creation_date = job_set.creation_date()
         self.assertTrue(creation_date)
         self.assertIsNotNone(creation_date.tzinfo)
@@ -577,8 +571,8 @@ class TestIBMQCompositeJob(IBMQTestCase):
 
         # Re-retrieve result via refresh.
         result = job_set.result(refresh=True)
-        self.assertDictEqual(cached_result, result.to_dict())
         self.assertNotEqual(result.results[0].header.name, 'modified_result')
+        self.assertDictEqual(cached_result, result.to_dict())
 
     def test_wait_for_final_state(self):
         """Test waiting for job to reach final state."""
@@ -657,9 +651,51 @@ class TestIBMQCompositeJob(IBMQTestCase):
 
     def test_retry_failed_jobs(self):
         """Test retrying failed jobs."""
+        max_circs = 3
+        num_jobs = 3
+        circs = []
+        for i in range(max_circs*(num_jobs-1)+1):
+            circs.append(random_circuit(num_qubits=2, depth=3, measure=True))
+        sub_tests = [[FailedFakeJob, BaseFakeJob, BaseFakeJob],
+                     [BaseFakeJob, FailedFakeJob, CancelableFakeJob],
+                     [CancelableFakeJob, BaseFakeJob, FailedFakeJob]]
+
+        for job_class in sub_tests:
+            with self.subTest(job_class=job_class):
+                self._set_fake_client(BaseFakeAccountClient(job_class=job_class))
+                job_set = self.fake_backend.run(circs, max_circuits_per_job=max_circs)
+                time.sleep(3)
+                for subjob in job_set.sub_jobs():
+                    if subjob.status() == JobStatus.RUNNING:
+                        subjob.cancel()
+                job_set.wait_for_final_state()
+                self.assertEqual(job_set.status(), JobStatus.ERROR)
+                good_ids = {job.job_id() for job in job_set.sub_jobs()
+                            if job.status() == JobStatus.DONE}
+
+                job_set.rerun_failed()
+                job_set.wait_for_final_state()
+                self.assertEqual(job_set.status(), JobStatus.DONE)
+                self.assertEqual(len(job_set.sub_jobs()), num_jobs)
+                self.assertTrue(good_ids.issubset({job.job_id() for job in job_set.sub_jobs()}))
+                circ_idx = 0
+                for sub_job in job_set.sub_jobs():
+                    for job_circ in sub_job.circuits():
+                        self.assertEqual(job_circ, circs[circ_idx])
+                        circ_idx += 1
+                self.assertEqual(job_set.circuits(), circs)
 
     def test_sub_job(self):
-        pass
+        """Test retrieving a single sub job."""
+        max_circs = 3
+        num_jobs = 3
+        circs = []
+        for i in range(max_circs*(num_jobs-1)+1):
+            circs.append(random_circuit(num_qubits=2, depth=3, measure=True))
+        job_set = self.fake_backend.run(circs, max_circuits_per_job=max_circs)
+        job_set.block_for_submit()
+        circ_idx = random.randint(0, len(circs))
+        self.assertIn(circs[circ_idx], job_set.sub_job(circ_idx).circuits())
 
 
 class TestIBMQCompositeJobIntegration(IBMQTestCase):
@@ -725,8 +761,23 @@ class TestIBMQCompositeJobIntegration(IBMQTestCase):
                 self.assertEqual(job.job_id(), circ_job.job_id())
 
     def test_retrieve_job_missing_subjobs(self):
-        pass
+        """Test retrieving a composite job with missing subjob."""
+        job_tags = [uuid.uuid4().hex]
+        job_set = self.sim_backend.run([self._qc]*3, max_circuits_per_job=1,
+                                       job_tags=job_tags)
+        job_set.block_for_submit()
+        sub_jobs = job_set.sub_jobs()
 
-    def test_partial_result(self):
-        # with simulator
-        pass
+        for subjob_idx in range(3):
+            with self.subTest(subjob_idx=subjob_idx):
+                job = sub_jobs[subjob_idx]
+                saved_tags = job.tags()
+                try:
+                    job._api_client.job_update_attribute(
+                        job_id=job.job_id(), attr_name='tags', attr_value=[])
+                    with self.assertRaises(IBMQJobInvalidStateError) as err_cm:
+                        self.sim_backend.retrieve_job(job_set.job_id())
+                    self.assertIn(f"indexes {subjob_idx}", str(err_cm.exception))
+                finally:
+                    job._api_client.job_update_attribute(
+                        job_id=job.job_id(), attr_name='tags', attr_value=saved_tags)

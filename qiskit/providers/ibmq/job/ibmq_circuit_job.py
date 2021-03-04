@@ -418,8 +418,8 @@ class IBMQCircuitJob(IBMQJob):
         Raises:
             IBMQJobInvalidStateError: If any of the input parameters are invalid.
         """
-        # Tags prefix that denotes a job belongs to a jobset.
-        ibmq_jobset_prefix = 'ibmq_jobset_'
+        # Tags prefix that denotes a job belongs to a jobset or composite job.
+        filter_tags = ('ibmq_jobset_', "ibmq_composite_job_")
 
         tags_to_update = set(self._tags or [])  # Get the current job tags.
         if isinstance(replacement_tags, list):  # `replacement_tags` could be an empty list.
@@ -427,7 +427,7 @@ class IBMQCircuitJob(IBMQJob):
             validate_job_tags(replacement_tags, IBMQJobInvalidStateError)
             tags_to_update = set(replacement_tags)
             tags_to_update.update(
-                filter(lambda old_tag: old_tag.startswith(ibmq_jobset_prefix), self._tags))
+                filter(lambda old_tag: old_tag.startswith(filter_tags), self._tags))
         if additional_tags:
             # Add the specified tags to the tags to update.
             validate_job_tags(additional_tags, IBMQJobInvalidStateError)
@@ -437,7 +437,7 @@ class IBMQCircuitJob(IBMQJob):
             # from the tags to update.
             validate_job_tags(removal_tags, IBMQJobInvalidStateError)
             for tag_to_remove in removal_tags:
-                if tag_to_remove.startswith(ibmq_jobset_prefix):
+                if tag_to_remove.startswith(filter_tags):
                     logger.warning('The tag "%s" for job %s will not be removed, because '
                                    'it is used internally by the ibmq-provider.',
                                    tag_to_remove, self.job_id())

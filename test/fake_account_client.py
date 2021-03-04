@@ -204,7 +204,6 @@ class BaseFakeJob:
         data = {'status': status.value}
         if status == ApiJobStatus.QUEUED:
             data['info_queue'] = self._get_info_queue()
-            print(f">>>>> fake account client: job {self._job_id} queue info: {data['info_queue']}")
         return data
 
     def status(self):
@@ -327,11 +326,11 @@ class BaseFakeAccountClient:
         self._est_completion = est_completion.copy() if est_completion else []
         self._est_completion.reverse()
         self._run_mode = run_mode
+        self._default_job_class = BaseFakeJob
 
     def list_jobs_statuses(self, limit, skip, descending=True, extra_filter=None):
         """Return a list of statuses of jobs."""
         # pylint: disable=unused-argument
-        print(f">>>>>>>> BaseFakeAccountClient.list_jobs_statuse extra_filter={extra_filter}")
         extra_filter = extra_filter or {}
         if all(fil in extra_filter for fil in ['creationDate', 'id']):
             return {}
@@ -339,7 +338,6 @@ class BaseFakeAccountClient:
         all_job_data = []
         for job in list(self._jobs.values())[skip:skip+limit]:
             job_data = job.data()
-            print(f">>>>>>>> BaseFakeAccountClient.list_jobs_statuse tag is {tag}, in data {tag in job_data['tags']}")
             if tag is None or tag in job_data['tags']:
                 all_job_data.append(job_data)
         if not descending:
@@ -356,8 +354,10 @@ class BaseFakeAccountClient:
 
         new_job_id = uuid.uuid4().hex
         job_share_level = job_share_level or ApiJobShareLevel.NONE
-        job_class = self._job_class.pop() \
-            if isinstance(self._job_class, list) else self._job_class
+        if isinstance(self._job_class, list):
+            job_class = self._job_class.pop() if self._job_class else self._default_job_class
+        else:
+            job_class = self._job_class
         job_kwargs = copy.copy(self._job_kwargs)
         if self._queue_positions:
             job_kwargs['queue_pos'] = self._queue_positions.pop()
@@ -471,7 +471,9 @@ class JobSubmitFailClient(BaseFakeAccountClient):
 
     def __init__(self, failed_indexes):
         """JobSubmitFailClient constructor."""
-        self._failed_indexes = list(failed_indexes)
+        if not isinstance(failed_indexes, list):
+            failed_indexes = [failed_indexes]
+        self._failed_indexes = failed_indexes
         self._job_count = -1
         super().__init__()
 

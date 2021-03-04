@@ -12,55 +12,113 @@
 
 """IBM Quantum Experience composite job."""
 
-import re
-import logging
-from typing import Dict, Optional, Tuple, Any, List, Callable, Union, Set
-import warnings
-import uuid
-from datetime import datetime
-from concurrent import futures
-import queue
-from collections import defaultdict, OrderedDict
+from typing import Optional, Union
 import threading
-import copy
-from functools import wraps
-import time
-import traceback
 
-from qiskit.compiler import assemble
-from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
-from qiskit.providers.models import BackendProperties
 from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.result import Result
-from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
-from qiskit.assembler.disassemble import disassemble
-from qiskit.circuit.quantumcircuit import QuantumCircuit
-from qiskit.pulse import Schedule
-from qiskit.result.models import ExperimentResult
 
-from ..apiconstants import API_JOB_FINAL_STATES
-from ..api.clients import AccountClient
-from ..utils.utils import validate_job_tags, api_status_to_job_status
-from .exceptions import (IBMQJobApiError, IBMQJobFailureError, IBMQJobTimeoutError,
-                         IBMQJobInvalidStateError)
-from .queueinfo import QueueInfo
-from .utils import auto_retry, JOB_STATUS_TO_INT, JobStatusQueueInfo, last_job_stat_pos
-from .ibmqjob import IBMQJob
+from .exceptions import IBMQJobFailureError, IBMQJobInvalidStateError
+from .utils import auto_retry
 from .ibmq_circuit_job import IBMQCircuitJob
-from ..exceptions import IBMQBackendJobLimitError
 
 
 class SubJob:
+    """Representation of a sub-job that belongs to an ``IBMQCompositeJob``."""
 
     def __init__(
             self,
             start_index: int,
             end_index: int,
             job_index: int,
-            total: int
+            total: int,
+            qobj: Optional[Union[QasmQobj, PulseQobj]] = None,
+            job: IBMQCircuitJob = None
     ) -> None:
+        """SubJob constructor.
+
+        Args:
+            start_index: Circuit start index.
+            end_index: Circuit end index.
+            job_index: Job index.
+            total: Total number of jobs.
+            qobj: Qobj for this job.
+        """
         self.start_index = start_index
         self.end_index = end_index
         self.job_index = job_index
         self.total_jobs = total
+        self._qobj = qobj
+        self._job = job
+        self.event = threading.Event()
+        self._submit_error = None
+        self.future = None
+
+    def format_tag(self, tag_template: str) -> str:
+        """Format the the job tag using indexes.
+
+        Args:
+            tag_template: Tag template to use.
+
+        Returns:
+            Formatted tag.
+        """
+        return tag_template.format(job_index=self.job_index, total_jobs=self.total_jobs,
+                                   start_index=self.start_index, end_index=self.end_index)
+
+    @property
+    def qobj(self):
+        if self._qobj:
+            return self._qobj
+        if self.job:
+            return self.job._get_qobj()
+        return None
+
+    @property
+    def job(self):
+        if self.future and not self.future.done():
+            return None
+        return self._job
+
+    @job.setter
+    def job(self, job):
+        self._job = job
+
+    @property
+    def submit_error(self):
+        if self.future and not self.future.done():
+            return None
+        return self._submit_error
+
+    @submit_error.setter
+    def submit_error(self, error):
+        self._submit_error = error
+
+    def reset(self):
+        """Clear job and error data."""
+        self.future = None
         self.job = None
+        self.submit_error = None
+        self.event.clear()
+
+    def result(self, refresh: bool, partial: bool) -> Optional[Result]:
+        """Return job result.
+
+        Args:
+            refresh: If ``True``, re-query the server for the result.
+            partial: If ``True``, return partial results if possible.
+
+        Returns:
+            Job result or ``None`` if job result is not available.
+        """
+        if not self.job:
+            return None
+        try:
+            return auto_retry(self.job.result, refresh=refresh, partial=partial)
+        except (IBMQJobFailureError, IBMQJobInvalidStateError):
+            return None
+
+    def __repr__(self):
+        job_id = self.job.job_id() if self.job else None
+        return f"<{self.__class__.__name__}> {self.job_index} (job ID {job_id}) " \
+               f" for circuits {self.start_index}-{self.end_index}"

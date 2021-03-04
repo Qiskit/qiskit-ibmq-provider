@@ -392,7 +392,6 @@ class IBMQBackend(Backend):
                 experiment_id=experiment_id)
         except ApiError as ex:
             if 'Error code: 3458' in str(ex):
-                print(f">>>>>>  IBMQBackend raising job limit error")
                 raise IBMQBackendJobLimitError('Error submitting job: {}'.format(str(ex))) from ex
             raise IBMQBackendApiError('Error submitting job: {}'.format(str(ex))) from ex
 
