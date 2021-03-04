@@ -202,6 +202,7 @@ class AccountClient(BaseClient):
         Raises:
             RequestsApiError: If an error occurred communicating with the server.
         """
+        # pylint: disable=missing-raises-doc
         # Check for the job share level.
         _job_share_level = job_share_level.value if job_share_level else None
 
@@ -224,10 +225,10 @@ class AccountClient(BaseClient):
             # Notify the API via the callback.
             response = job_api.callback_upload()
             return response['job']
-        except RequestsApiError:
+        except Exception:  # pylint: disable=broad-except
             try:
                 job_api.cancel()    # Cancel the job so it doesn't become a phantom job.
-            except RequestsApiError:
+            except Exception:  # pylint: disable=broad-except
                 pass
             raise
 
