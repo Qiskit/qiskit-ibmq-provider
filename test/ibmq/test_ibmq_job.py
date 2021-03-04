@@ -105,7 +105,7 @@ class TestIBMQJob(IBMQTestCase):
                 self.log.info('%s %s %s %s', job.status(), job.status() is JobStatus.RUNNING,
                               check, job.job_id())
             self.log.info('-  %s', str(time.time() - start_time))
-            if time.time() - start_time > timeout:
+            if time.time() - start_time > timeout and self.sim_backend.status().pending_jobs <= 5:
                 raise TimeoutError('Failed to see multiple running jobs after '
                                    '{0} seconds.'.format(timeout))
             time.sleep(0.2)
