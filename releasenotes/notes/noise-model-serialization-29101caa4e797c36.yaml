@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes the issue wherein passing in a noise model when sending a job to
+    an IBMQ simulator would raise a ``TypeError``. Fixes
+    `#894 <https://github.com/Qiskit/qiskit-ibmq-provider/issues/894>`_

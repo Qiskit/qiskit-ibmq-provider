@@ -803,7 +803,12 @@ class IBMQSimulator(IBMQBackend):
                           "run() method. For example: backend.run(circs, shots=2048).",
                           DeprecationWarning, stacklevel=2)
         backend_options = backend_options or {}
-        run_config = copy.copy(backend_options)
+        run_config = copy.deepcopy(backend_options)
+        if noise_model:
+            try:
+                noise_model = noise_model.to_dict()
+            except AttributeError:
+                pass
         run_config.update(kwargs)
         return super().run(circuits, job_name=job_name, job_share_level=job_share_level,
                            job_tags=job_tags, experiment_id=experiment_id,
