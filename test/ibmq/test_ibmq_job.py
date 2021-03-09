@@ -414,7 +414,7 @@ class TestIBMQJob(IBMQTestCase):
                      'status': 'COMPLETED'}
 
         job_list = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
-                                              limit=2, skip=5, db_filter=my_filter,
+                                              limit=2, skip=0, db_filter=my_filter,
                                               start_datetime=self.last_month)
         self.assertTrue(job_list)
 
