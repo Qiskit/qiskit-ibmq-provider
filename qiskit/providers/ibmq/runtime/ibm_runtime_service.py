@@ -18,10 +18,10 @@ import queue
 from concurrent import futures
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
+from qiskit import QiskitError
 
 from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram
-from ..ibmqbackend import IBMQBackend
 from ..api.clients.runtime import RuntimeClient
 
 logger = logging.getLogger(__name__)
@@ -72,15 +72,31 @@ class IBMRuntimeService:
     def run(
             self,
             program_name: str,
-            backend: IBMQBackend,
+            options: Dict,
             params: Dict,
             callback: Optional[Callable] = None
     ) -> RuntimeJob:
+        """Execute the runtime program.
+
+        Args:
+            program_name: Name of the program.
+            options: Runtime options. Currently the only available option is
+                ``backend_name``, which is required.
+            params: Program parameters.
+            callback: Callback function to be invoked for any interim results.
+
+        Returns:
+            A ``RuntimeJob`` instance representing the execution.
+        """
+        if 'backend_name' not in options:
+            raise QiskitError('"backend_name" is required field in "options"')
+        backend_name = options['backend_name']
         interim_queue = queue.Queue() if callback else None
         response = self._api_client.program_run(program_id=program_name,
                                                 credentials=self._provider.credentials,
-                                                backend_name=backend.name(),
+                                                backend_name=backend_name,
                                                 params=params, interim_queue=interim_queue)
+        backend = self._provider.get_backend(backend_name)
         job = RuntimeJob(backend=backend, api_client=self._api_client, job_id=response['id'],
                          interim_queue=interim_queue, user_callback=callback)
         return job
