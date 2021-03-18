@@ -20,7 +20,8 @@ import os
 import queue
 from concurrent import futures
 import uuid
-import numpy as np
+
+from qiskit.providers.ibmq.utils.runtime import RuntimeDecoder
 
 from .base import RestAdapterBase
 from ..session import RetrySession
@@ -168,7 +169,7 @@ class Program(RestAdapterBase):
             if nextline == '' and pgm_process.poll() is not None:
                 break
             try:
-                parsed = json.loads(nextline, cls=NumpyDecoder)
+                parsed = json.loads(nextline, cls=RuntimeDecoder)
                 if any(text in parsed for text in ['post', 'results']):
                     interim_queue.put_nowait(parsed)
             except:
@@ -250,7 +251,7 @@ class ProgramJob(RestAdapterBase):
             outs = outs.split('\n')
             for line in outs:
                 try:
-                    parsed = json.loads(line)
+                    parsed = json.loads(line, cls=RuntimeDecoder)
                     if 'results' in parsed:
                         return parsed['results']
                 except:
@@ -258,19 +259,3 @@ class ProgramJob(RestAdapterBase):
 
         return {}
         # return self.session.get(self.get_url('results')).json()
-
-
-class NumpyDecoder(json.JSONDecoder):
-    """JSON Decoder for Numpy arrays and complex numbers."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(object_hook=self.object_hook, *args, **kwargs)
-
-    def object_hook(self, obj):
-        if 'type' in obj:
-            if obj['type'] == 'complex':
-                val = obj['value']
-                return val[0] + 1j * val[1]
-            if obj['type'] == 'array':
-                return np.array(obj['value'])
-        return obj

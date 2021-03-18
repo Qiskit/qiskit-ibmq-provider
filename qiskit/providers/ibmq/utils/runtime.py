@@ -22,6 +22,7 @@ from qiskit.compiler import assemble
 from qiskit.assembler.disassemble import disassemble
 from qiskit.circuit.quantumcircuit import QuantumCircuit
 from qiskit.qobj import QasmQobj
+from qiskit.result import Result
 
 
 class RuntimeEncoder(json.JSONEncoder):
@@ -34,6 +35,8 @@ class RuntimeEncoder(json.JSONEncoder):
             return {'type': 'complex', 'value': [obj.real, obj.imag]}
         if isinstance(obj, QuantumCircuit):
             return {'type': 'circuits', 'value': assemble(obj).to_dict()}
+        if isinstance(obj, Result):
+            return {'type': 'result', 'value': obj.to_dict()}
         return super().default(obj)
 
 
@@ -55,4 +58,6 @@ class RuntimeDecoder(json.JSONDecoder):
                 if len(circuits) == 1:
                     return circuits[0]
                 return circuits
+            if obj['type'] == 'result':
+                return Result.from_dict(obj['value'])
         return obj

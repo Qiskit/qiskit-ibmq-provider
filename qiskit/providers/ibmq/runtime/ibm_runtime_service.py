@@ -23,7 +23,7 @@ from qiskit import QiskitError
 
 from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram
-from .utils import RuntimeEncoder
+from ..utils.runtime import RuntimeEncoder
 from ..api.clients.runtime import RuntimeClient
 
 logger = logging.getLogger(__name__)
