@@ -78,7 +78,7 @@ class RuntimeClient:
             program_id: str,
             credentials: Credentials,
             backend_name: str,
-            params: Dict,
+            params: str,
             interim_queue: Optional[queue.Queue] = None
     ) -> Dict:
         """Run the specified program.

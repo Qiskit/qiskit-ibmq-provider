@@ -22,7 +22,6 @@ from concurrent import futures
 import uuid
 import numpy as np
 
-from qiskit.providers.ibmq.utils import json_encoder
 from .base import RestAdapterBase
 from ..session import RetrySession
 
@@ -126,7 +125,7 @@ class Program(RestAdapterBase):
             group: str,
             project: str,
             backend_name: str,
-            params: Dict,
+            params: str,
             interim_queue: Optional[queue.Queue] = None
     ) -> Dict:
         """Execute the program.
@@ -153,9 +152,8 @@ class Program(RestAdapterBase):
         # temporary code
         python_bin = os.getenv('PYTHON_EXEC', 'python3')
         program_file = os.getenv('NTC_PROGRAM_FILE', 'runtime/qka_program.py')
-        data = json.dumps(params, cls=json_encoder.NumpyEncoder)
         global process
-        process = subprocess.Popen([python_bin, program_file, data],
+        process = subprocess.Popen([python_bin, program_file, params],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    universal_newlines=True)
         if interim_queue:
