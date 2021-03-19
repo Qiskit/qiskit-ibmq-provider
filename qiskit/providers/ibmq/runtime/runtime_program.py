@@ -49,22 +49,24 @@ class RuntimeProgram:
             self._parameters.append(
                 ProgramParameter(name=param['name'],
                                  description=param['description'],
-                                 param_type=param['type']))
+                                 param_type=param['type'],
+                                 required=param['required']))
         for ret in return_values:
             self._return_values.append(ProgramReturn(name=ret['name'],
                                                      description=ret['description'],
                                                      return_type=ret['type']))
 
     def pprint(self):
-        formatted = [f'"{self.name}":',
+        formatted = [f'{self.name}:',
                      f"  Description: {self._description}",
                      f"  Parameters:"]
 
         if self._parameters:
             for param in self._parameters:
                 formatted.append(" "*4 + "- " + param.name + ":")
-                formatted.append(" "*6 + "description: " + param.description)
-                formatted.append(" "*6 + "type: " + param.type)
+                formatted.append(" "*6 + "Description: " + param.description)
+                formatted.append(" "*6 + "Type: " + param.type)
+                formatted.append(" "*6 + "Required: " + str(param.required))
         else:
             formatted.append(" "*4 + "none")
 
@@ -72,8 +74,8 @@ class RuntimeProgram:
         if self._return_values:
             for ret in self._return_values:
                 formatted.append(" "*4 + "- " + ret.name + ":")
-                formatted.append(" "*6 + "description: " + ret.description)
-                formatted.append(" "*6 + "type: " + ret.type)
+                formatted.append(" "*6 + "Description: " + ret.description)
+                formatted.append(" "*6 + "Type: " + ret.type)
         else:
             formatted.append(" "*4 + "none")
         print('\n'.join(formatted))
@@ -81,7 +83,7 @@ class RuntimeProgram:
 
 class ProgramParameter:
 
-    def __init__(self, name: str, description: str, param_type: str):
+    def __init__(self, name: str, description: str, param_type: str, required: bool):
         """
 
         Args:
@@ -91,6 +93,7 @@ class ProgramParameter:
         self.name = name
         self.description = description
         self.type = param_type
+        self.required = required
 
 
 class ProgramReturn:
