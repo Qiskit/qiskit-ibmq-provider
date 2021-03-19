@@ -61,6 +61,7 @@ class IBMRuntimeService:
                                      **kwargs)
             self._programs[program.name] = program
         for prog in self._programs.values():
+            print("="*50)
             prog.pprint()
 
     def program(self, program_name: str):

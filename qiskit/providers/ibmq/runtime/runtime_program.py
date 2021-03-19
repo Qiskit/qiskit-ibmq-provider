@@ -56,13 +56,13 @@ class RuntimeProgram:
                                                      return_type=ret['type']))
 
     def pprint(self):
-        formatted = [f"Runtime Program {self.name}:",
+        formatted = [f'"{self.name}":',
                      f"  Description: {self._description}",
                      f"  Parameters:"]
 
         if self._parameters:
             for param in self._parameters:
-                formatted.append(" "*4 + param.name + ":")
+                formatted.append(" "*4 + "- " + param.name + ":")
                 formatted.append(" "*6 + "description: " + param.description)
                 formatted.append(" "*6 + "type: " + param.type)
         else:
@@ -71,7 +71,7 @@ class RuntimeProgram:
         formatted.append("  Returns:")
         if self._return_values:
             for ret in self._return_values:
-                formatted.append(" "*4 + ret.name + ":")
+                formatted.append(" "*4 + "- " + ret.name + ":")
                 formatted.append(" "*6 + "description: " + ret.description)
                 formatted.append(" "*6 + "type: " + ret.type)
         else:

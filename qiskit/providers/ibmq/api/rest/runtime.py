@@ -63,7 +63,7 @@ class Runtime(RestAdapterBase):
         doc_file = os.getenv('NTC_DOC_FILE', 'runtime/qka_doc.json')
         with open(doc_file, 'r') as file:
             data = json.load(file)
-        return [data]
+        return data
 
     def create_program(self, name: str, data: bytes) -> Dict:
         """Upload a new program.
