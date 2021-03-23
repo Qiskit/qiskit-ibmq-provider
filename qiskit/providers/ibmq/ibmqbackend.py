@@ -479,9 +479,6 @@ class IBMQBackend(Backend):
         Returns:
             The backend pulse defaults or ``None`` if the backend does not support pulse.
         """
-        if not self.configuration().open_pulse:
-            return None
-
         if refresh or self._defaults is None:
             api_defaults = self._api_client.backend_pulse_defaults(self.name())
             if api_defaults:

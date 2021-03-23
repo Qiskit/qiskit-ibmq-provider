@@ -89,8 +89,6 @@ class TestIBMQBackend(IBMQTestCase):
                 defaults = backend.defaults()
                 if backend.configuration().open_pulse:
                     self.assertIsNotNone(defaults)
-                else:
-                    self.assertIsNone(defaults)
 
     def test_backend_reservations(self):
         """Test backend reservations."""
