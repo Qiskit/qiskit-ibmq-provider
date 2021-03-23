@@ -13,7 +13,7 @@
 """IBM Quantum runtime service."""
 
 import logging
-from typing import Dict, Callable, Optional
+from typing import Dict, Callable, Optional, Union
 import queue
 from concurrent import futures
 import json
@@ -55,9 +55,9 @@ class IBMRuntimeService:
                 kwargs['data'] = prog_dict['data']
             program = RuntimeProgram(program_name=prog_dict['name'],
                                      program_id=prog_dict['id'],
-                                     description=prog_dict['description'],
-                                     parameters=prog_dict['parameters'],
-                                     return_values=prog_dict['return_values'],
+                                     description=prog_dict.get('description', ""),
+                                     parameters=prog_dict.get('parameters', None),
+                                     return_values=prog_dict.get('return_values', None),
                                      **kwargs)
             self._programs[program.name] = program
         for prog in self._programs.values():
@@ -74,7 +74,7 @@ class IBMRuntimeService:
 
     def run(
             self,
-            program_name: str,
+            program_id: str,
             options: Dict,
             params: Dict,
             callback: Optional[Callable] = None
@@ -82,7 +82,7 @@ class IBMRuntimeService:
         """Execute the runtime program.
 
         Args:
-            program_name: Name of the program.
+            program_id: Program ID.
             options: Runtime options. Currently the only available option is
                 ``backend_name``, which is required.
             params: Program parameters.
@@ -94,13 +94,34 @@ class IBMRuntimeService:
         if 'backend_name' not in options:
             raise QiskitError('"backend_name" is required field in "options"')
         backend_name = options['backend_name']
-        interim_queue = queue.Queue() if callback else None
+        # interim_queue = queue.Queue() if callback else None
         params_str = json.dumps(params, cls=RuntimeEncoder)
-        response = self._api_client.program_run(program_id=program_name,
+        response = self._api_client.program_run(program_id=program_id,
                                                 credentials=self._provider.credentials,
                                                 backend_name=backend_name,
-                                                params=params_str, interim_queue=interim_queue)
+                                                params=params_str)
         backend = self._provider.get_backend(backend_name)
         job = RuntimeJob(backend=backend, api_client=self._api_client, job_id=response['id'],
-                         interim_queue=interim_queue, user_callback=callback)
+                         user_callback=callback)
         return job
+
+    def upload(
+            self,
+            name: str,
+            data: Union[bytes, str],
+    ) -> str:
+        """Upload a runtime program.
+
+        Args:
+            name: Name of the program.
+            data: Name of the program file or program data to upload.
+
+        Returns:
+            Program ID.
+        """
+        response = self._api_client.program_create(name, data)
+        return response['id']
+
+    def job(self, program_id: str, job_id: str):
+        response = self._api_client.program_job_get(program_id, job_id)
+        print(f">>>>>> response is {response}")

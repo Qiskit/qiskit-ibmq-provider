@@ -13,15 +13,9 @@
 """Random REST adapter."""
 
 import logging
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 import json
-import subprocess
-import os
-import queue
 from concurrent import futures
-import uuid
-
-from qiskit.providers.ibmq.utils.runtime import RuntimeDecoder
 
 from .base import RestAdapterBase
 from ..session import RetrySession
@@ -58,27 +52,37 @@ class Runtime(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('self')
-        # return self.session.get(url).json()
-        # temporary code
-        doc_file = os.getenv('NTC_DOC_FILE', 'runtime/qka_doc.json')
-        with open(doc_file, 'r') as file:
-            data = json.load(file)
-        return data
+        return self.session.get(url).json()
 
-    def create_program(self, name: str, data: bytes) -> Dict:
+    def create_program(
+            self,
+            program_name: str,
+            program_data: Union[bytes, str]
+    ) -> Dict:
         """Upload a new program.
 
         Args:
-            name: Name of the program.
-            data: Program data.
+            program_name: Name of the program.
+            program_data: Program data.
 
         Returns:
             JSON response.
         """
         url = self.get_url('self')
-        data = {'name': name,
-                'program': (name, data)}  # type: ignore[dict-item]
-        return self.session.post(url, files=data).json()
+        if isinstance(program_data, str):
+            with open(program_data, 'rb') as file:
+                data = {'name': (None, program_name),
+                        'program': (program_name, file)}  # type: ignore[dict-item]
+                response = self.session.post(url, files=data).json()
+        else:
+            data = {'name': (None, program_name),
+                    'program': (program_name, program_data)}  # type: ignore[dict-item]
+            response = self.session.post(url, files=data).json()
+        return response
+
+        # data = {'name': program_name,
+        #         'program': (program_name, program_data)}  # type: ignore[dict-item]
+        # return self.session.post(url, files=data).json()
 
 
 class Program(RestAdapterBase):
@@ -127,7 +131,6 @@ class Program(RestAdapterBase):
             project: str,
             backend_name: str,
             params: str,
-            interim_queue: Optional[queue.Queue] = None
     ) -> Dict:
         """Execute the program.
 
@@ -147,34 +150,10 @@ class Program(RestAdapterBase):
             'group': group,
             'project': project,
             'backend': backend_name,
-            'params': params
+            'params': [params]
         }
-        # data = json.dumps(payload, cls=json_encoder.IQXJsonEncoder)
-        # temporary code
-        python_bin = os.getenv('PYTHON_EXEC', 'python3')
-        program_file = os.getenv('NTC_PROGRAM_FILE', 'runtime/qka_program.py')
-        global process
-        process = subprocess.Popen([python_bin, program_file, params],
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                   universal_newlines=True)
-        if interim_queue:
-            self._executor.submit(self._interim_result, interim_queue, process)
-
-        return {'id': uuid.uuid4().hex}
-        # return self.session.post(url, data=data).json()
-
-    def _interim_result(self, interim_queue: queue.Queue, pgm_process):
-        while True:
-            nextline = pgm_process.stdout.readline()
-            if nextline == '' and pgm_process.poll() is not None:
-                break
-            try:
-                parsed = json.loads(nextline, cls=RuntimeDecoder)
-                if any(text in parsed for text in ['post', 'results']):
-                    interim_queue.put_nowait(parsed)
-            except:
-                print(nextline)
-        interim_queue.put_nowait('poison_pill')
+        data = json.dumps(payload)
+        return self.session.post(url, data=data).json()
 
     def delete(self) -> Dict:
         """Delete this program.
@@ -218,18 +197,7 @@ class ProgramJob(RestAdapterBase):
         Returns:
             JSON response.
         """
-        output = {}
-        global process
-        if process is not None:
-            rc = process.poll()
-            if rc is None:
-                output['status'] = 'RUNNING'
-            elif rc < 0:
-                output['status'] = 'ERROR'
-            else:
-                output['status'] = 'DONE'
-        return output
-        # return self.session.get(self.get_url('self')).json()
+        return self.session.get(self.get_url('self')).json()
 
     def delete(self) -> Dict:
         """Delete program job.
@@ -245,17 +213,4 @@ class ProgramJob(RestAdapterBase):
         Returns:
             JSON response.
         """
-        global process
-        if process is not None:
-            outs, errs = process.communicate()
-            outs = outs.split('\n')
-            for line in outs:
-                try:
-                    parsed = json.loads(line, cls=RuntimeDecoder)
-                    if 'results' in parsed:
-                        return parsed['results']
-                except:
-                    print(line)
-
-        return {}
-        # return self.session.get(self.get_url('results')).json()
+        return self.session.get(self.get_url('results')).json()

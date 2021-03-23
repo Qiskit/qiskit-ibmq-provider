@@ -10,10 +10,11 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for accessing Random Number Generator (RNG) services."""
+"""Client for accessing IBM Quantum runtime service."""
 
+import os
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 import queue
 
 from qiskit.providers.ibmq.credentials import Credentials
@@ -38,7 +39,7 @@ class RuntimeClient:
             access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
         """
-        url = ''
+        url = os.getenv("QE_RUNTIME_URL", "")
         self._session = RetrySession(url, access_token,
                                      **credentials.connection_parameters())
         self.api = Runtime(self._session)
@@ -50,6 +51,13 @@ class RuntimeClient:
             A list of quantum programs.
         """
         return self.api.list_programs()
+
+    def program_create(
+            self,
+            program_name: str,
+            program_data: Union[bytes, str],
+    ):
+        return self.api.create_program(program_name=program_name, program_data=program_data)
 
     def program_get(self, program_id: str) -> Dict:
         """Return a specific program.
@@ -78,8 +86,7 @@ class RuntimeClient:
             program_id: str,
             credentials: Credentials,
             backend_name: str,
-            params: str,
-            interim_queue: Optional[queue.Queue] = None
+            params: str
     ) -> Dict:
         """Run the specified program.
 
@@ -94,7 +101,7 @@ class RuntimeClient:
         """
         return self.api.program(program_id).run(
             hub=credentials.hub, group=credentials.group, project=credentials.project,
-            backend_name=backend_name, params=params, interim_queue=interim_queue)
+            backend_name=backend_name, params=params)
 
     def program_delete(self, program_id: str):
         """Delete the specified program.

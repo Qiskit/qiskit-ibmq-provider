@@ -25,8 +25,8 @@ class RuntimeProgram:
             program_name: str,
             program_id: str,
             description: str,
-            parameters: List,
-            return_values: List,
+            parameters: Optional[List] = None,
+            return_values: Optional[List] = None,
             cost: float = 0,
             data: Optional[bytes] = None
     ) -> None:
@@ -45,19 +45,22 @@ class RuntimeProgram:
         self._data = data
         self._parameters = []
         self._return_values = []
-        for param in parameters:
-            self._parameters.append(
-                ProgramParameter(name=param['name'],
-                                 description=param['description'],
-                                 param_type=param['type'],
-                                 required=param['required']))
-        for ret in return_values:
-            self._return_values.append(ProgramReturn(name=ret['name'],
-                                                     description=ret['description'],
-                                                     return_type=ret['type']))
+        if parameters is not None:
+            for param in parameters:
+                self._parameters.append(
+                    ProgramParameter(name=param['name'],
+                                     description=param['description'],
+                                     param_type=param['type'],
+                                     required=param['required']))
+        if return_values is not None:
+            for ret in return_values:
+                self._return_values.append(ProgramReturn(name=ret['name'],
+                                                         description=ret['description'],
+                                                         return_type=ret['type']))
 
     def pprint(self):
         formatted = [f'{self.name}:',
+                     f"  ID: {self._id}",
                      f"  Description: {self._description}",
                      f"  Parameters:"]
 
