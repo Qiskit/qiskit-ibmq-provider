@@ -46,6 +46,14 @@ class IBMRuntimeService:
         self._programs = {}
 
     def programs(self):
+        if not self._programs:
+            self._get_programs()
+
+        for prog in self._programs.values():
+            print("="*50)
+            prog.pprint()
+
+    def _get_programs(self):
         response = self._api_client.list_programs()
         for prog_dict in response:
             kwargs = {}
@@ -60,17 +68,15 @@ class IBMRuntimeService:
                                      return_values=prog_dict.get('return_values', None),
                                      **kwargs)
             self._programs[program.name] = program
-        for prog in self._programs.values():
-            print("="*50)
-            prog.pprint()
 
     def program(self, program_name: str):
+        if not self._programs:
+            self._get_programs()
+
         if program_name in self._programs:
             self._programs[program_name].pprint()
         else:
-            program = RuntimeProgram(**self._api_client.program_get(program_name))
-            self._programs[program.name] = program
-            program.pprint()
+            raise ValueError(f"Program {program_name} is not found.")
 
     def run(
             self,
