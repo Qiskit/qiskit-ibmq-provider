@@ -76,7 +76,9 @@ class IBMRuntimeService:
         if program_name in self._programs:
             self._programs[program_name].pprint()
         else:
-            raise ValueError(f"Program {program_name} is not found.")
+            program = RuntimeProgram(**self._api_client.program_get(program_name))
+            self._programs[program.name] = program
+            program.pprint()
 
     def run(
             self,
