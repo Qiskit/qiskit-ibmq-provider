@@ -55,7 +55,8 @@ class RuntimeJob(Job):
                 if interim_result == 'poison_pill':
                     return
                 if 'post' in interim_result:
-                    self._user_callback(interim_result['post'])
+                    if self._user_callback:
+                        self._user_callback(interim_result['post'])
                 elif 'results' in interim_result:
                     self._result = interim_result['results']
                     return
@@ -81,10 +82,8 @@ class RuntimeJob(Job):
             timeout: Optional[float] = None
     ) -> Any:
         """Return the results of the job."""
-        if self._user_callback:
-            future = self._executor.submit(self._interim_results)
-            futures.wait([future])
-        self.wait_for_final_state(timeout=timeout)
+        future = self._executor.submit(self._interim_results)
+        futures.wait([future])
         if not self._result:
             self._result = self._api_client.program_job_results(
                 program_id='123', job_id=self.job_id())
