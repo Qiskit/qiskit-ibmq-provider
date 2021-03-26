@@ -43,3 +43,4 @@ from .ibm_runtime_service import IBMRuntimeService
 from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram
 from .program.user_messenger import UserMessenger
+from .program.program_backend import ProgramBackend

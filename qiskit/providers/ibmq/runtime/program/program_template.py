@@ -14,19 +14,18 @@ import sys
 import json
 
 from qiskit import Aer
-from qiskit.providers.backend import BackendV1 as Backend
-from qiskit.providers.ibmq.runtime import UserMessenger
+from qiskit.providers.ibmq.runtime import UserMessenger, ProgramBackend
 from qiskit.providers.ibmq.runtime.utils import RuntimeDecoder
 
 
-def program(backend: Backend, user_messenger: UserMessenger, **kwargs):
+def program(backend: ProgramBackend, user_messenger: UserMessenger, **kwargs):
     """Function that does classical-quantum calculation."""
     # UserMessenger can be used to publish interim results.
     user_messenger.publish("This is an interim result.")
     return "final result"
 
 
-def main(backend: Backend, user_messenger: UserMessenger, **kwargs):
+def main(backend: ProgramBackend, user_messenger: UserMessenger, **kwargs):
     """This is the main entry point of a quantum program.
 
     Args:
