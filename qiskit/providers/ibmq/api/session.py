@@ -268,7 +268,6 @@ class RetrySession(Session):
 
         try:
             self._log_request_info(url, method, kwargs)
-            print(f">>>>>> final url is {final_url}")
             response = super().request(method, final_url, headers=headers, **kwargs)
             response.raise_for_status()
         except RequestException as ex:

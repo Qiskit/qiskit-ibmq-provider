@@ -26,21 +26,21 @@ class RuntimeProgram:
             description: str,
             parameters: Optional[List] = None,
             return_values: Optional[List] = None,
-            cost: float = 0,
+            max_execution_time: float = 0,
             data: Optional[bytes] = None
     ) -> None:
         """
 
         Args:
-            program_name:
-            program_id:
-            description:
-            cost:
+            program_name: Program name.
+            program_id: Program ID.
+            description: Program description.
+            max_execution_time: Maximum execution time.
         """
         self.name = program_name
         self._id = program_id
         self._description = description
-        self._cost = cost
+        self._cost = max_execution_time
         self._data = data
         self._parameters = []
         self._return_values = []
@@ -57,7 +57,7 @@ class RuntimeProgram:
                                                          description=ret['description'],
                                                          return_type=ret['type']))
 
-    def pprint(self):
+    def __str__(self) -> str:
         formatted = [f'{self.name}:',
                      f"  ID: {self._id}",
                      f"  Description: {self._description}",
@@ -80,15 +80,11 @@ class RuntimeProgram:
                 formatted.append(" "*6 + "Type: " + ret.type)
         else:
             formatted.append(" "*4 + "none")
-        print('\n'.join(formatted))
+        return '\n'.join(formatted)
 
     @property
-    def id(self):
+    def program_id(self):
         return self._id
-
-    @id.setter
-    def id(self, value):
-        pass
 
 
 class ProgramParameter:

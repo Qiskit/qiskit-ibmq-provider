@@ -81,10 +81,6 @@ class Runtime(RestAdapterBase):
             response = self.session.post(url, files=data).json()
         return response
 
-        # data = {'name': program_name,
-        #         'program': (program_name, program_data)}  # type: ignore[dict-item]
-        # return self.session.post(url, files=data).json()
-
     def program_run(
             self,
             program_id: str,
@@ -209,19 +205,11 @@ class ProgramJob(RestAdapterBase):
         """
         return self.session.delete(self.get_url('self')).json()
 
-    def results(self) -> Dict:
+    def results(self) -> str:
         """Return program job results.
 
         Returns:
             JSON response.
         """
-        r = self.session.get(self.get_url('results'))
-        try:
-            print(f">>>>> result json {r.json()}")
-        except:
-            print(f">>>>> no result json")
-        try:
-            print(f">>>>>> result text {r.text}")
-        except:
-            print(f">>>>>>> no result text")
-
+        response = self.session.get(self.get_url('results'))
+        return response.text

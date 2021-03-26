@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Values used by the API for different values."""
+"""Values used by the runtime API for different values."""
 
 import enum
 
@@ -22,3 +22,9 @@ class ApiRuntimeJobStatus(enum.Enum):
     RUNNING = 'RUNNING'
     ERROR = 'ERROR'
     SUCCEEDED = 'SUCCEEDED'
+
+
+JOB_FINAL_STATES = (
+    "ERROR",
+    "SUCCEEDED"
+)

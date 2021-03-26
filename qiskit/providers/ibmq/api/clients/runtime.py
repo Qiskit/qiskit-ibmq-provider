@@ -38,7 +38,8 @@ class RuntimeClient:
             access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
         """
-        url = 'https://api-ntc.processing-prod-5dd5718798d097eccc65fac4e78a33ce-0000.us-east.containers.appdomain.cloud'
+        url = os.getenv('NTC_URL', 'https://api-ntc.processing-prod-5dd5718798d097eccc65fac4e78a33ce-0000.us-east.containers.appdomain.cloud')
+        logger.debug(f"Using runtime service url {url}")
         self._session = RetrySession(url, access_token,
                                      **credentials.connection_parameters())
         self.api = Runtime(self._session)
@@ -112,7 +113,7 @@ class RuntimeClient:
 
     def program_job_get(self, job_id):
         response = self.api.program_job(job_id).get()
-        print(f">>>>>> response is {response}")
+        logger.debug(f"Runtime job get response: {response}")
         return response
 
     def program_job_results(self, job_id: str) -> Dict:
