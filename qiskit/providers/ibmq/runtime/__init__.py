@@ -11,18 +11,18 @@
 # that they have been altered from the originals.
 
 """
-============================================================
+======================================================
 Runtime Service (:mod:`qiskit.providers.ibmq.runtime`)
-============================================================
+======================================================
 
 .. currentmodule:: qiskit.providers.ibmq.runtime
 
-Modules related to IBM Quantum Experience runtime service.
+Modules related to IBM Quantum Runtime Service.
 
 .. caution::
 
   This package is currently provided in beta form and heavy modifications to
-  both functionality and API are likely to occur.
+  both functionality and API are likely to occur without backward compatibility.
 
 .. note::
 
@@ -33,10 +33,13 @@ Classes
 .. autosummary::
    :toctree: ../stubs/
 
-   IBMRuntimeService
-   RuntimeJob
+   IBMQRandomService
+   CQCExtractor
+   CQCExtractorJob
 
 """
 
 from .ibm_runtime_service import IBMRuntimeService
 from .runtime_job import RuntimeJob
+from .runtime_program import RuntimeProgram
+from .program.user_messenger import UserMessenger

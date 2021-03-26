@@ -21,7 +21,6 @@ from .base import RestAdapterBase
 from ..session import RetrySession
 
 logger = logging.getLogger(__name__)
-process = None
 
 
 class Runtime(RestAdapterBase):
