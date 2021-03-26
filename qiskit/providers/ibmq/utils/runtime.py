@@ -24,64 +24,38 @@ from qiskit.result import Result
 
 
 class RuntimeEncoder(json.JSONEncoder):
-    """JSON Encoder for Numpy arrays and complex numbers."""
+    """JSON Encoder used by runtime service."""
 
     def default(self, obj: Any) -> Any:
         if hasattr(obj, 'tolist'):
-            return {'type': 'array', 'value': obj.tolist()}
+            return {'__type__': 'array', '__value__': obj.tolist()}
         if isinstance(obj, complex):
-            return {'type': 'complex', 'value': [obj.real, obj.imag]}
+            return {'__type__': 'complex', '__value__': [obj.real, obj.imag]}
+        if isinstance(obj, Result):
+            return {'__type__': 'result', '__value__': obj.to_dict()}
+        if hasattr(obj, '__class__'):
+            encoded = base64.standard_b64encode(dill.dumps(obj))
+            return {'__type__': 'dill', '__value__': encoded.decode('utf-8')}
+
         return super().default(obj)
 
 
 class RuntimeDecoder(json.JSONDecoder):
-    """JSON Decoder for Numpy arrays and complex numbers."""
+    """JSON Decoder used by runtime service."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, obj):
-        if 'type' in obj:
-            if obj['type'] == 'complex':
-                val = obj['value']
+        if '__type__' in obj:
+            if obj['__type__'] == 'complex':
+                val = obj['__value__']
                 return val[0] + 1j * val[1]
-            if obj['type'] == 'array':
-                return np.array(obj['value'])
+            if obj['__type__'] == 'array':
+                return np.array(obj['__value__'])
+            if obj['__type__'] == 'result':
+                return Result.from_dict(obj['__value__'])
+            if obj['__type__'] == 'dill':
+                decoded = base64.standard_b64decode(obj['__value__'])
+                return dill.loads(decoded)
         return obj
-
-# class RuntimeEncoder(json.JSONEncoder):
-#     """JSON Encoder used by runtime service."""
-#
-#     def default(self, obj: Any) -> Any:
-#         if hasattr(obj, 'tolist'):
-#             return {'__type__': 'array', '__value__': obj.tolist()}
-#         if isinstance(obj, complex):
-#             return {'__type__': 'complex', '__value__': [obj.real, obj.imag]}
-#         if isinstance(obj, Result):
-#             return {'__type__': 'result', '__value__': obj.to_dict()}
-#         if hasattr(obj, '__class__'):
-#             encoded = base64.standard_b64encode(dill.dumps(obj))
-#             return {'__type__': 'dill', '__value__': encoded.decode('utf-8')}
-#
-#         return super().default(obj)
-#
-#
-# class RuntimeDecoder(json.JSONDecoder):
-#     """JSON Decoder used by runtime service."""
-#
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(object_hook=self.object_hook, *args, **kwargs)
-#
-#     def object_hook(self, obj):
-#         if '__type__' in obj:
-#             if obj['__type__'] == 'complex':
-#                 val = obj['__value__']
-#                 return val[0] + 1j * val[1]
-#             if obj['__type__'] == 'array':
-#                 return np.array(obj['__value__'])
-#             if obj['__type__'] == 'result':
-#                 return Result.from_dict(obj['__value__'])
-#             if obj['__type__'] == 'dill':
-#                 decoded = base64.standard_b64decode(obj['__value__'])
-#                 return dill.loads(decoded)
-#         return obj
