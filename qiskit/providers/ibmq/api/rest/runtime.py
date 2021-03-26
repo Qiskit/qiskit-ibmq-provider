@@ -13,7 +13,7 @@
 """Random REST adapter."""
 
 import logging
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Union
 import json
 from concurrent import futures
 
@@ -28,7 +28,8 @@ class Runtime(RestAdapterBase):
     """Rest adapter for RNG related endpoints."""
 
     URL_MAP = {
-        'self': '/programs'
+        'programs': '/programs',
+        'jobs': '/jobs'
     }
 
     def program(self, program_id: str) -> 'Program':
@@ -42,8 +43,8 @@ class Runtime(RestAdapterBase):
         """
         return Program(self.session, program_id)
 
-    def program_job(self, program_id, job_id):
-        return ProgramJob(self.session, program_id, job_id)
+    def program_job(self, job_id):
+        return ProgramJob(self.session, job_id)
 
     def list_programs(self) -> List[Dict]:
         """Return a list of runtime programs.
@@ -51,7 +52,7 @@ class Runtime(RestAdapterBase):
         Returns:
             JSON response.
         """
-        url = self.get_url('self')
+        url = self.get_url('programs')
         return self.session.get(url).json()
 
     def create_program(
@@ -68,7 +69,7 @@ class Runtime(RestAdapterBase):
         Returns:
             JSON response.
         """
-        url = self.get_url('self')
+        url = self.get_url('programs')
         if isinstance(program_data, str):
             with open(program_data, 'rb') as file:
                 data = {'name': (None, program_name),
@@ -83,6 +84,40 @@ class Runtime(RestAdapterBase):
         # data = {'name': program_name,
         #         'program': (program_name, program_data)}  # type: ignore[dict-item]
         # return self.session.post(url, files=data).json()
+
+    def program_run(
+            self,
+            program_id: str,
+            hub: str,
+            group: str,
+            project: str,
+            backend_name: str,
+            params: str,
+    ) -> Dict:
+        """Execute the program.
+
+        Args:
+            program_id: Program ID.
+            hub: Hub to be used.
+            group: Group to be used.
+            project: Project to be used.
+            backend_name: Name of the backend.
+            params: Program parameters.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('jobs')
+        payload = {
+            'programId': program_id,
+            'hub': hub,
+            'group': group,
+            'project': project,
+            'backend': backend_name,
+            'params': [params]
+        }
+        data = json.dumps(payload)
+        return self.session.post(url, data=data).json()
 
 
 class Program(RestAdapterBase):
@@ -124,45 +159,14 @@ class Program(RestAdapterBase):
         url = self.get_url('data')
         return self.session.get(url).json()
 
-    def run(
-            self,
-            hub: str,
-            group: str,
-            project: str,
-            backend_name: str,
-            params: str,
-    ) -> Dict:
-        """Execute the program.
-
-        Args:
-            hub: Hub to be used.
-            group: Group to be used.
-            project: Project to be used.
-            backend_name: Name of the backend.
-            params: Program parameters.
-
-        Returns:
-            JSON response.
-        """
-        url = self.get_url('run')
-        payload = {
-            'hub': hub,
-            'group': group,
-            'project': project,
-            'backend': backend_name,
-            'params': [params]
-        }
-        data = json.dumps(payload)
-        return self.session.post(url, data=data).json()
-
-    def delete(self) -> Dict:
+    def delete(self) -> None:
         """Delete this program.
 
         Returns:
             JSON response.
         """
         url = self.get_url('self')
-        return self.session.delete(url).json()
+        self.session.delete(url)
 
 
 class ProgramJob(RestAdapterBase):
@@ -170,13 +174,12 @@ class ProgramJob(RestAdapterBase):
 
     URL_MAP = {
         'self': '',
-        'results': 'results'
+        'results': '/results'
     }
 
     def __init__(
             self,
             session: RetrySession,
-            program_id: str,
             job_id: str,
             url_prefix: str = ''
     ) -> None:
@@ -184,12 +187,11 @@ class ProgramJob(RestAdapterBase):
 
         Args:
             session: Session to be used in the adapter.
-            program_id: ID of the runtime program.
             job_id: ID of the program job.
             url_prefix: Prefix to use in the URL.
         """
-        super().__init__(session, '{}/programs/{}/jobs/{}'.format(
-            url_prefix, program_id, job_id))
+        super().__init__(session, '{}/jobs/{}'.format(
+            url_prefix, job_id))
 
     def get(self) -> Dict:
         """Return program job information.
@@ -213,4 +215,13 @@ class ProgramJob(RestAdapterBase):
         Returns:
             JSON response.
         """
-        return self.session.get(self.get_url('results')).json()
+        r = self.session.get(self.get_url('results'))
+        try:
+            print(f">>>>> result json {r.json()}")
+        except:
+            print(f">>>>> no result json")
+        try:
+            print(f">>>>>> result text {r.text}")
+        except:
+            print(f">>>>>>> no result text")
+

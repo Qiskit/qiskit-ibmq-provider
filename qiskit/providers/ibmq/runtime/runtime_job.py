@@ -12,7 +12,7 @@
 
 """IBM Quantum Experience Runtime job."""
 
-from typing import Any, Optional, Callable
+from typing import Any, Optional, Callable, Dict
 import queue
 from concurrent import futures
 
@@ -31,7 +31,7 @@ class RuntimeJob(Job):
             backend: 'ibmqbackend.IBMQBackend',
             api_client: RuntimeClient,
             job_id: str,
-            interim_queue: Optional[queue.Queue] = None,
+            params: Dict,
             user_callback: Optional[Callable] = None
     ) -> None:
         """RuntimeJob constructor.
@@ -44,24 +44,9 @@ class RuntimeJob(Job):
         super().__init__(backend, job_id)
         self._api_client = api_client
         self._result = None
+        self._params = params
 
         self._user_callback = user_callback
-        self._interim_queue = interim_queue
-
-    def _interim_results(self):
-        while True:
-            try:
-                interim_result = self._interim_queue.get(block=True, timeout=5)
-                if interim_result == 'poison_pill':
-                    return
-                if 'post' in interim_result:
-                    if self._user_callback:
-                        self._user_callback(interim_result['post'])
-                elif 'results' in interim_result:
-                    self._result = interim_result['results']
-                    return
-            except queue.Empty:
-                pass
 
     def submit(self):
         """Unsupported method.
@@ -82,11 +67,8 @@ class RuntimeJob(Job):
             timeout: Optional[float] = None
     ) -> Any:
         """Return the results of the job."""
-        future = self._executor.submit(self._interim_results)
-        futures.wait([future])
         if not self._result:
-            self._result = self._api_client.program_job_results(
-                program_id='123', job_id=self.job_id())
+            self._result = self._api_client.program_job_results(job_id=self.job_id())
         return self._result
 
     def cancel(self):
@@ -95,11 +77,17 @@ class RuntimeJob(Job):
 
     def status(self) -> JobStatus:
         """Return the status of the job."""
-        response = self._api_client.program_job_get(program_id='123', job_id=self.job_id())
-        status = response['status']
+        response = self._api_client.program_job_get(job_id=self.job_id())
+        status = response['status'].upper()
         if status == 'RUNNING':
             return JobStatus.RUNNING
-        elif status == 'DONE':
+        elif status == 'SUCCEEDED':
             return JobStatus.DONE
+        elif status == 'PENDING':
+            return JobStatus.INITIALIZING
         else:
             return JobStatus.ERROR
+
+    @property
+    def parameters(self) -> Dict:
+        return self._params

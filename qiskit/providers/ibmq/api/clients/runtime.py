@@ -14,8 +14,7 @@
 
 import os
 import logging
-from typing import List, Dict, Optional, Union
-import queue
+from typing import List, Dict, Union
 
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.session import RetrySession
@@ -39,7 +38,7 @@ class RuntimeClient:
             access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
         """
-        url = os.getenv("QE_RUNTIME_URL", "")
+        url = 'https://api-ntc.processing-prod-5dd5718798d097eccc65fac4e78a33ce-0000.us-east.containers.appdomain.cloud'
         self._session = RetrySession(url, access_token,
                                      **credentials.connection_parameters())
         self.api = Runtime(self._session)
@@ -99,25 +98,24 @@ class RuntimeClient:
         Returns:
             JSON response.
         """
-        return self.api.program(program_id).run(
-            hub=credentials.hub, group=credentials.group, project=credentials.project,
-            backend_name=backend_name, params=params)
+        return self.api.program_run(program_id=program_id, hub=credentials.hub,
+                                    group=credentials.group, project=credentials.project,
+                                    backend_name=backend_name, params=params)
 
-    def program_delete(self, program_id: str):
+    def program_delete(self, program_id: str) -> None:
         """Delete the specified program.
 
         Args:
             program_id: Program ID.
-
-        Returns:
-            JSON response.
         """
-        return self.api.program(program_id).delete()
+        self.api.program(program_id).delete()
 
-    def program_job_get(self, program_id, job_id):
-        return self.api.program_job(program_id, job_id).get()
+    def program_job_get(self, job_id):
+        response = self.api.program_job(job_id).get()
+        print(f">>>>>> response is {response}")
+        return response
 
-    def program_job_results(self, program_id, job_id: str) -> Dict:
+    def program_job_results(self, job_id: str) -> Dict:
         """Get the results of a program job.
 
         Args:
@@ -126,4 +124,4 @@ class RuntimeClient:
         Returns:
             JSON response.
         """
-        return self.api.program_job(program_id, job_id).results()
+        return self.api.program_job(job_id).results()

@@ -11,8 +11,7 @@
 # that they have been altered from the originals.
 
 import logging
-from datetime import datetime
-from typing import Dict, Optional, List, Union
+from typing import Optional, List
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +81,14 @@ class RuntimeProgram:
         else:
             formatted.append(" "*4 + "none")
         print('\n'.join(formatted))
+
+    @property
+    def id(self):
+        return self._id
+
+    @id.setter
+    def id(self, value):
+        pass
 
 
 class ProgramParameter:

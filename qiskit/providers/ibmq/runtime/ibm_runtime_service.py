@@ -14,8 +14,6 @@
 
 import logging
 from typing import Dict, Callable, Optional, Union
-import queue
-from concurrent import futures
 import json
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
@@ -32,8 +30,6 @@ logger = logging.getLogger(__name__)
 class IBMRuntimeService:
     """IBM Quantum runtime service."""
 
-    _executor = futures.ThreadPoolExecutor()
-
     def __init__(self, provider: 'accountprovider.AccountProvider', access_token: str) -> None:
         """IBMRuntimeService constructor.
 
@@ -45,39 +41,50 @@ class IBMRuntimeService:
         self._api_client = RuntimeClient(access_token, provider.credentials)
         self._programs = {}
 
-    def programs(self):
-        if not self._programs:
-            self._get_programs()
+    def programs(self, refresh: bool = False):
+        """Return available runtime programs.
+
+        Args:
+            refresh: If ``True``, re-query the server for the programs. Otherwise
+                return the cached value.
+
+        Returns:
+
+        """
+        if not self._programs or refresh:
+            response = self._api_client.list_programs()
+            for prog_dict in response:
+                kwargs = {}
+                if 'cost' in prog_dict:
+                    kwargs['cost'] = prog_dict['cost']
+                if 'data' in prog_dict:
+                    kwargs['data'] = prog_dict['data']
+                program = RuntimeProgram(program_name=prog_dict['name'],
+                                         program_id=prog_dict['id'],
+                                         description=prog_dict.get('description', ""),
+                                         parameters=prog_dict.get('parameters', None),
+                                         return_values=prog_dict.get('return_values', None),
+                                         **kwargs)
+                self._programs[program.id] = program
 
         for prog in self._programs.values():
             print("="*50)
             prog.pprint()
 
-    def _get_programs(self):
-        response = self._api_client.list_programs()
-        for prog_dict in response:
-            kwargs = {}
-            if 'cost' in prog_dict:
-                kwargs['cost'] = prog_dict['cost']
-            if 'data' in prog_dict:
-                kwargs['data'] = prog_dict['data']
-            program = RuntimeProgram(program_name=prog_dict['name'],
-                                     program_id=prog_dict['id'],
-                                     description=prog_dict.get('description', ""),
-                                     parameters=prog_dict.get('parameters', None),
-                                     return_values=prog_dict.get('return_values', None),
-                                     **kwargs)
-            self._programs[program.name] = program
+    def program(self, program_id: str):
+        """Retrieve a runtime program.
 
-    def program(self, program_name: str):
-        if not self._programs:
-            self._get_programs()
+        Args:
+            program_id: Program ID.
 
-        if program_name in self._programs:
-            self._programs[program_name].pprint()
+        Returns:
+            Runtime program.
+        """
+        if program_id in self._programs:
+            self._programs[program_id].pprint()
         else:
-            program = RuntimeProgram(**self._api_client.program_get(program_name))
-            self._programs[program.name] = program
+            program = RuntimeProgram(**self._api_client.program_get(program_id))
+            self._programs[program.id] = program
             program.pprint()
 
     def run(
@@ -101,19 +108,20 @@ class IBMRuntimeService:
         """
         if 'backend_name' not in options:
             raise QiskitError('"backend_name" is required field in "options"')
+
         backend_name = options['backend_name']
-        # interim_queue = queue.Queue() if callback else None
         params_str = json.dumps(params, cls=RuntimeEncoder)
         response = self._api_client.program_run(program_id=program_id,
                                                 credentials=self._provider.credentials,
                                                 backend_name=backend_name,
                                                 params=params_str)
+
         backend = self._provider.get_backend(backend_name)
-        job = RuntimeJob(backend=backend, api_client=self._api_client, job_id=response['id'],
-                         user_callback=callback)
+        job = RuntimeJob(backend=backend, api_client=self._api_client,
+                         job_id=response['id'], params=params)
         return job
 
-    def upload(
+    def upload_program(
             self,
             name: str,
             data: Union[bytes, str],
@@ -130,6 +138,24 @@ class IBMRuntimeService:
         response = self._api_client.program_create(name, data)
         return response['id']
 
-    def job(self, program_id: str, job_id: str):
-        response = self._api_client.program_job_get(program_id, job_id)
-        print(f">>>>>> response is {response}")
+    def delete_program(self, program_id: str):
+        """Delete a runtime program.
+
+        Args:
+            program_id: Program ID.
+        """
+        self._api_client.program_delete(program_id=program_id)
+
+    def job(self, job_id: str):
+        """Retrieve a runtime job.
+
+        Args:
+            job_id: Job ID.
+
+        Returns:
+            Runtime job retrieved.
+        """
+        response = self._api_client.program_job_get(job_id)
+        backend = self._provider.get_backend(response['backend'])
+        return RuntimeJob(backend=backend, api_client=self._api_client, job_id=response['id'],
+                          params=response.get('params', {}))
