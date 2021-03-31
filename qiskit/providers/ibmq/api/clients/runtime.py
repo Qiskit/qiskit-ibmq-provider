@@ -38,7 +38,7 @@ class RuntimeClient:
             access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
         """
-        url = os.getenv('NTC_URL', 'https://api-ntc.processing-prod-5dd5718798d097eccc65fac4e78a33ce-0000.us-east.containers.appdomain.cloud')
+        url = os.getenv('NTC_URL')
         logger.debug(f"Using runtime service url {url}")
         self._session = RetrySession(url, access_token,
                                      **credentials.connection_parameters())
@@ -56,7 +56,16 @@ class RuntimeClient:
             self,
             program_name: str,
             program_data: Union[bytes, str],
-    ):
+    ) -> Dict:
+        """Create a new program.
+
+        Args:
+            program_name: Name of the program.
+            program_data: Program data.
+
+        Returns:
+            Server response.
+        """
         return self.api.create_program(program_name=program_name, program_data=program_data)
 
     def program_get(self, program_id: str) -> Dict:
@@ -116,7 +125,7 @@ class RuntimeClient:
         logger.debug(f"Runtime job get response: {response}")
         return response
 
-    def program_job_results(self, job_id: str) -> Dict:
+    def program_job_results(self, job_id: str) -> str:
         """Get the results of a program job.
 
         Args:

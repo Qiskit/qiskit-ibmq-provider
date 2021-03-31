@@ -12,12 +12,16 @@
 
 """Tests for runtime service."""
 
+import unittest
+
 from qiskit.providers.jobstatus import JobStatus
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
+from ..fake_runtime_client import BaseFakeRuntimeClient
 
 
+@unittest.skip("Skip runtime tests")
 class TestRuntime(IBMQTestCase):
 
     @classmethod
@@ -27,6 +31,11 @@ class TestRuntime(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.provider = provider
+
+    def setUp(self):
+        """Initial test setup."""
+        super().setUp()
+        self.provider.runtime._api_client = BaseFakeRuntimeClient()
 
     def test_list_programs(self):
         """Test listing programs."""
@@ -50,3 +59,25 @@ class TestRuntime(IBMQTestCase):
         backend = self.provider.backend.ibmq_qasm_simulator
         job = self.provider.runtime.run("QKA", backend=backend, params=params, callback=_callback)
         job.result()
+
+
+class TestRuntimeIntegration(IBMQTestCase):
+
+    @classmethod
+    @requires_provider
+    def setUpClass(cls, provider):
+        """Initial class level setup."""
+        # pylint: disable=arguments-differ
+        super().setUpClass()
+        cls.provider = provider
+        try:
+            provider.runtime.programs()
+        except Exception:
+            raise unittest.SkipTest("No access to runtime service.")
+
+    def test_list_programs(self):
+        """Test listing programs."""
+        programs = self.provider.runtime.programs()
+        self.assertTrue(programs)
+        for prog in programs:
+            self.assertTrue(prog.name)

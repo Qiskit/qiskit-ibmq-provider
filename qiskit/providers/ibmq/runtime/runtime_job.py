@@ -15,12 +15,15 @@
 from typing import Any, Optional, Callable, Dict
 import time
 import logging
+import json
 
 from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.backend import Backend
 
 from ..api.clients import RuntimeClient
 from .constants import JOB_FINAL_STATES
+from .utils import RuntimeDecoder
+from ..job.exceptions import IBMQJobFailureError
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +52,7 @@ class RuntimeJob:
         self._job_id = job_id
         self._backend = backend
         self._api_client = api_client
-        self._result = None
+        self._results = []
         self._params = params or {}
         self._user_callback = user_callback
         self._program_id = program_id
@@ -58,21 +61,43 @@ class RuntimeJob:
     def result(
             self,
             timeout: Optional[float] = None,
-            wait: float = 5
+            wait: float = 5,
+            include_interim: bool = False
     ) -> Any:
         """Return the results of the job.
+
+        If ``include_interim=True`` is specified, this method will return a
+        list that includes both interim and final results in the order they
+        were published by the program.
 
         Args:
             timeout: Number of seconds to wait for job.
             wait: Seconds between queries.
+            include_interim: Whether to include interim results.
 
         Returns:
             Runtime job result.
+
+        Raises:
+            IBMQJobFailureError: If the job failed.
         """
-        if not self._result:
+        if not self._results:
             self.wait_for_final_state(timeout=timeout, wait=wait)
-            self._result = self._api_client.program_job_results(job_id=self.job_id())
-        return self._result
+            result_raw = self._api_client.program_job_results(job_id=self.job_id())
+            if self._status == 'FAILED':
+                raise IBMQJobFailureError(f"Unable to retrieve result for job {self.job_id()}. "
+                                          f"Job has failed:\n{result_raw}")
+            result_list = result_raw.split('\n')
+            for res in result_list:
+                if not res:
+                    continue
+                try:
+                    self._results.append(json.loads(res, cls=RuntimeDecoder))
+                except json.JSONDecodeError:
+                    self._results.append(res)
+        if include_interim:
+            return self._results
+        return self._results[-1]
 
     def cancel(self):
         """Attempt to cancel the job."""

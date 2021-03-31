@@ -20,11 +20,11 @@ class ApiRuntimeJobStatus(enum.Enum):
 
     PENDING = 'PENDING'
     RUNNING = 'RUNNING'
-    ERROR = 'ERROR'
+    FAILED = 'FAILED'
     SUCCEEDED = 'SUCCEEDED'
 
 
 JOB_FINAL_STATES = (
-    "ERROR",
+    "FAILED",
     "SUCCEEDED"
 )

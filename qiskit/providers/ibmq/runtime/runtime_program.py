@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 import logging
-from typing import Optional, List
+from typing import Optional, List, NamedTuple
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ class RuntimeProgram:
             description: str,
             parameters: Optional[List] = None,
             return_values: Optional[List] = None,
+            interim_results: Optional[List] = None,
             max_execution_time: float = 0,
             data: Optional[bytes] = None
     ) -> None:
@@ -35,82 +36,114 @@ class RuntimeProgram:
             program_name: Program name.
             program_id: Program ID.
             description: Program description.
+            parameters: Documentation on program parameters.
+            return_values: Documentation on program return values.
+            interim_results: Documentation on program interim results.
             max_execution_time: Maximum execution time.
+            data: Program data.
         """
-        self.name = program_name
+        self._name = program_name
         self._id = program_id
         self._description = description
         self._cost = max_execution_time
         self._data = data
         self._parameters = []
         self._return_values = []
-        if parameters is not None:
+        self._interim_results = []
+
+        if parameters:
             for param in parameters:
                 self._parameters.append(
                     ProgramParameter(name=param['name'],
                                      description=param['description'],
-                                     param_type=param['type'],
+                                     type=param['type'],
                                      required=param['required']))
         if return_values is not None:
             for ret in return_values:
-                self._return_values.append(ProgramReturn(name=ret['name'],
+                self._return_values.append(ProgramResult(name=ret['name'],
                                                          description=ret['description'],
-                                                         return_type=ret['type']))
+                                                         type=ret['type']))
+        if interim_results is not None:
+            for intret in interim_results:
+                self._interim_results.append(ProgramResult(name=intret['name'],
+                                                           description=intret['description'],
+                                                           type=intret['type']))
 
     def __str__(self) -> str:
+        def _format_common(items: List):
+            """Add name, description, and type to `formatted`."""
+            for item in items:
+                formatted.append(" "*4 + "- " + item.name + ":")
+                formatted.append(" "*6 + "Description: " + item.description)
+                formatted.append(" "*6 + "Type: " + item.type)
+                if hasattr(item, 'required'):
+                    formatted.append(" "*6 + "Required: " + str(item.required))
+
         formatted = [f'{self.name}:',
                      f"  ID: {self._id}",
                      f"  Description: {self._description}",
                      f"  Parameters:"]
 
         if self._parameters:
-            for param in self._parameters:
-                formatted.append(" "*4 + "- " + param.name + ":")
-                formatted.append(" "*6 + "Description: " + param.description)
-                formatted.append(" "*6 + "Type: " + param.type)
-                formatted.append(" "*6 + "Required: " + str(param.required))
+            _format_common(self._parameters)
+        else:
+            formatted.append(" "*4 + "none")
+
+        formatted.append("  Interim results:")
+        if self._interim_results:
+            _format_common(self._interim_results)
         else:
             formatted.append(" "*4 + "none")
 
         formatted.append("  Returns:")
         if self._return_values:
-            for ret in self._return_values:
-                formatted.append(" "*4 + "- " + ret.name + ":")
-                formatted.append(" "*6 + "Description: " + ret.description)
-                formatted.append(" "*6 + "Type: " + ret.type)
+            _format_common(self._return_values)
         else:
             formatted.append(" "*4 + "none")
         return '\n'.join(formatted)
 
     @property
-    def program_id(self):
+    def program_id(self) -> str:
+        """Return program ID.
+
+        Returns:
+            Program ID.
+        """
         return self._id
 
+    @property
+    def name(self) -> str:
+        """Return program name.
 
-class ProgramParameter:
-
-    def __init__(self, name: str, description: str, param_type: str, required: bool):
+        Returns:
+            Program name.
         """
+        return self._name
 
-        Args:
-            description:
-            param_type:
+    @property
+    def description(self) -> str:
+        """Return program description.
+
+        Returns:
+            Program description.
         """
-        self.name = name
-        self.description = description
-        self.type = param_type
-        self.required = required
+        return self._description
+
+    @property
+    def parameter_doc(self) -> List['ProgramParameter']:
+        return self._parameters
 
 
-class ProgramReturn:
+class ProgramParameter(NamedTuple):
+    """Program parameter."""
+    name: str
+    description: str
+    type: str
+    required: bool
 
-    def __init__(self, name: str, description: str, return_type: str):
-        """
 
-        Args:
-            description:
-            return_type:
-        """
-        self.name = name
-        self.description = description
-        self.type = return_type
+class ProgramResult(NamedTuple):
+    """Program result."""
+    name: str
+    description: str
+    type: str

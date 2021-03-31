@@ -28,15 +28,30 @@ Modules related to IBM Quantum Runtime Service.
 
   The runtime service is not available to all accounts.
 
+The IBM Quantum Runtime Service allows select users to upload their quantum programs
+that can be invoked by others. A quantum program is a piece of code that takes
+certain inputs, does quantum and sometimes classical processing, and returns the
+results. For example, user A can upload a VQE quantum program that takes a Hamiltonian
+and an optimizer as inputs and returns the minimum eigensolver result. User B
+can then invoke this program, passing in the inputs and obtaining the results,
+with minimal code.
+
+These quantum programs, sometimes called runtime programs, run in a special
+runtime environment that is separate from normal circuit job execution and has
+special performance advantage.
+
+TODO: Add tutorial reference
+
 Classes
 ==========================
 .. autosummary::
    :toctree: ../stubs/
 
-   IBMQRandomService
-   CQCExtractor
-   CQCExtractorJob
-
+   IBMRuntimeService
+   RuntimeJob
+   RuntimeProgram
+   UserMessenger
+   ProgramBackend
 """
 
 from .ibm_runtime_service import IBMRuntimeService

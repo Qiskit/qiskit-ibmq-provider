@@ -21,7 +21,7 @@ from qiskit import QiskitError
 
 from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram
-from .utils import RuntimeEncoder
+from .utils import RuntimeEncoder, RuntimeDecoder
 from ..api.clients.runtime import RuntimeClient
 
 logger = logging.getLogger(__name__)
@@ -174,6 +174,8 @@ class IBMRuntimeService:
         """
         response = self._api_client.program_job_get(job_id)
         backend = self._provider.get_backend(response['backend'])
+        params_str = json.dumps(response.get('params', {}))
+        params = json.loads(params_str, cls=RuntimeDecoder)
         return RuntimeJob(backend=backend, api_client=self._api_client, job_id=response['id'],
-                          program_id=response.get('program', ""),
-                          params=response.get('params', {}))
+                          program_id=response.get('program', {}).get('id', ""),
+                          params=params)
