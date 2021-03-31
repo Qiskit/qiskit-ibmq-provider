@@ -247,7 +247,8 @@ class Api(RestAdapterBase):
             device_components: Optional[List[str]] = None,
             experiment_uuid: Optional[str] = None,
             result_type: Optional[str] = None,
-            quality: Optional[List[str]] = None
+            quality: Optional[List[str]] = None,
+            verified: Optional[bool] = None
     ) -> Dict:
         """Return all analysis results.
 
@@ -259,6 +260,7 @@ class Api(RestAdapterBase):
             experiment_uuid: Experiment UUID used for filtering.
             result_type: Analysis result type used for filtering.
             quality: Quality value used for filtering.
+            verified: Indicates whether this result has been verified..
 
         Returns:
             JSON response.
@@ -279,6 +281,8 @@ class Api(RestAdapterBase):
             params['limit'] = limit
         if marker:
             params['marker'] = marker
+        if verified is not None:
+            params['verified'] = verified
         return self.session.get(url, params=params).json()
 
     def analysis_result_upload(self, result: Dict) -> Dict:
