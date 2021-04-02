@@ -312,7 +312,8 @@ class ExperimentService:
             device_components: Optional[List[str]] = None,
             experiment_id: Optional[str] = None,
             result_type: Optional[str] = None,
-            quality: Optional[List[Tuple[str, Union[str, ResultQuality]]]] = None
+            quality: Optional[List[Tuple[str, Union[str, ResultQuality]]]] = None,
+            verified: Optional[bool] = None
     ) -> List[AnalysisResult]:
         """Retrieve all analysis results, with optional filtering.
 
@@ -330,6 +331,7 @@ class ExperimentService:
                 ``analysis_results(quality=[('ge', 'Computer Bad'), ('lt', 'Computer Good')])``
                 will return all analysis results with a quality of ``Computer Bad`` and
                 ``No Information``.
+            verified: Indicates whether this result has been verified..
 
         Returns:
             A list of analysis results.
@@ -340,20 +342,21 @@ class ExperimentService:
         if limit is not None and (not isinstance(limit, int) or limit <= 0):  # type: ignore
             raise ValueError(f"{limit} is not a valid `limit`, which has to be a positive integer.")
 
-        qualit_list = []
+        quality_list = []
         if quality:
             for op, qual in quality:
                 if isinstance(qual, ResultQuality):
                     qual = qual.value  # type: ignore[assignment]
                 qual_str = qual if op == 'eq' else "{}:{}".format(op, qual)
-                qualit_list.append(qual_str)
+                quality_list.append(qual_str)
         results = []
         marker = None
         while limit is None or limit > 0:
             raw_data = self._api_client.analysis_results(
                 limit=limit, marker=marker,
                 backend_name=backend_name, device_components=device_components,
-                experiment_uuid=experiment_id, result_type=result_type, quality=qualit_list)
+                experiment_uuid=experiment_id, result_type=result_type, quality=quality_list,
+                verified=verified)
             marker = raw_data.get('marker')
             for result in raw_data['analysis_results']:
                 results.append(AnalysisResult.from_remote_data(result))
@@ -383,6 +386,8 @@ class ExperimentService:
             data['tags'] = result.tags
         if result.uuid:
             data['uuid'] = result.uuid
+        if result.verified is not None:
+            data['verified'] = result.verified
         response = self._api_client.analysis_result_upload(data)
         result.update_from_remote_data(response)
 

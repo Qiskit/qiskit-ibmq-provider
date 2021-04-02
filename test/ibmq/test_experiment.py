@@ -406,6 +406,7 @@ class TestExperiment(IBMQTestCase):
         results = self.provider.experiment.analysis_results()
         for res in results:
             self.assertTrue(isinstance(res, AnalysisResult))
+            self.assertFalse(res.verified)
             self.assertTrue(isinstance(res.fit, Fit))
             self.assertTrue(res.uuid, "{} does not have an uuid!".format(res))
             for dt_attr in ['creation_datetime', 'updated_datetime']:
@@ -440,12 +441,14 @@ class TestExperiment(IBMQTestCase):
                 self.assertEqual(res.device_components, [device_comp.type])
                 self.assertEqual(res.quality.value, 'No Information')
                 self.assertEqual(res.tags, ['qiskit-test'])
+                self.assertFalse(res.verified)
 
     def test_update_analysis_result(self):
         """Test updating an analysis result."""
         new_result = self._create_analysis_result()
         original_type = new_result.type
         new_result.quality = ResultQuality.HUMAN_BAD
+        new_result.verified = True
         new_fit = Fit(new_result.fit.value*2, new_result.fit.variance*2)
         new_result.fit = new_fit
         self.provider.experiment.update_analysis_result(new_result)
@@ -458,6 +461,7 @@ class TestExperiment(IBMQTestCase):
                 self.assertEqual(res.type, original_type)
                 self.assertEqual(res.quality, ResultQuality.HUMAN_BAD)
                 self.assertTrue(res.updated_datetime.tzinfo)
+                self.assertTrue(res.verified)
 
     def test_results_experiments_device_components(self):
         """Test filtering analysis results and experiments with device components."""

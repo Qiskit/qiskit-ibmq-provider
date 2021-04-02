@@ -58,6 +58,7 @@ class AnalysisResult:
             tags: Optional[List[str]] = None,
             result_uuid: Optional[str] = None,
             backend_name: Optional[str] = None,
+            verified: Optional[bool] = False
     ):
         """AnalysisResult constructor.
 
@@ -72,6 +73,7 @@ class AnalysisResult:
             tags: Tags for this result.
             result_uuid: Unique identifier for the result.
             backend_name: Name of the backend on which the experiment was run.
+            verified: Indicates whether this result has been verified..
 
         Raises:
             IBMQInputValueError: If an input argument is invalid.
@@ -88,6 +90,7 @@ class AnalysisResult:
         self._uuid = result_uuid
         self.device_components = device_components
         self.backend_name = backend_name
+        self.verified = verified
         self._creation_datetime = None
         self._updated_datetime = None
 
@@ -105,6 +108,7 @@ class AnalysisResult:
         self.quality = ResultQuality(remote_data['quality'])
         self.tags = remote_data['tags'] or []
         self.type = remote_data['type']
+        self.verified = remote_data['verified']
         self._creation_datetime = str_to_utc(remote_data['created_at'])
         self._updated_datetime = str_to_utc(remote_data['updated_at'])
         self._uuid = remote_data['uuid']
@@ -174,7 +178,8 @@ class AnalysisResult:
                   tags=remote_data['tags'],
                   result_uuid=remote_data['uuid'],
                   device_components=remote_data['device_components'],
-                  backend_name=remote_data['device_name']
+                  backend_name=remote_data['device_name'],
+                  verified=remote_data['verified']
                   )
         obj._creation_datetime = str_to_utc(remote_data['created_at'])
         obj._updated_datetime = str_to_utc(remote_data['updated_at'])
@@ -183,7 +188,7 @@ class AnalysisResult:
     def __repr__(self) -> str:
         attr_str = 'uuid="{}"'.format(self.uuid)
         for attr in ['type', 'quality', 'experiment_uuid', 'backend_name',
-                     'chisq', 'tags', 'device_components']:
+                     'chisq', 'tags', 'device_components', 'verified']:
             val = getattr(self, attr)
             if val is not None:
                 if isinstance(val, str):
