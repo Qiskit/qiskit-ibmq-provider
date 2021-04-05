@@ -15,14 +15,16 @@
 import os
 import re
 import logging
+import pkg_resources
 from typing import Dict, Optional, Any, Tuple, Union
+
 from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
 from urllib3.util.retry import Retry
 
 from qiskit.providers.ibmq.utils.utils import filter_data
-from qiskit.version import __qiskit_version__
+from qiskit import __version__ as terra_version
 
 from .exceptions import RequestsApiError
 from ..version import __version__ as ibmq_provider_version
@@ -47,14 +49,11 @@ RE_DEVICES_ENDPOINT = re.compile(r'^(.*/devices/)([^/}]{2,})(.*)$', re.IGNORECAS
 
 def _get_client_header() -> str:
     """Return the client version."""
-    if __qiskit_version__.get('qiskit', None):
-        client_header = 'qiskit/' + __qiskit_version__['qiskit']
-    else:
-        known_versions = dict(
-            filter(lambda item: item[1] is not None, __qiskit_version__.items()))
-        # Always include provider version.
-        known_versions['qiskit-ibmq-provider'] = ibmq_provider_version
-        client_header = ','.join(known_versions.keys()) + '/' + ','.join(known_versions.values())
+    try:
+        client_header = 'qiskit/' + pkg_resources.get_distribution('qiskit').version
+    except Exception:
+        client_header = (f'qiskit-ibmq-provider/{ibmq_provider_version},'
+                         f'qiskit-terra/{terra_version}')
     return client_header
 
 
