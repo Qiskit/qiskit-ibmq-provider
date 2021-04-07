@@ -17,7 +17,25 @@ logger = logging.getLogger(__name__)
 
 
 class RuntimeProgram:
-    """Class representing a program definition."""
+    """Class representing program metadata.
+
+    This class contains the metadata describing a program, including its
+    name, ID, description, etc.
+
+    You can use the :class:`~qiskit.providers.ibmq.runtime.IBMRuntimeService`
+    to retrieve the metadata of a specific program or all programs. For example::
+
+        from qiskit import IBMQ
+
+        provider = IBMQ.load_account()
+
+        # To retrieve metadata of all programs.
+        programs = provider.runtime.programs()
+
+        # To retrieve metadata of a single program.
+        program = provider.runtime.program(program_id='circuit-runner')
+        print(f"Program {program.name} takes parameters {program.parameters}")
+    """
 
     def __init__(
             self,
@@ -27,10 +45,9 @@ class RuntimeProgram:
             parameters: Optional[List] = None,
             return_values: Optional[List] = None,
             interim_results: Optional[List] = None,
-            max_execution_time: float = 0,
-            data: Optional[bytes] = None
+            max_execution_time: float = 0
     ) -> None:
-        """
+        """RuntimeProgram constructor.
 
         Args:
             program_name: Program name.
@@ -40,13 +57,11 @@ class RuntimeProgram:
             return_values: Documentation on program return values.
             interim_results: Documentation on program interim results.
             max_execution_time: Maximum execution time.
-            data: Program data.
         """
         self._name = program_name
         self._id = program_id
         self._description = description
         self._cost = max_execution_time
-        self._data = data
         self._parameters = []
         self._return_values = []
         self._interim_results = []
@@ -130,8 +145,31 @@ class RuntimeProgram:
         return self._description
 
     @property
-    def parameter_doc(self) -> List['ProgramParameter']:
+    def parameters(self) -> List['ProgramParameter']:
+        """Return program parameter definitions.
+
+        Returns:
+            Parameter definitions for this program.
+        """
         return self._parameters
+
+    @property
+    def return_values(self) -> List['ProgramResult']:
+        """Return program return value definitions.
+
+        Returns:
+            Return value definitions for this program.
+        """
+        return self._return_values
+
+    @property
+    def interim_results(self) -> List['ProgramResult']:
+        """Return program interim result definitions.
+
+        Returns:
+            Interim result definitions for this program.
+        """
+        return self._interim_results
 
 
 class ProgramParameter(NamedTuple):

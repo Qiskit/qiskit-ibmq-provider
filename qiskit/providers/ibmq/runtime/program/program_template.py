@@ -10,6 +10,13 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+"""Runtime program template.
+
+The ``main()`` method is the entry point of a runtime program. It takes a
+:class:`ProgramBackend` and a :class:`UserMessenger` that can be used to
+send circuits to the backend and messages to the user, respectively.
+"""
+
 import sys
 import json
 
@@ -26,7 +33,7 @@ def program(backend: ProgramBackend, user_messenger: UserMessenger, **kwargs):
 
 
 def main(backend: ProgramBackend, user_messenger: UserMessenger, **kwargs):
-    """This is the main entry point of a quantum program.
+    """This is the main entry point of a runtime program.
 
     Args:
         backend: Backend for the circuits to run on.
@@ -39,7 +46,7 @@ def main(backend: ProgramBackend, user_messenger: UserMessenger, **kwargs):
 
 
 if __name__ == '__main__':
-    """This is used for testing locally with Aer simulator."""
+    """This is used for testing locally using Aer simulator."""
     _backend = Aer.get_backend('qasm_simulator')
     user_params = {}
     if len(sys.argv) > 1:

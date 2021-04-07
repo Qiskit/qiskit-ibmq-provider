@@ -13,6 +13,9 @@
 """Tests for runtime service."""
 
 import unittest
+import os
+from io import StringIO
+from unittest.mock import patch
 
 from qiskit.providers.jobstatus import JobStatus
 
@@ -61,6 +64,7 @@ class TestRuntime(IBMQTestCase):
         job.result()
 
 
+@unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
 class TestRuntimeIntegration(IBMQTestCase):
 
     @classmethod
@@ -80,4 +84,46 @@ class TestRuntimeIntegration(IBMQTestCase):
         programs = self.provider.runtime.programs()
         self.assertTrue(programs)
         for prog in programs:
-            self.assertTrue(prog.name)
+            self._validate_program(prog)
+
+    def test_list_program(self):
+        """Test listing a single program."""
+        program = self.provider.runtime.programs()[0]
+        self._validate_program(program)
+
+    def test_print_programs(self):
+        """Test printing programs."""
+        programs = self.provider.runtime.programs()
+        with patch('sys.stdout', new=StringIO()) as mock_stdout:
+            self.provider.runtime.pprint_programs()
+            for prog in programs:
+                self.assertIn(prog.program_id, mock_stdout)
+                self.assertIn(prog.name, mock_stdout)
+                self.assertIn(prog.description, mock_stdout)
+
+    def test_upload_program(self):
+        """Test uploading a program."""
+        pass
+
+    def test_upload_program_conflict(self):
+        """Test uploading a program with conflicting name."""
+        pass
+
+    def test_upload_program_missing(self):
+        pass
+
+    def test_execute_program(self):
+        pass
+
+    def test_execute_program_bad_params(self):
+        pass
+
+    def test_execute_program_failed(self):
+        pass
+
+    def _validate_program(self, program):
+        self.assertTrue(program)
+        self.assertTrue(program.name)
+        self.assertTrue(program.program_id)
+        self.assertTrue(program.description)
+        self.assertTrue(program.cost)

@@ -14,17 +14,26 @@
 
 import enum
 
-
-class ApiRuntimeJobStatus(enum.Enum):
-    """Possible values used by the API for a runtime job status."""
-
-    PENDING = 'PENDING'
-    RUNNING = 'RUNNING'
-    FAILED = 'FAILED'
-    SUCCEEDED = 'SUCCEEDED'
+from qiskit.providers.jobstatus import JobStatus
 
 
-JOB_FINAL_STATES = (
-    "FAILED",
-    "SUCCEEDED"
-)
+# class ApiRuntimeJobStatus(enum.Enum):
+#     """Possible values used by the API for a runtime job status."""
+#
+#     PENDING = 'PENDING'
+#     RUNNING = 'RUNNING'
+#     FAILED = 'FAILED'
+#     SUCCEEDED = 'SUCCEEDED'
+#
+#
+# JOB_FINAL_STATES = (
+#     "FAILED",
+#     "SUCCEEDED"
+# )
+
+API_TO_JOB_STATUS = {
+    'PENDING': JobStatus.INITIALIZING,
+    'RUNNING': JobStatus.RUNNING,
+    'SUCCEEDED': JobStatus.DONE,
+    'FAILED': JobStatus.ERROR
+}

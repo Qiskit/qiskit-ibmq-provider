@@ -41,7 +41,7 @@ class TestAccountClient(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.provider = provider
-        cls.access_token = cls.provider._api_client.account_api.session.access_token
+        cls.access_token = cls.provider._api_client.account_api.session._access_token
 
     def setUp(self):
         """Initial test setup."""
@@ -174,7 +174,7 @@ class TestAccountClientJobs(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.provider = provider
-        cls.access_token = cls.provider._api_client.account_api.session.access_token
+        cls.access_token = cls.provider._api_client.account_api.session._access_token
 
         backend_name = 'ibmq_qasm_simulator'
         backend = cls.provider.get_backend(backend_name)
@@ -228,7 +228,7 @@ class TestAuthClient(IBMQTestCase):
     def test_valid_login(self, qe_token, qe_url):
         """Test valid authentication."""
         client = AuthClient(qe_token, qe_url)
-        self.assertTrue(client.base_api.session.access_token)
+        self.assertTrue(client.base_api.session._access_token)
 
     @requires_qe_access
     def test_url_404(self, qe_token, qe_url):

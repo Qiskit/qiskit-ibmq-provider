@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class IBMRuntimeService:
-    """IBM Quantum runtime service."""
+    """Class for interacting with the IBM Quantum runtime service."""
 
     def __init__(self, provider: 'accountprovider.AccountProvider', access_token: str) -> None:
         """IBMRuntimeService constructor.
@@ -39,10 +39,11 @@ class IBMRuntimeService:
         """
         self._provider = provider
         self._api_client = RuntimeClient(access_token, provider.credentials)
+        self._access_token = access_token
         self._programs = {}
 
-    def print_programs(self, refresh: bool = False) -> None:
-        """Print information about available runtime programs.
+    def pprint_programs(self, refresh: bool = False) -> None:
+        """Pretty print information about available runtime programs.
 
         Args:
             refresh: If ``True``, re-query the server for the programs. Otherwise
@@ -64,6 +65,7 @@ class IBMRuntimeService:
             A list of runtime programs.
         """
         if not self._programs or refresh:
+            self._programs = {}
             response = self._api_client.list_programs()
             for prog_dict in response:
                 program = self._to_program(prog_dict)
@@ -107,7 +109,7 @@ class IBMRuntimeService:
             self,
             program_id: str,
             options: Dict,
-            params: Dict,
+            inputs: Dict,
             callback: Optional[Callable] = None
     ) -> RuntimeJob:
         """Execute the runtime program.
@@ -116,7 +118,7 @@ class IBMRuntimeService:
             program_id: Program ID.
             options: Runtime options. Currently the only available option is
                 ``backend_name``, which is required.
-            params: Program parameters.
+            inputs: Program input parameters.
             callback: Callback function to be invoked for any interim results.
 
         Returns:
@@ -126,15 +128,16 @@ class IBMRuntimeService:
             raise QiskitError('"backend_name" is required field in "options"')
 
         backend_name = options['backend_name']
-        params_str = json.dumps(params, cls=RuntimeEncoder)
+        params_str = json.dumps(inputs, cls=RuntimeEncoder)
         response = self._api_client.program_run(program_id=program_id,
                                                 credentials=self._provider.credentials,
                                                 backend_name=backend_name,
                                                 params=params_str)
 
         backend = self._provider.get_backend(backend_name)
-        job = RuntimeJob(backend=backend, api_client=self._api_client,
-                         job_id=response['id'], program_id=program_id, params=params,
+        job = RuntimeJob(backend=backend,
+                         api_client=self._api_client, access_token=self._access_token,
+                         job_id=response['id'], program_id=program_id, params=inputs,
                          user_callback=callback)
         return job
 
@@ -176,6 +179,8 @@ class IBMRuntimeService:
         backend = self._provider.get_backend(response['backend'])
         params_str = json.dumps(response.get('params', {}))
         params = json.loads(params_str, cls=RuntimeDecoder)
-        return RuntimeJob(backend=backend, api_client=self._api_client, job_id=response['id'],
+        return RuntimeJob(backend=backend,
+                          api_client=self._api_client, access_token=self._access_token,
+                          job_id=response['id'],
                           program_id=response.get('program', {}).get('id', ""),
                           params=params)

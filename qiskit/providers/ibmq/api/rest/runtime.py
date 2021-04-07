@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class Runtime(RestAdapterBase):
-    """Rest adapter for RNG related endpoints."""
+    """Rest adapter for Runtime base endpoints."""
 
     URL_MAP = {
         'programs': '/programs',
@@ -212,3 +212,36 @@ class ProgramJob(RestAdapterBase):
         """
         response = self.session.get(self.get_url('results'))
         return response.text
+
+
+class Stream(RestAdapterBase):
+    """Rest adapter for streaming related endpoints."""
+
+    URL_MAP = {
+        'jobs': '/jobs'
+    }
+
+    def __init__(
+            self,
+            session: RetrySession,
+            url_prefix: str = ''
+    ) -> None:
+        """ProgramJob constructor.
+
+        Args:
+            session: Session to be used in the adapter.
+            url_prefix: Prefix to use in the URL.
+        """
+        super().__init__(session, '{}/stream'.format(
+            url_prefix))
+
+    def job(self, job_id):
+        """
+
+        Args:
+            job_id:
+
+        Returns:
+
+        """
+        response = self.session.get()

@@ -101,16 +101,16 @@ class TestWebsocketIntegration(IBMQTestCase):
         """Test http retry after websocket error due to an invalid URL."""
         job = self.sim_backend.run(self.bell)
 
-        saved_websocket_url = job._api_client.client_ws.websocket_url
+        saved_websocket_url = job._api_client.client_ws._websocket_url
         try:
             # Use fake websocket address.
-            job._api_client.client_ws.websocket_url = 'wss://wss.localhost'
+            job._api_client.client_ws._websocket_url = 'wss://wss.localhost'
 
             # _wait_for_completion() should retry with http successfully
             # after getting websockets error.
             job._wait_for_completion()
         finally:
-            job._api_client.client_ws.websocket_url = saved_websocket_url
+            job._api_client.client_ws._websocket_url = saved_websocket_url
 
         self.assertIs(job._status, JobStatus.DONE)
 

@@ -19,7 +19,10 @@ from ..utils import RuntimeEncoder
 
 
 class UserMessenger:
-    """Base class for handling communication with users"""
+    """Base class for handling communication with program consumers.
+
+    A program consumer is the user that executes the runtime program.
+    """
 
     def publish(
         self,

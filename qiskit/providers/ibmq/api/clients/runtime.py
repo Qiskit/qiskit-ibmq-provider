@@ -38,7 +38,7 @@ class RuntimeClient:
             access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
         """
-        url = os.getenv('NTC_URL')
+        url = os.getenv('NTC_URL', "")
         logger.debug(f"Using runtime service url {url}")
         self._session = RetrySession(url, access_token,
                                      **credentials.connection_parameters())

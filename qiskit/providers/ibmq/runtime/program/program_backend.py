@@ -26,7 +26,11 @@ logger = logging.getLogger(__name__)
 
 
 class ProgramBackend(Backend, ABC):
-    """Base class for a program backend."""
+    """Base class for a program backend.
+
+    This is a :class:`~qiskit.providers.Backend` class for runtime programs to
+    use in place of :class:`~qiskit.providers.ibmq.IBMQBackend`.
+    """
 
     @abstractmethod
     def run(
