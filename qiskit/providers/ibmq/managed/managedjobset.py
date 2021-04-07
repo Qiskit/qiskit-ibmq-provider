@@ -86,7 +86,7 @@ class ManagedJobSet:
             executor: ThreadPoolExecutor,
             job_share_level: ApiJobShareLevel,
             job_tags: Optional[List[str]] = None,
-            **assemble_config: Any
+            **run_config: Any
     ) -> None:
         """Execute a list of circuits or pulse schedules on a backend.
 
@@ -96,7 +96,7 @@ class ManagedJobSet:
             executor: The thread pool used to submit jobs asynchronously.
             job_share_level: Job share level.
             job_tags: Tags to be assigned to the job.
-            assemble_config: Additional arguments used to configure the Qobj
+            run_config: Additional arguments used to configure the Qobj
                 assembly. Refer to the :func:`qiskit.compiler.assemble` documentation
                 for details on these arguments.
 
@@ -114,13 +114,13 @@ class ManagedJobSet:
         exp_index = 0
         total_jobs = len(experiment_list)
         for i, experiments in enumerate(experiment_list):
-            qobj = assemble(experiments, backend=backend, **assemble_config)
             job_name = JOB_SET_NAME_FORMATTER.format(self._name, i)
             mjob = ManagedJob(experiments_count=len(experiments), start_index=exp_index)
             logger.debug("Submitting job %s/%s for job set %s", i+1, total_jobs, self._name)
-            mjob.submit(qobj=qobj, job_name=job_name, backend=backend,
+            mjob.submit(experiments, job_name=job_name, backend=backend,
                         executor=executor, job_share_level=job_share_level,
-                        job_tags=self._tags+[self._id_long], submit_lock=self._job_submit_lock)
+                        job_tags=self._tags+[self._id_long], submit_lock=self._job_submit_lock,
+                        **run_config)
             logger.debug("Job %s submitted", i+1)
             self._managed_jobs.append(mjob)
             exp_index += len(experiments)
