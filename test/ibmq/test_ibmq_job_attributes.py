@@ -13,7 +13,7 @@
 """Test IBMQJob attributes."""
 
 import time
-from unittest import mock
+from unittest import mock, skip
 from datetime import datetime, timedelta
 import re
 import uuid
@@ -164,6 +164,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
                     self.assertIn('bad_instruction', msg)
                     self.assertIsNotNone(re.search(r'Error code: [0-9]{4}\.$', msg), msg)
 
+    @skip("Skip until aer issue 1214 is fixed")
     def test_error_message_simulator(self):
         """Test retrieving job error messages from a simulator backend."""
         job = submit_job_one_bad_instr(self.sim_backend)
