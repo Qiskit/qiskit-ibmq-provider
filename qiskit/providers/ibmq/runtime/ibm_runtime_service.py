@@ -145,17 +145,19 @@ class IBMRuntimeService:
             self,
             name: str,
             data: Union[bytes, str],
+            max_execution_time: int = 0
     ) -> str:
         """Upload a runtime program.
 
         Args:
             name: Name of the program.
             data: Name of the program file or program data to upload.
+            max_execution_time: Maximum execution time.
 
         Returns:
             Program ID.
         """
-        response = self._api_client.program_create(name, data)
+        response = self._api_client.program_create(name, data, max_execution_time)
         return response['id']
 
     def delete_program(self, program_id: str):

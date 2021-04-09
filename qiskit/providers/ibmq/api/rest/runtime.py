@@ -57,26 +57,28 @@ class Runtime(RestAdapterBase):
     def create_program(
             self,
             program_name: str,
-            program_data: Union[bytes, str]
+            program_data: Union[bytes, str],
+            max_execution_time: int
     ) -> Dict:
         """Upload a new program.
 
         Args:
             program_name: Name of the program.
             program_data: Program data.
+            max_execution_time: Maximum execution time.
 
         Returns:
             JSON response.
         """
         url = self.get_url('programs')
+        data = {'name': (None, program_name),
+                'cost': (None, str(max_execution_time))}
         if isinstance(program_data, str):
             with open(program_data, 'rb') as file:
-                data = {'name': (None, program_name),
-                        'program': (program_name, file)}  # type: ignore[dict-item]
+                data['program'] = (program_name, file)
                 response = self.session.post(url, files=data).json()
         else:
-            data = {'name': (None, program_name),
-                    'program': (program_name, program_data)}  # type: ignore[dict-item]
+            data['program'] = (program_name, program_data)
             response = self.session.post(url, files=data).json()
         return response
 

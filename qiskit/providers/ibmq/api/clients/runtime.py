@@ -56,17 +56,20 @@ class RuntimeClient:
             self,
             program_name: str,
             program_data: Union[bytes, str],
+            max_execution_time: int
     ) -> Dict:
         """Create a new program.
 
         Args:
             program_name: Name of the program.
             program_data: Program data.
+            max_execution_time: Maximum execution time.
 
         Returns:
             Server response.
         """
-        return self.api.create_program(program_name=program_name, program_data=program_data)
+        return self.api.create_program(program_name=program_name, program_data=program_data,
+                                       max_execution_time=max_execution_time)
 
     def program_get(self, program_id: str) -> Dict:
         """Return a specific program.
