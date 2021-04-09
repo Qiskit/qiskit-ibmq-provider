@@ -45,7 +45,7 @@ class RuntimeProgram:
             parameters: Optional[List] = None,
             return_values: Optional[List] = None,
             interim_results: Optional[List] = None,
-            max_execution_time: float = 0
+            max_execution_time: int = 0
     ) -> None:
         """RuntimeProgram constructor.
 
@@ -61,7 +61,7 @@ class RuntimeProgram:
         self._name = program_name
         self._id = program_id
         self._description = description
-        self._cost = max_execution_time
+        self._max_execution_time = max_execution_time
         self._parameters = []
         self._return_values = []
         self._interim_results = []
@@ -170,6 +170,15 @@ class RuntimeProgram:
             Interim result definitions for this program.
         """
         return self._interim_results
+
+    @property
+    def max_execution_time(self) -> int:
+        """Return maximum execution time.
+
+        Returns:
+            Maximum execution time.
+        """
+        return self._max_execution_time
 
 
 class ProgramParameter(NamedTuple):
