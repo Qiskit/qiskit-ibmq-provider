@@ -152,7 +152,7 @@ class IBMRuntimeService:
         Args:
             name: Name of the program.
             data: Name of the program file or program data to upload.
-            max_execution_time: Maximum execution time.
+            max_execution_time: Maximum execution time in seconds.
 
         Returns:
             Program ID.
