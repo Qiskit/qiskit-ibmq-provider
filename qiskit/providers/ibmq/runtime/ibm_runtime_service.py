@@ -145,7 +145,7 @@ class IBMRuntimeService:
             self,
             name: str,
             data: Union[bytes, str],
-            max_execution_time: int = 0
+            max_execution_time: int
     ) -> str:
         """Upload a runtime program.
 
