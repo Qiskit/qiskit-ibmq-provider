@@ -12,7 +12,6 @@
 
 """Client for accessing IBM Quantum runtime service."""
 
-import os
 import logging
 from typing import List, Dict, Union
 
@@ -38,9 +37,7 @@ class RuntimeClient:
             access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
         """
-        url = os.getenv('NTC_URL', "")
-        logger.debug(f"Using runtime service url {url}")
-        self._session = RetrySession(url, access_token,
+        self._session = RetrySession(credentials.runtime_url, access_token,
                                      **credentials.connection_parameters())
         self.api = Runtime(self._session)
 

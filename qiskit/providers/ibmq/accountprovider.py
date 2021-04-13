@@ -22,12 +22,9 @@ from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 from qiskit.circuit import QuantumCircuit, Parameter
 from qiskit.pulse.instruction_schedule_map import InstructionScheduleMap
-from qiskit.pulse.channels import PulseChannel
 from qiskit.providers.backend import BackendV1 as Backend
 from qiskit.providers.basebackend import BaseBackend
 from qiskit.transpiler import Layout
-from qiskit.qobj.utils import MeasLevel, MeasReturnType
-from qiskit.exceptions import QiskitError
 
 from .api.clients import AccountClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
@@ -122,11 +119,13 @@ class AccountProvider(Provider):
             if credentials.extractor_url else None
         self._experiment = ExperimentService(self, access_token) \
             if credentials.experiment_url else None
-        self._runtime = IBMRuntimeService(self, access_token)
+        self._runtime = IBMRuntimeService(self, access_token) \
+            if credentials.runtime_url else None
 
         self._services = {'backend': self._backend,
                           'random': self._random,
-                          'experiment': self._experiment}
+                          'experiment': self._experiment,
+                          'runtime': self._runtime}
 
     def backends(
             self,
@@ -381,7 +380,7 @@ class AccountProvider(Provider):
         if self._random:
             return self._random
         else:
-            raise IBMQNotAuthorizedError("You are not authorized to use the random number service.")
+            raise IBMQNotAuthorizedError("You are not authorized to use the service.")
 
     @property
     def runtime(self) -> IBMRuntimeService:
@@ -389,8 +388,14 @@ class AccountProvider(Provider):
 
         Returns:
             The runtime service instance.
+
+        Raises:
+            IBMQNotAuthorizedError: If the account is not authorized to use the service.
         """
-        return self._runtime
+        if self._runtime:
+            return self._runtime
+        else:
+            raise IBMQNotAuthorizedError("You are not authorized to use the runtime service.")
 
     def __eq__(
             self,
