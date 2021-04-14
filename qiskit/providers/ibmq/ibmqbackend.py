@@ -101,6 +101,8 @@ class IBMQBackend(Backend):
         job_limit = backend.job_limit()
     """
 
+    qobj_warning_issued = False
+
     def __init__(
             self,
             configuration: Union[QasmBackendConfiguration, PulseBackendConfiguration],
@@ -272,10 +274,12 @@ class IBMQBackend(Backend):
             sim_method = getattr(self.configuration(), 'simulation_method', None)
 
         if isinstance(circuits, (QasmQobj, PulseQobj)):
-            warnings.warn("Passing a Qobj to Backend.run is deprecated and will "
-                          "be removed in a future release. Please pass in circuits "
-                          "or pulse schedules instead.", DeprecationWarning,
-                          stacklevel=3)  # need level 3 because of decorator
+            if not self.qobj_warning_issued:
+                warnings.warn("Passing a Qobj to Backend.run is deprecated and will "
+                              "be removed in a future release. Please pass in circuits "
+                              "or pulse schedules instead.", DeprecationWarning,
+                              stacklevel=3)  # need level 3 because of decorator
+                self.qobj_warning_issued = True
             qobj = circuits
             if sim_method and not hasattr(qobj.config, 'method'):
                 qobj.config.method = sim_method
