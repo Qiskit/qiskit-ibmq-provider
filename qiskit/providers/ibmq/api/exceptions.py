@@ -54,6 +54,11 @@ class WebsocketTimeoutError(WebsocketError):
     pass
 
 
+class WebsocketRetryableError(WebsocketError):
+    """A websocket error that can be retried."""
+    pass
+
+
 class AuthenticationLicenseError(ApiError):
     """Exception due to user not having accepted the license agreement."""
     pass

@@ -19,8 +19,9 @@ import json
 import asyncio
 from concurrent import futures
 import traceback
-import os
+import queue
 
+from qiskit.exceptions import QiskitError
 from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.backend import Backend
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
@@ -38,12 +39,13 @@ class RuntimeJob:
     """Representation of a runtime program execution."""
 
     _executor = futures.ThreadPoolExecutor()
+    _result_queue_poison_pill = "_poison_pill"
 
     def __init__(
             self,
             backend: 'ibmqbackend.IBMQBackend',
             api_client: RuntimeClient,
-            access_token: str,
+            ws_client: RuntimeWebsocketClient,
             job_id: str,
             program_id: str,
             params: Optional[Dict] = None,
@@ -54,7 +56,7 @@ class RuntimeJob:
         Args:
             backend: The backend instance used to run this job.
             api_client: Object for connecting to the server.
-            access_token: IBM Quantum Experience access token.
+            ws_client: Object for connecting to the server via websocket.
             job_id: Job ID.
             program_id: ID of the program this job is for.
             params: Job parameters.
@@ -63,14 +65,14 @@ class RuntimeJob:
         self._job_id = job_id
         self._backend = backend
         self._api_client = api_client
-        url = os.getenv('NTC_URL', "")
-        ws_url = url.replace('https', 'wss')
-        self._ws_client = RuntimeWebsocketClient(ws_url, access_token)
-        self._results = []
+        self._ws_client = ws_client
+        self._results = None
         self._params = params or {}
         # self._user_callback = user_callback
         self._program_id = program_id
         self._status = JobStatus.INITIALIZING
+        self._streaming = False
+        self._result_queue = queue.Queue()
 
         if user_callback is not None:
             self.stream_results(user_callback)
@@ -78,8 +80,7 @@ class RuntimeJob:
     def result(
             self,
             timeout: Optional[float] = None,
-            wait: float = 5,
-            include_interim: bool = False
+            wait: float = 5
     ) -> Any:
         """Return the results of the job.
 
@@ -90,7 +91,6 @@ class RuntimeJob:
         Args:
             timeout: Number of seconds to wait for job.
             wait: Seconds between queries.
-            include_interim: Whether to include interim results.
 
         Returns:
             Runtime job result.
@@ -104,15 +104,8 @@ class RuntimeJob:
             if self._status == JobStatus.ERROR:
                 raise IBMQJobFailureError(f"Unable to retrieve result for job {self.job_id()}. "
                                           f"Job has failed:\n{result_raw}")
-            # TODO - Update when interim results are for streaming only
-            result_list = result_raw.split('\n')
-            for res in result_list:
-                if not res:
-                    continue
-                self._results.append(self._decode_data(res))
-        if include_interim:
-            return self._results
-        return self._results[-1]
+            self._results = self._decode_data(result_raw)
+        return self._results
 
     def cancel(self):
         """Attempt to cancel the job."""
@@ -155,7 +148,7 @@ class RuntimeJob:
             status = self.status()
         return
 
-    def stream_results(self, callback: Callable):
+    def stream_results(self, callback: Callable) -> None:
         """Start streaming job results.
 
         Args:
@@ -164,40 +157,61 @@ class RuntimeJob:
                     1. Job ID
                     2. Job interim result.
         """
-        self._executor.submit(self._stream_results, user_callback=callback)
+        if self._streaming:
+            raise QiskitError("A callback function is already streaming results.")
+        self._streaming = True
 
-    def _stream_results(self, user_callback: Callable) -> None:
+        self._executor.submit(self._start_websocket_client,
+                              result_queue=self._result_queue)
+        self._executor.submit(self._stream_results,
+                              result_queue=self._result_queue, user_callback=callback)
+
+    def _start_websocket_client(
+            self,
+            result_queue: queue.Queue
+    ) -> None:
+        """Start websocket client to stream results."""
+        loop = None
+        try:
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError as ex:
+                # Event loop may not be set in a child thread.
+                if 'There is no current event loop' in str(ex):
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                else:
+                    logger.warning(f"Unable to get the event loop: {ex}")
+                    raise
+
+            logger.debug(f"Start websocket client for job {self.job_id()}")
+            loop.run_until_complete(self._ws_client.job_results(self._job_id, result_queue))
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(
+                f"An error occurred while streaming results "
+                f"from the server for job {self.job_id()}:\n{traceback.format_exc()}")
+        finally:
+            result_queue.put_nowait(self._result_queue_poison_pill)
+            if loop is not None:
+                loop.run_until_complete(self._ws_client.disconnect())
+
+    def _stream_results(self, result_queue: queue.Queue, user_callback: Callable) -> None:
         """Stream interim results.
 
         Args:
             user_callback: User callback function.
         """
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError as ex:
-            # Event loop may not be set in a child thread.
-            if 'There is no current event loop' in str(ex):
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            else:
-                raise
-
         logger.debug(f"Start result streaming for job {self.job_id()}")
-        try:
-            while True:
-                try:
-                    response = loop.run_until_complete(self._ws_client.job_results(self._job_id))
-                    user_callback(self.job_id(), self._decode_data(response))
-                except WebsocketTimeoutError:
-                    if self.status() in JOB_FINAL_STATES:
-                        logger.debug(f"Job {self.job_id()} finished, stop result streaming.")
-                        return
-        except Exception:  # pylint: disable=broad-except
-            logger.warning(
-                f"An error occurred while streaming results for job {self.job_id()}: " +
-                traceback.format_exc())
-        finally:
-            loop.run_until_complete(self._ws_client.disconnect())
+        while True:
+            try:
+                response = result_queue.get()
+                if response == self._result_queue_poison_pill:
+                    return
+                user_callback(self.job_id(), self._decode_data(response))
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(
+                    f"An error occurred while streaming results "
+                    f"for job {self.job_id()}:\n{traceback.format_exc()}")
 
     def _decode_data(self, data: Any) -> Any:
         """Attempt to decode data using default decoder.

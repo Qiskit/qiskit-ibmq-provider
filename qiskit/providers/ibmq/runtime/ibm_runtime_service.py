@@ -23,6 +23,7 @@ from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram
 from .utils import RuntimeEncoder, RuntimeDecoder
 from ..api.clients.runtime import RuntimeClient
+from ..api.clients.runtime_ws import RuntimeWebsocketClient
 
 logger = logging.getLogger(__name__)
 
@@ -30,16 +31,16 @@ logger = logging.getLogger(__name__)
 class IBMRuntimeService:
     """Class for interacting with the IBM Quantum runtime service."""
 
-    def __init__(self, provider: 'accountprovider.AccountProvider', access_token: str) -> None:
+    def __init__(self, provider: 'accountprovider.AccountProvider') -> None:
         """IBMRuntimeService constructor.
 
         Args:
             provider: IBM Quantum account provider.
-            access_token: IBM Quantum access token.
         """
         self._provider = provider
-        self._api_client = RuntimeClient(access_token, provider.credentials)
-        self._access_token = access_token
+        self._api_client = RuntimeClient(provider.credentials)
+        self._access_token = provider.credentials.access_token
+        self._ws_url = provider.credentials.runtime_url.replace('https', 'wss')
         self._programs = {}
 
     def pprint_programs(self, refresh: bool = False) -> None:
@@ -136,7 +137,8 @@ class IBMRuntimeService:
 
         backend = self._provider.get_backend(backend_name)
         job = RuntimeJob(backend=backend,
-                         api_client=self._api_client, access_token=self._access_token,
+                         api_client=self._api_client,
+                         ws_client=RuntimeWebsocketClient(self._ws_url, self._access_token),
                          job_id=response['id'], program_id=program_id, params=inputs,
                          user_callback=callback)
         return job
@@ -182,7 +184,8 @@ class IBMRuntimeService:
         params_str = json.dumps(response.get('params', {}))
         params = json.loads(params_str, cls=RuntimeDecoder)
         return RuntimeJob(backend=backend,
-                          api_client=self._api_client, access_token=self._access_token,
+                          api_client=self._api_client,
+                          ws_client=RuntimeWebsocketClient(self._ws_url, self._access_token),
                           job_id=response['id'],
                           program_id=response.get('program', {}).get('id', ""),
                           params=params)

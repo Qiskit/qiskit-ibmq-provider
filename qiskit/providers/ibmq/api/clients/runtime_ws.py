@@ -14,14 +14,16 @@
 
 import logging
 import asyncio
-from typing import Optional, Any
+from typing import Any
 from ssl import SSLError
+import queue
+import traceback
 
 from websockets import connect, ConnectionClosed
 from websockets.client import WebSocketClientProtocol
 from websockets.exceptions import InvalidURI
 
-from ..exceptions import WebsocketError, WebsocketTimeoutError
+from ..exceptions import WebsocketError, WebsocketRetryableError
 
 logger = logging.getLogger(__name__)
 
@@ -64,20 +66,16 @@ class RuntimeWebsocketClient:
         """
         try:
             logger.debug('Starting new websocket connection: %s', url)
-            # TODO: Re-enable ping_timeout when server is fixed.
-            websocket = await connect(url, extra_headers=self._header, ping_interval=None)
+            websocket = await connect(url, extra_headers=self._header)
             await websocket.recv()  # Ack from server
 
-        # Isolate specific exceptions, so they are not retried in `get_job_status`.
+        # Isolate specific exceptions, so they are not retried.
         except (SSLError, InvalidURI) as ex:
             raise ex
 
         # pylint: disable=broad-except
         except Exception as ex:
-            exception_to_raise = WebsocketError('Failed to connect to the server.')
-
-            logger.info('An exception occurred. Raising "%s" from "%s"',
-                        repr(exception_to_raise), repr(ex))
+            exception_to_raise = WebsocketRetryableError('Failed to connect to the server.')
             raise exception_to_raise from ex
 
         logger.debug("Runtime websocket connection established.")
@@ -86,7 +84,7 @@ class RuntimeWebsocketClient:
     async def job_results(
             self,
             job_id: str,
-            timeout: Optional[float] = 5,
+            result_queue: queue.Queue,
             max_retries: int = 5,
             backoff_factor: float = 0.5
     ) -> Any:
@@ -94,7 +92,7 @@ class RuntimeWebsocketClient:
 
         Args:
             job_id: ID of the job.
-            timeout: Timeout value, in seconds.
+            result_queue: Queue used to hold response received from the server.
             max_retries: Max number of retries.
             backoff_factor: Backoff factor used to calculate the
                 time to wait between retries.
@@ -103,8 +101,7 @@ class RuntimeWebsocketClient:
             The interim result of a job.
 
         Raises:
-            WebsocketError: If the websocket connection ended unexpectedly.
-            WebsocketTimeoutError: If the timeout has been reached.
+            WebsocketError: If a websocket error occurred.
         """
         url = '{}/stream/jobs/{}'.format(self._websocket_url, job_id)
 
@@ -114,29 +111,34 @@ class RuntimeWebsocketClient:
             try:
                 if self._ws is None:
                     self._ws = await self._connect(url)
+                while True:
+                    try:
+                        response = await self._ws.recv()
+                        result_queue.put_nowait(response)
+                        current_retry = 0  # Reset counter after a good receive.
+                    except ConnectionClosed as ex:
+                        self._ws = None
+                        if ex.code == 1000:  # Job has finished.
+                            return
+                        exception_to_raise = WebsocketRetryableError(
+                            f"Connection with websocket for job {job_id} "
+                            f"closed unexpectedly: {ex.code}")
+                        raise exception_to_raise
 
-                response = await asyncio.wait_for(self._ws.recv(), timeout=timeout)
-                return response
-
-            except asyncio.TimeoutError:
-                # Timeout during our wait.
-                raise WebsocketTimeoutError(
-                    'Timeout reached while streaming job results.') from None
-            except (WebsocketError, ConnectionClosed) as ex:
-                if isinstance(ex, ConnectionClosed):
-                    self._ws = None
-
-                logger.debug(
-                    f"A websocket error occurred while streaming runtime job result: {str(ex)}")
+            except WebsocketRetryableError as ex:
+                logger.debug(f"A websocket error occurred while streaming "
+                             f"results for runtime job {job_id}:\n{traceback.format_exc()}")
                 current_retry += 1
                 if current_retry > max_retries:
                     raise ex
 
-                # Sleep, and then `continue` with retrying.
                 backoff_time = self._backoff_time(backoff_factor, current_retry)
-                logger.info('Retrying websocket after %s seconds: '
-                            'Attempt #%s', backoff_time, current_retry)
+                logger.info(f"Retrying websocket after {backoff_time} seconds. "
+                            f"Attemp {current_retry}")
                 await asyncio.sleep(backoff_time)  # Block asyncio loop for given backoff time.
+                continue  # Continues next iteration after `finally` block.
+            finally:
+                await self.disconnect()
 
         # Execution should not reach here, sanity check.
         exception_message = 'Max retries exceeded: Failed to establish a websocket ' \

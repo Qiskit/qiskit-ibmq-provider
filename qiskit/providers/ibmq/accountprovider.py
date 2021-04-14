@@ -95,18 +95,16 @@ class AccountProvider(Provider):
         in Jupyter Notebook and the Python interpreter.
     """
 
-    def __init__(self, credentials: Credentials, access_token: str) -> None:
+    def __init__(self, credentials: Credentials) -> None:
         """AccountProvider constructor.
 
         Args:
             credentials: IBM Quantum Experience credentials.
-            access_token: IBM Quantum Experience access token.
         """
         super().__init__()
 
         self.credentials = credentials
-        self._api_client = AccountClient(access_token,
-                                         credentials,
+        self._api_client = AccountClient(credentials,
                                          **credentials.connection_parameters())
 
         # Initialize the internal list of backends.
@@ -115,11 +113,9 @@ class AccountProvider(Provider):
         self.backends = IBMQDeprecatedBackendService(self.backend)  # type: ignore[assignment]
 
         # Initialize other services.
-        self._random = IBMQRandomService(self, access_token) \
-            if credentials.extractor_url else None
-        self._experiment = ExperimentService(self, access_token) \
-            if credentials.experiment_url else None
-        self._runtime = IBMRuntimeService(self, access_token) \
+        self._random = IBMQRandomService(self) if credentials.extractor_url else None
+        self._experiment = ExperimentService(self) if credentials.experiment_url else None
+        self._runtime = IBMRuntimeService(self) \
             if credentials.runtime_url else None
 
         self._services = {'backend': self._backend,

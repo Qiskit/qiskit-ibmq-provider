@@ -48,7 +48,8 @@ class Credentials:
             project: Optional[str] = None,
             proxies: Optional[Dict] = None,
             verify: bool = True,
-            services: Optional[Dict] = None
+            services: Optional[Dict] = None,
+            access_token: Optional[str] = None
     ) -> None:
         """Credentials constructor.
 
@@ -62,8 +63,10 @@ class Credentials:
             proxies: Proxy configuration.
             verify: If ``False``, ignores SSL certificates errors.
             services: Additional services for this account.
+            access_token: IBM Quantum access token.
         """
         self.token = token
+        self.access_token = access_token
         (self.url, self.base_url,
          self.hub, self.group, self.project) = _unify_ibmq_url(
              url, hub, group, project)
