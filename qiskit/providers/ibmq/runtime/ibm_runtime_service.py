@@ -179,7 +179,7 @@ class IBMRuntimeService:
         Returns:
             Runtime job retrieved.
         """
-        response = self._api_client.program_job_get(job_id)
+        response = self._api_client.job_get(job_id)
         backend = self._provider.get_backend(response['backend'])
         params_str = json.dumps(response.get('params', {}))
         params = json.loads(params_str, cls=RuntimeDecoder)

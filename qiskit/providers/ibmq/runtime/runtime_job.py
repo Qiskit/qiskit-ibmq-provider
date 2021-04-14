@@ -29,7 +29,6 @@ from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from .utils import RuntimeDecoder
 from .constants import API_TO_JOB_STATUS
 from ..api.clients import RuntimeClient, RuntimeWebsocketClient
-from ..api.exceptions import WebsocketTimeoutError
 from ..job.exceptions import IBMQJobFailureError
 
 logger = logging.getLogger(__name__)
@@ -100,16 +99,18 @@ class RuntimeJob:
         """
         if not self._results:
             self.wait_for_final_state(timeout=timeout, wait=wait)
-            result_raw = self._api_client.program_job_results(job_id=self.job_id())
+            result_raw = self._api_client.job_results(job_id=self.job_id())
             if self._status == JobStatus.ERROR:
                 raise IBMQJobFailureError(f"Unable to retrieve result for job {self.job_id()}. "
                                           f"Job has failed:\n{result_raw}")
             self._results = self._decode_data(result_raw)
         return self._results
 
-    def cancel(self):
-        """Attempt to cancel the job."""
-        raise NotImplementedError
+    def cancel(self) -> None:
+        """Cancel the job."""
+        self._api_client.job_cancel(self.job_id())
+        self._cancel_result_streaming()
+        self._status = JobStatus.CANCELLED
 
     def status(self) -> JobStatus:
         """Return the status of the job.
@@ -118,7 +119,7 @@ class RuntimeJob:
             Status of this job.
         """
         if self._status not in JOB_FINAL_STATES:
-            response = self._api_client.program_job_get(job_id=self.job_id())
+            response = self._api_client.job_get(job_id=self.job_id())
             self._status = API_TO_JOB_STATUS[response['status'].upper()]
         return self._status
 
@@ -165,6 +166,13 @@ class RuntimeJob:
                               result_queue=self._result_queue)
         self._executor.submit(self._stream_results,
                               result_queue=self._result_queue, user_callback=callback)
+        # TODO - wait for ws to connect before returning?
+
+    def _cancel_result_streaming(self) -> None:
+        """Cancel result streaming."""
+        if not self._streaming:
+            return
+        self._result_queue.put_nowait(self._result_queue_poison_pill)
 
     def _start_websocket_client(
             self,
@@ -206,12 +214,26 @@ class RuntimeJob:
             try:
                 response = result_queue.get()
                 if response == self._result_queue_poison_pill:
+                    self._empty_result_queue(result_queue)
+                    self._streaming = False
                     return
                 user_callback(self.job_id(), self._decode_data(response))
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"An error occurred while streaming results "
                     f"for job {self.job_id()}:\n{traceback.format_exc()}")
+
+    def _empty_result_queue(self, result_queue: queue.Queue) -> None:
+        """Empty the result queue.
+
+        Args:
+            result_queue: Result queue to empty.
+        """
+        try:
+            while True:
+                result_queue.get_nowait()
+        except queue.Empty:
+            pass
 
     def _decode_data(self, data: Any) -> Any:
         """Attempt to decode data using default decoder.

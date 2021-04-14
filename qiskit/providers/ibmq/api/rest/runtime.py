@@ -171,7 +171,8 @@ class ProgramJob(RestAdapterBase):
 
     URL_MAP = {
         'self': '',
-        'results': '/results'
+        'results': '/results',
+        'cancel': '/cancel'
     }
 
     def __init__(
@@ -215,35 +216,6 @@ class ProgramJob(RestAdapterBase):
         response = self.session.get(self.get_url('results'))
         return response.text
 
-
-class Stream(RestAdapterBase):
-    """Rest adapter for streaming related endpoints."""
-
-    URL_MAP = {
-        'jobs': '/jobs'
-    }
-
-    def __init__(
-            self,
-            session: RetrySession,
-            url_prefix: str = ''
-    ) -> None:
-        """ProgramJob constructor.
-
-        Args:
-            session: Session to be used in the adapter.
-            url_prefix: Prefix to use in the URL.
-        """
-        super().__init__(session, '{}/stream'.format(
-            url_prefix))
-
-    def job(self, job_id):
-        """
-
-        Args:
-            job_id:
-
-        Returns:
-
-        """
-        response = self.session.get()
+    def cancel(self) -> None:
+        """Cancel the job."""
+        self.session.post(self.get_url('cancel'))

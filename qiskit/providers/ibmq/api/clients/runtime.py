@@ -118,12 +118,12 @@ class RuntimeClient:
         """
         self.api.program(program_id).delete()
 
-    def program_job_get(self, job_id):
+    def job_get(self, job_id):
         response = self.api.program_job(job_id).get()
         logger.debug(f"Runtime job get response: {response}")
         return response
 
-    def program_job_results(self, job_id: str) -> str:
+    def job_results(self, job_id: str) -> str:
         """Get the results of a program job.
 
         Args:
@@ -133,3 +133,11 @@ class RuntimeClient:
             JSON response.
         """
         return self.api.program_job(job_id).results()
+
+    def job_cancel(self, job_id: str) -> None:
+        """Cancel a job.
+
+        Args:
+            job_id: Program job ID.
+        """
+        self.api.program_job(job_id).cancel()
