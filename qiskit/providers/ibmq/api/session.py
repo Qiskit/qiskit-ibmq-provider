@@ -15,8 +15,8 @@
 import os
 import re
 import logging
-import pkg_resources
 from typing import Dict, Optional, Any, Tuple, Union
+import pkg_resources
 
 from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
@@ -24,7 +24,6 @@ from requests.auth import AuthBase
 from urllib3.util.retry import Retry
 
 from qiskit.providers.ibmq.utils.utils import filter_data
-from qiskit import __version__ as terra_version
 
 from .exceptions import RequestsApiError
 from ..version import __version__ as ibmq_provider_version
@@ -51,10 +50,18 @@ def _get_client_header() -> str:
     """Return the client version."""
     try:
         client_header = 'qiskit/' + pkg_resources.get_distribution('qiskit').version
-    except Exception:
-        client_header = (f'qiskit-ibmq-provider/{ibmq_provider_version},'
-                         f'qiskit-terra/{terra_version}')
-    return client_header
+        return client_header
+    except Exception:  # pylint: disable=broad-except
+        pass
+
+    qiskit_pkgs = ['qiskit-terra', 'qiskit-aer', 'qiskit-ignis', 'qiskit-aqua']
+    pkg_versions = {"qiskit-ibmq-provider": ibmq_provider_version}
+    for pkg_name in qiskit_pkgs:
+        try:
+            pkg_versions[pkg_name] = pkg_resources.get_distribution(pkg_name).version
+        except Exception:  # pylint: disable=broad-except
+            pass
+    return ','.join(pkg_versions.keys()) + '/' + ','.join(pkg_versions.values())
 
 
 CLIENT_APPLICATION = _get_client_header()
