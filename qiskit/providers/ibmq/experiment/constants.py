@@ -48,9 +48,11 @@ class ResultQuality(enum.Enum):
 
     HUMAN_BAD = 'Human Bad', 1
     COMPUTER_BAD = 'Computer Bad', 2
-    NO_INFORMATION = 'No Information', 3
-    COMPUTER_GOOD = 'Computer Good', 4
-    HUMAN_GOOD = 'Human Good', 5
+    BAD = 'Bad', 3
+    NO_INFORMATION = 'No Information', 4
+    GOOD = 'Good', 5
+    COMPUTER_GOOD = 'Computer Good', 6
+    HUMAN_GOOD = 'Human Good', 7
 
 
 class ExperimentShareLevel(enum.Enum):
