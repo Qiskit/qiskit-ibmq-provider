@@ -1,5 +1,0 @@
----
-features:
-  - |
-    :class:`qiskit.providers.ibmq.analysis_result.AnalysisResult now has an additional
-    ``verified`` attribute which identifies if the ``quality`` has been verified by a human.
