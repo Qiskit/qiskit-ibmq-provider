@@ -462,7 +462,7 @@ class TestExperiment(IBMQTestCase):
             with self.subTest(sub_test_name=name):
                 self.assertEqual(res.fit, new_fit)
                 self.assertEqual(res.type, original_type)
-                self.assertEqual(res.quality, ResultQuality.BAD)
+                self.assertEqual(res.quality, ResultQuality.BAD)  # pylint: disable=no-member
                 self.assertTrue(res.updated_datetime.tzinfo)
                 self.assertTrue(res.verified)
 
