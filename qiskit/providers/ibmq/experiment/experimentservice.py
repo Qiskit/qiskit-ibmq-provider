@@ -372,9 +372,10 @@ class ExperimentService:
         data = {
             'device_components': result.device_components,
             'experiment_uuid': result.experiment_uuid,
-            'fit': result.fit.to_dict(),
             'type': result.type
         }  # type: Dict[str, Any]
+        if result.fit:
+            data['fit'] = result.fit
         if result.chisq:
             data['chisq'] = result.chisq
         if result.quality:
@@ -412,15 +413,21 @@ class ExperimentService:
         """Update an analysis result.
 
         Args:
-            result: The analysis result to upload.
+            result: The analysis result to update.
         """
-        data = {
-            'fit': result.fit.to_dict(),
-            'chisq': result.chisq,
-            'quality': result.quality.value,
-        }
+        data = {}
+        if result.chisq:
+            data['chisq'] = result.chisq
+        if result.quality:
+            data['quality'] = result.quality.value  # type: ignore[assignment]
+        if result.fit:
+            data['fit'] = result.fit  # type: ignore[assignment]
         if result.tags:
-            data['tags'] = result.tags
+            data['tags'] = result.tags  # type: ignore[assignment]
+
+        if not data:  # Nothing to update.
+            return
+
         response = self._api_client.analysis_result_update(result.uuid, data)
         result.update_from_remote_data(response)
 
