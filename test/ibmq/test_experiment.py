@@ -447,7 +447,7 @@ class TestExperiment(IBMQTestCase):
         """Test updating an analysis result."""
         new_result = self._create_analysis_result()
         original_type = new_result.type
-        new_result.quality = ResultQuality.HUMAN_BAD
+        new_result.quality = ResultQuality.BAD
         new_result.verified = True
         new_fit = dict(
             value=new_result.fit['value']*2,
@@ -561,14 +561,13 @@ class TestExperiment(IBMQTestCase):
                                      "Analysis result {} with type {} does not match {}.".format(
                                          result.uuid, result.type, res_type))
 
-    @skip("Skip until issue 902 is fixed")
     def test_analysis_results_quality(self):
         """Test filtering analysis results with quality."""
         all_results = self.provider.experiment.analysis_results()
         ref_result = all_results[0]
         # Find a result whose quality is in the middle.
         for result in all_results:
-            if result.quality not in [ResultQuality.HUMAN_BAD, ResultQuality.HUMAN_GOOD]:
+            if result.quality not in [ResultQuality.BAD, ResultQuality.GOOD]:
                 ref_result = result
                 break
 

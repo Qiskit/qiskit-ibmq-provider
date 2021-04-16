@@ -328,8 +328,8 @@ class ExperimentService:
                 of an operator and a value. The operator is one of
                 ``lt``, ``le``, ``gt``, ``ge``, and ``eq``. The value is one of the
                 :class:`ResultQuality` values. For example,
-                ``analysis_results(quality=[('ge', 'Computer Bad'), ('lt', 'Computer Good')])``
-                will return all analysis results with a quality of ``Computer Bad`` and
+                ``analysis_results(quality=[('ge', 'Bad'), ('lt', 'Good')])``
+                will return all analysis results with a quality of ``Bad`` and
                 ``No Information``.
             verified: Indicates whether this result has been verified..
 
