@@ -14,7 +14,7 @@
 
 import os
 import uuid
-from unittest import mock, SkipTest, skipIf, skip
+from unittest import mock, SkipTest, skipIf
 from datetime import datetime, timedelta
 from typing import Optional, Union, Dict
 
@@ -447,7 +447,7 @@ class TestExperiment(IBMQTestCase):
         """Test updating an analysis result."""
         new_result = self._create_analysis_result()
         original_type = new_result.type
-        new_result.quality = ResultQuality.BAD
+        new_result.quality = ResultQuality.BAD  # pylint: disable=no-member
         new_result.verified = True
         new_fit = dict(
             value=new_result.fit['value']*2,
@@ -566,8 +566,9 @@ class TestExperiment(IBMQTestCase):
         all_results = self.provider.experiment.analysis_results()
         ref_result = all_results[0]
         # Find a result whose quality is in the middle.
+        bad_good = [ResultQuality.BAD, ResultQuality.GOOD]  # pylint: disable=no-member
         for result in all_results:
-            if result.quality not in [ResultQuality.BAD, ResultQuality.GOOD]:
+            if result.quality not in bad_good:
                 ref_result = result
                 break
 
