@@ -407,7 +407,7 @@ class TestExperiment(IBMQTestCase):
         for res in results:
             self.assertTrue(isinstance(res, AnalysisResult))
             self.assertIsInstance(res.verified, bool)
-            self.assertTrue(isinstance(res.fit, Dict))
+            self.assertIsInstance(res.fit, dict)
             self.assertTrue(res.uuid, "{} does not have an uuid!".format(res))
             for dt_attr in ['creation_datetime', 'updated_datetime']:
                 if getattr(res, dt_attr):
