@@ -36,7 +36,7 @@ class AnalysisResult:
             result_type: str,
             fit: Optional[Dict] = None,
             chisq: Optional[float] = None,
-            quality: Union[ResultQuality, str] = ResultQuality.NO_INFORMATION,
+            quality: Union[ResultQuality, str] = ResultQuality.UNKNOWN,
             tags: Optional[List[str]] = None,
             result_uuid: Optional[str] = None,
             backend_name: Optional[str] = None,

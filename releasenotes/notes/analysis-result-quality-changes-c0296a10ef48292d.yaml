@@ -19,3 +19,5 @@ upgrade:
     +---------------+-------------+----------+
     | Human Good    | Good        | True     |
     +---------------+-------------+----------+
+
+    Furthermore, the ``NO_INFORMATION`` enum has been renamed to ``UNKNOWN``.

@@ -47,7 +47,7 @@ class ResultQuality(enum.Enum):
         return NotImplemented
 
     BAD = 'Bad', 1
-    NO_INFORMATION = 'No Information', 2
+    UNKNOWN = 'No Information', 2
     GOOD = 'Good', 3
 
 
