@@ -429,6 +429,8 @@ class ExperimentService:
             data['fit'] = result.fit  # type: ignore[assignment]
         if result.tags:
             data['tags'] = result.tags  # type: ignore[assignment]
+        if result.verified is not None:
+            data['verified'] = result.verified
 
         if not data:  # Nothing to update.
             return
