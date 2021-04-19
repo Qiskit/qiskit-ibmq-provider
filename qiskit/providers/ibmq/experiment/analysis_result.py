@@ -26,24 +26,6 @@ DeviceComponent = NamedTuple('DeviceComponent',
 """Named tuple representing a device component."""
 
 
-class Fit:
-    """Class representing a fit value."""
-
-    def __init__(self, value: float, variance: Optional[float] = None):
-        """Fit constructor.
-
-        Args:
-            value: Value of the fit.
-            variance: Variance of the fit.
-        """
-        self.value = value
-        self.variance = variance
-
-    def to_dict(self) -> Dict:
-        """Return the dictionary representation of the object."""
-        return {'value': self.value, 'variance': self.variance}
-
-
 class AnalysisResult:
     """Class representing an analysis result for an experiment."""
 
@@ -51,8 +33,8 @@ class AnalysisResult:
             self,
             experiment_uuid: str,
             device_components: List[str],
-            fit: Union[Fit, Dict[str, float]],
             result_type: str,
+            fit: Optional[Dict] = None,
             chisq: Optional[float] = None,
             quality: Union[ResultQuality, str] = ResultQuality.NO_INFORMATION,
             tags: Optional[List[str]] = None,
@@ -64,9 +46,8 @@ class AnalysisResult:
         Args:
             experiment_uuid: Unique identifier of the experiment.
             device_components: Device component types.
-            fit: Fit value. This can be an instance of the :class:`Fit` class, or
-                a dictionary with the keys ``value`` and optionally ``variance``.
             result_type: Result type.
+            fit: Fit value.
             chisq: chi^2 decimal value of the fit.
             quality: Quality of the measurement value.
             tags: Tags for this result.
@@ -80,7 +61,7 @@ class AnalysisResult:
             raise IBMQInputValueError('device_components must not be empty.')
 
         self.experiment_uuid = experiment_uuid
-        self.fit = fit  # type: ignore[assignment]
+        self.fit = fit or {}
         self.type = result_type
         self.chisq = chisq
         self.quality = quality  # type: ignore[assignment]
@@ -113,22 +94,6 @@ class AnalysisResult:
     def uuid(self) -> str:
         """Return UUID of this analysis result."""
         return self._uuid
-
-    @property
-    def fit(self) -> Fit:
-        """Return the fit value for the experiment."""
-        return self._fit
-
-    @fit.setter
-    def fit(self, fit_val: Union[Fit, Dict[str, float]]) -> None:
-        """Update the analysis result fit value.
-
-        Args:
-            fit_val: Analysis result fit value.
-        """
-        if not isinstance(fit_val, Fit):
-            fit_val = Fit(**fit_val)
-        self._fit = fit_val
 
     @property
     def creation_datetime(self) -> datetime:
@@ -183,14 +148,13 @@ class AnalysisResult:
     def __repr__(self) -> str:
         attr_str = 'uuid="{}"'.format(self.uuid)
         for attr in ['type', 'quality', 'experiment_uuid', 'backend_name',
-                     'chisq', 'tags', 'device_components']:
+                     'chisq', 'tags', 'device_components', 'fit']:
             val = getattr(self, attr)
             if val is not None:
                 if isinstance(val, str):
                     attr_str += ', {}="{}"'.format(attr, val)
                 else:
                     attr_str += ', {}={}'.format(attr, val)
-        attr_str += ', fit={}'.format(self.fit.to_dict())
         for dt_ in ['creation_datetime', 'updated_datetime']:
             val = getattr(self, dt_)
             if val is not None:

@@ -14,12 +14,14 @@
 
 import warnings
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
 from qiskit.providers.ibmq import IBMQBackend
 from qiskit.qobj import QasmQobj, PulseQobj
+from qiskit.circuit import QuantumCircuit
+from qiskit.pulse import Schedule
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobError
@@ -58,51 +60,56 @@ class ManagedJob:
 
     def submit(
             self,
-            qobj: Union[QasmQobj, PulseQobj],
+            circuits: Union[QuantumCircuit, Schedule, List[Union[QuantumCircuit, Schedule]]],
             job_name: str,
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
             submit_lock: Lock,
             job_share_level: ApiJobShareLevel,
-            job_tags: Optional[List[str]] = None
+            job_tags: Optional[List[str]] = None,
+            **run_config: Dict
     ) -> None:
         """Submit the job.
 
         Args:
-            qobj: Qobj to run.
+            circuits: Circuits to run.
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
             executor: The thread pool used to submit the job.
             submit_lock: Lock used to synchronize job submission.
             job_share_level: Job share level.
             job_tags: Tags to be assigned to the job.
+            **run_config: Extra arguments used to configure the run.
         """
 
         # Submit the job in its own future.
         logger.debug("Submitting job %s in future", job_name)
         self.future = executor.submit(
-            self._async_submit, qobj=qobj, job_name=job_name, backend=backend,
-            submit_lock=submit_lock, job_share_level=job_share_level, job_tags=job_tags)
+            self._async_submit, circuits=circuits, job_name=job_name, backend=backend,
+            submit_lock=submit_lock, job_share_level=job_share_level, job_tags=job_tags,
+            **run_config)
         logger.debug("Job %s future obtained", job_name)
 
     def _async_submit(
             self,
-            qobj: Union[QasmQobj, PulseQobj],
+            circuits: Union[QuantumCircuit, Schedule, List[Union[QuantumCircuit, Schedule]]],
             job_name: str,
             backend: IBMQBackend,
             submit_lock: Lock,
             job_share_level: ApiJobShareLevel,
-            job_tags: Optional[List[str]] = None
+            job_tags: Optional[List[str]] = None,
+            **run_config: Dict
     ) -> None:
-        """Run a Qobj asynchronously and populate instance attributes.
+        """Run circuits asynchronously and populate instance attributes.
 
         Args:
-            qobj: Qobj to run.
+            circuits: Circuits to run.
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
             submit_lock: Lock used to synchronize job submission.
             job_share_level: Job share level.
             job_tags: Tags to be assigned to the job.
+            **run_config: Extra arguments used to configure the run.
         """
         # pylint: disable=missing-raises-doc
         logger.debug("Job %s waiting for submit lock.", job_name)
@@ -112,10 +119,11 @@ class ManagedJob:
             while self.job is None:
                 try:
                     self.job = backend.run(
-                        qobj=qobj,
+                        circuits,
                         job_name=job_name,
                         job_share_level=job_share_level.value,
-                        job_tags=job_tags)
+                        job_tags=job_tags,
+                        **run_config)
                 except IBMQBackendJobLimitError:
                     final_states = [state.value for state in API_JOB_FINAL_STATES]
                     oldest_running = backend.jobs(limit=1, descending=False,
