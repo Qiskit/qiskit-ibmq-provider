@@ -18,7 +18,6 @@ from io import StringIO
 from unittest.mock import patch
 import uuid
 import time
-import threading
 
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
@@ -33,6 +32,7 @@ from ..fake_runtime_client import BaseFakeRuntimeClient
 
 @unittest.skip("Skip runtime tests")
 class TestRuntime(IBMQTestCase):
+    """Class for testing runtime modules."""
 
     @classmethod
     @requires_provider
@@ -63,6 +63,7 @@ class TestRuntime(IBMQTestCase):
         self.assertTrue(job.result())
 
     def test_interim_results(self):
+        """Test interim results."""
         def _callback(interim_result):
             print(f"interim result {interim_result}")
         params = {'param1': 'foo'}
@@ -96,6 +97,7 @@ class TestRuntime(IBMQTestCase):
 
 @unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
 class TestRuntimeIntegration(IBMQTestCase):
+    """Integration tests for runtime modules."""
 
     RUNTIME_PROGRAM = """
 import random
@@ -147,7 +149,7 @@ def main(backend, user_messenger, **kwargs):
         super().tearDownClass()
         try:
             cls.provider.runtime.delete_program(cls.program_id)
-        except:
+        except Exception:  # pylint: disable=broad-except
             pass
 
     def setUp(self) -> None:
@@ -163,7 +165,7 @@ def main(backend, user_messenger, **kwargs):
         for prog in self.to_delete:
             try:
                 self.provider.runtime.delete_program(prog)
-            except:
+            except Exception:  # pylint: disable=broad-except
                 pass
 
         # Cancel jobs.
@@ -171,7 +173,7 @@ def main(backend, user_messenger, **kwargs):
             if job.status() not in JOB_FINAL_STATES:
                 try:
                     job.cancel()
-                except:
+                except Exception:  # pylint: disable=broad-except
                     pass
 
     def test_runtime_service(self):
@@ -264,13 +266,13 @@ def main(backend, user_messenger, **kwargs):
         """Test a failed program execution."""
         options = {'backend_name': self.backend.name()}
         job = self.provider.runtime.run(program_id=self.program_id, inputs={}, options=options)
-        self.log.info(f"Runtime job {job.job_id()} submitted.")
+        self.log.info("Runtime job %s submitted.", job.job_id())
 
         job.wait_for_final_state()
         self.assertEqual(JobStatus.ERROR, job.status())
-        with self.assertRaises(RuntimeJobFailureError) as cm:
+        with self.assertRaises(RuntimeJobFailureError) as err_cm:
             job.result()
-        self.assertIn('KeyError', str(cm.exception))
+        self.assertIn('KeyError', str(err_cm.exception))
 
     def test_retrieve_job_queued(self):
         """Test retrieving a queued job."""
@@ -288,15 +290,26 @@ def main(backend, user_messenger, **kwargs):
         self.assertEqual(job.job_id(), rjob.job_id())
 
     def test_retrieve_job_done(self):
+        """Test retrieving a finished job."""
         pass
 
     def test_cancel_job_queued(self):
+        """Test canceling a queued job."""
         pass
 
+    @unittest.skip("Skip until fixed")
     def test_cancel_job_running(self):
-        pass
+        """Test canceling a running job."""
+        job = self._run_program(iterations=3, interim_results="foobar")
+        while job.status() != JobStatus.RUNNING:
+            time.sleep(5)
+        job.cancel()
+        self.assertEqual(job.status(), JobStatus.CANCELLED)
+        rjob = self.provider.runtime.job(job.job_id())
+        self.assertEqual(rjob.status(), JobStatus.CANCELLED)
 
     def test_cancel_job_done(self):
+        """Test canceling a finished job."""
         pass
 
     def test_interim_result_callback(self):
@@ -353,6 +366,7 @@ def main(backend, user_messenger, **kwargs):
     def test_stream_results_done(self):
         """Test streaming interim results after job is done."""
         def result_callback(job_id, interim_result):
+            # pylint: disable=unused-argument
             nonlocal called_back
             called_back = True
 
@@ -367,6 +381,7 @@ def main(backend, user_messenger, **kwargs):
     def test_callback_error(self):
         """Test error in callback method."""
         def result_callback(job_id, interim_result):
+            # pylint: disable=unused-argument
             if interim_result['iteration'] == 0:
                 raise ValueError("Kaboom!")
             nonlocal final_it
@@ -374,35 +389,40 @@ def main(backend, user_messenger, **kwargs):
 
         final_it = 0
         iterations = 3
-        with self.assertLogs('qiskit.providers.ibmq.runtime', level='WARNING') as cm:
+        with self.assertLogs('qiskit.providers.ibmq.runtime', level='WARNING') as err_cm:
             job = self._run_program(iterations=iterations, interim_results="foo",
                                     callback=result_callback)
             job.wait_for_final_state()
 
-        self.assertIn("Kaboom", ', '.join(cm.output))
+        self.assertIn("Kaboom", ', '.join(err_cm.output))
         self.assertEqual(iterations-1, final_it)
         self.assertIsNone(job._ws_client._ws)
 
-    @unittest.skip("Skip until 277 is fixed")
-    def test_callback_job_cancelled(self):
+    # @unittest.skip("Skip until 277 is fixed")
+    def test_callback_job_cancelled_running(self):
         """Test canceling a job while streaming results."""
         def result_callback(job_id, interim_result):
-            nonlocal callback_event
-            callback_event.set()
+            # pylint: disable=unused-argument
+            nonlocal final_it
+            final_it = interim_result['iteration']
 
-        callback_event = threading.Event()
-        job = self._run_program(iterations=3, interim_results="foo",
+        final_it = 0
+        iterations = 3
+        job = self._run_program(iterations=iterations, interim_results="foo",
                                 callback=result_callback)
-
-        callback_event.wait(10)
+        while job.status() != JobStatus.RUNNING:
+            time.sleep(5)
         job.cancel()
-        time.sleep(5)  # Wait for cleanup
+        time.sleep(3)  # Wait for cleanup
         self.assertIsNone(job._ws_client._ws)
+        self.assertLess(final_it, iterations)
 
     def test_final_result(self):
+        """Test getting final result."""
         pass
 
     def test_job_status(self):
+        """Test job status."""
         pass
 
     def test_job_inputs(self):
@@ -412,7 +432,7 @@ def main(backend, user_messenger, **kwargs):
         options = {'backend_name': self.backend.name()}
         job = self.provider.runtime.run(program_id=self.program_id, inputs=inputs,
                                         options=options)
-        self.log.info(f"Runtime job {job.job_id()} submitted.")
+        self.log.info("Runtime job %s submitted.", job.job_id())
         self.to_cancel.append(job)
         self.assertEqual(inputs, job.inputs)
 
@@ -433,6 +453,7 @@ def main(backend, user_messenger, **kwargs):
         self.assertEqual(JobStatus.DONE, job.status())
 
     def _validate_program(self, program):
+        """Validate a program."""
         # TODO add more validation
         self.assertTrue(program)
         self.assertTrue(program.name)
@@ -441,6 +462,7 @@ def main(backend, user_messenger, **kwargs):
         self.assertTrue(program.max_execution_time)
 
     def _upload_program(self, name=None, max_execution_time=300):
+        """Upload a new program."""
         name = name or self._get_program_name()
         program_id = self.provider.runtime.upload_program(
             name=name,
@@ -450,6 +472,7 @@ def main(backend, user_messenger, **kwargs):
         return program_id
 
     def _get_program_name(self):
+        """Return a unique program name."""
         return self.PROGRAM_PREFIX + "_" + uuid.uuid4().hex
 
     def _run_program(self, program_id=None, iterations=1,
@@ -463,7 +486,7 @@ def main(backend, user_messenger, **kwargs):
         options = {'backend_name': self.backend.name()}
         job = self.provider.runtime.run(program_id=pid, inputs=inputs,
                                         options=options, callback=callback)
-        self.log.info(f"Runtime job {job.job_id()} submitted.")
+        self.log.info("Runtime job %s submitted.", job.job_id())
         self.to_cancel.append(job)
         return job
 
@@ -478,8 +501,10 @@ def main(backend, user_messenger, **kwargs):
             self.value = value
 
         def to_json(self):
+            """To JSON serializable."""
             return {"value": self.value}
 
         @classmethod
         def from_json(cls, data):
+            """From JSON serializable."""
             return cls(**data)

@@ -33,6 +33,7 @@ class RuntimeWebsocketClient:
 
     BACKOFF_MAX = 8
     """Maximum time to wait between retries."""
+    POISON_PILL = "_poison_pill"
 
     def __init__(
             self,
@@ -57,12 +58,8 @@ class RuntimeWebsocketClient:
             An open websocket connection.
 
         Raises:
-            WebsocketError: If the connection to the websocket server could
+            WebsocketRetryableError: If the connection to the websocket server could
                 not be established.
-            WebsocketAuthenticationError: If the connection to the websocket
-                was established, but the authentication failed.
-            WebsocketIBMQProtocolError: If the connection to the websocket
-                server was established, but the answer was unexpected.
         """
         try:
             logger.debug('Starting new websocket connection: %s', url)
@@ -102,6 +99,7 @@ class RuntimeWebsocketClient:
 
         Raises:
             WebsocketError: If a websocket error occurred.
+            WebsocketRetryableError: If a websocket error occurred and maximum retry reached.
         """
         url = '{}/stream/jobs/{}'.format(self._websocket_url, job_id)
 
@@ -125,16 +123,21 @@ class RuntimeWebsocketClient:
                             f"closed unexpectedly: {ex.code}")
                         raise exception_to_raise
 
+            except asyncio.CancelledError:
+                logger.debug("Streaming is cancelled.")
+                result_queue.put_nowait(self.POISON_PILL)
+                return
             except WebsocketRetryableError as ex:
-                logger.debug(f"A websocket error occurred while streaming "
-                             f"results for runtime job {job_id}:\n{traceback.format_exc()}")
+                logger.debug("A websocket error occurred while streaming "
+                             "results for runtime job %s:\n%s", job_id, traceback.format_exc())
                 current_retry += 1
                 if current_retry > max_retries:
+                    result_queue.put_nowait(self.POISON_PILL)
                     raise ex
 
                 backoff_time = self._backoff_time(backoff_factor, current_retry)
-                logger.info(f"Retrying websocket after {backoff_time} seconds. "
-                            f"Attemp {current_retry}")
+                logger.info("Retrying websocket after %s seconds. Attemp %s",
+                            backoff_time, current_retry)
                 await asyncio.sleep(backoff_time)  # Block asyncio loop for given backoff time.
                 continue  # Continues next iteration after `finally` block.
             finally:

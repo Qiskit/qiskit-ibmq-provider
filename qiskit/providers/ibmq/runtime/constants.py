@@ -16,7 +16,6 @@ from qiskit.providers.jobstatus import JobStatus
 
 
 API_TO_JOB_STATUS = {
-    'PENDING': JobStatus.INITIALIZING,
     'QUEUED': JobStatus.QUEUED,
     'RUNNING': JobStatus.RUNNING,
     'COMPLETED': JobStatus.DONE,

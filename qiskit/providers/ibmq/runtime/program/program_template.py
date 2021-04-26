@@ -9,6 +9,8 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+# pylint: disable=unused-argument
+# pylint: disable=invalid-name
 
 """Runtime program template.
 
@@ -38,6 +40,7 @@ def main(backend: ProgramBackend, user_messenger: UserMessenger, **kwargs):
     Args:
         backend: Backend for the circuits to run on.
         user_messenger: Used to communicate with the program consumer.
+        kwargs: User inputs.
     """
     # Massage the input if necessary.
     result = program(backend, user_messenger, **kwargs)
@@ -46,10 +49,10 @@ def main(backend: ProgramBackend, user_messenger: UserMessenger, **kwargs):
 
 
 if __name__ == '__main__':
-    """This is used for testing locally using Aer simulator."""
-    _backend = Aer.get_backend('qasm_simulator')
+    # This is used for testing locally using Aer simulator.
+    sim_backend = Aer.get_backend('qasm_simulator')
     user_params = {}
     if len(sys.argv) > 1:
         # If there are user parameters.
         user_params = json.loads(sys.argv[1], cls=RuntimeDecoder)
-    main(_backend, UserMessenger(), **user_params)
+    main(sim_backend, UserMessenger(), **user_params)

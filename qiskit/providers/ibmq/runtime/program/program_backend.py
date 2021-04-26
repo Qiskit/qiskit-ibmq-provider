@@ -67,4 +67,5 @@ class ProgramBackend(Backend, ABC):
                  the server.
             IBMQBackendValueError: If an input parameter value is not valid.
         """
+        # pylint: disable=arguments-differ
         pass

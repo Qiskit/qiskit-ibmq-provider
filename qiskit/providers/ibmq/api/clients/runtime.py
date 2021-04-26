@@ -119,8 +119,9 @@ class RuntimeClient:
         self.api.program(program_id).delete()
 
     def job_get(self, job_id):
+        """Get job data."""
         response = self.api.program_job(job_id).get()
-        logger.debug(f"Runtime job get response: {response}")
+        logger.debug("Runtime job get response: %s", response)
         return response
 
     def job_results(self, job_id: str) -> str:

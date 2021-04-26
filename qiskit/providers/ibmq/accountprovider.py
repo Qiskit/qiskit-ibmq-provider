@@ -209,7 +209,7 @@ class AccountProvider(Provider):
             rep_time: Optional[int] = None,
             rep_delay: Optional[float] = None,
             parameter_binds: Optional[List[Dict[Parameter, float]]] = None,
-            schedule_circuit=False,
+            schedule_circuit: bool = False,
             inst_map: InstructionScheduleMap = None,
             meas_map: List[List[int]] = None,
             init_qubits: Optional[bool] = None,

@@ -25,10 +25,10 @@ class UserMessenger:
     """
 
     def publish(
-        self,
-        message: Any,
-        encoder: json.JSONEncoder = RuntimeEncoder,
-        final: bool = False
+            self,
+            message: Any,
+            encoder: json.JSONEncoder = RuntimeEncoder,
+            final: bool = False
     ) -> None:
         """Publish message.
 
@@ -45,5 +45,6 @@ class UserMessenger:
             encoder: An optional JSON encoder for serializing
             final: Whether the message being published is the final result.
         """
+        # pylint: disable=unused-argument
         # Default implementation for testing.
         print(json.dumps(message, cls=encoder))

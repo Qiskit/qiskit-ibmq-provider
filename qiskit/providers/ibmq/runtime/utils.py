@@ -9,14 +9,16 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+# pylint: disable=method-hidden
 
 """Utility functions for the runtime service."""
 
 import json
 from typing import Any
-import numpy as np
-import dill
 import base64
+
+import dill
+import numpy as np
 
 from qiskit.result import Result
 
@@ -24,7 +26,7 @@ from qiskit.result import Result
 class RuntimeEncoder(json.JSONEncoder):
     """JSON Encoder used by runtime service."""
 
-    def default(self, obj: Any) -> Any:
+    def default(self, obj: Any) -> Any:  # pylint: disable=arguments-differ
         if hasattr(obj, 'tolist'):
             return {'__type__': 'array', '__value__': obj.tolist()}
         if isinstance(obj, complex):
@@ -47,6 +49,7 @@ class RuntimeDecoder(json.JSONDecoder):
         super().__init__(object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, obj):
+        """Called to decode object."""
         if '__type__' in obj:
             if obj['__type__'] == 'complex':
                 val = obj['__value__']

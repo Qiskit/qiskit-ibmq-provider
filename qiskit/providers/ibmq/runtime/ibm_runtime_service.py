@@ -17,7 +17,6 @@ from typing import Dict, Callable, Optional, Union, List
 import json
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
-from qiskit import QiskitError
 
 from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram
@@ -26,7 +25,7 @@ from .exceptions import QiskitRuntimeError, RuntimeDuplicateProgramError, Runtim
 from ..api.clients.runtime import RuntimeClient
 from ..api.clients.runtime_ws import RuntimeWebsocketClient
 from ..api.exceptions import RequestsApiError
-from ..exceptions import IBMQNotAuthorizedError
+from ..exceptions import IBMQNotAuthorizedError, IBMQInputValueError
 
 logger = logging.getLogger(__name__)
 
@@ -179,9 +178,12 @@ class IBMRuntimeService:
 
         Returns:
             A ``RuntimeJob`` instance representing the execution.
+
+        Raises:
+            IBMQInputValueError: If input is invalid.
         """
         if 'backend_name' not in options:
-            raise QiskitError('"backend_name" is required field in "options"')
+            raise IBMQInputValueError('"backend_name" is required field in "options"')
 
         backend_name = options['backend_name']
         params_str = json.dumps(inputs, cls=RuntimeEncoder)
@@ -225,7 +227,7 @@ class IBMRuntimeService:
             if ex.status_code == 409:
                 raise RuntimeDuplicateProgramError(
                     "Program with the same name already exists.") from None
-            elif ex.status_code == 403:
+            if ex.status_code == 403:
                 raise IBMQNotAuthorizedError(
                     "You are not authorized to upload programs.") from None
             raise QiskitRuntimeError(f"Failed to create program: {ex}") from None
@@ -251,7 +253,7 @@ class IBMRuntimeService:
         if program_id in self._programs:
             del self._programs[program_id]
 
-    def job(self, job_id: str):
+    def job(self, job_id: str) -> RuntimeJob:
         """Retrieve a runtime job.
 
         Args:

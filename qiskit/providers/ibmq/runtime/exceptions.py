@@ -34,3 +34,8 @@ class RuntimeProgramNotFound(QiskitRuntimeError):
 class RuntimeJobFailureError(QiskitRuntimeError):
     """Error raised when a runtime job failed."""
     pass
+
+
+class RuntimeInvalidStateError(QiskitRuntimeError):
+    """Errors raised when the state is not valid for the operation."""
+    pass

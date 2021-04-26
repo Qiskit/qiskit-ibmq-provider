@@ -31,6 +31,7 @@ class BaseFakeProgram:
         self._cost = cost
 
     def to_dict(self, include_data=False):
+        """Convert this program to a dictionary format."""
         out = {'id': self._id,
                'name': self._name,
                'cost': self._cost}
@@ -73,6 +74,7 @@ class BaseFakeRuntimeJob:
             self._result = "foo"
 
     def to_dict(self):
+        """Convert to dictionary format."""
         return {'id': self._job_id,
                 'hub': self._hub,
                 'group': self._group,
