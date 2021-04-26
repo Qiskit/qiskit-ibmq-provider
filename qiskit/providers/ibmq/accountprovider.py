@@ -25,6 +25,7 @@ from qiskit.pulse.instruction_schedule_map import InstructionScheduleMap
 from qiskit.providers.backend import BackendV1 as Backend
 from qiskit.providers.basebackend import BaseBackend
 from qiskit.transpiler import Layout
+import qiskit.providers.ibmq.runtime.runtime_job as runtime_job  # pylint: disable=unused-import
 
 from .api.clients import AccountClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
@@ -214,7 +215,7 @@ class AccountProvider(Provider):
             meas_map: List[List[int]] = None,
             init_qubits: Optional[bool] = None,
             **run_config: Dict
-    ) -> 'RuntimeJob':
+    ) -> 'runtime_job.RuntimeJob':
         """Execute the input circuit(s) on a backend using the runtime service.
 
         Note:
