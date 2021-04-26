@@ -27,8 +27,8 @@ class UserMessenger:
     def publish(
         self,
         message: Any,
-        final_result: bool = False,
         encoder: json.JSONEncoder = RuntimeEncoder,
+        final: bool = False
     ) -> None:
         """Publish message.
 
@@ -36,14 +36,14 @@ class UserMessenger:
         to the program consumer. The messages will be made immediately available to the consumer,
         but they may choose not to receive the messages.
 
-        The `final_result` parameter is used to indicate whether the message is
+        The `final` parameter is used to indicate whether the message is
         the final result of the program. Final results may be processed differently
         from interim results.
 
         Args:
             message: Message to be published. Can be any type.
-            final_result: Whether this is the final result from the program.
             encoder: An optional JSON encoder for serializing
+            final: Whether the message being published is the final result.
         """
         # Default implementation for testing.
         print(json.dumps(message, cls=encoder))

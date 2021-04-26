@@ -22,14 +22,59 @@ from qiskit import QiskitError
 from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram
 from .utils import RuntimeEncoder, RuntimeDecoder
+from .exceptions import QiskitRuntimeError, RuntimeDuplicateProgramError, RuntimeProgramNotFound
 from ..api.clients.runtime import RuntimeClient
 from ..api.clients.runtime_ws import RuntimeWebsocketClient
+from ..api.exceptions import RequestsApiError
+from ..exceptions import IBMQNotAuthorizedError
 
 logger = logging.getLogger(__name__)
 
 
 class IBMRuntimeService:
-    """Class for interacting with the IBM Quantum runtime service."""
+    """Class for interacting with the IBM Quantum runtime service.
+
+    The IBM Quantum Runtime Service allows authorized users to upload their quantum programs
+    that can be invoked by others. A quantum program is a piece of code that takes
+    certain inputs, performs quantum and classical processing, and returns the
+    results.
+
+    A sample workflow of using the runtime service::
+
+        from qiskit import IBMQ, QuantumCircuit
+
+        provider = IBMQ.load_account()
+        backend = provider.backend.ibmq_qasm_simulator
+
+        # List all available programs.
+        provider.runtime.pprint_programs()
+
+        # Create a circuit.
+        qc = QuantumCircuit(2, 2)
+        qc.h(0)
+        qc.cx(0, 1)
+        qc.measure_all()
+
+        # Execute the circuit using the "circuit-runner" program.
+        runtime_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
+        options = {'backend_name': backend.name()}
+        job = provider.runtime.run(program_id="circuit-runner",
+                                   options=options,
+                                   inputs=runtime_inputs)
+
+        # Get runtime job result.
+        result = job.result()
+
+    If the program has any interim results, you can use the ``callback``
+    parameter of the :meth:`run` method to stream the interim results.
+    Alternatively, you can use the :meth:`stream_results` method to stream
+    the results at a later time, but before the job finishes.
+
+    The :meth:`run` method returns a
+    :class:`qiskit.providers.ibmq.runtime.RuntimeJob` object. You can use its
+    methods to perform tasks like checking the job status, getting job result, and
+    canceling the job.
+    """
 
     def __init__(self, provider: 'accountprovider.AccountProvider') -> None:
         """IBMRuntimeService constructor.
@@ -83,9 +128,19 @@ class IBMRuntimeService:
 
         Returns:
             Runtime program.
+
+        Raises:
+            RuntimeProgramNotFound: If the program does not exist.
+            QiskitRuntimeError: If the request failed.
         """
         if program_id not in self._programs or refresh:
-            response = self._api_client.program_get(program_id)
+            try:
+                response = self._api_client.program_get(program_id)
+            except RequestsApiError as ex:
+                if ex.status_code == 404:
+                    raise RuntimeProgramNotFound(f"Program not found: {ex.message}") from None
+                raise QiskitRuntimeError(f"Failed to get program: {ex}") from None
+
             self._programs[program_id] = self._to_program(response)
 
         return self._programs[program_id]
@@ -158,8 +213,22 @@ class IBMRuntimeService:
 
         Returns:
             Program ID.
+
+        Raises:
+            RuntimeDuplicateProgramError: If a program with the same name already exists.
+            IBMQNotAuthorizedError: If you are not authorized to upload programs.
+            QiskitRuntimeError: If the upload failed.
         """
-        response = self._api_client.program_create(name, data, max_execution_time)
+        try:
+            response = self._api_client.program_create(name, data, max_execution_time)
+        except RequestsApiError as ex:
+            if ex.status_code == 409:
+                raise RuntimeDuplicateProgramError(
+                    "Program with the same name already exists.") from None
+            elif ex.status_code == 403:
+                raise IBMQNotAuthorizedError(
+                    "You are not authorized to upload programs.") from None
+            raise QiskitRuntimeError(f"Failed to create program: {ex}") from None
         return response['id']
 
     def delete_program(self, program_id: str):
@@ -167,8 +236,20 @@ class IBMRuntimeService:
 
         Args:
             program_id: Program ID.
+
+        Raises:
+            RuntimeProgramNotFound: If the program doesn't exist.
+            QiskitRuntimeError: If the request failed.
         """
-        self._api_client.program_delete(program_id=program_id)
+        try:
+            self._api_client.program_delete(program_id=program_id)
+        except RequestsApiError as ex:
+            if ex.status_code == 404:
+                raise RuntimeProgramNotFound(f"Program not found: {ex.message}") from None
+            raise QiskitRuntimeError(f"Failed to delete program: {ex}") from None
+
+        if program_id in self._programs:
+            del self._programs[program_id]
 
     def job(self, job_id: str):
         """Retrieve a runtime job.

@@ -28,14 +28,44 @@ from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 
 from .utils import RuntimeDecoder
 from .constants import API_TO_JOB_STATUS
+from .exceptions import RuntimeJobFailureError
 from ..api.clients import RuntimeClient, RuntimeWebsocketClient
-from ..job.exceptions import IBMQJobFailureError
 
 logger = logging.getLogger(__name__)
 
 
 class RuntimeJob:
-    """Representation of a runtime program execution."""
+    """Representation of a runtime program execution.
+
+    A new ``RuntimeJob`` instance is returned when you call
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.run`
+    to execute a runtime program, and when you call
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.job`
+    to retrieve a previously executed job.
+
+    If the program execution is successful, you can inspect the job's status by
+    calling :meth:`status()`. Job status can be one of the
+    :class:`~qiskit.providers.JobStatus` members.
+
+    Some of the methods in this class are blocking, which means control may
+    not be returned immediately. :meth:`result()` is an example
+    of a blocking method::
+
+        job = provider.runtime.run(...)
+
+        try:
+            job_result = job.result()  # It will block until the job finishes.
+            print("The job finished with result {}".format(job_result))
+        except IBMQJobFailureError as ex:
+            print("Job failed!: {}".format(ex))
+
+    If the program has any interim results, you can use the ``callback``
+    parameter of the
+    :meth:`~qiskit.providers.ibmq.runtime.IBMRuntimeService.run`
+    method to stream the interim results.
+    Alternatively, you can use the :meth:`stream_results` method to stream
+    the results at a later time, but before the job finishes.
+    """
 
     _executor = futures.ThreadPoolExecutor()
     _result_queue_poison_pill = "_poison_pill"
@@ -67,7 +97,6 @@ class RuntimeJob:
         self._ws_client = ws_client
         self._results = None
         self._params = params or {}
-        # self._user_callback = user_callback
         self._program_id = program_id
         self._status = JobStatus.INITIALIZING
         self._streaming = False
@@ -95,14 +124,14 @@ class RuntimeJob:
             Runtime job result.
 
         Raises:
-            IBMQJobFailureError: If the job failed.
+            RuntimeJobFailureError: If the job failed.
         """
         if not self._results:
             self.wait_for_final_state(timeout=timeout, wait=wait)
             result_raw = self._api_client.job_results(job_id=self.job_id())
             if self._status == JobStatus.ERROR:
-                raise IBMQJobFailureError(f"Unable to retrieve result for job {self.job_id()}. "
-                                          f"Job has failed:\n{result_raw}")
+                raise RuntimeJobFailureError(f"Unable to retrieve result for job {self.job_id()}. "
+                                             f"Job has failed:\n{result_raw}")
             self._results = self._decode_data(result_raw)
         return self._results
 
@@ -120,7 +149,10 @@ class RuntimeJob:
         """
         if self._status not in JOB_FINAL_STATES:
             response = self._api_client.job_get(job_id=self.job_id())
-            self._status = API_TO_JOB_STATUS[response['status'].upper()]
+            try:
+                self._status = API_TO_JOB_STATUS[response['status'].upper()]
+            except KeyError:
+                raise QiskitError(f"Unknown status: {response['status']}")
         return self._status
 
     def wait_for_final_state(
@@ -266,11 +298,11 @@ class RuntimeJob:
         return self._backend
 
     @property
-    def parameters(self) -> Dict:
-        """Job parameters.
+    def inputs(self) -> Dict:
+        """Job input parameters.
 
         Returns:
-            Parameters used in this job.
+            Input parameters used in this job.
         """
         return self._params
 

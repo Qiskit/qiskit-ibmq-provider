@@ -10,30 +10,17 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Values used by the runtime API for different values."""
-
-import enum
+"""Constant values."""
 
 from qiskit.providers.jobstatus import JobStatus
 
 
-# class ApiRuntimeJobStatus(enum.Enum):
-#     """Possible values used by the API for a runtime job status."""
-#
-#     PENDING = 'PENDING'
-#     RUNNING = 'RUNNING'
-#     FAILED = 'FAILED'
-#     SUCCEEDED = 'SUCCEEDED'
-#
-#
-# JOB_FINAL_STATES = (
-#     "FAILED",
-#     "SUCCEEDED"
-# )
-
 API_TO_JOB_STATUS = {
     'PENDING': JobStatus.INITIALIZING,
+    'QUEUED': JobStatus.QUEUED,
     'RUNNING': JobStatus.RUNNING,
-    'SUCCEEDED': JobStatus.DONE,
-    'FAILED': JobStatus.ERROR
+    'COMPLETED': JobStatus.DONE,
+    'SUCCEEDED': JobStatus.DONE,    # TODO remove when no longer used
+    'FAILED': JobStatus.ERROR,
+    'CANCELLED': JobStatus.CANCELLED
 }

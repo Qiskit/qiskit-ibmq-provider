@@ -94,9 +94,9 @@ class RuntimeProgram:
                 if hasattr(item, 'required'):
                     formatted.append(" "*6 + "Required: " + str(item.required))
 
-        formatted = [f'{self.name}:',
-                     f"  ID: {self._id}",
-                     f"  Description: {self._description}",
+        formatted = [f'{self.program_id}:',
+                     f"  Name: {self.name}",
+                     f"  Description: {self.description}",
                      f"  Parameters:"]
 
         if self._parameters:
