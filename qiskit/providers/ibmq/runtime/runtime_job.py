@@ -24,6 +24,7 @@ import queue
 from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.backend import Backend
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
+import qiskit.providers.ibmq.ibmqbackend as ibmqbackend
 
 from .utils import RuntimeDecoder
 from .constants import API_TO_JOB_STATUS
@@ -68,11 +69,10 @@ class RuntimeJob:
     """
 
     _executor = futures.ThreadPoolExecutor()
-    _result_queue_poison_pill = "_poison_pill"
 
     def __init__(
             self,
-            backend: 'IBMQBackend',
+            backend: 'ibmqbackend.IBMQBackend',
             api_client: RuntimeClient,
             ws_client: RuntimeWebsocketClient,
             job_id: str,

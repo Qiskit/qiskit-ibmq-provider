@@ -85,7 +85,9 @@ class Credentials:
         return all([self.hub, self.group, self.project])
 
     def __eq__(self, other: object) -> bool:
-        return self.__dict__ == other.__dict__
+        if not isinstance(other, Credentials):
+            return False
+        return (self.token == other.token) & (self.unique_id() == other.unique_id())
 
     def unique_id(self) -> HubGroupProject:
         """Return a value that uniquely identifies these credentials.
