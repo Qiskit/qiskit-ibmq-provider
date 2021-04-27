@@ -104,7 +104,7 @@ class RuntimeJob:
         self._streaming = False
         self._streaming_loop = None
         self._streaming_task = None
-        self._result_queue = queue.Queue()
+        self._result_queue = queue.Queue()  # type: queue.Queue
 
         if user_callback is not None:
             self.stream_results(user_callback)
@@ -226,7 +226,7 @@ class RuntimeJob:
         """
         try:
             # Need new loop for the thread.
-            self._streaming_loop = asyncio.new_event_loop()
+            self._streaming_loop = asyncio.new_event_loop()  # type: ignore[assignment]
             asyncio.set_event_loop(self._streaming_loop)
             # TODO - use asyncio.create_task() when 3.6 is dropped.
             self._streaming_task = self._streaming_loop.create_task(
@@ -242,7 +242,8 @@ class RuntimeJob:
                 "from the server for job %s:\n%s", self.job_id(), traceback.format_exc())
         finally:
             if self._streaming_loop is not None:
-                self._streaming_loop.run_until_complete(self._ws_client.disconnect())
+                self._streaming_loop.run_until_complete(  # type: ignore[unreachable]
+                    self._ws_client.disconnect())
             self._streaming = False
 
     def _stream_results(self, result_queue: queue.Queue, user_callback: Callable) -> None:

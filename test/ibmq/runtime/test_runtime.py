@@ -17,6 +17,8 @@ from io import StringIO
 from unittest.mock import patch
 from unittest import mock
 import uuid
+import time
+import random
 
 import numpy as np
 from qiskit.result import Result
@@ -24,11 +26,12 @@ from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder, RuntimeDecoder
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.runtime import IBMRuntimeService, RuntimeJob
-from qiskit.providers.ibmq.runtime.exceptions import RuntimeProgramNotFound
+from qiskit.providers.ibmq.runtime.exceptions import (RuntimeProgramNotFound,
+                                                      RuntimeJobFailureError)
 
 
 from ...ibmqtestcase import IBMQTestCase
-from .fake_runtime_client import BaseFakeRuntimeClient
+from .fake_runtime_client import BaseFakeRuntimeClient, FailedRuntimeJob, CancelableRuntimeJob
 from .utils import SerializableClass, UnserializableClass
 
 
@@ -125,9 +128,8 @@ class TestRuntime(IBMQTestCase):
 
     def test_run_program(self):
         """Test running program."""
-        program_id = self._upload_program()
         params = {'param1': 'foo'}
-        job = self._run_program(program_id, inputs=params)
+        job = self._run_program(inputs=params)
         self.assertTrue(job.job_id())
         self.assertIsInstance(job, RuntimeJob)
         self.assertIsInstance(job.status(), JobStatus)
@@ -136,18 +138,62 @@ class TestRuntime(IBMQTestCase):
         self.assertEqual(job.status(), JobStatus.DONE)
         self.assertTrue(job.result())
 
-    # def test_run_program_failed(self):
-    #     """Test a failed program execution."""
-    #     options = {'backend_name': self.backend.name()}
-    #     job = self.provider.runtime.run(program_id=self.program_id, inputs={}, options=options)
-    #     self.log.info("Runtime job %s submitted.", job.job_id())
-    #
-    #     job.wait_for_final_state()
-    #     self.assertEqual(JobStatus.ERROR, job.status())
-    #     with self.assertRaises(RuntimeJobFailureError) as err_cm:
-    #         job.result()
-    #     self.assertIn('KeyError', str(err_cm.exception))
-    #
+    def test_run_program_failed(self):
+        """Test a failed program execution."""
+        job = self._run_program(job_classes=FailedRuntimeJob)
+        job.wait_for_final_state()
+        self.assertEqual(JobStatus.ERROR, job.status())
+        with self.assertRaises(RuntimeJobFailureError):
+            job.result()
+
+    def test_retrieve_job(self):
+        """Test retrieving a job."""
+        program_id = self._upload_program()
+        params = {'param1': 'foo'}
+        job = self._run_program(program_id, inputs=params)
+        rjob = self.runtime.job(job.job_id())
+        self.assertEqual(job.job_id(), rjob.job_id())
+        self.assertEqual(program_id, rjob.program_id)
+
+    def test_cancel_job(self):
+        """Test canceling a job."""
+        job = self._run_program(job_classes=CancelableRuntimeJob)
+        time.sleep(1)
+        job.cancel()
+        self.assertEqual(job.status(), JobStatus.CANCELLED)
+        rjob = self.runtime.job(job.job_id())
+        self.assertEqual(rjob.status(), JobStatus.CANCELLED)
+
+    def test_final_result(self):
+        """Test getting final result."""
+        job = self._run_program()
+        result = job.result()
+        self.assertTrue(result)
+
+    def test_job_status(self):
+        """Test job status."""
+        job = self._run_program()
+        time.sleep(random.randint(1, 5))
+        self.assertTrue(job.status())
+
+    def test_job_inputs(self):
+        """Test job inputs."""
+        inputs = {"param1": "foo", "param2": "bar"}
+        job = self._run_program(inputs=inputs)
+        self.assertEqual(inputs, job.inputs)
+
+    def test_job_program_id(self):
+        """Test job program ID."""
+        program_id = self._upload_program()
+        job = self._run_program(program_id=program_id)
+        self.assertEqual(program_id, job.program_id)
+
+    def test_wait_for_final_state(self):
+        """Test wait for final state."""
+        job = self._run_program()
+        job.wait_for_final_state()
+        self.assertEqual(JobStatus.DONE, job.status())
+
     # def test_interim_results(self):
     #     """Test interim results."""
     #     def _callback(interim_result):
@@ -167,9 +213,13 @@ class TestRuntime(IBMQTestCase):
             max_execution_time=max_execution_time)
         return program_id
 
-    def _run_program(self, program_id, inputs=None):
+    def _run_program(self, program_id=None, inputs=None, job_classes=None):
         """Run a program."""
         options = {'backend_name': "some_backend"}
+        if job_classes:
+            self.runtime._api_client.set_job_classes(job_classes)
+        if program_id is None:
+            program_id = self._upload_program()
         job = self.runtime.run(program_id=program_id, inputs=inputs,
                                options=options)
         return job

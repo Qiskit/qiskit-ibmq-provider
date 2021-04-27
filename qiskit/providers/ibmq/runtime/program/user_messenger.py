@@ -27,7 +27,7 @@ class UserMessenger:
     def publish(
             self,
             message: Any,
-            encoder: json.JSONEncoder = RuntimeEncoder,
+            encoder: json.JSONEncoder = RuntimeEncoder,  # type: ignore[assignment]
             final: bool = False
     ) -> None:
         """Publish message.

@@ -45,10 +45,10 @@ class RuntimeEncoder(json.JSONEncoder):
 class RuntimeDecoder(json.JSONDecoder):
     """JSON Decoder used by runtime service."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(object_hook=self.object_hook, *args, **kwargs)
 
-    def object_hook(self, obj):
+    def object_hook(self, obj: Any) -> Any:
         """Called to decode object."""
         if '__type__' in obj:
             if obj['__type__'] == 'complex':

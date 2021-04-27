@@ -42,7 +42,7 @@ class Runtime(RestAdapterBase):
         """
         return Program(self.session, program_id)
 
-    def program_job(self, job_id: str) -> None:
+    def program_job(self, job_id: str) -> 'ProgramJob':
         """Return an adapter for the job.
 
         Args:

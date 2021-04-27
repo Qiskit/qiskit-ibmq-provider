@@ -87,7 +87,7 @@ class RuntimeProgram:
                                                            type=intret['type']))
 
     def __str__(self) -> str:
-        def _format_common(items: List):
+        def _format_common(items: List) -> None:
             """Add name, description, and type to `formatted`."""
             for item in items:
                 formatted.append(" "*4 + "- " + item.name + ":")

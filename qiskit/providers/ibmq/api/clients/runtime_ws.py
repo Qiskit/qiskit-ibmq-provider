@@ -167,6 +167,6 @@ class RuntimeWebsocketClient:
     async def disconnect(self) -> None:
         """Close the websocket connection."""
         if self._ws is not None:
-            logger.debug("Closing runtime websocket connection.")
+            logger.debug("Closing runtime websocket connection.")  # type: ignore[unreachable]
             await self._ws.close()
             self._ws = None

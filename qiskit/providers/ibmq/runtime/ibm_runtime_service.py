@@ -85,7 +85,7 @@ class IBMRuntimeService:
         self._api_client = RuntimeClient(provider.credentials)
         self._access_token = provider.credentials.access_token
         self._ws_url = provider.credentials.runtime_url.replace('https', 'wss')
-        self._programs = {}
+        self._programs = {}  # type: Dict
 
     def pprint_programs(self, refresh: bool = False) -> None:
         """Pretty print information about available runtime programs.
@@ -233,7 +233,7 @@ class IBMRuntimeService:
             raise QiskitRuntimeError(f"Failed to create program: {ex}") from None
         return response['id']
 
-    def delete_program(self, program_id: str):
+    def delete_program(self, program_id: str) -> None:
         """Delete a runtime program.
 
         Args:

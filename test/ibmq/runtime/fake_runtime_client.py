@@ -81,7 +81,8 @@ class BaseFakeRuntimeJob:
                 'project': self._project,
                 'backend': self._backend_name,
                 'status': self._status,
-                'params': [self._params]}
+                'params': [self._params],
+                'program': {'id': self._program_id}}
 
     def result(self):
         """Return job result."""
@@ -89,7 +90,7 @@ class BaseFakeRuntimeJob:
 
 
 class FailedRuntimeJob(BaseFakeRuntimeJob):
-    """Base class for faking a runtime job."""
+    """Class for faking a failed runtime job."""
 
     _job_progress = [
         "QUEUED",
@@ -103,6 +104,20 @@ class FailedRuntimeJob(BaseFakeRuntimeJob):
 
         if self._status == "FAILED":
             self._result = "Kaboom!"
+
+
+class CancelableRuntimeJob(BaseFakeRuntimeJob):
+    """Class for faking a cancelable runtime job."""
+
+    _job_progress = [
+        "QUEUED",
+        "RUNNING"
+    ]
+
+    def cancel(self):
+        """Cancel the job."""
+        self._future.cancel()
+        self._status = "CANCELLED"
 
 
 class BaseFakeRuntimeClient:
@@ -167,7 +182,7 @@ class BaseFakeRuntimeClient:
     def program_delete(self, program_id: str) -> None:
         """Delete the specified program."""
         if program_id not in self._programs:
-            raise RequestsApiError("Program not found")
+            raise RequestsApiError("Program not found", status_code=404)
         del self._programs[program_id]
 
     def job_get(self, job_id):
@@ -182,4 +197,4 @@ class BaseFakeRuntimeClient:
 
     def job_cancel(self, job_id):
         """Cancel the job."""
-        pass
+        self._jobs[job_id].cancel()

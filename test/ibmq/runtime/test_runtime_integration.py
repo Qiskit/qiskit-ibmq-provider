@@ -203,7 +203,7 @@ def main(backend, user_messenger, **kwargs):
             time.sleep(1)
         rjob = self.provider.runtime.job(job.job_id())
         self.assertEqual(job.job_id(), rjob.job_id())
-        self.assertEqual(self.program_id, job.program_id)
+        self.assertEqual(self.program_id, rjob.program_id)
 
     def test_retrieve_job_running(self):
         """Test retrieving a running job."""
@@ -376,7 +376,7 @@ def main(backend, user_messenger, **kwargs):
         """Test job status."""
         job = self._run_program(iterations=1)
         time.sleep(random.randint(1, 5))
-        job.status()
+        self.assertTrue(job.status())
 
     def test_job_inputs(self):
         """Test job inputs."""

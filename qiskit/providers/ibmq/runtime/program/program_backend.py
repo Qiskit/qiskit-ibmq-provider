@@ -18,8 +18,8 @@ from abc import abstractmethod, ABC
 
 from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.pulse import Schedule
-from qiskit.providers import BackendV1 as Backend
-from qiskit.providers import JobV1 as Job
+from qiskit.providers.backend import BackendV1 as Backend
+from qiskit.providers.job import JobV1 as Job
 from qiskit.circuit import QuantumCircuit
 
 logger = logging.getLogger(__name__)

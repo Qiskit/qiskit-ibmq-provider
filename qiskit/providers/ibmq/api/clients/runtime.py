@@ -118,8 +118,15 @@ class RuntimeClient:
         """
         self.api.program(program_id).delete()
 
-    def job_get(self, job_id):
-        """Get job data."""
+    def job_get(self, job_id: str) -> Dict:
+        """Get job data.
+
+        Args:
+            job_id: Job ID.
+
+        Returns:
+            JSON response.
+        """
         response = self.api.program_job(job_id).get()
         logger.debug("Runtime job get response: %s", response)
         return response
@@ -131,7 +138,7 @@ class RuntimeClient:
             job_id: Program job ID.
 
         Returns:
-            JSON response.
+            Job result.
         """
         return self.api.program_job(job_id).results()
 
