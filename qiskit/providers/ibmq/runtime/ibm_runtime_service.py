@@ -264,11 +264,19 @@ class IBMRuntimeService:
         """
         response = self._api_client.job_get(job_id)
         backend = self._provider.get_backend(response['backend'])
-        params_str = json.dumps(response.get('params', {}))
-        params = json.loads(params_str, cls=RuntimeDecoder)
+        params = response.get('params', {})
+        if isinstance(params, list):
+            if len(params) > 0:
+                params = params[0]
+            else:
+                params = {}
+        if not isinstance(params, str):
+            params = json.dumps(params)
+
+        decoded = json.loads(params, cls=RuntimeDecoder)
         return RuntimeJob(backend=backend,
                           api_client=self._api_client,
                           ws_client=RuntimeWebsocketClient(self._ws_url, self._access_token),
                           job_id=response['id'],
                           program_id=response.get('program', {}).get('id', ""),
-                          params=params)
+                          params=decoded)

@@ -44,7 +44,7 @@ class BaseFakeRuntimeJob:
     """Base class for faking a runtime job."""
 
     _job_progress = [
-        "PENDING",
+        "QUEUED",
         "RUNNING",
         "SUCCEEDED"
     ]
@@ -54,7 +54,7 @@ class BaseFakeRuntimeJob:
     def __init__(self, job_id, program_id, hub, group, project, backend_name, params):
         """Initialize a fake job."""
         self._job_id = job_id
-        self._status = "PENDING"
+        self._status = "QUEUED"
         self._program_id = program_id
         self._hub = hub
         self._group = group
@@ -83,6 +83,27 @@ class BaseFakeRuntimeJob:
                 'status': self._status,
                 'params': [self._params]}
 
+    def result(self):
+        """Return job result."""
+        return self._result
+
+
+class FailedRuntimeJob(BaseFakeRuntimeJob):
+    """Base class for faking a runtime job."""
+
+    _job_progress = [
+        "QUEUED",
+        "RUNNING",
+        "FAILED"
+    ]
+
+    def _auto_progress(self):
+        """Automatically update job status."""
+        super()._auto_progress()
+
+        if self._status == "FAILED":
+            self._result = "Kaboom!"
+
 
 class BaseFakeRuntimeClient:
     """Base class for faking the runtime client."""
@@ -91,6 +112,13 @@ class BaseFakeRuntimeClient:
         """Initialize a fake runtime client."""
         self._programs = {}
         self._jobs = {}
+        self._job_classes = []
+
+    def set_job_classes(self, classes):
+        """Set job classes to use."""
+        if not isinstance(classes, list):
+            classes = [classes]
+        self._job_classes = classes
 
     def list_programs(self):
         """List all progrmas."""
@@ -99,17 +127,20 @@ class BaseFakeRuntimeClient:
             programs.append(prog.to_dict())
         return programs
 
-    def program_create(self, program_name, program_data):
+    def program_create(self, program_name, program_data, max_execution_time):
         """Create a program."""
         if isinstance(program_data, str):
             with open(program_data, 'rb') as file:
                 program_data = file.read()
         program_id = uuid.uuid4().hex
-        self._programs[program_id] = BaseFakeProgram(program_id, program_name, program_data)
+        self._programs[program_id] = BaseFakeProgram(program_id, program_name, program_data,
+                                                     max_execution_time)
         return {'id': program_id}
 
     def program_get(self, program_id: str):
         """Return a specific program."""
+        if program_id not in self._programs:
+            raise RequestsApiError("Program not found", status_code=404)
         return self._programs[program_id].to_dict()
 
     def program_get_data(self, program_id: str):
@@ -125,10 +156,11 @@ class BaseFakeRuntimeClient:
     ):
         """Run the specified program."""
         job_id = uuid.uuid4().hex
-        job = BaseFakeRuntimeJob(job_id=job_id, program_id=program_id,
-                                 hub=credentials.hub, group=credentials.group,
-                                 project=credentials.project, backend_name=backend_name,
-                                 params=params)
+        job_cls = self._job_classes.pop(0) if len(self._job_classes) > 0 else BaseFakeRuntimeJob
+        job = job_cls(job_id=job_id, program_id=program_id,
+                      hub=credentials.hub, group=credentials.group,
+                      project=credentials.project, backend_name=backend_name,
+                      params=params)
         self._jobs[job_id] = job
         return {'id': job_id}
 
@@ -138,12 +170,16 @@ class BaseFakeRuntimeClient:
             raise RequestsApiError("Program not found")
         del self._programs[program_id]
 
-    def program_job_get(self, job_id):
+    def job_get(self, job_id):
         """Get the specific job."""
         if job_id not in self._jobs:
-            raise RequestsApiError("Job not found")
+            raise RequestsApiError("Job not found", status_code=404)
         return self._jobs[job_id].to_dict()
 
-    def program_job_results(self, job_id: str):
+    def job_results(self, job_id):
         """Get the results of a program job."""
+        return self._jobs[job_id].result()
+
+    def job_cancel(self, job_id):
+        """Cancel the job."""
         pass

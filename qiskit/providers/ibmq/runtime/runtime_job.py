@@ -24,7 +24,7 @@ import queue
 from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.backend import Backend
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-import qiskit.providers.ibmq.ibmqbackend as ibmqbackend  # pylint: disable=unused-import
+from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
 
 from .utils import RuntimeDecoder
 from .constants import API_TO_JOB_STATUS
@@ -193,6 +193,7 @@ class RuntimeJob:
         Args:
             callback: Callback function to be invoked for any interim results.
                 The callback function will receive 2 position parameters:
+
                     1. Job ID
                     2. Job interim result.
 

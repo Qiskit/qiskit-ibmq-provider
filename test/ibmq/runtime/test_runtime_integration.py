@@ -14,10 +14,9 @@
 
 import unittest
 import os
-from io import StringIO
-from unittest.mock import patch
 import uuid
 import time
+import random
 
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
@@ -25,75 +24,13 @@ from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramErr
                                                       RuntimeProgramNotFound,
                                                       RuntimeJobFailureError)
 
-from ..ibmqtestcase import IBMQTestCase
-from ..decorators import requires_device, requires_provider
-from ..fake_runtime_client import BaseFakeRuntimeClient
+from ...ibmqtestcase import IBMQTestCase
+from ...decorators import requires_runtime_device
+from .utils import SerializableClass
 
 
-@unittest.skip("Skip runtime tests")
-class TestRuntime(IBMQTestCase):
-    """Class for testing runtime modules."""
+# os.environ['USE_STAGING_CREDENTIALS'] = 'true'
 
-    @classmethod
-    @requires_provider
-    def setUpClass(cls, provider):
-        """Initial class level setup."""
-        # pylint: disable=arguments-differ
-        super().setUpClass()
-        cls.provider = provider
-
-    def setUp(self):
-        """Initial test setup."""
-        super().setUp()
-        self.provider.runtime._api_client = BaseFakeRuntimeClient()
-
-    def test_list_programs(self):
-        """Test listing programs."""
-        self.provider.runtime.programs()
-
-    def test_run_program(self):
-        """Test running program."""
-        params = {'param1': 'foo'}
-        backend = self.provider.backend.ibmq_qasm_simulator
-        job = self.provider.runtime.run("QKA", backend=backend, params=params)
-        self.assertTrue(job.job_id())
-        self.assertIsInstance(job.status(), JobStatus)
-        job.wait_for_final_state()
-        self.assertEqual(job.status(), JobStatus.DONE)
-        self.assertTrue(job.result())
-
-    def test_interim_results(self):
-        """Test interim results."""
-        def _callback(interim_result):
-            print(f"interim result {interim_result}")
-        params = {'param1': 'foo'}
-        backend = self.provider.backend.ibmq_qasm_simulator
-        job = self.provider.runtime.run("QKA", backend=backend, params=params, callback=_callback)
-        job.result()
-
-
-# import random
-#
-# from qiskit import transpile
-# from qiskit.circuit.random import random_circuit
-# from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder
-#
-# def prepare_circuits(backend):
-#     circuit = random_circuit(num_qubits=5, depth=4, measure=True,
-#                              seed=random.randint(0, 1000))
-#     return transpile(circuit, backend)
-#
-# def main(backend, user_messenger, **kwargs):
-#     iterations = kwargs.pop('iterations', 5)
-#     interim_results = kwargs.pop('interim_results', {})
-#     final_result = kwargs.pop("final_result", {})
-#     for it in range(iterations):
-#         qc = prepare_circuits(backend)
-#         user_messenger.publish({"iteration": it, "interim_results": interim_results})
-#         backend.run(qc).result()
-#
-#     user_messenger.publish("this is the last message")
-#     print(final_result, cls=RuntimeEncoder)
 
 @unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
 class TestRuntimeIntegration(IBMQTestCase):
@@ -125,7 +62,7 @@ def main(backend, user_messenger, **kwargs):
     PROGRAM_PREFIX = 'qiskit-test'
 
     @classmethod
-    @requires_device
+    @requires_runtime_device
     def setUpClass(cls, backend):
         """Initial class level setup."""
         # pylint: disable=arguments-differ
@@ -197,17 +134,6 @@ def main(backend, user_messenger, **kwargs):
         self.assertEqual(self.program_id, program.program_id)
         self._validate_program(program)
 
-    def test_print_programs(self):
-        """Test printing programs."""
-        programs = self.provider.runtime.programs()
-        with patch('sys.stdout', new=StringIO()) as mock_stdout:
-            self.provider.runtime.pprint_programs()
-            stdout = mock_stdout.getvalue()
-            for prog in programs:
-                self.assertIn(prog.program_id, stdout)
-                self.assertIn(prog.name, stdout)
-                self.assertIn(prog.description, stdout)
-
     def test_upload_program(self):
         """Test uploading a program."""
         max_execution_time = 3000
@@ -252,15 +178,10 @@ def main(backend, user_messenger, **kwargs):
 
     def test_run_program(self):
         """Test running a program."""
-        final_result = {"string": "foo",
-                        "float": 1.5,
-                        "complex": 2+3j,
-                        "class": self.CustomClass("foo")}
-        job = self._run_program(final_result=final_result)
+        job = self._run_program(final_result="foo")
         result = job.result()
-        my_class = self.CustomClass.from_json(result.pop('class'))
-        self.assertEqual(final_result.pop('class').value, my_class.value)
-        self.assertEqual(final_result, result)
+        self.assertEqual(JobStatus.DONE, job.status())
+        self.assertEqual("foo", result)
 
     def test_run_program_failed(self):
         """Test a failed program execution."""
@@ -276,31 +197,46 @@ def main(backend, user_messenger, **kwargs):
 
     def test_retrieve_job_queued(self):
         """Test retrieving a queued job."""
-        pass
+        _ = self._run_program(iterations=10)
+        job = self._run_program(iterations=2)
+        while job.status() != JobStatus.QUEUED:
+            time.sleep(1)
+        rjob = self.provider.runtime.job(job.job_id())
+        self.assertEqual(job.job_id(), rjob.job_id())
+        self.assertEqual(self.program_id, job.program_id)
 
     def test_retrieve_job_running(self):
         """Test retrieving a running job."""
         job = self._run_program(iterations=10)
-        for _ in range(10):
-            if job.status() == JobStatus.RUNNING:
-                break
-            time.sleep(1)
-        self.assertEqual(JobStatus.RUNNING, job.status())
+        while job.status() != JobStatus.RUNNING:
+            time.sleep(5)
         rjob = self.provider.runtime.job(job.job_id())
         self.assertEqual(job.job_id(), rjob.job_id())
+        self.assertEqual(self.program_id, job.program_id)
 
     def test_retrieve_job_done(self):
         """Test retrieving a finished job."""
-        pass
+        job = self._run_program()
+        job.wait_for_final_state()
+        rjob = self.provider.runtime.job(job.job_id())
+        self.assertEqual(job.job_id(), rjob.job_id())
+        self.assertEqual(self.program_id, job.program_id)
 
     def test_cancel_job_queued(self):
         """Test canceling a queued job."""
-        pass
+        _ = self._run_program(iterations=10)
+        job = self._run_program(iterations=2)
+        while job.status() != JobStatus.QUEUED:
+            time.sleep(1)
+        job.cancel()
+        self.assertEqual(job.status(), JobStatus.CANCELLED)
+        rjob = self.provider.runtime.job(job.job_id())
+        self.assertEqual(rjob.status(), JobStatus.CANCELLED)
 
     @unittest.skip("Skip until fixed")
     def test_cancel_job_running(self):
         """Test canceling a running job."""
-        job = self._run_program(iterations=3, interim_results="foobar")
+        job = self._run_program(iterations=3)
         while job.status() != JobStatus.RUNNING:
             time.sleep(5)
         job.cancel()
@@ -310,7 +246,9 @@ def main(backend, user_messenger, **kwargs):
 
     def test_cancel_job_done(self):
         """Test canceling a finished job."""
-        pass
+        job = self._run_program()
+        job.wait_for_final_state()
+        job.cancel()
 
     def test_interim_result_callback(self):
         """Test interim result callback."""
@@ -399,8 +337,8 @@ def main(backend, user_messenger, **kwargs):
         self.assertIsNone(job._ws_client._ws)
 
     # @unittest.skip("Skip until 277 is fixed")
-    def test_callback_job_cancelled_running(self):
-        """Test canceling a job while streaming results."""
+    def test_callback_cancel_job(self):
+        """Test canceling a running job while streaming results."""
         def result_callback(job_id, interim_result):
             # pylint: disable=unused-argument
             nonlocal final_it
@@ -408,33 +346,52 @@ def main(backend, user_messenger, **kwargs):
 
         final_it = 0
         iterations = 3
-        job = self._run_program(iterations=iterations, interim_results="foo",
-                                callback=result_callback)
-        while job.status() != JobStatus.RUNNING:
-            time.sleep(5)
-        job.cancel()
-        time.sleep(3)  # Wait for cleanup
-        self.assertIsNone(job._ws_client._ws)
-        self.assertLess(final_it, iterations)
+        sub_tests = [JobStatus.QUEUED, JobStatus.RUNNING]
+
+        for status in sub_tests:
+            with self.subTest(status=status):
+                if status == JobStatus.QUEUED:
+                    _ = self._run_program(iterations=10)
+
+                job = self._run_program(iterations=iterations, interim_results="foo",
+                                        callback=result_callback)
+                while job.status() != status:
+                    time.sleep(5)
+                job.cancel()
+                time.sleep(3)  # Wait for cleanup
+                self.assertIsNone(job._ws_client._ws)
+                self.assertLess(final_it, iterations)
 
     def test_final_result(self):
         """Test getting final result."""
-        pass
+        final_result = self._get_complex_types()
+        job = self._run_program(final_result=final_result)
+        result = job.result()
+        self._assert_complex_types_equal(final_result, result)
+
+        rresults = self.provider.runtime.job(job.job_id()).result()
+        self._assert_complex_types_equal(final_result, rresults)
 
     def test_job_status(self):
         """Test job status."""
-        pass
+        job = self._run_program(iterations=1)
+        time.sleep(random.randint(1, 5))
+        job.status()
 
     def test_job_inputs(self):
         """Test job inputs."""
+        interim_results = self._get_complex_types()
         inputs = {'iterations': 1,
-                  'interim_results': "foo"}
+                  'interim_results': interim_results}
         options = {'backend_name': self.backend.name()}
         job = self.provider.runtime.run(program_id=self.program_id, inputs=inputs,
                                         options=options)
         self.log.info("Runtime job %s submitted.", job.job_id())
         self.to_cancel.append(job)
         self.assertEqual(inputs, job.inputs)
+        rjob = self.provider.runtime.job(job.job_id())
+        rinterim_results = rjob.inputs['interim_results']
+        self._assert_complex_types_equal(interim_results, rinterim_results)
 
     def test_job_backend(self):
         """Test job backend."""
@@ -475,6 +432,18 @@ def main(backend, user_messenger, **kwargs):
         """Return a unique program name."""
         return self.PROGRAM_PREFIX + "_" + uuid.uuid4().hex
 
+    def _get_complex_types(self):
+        return {"string": "foo",
+                "float": 1.5,
+                "complex": 2+3j,
+                "class": SerializableClass("foo")}
+
+    def _assert_complex_types_equal(self, expected, received):
+        """Verify the received data in complex types is expected."""
+        if 'class' in received:
+            received['class'] = SerializableClass.from_json(**received['class'])
+        self.assertEqual(expected, received)
+
     def _run_program(self, program_id=None, iterations=1,
                      interim_results=None, final_result=None,
                      callback=None):
@@ -489,22 +458,3 @@ def main(backend, user_messenger, **kwargs):
         self.log.info("Runtime job %s submitted.", job.job_id())
         self.to_cancel.append(job)
         return job
-
-    # iterations = kwargs.pop('iterations', 5)
-    # interim_results = kwargs.pop('interim_results', {})
-    # final_result = kwargs.pop("final_result", {})
-    # test_lp1_sw_renierm
-
-    class CustomClass:
-        """Custom class with serialization methods."""
-        def __init__(self, value):
-            self.value = value
-
-        def to_json(self):
-            """To JSON serializable."""
-            return {"value": self.value}
-
-        @classmethod
-        def from_json(cls, data):
-            """From JSON serializable."""
-            return cls(**data)
