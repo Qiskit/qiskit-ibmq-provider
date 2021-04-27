@@ -12,6 +12,8 @@
 
 """Utility functions for runtime testing."""
 
+import json
+
 
 class SerializableClass:
     """Custom class with serialization methods."""
@@ -21,12 +23,12 @@ class SerializableClass:
 
     def to_json(self):
         """To JSON serializable."""
-        return {"value": self.value}
+        return json.dumps({"value": self.value})
 
     @classmethod
-    def from_json(cls, value):
+    def from_json(cls, json_str):
         """From JSON serializable."""
-        return cls(value=value)
+        return cls(**json.loads(json_str))
 
     def __eq__(self, other):
         return self.value == other.value

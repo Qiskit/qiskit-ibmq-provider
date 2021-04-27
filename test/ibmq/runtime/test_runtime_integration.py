@@ -441,7 +441,7 @@ def main(backend, user_messenger, **kwargs):
     def _assert_complex_types_equal(self, expected, received):
         """Verify the received data in complex types is expected."""
         if 'class' in received:
-            received['class'] = SerializableClass.from_json(**received['class'])
+            received['class'] = SerializableClass.from_json(received['class'])
         self.assertEqual(expected, received)
 
     def _run_program(self, program_id=None, iterations=1,

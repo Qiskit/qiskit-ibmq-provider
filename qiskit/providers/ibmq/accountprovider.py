@@ -25,7 +25,7 @@ from qiskit.pulse.instruction_schedule_map import InstructionScheduleMap
 from qiskit.providers.backend import BackendV1 as Backend
 from qiskit.providers.basebackend import BaseBackend
 from qiskit.transpiler import Layout
-import qiskit.providers.ibmq.runtime.runtime_job as runtime_job  # pylint: disable=unused-import
+from qiskit.providers.ibmq.runtime import runtime_job  # pylint: disable=unused-import
 
 from .api.clients import AccountClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator

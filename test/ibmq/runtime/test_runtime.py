@@ -63,7 +63,7 @@ class TestRuntime(IBMQTestCase):
                 }
         encoded = json.dumps(data, cls=RuntimeEncoder)
         decoded = json.loads(encoded, cls=RuntimeDecoder)
-        decoded["sclass"] = SerializableClass.from_json(**decoded['sclass'])
+        decoded["sclass"] = SerializableClass.from_json(decoded['sclass'])
 
         decoded_result = decoded.pop('result')
         data.pop('result')
