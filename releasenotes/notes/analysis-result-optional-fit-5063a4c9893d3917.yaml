@@ -1,0 +1,5 @@
+---
+other:
+  - |
+    The :class:`qiskit.providers.ibmq.experiment.analysis_result.AnalysisResult` ``fit``
+    attribute is now optional.

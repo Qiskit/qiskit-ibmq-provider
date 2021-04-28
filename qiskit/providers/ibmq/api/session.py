@@ -16,13 +16,14 @@ import os
 import re
 import logging
 from typing import Dict, Optional, Any, Tuple, Union
+import pkg_resources
+
 from requests import Session, RequestException, Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
 from urllib3.util.retry import Retry
 
 from qiskit.providers.ibmq.utils.utils import filter_data
-from qiskit.version import __qiskit_version__
 
 from .exceptions import RequestsApiError
 from ..version import __version__ as ibmq_provider_version
@@ -47,15 +48,20 @@ RE_DEVICES_ENDPOINT = re.compile(r'^(.*/devices/)([^/}]{2,})(.*)$', re.IGNORECAS
 
 def _get_client_header() -> str:
     """Return the client version."""
-    if __qiskit_version__.get('qiskit', None):
-        client_header = 'qiskit/' + __qiskit_version__['qiskit']
-    else:
-        known_versions = dict(
-            filter(lambda item: item[1] is not None, __qiskit_version__.items()))
-        # Always include provider version.
-        known_versions['qiskit-ibmq-provider'] = ibmq_provider_version
-        client_header = ','.join(known_versions.keys()) + '/' + ','.join(known_versions.values())
-    return client_header
+    try:
+        client_header = 'qiskit/' + pkg_resources.get_distribution('qiskit').version
+        return client_header
+    except Exception:  # pylint: disable=broad-except
+        pass
+
+    qiskit_pkgs = ['qiskit-terra', 'qiskit-aer', 'qiskit-ignis', 'qiskit-aqua']
+    pkg_versions = {"qiskit-ibmq-provider": ibmq_provider_version}
+    for pkg_name in qiskit_pkgs:
+        try:
+            pkg_versions[pkg_name] = pkg_resources.get_distribution(pkg_name).version
+        except Exception:  # pylint: disable=broad-except
+            pass
+    return ','.join(pkg_versions.keys()) + '/' + ','.join(pkg_versions.values())
 
 
 CLIENT_APPLICATION = _get_client_header()

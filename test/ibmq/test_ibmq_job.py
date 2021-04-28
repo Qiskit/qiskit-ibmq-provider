@@ -15,7 +15,7 @@
 import time
 import copy
 from datetime import datetime, timedelta
-from unittest import SkipTest, mock
+from unittest import SkipTest, mock, skip
 from threading import Thread, Event
 
 from dateutil import tz
@@ -457,6 +457,7 @@ class TestIBMQJob(IBMQTestCase):
             limit=10, status=JobStatus.DONE, descending=False, start_datetime=self.last_month)
         self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in oldest_jobs])
 
+    @skip("Skip until aer issue 1214 is fixed")
     def test_retrieve_failed_job_simulator_partial(self):
         """Test retrieving partial results from a simulator backend."""
         job = submit_job_one_bad_instr(self.sim_backend)

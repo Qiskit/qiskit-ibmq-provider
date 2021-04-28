@@ -16,10 +16,10 @@ import os
 import uuid
 from unittest import mock, SkipTest, skipIf
 from datetime import datetime, timedelta
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 
 from qiskit.providers.ibmq.experiment.experiment import Experiment
-from qiskit.providers.ibmq.experiment.analysis_result import AnalysisResult, Fit, DeviceComponent
+from qiskit.providers.ibmq.experiment.analysis_result import AnalysisResult, DeviceComponent
 from qiskit.providers.ibmq.experiment.exceptions import (ExperimentNotFoundError,
                                                          AnalysisResultNotFoundError,
                                                          PlotNotFoundError)
@@ -406,7 +406,8 @@ class TestExperiment(IBMQTestCase):
         results = self.provider.experiment.analysis_results()
         for res in results:
             self.assertTrue(isinstance(res, AnalysisResult))
-            self.assertTrue(isinstance(res.fit, Fit))
+            self.assertIsInstance(res.verified, bool)
+            self.assertIsInstance(res.fit, dict)
             self.assertTrue(res.uuid, "{} does not have an uuid!".format(res))
             for dt_attr in ['creation_datetime', 'updated_datetime']:
                 if getattr(res, dt_attr):
@@ -435,18 +436,23 @@ class TestExperiment(IBMQTestCase):
                 self.assertIsNotNone(res.uuid)
                 self.assertTrue(res.creation_datetime.tzinfo)
                 self.assertEqual(res.experiment_uuid, new_experiment.uuid)
-                self.assertEqual(res.fit.to_dict(), ref_result.fit.to_dict())
+                self.assertEqual(res.fit, ref_result.fit)
                 self.assertEqual(res.type, ref_result.type)
                 self.assertEqual(res.device_components, [device_comp.type])
                 self.assertEqual(res.quality.value, 'No Information')
                 self.assertEqual(res.tags, ['qiskit-test'])
+                self.assertFalse(res.verified)
 
     def test_update_analysis_result(self):
         """Test updating an analysis result."""
         new_result = self._create_analysis_result()
         original_type = new_result.type
-        new_result.quality = ResultQuality.HUMAN_BAD
-        new_fit = Fit(new_result.fit.value*2, new_result.fit.variance*2)
+        new_result.quality = ResultQuality.BAD  # pylint: disable=no-member
+        new_result.verified = True
+        new_fit = dict(
+            value=new_result.fit['value']*2,
+            variance=new_result.fit['variance']*2
+        )
         new_result.fit = new_fit
         self.provider.experiment.update_analysis_result(new_result)
 
@@ -454,10 +460,11 @@ class TestExperiment(IBMQTestCase):
         sub_tests = [(new_result, 'local result'), (rresult, 'retrieved result')]
         for res, name in sub_tests:
             with self.subTest(sub_test_name=name):
-                self.assertEqual(res.fit.to_dict(), new_fit.to_dict())
+                self.assertEqual(res.fit, new_fit)
                 self.assertEqual(res.type, original_type)
-                self.assertEqual(res.quality, ResultQuality.HUMAN_BAD)
+                self.assertEqual(res.quality, ResultQuality.BAD)  # pylint: disable=no-member
                 self.assertTrue(res.updated_datetime.tzinfo)
+                self.assertTrue(res.verified)
 
     def test_results_experiments_device_components(self):
         """Test filtering analysis results and experiments with device components."""
@@ -559,8 +566,9 @@ class TestExperiment(IBMQTestCase):
         all_results = self.provider.experiment.analysis_results()
         ref_result = all_results[0]
         # Find a result whose quality is in the middle.
+        bad_good = [ResultQuality.BAD, ResultQuality.GOOD]  # pylint: disable=no-member
         for result in all_results:
-            if result.quality not in [ResultQuality.HUMAN_BAD, ResultQuality.HUMAN_GOOD]:
+            if result.quality not in bad_good:
                 ref_result = result
                 break
 
@@ -640,6 +648,7 @@ class TestExperiment(IBMQTestCase):
         plot_name = "hello.svg"
         with open(file_name, 'wb') as file:
             file.write(hello_bytes)
+        self.addCleanup(os.remove, file_name)
         response = self.provider.experiment.upload_plot(new_exp.uuid, file_name, plot_name)
         self.assertEqual(response['name'], plot_name)
         new_exp.refresh()
@@ -729,7 +738,7 @@ class TestExperiment(IBMQTestCase):
     def _create_analysis_result(self):
         device_comp = self.device_components[0]
         new_experiment = self._create_experiment(device_comp.backend_name)
-        fit = Fit(41.456, 4.051)
+        fit = dict(value=41.456, variance=4.051)
         new_result = AnalysisResult(experiment_uuid=new_experiment.uuid,
                                     fit=fit,
                                     result_type="T1",

@@ -46,11 +46,9 @@ class ResultQuality(enum.Enum):
             return self.ranking < other.ranking  # type: ignore[attr-defined]
         return NotImplemented
 
-    HUMAN_BAD = 'Human Bad', 1
-    COMPUTER_BAD = 'Computer Bad', 2
-    NO_INFORMATION = 'No Information', 3
-    COMPUTER_GOOD = 'Computer Good', 4
-    HUMAN_GOOD = 'Human Good', 5
+    BAD = 'Bad', 1
+    UNKNOWN = 'No Information', 2
+    GOOD = 'Good', 3
 
 
 class ExperimentShareLevel(enum.Enum):
