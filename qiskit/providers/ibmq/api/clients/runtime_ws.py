@@ -34,6 +34,7 @@ class RuntimeWebsocketClient:
     BACKOFF_MAX = 8
     """Maximum time to wait between retries."""
     POISON_PILL = "_poison_pill"
+    """Used to inform consumer to stop."""
 
     def __init__(
             self,

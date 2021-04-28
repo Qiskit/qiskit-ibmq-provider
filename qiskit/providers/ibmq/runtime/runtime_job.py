@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Quantum Experience runtime job."""
+"""Qiskit runtime job."""
 
 from typing import Any, Optional, Callable, Dict
 import time
@@ -234,7 +234,6 @@ class RuntimeJob:
             self._streaming = True
 
             logger.debug("Start websocket client for job %s", self.job_id())
-            # loop.run_until_complete(self._ws_client.job_results(self._job_id, result_queue))
             self._streaming_loop.run_until_complete(self._streaming_task)
         except Exception:  # pylint: disable=broad-except
             logger.warning(

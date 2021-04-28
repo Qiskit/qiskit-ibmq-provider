@@ -130,7 +130,7 @@ Uploading a program
 -------------------
 
 
-TODO: Add tutorial reference
+TODO: Add doc about uploading a program
 
 Classes
 ==========================

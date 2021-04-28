@@ -194,15 +194,6 @@ class TestRuntime(IBMQTestCase):
         job.wait_for_final_state()
         self.assertEqual(JobStatus.DONE, job.status())
 
-    # def test_interim_results(self):
-    #     """Test interim results."""
-    #     def _callback(interim_result):
-    #         print(f"interim result {interim_result}")
-    #     params = {'param1': 'foo'}
-    #     backend = self.provider.backend.ibmq_qasm_simulator
-    #     job = self.provider.runtime.run("QKA", backend=backend, params=params, callback=_callback)
-    #     job.result()
-
     def _upload_program(self, name=None, max_execution_time=300):
         """Upload a new program."""
         name = name or uuid.uuid4().hex
@@ -223,3 +214,5 @@ class TestRuntime(IBMQTestCase):
         job = self.runtime.run(program_id=program_id, inputs=inputs,
                                options=options)
         return job
+
+    # TODO add websocket tests

@@ -218,6 +218,8 @@ def requires_runtime_device(func):
 
         backend_name = os.getenv('QE_STAGING_RUNTIME_DEVICE', None) if \
             os.getenv('USE_STAGING_CREDENTIALS', '') else os.getenv('QE_RUNTIME_DEVICE', None)
+        if not backend_name:
+            raise SkipTest("Runtime device not specified")
         _backend = _get_backend(qe_token=kwargs.pop('qe_token'),
                                 qe_url=kwargs.pop('qe_url'),
                                 backend_name=backend_name)

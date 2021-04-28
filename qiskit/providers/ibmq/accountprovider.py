@@ -306,7 +306,7 @@ class AccountProvider(Provider):
         }
         inputs.update(run_config)
         options = {'backend_name': backend.name()}
-        return self.runtime.run('circuit-runner-jessie3', options=options, inputs=inputs)
+        return self.runtime.run('circuit-runner', options=options, inputs=inputs)
 
     def service(self, name: str) -> Any:
         """Return the specified service.
