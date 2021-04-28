@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Quantum Experience runtime program."""
+"""Qiskit runtime program."""
 
 import logging
 from typing import Optional, List, NamedTuple
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class RuntimeProgram:
     """Class representing program metadata.
 
-    This class contains the metadata describing a program, including its
+    This class contains the metadata describing a program, such as its
     name, ID, description, etc.
 
     You can use the :class:`~qiskit.providers.ibmq.runtime.IBMRuntimeService`

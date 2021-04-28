@@ -1,0 +1,36 @@
+---
+prelude: >
+    This release introduces a new feature ``Qiskit Runtime Service``.
+    This new service allows authorized users to upload quantum programs that
+    can be invoked by others. These quantum programs run in a special
+    environment that significantly reduces waiting time during computational
+    iterations.
+features:
+  - |
+    This release introduces a new feature ``Qiskit Runtime Service``. This
+    new service allows authorized users to upload quantum programs. Other
+    authorized users can invoke these quantum programs by simply passing
+    in parameters. These quantum programs run in a speical runtime
+    environment that significantly reduces waiting time during computational
+    iterations.
+
+    An example of using this new service::
+
+      from qiskit import IBMQ
+
+      provider = IBMQ.load_account()
+      # Print all avaiable programs.
+      provider.runtime.pprint_programs()
+
+      # Prepare the inputs. See program documentation on input parameters.
+      inputs = {...}
+      options = {"backend_name": provider.backend.ibmq_montreal.name()}
+
+      job = provider.runtime.run(program_id="circuit-runner",
+                                 options=options,
+                                 inputs=inputs)
+      # Check job status.
+      print(f"job status is {job.status()}")
+
+      # Get job result.
+      result = job.result()

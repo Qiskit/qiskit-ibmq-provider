@@ -30,6 +30,7 @@ class ProgramBackend(Backend, ABC):
 
     This is a :class:`~qiskit.providers.Backend` class for runtime programs to
     use in place of :class:`~qiskit.providers.ibmq.IBMQBackend`.
+    This class can be used when writing a new runtime program.
     """
 
     @abstractmethod

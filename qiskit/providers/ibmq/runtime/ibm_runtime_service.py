@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Quantum runtime service."""
+"""Qiskit runtime service."""
 
 import logging
 from typing import Dict, Callable, Optional, Union, List
@@ -31,12 +31,14 @@ logger = logging.getLogger(__name__)
 
 
 class IBMRuntimeService:
-    """Class for interacting with the IBM Quantum runtime service.
+    """Class for interacting with the Qiskit runtime service.
 
-    The IBM Quantum Runtime Service allows authorized users to upload their quantum programs
-    that can be invoked by others. A quantum program is a piece of code that takes
+    The Qiskit Runtime Service allows authorized users to upload their quantum programs
+    that can be invoked by other users. A quantum program is a piece of code that takes
     certain inputs, performs quantum and classical processing, and returns the
-    results.
+    results. Quantum programs, also known as runtime programs, run in a special
+    runtime environment that significantly reduces waiting time during computational
+    iterations.
 
     A sample workflow of using the runtime service::
 
@@ -70,9 +72,9 @@ class IBMRuntimeService:
     the results at a later time, but before the job finishes.
 
     The :meth:`run` method returns a
-    :class:`qiskit.providers.ibmq.runtime.RuntimeJob` object. You can use its
-    methods to perform tasks like checking the job status, getting job result, and
-    canceling the job.
+    :class:`~qiskit.providers.ibmq.runtime.RuntimeJob` object. You can use its
+    methods to perform tasks like checking job status, getting job result, and
+    canceling job.
     """
 
     def __init__(self, provider: 'accountprovider.AccountProvider') -> None:
@@ -175,6 +177,10 @@ class IBMRuntimeService:
                 ``backend_name``, which is required.
             inputs: Program input parameters.
             callback: Callback function to be invoked for any interim results.
+                The callback function will receive 2 positional parameters:
+
+                    1. Job ID
+                    2. Job interim result.
 
         Returns:
             A ``RuntimeJob`` instance representing the execution.

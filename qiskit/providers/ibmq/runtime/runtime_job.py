@@ -57,7 +57,7 @@ class RuntimeJob:
         try:
             job_result = job.result()  # It will block until the job finishes.
             print("The job finished with result {}".format(job_result))
-        except IBMQJobFailureError as ex:
+        except RuntimeJobFailureError as ex:
             print("Job failed!: {}".format(ex))
 
     If the program has any interim results, you can use the ``callback``
@@ -192,7 +192,7 @@ class RuntimeJob:
 
         Args:
             callback: Callback function to be invoked for any interim results.
-                The callback function will receive 2 position parameters:
+                The callback function will receive 2 positional parameters:
 
                     1. Job ID
                     2. Job interim result.

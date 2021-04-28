@@ -17,7 +17,7 @@ Runtime Service (:mod:`qiskit.providers.ibmq.runtime`)
 
 .. currentmodule:: qiskit.providers.ibmq.runtime
 
-Modules related to IBM Quantum Runtime Service.
+Modules related to Qiskit Runtime Service.
 
 .. caution::
 
@@ -28,17 +28,14 @@ Modules related to IBM Quantum Runtime Service.
 
   The runtime service is not available to all accounts.
 
-The IBM Quantum Runtime Service allows authorized users to upload their quantum programs
-that can be invoked by others. A quantum program is a piece of code that takes
-certain inputs, performs quantum and classical processing, and returns the
-results. For example, user A can upload a VQE quantum program that takes a Hamiltonian
-and an optimizer as inputs and returns the minimum eigensolver result. User B
-can then invoke this program, passing in the inputs and obtaining the results,
-with minimal code.
+The Qiskit Runtime Service allows authorized users to upload their quantum programs.
+A quantum program is a piece of code that takes certain inputs, performs
+quantum and classical processing, and returns the results. Other
+authorized users can invoke these quantum programs by simply passing in parameters.
 
 These quantum programs, sometimes called runtime programs, run in a special
-runtime environment that is separate from normal circuit job execution and has
-special performance advantages.
+runtime environment that significantly reduces waiting time during computational
+iterations.
 
 Listing runtime programs
 ------------------------
@@ -59,7 +56,7 @@ To list all available runtime programs::
     print(program)
 
 In the example above, ``provider.runtime`` points to the runtime service class
-:class:`~qiskit.providers.ibmq.runtime.IBMRuntimeService`, which is the main entry
+:class:`IBMRuntimeService`, which is the main entry
 point for using this service. The example prints the program definitions of all
 available runtime programs and of just the ``circuit-runner`` program. A program
 definition consists of a program's ID, name, description, input parameters,
@@ -75,7 +72,7 @@ For example::
     from qiskit import IBMQ, QuantumCircuit
 
     provider = IBMQ.load_account()
-    backend = provider.backend.ibmq_qasm_simulator
+    backend = provider.backend.ibmq_montreal
 
     # Create a circuit.
     qc = QuantumCircuit(2, 2)
@@ -94,7 +91,7 @@ For example::
     result = job.result()
 
 The example above invokes the ``circuit-runner`` program,
-which compile, executes, and optionally applies measurement error mitigation to
+which compiles, executes, and optionally applies measurement error mitigation to
 the circuit result.
 
 Runtime Job
@@ -111,7 +108,7 @@ Interim results
 ---------------
 
 Some runtime programs provide interim results that inform you about program
-progress. You can choose to stream the interim results when you invoke the
+progress. You can choose to stream the interim results when you run the
 program by passing in the ``callback`` parameter, or at a later time using
 the :meth:`RuntimeJob.stream_results` method. For example::
 
