@@ -69,8 +69,7 @@ class TestAccountClient(IBMQTestCase):
 
     def _get_client(self):
         """Helper for instantiating an AccountClient."""
-        return AccountClient(self.access_token,
-                             self.provider.credentials)
+        return AccountClient(self.provider.credentials)
 
     def test_exception_message(self):
         """Check exception has proper message."""
