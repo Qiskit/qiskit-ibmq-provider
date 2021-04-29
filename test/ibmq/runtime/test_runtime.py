@@ -31,8 +31,10 @@ from qiskit.providers.ibmq.runtime.exceptions import (RuntimeProgramNotFound,
 
 
 from ...ibmqtestcase import IBMQTestCase
-from .fake_runtime_client import BaseFakeRuntimeClient, FailedRuntimeJob, CancelableRuntimeJob
-from .utils import SerializableClass, UnserializableClass
+from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRuntimeJob, CancelableRuntimeJob,
+                                  CustomResultRuntimeJob)
+from .utils import (SerializableClass, UnserializableClass, SerializableClassDecoder,
+                    get_complex_types)
 
 
 class TestRuntime(IBMQTestCase):
@@ -194,6 +196,19 @@ class TestRuntime(IBMQTestCase):
         job.wait_for_final_state()
         self.assertEqual(JobStatus.DONE, job.status())
 
+    def test_result_decoder(self):
+        """Test result decoder."""
+        custom_result = get_complex_types()
+        job_cls = CustomResultRuntimeJob
+        job_cls.custom_result = custom_result
+
+        sub_tests = [(SerializableClassDecoder, None), (None, SerializableClassDecoder)]
+        for result_decoder, decoder in sub_tests:
+            with self.subTest(decoder=decoder):
+                job = self._run_program(job_classes=job_cls, decoder=result_decoder)
+                result = job.result(decoder=decoder)
+                self.assertIsInstance(result['serializable_class'], SerializableClass)
+
     def _upload_program(self, name=None, max_execution_time=300):
         """Upload a new program."""
         name = name or uuid.uuid4().hex
@@ -204,7 +219,7 @@ class TestRuntime(IBMQTestCase):
             max_execution_time=max_execution_time)
         return program_id
 
-    def _run_program(self, program_id=None, inputs=None, job_classes=None):
+    def _run_program(self, program_id=None, inputs=None, job_classes=None, decoder=None):
         """Run a program."""
         options = {'backend_name': "some_backend"}
         if job_classes:
@@ -212,7 +227,7 @@ class TestRuntime(IBMQTestCase):
         if program_id is None:
             program_id = self._upload_program()
         job = self.runtime.run(program_id=program_id, inputs=inputs,
-                               options=options)
+                               options=options, result_decoder=decoder)
         return job
 
     # TODO add websocket tests

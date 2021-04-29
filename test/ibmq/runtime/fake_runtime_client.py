@@ -14,10 +14,12 @@
 
 import time
 import uuid
+import json
 from concurrent.futures import ThreadPoolExecutor
 
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
+from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder
 
 
 class BaseFakeProgram:
@@ -71,7 +73,7 @@ class BaseFakeRuntimeJob:
             self._status = status
 
         if self._status == "SUCCEEDED":
-            self._result = "foo"
+            self._result = json.dumps("foo")
 
     def to_dict(self):
         """Convert to dictionary format."""
@@ -118,6 +120,19 @@ class CancelableRuntimeJob(BaseFakeRuntimeJob):
         """Cancel the job."""
         self._future.cancel()
         self._status = "CANCELLED"
+
+
+class CustomResultRuntimeJob(BaseFakeRuntimeJob):
+    """Class for using custom job result."""
+
+    custom_result = "bar"
+
+    def _auto_progress(self):
+        """Automatically update job status."""
+        super()._auto_progress()
+
+        if self._status == "SUCCEEDED":
+            self._result = json.dumps(self.custom_result, cls=RuntimeEncoder)
 
 
 class BaseFakeRuntimeClient:

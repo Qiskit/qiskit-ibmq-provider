@@ -14,6 +14,15 @@
 
 import json
 
+from qiskit.providers.ibmq.runtime.result_decoder import ResultDecoder
+
+
+def get_complex_types():
+    return {"string": "foo",
+            "float": 1.5,
+            "complex": 2+3j,
+            "serializable_class": SerializableClass("foo")}
+
 
 class SerializableClass:
     """Custom class with serialization methods."""
@@ -32,6 +41,17 @@ class SerializableClass:
 
     def __eq__(self, other):
         return self.value == other.value
+
+
+class SerializableClassDecoder(ResultDecoder):
+
+    @classmethod
+    def decode(cls, data):
+        decoded = super().decode(data)
+        if 'serializable_class' in decoded:
+            decoded['serializable_class'] = \
+                SerializableClass.from_json(decoded['serializable_class'])
+        return decoded
 
 
 class UnserializableClass:

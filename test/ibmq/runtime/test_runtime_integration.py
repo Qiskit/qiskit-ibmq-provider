@@ -18,7 +18,7 @@ import uuid
 import time
 import random
 
-from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
+from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramError,
                                                       RuntimeProgramNotFound,
@@ -28,7 +28,7 @@ from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramErr
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_runtime_device
-from .utils import SerializableClass
+from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
 @unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
@@ -396,7 +396,7 @@ def main(backend, user_messenger, **kwargs):
 
     def test_final_result(self):
         """Test getting final result."""
-        final_result = self._get_complex_types()
+        final_result = get_complex_types()
         job = self._run_program(final_result=final_result)
         result = job.result()
         self._assert_complex_types_equal(final_result, result)
@@ -412,7 +412,7 @@ def main(backend, user_messenger, **kwargs):
 
     def test_job_inputs(self):
         """Test job inputs."""
-        interim_results = self._get_complex_types()
+        interim_results = get_complex_types()
         inputs = {'iterations': 1,
                   'interim_results': interim_results}
         options = {'backend_name': self.backend.name()}
@@ -472,16 +472,11 @@ def main(backend, user_messenger, **kwargs):
         """Return a unique program name."""
         return self.PROGRAM_PREFIX + "_" + uuid.uuid4().hex
 
-    def _get_complex_types(self):
-        return {"string": "foo",
-                "float": 1.5,
-                "complex": 2+3j,
-                "class": SerializableClass("foo")}
-
     def _assert_complex_types_equal(self, expected, received):
         """Verify the received data in complex types is expected."""
-        if 'class' in received:
-            received['class'] = SerializableClass.from_json(received['class'])
+        if 'serializable_class' in received:
+            received['serializable_class'] = \
+                SerializableClass.from_json(received['serializable_class'])
         self.assertEqual(expected, received)
 
     def _run_program(self, program_id=None, iterations=1,

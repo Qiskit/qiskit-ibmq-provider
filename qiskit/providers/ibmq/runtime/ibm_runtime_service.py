@@ -13,7 +13,7 @@
 """Qiskit runtime service."""
 
 import logging
-from typing import Dict, Callable, Optional, Union, List, Any
+from typing import Dict, Callable, Optional, Union, List, Any, Type
 import json
 import copy
 
@@ -21,6 +21,7 @@ from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-impo
 
 from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram, ProgramParameter, ProgramResult
+from .result_decoder import ResultDecoder
 from .utils import RuntimeEncoder, RuntimeDecoder
 from .exceptions import (QiskitRuntimeError, RuntimeDuplicateProgramError, RuntimeProgramNotFound,
                          RuntimeJobNotFound)
@@ -169,7 +170,8 @@ class IBMRuntimeService:
             program_id: str,
             options: Dict,
             inputs: Dict,
-            callback: Optional[Callable] = None
+            callback: Optional[Callable] = None,
+            result_decoder: Optional[Type[ResultDecoder]] = None
     ) -> RuntimeJob:
         """Execute the runtime program.
 
@@ -185,6 +187,9 @@ class IBMRuntimeService:
                     1. Job ID
                     2. Job interim result.
 
+            result_decoder: A :class:`ResultDecoder` subclass used to decode job results.
+                ``ResultDecoder`` is used if not specified.
+
         Returns:
             A ``RuntimeJob`` instance representing the execution.
 
@@ -196,6 +201,7 @@ class IBMRuntimeService:
 
         backend_name = options['backend_name']
         params_str = json.dumps(inputs, cls=RuntimeEncoder)
+        result_decoder = result_decoder or ResultDecoder
         response = self._api_client.program_run(program_id=program_id,
                                                 credentials=self._provider.credentials,
                                                 backend_name=backend_name,
@@ -206,7 +212,8 @@ class IBMRuntimeService:
                          api_client=self._api_client,
                          ws_client=RuntimeWebsocketClient(self._ws_url, self._access_token),
                          job_id=response['id'], program_id=program_id, params=inputs,
-                         user_callback=callback)
+                         user_callback=callback,
+                         result_decoder=result_decoder)
         return job
 
     def upload_program(

@@ -12,10 +12,9 @@
 
 """Qiskit runtime job."""
 
-from typing import Any, Optional, Callable, Dict
+from typing import Any, Optional, Callable, Dict, Type
 import time
 import logging
-import json
 import asyncio
 from concurrent import futures
 import traceback
@@ -26,9 +25,9 @@ from qiskit.providers.backend import Backend
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
 
-from .utils import RuntimeDecoder
 from .constants import API_TO_JOB_STATUS
 from .exceptions import RuntimeJobFailureError, RuntimeInvalidStateError
+from .result_decoder import ResultDecoder
 from ..api.clients import RuntimeClient, RuntimeWebsocketClient
 from ..exceptions import IBMQError
 from ..api.exceptions import RequestsApiError
@@ -82,7 +81,8 @@ class RuntimeJob:
             job_id: str,
             program_id: str,
             params: Optional[Dict] = None,
-            user_callback: Optional[Callable] = None
+            user_callback: Optional[Callable] = None,
+            result_decoder: Type[ResultDecoder] = ResultDecoder
     ) -> None:
         """RuntimeJob constructor.
 
@@ -94,6 +94,7 @@ class RuntimeJob:
             program_id: ID of the program this job is for.
             params: Job parameters.
             user_callback: User callback function.
+            result_decoder: A :class:`ResultDecoder` subclass used to decode job results.
         """
         self._job_id = job_id
         self._backend = backend
@@ -103,6 +104,7 @@ class RuntimeJob:
         self._params = params or {}
         self._program_id = program_id
         self._status = JobStatus.INITIALIZING
+        self._result_decoder = result_decoder
 
         # Used for streaming
         self._streaming = False
@@ -117,6 +119,7 @@ class RuntimeJob:
             self,
             timeout: Optional[float] = None,
             wait: float = 5,
+            decoder: Optional[Type[ResultDecoder]] = None
     ) -> Any:
         """Return the results of the job.
 
@@ -127,6 +130,7 @@ class RuntimeJob:
         Args:
             timeout: Number of seconds to wait for job.
             wait: Seconds between queries.
+            decoder: A :class:`ResultDecoder` subclass used to decode job results.
 
         Returns:
             Runtime job result.
@@ -134,13 +138,14 @@ class RuntimeJob:
         Raises:
             RuntimeJobFailureError: If the job failed.
         """
-        if not self._results:
+        _decoder = decoder or self._result_decoder
+        if not self._results or _decoder != self._result_decoder:
             self.wait_for_final_state(timeout=timeout, wait=wait)
             result_raw = self._api_client.job_results(job_id=self.job_id())
             if self._status == JobStatus.ERROR:
                 raise RuntimeJobFailureError(f"Unable to retrieve result for job {self.job_id()}. "
                                              f"Job has failed:\n{result_raw}")
-            self._results = self._decode_data(result_raw)
+            self._results = _decoder.decode(result_raw)
         return self._results
 
     def cancel(self) -> None:
@@ -200,7 +205,11 @@ class RuntimeJob:
             time.sleep(wait)
             status = self.status()
 
-    def stream_results(self, callback: Callable) -> None:
+    def stream_results(
+            self,
+            callback: Callable,
+            decoder: Optional[Type[ResultDecoder]] = None
+    ) -> None:
         """Start streaming job results.
 
         Args:
@@ -209,6 +218,8 @@ class RuntimeJob:
 
                     1. Job ID
                     2. Job interim result.
+
+            decoder: A :class:`ResultDecoder` subclass used to decode job results.
 
         Raises:
             RuntimeInvalidStateError: If a callback function is already streaming results or
@@ -223,7 +234,8 @@ class RuntimeJob:
         self._executor.submit(self._start_websocket_client,
                               result_queue=self._result_queue)
         self._executor.submit(self._stream_results,
-                              result_queue=self._result_queue, user_callback=callback)
+                              result_queue=self._result_queue, user_callback=callback,
+                              decoder=decoder)
 
     def _cancel_result_streaming(self) -> None:
         """Cancel result streaming."""
@@ -263,21 +275,28 @@ class RuntimeJob:
                     self._ws_client.disconnect())
             self._streaming = False
 
-    def _stream_results(self, result_queue: queue.Queue, user_callback: Callable) -> None:
+    def _stream_results(
+            self,
+            result_queue: queue.Queue,
+            user_callback: Callable,
+            decoder: Optional[Type[ResultDecoder]] = None
+    ) -> None:
         """Stream interim results.
 
         Args:
             result_queue: Queue used to pass websocket messages.
             user_callback: User callback function.
+            decoder: A :class:`ResultDecoder` (sub)class used to decode job results.
         """
         logger.debug("Start result streaming for job %s", self.job_id())
+        _decoder = decoder or self._result_decoder
         while True:
             try:
                 response = result_queue.get()
                 if response == self.POISON_PILL:
                     self._empty_result_queue(result_queue)
                     return
-                user_callback(self.job_id(), self._decode_data(response))
+                user_callback(self.job_id(), _decoder.decode(response))
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     "An error occurred while streaming results "
@@ -294,20 +313,6 @@ class RuntimeJob:
                 result_queue.get_nowait()
         except queue.Empty:
             pass
-
-    def _decode_data(self, data: Any) -> Any:
-        """Attempt to decode data using default decoder.
-
-        Args:
-            data: Data to be decoded.
-
-        Returns:
-            Decoded data, or the original data if decoding failed.
-        """
-        try:
-            return json.loads(data, cls=RuntimeDecoder)
-        except json.JSONDecodeError:
-            return data
 
     def job_id(self) -> str:
         """Return a unique id identifying the job.
