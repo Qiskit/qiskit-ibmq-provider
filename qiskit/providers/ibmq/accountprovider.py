@@ -338,6 +338,26 @@ class AccountProvider(Provider):
         """
         return {key: val for key, val in self._services.items() if val is not None}
 
+    def has_service(self, name: str) -> bool:
+        """Check if this provider has access to the service.
+
+        Args:
+            name: Name of the service.
+
+        Returns:
+            Whether the provider has access to the service.
+
+        Raises:
+            IBMQInputValueError: If an unknown service name is specified.
+        """
+        if name not in self._services:
+            raise IBMQInputValueError(f"Unknown service {name} specified.")
+
+        if self._services[name] is None:
+            return False
+
+        return True
+
     @property
     def backend(self) -> IBMQBackendService:
         """Return the backend service.

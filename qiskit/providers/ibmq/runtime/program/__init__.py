@@ -12,5 +12,5 @@
 
 """Runtime program package.
 
-This package contains code used to write runtime programs.
+This package contains files to help you write runtime programs.
 """

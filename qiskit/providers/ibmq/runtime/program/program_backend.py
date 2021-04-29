@@ -29,8 +29,7 @@ class ProgramBackend(Backend, ABC):
     """Base class for a program backend.
 
     This is a :class:`~qiskit.providers.Backend` class for runtime programs to
-    use in place of :class:`~qiskit.providers.ibmq.IBMQBackend`.
-    This class can be used when writing a new runtime program.
+    submit circuits.
     """
 
     @abstractmethod

@@ -131,6 +131,14 @@ class RuntimeClient:
         logger.debug("Runtime job get response: %s", response)
         return response
 
+    def jobs_get(self) -> List:
+        """Get job data for all jobs.
+
+        Returns:
+            A list of job data.
+        """
+        return self.api.jobs_get()
+
     def job_results(self, job_id: str) -> str:
         """Get the results of a program job.
 
@@ -146,6 +154,18 @@ class RuntimeClient:
         """Cancel a job.
 
         Args:
-            job_id: Program job ID.
+            job_id: Runtime job ID.
         """
         self.api.program_job(job_id).cancel()
+
+    def job_delete(self, job_id: str) -> None:
+        """Delete a job.
+
+        Args:
+            job_id: Runtime job ID.
+        """
+        self.api.program_job(job_id).delete()
+
+    def logout(self) -> None:
+        """Clear authorization cache."""
+        self.api.logout()

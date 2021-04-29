@@ -28,7 +28,8 @@ class Runtime(RestAdapterBase):
 
     URL_MAP = {
         'programs': '/programs',
-        'jobs': '/jobs'
+        'jobs': '/jobs',
+        'logout': '/logout'
     }
 
     def program(self, program_id: str) -> 'Program':
@@ -124,6 +125,20 @@ class Runtime(RestAdapterBase):
         data = json.dumps(payload)
         return self.session.post(url, data=data).json()
 
+    def jobs_get(self) -> List[Dict]:
+        """Get a list of job data.
+
+        Returns:
+            A list of job data.
+        """
+        url = self.get_url('jobs')
+        return self.session.get(url).json()
+
+    def logout(self) -> None:
+        """Clear authorization cache."""
+        url = self.get_url('logout')
+        self.session.post(url)
+
 
 class Program(RestAdapterBase):
     """Rest adapter for program related endpoints."""
@@ -207,13 +222,9 @@ class ProgramJob(RestAdapterBase):
         """
         return self.session.get(self.get_url('self')).json()
 
-    def delete(self) -> Dict:
-        """Delete program job.
-
-        Returns:
-            JSON response.
-        """
-        return self.session.delete(self.get_url('self')).json()
+    def delete(self) -> None:
+        """Delete program job."""
+        self.session.delete(self.get_url('self'))
 
     def results(self) -> str:
         """Return program job results.

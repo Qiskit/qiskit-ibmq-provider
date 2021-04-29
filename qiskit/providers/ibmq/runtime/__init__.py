@@ -19,14 +19,23 @@ Runtime Service (:mod:`qiskit.providers.ibmq.runtime`)
 
 Modules related to Qiskit Runtime Service.
 
-.. caution::
+.. note::
 
-  This package is currently provided in beta form and heavy modifications to
-  both functionality and API are likely to occur.
+    The runtime service is not available to all providers. To check if a provider
+    has access::
+
+        from qiskit import IBMQ
+
+        IBMQ.load_account()
+        provider = IBMQ.get_provider(...)
+
+        can_use_runtime = provider.has_service('runtime')
 
 .. note::
 
-  The runtime service is not available to all accounts.
+    Not all backends support Runtime. Refer to documentation on
+    `Qiskit-Partners/qiskit-runtime
+    <https://github.com/Qiskit-Partners/qiskit-runtime>`_ for more information.
 
 The Qiskit Runtime Service allows authorized users to upload their quantum programs.
 A quantum program is a piece of code that takes certain inputs, performs
@@ -36,6 +45,10 @@ authorized users can invoke these quantum programs by simply passing in paramete
 These quantum programs, sometimes called runtime programs, run in a special
 runtime environment that significantly reduces waiting time during computational
 iterations.
+
+`Qiskit-Partners/qiskit-runtime <https://github.com/Qiskit-Partners/qiskit-runtime>`_
+contains detailed tutorials on how to use the runtime service.
+
 
 Listing runtime programs
 ------------------------
@@ -115,7 +128,7 @@ the :meth:`RuntimeJob.stream_results` method. For example::
     from qiskit import IBMQ, QuantumCircuit
 
     provider = IBMQ.load_account()
-    backend = provider.backend.ibmq_qasm_simulator
+    backend = provider.backend.ibmq_montreal
 
     def interim_result_callback(job_id, interim_result):
         print(interim_result)
@@ -129,8 +142,56 @@ the :meth:`RuntimeJob.stream_results` method. For example::
 Uploading a program
 -------------------
 
+.. note::
 
-TODO: Add doc about uploading a program
+  Only authorized accounts can upload programs. Having access to the
+  runtime service doesn't imply access to upload programs.
+
+Each runtime program has both ``data`` and ``metadata``. Program data is
+the Python code to be executed. Program metadata provides usage information,
+such as program description, its inputs and outputs, and backend requirements.
+A detailed program metadata helps the consumers of the program to know what is
+needed to run the program.
+
+Each program data needs to have a ``main(backend, user_messenger, **kwargs)``
+method, which serves as the entry point to the program. The ``backend`` parameter
+is a :class:`ProgramBackend` instance whose :meth:`ProgramBackend.run` method
+can be used to submit circuits. The ``user_messenger`` is a :class:`UserMessenger`
+whose :meth:`UserMessenger.publish` method can be used to publish interim and
+final results. See :file:`program/program_template.py` for a program data
+template file.
+
+Each program metadata must include at least the program name, description, and
+maximum execution time. You can find description of each metadata field in
+the :meth:`IBMRuntimeService.upload_program` method. Instead of passing in
+the metadata fields individually, you can pass in a JSON file or a dictionary
+to :meth:`IBMRuntimeService.upload_program` via the ``metadata`` parameter.
+:file:`program/program_metadata_sample.json` is a sample file of program metadata.
+
+You can use the :meth:`IBMRuntimeService.upload_program` to upload a program.
+For example::
+
+    from qiskit import IBMQ
+
+    provider = IBMQ.load_account()
+    program_id = provider.runtime.upload_program(
+                    data="my_vqe.py",
+                    metadata="my_vqe_metadata.json",
+                    version=1.2
+                )
+
+In the example above, the file ``my_vqe.py`` contains the program data, and
+``my_vqe_metadata.json`` contains the program metadata. An additional
+parameter ``version`` is also specified, which will be used instead of the
+``version`` value in ``my_vqe_metadata.json``.
+
+Methods :meth:`IBMRuntimeService.update_program` and
+:meth:`IBMRuntimeService.delete_program` allow you to update and delete a
+program, respectively.
+
+Files related to writing a runtime program are in the
+``qiskit/providers/ibmq/runtime/program`` directory.
+
 
 Classes
 ==========================

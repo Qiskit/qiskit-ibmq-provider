@@ -31,6 +31,7 @@ from .constants import API_TO_JOB_STATUS
 from .exceptions import RuntimeJobFailureError, RuntimeInvalidStateError
 from ..api.clients import RuntimeClient, RuntimeWebsocketClient
 from ..exceptions import IBMQError
+from ..api.exceptions import RequestsApiError
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,10 @@ class RuntimeJob:
     the results at a later time, but before the job finishes.
     """
 
-    _executor = futures.ThreadPoolExecutor()
+    POISON_PILL = "_poison_pill"
+    """Used to inform streaming to stop."""
+
+    _executor = futures.ThreadPoolExecutor(thread_name_prefix="runtime_job")
 
     def __init__(
             self,
@@ -112,7 +116,7 @@ class RuntimeJob:
     def result(
             self,
             timeout: Optional[float] = None,
-            wait: float = 5
+            wait: float = 5,
     ) -> Any:
         """Return the results of the job.
 
@@ -140,8 +144,17 @@ class RuntimeJob:
         return self._results
 
     def cancel(self) -> None:
-        """Cancel the job."""
-        self._api_client.job_cancel(self.job_id())
+        """Cancel the job.
+
+        Raises:
+            RuntimeInvalidStateError: If the job is in a state that cannot be cancelled.
+        """
+        try:
+            self._api_client.job_cancel(self.job_id())
+        except RequestsApiError as ex:
+            if ex.status_code == 409:
+                raise RuntimeInvalidStateError(f"Job cannot be cancelled: {ex}") from None
+            raise
         self._cancel_result_streaming()
         self._status = JobStatus.CANCELLED
 
@@ -198,10 +211,14 @@ class RuntimeJob:
                     2. Job interim result.
 
         Raises:
-            RuntimeInvalidStateError: If a callback function is already streaming results.
+            RuntimeInvalidStateError: If a callback function is already streaming results or
+                if the job already finished.
         """
         if self._streaming:
             raise RuntimeInvalidStateError("A callback function is already streaming results.")
+
+        if self._status in JOB_FINAL_STATES:
+            raise RuntimeInvalidStateError("Job already finished.")
 
         self._executor.submit(self._start_websocket_client,
                               result_queue=self._result_queue)
@@ -240,6 +257,7 @@ class RuntimeJob:
                 "An error occurred while streaming results "
                 "from the server for job %s:\n%s", self.job_id(), traceback.format_exc())
         finally:
+            self._result_queue.put_nowait(self.POISON_PILL)
             if self._streaming_loop is not None:
                 self._streaming_loop.run_until_complete(  # type: ignore[unreachable]
                     self._ws_client.disconnect())
@@ -256,7 +274,7 @@ class RuntimeJob:
         while True:
             try:
                 response = result_queue.get()
-                if response == self._ws_client.POISON_PILL:
+                if response == self.POISON_PILL:
                     self._empty_result_queue(result_queue)
                     return
                 user_callback(self.job_id(), self._decode_data(response))

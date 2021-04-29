@@ -13,15 +13,17 @@
 """Qiskit runtime service."""
 
 import logging
-from typing import Dict, Callable, Optional, Union, List
+from typing import Dict, Callable, Optional, Union, List, Any
 import json
+import copy
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .runtime_job import RuntimeJob
-from .runtime_program import RuntimeProgram
+from .runtime_program import RuntimeProgram, ProgramParameter, ProgramResult
 from .utils import RuntimeEncoder, RuntimeDecoder
-from .exceptions import QiskitRuntimeError, RuntimeDuplicateProgramError, RuntimeProgramNotFound
+from .exceptions import (QiskitRuntimeError, RuntimeDuplicateProgramError, RuntimeProgramNotFound,
+                         RuntimeJobNotFound)
 from ..api.clients.runtime import RuntimeClient
 from ..api.clients.runtime_ws import RuntimeWebsocketClient
 from ..api.exceptions import RequestsApiError
@@ -175,7 +177,8 @@ class IBMRuntimeService:
             program_id: Program ID.
             options: Runtime options. Currently the only available option is
                 ``backend_name``, which is required.
-            inputs: Program input parameters.
+            inputs: Program input parameters. These input values are passed
+                to the runtime program.
             callback: Callback function to be invoked for any interim results.
                 The callback function will receive 2 positional parameters:
 
@@ -208,25 +211,75 @@ class IBMRuntimeService:
 
     def upload_program(
             self,
-            name: str,
             data: Union[bytes, str],
-            max_execution_time: int
+            metadata: Optional[Union[Dict, str]] = None,
+            name: Optional[str] = None,
+            max_execution_time: Optional[int] = None,
+            description: Optional[str] = None,
+            version: Optional[float] = None,
+            backend_requirements: Optional[str] = None,
+            parameter_schema: Optional[str] = None,
+            parameters: Optional[List[ProgramParameter]] = None,
+            return_values: Optional[List[ProgramResult]] = None,
+            interim_results: Optional[List[ProgramResult]] = None
     ) -> str:
         """Upload a runtime program.
 
+        In addition to program data, the following program metadata are also
+        required:
+
+            - name
+            - max_execution_time
+            - description
+
+        Program metadata can be specified using the `metadata` parameter or
+        individual parameter (for example, `name` and `description`). If the
+        same metadata field is specified in both places, the individual parameter
+        takes precedence. For example, if you specify:
+
+            upload_program(metadata={"name": "name1"}, name="name2")
+
+        ``name2`` will be used as the program name.
+
         Args:
-            name: Name of the program.
             data: Name of the program file or program data to upload.
-            max_execution_time: Maximum execution time in seconds.
+            metadata: Name of the program metadata file or metadata dictionary.
+                A metadata file needs to be in the JSON format.
+                See :file:`program/program_metadata_sample.yaml` for an example.
+            name: Name of the program. Required if not specified via `metadata`.
+            max_execution_time: Maximum execution time in seconds. Required if
+                not specified via `metadata`.
+            description: Program description. Required if not specified via `metadata`.
+            version: Program version. The default is 1.0 if not specified.
+            backend_requirements: Backend requirements.
+            parameter_schema: Schema that can be used to validate the program
+                input parameters.
+            parameters: A list of program input parameters.
+            return_values: A list of program return values.
+            interim_results: A list of program interim results.
 
         Returns:
             Program ID.
 
         Raises:
+            IBMQInputValueError: If required metadata is missing.
             RuntimeDuplicateProgramError: If a program with the same name already exists.
             IBMQNotAuthorizedError: If you are not authorized to upload programs.
             QiskitRuntimeError: If the upload failed.
         """
+        program_metadata = self._merge_metadata(
+            initial={},
+            metadata=metadata,
+            name=name, max_execution_time=max_execution_time, description=description,
+            version=version, backend_requirements=backend_requirements,
+            parameter_schema=parameter_schema, parameters=parameters,
+            return_values=return_values, interim_results=interim_results)
+
+        # TODO uncomment when metada is supported on server
+        # for req in ['name', 'description', 'max_execution_time']:
+        #     if req not in program_metadata or not program_metadata[req]:
+        #         raise IBMQInputValueError(f"{req} is a required metadata field.")
+
         try:
             response = self._api_client.program_create(name, data, max_execution_time)
         except RequestsApiError as ex:
@@ -238,6 +291,98 @@ class IBMRuntimeService:
                     "You are not authorized to upload programs.") from None
             raise QiskitRuntimeError(f"Failed to create program: {ex}") from None
         return response['id']
+
+    def update_program(
+            self,
+            program_id: str,
+            data: Union[bytes, str] = None,
+            metadata: Optional[Union[Dict, str]] = None,
+            name: Optional[str] = None,
+            max_execution_time: Optional[int] = None,
+            description: Optional[str] = None,
+            version: Optional[float] = None,
+            backend_requirements: Optional[str] = None,
+            parameter_schema: Optional[str] = None,
+            parameters: Optional[List[ProgramParameter]] = None,
+            return_values: Optional[List[ProgramResult]] = None,
+            interim_results: Optional[List[ProgramResult]] = None
+    ) -> None:
+        """Update an existing runtime program.
+
+        Program metadata can be specified using the `metadata` parameter or
+        individual parameter (for example, `name` and `description`). If the
+        same metadata field is specified in both places, the individual parameter
+        takes precedence. For example, if you specify:
+
+            update_program(metadata={"name": "name1"}, name="name2")
+
+        ``name2`` will be used as the program name.
+
+        Args:
+            program_id: Program ID.
+            data: Name of the program file or program data to upload.
+            metadata: Name of the program metadata file or metadata dictionary.
+                A metadata file needs to be in the JSON format.
+                See :file:`program/program_metadata_sample.yaml` for an example.
+            name: Name of the program. Required if not specified via `metadata`.
+            max_execution_time: Maximum execution time in seconds. Required if
+                not specified via `metadata`.
+            description: Program description. Required if not specified via `metadata`.
+            version: Program version. The default is 1.0 if not specified.
+            backend_requirements: Backend requirements.
+            parameter_schema: Schema that can be used to validate the program
+                input parameters.
+            parameters: A list of program input parameters.
+            return_values: A list of program return values.
+            interim_results: A list of program interim results.
+
+        Raises:
+            RuntimeProgramNotFound: If the program doesn't exist.
+            IBMQNotAuthorizedError: If you are not authorized to upload programs.
+            QiskitRuntimeError: If the update failed.
+        """
+        program_metadata = self.program(program_id, refresh=True).to_dict()
+        program_metadata = self._merge_metadata(
+            initial=program_metadata,
+            metadata=metadata,
+            name=name, max_execution_time=max_execution_time, description=description,
+            version=version, backend_requirements=backend_requirements,
+            parameter_schema=parameter_schema, parameters=parameters,
+            return_values=return_values, interim_results=interim_results)
+
+        self.delete_program(program_id)
+        self.upload_program(data=data, metadata=program_metadata)
+
+    def _merge_metadata(
+            self,
+            initial: Dict,
+            metadata: Optional[Union[Dict, str]] = None,
+            **kwargs: Any
+    ) -> Dict:
+        """Merge multiple copies of metadata.
+
+        Args:
+            initial: The initial metadata. This may be mutated.
+            metadata: Name of the program metadata file or metadata dictionary.
+            **kwargs: Additional metadata fields to overwrite.
+
+        Returns:
+            Merged metadata.
+        """
+        upd_metadata = {}
+        if metadata is not None:
+            if isinstance(metadata, str):
+                with open(metadata, 'r') as file:
+                    upd_metadata = json.load(file)
+            else:
+                upd_metadata = copy.deepcopy(metadata)
+
+        initial.update(upd_metadata)
+
+        for key, val in kwargs.items():
+            if val is not None:
+                initial[key] = val
+        return initial
 
     def delete_program(self, program_id: str) -> None:
         """Delete a runtime program.
@@ -267,10 +412,60 @@ class IBMRuntimeService:
 
         Returns:
             Runtime job retrieved.
+
+        Raises:
+            RuntimeJobNotFound: If the job doesn't exist.
+            QiskitRuntimeError: If the request failed.
         """
-        response = self._api_client.job_get(job_id)
-        backend = self._provider.get_backend(response['backend'])
-        params = response.get('params', {})
+        try:
+            response = self._api_client.job_get(job_id)
+        except RequestsApiError as ex:
+            if ex.status_code == 404:
+                raise RuntimeJobNotFound(f"Job not found: {ex.message}") from None
+            raise QiskitRuntimeError(f"Failed to delete job: {ex}") from None
+        return self._decode_job(response)
+
+    def jobs(self) -> List[RuntimeJob]:
+        """Retrieve all runtime jobs.
+
+        Returns:
+            A list of runtime jobs.
+        """
+        response = self._api_client.jobs_get()
+        jobs = [self._decode_job(job) for job in response]
+        return jobs
+
+    def delete_job(self, job_id: str) -> None:
+        """Delete a runtime job.
+
+        Note that this operation cannot be reversed.
+
+        Args:
+            job_id: ID of the job to delete.
+
+        Raises:
+            RuntimeJobNotFound: If the job doesn't exist.
+            QiskitRuntimeError: If the request failed.
+        """
+        try:
+            self._api_client.job_delete(job_id)
+        except RequestsApiError as ex:
+            if ex.status_code == 404:
+                raise RuntimeJobNotFound(f"Job not found: {ex.message}") from None
+            raise QiskitRuntimeError(f"Failed to delete job: {ex}") from None
+
+    def _decode_job(self, raw_data: Dict) -> RuntimeJob:
+        """Decode job data received from the server.
+
+        Args:
+            raw_data: Raw job data received from the server.
+
+        Returns:
+            Decoded job data.
+        """
+        backend = self._provider.get_backend(raw_data['backend'])
+
+        params = raw_data.get('params', {})
         if isinstance(params, list):
             if len(params) > 0:
                 params = params[0]
@@ -283,6 +478,20 @@ class IBMRuntimeService:
         return RuntimeJob(backend=backend,
                           api_client=self._api_client,
                           ws_client=RuntimeWebsocketClient(self._ws_url, self._access_token),
-                          job_id=response['id'],
-                          program_id=response.get('program', {}).get('id', ""),
+                          job_id=raw_data['id'],
+                          program_id=raw_data.get('program', {}).get('id', ""),
                           params=decoded)
+
+    def logout(self) -> None:
+        """Clears authorization cache on the server.
+
+        For better performance, the runtime server caches each user's
+        authorization information. This method is used to force the server
+        to clear its cache.
+
+        Note:
+            Invoking this method ONLY when your access level to the runtime
+            service has changed - for example, the first time your account is
+            given the authority to upload a program.
+        """
+        self._api_client.logout()

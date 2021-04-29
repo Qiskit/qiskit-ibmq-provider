@@ -13,7 +13,7 @@
 """Qiskit runtime program."""
 
 import logging
-from typing import Optional, List, NamedTuple
+from typing import Optional, List, NamedTuple, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,10 @@ class RuntimeProgram:
             parameters: Optional[List] = None,
             return_values: Optional[List] = None,
             interim_results: Optional[List] = None,
-            max_execution_time: int = 0
+            max_execution_time: int = 0,
+            version: float = 1.0,
+            backend_requirements: Optional[Dict] = None,
+            parameter_schema: str = ""
     ) -> None:
         """RuntimeProgram constructor.
 
@@ -59,11 +62,17 @@ class RuntimeProgram:
             return_values: Documentation on program return values.
             interim_results: Documentation on program interim results.
             max_execution_time: Maximum execution time.
+            version: Program version.
+            backend_requirements: Backend requirements.
+            parameter_schema: Schema used to validate parameters.
         """
         self._name = program_name
         self._id = program_id
         self._description = description
         self._max_execution_time = max_execution_time
+        self._version = version
+        self._backend_requirements = backend_requirements or {}
+        self._parameter_schema = parameter_schema
         self._parameters = []
         self._return_values = []
         self._interim_results = []
@@ -118,6 +127,25 @@ class RuntimeProgram:
         else:
             formatted.append(" "*4 + "none")
         return '\n'.join(formatted)
+
+    def to_dict(self) -> Dict:
+        """Convert program metadata to dictionary format.
+
+        Returns:
+            Program metadata in dictionary format.
+        """
+        return {
+            "program_id": self.program_id,
+            "name": self.name,
+            "description": self.description,
+            "max_execution_time": self.max_execution_time,
+            "version": self.version,
+            "backend_requirements": self.backend_requirements,
+            "parameter_schema": self._parameter_schema,
+            "parameters": self.parameters,
+            "return_values": self.return_values,
+            "interim_results": self.interim_results
+        }
 
     @property
     def program_id(self) -> str:
@@ -181,6 +209,33 @@ class RuntimeProgram:
             Maximum execution time.
         """
         return self._max_execution_time
+
+    @property
+    def version(self) -> float:
+        """Return program version.
+
+        Returns:
+            Program version.
+        """
+        return self._version
+
+    @property
+    def backend_requirements(self) -> Dict:
+        """Return backend requirements.
+
+        Returns:
+            Backend requirements for this program.
+        """
+        return self._backend_requirements
+
+    @property
+    def parameter_schema(self) -> str:
+        """Return program parameter schema.
+
+        Returns:
+            Program parameter schema.
+        """
+        return self._parameter_schema
 
 
 class ProgramParameter(NamedTuple):

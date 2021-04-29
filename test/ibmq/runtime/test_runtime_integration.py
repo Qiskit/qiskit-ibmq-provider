@@ -22,7 +22,9 @@ from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramError,
                                                       RuntimeProgramNotFound,
-                                                      RuntimeJobFailureError)
+                                                      RuntimeJobFailureError,
+                                                      RuntimeInvalidStateError,
+                                                      RuntimeJobNotFound)
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_runtime_device
@@ -56,6 +58,11 @@ def main(backend, user_messenger, **kwargs):
     user_messenger.publish(final_result, final=True)
     """
 
+    RUNTIME_PROGRAM_METADATA = {
+        "max_execution_time": 600,
+        "description": "Qiskit test program"
+    }
+
     PROGRAM_PREFIX = 'qiskit-test'
 
     @classmethod
@@ -71,7 +78,7 @@ def main(backend, user_messenger, **kwargs):
             cls.program_id = cls.provider.runtime.upload_program(
                 name=cls.PROGRAM_PREFIX,
                 data=cls.RUNTIME_PROGRAM.encode(),
-                max_execution_time=600)
+                metadata=cls.RUNTIME_PROGRAM_METADATA)
         except RuntimeDuplicateProgramError:
             pass
         except IBMQNotAuthorizedError:
@@ -102,13 +109,13 @@ def main(backend, user_messenger, **kwargs):
             except Exception:  # pylint: disable=broad-except
                 pass
 
-        # Cancel jobs.
+        # Cancel and delete jobs.
         for job in self.to_cancel:
-            if job.status() not in JOB_FINAL_STATES:
-                try:
-                    job.cancel()
-                except Exception:  # pylint: disable=broad-except
-                    pass
+            try:
+                job.cancel()
+                self.provider.runtime.delete_job(job.job_id())
+            except Exception:  # pylint: disable=broad-except
+                pass
 
     def test_runtime_service(self):
         """Test getting runtime service."""
@@ -219,6 +226,19 @@ def main(backend, user_messenger, **kwargs):
         self.assertEqual(job.job_id(), rjob.job_id())
         self.assertEqual(self.program_id, job.program_id)
 
+    def test_retrieve_all_jobs(self):
+        """Test retrieving all jobs."""
+        job = self._run_program()
+        rjobs = self.provider.runtime.jobs()
+        found = False
+        for rjob in rjobs:
+            if rjob.job_id() == job.job_id():
+                self.assertEqual(job.program_id, rjob.program_id)
+                self.assertEqual(job.inputs, rjob.inputs)
+                found = True
+                break
+        self.assertTrue(found, f"Job {job.job_id()} not returned.")
+
     def test_cancel_job_queued(self):
         """Test canceling a queued job."""
         _ = self._run_program(iterations=10)
@@ -230,7 +250,6 @@ def main(backend, user_messenger, **kwargs):
         rjob = self.provider.runtime.job(job.job_id())
         self.assertEqual(rjob.status(), JobStatus.CANCELLED)
 
-    @unittest.skip("Skip until fixed")
     def test_cancel_job_running(self):
         """Test canceling a running job."""
         job = self._run_program(iterations=3)
@@ -245,7 +264,23 @@ def main(backend, user_messenger, **kwargs):
         """Test canceling a finished job."""
         job = self._run_program()
         job.wait_for_final_state()
-        job.cancel()
+        with self.assertRaises(RuntimeInvalidStateError):
+            job.cancel()
+
+    def test_delete_job(self):
+        """Test deleting a job."""
+        sub_tests = [JobStatus.QUEUED, JobStatus.RUNNING, JobStatus.DONE]
+        for status in sub_tests:
+            with self.subTest(status=status):
+                if status == JobStatus.QUEUED:
+                    _ = self._run_program(iterations=10)
+
+                job = self._run_program(iterations=2)
+                while job.status() != status:
+                    time.sleep(5)
+                self.provider.runtime.delete_job(job.job_id())
+                with self.assertRaises(RuntimeJobNotFound):
+                    self.provider.runtime.job(job.job_id())
 
     def test_interim_result_callback(self):
         """Test interim result callback."""
@@ -297,7 +332,6 @@ def main(backend, user_messenger, **kwargs):
         self.assertFalse(callback_err)
         self.assertIsNone(job._ws_client._ws)
 
-    @unittest.skip("Skip until 267 is fixed")
     def test_stream_results_done(self):
         """Test streaming interim results after job is done."""
         def result_callback(job_id, interim_result):
@@ -308,8 +342,9 @@ def main(backend, user_messenger, **kwargs):
         called_back = False
         job = self._run_program(interim_results="foobar")
         job.wait_for_final_state()
+        job._status = JobStatus.RUNNING  # Allow stream_results()
         job.stream_results(result_callback)
-        time.sleep(1)
+        time.sleep(2)
         self.assertFalse(called_back)
         self.assertIsNone(job._ws_client._ws)
 
@@ -333,7 +368,7 @@ def main(backend, user_messenger, **kwargs):
         self.assertEqual(iterations-1, final_it)
         self.assertIsNone(job._ws_client._ws)
 
-    # @unittest.skip("Skip until 277 is fixed")
+    @unittest.skip("Skip until 277 is fixed")
     def test_callback_cancel_job(self):
         """Test canceling a running job while streaming results."""
         def result_callback(job_id, interim_result):
@@ -406,6 +441,13 @@ def main(backend, user_messenger, **kwargs):
         job.wait_for_final_state()
         self.assertEqual(JobStatus.DONE, job.status())
 
+    def test_logout(self):
+        """Test logout."""
+        self.provider.runtime.logout()
+        # Make sure we can still do things.
+        self._upload_program()
+        _ = self._run_program()
+
     def _validate_program(self, program):
         """Validate a program."""
         # TODO add more validation
@@ -421,6 +463,7 @@ def main(backend, user_messenger, **kwargs):
         program_id = self.provider.runtime.upload_program(
             name=name,
             data=self.RUNTIME_PROGRAM.encode(),
+            metadata=self.RUNTIME_PROGRAM_METADATA,
             max_execution_time=max_execution_time)
         self.to_delete.append(program_id)
         return program_id

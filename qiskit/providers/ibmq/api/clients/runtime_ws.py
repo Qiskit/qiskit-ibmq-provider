@@ -33,8 +33,6 @@ class RuntimeWebsocketClient:
 
     BACKOFF_MAX = 8
     """Maximum time to wait between retries."""
-    POISON_PILL = "_poison_pill"
-    """Used to inform consumer to stop."""
 
     def __init__(
             self,
@@ -116,7 +114,6 @@ class RuntimeWebsocketClient:
                         result_queue.put_nowait(response)
                         current_retry = 0  # Reset counter after a good receive.
                     except ConnectionClosed as ex:
-                        self._ws = None
                         if ex.code == 1000:  # Job has finished.
                             return
                         exception_to_raise = WebsocketRetryableError(
@@ -126,14 +123,12 @@ class RuntimeWebsocketClient:
 
             except asyncio.CancelledError:
                 logger.debug("Streaming is cancelled.")
-                result_queue.put_nowait(self.POISON_PILL)
                 return
             except WebsocketRetryableError as ex:
                 logger.debug("A websocket error occurred while streaming "
                              "results for runtime job %s:\n%s", job_id, traceback.format_exc())
                 current_retry += 1
                 if current_retry > max_retries:
-                    result_queue.put_nowait(self.POISON_PILL)
                     raise ex
 
                 backoff_time = self._backoff_time(backoff_factor, current_retry)

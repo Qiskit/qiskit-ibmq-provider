@@ -36,6 +36,11 @@ class RuntimeJobFailureError(QiskitRuntimeError):
     pass
 
 
+class RuntimeJobNotFound(QiskitRuntimeError):
+    """Error raised when a job is not found."""
+    pass
+
+
 class RuntimeInvalidStateError(QiskitRuntimeError):
     """Errors raised when the state is not valid for the operation."""
     pass
