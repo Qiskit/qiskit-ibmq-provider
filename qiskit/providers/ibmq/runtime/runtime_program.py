@@ -48,9 +48,9 @@ class RuntimeProgram:
             return_values: Optional[List] = None,
             interim_results: Optional[List] = None,
             max_execution_time: int = 0,
-            version: float = 1.0,
+            version: str = "0",
             backend_requirements: Optional[Dict] = None,
-            parameter_schema: str = ""
+            creation_date: str = ""
     ) -> None:
         """RuntimeProgram constructor.
 
@@ -64,7 +64,7 @@ class RuntimeProgram:
             max_execution_time: Maximum execution time.
             version: Program version.
             backend_requirements: Backend requirements.
-            parameter_schema: Schema used to validate parameters.
+            creation_date: Program creation date.
         """
         self._name = program_name
         self._id = program_id
@@ -72,10 +72,10 @@ class RuntimeProgram:
         self._max_execution_time = max_execution_time
         self._version = version
         self._backend_requirements = backend_requirements or {}
-        self._parameter_schema = parameter_schema
         self._parameters = []
         self._return_values = []
         self._interim_results = []
+        self._creation_date = creation_date
 
         if parameters:
             for param in parameters:
@@ -141,7 +141,6 @@ class RuntimeProgram:
             "max_execution_time": self.max_execution_time,
             "version": self.version,
             "backend_requirements": self.backend_requirements,
-            "parameter_schema": self._parameter_schema,
             "parameters": self.parameters,
             "return_values": self.return_values,
             "interim_results": self.interim_results
@@ -211,7 +210,7 @@ class RuntimeProgram:
         return self._max_execution_time
 
     @property
-    def version(self) -> float:
+    def version(self) -> str:
         """Return program version.
 
         Returns:
@@ -229,13 +228,13 @@ class RuntimeProgram:
         return self._backend_requirements
 
     @property
-    def parameter_schema(self) -> str:
-        """Return program parameter schema.
+    def creation_date(self) -> str:
+        """Return program creation date.
 
         Returns:
-            Program parameter schema.
+            Program creation date.
         """
-        return self._parameter_schema
+        return self._creation_date
 
 
 class ProgramParameter(NamedTuple):

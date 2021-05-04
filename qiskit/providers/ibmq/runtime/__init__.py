@@ -37,12 +37,12 @@ Modules related to Qiskit Runtime Service.
     `Qiskit-Partners/qiskit-runtime
     <https://github.com/Qiskit-Partners/qiskit-runtime>`_ for more information.
 
-The Qiskit Runtime Service allows authorized users to upload their quantum programs.
-A quantum program is a piece of code that takes certain inputs, performs
-quantum and classical processing, and returns the results. Other
+The Qiskit Runtime Service allows authorized users to upload their Qiskit quantum programs.
+A Qiskit quantum program is a piece of Python code that takes certain inputs, performs
+quantum and classical processing, and returns the results. The same or other
 authorized users can invoke these quantum programs by simply passing in parameters.
 
-These quantum programs, sometimes called runtime programs, run in a special
+These Qiskit quantum programs, sometimes called runtime programs, run in a special
 runtime environment that significantly reduces waiting time during computational
 iterations.
 
@@ -70,9 +70,9 @@ To list all available runtime programs::
 
 In the example above, ``provider.runtime`` points to the runtime service class
 :class:`IBMRuntimeService`, which is the main entry
-point for using this service. The example prints the program definitions of all
+point for using this service. The example prints the program metadata of all
 available runtime programs and of just the ``circuit-runner`` program. A program
-definition consists of a program's ID, name, description, input parameters,
+metadata consists of a program's ID, name, description, input parameters,
 return values, interim results, and other information that helps you to know
 more about the program.
 
@@ -203,6 +203,7 @@ Classes
    RuntimeProgram
    UserMessenger
    ProgramBackend
+   ResultDecoder
 """
 
 from .ibm_runtime_service import IBMRuntimeService
@@ -210,3 +211,5 @@ from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram
 from .program.user_messenger import UserMessenger
 from .program.program_backend import ProgramBackend
+from .result_decoder import ResultDecoder
+from .utils import RuntimeEncoder, RuntimeDecoder

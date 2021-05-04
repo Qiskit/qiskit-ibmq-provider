@@ -13,6 +13,7 @@
 """Tests for runtime service."""
 
 import json
+import os
 from io import StringIO
 from unittest.mock import patch
 from unittest import mock
@@ -28,6 +29,7 @@ from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.runtime import IBMRuntimeService, RuntimeJob
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeProgramNotFound,
                                                       RuntimeJobFailureError)
+from qiskit.providers.ibmq.runtime.runtime_program import ProgramParameter, ProgramResult
 
 
 from ...ibmqtestcase import IBMQTestCase
@@ -39,6 +41,24 @@ from .utils import (SerializableClass, UnserializableClass, SerializableClassDec
 
 class TestRuntime(IBMQTestCase):
     """Class for testing runtime modules."""
+
+    DEFAULT_METADATA = {
+        "name": "qiskit-test",
+        "description": "Test program.",
+        "max_execution_time": 300,
+        "version": "0.1",
+        "backend_requirements": {"min_num_qubits":  5},
+        "parameters": [
+            {"name": "param1", "description": "Some parameter.",
+             "type": "integer", "required": True}
+        ],
+        "return_values": [
+            {"name": "ret_val", "description": "Some return value.", "type": "string"}
+        ],
+        "interim_results": [
+            {"name": "int_res", "description": "Some interim result", "type": "string"},
+        ]
+    }
 
     def setUp(self):
         """Initial test setup."""
@@ -103,7 +123,6 @@ class TestRuntime(IBMQTestCase):
             for prog in programs:
                 self.assertIn(prog.program_id, stdout)
                 self.assertIn(prog.name, stdout)
-                # self.assertIn(prog.description, stdout)  TODO - add when enabled
 
     def test_upload_program(self):
         """Test uploading a program."""
@@ -209,14 +228,68 @@ class TestRuntime(IBMQTestCase):
                 result = job.result(decoder=decoder)
                 self.assertIsInstance(result['serializable_class'], SerializableClass)
 
+    def test_program_metadata(self):
+        """Test program metadata."""
+        fn = "test_metadata.json"
+        with open(fn, 'w') as file:
+            json.dump(self.DEFAULT_METADATA, file)
+        self.addCleanup(os.remove, fn)
+
+        sub_tests = [fn, self.DEFAULT_METADATA]
+
+        for metadata in sub_tests:
+            with self.subTest(metadata_type=type(metadata)):
+                program_id = self.runtime.upload_program(data="foo".encode(), metadata=metadata)
+                program = self.runtime.program(program_id)
+                self.runtime.delete_program(program_id)
+                self.assertEqual(self.DEFAULT_METADATA['name'], program.name)
+                self.assertEqual(self.DEFAULT_METADATA['description'], program.description)
+                self.assertEqual(self.DEFAULT_METADATA['max_execution_time'],
+                                 program.max_execution_time)
+                self.assertEqual(self.DEFAULT_METADATA["version"], program.version)
+                self.assertEqual(self.DEFAULT_METADATA['backend_requirements'],
+                                 program.backend_requirements)
+                self.assertEqual([ProgramParameter(**param) for param in
+                                  self.DEFAULT_METADATA['parameters']],
+                                 program.parameters)
+                self.assertEqual([ProgramResult(**ret) for ret in
+                                  self.DEFAULT_METADATA['return_values']],
+                                 program.return_values)
+                self.assertEqual([ProgramResult(**ret) for ret in
+                                  self.DEFAULT_METADATA['interim_results']],
+                                 program.interim_results)
+
+    def test_metadata_combined(self):
+        """Test combining metadata"""
+        update_metadata = {"version": "1.2", "max_execution_time": 600}
+        program_id = self.runtime.upload_program(
+            data="foo".encode(), metadata=self.DEFAULT_METADATA, **update_metadata)
+        program = self.runtime.program(program_id)
+        self.assertEqual(update_metadata['max_execution_time'], program.max_execution_time)
+        self.assertEqual(update_metadata["version"], program.version)
+
+    def test_update_program(self):
+        """Test updating program."""
+        update_metadata = {"version": "1.2", "max_execution_time": 600}
+        final_version = "1.3"
+        program_data = "foo".encode()
+        program_id = self.runtime.upload_program(
+            data=program_data, metadata=self.DEFAULT_METADATA)
+        self.runtime.update_program(program_id, data=program_data,
+                                    metadata=update_metadata, version=final_version)
+        program = self.runtime.program(program_id)
+        self.assertEqual(update_metadata['max_execution_time'], program.max_execution_time)
+        self.assertEqual(final_version, program.version)
+
     def _upload_program(self, name=None, max_execution_time=300):
         """Upload a new program."""
         name = name or uuid.uuid4().hex
-        data = "A fancy program"
+        data = "def main() {}"
         program_id = self.runtime.upload_program(
             name=name,
             data=data.encode(),
-            max_execution_time=max_execution_time)
+            max_execution_time=max_execution_time,
+            description="A test program")
         return program_id
 
     def _run_program(self, program_id=None, inputs=None, job_classes=None, decoder=None):

@@ -10,31 +10,30 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Base class for handling communication with program consumers."""
+"""Base class for handling communication with program users."""
 
 import json
-from typing import Any
+from typing import Any, Type
 
 from ..utils import RuntimeEncoder
 
 
 class UserMessenger:
-    """Base class for handling communication with program consumers.
+    """Base class for handling communication with program users.
 
-    A program consumer is the user that executes the runtime program.
     This class can be used when writing a new runtime program.
     """
 
     def publish(
             self,
             message: Any,
-            encoder: json.JSONEncoder = RuntimeEncoder,  # type: ignore[assignment]
+            encoder: Type[json.JSONEncoder] = RuntimeEncoder,
             final: bool = False
     ) -> None:
         """Publish message.
 
         You can use this method to publish messages, such as interim and final results,
-        to the program consumer. The messages will be made immediately available to the consumer,
+        to the program user. The messages will be made immediately available to the user,
         but they may choose not to receive the messages.
 
         The `final` parameter is used to indicate whether the message is

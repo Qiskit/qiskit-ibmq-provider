@@ -1,18 +1,17 @@
-{ "name": "Quantum-Kernel-Alignment",
-  "description": "Quantum kernel alignment algorithm that learns, on a given dataset, a quantum kernel maximizing the SVM classification margin.",
-  "max_execution_time": 3600,
+{
+  "name": "runtime-simple",
+  "description": "Simple runtime program used for testing.",
+  "max_execution_time": 300,
   "version": 1.0,
   "backend_requirements": {"min_num_qubits":  5},
   "parameters": [
-    {"name": "feature_map", "description": "An instance of FeatureMapACME used to map classical data into a quantum state space.", "type": "FeatureMapACME", "required": true},
-    {"name": "data", "description": "NxD array of training data, where N is the number of samples and D is the feature dimension.", "type": "numpy.ndarray", "required": true},
-    {"name": "labels", "description": "Nx1 array of +/-1 labels of the N training samples.", "type": "numpy.ndarray", "required": true}
+    {"name": "iterations", "description": "Number of iterations to run. Each iteration generates a runs a random circuit.", "type": "integer", "required": true}
   ],
   "return_values": [
-    {"name": "aligned_kernel_parameters", "description": "The optimized kernel parameters found from quantum kernel alignment.", "type": "numpy.ndarray"},
-    {"name": "aligned_kernel_matrix", "description": "The aligned quantum kernel matrix evaluated with the optimized kernel parameters on the training data.", "type": "numpy.ndarray"}
+    {"name": "-", "description": "A string that says 'All done!'.", "type": "string"}
   ],
   "interim_results": [
-    {"name": "cost", "description": "Estimate of updated SVM objective function F using average of F(alpha_+, lambda_+) and F(alpha_-, lambda_-).", "type": "float"}
+    {"name": "iteration", "description": "Iteration number.", "type": "int"},
+    {"name": "counts", "description": "Histogram data of the circuit result.", "type": "dict"}
   ]
 }

@@ -158,12 +158,21 @@ class IBMRuntimeService:
         Returns:
             A ``RuntimeProgram`` instance.
         """
+        backend_req = json.loads(response.get('backendRequirements', '{}'))
+        params = json.loads(response.get('parameters', '{}')).get("doc", [])
+        ret_vals = json.loads(response.get('returnValues', '{}'))
+        interim_results = json.loads(response.get('interimResults', '{}'))
+
         return RuntimeProgram(program_name=response['name'],
                               program_id=response['id'],
                               description=response.get('description', ""),
-                              parameters=response.get('parameters', None),
-                              return_values=response.get('return_values', None),
-                              max_execution_time=response.get('cost', 0))
+                              parameters=params,
+                              return_values=ret_vals,
+                              interim_results=interim_results,
+                              max_execution_time=response.get('cost', 0),
+                              creation_date=response.get('creationDate', ""),
+                              version=response.get('version', "0"),
+                              backend_requirements=backend_req)
 
     def run(
             self,
@@ -177,8 +186,8 @@ class IBMRuntimeService:
 
         Args:
             program_id: Program ID.
-            options: Runtime options. Currently the only available option is
-                ``backend_name``, which is required.
+            options: Runtime options that control the execution environment.
+                Currently the only available option is ``backend_name``, which is required.
             inputs: Program input parameters. These input values are passed
                 to the runtime program.
             callback: Callback function to be invoked for any interim results.
@@ -225,7 +234,6 @@ class IBMRuntimeService:
             description: Optional[str] = None,
             version: Optional[float] = None,
             backend_requirements: Optional[str] = None,
-            parameter_schema: Optional[str] = None,
             parameters: Optional[List[ProgramParameter]] = None,
             return_values: Optional[List[ProgramResult]] = None,
             interim_results: Optional[List[ProgramResult]] = None
@@ -259,8 +267,6 @@ class IBMRuntimeService:
             description: Program description. Required if not specified via `metadata`.
             version: Program version. The default is 1.0 if not specified.
             backend_requirements: Backend requirements.
-            parameter_schema: Schema that can be used to validate the program
-                input parameters.
             parameters: A list of program input parameters.
             return_values: A list of program return values.
             interim_results: A list of program interim results.
@@ -279,16 +285,15 @@ class IBMRuntimeService:
             metadata=metadata,
             name=name, max_execution_time=max_execution_time, description=description,
             version=version, backend_requirements=backend_requirements,
-            parameter_schema=parameter_schema, parameters=parameters,
+            parameters=parameters,
             return_values=return_values, interim_results=interim_results)
 
-        # TODO uncomment when metada is supported on server
-        # for req in ['name', 'description', 'max_execution_time']:
-        #     if req not in program_metadata or not program_metadata[req]:
-        #         raise IBMQInputValueError(f"{req} is a required metadata field.")
+        for req in ['name', 'description', 'max_execution_time']:
+            if req not in program_metadata or not program_metadata[req]:
+                raise IBMQInputValueError(f"{req} is a required metadata field.")
 
         try:
-            response = self._api_client.program_create(name, data, max_execution_time)
+            response = self._api_client.program_create(program_data=data, **program_metadata)
         except RequestsApiError as ex:
             if ex.status_code == 409:
                 raise RuntimeDuplicateProgramError(
@@ -309,7 +314,6 @@ class IBMRuntimeService:
             description: Optional[str] = None,
             version: Optional[float] = None,
             backend_requirements: Optional[str] = None,
-            parameter_schema: Optional[str] = None,
             parameters: Optional[List[ProgramParameter]] = None,
             return_values: Optional[List[ProgramResult]] = None,
             interim_results: Optional[List[ProgramResult]] = None
@@ -337,8 +341,6 @@ class IBMRuntimeService:
             description: Program description. Required if not specified via `metadata`.
             version: Program version. The default is 1.0 if not specified.
             backend_requirements: Backend requirements.
-            parameter_schema: Schema that can be used to validate the program
-                input parameters.
             parameters: A list of program input parameters.
             return_values: A list of program return values.
             interim_results: A list of program interim results.
@@ -354,7 +356,7 @@ class IBMRuntimeService:
             metadata=metadata,
             name=name, max_execution_time=max_execution_time, description=description,
             version=version, backend_requirements=backend_requirements,
-            parameter_schema=parameter_schema, parameters=parameters,
+            parameters=parameters,
             return_values=return_values, interim_results=interim_results)
 
         self.delete_program(program_id)
@@ -384,12 +386,31 @@ class IBMRuntimeService:
             else:
                 upd_metadata = copy.deepcopy(metadata)
 
+        self._tuple_to_dict(initial)
         initial.update(upd_metadata)
 
+        self._tuple_to_dict(kwargs)
         for key, val in kwargs.items():
             if val is not None:
                 initial[key] = val
-        return initial
+
+        # TODO validate metadata format
+        metadata_keys = ['name', 'max_execution_time', 'description', 'version',
+                         'backend_requirements', 'parameters', 'return_values',
+                         'interim_results']
+        return {key: val for key, val in initial.items() if key in metadata_keys}
+
+    def _tuple_to_dict(self, metadata: Dict) -> None:
+        """Convert fields in metadata from named tuples to dictionaries.
+
+        Args:
+            metadata: Metadata to be converted.
+        """
+        for key in ['parameters', 'return_values', 'interim_results']:
+            doc_list = metadata.pop(key, None)
+            if not doc_list or isinstance(doc_list[0], dict):
+                continue
+            metadata[key] = [dict(elem._asdict()) for elem in doc_list]
 
     def delete_program(self, program_id: str) -> None:
         """Delete a runtime program.
@@ -432,13 +453,17 @@ class IBMRuntimeService:
             raise QiskitRuntimeError(f"Failed to delete job: {ex}") from None
         return self._decode_job(response)
 
-    def jobs(self) -> List[RuntimeJob]:
+    def jobs(self, limit: int = 10, skip: int = 0) -> List[RuntimeJob]:
         """Retrieve all runtime jobs.
+
+        Args:
+            limit: Number of jobs to retrieve.
+            skip: Starting index for the job retrieval.
 
         Returns:
             A list of runtime jobs.
         """
-        response = self._api_client.jobs_get()
+        response = self._api_client.jobs_get(limit=limit, skip=skip)
         jobs = [self._decode_job(job) for job in response]
         return jobs
 
@@ -470,6 +495,7 @@ class IBMRuntimeService:
         Returns:
             Decoded job data.
         """
+        print(f">>>>>> raw_data is {raw_data}")
         backend = self._provider.get_backend(raw_data['backend'])
 
         params = raw_data.get('params', {})

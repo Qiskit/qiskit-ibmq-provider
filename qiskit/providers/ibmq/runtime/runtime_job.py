@@ -160,7 +160,7 @@ class RuntimeJob:
             if ex.status_code == 409:
                 raise RuntimeInvalidStateError(f"Job cannot be cancelled: {ex}") from None
             raise
-        self._cancel_result_streaming()
+        self.cancel_result_streaming()
         self._status = JobStatus.CANCELLED
 
     def status(self) -> JobStatus:
@@ -237,9 +237,8 @@ class RuntimeJob:
                               result_queue=self._result_queue, user_callback=callback,
                               decoder=decoder)
 
-    def _cancel_result_streaming(self) -> None:
+    def cancel_result_streaming(self) -> None:
         """Cancel result streaming."""
-        # TODO - consider making this public
         if not self._streaming:
             return
         self._streaming_loop.call_soon_threadsafe(self._streaming_task.cancel())

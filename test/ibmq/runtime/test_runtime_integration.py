@@ -17,6 +17,7 @@ import os
 import uuid
 import time
 import random
+from contextlib import suppress
 
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
@@ -30,6 +31,8 @@ from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_runtime_device
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
+
+os.environ['USE_STAGING_CREDENTIALS'] = "true"
 
 @unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
 class TestRuntimeIntegration(IBMQTestCase):
@@ -104,18 +107,15 @@ def main(backend, user_messenger, **kwargs):
         super().tearDown()
         # Delete programs
         for prog in self.to_delete:
-            try:
+            with suppress(Exception):
                 self.provider.runtime.delete_program(prog)
-            except Exception:  # pylint: disable=broad-except
-                pass
 
         # Cancel and delete jobs.
         for job in self.to_cancel:
-            try:
+            with suppress(Exception):
                 job.cancel()
+            with suppress(Exception):
                 self.provider.runtime.delete_job(job.job_id())
-            except Exception:  # pylint: disable=broad-except
-                pass
 
     def test_runtime_service(self):
         """Test getting runtime service."""
@@ -398,11 +398,13 @@ def main(backend, user_messenger, **kwargs):
         """Test getting final result."""
         final_result = get_complex_types()
         job = self._run_program(final_result=final_result)
-        result = job.result()
-        self._assert_complex_types_equal(final_result, result)
+        result = job.result(decoder=SerializableClassDecoder)
+        # self._assert_complex_types_equal(final_result, result)
+        self.assertEqual(final_result, result)
 
-        rresults = self.provider.runtime.job(job.job_id()).result()
-        self._assert_complex_types_equal(final_result, rresults)
+        rresults = self.provider.runtime.job(job.job_id()).result(decoder=SerializableClassDecoder)
+        self.assertEqual(final_result, rresults)
+        # self._assert_complex_types_equal(final_result, rresults)
 
     def test_job_status(self):
         """Test job status."""
@@ -450,11 +452,10 @@ def main(backend, user_messenger, **kwargs):
 
     def _validate_program(self, program):
         """Validate a program."""
-        # TODO add more validation
         self.assertTrue(program)
         self.assertTrue(program.name)
         self.assertTrue(program.program_id)
-        # self.assertTrue(program.description)
+        self.assertTrue(program.description)
         self.assertTrue(program.max_execution_time)
 
     def _upload_program(self, name=None, max_execution_time=300):
@@ -464,7 +465,8 @@ def main(backend, user_messenger, **kwargs):
             name=name,
             data=self.RUNTIME_PROGRAM.encode(),
             metadata=self.RUNTIME_PROGRAM_METADATA,
-            max_execution_time=max_execution_time)
+            max_execution_time=max_execution_time,
+            description="Qiskit test program")
         self.to_delete.append(program_id)
         return program_id
 

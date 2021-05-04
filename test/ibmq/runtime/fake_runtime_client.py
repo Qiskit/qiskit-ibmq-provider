@@ -25,20 +25,39 @@ from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder
 class BaseFakeProgram:
     """Base class for faking a program."""
 
-    def __init__(self, program_id, name, data, cost=600):
+    def __init__(self, program_id, name, data, cost, description, version="1.0",
+                 backend_requirements=None, parameters=None, return_values=None,
+                 interim_results=None):
         """Initialize a fake program."""
         self._id = program_id
         self._name = name
         self._data = data
         self._cost = cost
+        self._description = description
+        self._version = version
+        self._backend_requirements = backend_requirements
+        self._parameters = parameters
+        self._return_values = return_values
+        self._interim_results = interim_results
 
     def to_dict(self, include_data=False):
         """Convert this program to a dictionary format."""
         out = {'id': self._id,
                'name': self._name,
-               'cost': self._cost}
+               'cost': self._cost,
+               'description': self._description,
+               'version': self._version}
         if include_data:
             out['data'] = self._data
+        if self._backend_requirements:
+            out['backendRequirements'] = json.dumps(self._backend_requirements)
+        if self._parameters:
+            out['parameters'] = json.dumps({"doc": self._parameters})
+        if self._return_values:
+            out['returnValues'] = json.dumps(self._return_values)
+        if self._interim_results:
+            out['interimResults'] = json.dumps(self._interim_results)
+
         return out
 
 
@@ -157,14 +176,20 @@ class BaseFakeRuntimeClient:
             programs.append(prog.to_dict())
         return programs
 
-    def program_create(self, program_name, program_data, max_execution_time):
+    def program_create(self, program_data, name, description, max_execution_time, version="1.0",
+                       backend_requirements=None, parameters=None, return_values=None,
+                       interim_results=None):
         """Create a program."""
         if isinstance(program_data, str):
             with open(program_data, 'rb') as file:
                 program_data = file.read()
-        program_id = uuid.uuid4().hex
-        self._programs[program_id] = BaseFakeProgram(program_id, program_name, program_data,
-                                                     max_execution_time)
+        program_id = name
+        if program_id in self._programs:
+            raise RequestsApiError("Program already exists.", status_code=409)
+        self._programs[program_id] = BaseFakeProgram(
+            program_id=program_id, name=name, data=program_data, cost=max_execution_time,
+            description=description, version=version, backend_requirements=backend_requirements,
+            parameters=parameters, return_values=return_values, interim_results=interim_results)
         return {'id': program_id}
 
     def program_get(self, program_id: str):
@@ -202,14 +227,27 @@ class BaseFakeRuntimeClient:
 
     def job_get(self, job_id):
         """Get the specific job."""
-        if job_id not in self._jobs:
-            raise RequestsApiError("Job not found", status_code=404)
-        return self._jobs[job_id].to_dict()
+        return self._get_job(job_id).to_dict()
+
+    def jobs_get(self):
+        """Get all jobs."""
+        return [job.to_dict() for job in self._jobs]
 
     def job_results(self, job_id):
         """Get the results of a program job."""
-        return self._jobs[job_id].result()
+        return self._get_job(job_id).result()
 
     def job_cancel(self, job_id):
         """Cancel the job."""
-        self._jobs[job_id].cancel()
+        self._get_job(job_id).cancel()
+
+    def job_delete(self, job_id):
+        """Delete the job."""
+        self._get_job(job_id)
+        del self._jobs[job_id]
+
+    def _get_job(self, job_id):
+        """Get job."""
+        if job_id not in self._jobs:
+            raise RequestsApiError("Job not found", status_code=404)
+        return self._jobs[job_id]

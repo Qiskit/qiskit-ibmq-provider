@@ -13,7 +13,7 @@
 """Random REST adapter."""
 
 import logging
-from typing import Dict, List, Any, Union
+from typing import Dict, List, Any, Union, Optional
 import json
 from concurrent import futures
 
@@ -65,30 +65,55 @@ class Runtime(RestAdapterBase):
 
     def create_program(
             self,
-            program_name: str,
             program_data: Union[bytes, str],
-            max_execution_time: int
+            name: str,
+            description: str,
+            max_execution_time: int,
+            version: Optional[str] = None,
+            backend_requirements: Optional[Dict] = None,
+            parameters: Optional[Dict] = None,
+            return_values: Optional[List] = None,
+            interim_results: Optional[List] = None
     ) -> Dict:
         """Upload a new program.
 
         Args:
-            program_name: Name of the program.
             program_data: Program data.
+            name: Name of the program.
+            description: Program description.
             max_execution_time: Maximum execution time.
+            version: Program version.
+            backend_requirements: Backend requirements.
+            parameters: Program parameters.
+            return_values: Program return values.
+            interim_results: Program interim results.
 
         Returns:
             JSON response.
         """
         url = self.get_url('programs')
-        data = {'name': (None, program_name),
-                'cost': (None, str(max_execution_time))}
+        data = {'name': name,
+                'cost': str(max_execution_time),
+                'description': description.encode(),
+                'max_execution_time': max_execution_time}
+        if version is not None:
+            data['version'] = version
+        if backend_requirements:
+            data['backendRequirements'] = json.dumps(backend_requirements)
+        if parameters:
+            data['parameters'] = json.dumps({"doc": parameters})
+        if return_values:
+            data['returnValues'] = json.dumps(return_values)
+        if interim_results:
+            data['interimResults'] = json.dumps(interim_results)
+
         if isinstance(program_data, str):
             with open(program_data, 'rb') as file:
-                data['program'] = (program_name, file)
-                response = self.session.post(url, files=data).json()
+                files = {'program': (name, file)}
+                response = self.session.post(url, data=data, files=files).json()
         else:
-            data['program'] = (program_name, program_data)
-            response = self.session.post(url, files=data).json()
+            files = {'program': (name, program_data)}
+            response = self.session.post(url, data=data, files=files).json()
         return response
 
     def program_run(
@@ -125,14 +150,23 @@ class Runtime(RestAdapterBase):
         data = json.dumps(payload)
         return self.session.post(url, data=data).json()
 
-    def jobs_get(self) -> List[Dict]:
+    def jobs_get(self, limit: int = None, skip: int = None) -> List[Dict]:
         """Get a list of job data.
+
+        Args:
+            limit: Number of results to return.
+            skip: Number of results to skip.
 
         Returns:
             A list of job data.
         """
         url = self.get_url('jobs')
-        return self.session.get(url).json()
+        payload = {}
+        if limit:
+            payload['limit'] = limit
+        if skip:
+            payload['offset'] = skip
+        return self.session.get(url, json=payload).json()
 
     def logout(self) -> None:
         """Clear authorization cache."""

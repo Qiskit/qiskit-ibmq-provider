@@ -19,12 +19,7 @@ The ``main()`` method is the entry point of a runtime program. It takes a
 send circuits to the backend and messages to the user, respectively.
 """
 
-import sys
-import json
-
-from qiskit import Aer
 from qiskit.providers.ibmq.runtime import UserMessenger, ProgramBackend
-from qiskit.providers.ibmq.runtime.utils import RuntimeDecoder
 
 
 def program(backend: ProgramBackend, user_messenger: UserMessenger, **kwargs):
@@ -42,20 +37,10 @@ def main(backend: ProgramBackend, user_messenger: UserMessenger, **kwargs):
 
     Args:
         backend: Backend for the circuits to run on.
-        user_messenger: Used to communicate with the program consumer.
+        user_messenger: Used to communicate with the program user.
         kwargs: User inputs.
     """
     # Massage the input if necessary.
     result = program(backend, user_messenger, **kwargs)
     # UserMessenger can be used to publish final results.
-    user_messenger.publish(result, final_result=True)
-
-
-if __name__ == '__main__':
-    # This is used for testing locally using Aer simulator.
-    sim_backend = Aer.get_backend('qasm_simulator')
-    user_params = {}
-    if len(sys.argv) > 1:
-        # If there are user parameters.
-        user_params = json.loads(sys.argv[1], cls=RuntimeDecoder)
-    main(sim_backend, UserMessenger(), **user_params)
+    user_messenger.publish(result, final=True)

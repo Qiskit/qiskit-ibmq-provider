@@ -13,7 +13,7 @@
 """Client for accessing IBM Quantum runtime service."""
 
 import logging
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.session import RetrySession
@@ -49,22 +49,40 @@ class RuntimeClient:
 
     def program_create(
             self,
-            program_name: str,
             program_data: Union[bytes, str],
-            max_execution_time: int
+            name: str,
+            description: str,
+            max_execution_time: int,
+            version: Optional[str] = None,
+            backend_requirements: Optional[Dict] = None,
+            parameters: Optional[Dict] = None,
+            return_values: Optional[List] = None,
+            interim_results: Optional[List] = None
     ) -> Dict:
         """Create a new program.
 
         Args:
-            program_name: Name of the program.
+            name: Name of the program.
             program_data: Program data.
+            description: Program description.
             max_execution_time: Maximum execution time.
+            version: Program version.
+            backend_requirements: Backend requirements.
+            parameters: Program parameters.
+            return_values: Program return values.
+            interim_results: Program interim results.
 
         Returns:
             Server response.
         """
-        return self.api.create_program(program_name=program_name, program_data=program_data,
-                                       max_execution_time=max_execution_time)
+        return self.api.create_program(
+            program_data=program_data,
+            name=name,
+            description=description, max_execution_time=max_execution_time,
+            version=version, backend_requirements=backend_requirements,
+            parameters=parameters, return_values=return_values,
+            interim_results=interim_results
+        )
 
     def program_get(self, program_id: str) -> Dict:
         """Return a specific program.
@@ -131,13 +149,17 @@ class RuntimeClient:
         logger.debug("Runtime job get response: %s", response)
         return response
 
-    def jobs_get(self) -> List:
+    def jobs_get(self, limit: int = None, skip: int = None) -> List:
         """Get job data for all jobs.
+
+        Args:
+            limit: Number of results to return.
+            skip: Number of results to skip.
 
         Returns:
             A list of job data.
         """
-        return self.api.jobs_get()
+        return self.api.jobs_get(limit=limit, skip=skip)
 
     def job_results(self, job_id: str) -> str:
         """Get the results of a program job.
