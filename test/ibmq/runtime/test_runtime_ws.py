@@ -61,7 +61,6 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         cls.server = asyncio.get_event_loop().run_until_complete(start_server)
         cls._ws_event.wait(timeout=10)
 
-
     @classmethod
     def tearDownClass(cls):
         """Class level cleanup."""
@@ -94,17 +93,12 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
     def test_interim_result_callback(self):
         """Test interim result callback."""
         def result_callback(job_id, interim_result):
-            print(f">>>>> callback called")
             nonlocal results
             results.append(interim_result)
             self.assertEqual(JOB_ID_PROGRESS_DONE, job_id)
 
         results = []
-        # ws = RuntimeWebsocketClient(self.VALID_URL, "my_token")
-        ws = RuntimeWebsocketClient('ws://{}:{}'.format(
-            self.TEST_IP_ADDRESS, self.VALID_PORT), "foo")
-        # api = BaseFakeRuntimeClient(job_classes=TimedRuntimeJob,
-        #                             job_kwargs={"run_time": JOB_PROGRESS_RESULT_COUNT+2})
+        ws = RuntimeWebsocketClient(self.VALID_URL, "my_token")
         job = RuntimeJob(backend=FakeQasmSimulator(),
                          api_client=BaseFakeRuntimeClient(),
                          ws_client=ws,

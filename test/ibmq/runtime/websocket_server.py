@@ -24,7 +24,6 @@ JOB_PROGRESS_RESULT_COUNT = 5
 
 async def websocket_handler(websocket, path):
     """Entry point for the websocket mock server."""
-    print(">>>>> handler called")
     request = path.split('/')[-1]
     await websocket.send("ACK")
 
@@ -45,7 +44,6 @@ async def websocket_handler(websocket, path):
 async def handle_job_progress_done(websocket):
     """Send a few results then close with 1000."""
     for idx in range(JOB_PROGRESS_RESULT_COUNT):
-        print(f">>>>> adding result")
         await websocket.send(f"foo{idx}".encode())
         await asyncio.sleep(1)
     await websocket.close(code=1000)
