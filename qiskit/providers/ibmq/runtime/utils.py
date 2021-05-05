@@ -35,10 +35,6 @@ class RuntimeEncoder(json.JSONEncoder):
             return {'__type__': 'array', '__value__': obj.tolist()}
         if isinstance(obj, complex):
             return {'__type__': 'complex', '__value__': [obj.real, obj.imag]}
-        if isinstance(obj, QuantumCircuit):
-            with suppress(Exception):  # Cannot assemble circuits with unbound params.
-                qobj = assemble(obj)
-                return {'__type__': 'qobj', '__value__': qobj.to_dict()}
         if isinstance(obj, Result):
             return {'__type__': 'result', '__value__': obj.to_dict()}
         if hasattr(obj, 'to_json'):
@@ -64,10 +60,6 @@ class RuntimeDecoder(json.JSONDecoder):
                 return val[0] + 1j * val[1]
             if obj['__type__'] == 'array':
                 return np.array(obj['__value__'])
-            if obj['__type__'] == 'qobj':
-                qobj = QasmQobj.from_dict(obj['__value__'])
-                circuits, _, _ = disassemble(qobj)
-                return circuits
             if obj['__type__'] == 'result':
                 return Result.from_dict(obj['__value__'])
             if obj['__type__'] == 'to_json':
