@@ -239,6 +239,18 @@ def main(backend, user_messenger, **kwargs):
                 break
         self.assertTrue(found, f"Job {job.job_id()} not returned.")
 
+    def test_retrieve_jobs_limit(self):
+        """Test retrieving jobs with limit."""
+        jobs = []
+        for _ in range(3):
+            jobs.append(self._run_program())
+
+        rjobs = self.provider.runtime.jobs(limit=2)
+        self.assertEqual(len(rjobs), 2)
+        job_ids = {job.job_id() for job in jobs}
+        rjob_ids = {rjob.job_id() for rjob in rjobs}
+        self.assertTrue(rjob_ids.issubset(job_ids))
+
     def test_cancel_job_queued(self):
         """Test canceling a queued job."""
         _ = self._run_program(iterations=10)
@@ -368,7 +380,6 @@ def main(backend, user_messenger, **kwargs):
         self.assertEqual(iterations-1, final_it)
         self.assertIsNone(job._ws_client._ws)
 
-    @unittest.skip("Skip until 277 is fixed")
     def test_callback_cancel_job(self):
         """Test canceling a running job while streaming results."""
         def result_callback(job_id, interim_result):
@@ -457,6 +468,8 @@ def main(backend, user_messenger, **kwargs):
         self.assertTrue(program.program_id)
         self.assertTrue(program.description)
         self.assertTrue(program.max_execution_time)
+        self.assertTrue(program.creation_date)
+        self.assertTrue(program.version)
 
     def _upload_program(self, name=None, max_execution_time=300):
         """Upload a new program."""

@@ -154,14 +154,31 @@ class CustomResultRuntimeJob(BaseFakeRuntimeJob):
             self._result = json.dumps(self.custom_result, cls=RuntimeEncoder)
 
 
+class TimedRuntimeJob(BaseFakeRuntimeJob):
+    """Class for a job that runs for the input seconds."""
+
+    def __init__(self, **kwargs):
+        self._runtime = kwargs.pop('run_time')
+        super().__init__(**kwargs)
+
+    def _auto_progress(self):
+        self._status = "RUNNING"
+        time.sleep(self._runtime)
+        self._status = "SUCCEEDED"
+
+        if self._status == "SUCCEEDED":
+            self._result = json.dumps("foo")
+
+
 class BaseFakeRuntimeClient:
     """Base class for faking the runtime client."""
 
-    def __init__(self):
+    def __init__(self, job_classes=None, job_kwargs=None):
         """Initialize a fake runtime client."""
         self._programs = {}
         self._jobs = {}
-        self._job_classes = []
+        self._job_classes = job_classes or []
+        self._job_kwargs = job_kwargs or {}
 
     def set_job_classes(self, classes):
         """Set job classes to use."""
@@ -215,7 +232,7 @@ class BaseFakeRuntimeClient:
         job = job_cls(job_id=job_id, program_id=program_id,
                       hub=credentials.hub, group=credentials.group,
                       project=credentials.project, backend_name=backend_name,
-                      params=params)
+                      params=params, **self._job_kwargs)
         self._jobs[job_id] = job
         return {'id': job_id}
 
@@ -229,9 +246,13 @@ class BaseFakeRuntimeClient:
         """Get the specific job."""
         return self._get_job(job_id).to_dict()
 
-    def jobs_get(self):
+    def jobs_get(self, limit=None, skip=None):
         """Get all jobs."""
-        return [job.to_dict() for job in self._jobs]
+        limit = limit or len(self._jobs)
+        skip = skip or 0
+        jobs = list(self._jobs.values())[skip:limit+skip]
+        return {"jobs": [job.to_dict() for job in jobs],
+                "count": len(self._jobs)}
 
     def job_results(self, job_id):
         """Get the results of a program job."""

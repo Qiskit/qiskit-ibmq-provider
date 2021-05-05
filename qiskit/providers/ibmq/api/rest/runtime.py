@@ -150,7 +150,7 @@ class Runtime(RestAdapterBase):
         data = json.dumps(payload)
         return self.session.post(url, data=data).json()
 
-    def jobs_get(self, limit: int = None, skip: int = None) -> List[Dict]:
+    def jobs_get(self, limit: int = None, skip: int = None) -> Dict:
         """Get a list of job data.
 
         Args:
@@ -158,7 +158,7 @@ class Runtime(RestAdapterBase):
             skip: Number of results to skip.
 
         Returns:
-            A list of job data.
+            JSON response.
         """
         url = self.get_url('jobs')
         payload = {}
@@ -166,7 +166,7 @@ class Runtime(RestAdapterBase):
             payload['limit'] = limit
         if skip:
             payload['offset'] = skip
-        return self.session.get(url, json=payload).json()
+        return self.session.get(url, params=payload).json()
 
     def logout(self) -> None:
         """Clear authorization cache."""

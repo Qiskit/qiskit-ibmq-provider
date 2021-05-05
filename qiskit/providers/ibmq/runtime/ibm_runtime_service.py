@@ -463,9 +463,27 @@ class IBMRuntimeService:
         Returns:
             A list of runtime jobs.
         """
-        response = self._api_client.jobs_get(limit=limit, skip=skip)
-        jobs = [self._decode_job(job) for job in response]
-        return jobs
+        job_responses = []  # type: List[Dict[str, Any]]
+        current_page_limit = limit or 20
+
+        while True:
+            job_page = self._api_client.jobs_get(limit=current_page_limit, skip=skip)["jobs"]
+            if not job_page:
+                # Stop if there are no more jobs returned by the server.
+                break
+
+            job_responses += job_page
+            if limit:
+                if len(job_responses) >= limit:
+                    # Stop if we have reached the limit.
+                    break
+                current_page_limit = limit - len(job_responses)
+            else:
+                current_page_limit = 20
+
+            skip += len(job_page)
+
+        return [self._decode_job(job) for job in job_responses]
 
     def delete_job(self, job_id: str) -> None:
         """Delete a runtime job.
@@ -495,7 +513,6 @@ class IBMRuntimeService:
         Returns:
             Decoded job data.
         """
-        print(f">>>>>> raw_data is {raw_data}")
         backend = self._provider.get_backend(raw_data['backend'])
 
         params = raw_data.get('params', {})

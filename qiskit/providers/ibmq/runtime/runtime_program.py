@@ -108,6 +108,9 @@ class RuntimeProgram:
         formatted = [f'{self.program_id}:',
                      f"  Name: {self.name}",
                      f"  Description: {self.description}",
+                     f"  Version: {self.version}",
+                     f"  Creation date: {self.creation_date}",
+                     f"  Max execution time: {self.max_execution_time}",
                      f"  Parameters:"]
 
         if self._parameters:

@@ -149,7 +149,7 @@ class RuntimeClient:
         logger.debug("Runtime job get response: %s", response)
         return response
 
-    def jobs_get(self, limit: int = None, skip: int = None) -> List:
+    def jobs_get(self, limit: int = None, skip: int = None) -> Dict:
         """Get job data for all jobs.
 
         Args:
@@ -157,7 +157,7 @@ class RuntimeClient:
             skip: Number of results to skip.
 
         Returns:
-            A list of job data.
+            JSON response.
         """
         return self.api.jobs_get(limit=limit, skip=skip)
 

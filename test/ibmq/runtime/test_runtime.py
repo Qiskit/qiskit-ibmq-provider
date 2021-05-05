@@ -176,6 +176,47 @@ class TestRuntime(IBMQTestCase):
         self.assertEqual(job.job_id(), rjob.job_id())
         self.assertEqual(program_id, rjob.program_id)
 
+    def test_jobs_no_limit(self):
+        """Test retrieving jobs without limit."""
+        jobs = []
+        program_id = self._upload_program()
+        for _ in range(25):
+            jobs.append(self._run_program(program_id))
+        rjobs = self.runtime.jobs(limit=None)
+        self.assertEqual(25, len(rjobs))
+
+    def test_jobs_limit(self):
+        """Test retrieving jobs with limit."""
+        jobs = []
+        job_count = 25
+        program_id = self._upload_program()
+        for _ in range(job_count):
+            jobs.append(self._run_program(program_id))
+
+        limits = [21, 30]
+        for limit in limits:
+            with self.subTest(limit=limit):
+                rjobs = self.runtime.jobs(limit=limit)
+                self.assertEqual(min(limit, job_count), len(rjobs))
+
+    def test_jobs_skip(self):
+        """Test retrieving jobs with skip."""
+        jobs = []
+        program_id = self._upload_program()
+        for _ in range(5):
+            jobs.append(self._run_program(program_id))
+        rjobs = self.runtime.jobs(skip=4)
+        self.assertEqual(1, len(rjobs))
+
+    def test_jobs_skip_limit(self):
+        """Test retrieving jobs with skip and limit."""
+        jobs = []
+        program_id = self._upload_program()
+        for _ in range(10):
+            jobs.append(self._run_program(program_id))
+        rjobs = self.runtime.jobs(skip=4, limit=2)
+        self.assertEqual(2, len(rjobs))
+
     def test_cancel_job(self):
         """Test canceling a job."""
         job = self._run_program(job_classes=CancelableRuntimeJob)
