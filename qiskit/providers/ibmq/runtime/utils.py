@@ -24,6 +24,7 @@ import numpy as np
 from qiskit.result import Result
 from qiskit import assemble, QuantumCircuit
 from qiskit.assembler.disassemble import disassemble
+from qiskit.qobj import QasmQobj
 
 
 class RuntimeEncoder(json.JSONEncoder):
@@ -63,8 +64,9 @@ class RuntimeDecoder(json.JSONDecoder):
                 return val[0] + 1j * val[1]
             if obj['__type__'] == 'array':
                 return np.array(obj['__value__'])
-            if obj['__type__'] == ['qobj']:
-                circuits, _, _ = disassemble(obj['__value__'])
+            if obj['__type__'] == 'qobj':
+                qobj = QasmQobj.from_dict(obj['__value__'])
+                circuits, _, _ = disassemble(qobj)
                 return circuits
             if obj['__type__'] == 'result':
                 return Result.from_dict(obj['__value__'])
