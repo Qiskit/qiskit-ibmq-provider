@@ -1,0 +1,23 @@
+---
+upgrade:
+  - |
+    The deprecated ``Human Bad``, ``Computer Bad``, ``Computer Good`` and
+    ``Human Good`` enum values have been removed from
+    :class:`qiskit.providers.ibmq.experiment.constants.ResultQuality`. They
+    are replaced with ``Bad`` and ``Good`` values which should be used with
+    the ``verified`` attribute on
+    :class:`qiskit.providers.ibmq.experiment.analysis_result.AnalysisResult`:
+
+    +---------------+-------------+----------+
+    | Old Quality   | New Quality | Verified |
+    +===============+=============+==========+
+    | Human Bad     | Bad         | True     |
+    +---------------+-------------+----------+
+    | Computer Bad  | Bad         | False    |
+    +---------------+-------------+----------+
+    | Computer Good | Good        | False    |
+    +---------------+-------------+----------+
+    | Human Good    | Good        | True     |
+    +---------------+-------------+----------+
+
+    Furthermore, the ``NO_INFORMATION`` enum has been renamed to ``UNKNOWN``.
