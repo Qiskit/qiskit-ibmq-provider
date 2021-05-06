@@ -234,6 +234,8 @@ class ExperimentService:
             data['uuid'] = experiment.uuid
         if experiment.share_level:
             data['visibility'] = experiment.share_level.value
+        if experiment.notes:
+            data['notes'] = experiment.notes
         response_data = self._api_client.experiment_upload(data)
         experiment.update_from_remote_data(response_data)
 
@@ -268,6 +270,7 @@ class ExperimentService:
 
                 * end_datetime
                 * share_level (visibility)
+                * notes (use empty string to clear notes)
 
         Args:
             experiment: Experiment to be updated.
@@ -277,6 +280,9 @@ class ExperimentService:
             data['end_time'] = experiment.end_datetime.isoformat()
         if experiment.share_level:
             data['visibility'] = experiment.share_level.value
+        # notes can be cleared with an empty string so check for None
+        if experiment.notes is not None:
+            data['notes'] = experiment.notes or None
 
         if not data:    # Nothing to update.
             return
