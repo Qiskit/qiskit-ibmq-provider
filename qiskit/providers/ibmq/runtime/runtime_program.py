@@ -111,7 +111,7 @@ class RuntimeProgram:
                      f"  Version: {self.version}",
                      f"  Creation date: {self.creation_date}",
                      f"  Max execution time: {self.max_execution_time}",
-                     f"  Parameters:"]
+                     f"  Input parameters:"]
 
         if self._parameters:
             _format_common(self._parameters)
