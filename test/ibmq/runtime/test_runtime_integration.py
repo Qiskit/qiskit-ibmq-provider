@@ -152,18 +152,6 @@ def main(backend, user_messenger, **kwargs):
         with self.assertRaises(RuntimeDuplicateProgramError):
             self._upload_program(name=name)
 
-    def test_update_program(self):
-        """Test updating a program."""
-        program_id = self._upload_program()
-        program = self.provider.runtime.program(program_id)
-
-        self.provider.runtime.delete_program(program_id)
-        new_cost = program.max_execution_time + 1000
-        new_id = self._upload_program(name=program.name, max_execution_time=new_cost)
-        updated = self.provider.runtime.program(new_id, refresh=True)
-        self.assertEqual(new_cost, updated.max_execution_time,
-                         f"Program {new_id} does not have the expected cost.")
-
     def test_delete_program(self):
         """Test deleting program."""
         program_id = self._upload_program()

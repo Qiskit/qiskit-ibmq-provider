@@ -304,64 +304,6 @@ class IBMRuntimeService:
             raise QiskitRuntimeError(f"Failed to create program: {ex}") from None
         return response['id']
 
-    def update_program(
-            self,
-            program_id: str,
-            data: Union[bytes, str] = None,
-            metadata: Optional[Union[Dict, str]] = None,
-            name: Optional[str] = None,
-            max_execution_time: Optional[int] = None,
-            description: Optional[str] = None,
-            version: Optional[float] = None,
-            backend_requirements: Optional[str] = None,
-            parameters: Optional[List[ProgramParameter]] = None,
-            return_values: Optional[List[ProgramResult]] = None,
-            interim_results: Optional[List[ProgramResult]] = None
-    ) -> None:
-        """Update an existing runtime program.
-
-        Program metadata can be specified using the `metadata` parameter or
-        individual parameter (for example, `name` and `description`). If the
-        same metadata field is specified in both places, the individual parameter
-        takes precedence. For example, if you specify:
-
-            update_program(metadata={"name": "name1"}, name="name2")
-
-        ``name2`` will be used as the program name.
-
-        Args:
-            program_id: Program ID.
-            data: Name of the program file or program data to upload.
-            metadata: Name of the program metadata file or metadata dictionary.
-                A metadata file needs to be in the JSON format.
-                See :file:`program/program_metadata_sample.yaml` for an example.
-            name: Name of the program. Required if not specified via `metadata`.
-            max_execution_time: Maximum execution time in seconds. Required if
-                not specified via `metadata`.
-            description: Program description. Required if not specified via `metadata`.
-            version: Program version. The default is 1.0 if not specified.
-            backend_requirements: Backend requirements.
-            parameters: A list of program input parameters.
-            return_values: A list of program return values.
-            interim_results: A list of program interim results.
-
-        Raises:
-            RuntimeProgramNotFound: If the program doesn't exist.
-            IBMQNotAuthorizedError: If you are not authorized to upload programs.
-            QiskitRuntimeError: If the update failed.
-        """
-        program_metadata = self.program(program_id, refresh=True).to_dict()
-        program_metadata = self._merge_metadata(
-            initial=program_metadata,
-            metadata=metadata,
-            name=name, max_execution_time=max_execution_time, description=description,
-            version=version, backend_requirements=backend_requirements,
-            parameters=parameters,
-            return_values=return_values, interim_results=interim_results)
-
-        self.delete_program(program_id)
-        self.upload_program(data=data, metadata=program_metadata)
-
     def _merge_metadata(
             self,
             initial: Dict,

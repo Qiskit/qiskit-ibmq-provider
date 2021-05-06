@@ -309,19 +309,6 @@ class TestRuntime(IBMQTestCase):
         self.assertEqual(update_metadata['max_execution_time'], program.max_execution_time)
         self.assertEqual(update_metadata["version"], program.version)
 
-    def test_update_program(self):
-        """Test updating program."""
-        update_metadata = {"version": "1.2", "max_execution_time": 600}
-        final_version = "1.3"
-        program_data = "foo".encode()
-        program_id = self.runtime.upload_program(
-            data=program_data, metadata=self.DEFAULT_METADATA)
-        self.runtime.update_program(program_id, data=program_data,
-                                    metadata=update_metadata, version=final_version)
-        program = self.runtime.program(program_id)
-        self.assertEqual(update_metadata['max_execution_time'], program.max_execution_time)
-        self.assertEqual(final_version, program.version)
-
     def _upload_program(self, name=None, max_execution_time=300):
         """Upload a new program."""
         name = name or uuid.uuid4().hex
