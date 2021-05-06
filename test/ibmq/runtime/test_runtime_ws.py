@@ -60,6 +60,7 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         # Launch the mock server.
+        # pylint: disable=no-member
         start_server = websockets.serve(websocket_handler, cls.TEST_IP_ADDRESS, cls.VALID_PORT)
         cls.server = loop.run_until_complete(start_server)
         cls._ws_start_event.set()

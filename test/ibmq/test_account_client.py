@@ -69,7 +69,7 @@ class TestAccountClient(IBMQTestCase):
 
     def _get_client(self):
         """Helper for instantiating an AccountClient."""
-        return AccountClient(self.provider.credentials)
+        return AccountClient(self.provider.credentials)  # pylint: disable=no-value-for-parameter
 
     def test_exception_message(self):
         """Check exception has proper message."""

@@ -67,7 +67,7 @@ class BaseFakeRuntimeJob:
     _job_progress = [
         "QUEUED",
         "RUNNING",
-        "SUCCEEDED"
+        "COMPLETED"
     ]
 
     _executor = ThreadPoolExecutor()
@@ -91,7 +91,7 @@ class BaseFakeRuntimeJob:
             time.sleep(0.5)
             self._status = status
 
-        if self._status == "SUCCEEDED":
+        if self._status == "COMPLETED":
             self._result = json.dumps("foo")
 
     def to_dict(self):
@@ -150,7 +150,7 @@ class CustomResultRuntimeJob(BaseFakeRuntimeJob):
         """Automatically update job status."""
         super()._auto_progress()
 
-        if self._status == "SUCCEEDED":
+        if self._status == "COMPLETED":
             self._result = json.dumps(self.custom_result, cls=RuntimeEncoder)
 
 
@@ -164,9 +164,9 @@ class TimedRuntimeJob(BaseFakeRuntimeJob):
     def _auto_progress(self):
         self._status = "RUNNING"
         time.sleep(self._runtime)
-        self._status = "SUCCEEDED"
+        self._status = "COMPLETED"
 
-        if self._status == "SUCCEEDED":
+        if self._status == "COMPLETED":
             self._result = json.dumps("foo")
 
 
