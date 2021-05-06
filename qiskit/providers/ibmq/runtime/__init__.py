@@ -37,14 +37,23 @@ Modules related to Qiskit Runtime Service.
     `Qiskit-Partners/qiskit-runtime
     <https://github.com/Qiskit-Partners/qiskit-runtime>`_ for more information.
 
+.. caution::
+
+  This package is currently provided in beta form and heavy modifications to
+  both functionality and API are likely to occur. Backward compatibility is not
+  always guaranteed.
+
+Qiskit Runtime is a new architecture offered by IBM Quantum that
+significantly reduces waiting time during computational iterations.
+You can execute your experiments near the quantum hardware, without
+the interactions of multiple layers of classical and quantum hardware
+slowing it down.
+
 The Qiskit Runtime Service allows authorized users to upload their Qiskit quantum programs.
-A Qiskit quantum program is a piece of Python code that takes certain inputs, performs
+A Qiskit quantum program, also called a runtime program, is a piece of Python
+code that takes certain inputs, performs
 quantum and classical processing, and returns the results. The same or other
 authorized users can invoke these quantum programs by simply passing in parameters.
-
-These Qiskit quantum programs, sometimes called runtime programs, run in a special
-runtime environment that significantly reduces waiting time during computational
-iterations.
 
 `Qiskit-Partners/qiskit-runtime <https://github.com/Qiskit-Partners/qiskit-runtime>`_
 contains detailed tutorials on how to use the runtime service.

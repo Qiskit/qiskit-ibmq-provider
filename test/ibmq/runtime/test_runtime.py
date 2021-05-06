@@ -271,12 +271,12 @@ class TestRuntime(IBMQTestCase):
 
     def test_program_metadata(self):
         """Test program metadata."""
-        fn = "test_metadata.json"
-        with open(fn, 'w') as file:
+        file_name = "test_metadata.json"
+        with open(file_name, 'w') as file:
             json.dump(self.DEFAULT_METADATA, file)
-        self.addCleanup(os.remove, fn)
+        self.addCleanup(os.remove, file_name)
 
-        sub_tests = [fn, self.DEFAULT_METADATA]
+        sub_tests = [file_name, self.DEFAULT_METADATA]
 
         for metadata in sub_tests:
             with self.subTest(metadata_type=type(metadata)):
@@ -343,5 +343,3 @@ class TestRuntime(IBMQTestCase):
         job = self.runtime.run(program_id=program_id, inputs=inputs,
                                options=options, result_decoder=decoder)
         return job
-
-    # TODO add websocket tests

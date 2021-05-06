@@ -19,7 +19,6 @@ API_TO_JOB_STATUS = {
     'QUEUED': JobStatus.QUEUED,
     'RUNNING': JobStatus.RUNNING,
     'COMPLETED': JobStatus.DONE,
-    'SUCCEEDED': JobStatus.DONE,    # TODO remove when no longer used
     'FAILED': JobStatus.ERROR,
     'CANCELLED': JobStatus.CANCELLED
 }

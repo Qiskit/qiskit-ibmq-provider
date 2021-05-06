@@ -18,7 +18,6 @@ JOB_ID_PROGRESS_DONE = 'JOB_ID_PROGRESS_DONE'
 JOB_ID_ALREADY_DONE = 'JOB_ID_ALREADY_DONE'
 JOB_ID_RETRY_SUCCESS = 'JOB_ID_RETRY_SUCCESS'
 JOB_ID_RETRY_FAILURE = 'JOB_ID_RETRY_FAILURE'
-JOB_ID_RANDOM_CODE = 'JOB_ID_RANDOM_CODE'
 JOB_PROGRESS_RESULT_COUNT = 5
 
 
@@ -35,8 +34,6 @@ async def websocket_handler(websocket, path):
         await handle_token_retry_success(websocket)
     elif request == JOB_ID_RETRY_FAILURE:
         await handle_token_retry_failure(websocket)
-    elif request == JOB_ID_RANDOM_CODE:
-        await handle_close_random_code(websocket)
     else:
         raise ValueError(f"Unknown request {request}")
 
@@ -44,7 +41,7 @@ async def websocket_handler(websocket, path):
 async def handle_job_progress_done(websocket):
     """Send a few results then close with 1000."""
     for idx in range(JOB_PROGRESS_RESULT_COUNT):
-        await websocket.send(f"foo{idx}".encode())
+        await websocket.send(f"foo{idx}")
         await asyncio.sleep(1)
     await websocket.close(code=1000)
 
@@ -65,9 +62,4 @@ async def handle_token_retry_success(websocket):
 
 async def handle_token_retry_failure(websocket):
     """Continually close the socket, until both the first attempt and retry fail."""
-    await websocket.close()
-
-
-async def handle_close_random_code(websocket):
-    """Close with a random code."""
-    await websocket.close(code=1234)
+    await websocket.close(code=1011)

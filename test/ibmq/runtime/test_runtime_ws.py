@@ -16,7 +16,6 @@ import sys
 import asyncio
 import warnings
 from contextlib import suppress
-import queue
 import time
 from concurrent.futures import ThreadPoolExecutor
 import threading
@@ -25,13 +24,14 @@ import websockets
 
 from qiskit.providers.ibmq.api.clients.runtime_ws import RuntimeWebsocketClient
 from qiskit.providers.ibmq.runtime import RuntimeJob
+from qiskit.providers.ibmq.runtime.exceptions import RuntimeInvalidStateError
 from qiskit.test.mock.fake_qasm_simulator import FakeQasmSimulator
 
 from ...ibmqtestcase import IBMQTestCase
 from .websocket_server import (websocket_handler, JOB_ID_PROGRESS_DONE, JOB_ID_ALREADY_DONE,
-                               JOB_ID_RETRY_SUCCESS, JOB_ID_RETRY_FAILURE, JOB_ID_RANDOM_CODE,
+                               JOB_ID_RETRY_SUCCESS, JOB_ID_RETRY_FAILURE,
                                JOB_PROGRESS_RESULT_COUNT)
-from .fake_runtime_client import BaseFakeRuntimeClient, TimedRuntimeJob
+from .fake_runtime_client import BaseFakeRuntimeClient
 
 
 class TestRuntimeWebsocketClient(IBMQTestCase):
@@ -50,24 +50,25 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         super().setUpClass()
 
         # Launch the mock server.
-        # start_server = websockets.serve(websocket_handler, cls.TEST_IP_ADDRESS, cls.VALID_PORT)
-        # cls.server = asyncio.get_event_loop().run_until_complete(start_server)
-        cls._ws_event = threading.Event()
+        cls._ws_stop_event = threading.Event()
+        cls._ws_start_event = threading.Event()
+        cls._future = cls._executor.submit(cls._ws_server)
+        cls._ws_start_event.wait(5)
 
     @classmethod
     def _ws_server(cls):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        # Launch the mock server.
         start_server = websockets.serve(websocket_handler, cls.TEST_IP_ADDRESS, cls.VALID_PORT)
-        cls.server = asyncio.get_event_loop().run_until_complete(start_server)
-        cls._ws_event.wait(timeout=10)
+        cls.server = loop.run_until_complete(start_server)
+        cls._ws_start_event.set()
 
-    @classmethod
-    def tearDownClass(cls):
-        """Class level cleanup."""
-        super().tearDownClass()
+        # A bit hacky but we need to keep the loop running to serve the request.
+        # An there's no easy way to interrupt a run_forever.
+        while not cls._ws_stop_event.is_set():
+            loop.run_until_complete(asyncio.sleep(1))
 
-        # Close the mock server.
-        loop = asyncio.get_event_loop()
         cls.server.close()
         loop.run_until_complete(cls.server.wait_closed())
 
@@ -90,6 +91,15 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
                               "Traceback:", str(err), str(task))
                 task.print_stack()
 
+    @classmethod
+    def tearDownClass(cls):
+        """Class level cleanup."""
+        super().tearDownClass()
+
+        # Close the mock server.
+        cls._ws_stop_event.set()
+        cls._future.result()
+
     def test_interim_result_callback(self):
         """Test interim result callback."""
         def result_callback(job_id, interim_result):
@@ -98,36 +108,125 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
             self.assertEqual(JOB_ID_PROGRESS_DONE, job_id)
 
         results = []
-        ws = RuntimeWebsocketClient(self.VALID_URL, "my_token")
-        job = RuntimeJob(backend=FakeQasmSimulator(),
-                         api_client=BaseFakeRuntimeClient(),
-                         ws_client=ws,
-                         job_id=JOB_ID_PROGRESS_DONE,
-                         program_id="my-program",
-                         user_callback=result_callback)
+        job = self._get_job(callback=result_callback)
         time.sleep(JOB_PROGRESS_RESULT_COUNT+2)
         self.assertEqual(JOB_PROGRESS_RESULT_COUNT, len(results))
         self.assertIsNone(job._ws_client._ws)
 
     def test_stream_results(self):
-        pass
+        """Test streaming results."""
+        def result_callback(job_id, interim_result):
+            nonlocal results
+            results.append(interim_result)
+            self.assertEqual(JOB_ID_PROGRESS_DONE, job_id)
+
+        results = []
+        job = self._get_job()
+        job.stream_results(callback=result_callback)
+        time.sleep(JOB_PROGRESS_RESULT_COUNT+2)
+        self.assertEqual(JOB_PROGRESS_RESULT_COUNT, len(results))
+        self.assertIsNone(job._ws_client._ws)
+
+    def test_duplicate_streaming(self):
+        """Testing duplicate streaming."""
+        def result_callback(job_id, interim_result):
+            nonlocal results
+            results.append(interim_result)
+            self.assertEqual(JOB_ID_PROGRESS_DONE, job_id)
+
+        results = []
+        job = self._get_job(callback=result_callback)
+        time.sleep(1)
+        with self.assertRaises(RuntimeInvalidStateError):
+            job.stream_results(callback=result_callback)
 
     def test_cancel_streaming(self):
-        pass
+        """Test canceling streaming."""
+        def result_callback(job_id, interim_result):
+            nonlocal results
+            results.append(interim_result)
+            self.assertEqual(JOB_ID_PROGRESS_DONE, job_id)
+
+        results = []
+        job = self._get_job(callback=result_callback)
+        time.sleep(1)
+        job.cancel_result_streaming()
+        time.sleep(1)
+        self.assertIsNone(job._ws_client._ws)
+
+    def test_cancel_closed_streaming(self):
+        """Test canceling streaming that's already closed."""
+        def result_callback(job_id, interim_result):
+            nonlocal results
+            results.append(interim_result)
+            self.assertEqual(JOB_ID_ALREADY_DONE, job_id)
+
+        results = []
+        job = self._get_job(callback=result_callback, job_id=JOB_ID_ALREADY_DONE)
+        time.sleep(2)
+        job.cancel_result_streaming()
+        self.assertIsNone(job._ws_client._ws)
 
     def test_completed_job(self):
-        pass
+        """Test callback from completed job."""
+        def result_callback(job_id, interim_result):
+            nonlocal results
+            results.append(interim_result)
+            self.assertEqual(JOB_ID_ALREADY_DONE, job_id)
+
+        results = []
+        job = self._get_job(callback=result_callback, job_id=JOB_ID_ALREADY_DONE)
+        time.sleep(2)
+        self.assertEqual(0, len(results))
+        self.assertIsNone(job._ws_client._ws)
+
+    def test_completed_job_stream(self):
+        """Test streaming from completed job."""
+        def result_callback(job_id, interim_result):
+            nonlocal results
+            results.append(interim_result)
+            self.assertEqual(JOB_ID_ALREADY_DONE, job_id)
+
+        results = []
+        job = self._get_job(job_id=JOB_ID_ALREADY_DONE)
+        job.stream_results(callback=result_callback)
+        time.sleep(2)
+        self.assertEqual(0, len(results))
+        self.assertIsNone(job._ws_client._ws)
 
     def test_websocket_retry_success(self):
-        pass
+        """Test successful retry."""
+        def result_callback(job_id, interim_result):
+            nonlocal results
+            results.append(interim_result)
+            self.assertEqual(JOB_ID_RETRY_SUCCESS, job_id)
+
+        results = []
+        job = self._get_job(job_id=JOB_ID_RETRY_SUCCESS, callback=result_callback)
+        time.sleep(JOB_PROGRESS_RESULT_COUNT+2)
+        self.assertEqual(JOB_PROGRESS_RESULT_COUNT, len(results))
+        self.assertIsNone(job._ws_client._ws)
 
     def test_websocket_retry_failure(self):
-        pass
+        """Test failed retry."""
+        def result_callback(job_id, interim_result):
+            nonlocal results
+            results.append(interim_result)
+            self.assertEqual(JOB_ID_RETRY_FAILURE, job_id)
 
-    def test_job_interim_results(self):
-        """Test retrieving a job already in final status."""
-        client = RuntimeWebsocketClient('ws://{}:{}'.format(
-            self.TEST_IP_ADDRESS, self.VALID_PORT), "foo")
+        results = []
+        job = self._get_job(job_id=JOB_ID_RETRY_FAILURE, callback=result_callback)
+        time.sleep(20)  # Need to wait for all retries.
+        self.assertEqual(0, len(results))
+        self.assertIsNone(job._ws_client._ws)
 
-        asyncio.get_event_loop().run_until_complete(
-            client.job_results(JOB_ID_PROGRESS_DONE, queue.Queue()))
+    def _get_job(self, callback=None, job_id=JOB_ID_PROGRESS_DONE):
+        """Get a runtime job."""
+        ws_client = RuntimeWebsocketClient(self.VALID_URL, "my_token")
+        job = RuntimeJob(backend=FakeQasmSimulator(),
+                         api_client=BaseFakeRuntimeClient(),
+                         ws_client=ws_client,
+                         job_id=job_id,
+                         program_id="my-program",
+                         user_callback=callback)
+        return job

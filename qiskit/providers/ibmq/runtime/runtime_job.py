@@ -26,7 +26,7 @@ from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
 
 from .constants import API_TO_JOB_STATUS
-from .exceptions import RuntimeJobFailureError, RuntimeInvalidStateError
+from .exceptions import RuntimeJobFailureError, RuntimeInvalidStateError, QiskitRuntimeError
 from .result_decoder import ResultDecoder
 from ..api.clients import RuntimeClient, RuntimeWebsocketClient
 from ..exceptions import IBMQError
@@ -139,7 +139,7 @@ class RuntimeJob:
             RuntimeJobFailureError: If the job failed.
         """
         _decoder = decoder or self._result_decoder
-        if not self._results or _decoder != self._result_decoder:
+        if not self._results or (_decoder != self._result_decoder):  # type: ignore[unreachable]
             self.wait_for_final_state(timeout=timeout, wait=wait)
             result_raw = self._api_client.job_results(job_id=self.job_id())
             if self._status == JobStatus.ERROR:
@@ -153,13 +153,14 @@ class RuntimeJob:
 
         Raises:
             RuntimeInvalidStateError: If the job is in a state that cannot be cancelled.
+            QiskitRuntimeError: If unable to cancel job.
         """
         try:
             self._api_client.job_cancel(self.job_id())
         except RequestsApiError as ex:
             if ex.status_code == 409:
                 raise RuntimeInvalidStateError(f"Job cannot be cancelled: {ex}") from None
-            raise
+            raise QiskitRuntimeError(f"Failed to cancel job: {ex}") from None
         self.cancel_result_streaming()
         self._status = JobStatus.CANCELLED
 

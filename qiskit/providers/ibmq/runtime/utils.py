@@ -16,15 +16,11 @@
 import json
 from typing import Any
 import base64
-from contextlib import suppress
 
 import dill
 import numpy as np
 
 from qiskit.result import Result
-from qiskit import assemble, QuantumCircuit
-from qiskit.assembler.disassemble import disassemble
-from qiskit.qobj import QasmQobj
 
 
 class RuntimeEncoder(json.JSONEncoder):

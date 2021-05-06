@@ -112,7 +112,7 @@ class Runtime(RestAdapterBase):
                 files = {'program': (name, file)}
                 response = self.session.post(url, data=data, files=files).json()
         else:
-            files = {'program': (name, program_data)}
+            files = {'program': (name, program_data)}  # type: ignore[dict-item]
             response = self.session.post(url, data=data, files=files).json()
         return response
 
