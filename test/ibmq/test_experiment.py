@@ -368,27 +368,31 @@ class TestExperiment(IBMQTestCase):
         self.assertTrue(new_exp.creation_datetime)
         self.assertEqual(ExperimentShareLevel.PRIVATE, new_exp.share_level)
         self.assertIsNotNone(new_exp.owner, 'Owner should be set')  # pylint: disable=no-member
+        self.assertIsNone(new_exp.notes)
         for dt_attr in ['start_datetime', 'creation_datetime', 'end_datetime', 'updated_datetime']:
             if getattr(exp, dt_attr):
                 self.assertTrue(getattr(exp, dt_attr).tzinfo)
 
     def test_update_experiment(self):
         """Test updating an experiment."""
-        new_exp = self._create_experiment()
+        new_exp = self._create_experiment(notes='test note')
         new_exp.end_datetime = datetime.now()
         new_exp.share_level = ExperimentShareLevel.PROJECT
+        new_exp.notes = ''  # Clear the notes
         self.provider.experiment.update_experiment(new_exp)
         rexp = self.provider.experiment.retrieve_experiment(new_exp.uuid)
         self.assertEqual(new_exp.end_datetime, rexp.end_datetime)
         self.assertEqual(ExperimentShareLevel.PROJECT, rexp.share_level)
+        self.assertIsNone(rexp.notes)
 
     def test_delete_experiment(self):
         """Test deleting an experiment."""
-        new_exp = self._create_experiment()
+        new_exp = self._create_experiment(notes='delete me')
 
         with mock.patch('builtins.input', lambda _: 'y'):
             deleted_exp = self.provider.experiment.delete_experiment(new_exp.uuid)
         self.assertEqual(deleted_exp.uuid, new_exp.uuid)
+        self.assertEqual('delete me', new_exp.notes)
 
         with self.assertRaises(ExperimentNotFoundError) as ex_cm:
             self.provider.experiment.retrieve_experiment(new_exp.uuid)
@@ -720,7 +724,8 @@ class TestExperiment(IBMQTestCase):
             self,
             backend_name: Optional[str] = None,
             start_dt: Optional[datetime] = None,
-            share_level: Optional[Union[ExperimentShareLevel, str]] = None
+            share_level: Optional[Union[ExperimentShareLevel, str]] = None,
+            notes: Optional[str] = None
     ) -> Experiment:
         backend_name = backend_name or self.experiments[0].backend_name
         new_exp = Experiment(  # pylint: disable=unexpected-keyword-arg
@@ -729,7 +734,8 @@ class TestExperiment(IBMQTestCase):
             experiment_type='test',
             tags=['qiskit-test'],
             start_datetime=start_dt,
-            share_level=share_level
+            share_level=share_level,
+            notes=notes
         )
         self.provider.experiment.upload_experiment(new_exp)
         self.experiments_to_delete.append(new_exp.uuid)

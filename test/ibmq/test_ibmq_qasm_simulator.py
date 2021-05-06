@@ -33,7 +33,7 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUp()
         self.provider = provider
-        self.sim_backend = self.provider.get_backend(simulator=True)
+        self.sim_backend = self.provider.get_backend('ibmq_qasm_simulator')
 
     def test_execute_one_circuit_simulator_online(self):
         """Test execute_one_circuit_simulator_online."""

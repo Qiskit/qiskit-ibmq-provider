@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    :class:`qiskit.providers.ibmq.experiment.Experiment` now has an additional
+    ``notes`` attribute which can be used to set notes on an experiment.
