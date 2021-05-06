@@ -73,6 +73,7 @@ class TestWebsocketClientMock(IBMQTestCase):
         super().setUpClass()
 
         # Launch the mock server.
+        # pylint: disable=no-member
         start_server = websockets.serve(websocket_handler, TEST_IP_ADDRESS, int(VALID_PORT))
         cls.server = asyncio.get_event_loop().run_until_complete(start_server)
 
