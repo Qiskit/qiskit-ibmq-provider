@@ -37,11 +37,11 @@ class IBMRuntimeService:
     """Class for interacting with the Qiskit Runtime service.
 
     The Qiskit Runtime service allows authorized users to upload their quantum programs
-    that can be invoked by themselves and other users. A quantum program is a piece of code that takes
-    certain inputs, performs quantum and maybe classical processing, and returns the
-    results. Quantum programs, also known as Qiskit runtime programs, run in a special
-    runtime environment that significantly reduces waiting time during computational
-    iterations.
+    that can be invoked by themselves and other users. A quantum program is a
+    piece of code that takes certain inputs, performs quantum and maybe classical
+    processing, and returns the results. Quantum programs, also known as
+    Qiskit Runtime programs, run in a special runtime environment that significantly
+    reduces waiting time during computational iterations.
 
     A sample workflow of using the runtime service::
 
