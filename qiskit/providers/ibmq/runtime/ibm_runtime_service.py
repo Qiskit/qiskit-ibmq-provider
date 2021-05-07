@@ -477,7 +477,8 @@ class IBMRuntimeService:
                           ws_client=RuntimeWebsocketClient(self._ws_url, self._access_token),
                           job_id=raw_data['id'],
                           program_id=raw_data.get('program', {}).get('id', ""),
-                          params=decoded)
+                          params=decoded,
+                          creation_date=raw_data.get('created', None))
 
     def logout(self) -> None:
         """Clears authorization cache on the server.

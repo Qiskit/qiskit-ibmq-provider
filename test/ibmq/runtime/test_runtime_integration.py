@@ -454,6 +454,16 @@ def main(backend, user_messenger, **kwargs):
             ReferenceCircuits.bell(), backend=self.backend, shots=100)
         job.result()
 
+    def test_job_creation_date(self):
+        """Test job creation date."""
+        job = self._run_program(iterations=1)
+        self.assertTrue(job.creation_date)
+        rjob = self.provider.runtime.job(job.job_id())
+        self.assertTrue(rjob.creation_date)
+        rjobs = self.provider.runtime.jobs(limit=2)
+        for rjob in rjobs:
+            self.assertTrue(rjob.creation_date)
+
     def _validate_program(self, program):
         """Validate a program."""
         self.assertTrue(program)
