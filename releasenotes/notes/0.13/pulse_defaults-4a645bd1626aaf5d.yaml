@@ -1,0 +1,6 @@
+---
+upgrade:
+  - |
+    The :meth:`qiskit.providers.ibmq.IBMQBackend.defaults` method now always
+    returns pulse defaults if they are available, regardless whether open
+    pulse is enabled for the provider.
