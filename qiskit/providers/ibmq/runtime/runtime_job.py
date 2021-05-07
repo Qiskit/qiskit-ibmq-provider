@@ -238,7 +238,7 @@ class RuntimeJob:
         """Cancel result streaming."""
         if not self._streaming:
             return
-        self._streaming_loop.call_soon_threadsafe(self._streaming_task.cancel())
+        self._streaming_loop.call_soon_threadsafe(self._streaming_task.cancel)
 
     def _start_websocket_client(
             self,
