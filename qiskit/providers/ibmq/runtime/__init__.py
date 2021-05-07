@@ -169,7 +169,7 @@ is a :class:`ProgramBackend` instance whose :meth:`ProgramBackend.run` method
 can be used to submit circuits. The ``user_messenger`` is a :class:`UserMessenger`
 instance whose :meth:`UserMessenger.publish` method can be used to publish interim and
 final results.
-See :file:`qiskit.providers.ibmq.runtime.program.program_template.py` for a program data
+See `qiskit/providers/ibmq/runtime/program/program_template.py` for a program data
 template file.
 
 Each program metadata must include at least the program name, description, and
@@ -177,7 +177,8 @@ maximum execution time. You can find description of each metadata field in
 the :meth:`IBMRuntimeService.upload_program` method. Instead of passing in
 the metadata fields individually, you can pass in a JSON file or a dictionary
 to :meth:`IBMRuntimeService.upload_program` via the ``metadata`` parameter.
-:file:`program/program_metadata_sample.json` is a sample file of program metadata.
+`qiskit/providers/ibmq/runtime/program/program_metadata_sample.json`
+is a sample file of program metadata.
 
 You can use the :meth:`IBMRuntimeService.upload_program` to upload a program.
 For example::
