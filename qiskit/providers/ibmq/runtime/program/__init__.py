@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Runtime program package.
+"""Qiskit Runtime program package.
 
-This package contains files to help you write runtime programs.
+This package contains files to help you write Qiskit Runtime programs.
 """

@@ -21,7 +21,7 @@ from ..utils import RuntimeEncoder
 class UserMessenger:
     """Base class for handling communication with program users.
 
-    This class can be used when writing a new runtime program.
+    This class can be used when writing a new Qiskit Runtime program.
     """
 
     def publish(

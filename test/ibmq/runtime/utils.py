@@ -14,7 +14,7 @@
 
 import json
 
-from qiskit.providers.ibmq.runtime.result_decoder import ResultDecoder
+from qiskit.providers.ibmq.runtime import ResultDecoder
 
 
 def get_complex_types():

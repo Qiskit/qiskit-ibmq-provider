@@ -15,11 +15,27 @@
 import json
 from typing import Any
 
-from .utils import RuntimeDecoder
+from qiskit.providers.ibmq.runtime.utils import RuntimeDecoder
 
 
 class ResultDecoder:
-    """Runtime job result decoder."""
+    """Runtime job result decoder.
+
+    You can subclass this class and overwrite the :meth:`decode` method
+    to create a custom result decoder for the
+    results of your runtime program. For example::
+
+        class MyResultDecoder(ResultDecoder):
+
+            @classmethod
+            def decode(cls, data):
+                decoded = super().decode(data)
+                custom_processing(decoded)  # perform custom processing
+
+    Users of your program will need to pass in the subclass when invoking
+    :meth:`qiskit.providers.ibmq.runtime.RuntimeJob.result` or
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.run`.
+    """
 
     @classmethod
     def decode(cls, data: str) -> Any:

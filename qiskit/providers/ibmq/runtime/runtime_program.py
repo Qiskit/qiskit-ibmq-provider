@@ -151,7 +151,7 @@ class RuntimeProgram:
 
     @property
     def program_id(self) -> str:
-        """Return program ID.
+        """Program ID.
 
         Returns:
             Program ID.
@@ -160,7 +160,7 @@ class RuntimeProgram:
 
     @property
     def name(self) -> str:
-        """Return program name.
+        """Program name.
 
         Returns:
             Program name.
@@ -169,7 +169,7 @@ class RuntimeProgram:
 
     @property
     def description(self) -> str:
-        """Return program description.
+        """Program description.
 
         Returns:
             Program description.
@@ -178,7 +178,7 @@ class RuntimeProgram:
 
     @property
     def parameters(self) -> List['ProgramParameter']:
-        """Return program parameter definitions.
+        """Program parameter definitions.
 
         Returns:
             Parameter definitions for this program.
@@ -187,7 +187,7 @@ class RuntimeProgram:
 
     @property
     def return_values(self) -> List['ProgramResult']:
-        """Return program return value definitions.
+        """Program return value definitions.
 
         Returns:
             Return value definitions for this program.
@@ -196,7 +196,7 @@ class RuntimeProgram:
 
     @property
     def interim_results(self) -> List['ProgramResult']:
-        """Return program interim result definitions.
+        """Program interim result definitions.
 
         Returns:
             Interim result definitions for this program.
@@ -205,7 +205,9 @@ class RuntimeProgram:
 
     @property
     def max_execution_time(self) -> int:
-        """Return maximum execution time.
+        """Maximum execution time in seconds.
+
+        A program execution exceeding this time will be forcibly terminated.
 
         Returns:
             Maximum execution time.
@@ -214,7 +216,7 @@ class RuntimeProgram:
 
     @property
     def version(self) -> str:
-        """Return program version.
+        """Program version.
 
         Returns:
             Program version.
@@ -223,7 +225,7 @@ class RuntimeProgram:
 
     @property
     def backend_requirements(self) -> Dict:
-        """Return backend requirements.
+        """Backend requirements.
 
         Returns:
             Backend requirements for this program.
@@ -232,7 +234,7 @@ class RuntimeProgram:
 
     @property
     def creation_date(self) -> str:
-        """Return program creation date.
+        """Program creation date.
 
         Returns:
             Program creation date.

@@ -11,9 +11,9 @@
 # that they have been altered from the originals.
 
 """
-======================================================
-Runtime Service (:mod:`qiskit.providers.ibmq.runtime`)
-======================================================
+==============================================
+Runtime (:mod:`qiskit.providers.ibmq.runtime`)
+==============================================
 
 .. currentmodule:: qiskit.providers.ibmq.runtime
 
@@ -21,7 +21,7 @@ Modules related to Qiskit Runtime Service.
 
 .. note::
 
-    The runtime service is not available to all providers. To check if a provider
+    The Qiskit Runtime service is not available to all providers. To check if your provider
     has access::
 
         from qiskit import IBMQ
@@ -33,7 +33,7 @@ Modules related to Qiskit Runtime Service.
 
 .. note::
 
-    Not all backends support Runtime. Refer to documentation on
+    Not all backends support Qiskit Runtime. Refer to documentation in
     `Qiskit-Partners/qiskit-runtime
     <https://github.com/Qiskit-Partners/qiskit-runtime>`_ for more information.
 
@@ -52,11 +52,11 @@ slowing it down.
 The Qiskit Runtime Service allows authorized users to upload their Qiskit quantum programs.
 A Qiskit quantum program, also called a runtime program, is a piece of Python
 code that takes certain inputs, performs
-quantum and classical processing, and returns the results. The same or other
+quantum and maybe classical processing, and returns the results. The same or other
 authorized users can invoke these quantum programs by simply passing in parameters.
 
 `Qiskit-Partners/qiskit-runtime <https://github.com/Qiskit-Partners/qiskit-runtime>`_
-contains detailed tutorials on how to use the runtime service.
+contains detailed tutorials on how to use Qiskit Runtime.
 
 
 Listing runtime programs
@@ -74,14 +74,14 @@ To list all available runtime programs::
     # Get a single program.
     program = provider.runtime.program('circuit-runner')
 
-    # Print program definition.
+    # Print program metadata.
     print(program)
 
 In the example above, ``provider.runtime`` points to the runtime service class
 :class:`IBMRuntimeService`, which is the main entry
 point for using this service. The example prints the program metadata of all
 available runtime programs and of just the ``circuit-runner`` program. A program
-metadata consists of a program's ID, name, description, input parameters,
+metadata consists of the program's ID, name, description, input parameters,
 return values, interim results, and other information that helps you to know
 more about the program.
 
@@ -92,6 +92,7 @@ You can use the :meth:`IBMRuntimeService.run` method to invoke a runtime program
 For example::
 
     from qiskit import IBMQ, QuantumCircuit
+    from qiskit_runtime.circuit_runner import RunnerResult
 
     provider = IBMQ.load_account()
     backend = provider.backend.ibmq_montreal
@@ -110,14 +111,14 @@ For example::
                                inputs=runtime_inputs)
 
     # Get runtime job result.
-    result = job.result()
+    result = job.result(decoder=RunnerResult)
 
 The example above invokes the ``circuit-runner`` program,
 which compiles, executes, and optionally applies measurement error mitigation to
 the circuit result.
 
-Runtime Job
------------
+Runtime Jobs
+------------
 
 When you use the :meth:`IBMRuntimeService.run` method to invoke a runtime
 program, a
@@ -166,8 +167,9 @@ Each program data needs to have a ``main(backend, user_messenger, **kwargs)``
 method, which serves as the entry point to the program. The ``backend`` parameter
 is a :class:`ProgramBackend` instance whose :meth:`ProgramBackend.run` method
 can be used to submit circuits. The ``user_messenger`` is a :class:`UserMessenger`
-whose :meth:`UserMessenger.publish` method can be used to publish interim and
-final results. See :file:`program/program_template.py` for a program data
+instance whose :meth:`UserMessenger.publish` method can be used to publish interim and
+final results.
+See :file:`qiskit.providers.ibmq.runtime.program.program_template.py` for a program data
 template file.
 
 Each program metadata must include at least the program name, description, and
@@ -186,17 +188,16 @@ For example::
     program_id = provider.runtime.upload_program(
                     data="my_vqe.py",
                     metadata="my_vqe_metadata.json",
-                    version=1.2
+                    version="1.2"
                 )
 
 In the example above, the file ``my_vqe.py`` contains the program data, and
 ``my_vqe_metadata.json`` contains the program metadata. An additional
-parameter ``version`` is also specified, which will be used instead of the
-``version`` value in ``my_vqe_metadata.json``.
+parameter ``version`` is also specified, which takes precedence over any
+``version`` value specified in ``my_vqe_metadata.json``.
 
-Methods :meth:`IBMRuntimeService.update_program` and
-:meth:`IBMRuntimeService.delete_program` allow you to update and delete a
-program, respectively.
+Method :meth:`IBMRuntimeService.delete_program` allows you to delete a
+program.
 
 Files related to writing a runtime program are in the
 ``qiskit/providers/ibmq/runtime/program`` directory.
@@ -220,5 +221,5 @@ from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram
 from .program.user_messenger import UserMessenger
 from .program.program_backend import ProgramBackend
-from .result_decoder import ResultDecoder
+from .program.result_decoder import ResultDecoder
 from .utils import RuntimeEncoder, RuntimeDecoder

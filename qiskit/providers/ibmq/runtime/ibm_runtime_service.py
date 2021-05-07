@@ -21,10 +21,10 @@ from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-impo
 
 from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram, ProgramParameter, ProgramResult
-from .result_decoder import ResultDecoder
 from .utils import RuntimeEncoder, RuntimeDecoder
 from .exceptions import (QiskitRuntimeError, RuntimeDuplicateProgramError, RuntimeProgramNotFound,
                          RuntimeJobNotFound)
+from .program.result_decoder import ResultDecoder
 from ..api.clients.runtime import RuntimeClient
 from ..api.clients.runtime_ws import RuntimeWebsocketClient
 from ..api.exceptions import RequestsApiError
@@ -34,21 +34,22 @@ logger = logging.getLogger(__name__)
 
 
 class IBMRuntimeService:
-    """Class for interacting with the Qiskit runtime service.
+    """Class for interacting with the Qiskit Runtime service.
 
-    The Qiskit Runtime Service allows authorized users to upload their quantum programs
-    that can be invoked by other users. A quantum program is a piece of code that takes
-    certain inputs, performs quantum and classical processing, and returns the
-    results. Quantum programs, also known as runtime programs, run in a special
+    The Qiskit Runtime service allows authorized users to upload their quantum programs
+    that can be invoked by themselves and other users. A quantum program is a piece of code that takes
+    certain inputs, performs quantum and maybe classical processing, and returns the
+    results. Quantum programs, also known as Qiskit runtime programs, run in a special
     runtime environment that significantly reduces waiting time during computational
     iterations.
 
     A sample workflow of using the runtime service::
 
         from qiskit import IBMQ, QuantumCircuit
+        from qiskit_runtime.circuit_runner import RunnerResult
 
         provider = IBMQ.load_account()
-        backend = provider.backend.ibmq_qasm_simulator
+        backend = provider.backend.ibmq_montreal
 
         # List all available programs.
         provider.runtime.pprint_programs()
@@ -67,11 +68,11 @@ class IBMRuntimeService:
                                    inputs=runtime_inputs)
 
         # Get runtime job result.
-        result = job.result()
+        result = job.result(decoder=RunnerResult)
 
     If the program has any interim results, you can use the ``callback``
     parameter of the :meth:`run` method to stream the interim results.
-    Alternatively, you can use the :meth:`stream_results` method to stream
+    Alternatively, you can use the :meth:`RuntimeJob.stream_results` method to stream
     the results at a later time, but before the job finishes.
 
     The :meth:`run` method returns a
@@ -107,6 +108,8 @@ class IBMRuntimeService:
     def programs(self, refresh: bool = False) -> List[RuntimeProgram]:
         """Return available runtime programs.
 
+        Currently only program metadata is returned.
+
         Args:
             refresh: If ``True``, re-query the server for the programs. Otherwise
                 return the cached value.
@@ -124,6 +127,8 @@ class IBMRuntimeService:
 
     def program(self, program_id: str, refresh: bool = False) -> RuntimeProgram:
         """Retrieve a runtime program.
+
+        Currently only program metadata is returned.
 
         Args:
             program_id: Program ID.
@@ -240,7 +245,7 @@ class IBMRuntimeService:
     ) -> str:
         """Upload a runtime program.
 
-        In addition to program data, the following program metadata are also
+        In addition to program data, the following program metadata is also
         required:
 
             - name
@@ -250,7 +255,7 @@ class IBMRuntimeService:
         Program metadata can be specified using the `metadata` parameter or
         individual parameter (for example, `name` and `description`). If the
         same metadata field is specified in both places, the individual parameter
-        takes precedence. For example, if you specify:
+        takes precedence. For example, if you specify::
 
             upload_program(metadata={"name": "name1"}, name="name2")
 

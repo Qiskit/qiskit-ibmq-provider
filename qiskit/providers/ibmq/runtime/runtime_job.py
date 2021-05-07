@@ -27,7 +27,7 @@ from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
 
 from .constants import API_TO_JOB_STATUS
 from .exceptions import RuntimeJobFailureError, RuntimeInvalidStateError, QiskitRuntimeError
-from .result_decoder import ResultDecoder
+from .program.result_decoder import ResultDecoder
 from ..api.clients import RuntimeClient, RuntimeWebsocketClient
 from ..exceptions import IBMQError
 from ..api.exceptions import RequestsApiError
@@ -39,9 +39,9 @@ class RuntimeJob:
     """Representation of a runtime program execution.
 
     A new ``RuntimeJob`` instance is returned when you call
-    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.run`
+    :meth:`IBMRuntimeService.run<qiskit.providers.ibmq.runtime.IBMRuntimeService.run>`
     to execute a runtime program, and when you call
-    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.job`
+    :meth:`IBMRuntimeService.job<qiskit.providers.ibmq.runtime.IBMRuntimeService.job>`
     to retrieve a previously executed job.
 
     If the program execution is successful, you can inspect the job's status by
@@ -68,7 +68,7 @@ class RuntimeJob:
     the results at a later time, but before the job finishes.
     """
 
-    POISON_PILL = "_poison_pill"
+    _POISON_PILL = "_poison_pill"
     """Used to inform streaming to stop."""
 
     _executor = futures.ThreadPoolExecutor(thread_name_prefix="runtime_job")
@@ -122,10 +122,6 @@ class RuntimeJob:
             decoder: Optional[Type[ResultDecoder]] = None
     ) -> Any:
         """Return the results of the job.
-
-        If ``include_interim=True`` is specified, this method will return a
-        list that includes both interim and final results in the order they
-        were published by the program.
 
         Args:
             timeout: Number of seconds to wait for job.
@@ -269,7 +265,7 @@ class RuntimeJob:
                 "An error occurred while streaming results "
                 "from the server for job %s:\n%s", self.job_id(), traceback.format_exc())
         finally:
-            self._result_queue.put_nowait(self.POISON_PILL)
+            self._result_queue.put_nowait(self._POISON_PILL)
             if self._streaming_loop is not None:
                 self._streaming_loop.run_until_complete(  # type: ignore[unreachable]
                     self._ws_client.disconnect())
@@ -293,7 +289,7 @@ class RuntimeJob:
         while True:
             try:
                 response = result_queue.get()
-                if response == self.POISON_PILL:
+                if response == self._POISON_PILL:
                     self._empty_result_queue(result_queue)
                     return
                 user_callback(self.job_id(), _decoder.decode(response))
@@ -315,7 +311,7 @@ class RuntimeJob:
             pass
 
     def job_id(self) -> str:
-        """Return a unique id identifying the job.
+        """Return a unique ID identifying the job.
 
         Returns:
             Job ID.
@@ -341,7 +337,7 @@ class RuntimeJob:
 
     @property
     def program_id(self) -> str:
-        """Returns program ID.
+        """Program ID.
 
         Returns:
             ID of the program this job is for.
