@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 
-.PHONY: lint style test mypy test1 test2 test3
+.PHONY: lint style test mypy test1 test2 test3 runtime_integration
 
 lint:
 	pylint -rn qiskit/providers/ibmq test
@@ -34,3 +34,6 @@ test2:
 
 test3:
 	python -m unittest -v test/ibmq/test_ibmq_job_attributes.py test/ibmq/test_ibmq_job.py test/ibmq/websocket/test_websocket.py test/ibmq/websocket/test_websocket_integration.py
+
+runtime_integration:
+	python -m unittest -v test/ibmq/runtime/test_runtime_integration.py
