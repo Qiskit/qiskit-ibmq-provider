@@ -225,7 +225,7 @@ class AccountProvider(Provider):
                 result = provider.run_circuits(...).result(decoder=RunnerResult)
 
             You can find more about the ``RunnerResult`` class in the
-            `qiskit-runtime repository<https://github.com/Qiskit-Partners/qiskit-runtime>`_.
+            `qiskit-runtime repository <https://github.com/Qiskit-Partners/qiskit-runtime>`_.
 
         Args:
             circuits: Circuit(s) to execute.
