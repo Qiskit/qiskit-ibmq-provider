@@ -19,6 +19,7 @@ import asyncio
 from concurrent import futures
 import traceback
 import queue
+from datetime import datetime
 
 from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.backend import Backend
@@ -31,6 +32,7 @@ from .program.result_decoder import ResultDecoder
 from ..api.clients import RuntimeClient, RuntimeWebsocketClient
 from ..exceptions import IBMQError
 from ..api.exceptions import RequestsApiError
+from ..utils.converters import utc_to_local
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +83,7 @@ class RuntimeJob:
             job_id: str,
             program_id: str,
             params: Optional[Dict] = None,
+            creation_date: Optional[str] = None,
             user_callback: Optional[Callable] = None,
             result_decoder: Type[ResultDecoder] = ResultDecoder
     ) -> None:
@@ -93,6 +96,7 @@ class RuntimeJob:
             job_id: Job ID.
             program_id: ID of the program this job is for.
             params: Job parameters.
+            creation_date: Job creation date, in UTC.
             user_callback: User callback function.
             result_decoder: A :class:`ResultDecoder` subclass used to decode job results.
         """
@@ -102,6 +106,7 @@ class RuntimeJob:
         self._ws_client = ws_client
         self._results = None
         self._params = params or {}
+        self._creation_date = creation_date
         self._program_id = program_id
         self._status = JobStatus.INITIALIZING
         self._result_decoder = result_decoder
@@ -343,3 +348,20 @@ class RuntimeJob:
             ID of the program this job is for.
         """
         return self._program_id
+
+    @property
+    def creation_date(self) -> Optional[datetime]:
+        """Job creation date in local time.
+
+        Returns:
+            The job creation date as a datetime object, in local time, or
+            ``None`` if creation date is not available.
+        """
+        if not self._creation_date:
+            response = self._api_client.job_get(job_id=self.job_id())
+            self._creation_date = response.get('created', None)
+
+        if not self._creation_date:
+            return None
+        creation_date_local_dt = utc_to_local(self._creation_date)
+        return creation_date_local_dt

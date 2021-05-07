@@ -33,6 +33,8 @@ from ...decorators import requires_runtime_device
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
+os.environ['USE_STAGING_CREDENTIALS'] = "true"
+
 @unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
 class TestRuntimeIntegration(IBMQTestCase):
     """Integration tests for runtime modules."""
@@ -453,6 +455,16 @@ def main(backend, user_messenger, **kwargs):
         job = self.provider.run_circuits(
             ReferenceCircuits.bell(), backend=self.backend, shots=100)
         job.result()
+
+    def test_job_creation_date(self):
+        """Test job creation date."""
+        job = self._run_program(iterations=1)
+        self.assertTrue(job.creation_date)
+        rjob = self.provider.runtime.job(job.job_id())
+        self.assertTrue(rjob.creation_date)
+        rjobs = self.provider.runtime.jobs(limit=2)
+        for rjob in rjobs:
+            self.assertTrue(rjob.creation_date)
 
     def _validate_program(self, program):
         """Validate a program."""
