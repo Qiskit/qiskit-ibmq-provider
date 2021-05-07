@@ -216,6 +216,17 @@ class AccountProvider(Provider):
             This method uses the IBM Quantum runtime service which is not
             available to all accounts.
 
+        Note:
+            This method returns a :class:``~qiskit.provider.ibmq.runtime.RuntimeJob``.
+            To get the job result, you'll need to use the
+            ``qiskit_runtime.circuit_runner.RunnerResult`` class
+            as the ``decoder``, e.g.::
+
+                result = provider.run_circuits(...).result(decoder=RunnerResult)
+
+            You can find more about the ``RunnerResult`` class in the
+            `qiskit-runtime repository<https://github.com/Qiskit-Partners/qiskit-runtime>`_.
+
         Args:
             circuits: Circuit(s) to execute.
 

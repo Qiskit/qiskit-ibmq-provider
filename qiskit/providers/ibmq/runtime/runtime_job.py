@@ -40,7 +40,7 @@ class RuntimeJob:
 
     A new ``RuntimeJob`` instance is returned when you call
     :meth:`IBMRuntimeService.run<qiskit.providers.ibmq.runtime.IBMRuntimeService.run>`
-    to execute a runtime program, and when you call
+    to execute a runtime program, or
     :meth:`IBMRuntimeService.job<qiskit.providers.ibmq.runtime.IBMRuntimeService.job>`
     to retrieve a previously executed job.
 
