@@ -20,6 +20,7 @@ import random
 from contextlib import suppress
 
 from qiskit.providers.jobstatus import JobStatus
+from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramError,
                                                       RuntimeProgramNotFound,
@@ -446,6 +447,12 @@ def main(backend, user_messenger, **kwargs):
         # Make sure we can still do things.
         self._upload_program()
         _ = self._run_program()
+
+    def test_run_circuit(self):
+        """Test run_circuit"""
+        job = self.provider.run_circuits(
+            ReferenceCircuits.bell(), backend=self.backend, shots=100)
+        job.result()
 
     def _validate_program(self, program):
         """Validate a program."""

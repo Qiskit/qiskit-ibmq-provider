@@ -20,8 +20,7 @@ import traceback
 from qiskit.providers import ProviderV1 as Provider  # type: ignore[attr-defined]
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
-from qiskit.circuit import QuantumCircuit, Parameter
-from qiskit.pulse.instruction_schedule_map import InstructionScheduleMap
+from qiskit.circuit import QuantumCircuit
 from qiskit.providers.backend import BackendV1 as Backend
 from qiskit.providers.basebackend import BaseBackend
 from qiskit.transpiler import Layout
@@ -197,23 +196,18 @@ class AccountProvider(Provider):
     def run_circuits(
             self,
             circuits: Union[QuantumCircuit, List[QuantumCircuit]],
-            backend: Optional[Union[Backend, BaseBackend]] = None,
+            backend: Union[Backend, BaseBackend],
+            shots: Optional[int] = None,
             initial_layout: Optional[Union[Layout, Dict, List]] = None,
+            layout_method: Optional[str] = None,
+            routing_method: Optional[str] = None,
+            translation_method: Optional[str] = None,
             seed_transpiler: Optional[int] = None,
             optimization_level: Optional[int] = None,
-            transpiler_options: Optional[dict] = None,
-            scheduling_method: Optional[str] = None,
-            shots: Optional[int] = None,
-            memory: Optional[bool] = None,
-            memory_slots: Optional[int] = None,
-            memory_slot_size: Optional[int] = None,
-            rep_time: Optional[int] = None,
+            init_qubits: Optional[bool] = True,
             rep_delay: Optional[float] = None,
-            parameter_binds: Optional[List[Dict[Parameter, float]]] = None,
-            schedule_circuit: bool = False,
-            inst_map: InstructionScheduleMap = None,
-            meas_map: List[List[int]] = None,
-            init_qubits: Optional[bool] = None,
+            transpiler_options: Optional[dict] = None,
+            measurement_error_mitigation: Optional[bool] = False,
             **run_config: Dict
     ) -> 'runtime_job.RuntimeJob':
         """Execute the input circuit(s) on a backend using the runtime service.
@@ -231,6 +225,15 @@ class AccountProvider(Provider):
 
             initial_layout: Initial position of virtual qubits on physical qubits.
 
+            layout_method: Name of layout selection pass ('trivial', 'dense',
+                'noise_adaptive', 'sabre').
+                Sometimes a perfect layout can be available in which case the layout_method
+                may not run.
+
+            routing_method: Name of routing pass ('basic', 'lookahead', 'stochastic', 'sabre')
+
+            translation_method: Name of translation pass ('unroller', 'translator', 'synthesis')
+
             seed_transpiler: Sets random seed for the stochastic parts of the transpiler.
 
             optimization_level: How much optimization to perform on the circuits.
@@ -238,22 +241,7 @@ class AccountProvider(Provider):
                 transpilation time.
                 If None, level 1 will be chosen as default.
 
-            transpiler_options: Additional transpiler options.
-
-            scheduling_method: Scheduling method.
-
             shots: Number of repetitions of each circuit, for sampling. Default: 1024.
-
-            memory: If True, per-shot measurement bitstrings are returned as well
-                (provided the backend supports it). Default: False
-
-            memory_slots: Number of classical memory slots used in this job.
-
-            memory_slot_size: Size of each memory slot if the output is Level 0.
-
-            rep_time: Time per program execution in seconds. Must be from the list provided
-                by the backend configuration (``backend.configuration().rep_times``).
-                Defaults to the first entry.
 
             rep_delay: Delay between programs in seconds. Only supported on certain
                 backends (``backend.configuration().dynamic_reprate_enabled`` ). If supported,
@@ -261,24 +249,11 @@ class AccountProvider(Provider):
                 range supplied by the backend (``backend.configuration().rep_delay_range``).
                 Default is given by ``backend.configuration().default_rep_delay``.
 
-            parameter_binds: List of Parameter bindings over which the set of
-                experiments will be executed. Each list element (bind) should be of the form
-                ``{Parameter1: value1, Parameter2: value2, ...}``. All binds will be
-                executed across all experiments, e.g. if parameter_binds is a
-                length-n list, and there are m experiments, a total of :math:`m x n`
-                experiments will be run (one for each experiment/bind pair).
-
-            schedule_circuit: If ``True``, ``circuits`` will be converted to
-                :class:`qiskit.pulse.Schedule` objects prior to execution.
-
-            inst_map: Mapping of circuit operations to pulse schedules. If None, defaults to the
-                ``instruction_schedule_map`` of ``backend``.
-
-            meas_map: List of sets of qubits that must be measured together. If None,
-                defaults to the ``meas_map`` of ``backend``.
-
             init_qubits: Whether to reset the qubits to the ground state for each shot.
-                Default: ``True``.
+
+            transpiler_options: Additional transpiler options.
+
+            measurement_error_mitigation: Whether to apply measurement error mitigation.
 
             **run_config: Extra arguments used to configure the circuit execution.
 
@@ -290,19 +265,14 @@ class AccountProvider(Provider):
             'initial_layout': initial_layout,
             'seed_transpiler': seed_transpiler,
             'optimization_level': optimization_level,
-            'scheduling_method': scheduling_method,
+            'layout_method': layout_method,
             'shots': shots,
-            'memory': memory,
-            'memory_slots': memory_slots,
-            'memory_slot_size': memory_slot_size,
-            'rep_time': rep_time,
+            'routing_method': routing_method,
+            'translation_method': translation_method,
             'rep_delay': rep_delay,
-            'parameter_binds': parameter_binds,
-            'schedule_circuit': schedule_circuit,
-            'inst_map': inst_map,
-            'meas_map': meas_map,
             'init_qubits': init_qubits,
-            'transpiler_options': transpiler_options
+            'transpiler_options': transpiler_options,
+            'measurement_error_mitigation': measurement_error_mitigation
         }
         inputs.update(run_config)
         options = {'backend_name': backend.name()}
