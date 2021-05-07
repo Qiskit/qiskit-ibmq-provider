@@ -103,7 +103,7 @@ class TestRandom(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.provider = provider
-        random_service = IBMQRandomService(provider, None)
+        random_service = IBMQRandomService(provider)  # pylint: disable=no-value-for-parameter
         random_service._random_client = FakeRandomClient()
         random_service._initialized = False
         cls.provider._random = random_service

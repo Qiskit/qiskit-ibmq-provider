@@ -28,16 +28,14 @@ class RandomClient:
 
     def __init__(
             self,
-            access_token: str,
             credentials: Credentials,
     ) -> None:
         """RandomClient constructor.
 
         Args:
-            access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
         """
-        self._session = RetrySession(credentials.extractor_url, access_token,
+        self._session = RetrySession(credentials.extractor_url, credentials.access_token,
                                      **credentials.connection_parameters())
         self.random_api = Random(self._session)
 
@@ -47,7 +45,6 @@ class RandomClient:
         Returns:
             RNG services available for this provider.
         """
-        # return [{'name': 'cqc', 'extractors': ['ext1', 'ext2']}]
         return self.random_api.list_services()
 
     def extract(

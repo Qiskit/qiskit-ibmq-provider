@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2018, 2019.
+# (C) Copyright IBM 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -10,12 +10,15 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Quantum Experience API clients."""
+"""Constant values."""
 
-from .base import BaseClient
-from .account import AccountClient
-from .auth import AuthClient
-from .version import VersionClient
-from .websocket import WebsocketClient
-from .runtime import RuntimeClient
-from .runtime_ws import RuntimeWebsocketClient
+from qiskit.providers.jobstatus import JobStatus
+
+
+API_TO_JOB_STATUS = {
+    'QUEUED': JobStatus.QUEUED,
+    'RUNNING': JobStatus.RUNNING,
+    'COMPLETED': JobStatus.DONE,
+    'FAILED': JobStatus.ERROR,
+    'CANCELLED': JobStatus.CANCELLED
+}

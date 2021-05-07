@@ -39,16 +39,15 @@ class IBMQRandomService:
         extractor = provider.random.cqc_extractor  # Short hand for above.
     """
 
-    def __init__(self, provider: 'accountprovider.AccountProvider', access_token: str) -> None:
+    def __init__(self, provider: 'accountprovider.AccountProvider') -> None:
         """IBMQRandomService constructor.
 
         Args:
             provider: IBM Quantum Experience account provider.
-            access_token: IBM Quantum Experience access token.
         """
         self._provider = provider
         if provider.credentials.extractor_url:
-            self._random_client = RandomClient(access_token, provider.credentials)
+            self._random_client = RandomClient(provider.credentials)
             self._initialized = False
         else:
             self._random_client = None

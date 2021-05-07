@@ -73,19 +73,17 @@ class ExperimentService:
 
     def __init__(
             self,
-            provider: 'accountprovider.AccountProvider',
-            access_token: str
+            provider: 'accountprovider.AccountProvider'
     ) -> None:
         """IBMQBackendService constructor.
 
         Args:
             provider: IBM Quantum Experience account provider.
-            access_token: IBM Quantum Experience access token.
         """
         super().__init__()
 
         self._provider = provider
-        self._api_client = ExperimentClient(access_token, provider.credentials)
+        self._api_client = ExperimentClient(provider.credentials)
 
     def backends(self) -> List[Dict]:
         """Return a list of backends.

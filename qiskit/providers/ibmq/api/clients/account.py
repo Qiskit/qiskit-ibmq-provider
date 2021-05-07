@@ -41,24 +41,23 @@ class AccountClient(BaseClient):
 
     def __init__(
             self,
-            access_token: str,
             credentials: Credentials,
             **request_kwargs: Any
     ) -> None:
         """AccountClient constructor.
 
         Args:
-            access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
             **request_kwargs: Arguments for the request ``Session``.
         """
-        self._session = RetrySession(credentials.base_url, access_token, **request_kwargs)
+        self._session = RetrySession(
+            credentials.base_url, credentials.access_token, **request_kwargs)
         # base_api is used to handle endpoints that don't include h/g/p.
         # account_api is for h/g/p.
         self.base_api = Api(self._session)
         self.account_api = Account(session=self._session, hub=credentials.hub,
                                    group=credentials.group, project=credentials.project)
-        self.client_ws = WebsocketClient(credentials.websockets_url, access_token)
+        self.client_ws = WebsocketClient(credentials.websockets_url, credentials.access_token)
         self._use_websockets = (not credentials.proxies)
 
     # Backend-related public functions.

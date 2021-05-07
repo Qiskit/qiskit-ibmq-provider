@@ -191,34 +191,67 @@ def requires_device(func):
     @requires_qe_access
     def _wrapper(obj, *args, **kwargs):
 
-        _enable_account(kwargs.pop('qe_token'), kwargs.pop('qe_url'))
-
         backend_name = os.getenv('QE_STAGING_DEVICE', None) if \
             os.getenv('USE_STAGING_CREDENTIALS', '') else os.getenv('QE_DEVICE', None)
 
-        _backend = None
-        provider = _get_custom_provider(IBMQ) or list(IBMQ._providers.values())[0]
-
-        if backend_name:
-            # Put desired provider as the first in the list.
-            providers = [provider] + IBMQ.providers()
-            for provider in providers:
-                backends = provider.backends(name=backend_name)
-                if backends:
-                    _backend = backends[0]
-                    break
-        else:
-            _backend = least_busy(provider.backends(
-                simulator=False, min_num_qubits=5))
-
-        if not _backend:
-            raise Exception('Unable to find a suitable backend.')
-
+        _backend = _get_backend(qe_token=kwargs.pop('qe_token'),
+                                qe_url=kwargs.pop('qe_url'),
+                                backend_name=backend_name)
         kwargs.update({'backend': _backend})
-
         return func(obj, *args, **kwargs)
 
     return _wrapper
+
+
+def requires_runtime_device(func):
+    """Decorator that retrieves the appropriate backend to use for testing.
+
+    Args:
+        func (callable): test function to be decorated.
+
+    Returns:
+        callable: the decorated function.
+    """
+    @wraps(func)
+    @requires_qe_access
+    def _wrapper(obj, *args, **kwargs):
+
+        backend_name = os.getenv('QE_STAGING_RUNTIME_DEVICE', None) if \
+            os.getenv('USE_STAGING_CREDENTIALS', '') else os.getenv('QE_RUNTIME_DEVICE', None)
+        if not backend_name:
+            raise SkipTest("Runtime device not specified")
+        _backend = _get_backend(qe_token=kwargs.pop('qe_token'),
+                                qe_url=kwargs.pop('qe_url'),
+                                backend_name=backend_name)
+        kwargs.update({'backend': _backend})
+        return func(obj, *args, **kwargs)
+
+    return _wrapper
+
+
+def _get_backend(qe_token, qe_url, backend_name):
+    """Get the specified backend."""
+    _enable_account(qe_token, qe_url)
+
+    _backend = None
+    provider = _get_custom_provider(IBMQ) or list(IBMQ._providers.values())[0]
+
+    if backend_name:
+        # Put desired provider as the first in the list.
+        providers = [provider] + IBMQ.providers()
+        for provider in providers:
+            backends = provider.backends(name=backend_name)
+            if backends:
+                _backend = backends[0]
+                break
+    else:
+        _backend = least_busy(provider.backends(
+            simulator=False, min_num_qubits=5))
+
+    if not _backend:
+        raise Exception('Unable to find a suitable backend.')
+
+    return _backend
 
 
 def _get_credentials():

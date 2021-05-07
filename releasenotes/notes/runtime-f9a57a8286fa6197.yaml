@@ -1,0 +1,48 @@
+---
+prelude: >
+    This release introduces a new feature ``Qiskit Runtime Service``.
+    Qiskit Runtime is a new architecture offered by IBM Quantum that
+    significantly reduces waiting time during computational iterations.
+    You can execute your experiments near the quantum hardware, without
+    the interactions of multiple layers of classical and quantum hardware
+    slowing it down.
+
+    Qiskit Runtime allows authorized users to upload their Qiskit quantum
+    programs, which are Python code that takes
+    certain inputs, performs quantum and maybe classical computation, and returns
+    the processing results. The same or other authorized users can then invoke
+    these quantum programs by simply passing in the required input parameters.
+
+    Qiskit Runtime is currently in private beta for select account but will be
+    released to the public in the near future.
+features:
+  - |
+    This release introduces a new feature ``Qiskit Runtime Service``.
+    Qiskit Runtime is a new architecture that
+    significantly reduces waiting time during computational iterations.
+    This new service allows authorized users to upload their Qiskit quantum
+    programs, which are Python code that takes
+    certain inputs, performs quantum and maybe classical computation, and returns
+    the processing results. The same or other authorized users can then invoke
+    these quantum programs by simply passing in the required input parameters.
+
+    An example of using this new service::
+
+      from qiskit import IBMQ
+
+      provider = IBMQ.load_account()
+      # Print all avaiable programs.
+      provider.runtime.pprint_programs()
+
+      # Prepare the inputs. See program documentation on input parameters.
+      inputs = {...}
+      options = {"backend_name": provider.backend.ibmq_montreal.name()}
+
+      job = provider.runtime.run(program_id="circuit-runner",
+                                 options=options,
+                                 inputs=inputs)
+      # Check job status.
+      print(f"job status is {job.status()}")
+
+      # Get job result.
+      result = job.result()
