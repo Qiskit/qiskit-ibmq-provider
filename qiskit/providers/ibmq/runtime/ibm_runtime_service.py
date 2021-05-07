@@ -478,7 +478,7 @@ class IBMRuntimeService:
                           job_id=raw_data['id'],
                           program_id=raw_data.get('program', {}).get('id', ""),
                           params=decoded,
-                          creation_date=raw_data.get('created', ""))
+                          creation_date=raw_data.get('created', None))
 
     def logout(self) -> None:
         """Clears authorization cache on the server.
