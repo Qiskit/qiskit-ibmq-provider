@@ -25,7 +25,7 @@ REQUIREMENTS = [
     "numpy>=1.13",
     "urllib3>=1.21.1",
     "python-dateutil>=2.8.0",
-    "dill>=0.3"
+    "dill>=0.3  "
 ]
 
 # Handle version.
