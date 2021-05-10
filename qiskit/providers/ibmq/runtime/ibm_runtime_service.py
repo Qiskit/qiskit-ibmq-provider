@@ -36,12 +36,16 @@ logger = logging.getLogger(__name__)
 class IBMRuntimeService:
     """Class for interacting with the Qiskit Runtime service.
 
-    The Qiskit Runtime service allows authorized users to upload their quantum programs
-    that can be invoked by themselves and other users. A quantum program is a
-    piece of code that takes certain inputs, performs quantum and maybe classical
-    processing, and returns the results. Quantum programs, also known as
-    Qiskit Runtime programs, run in a special runtime environment that significantly
-    reduces waiting time during computational iterations.
+    Qiskit Runtime is a new architecture offered by IBM Quantum that
+    streamlines computations requiring many iterations. These experiments will
+    execute significantly faster within its improved hybrid quantum/classical
+    process.
+
+    The Qiskit Runtime Service allows authorized users to upload their Qiskit
+    quantum programs. A Qiskit quantum program, also called a runtime program,
+    is a piece of Python code and its metadata that takes certain inputs, performs
+    quantum and maybe classical processing, and returns the results. The same or other
+    authorized users can invoke these quantum programs by simply passing in parameters.
 
     A sample workflow of using the runtime service::
 
@@ -61,11 +65,11 @@ class IBMRuntimeService:
         qc.measure_all()
 
         # Execute the circuit using the "circuit-runner" program.
-        runtime_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
+        program_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
         options = {'backend_name': backend.name()}
         job = provider.runtime.run(program_id="circuit-runner",
                                    options=options,
-                                   inputs=runtime_inputs)
+                                   inputs=program_inputs)
 
         # Get runtime job result.
         result = job.result(decoder=RunnerResult)
