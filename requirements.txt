@@ -1,5 +1,5 @@
 nest-asyncio>=1.0.0,!=1.1.0
-qiskit-terra>=0.17
+qiskit-terra>=0.17.3
 requests>=2.19
 requests_ntlm>=1.1.0
 websockets>=8
