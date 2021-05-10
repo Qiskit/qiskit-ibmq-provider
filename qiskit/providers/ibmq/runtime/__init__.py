@@ -92,7 +92,7 @@ You can use the :meth:`IBMRuntimeService.run` method to invoke a runtime program
 For example::
 
     from qiskit import IBMQ, QuantumCircuit
-    from qiskit_runtime.circuit_runner import RunnerResult
+    from qiskit.providers.ibmq import RunnerResult
 
     provider = IBMQ.load_account()
     backend = provider.backend.ibmq_montreal
