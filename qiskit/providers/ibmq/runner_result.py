@@ -19,8 +19,10 @@ from qiskit.result import Result, QuasiDistribution
 from qiskit.result.postprocess import _hex_to_bin
 from qiskit.exceptions import QiskitError
 
+from .runtime import ResultDecoder
 
-class RunnerResult(Result):
+
+class RunnerResult(Result, ResultDecoder):
     """Result class for Qiskit Runtime program circuit-runner."""
 
     @classmethod
