@@ -58,6 +58,7 @@ Classes
     IBMQBackend
     IBMQBackendService
     IBMQFactory
+    RunnerResult
 
 Exceptions
 ==========
@@ -93,6 +94,7 @@ from .backendjoblimit import BackendJobLimit
 from .exceptions import *
 from .ibmqbackendservice import IBMQBackendService
 from .utils.utils import setup_logger
+from .runner_result import RunnerResult
 
 from .version import __version__
 

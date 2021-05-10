@@ -35,6 +35,7 @@ from .random.ibmqrandomservice import IBMQRandomService
 from .experiment.experimentservice import ExperimentService
 from .runtime.ibm_runtime_service import IBMRuntimeService
 from .exceptions import IBMQNotAuthorizedError, IBMQInputValueError
+from .runner_result import RunnerResult
 
 logger = logging.getLogger(__name__)
 
@@ -216,17 +217,6 @@ class AccountProvider(Provider):
             This method uses the IBM Quantum runtime service which is not
             available to all accounts.
 
-        Note:
-            This method returns a :class:``~qiskit.provider.ibmq.runtime.RuntimeJob``.
-            To get the job result, you'll need to use the
-            ``qiskit_runtime.circuit_runner.RunnerResult`` class
-            as the ``decoder``, e.g.::
-
-                result = provider.run_circuits(...).result(decoder=RunnerResult)
-
-            You can find more about the ``RunnerResult`` class in the
-            `qiskit-runtime repository <https://github.com/Qiskit-Partners/qiskit-runtime>`_.
-
         Args:
             circuits: Circuit(s) to execute.
 
@@ -287,7 +277,8 @@ class AccountProvider(Provider):
         }
         inputs.update(run_config)
         options = {'backend_name': backend.name()}
-        return self.runtime.run('circuit-runner', options=options, inputs=inputs)
+        return self.runtime.run('circuit-runner', options=options, inputs=inputs,
+                                result_decoder=RunnerResult)
 
     def service(self, name: str) -> Any:
         """Return the specified service.

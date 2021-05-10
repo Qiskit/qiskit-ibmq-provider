@@ -44,14 +44,12 @@ Modules related to Qiskit Runtime Service.
   always guaranteed.
 
 Qiskit Runtime is a new architecture offered by IBM Quantum that
-significantly reduces waiting time during computational iterations.
-You can execute your experiments near the quantum hardware, without
-the interactions of multiple layers of classical and quantum hardware
-slowing it down.
+streamlines computations requiring many iterations. These experiments will
+execute significantly faster within its improved hybrid quantum/classical process.
 
 The Qiskit Runtime Service allows authorized users to upload their Qiskit quantum programs.
 A Qiskit quantum program, also called a runtime program, is a piece of Python
-code that takes certain inputs, performs
+code and its metadata that takes certain inputs, performs
 quantum and maybe classical processing, and returns the results. The same or other
 authorized users can invoke these quantum programs by simply passing in parameters.
 
@@ -92,7 +90,7 @@ You can use the :meth:`IBMRuntimeService.run` method to invoke a runtime program
 For example::
 
     from qiskit import IBMQ, QuantumCircuit
-    from qiskit_runtime.circuit_runner import RunnerResult
+    from qiskit.providers.ibmq import RunnerResult
 
     provider = IBMQ.load_account()
     backend = provider.backend.ibmq_montreal
@@ -104,11 +102,11 @@ For example::
     qc.measure_all()
 
     # Execute the circuit using the "circuit-runner" program.
-    runtime_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
+    program_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
     options = {'backend_name': backend.name()}
     job = provider.runtime.run(program_id="circuit-runner",
                                options=options,
-                               inputs=runtime_inputs)
+                               inputs=program_inputs)
 
     # Get runtime job result.
     result = job.result(decoder=RunnerResult)
@@ -146,7 +144,7 @@ the :meth:`RuntimeJob.stream_results` method. For example::
     # Stream interim results as soon as the job starts running.
     job = provider.runtime.run(program_id="circuit-runner",
                                options=options,
-                               inputs=runtime_inputs,
+                               inputs=program_inputs,
                                callback=interim_result_callback)
 
 Uploading a program
