@@ -61,11 +61,11 @@ class IBMRuntimeService:
         qc.measure_all()
 
         # Execute the circuit using the "circuit-runner" program.
-        runtime_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
+        program_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
         options = {'backend_name': backend.name()}
         job = provider.runtime.run(program_id="circuit-runner",
                                    options=options,
-                                   inputs=runtime_inputs)
+                                   inputs=program_inputs)
 
         # Get runtime job result.
         result = job.result(decoder=RunnerResult)
