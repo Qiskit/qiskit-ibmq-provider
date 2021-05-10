@@ -104,11 +104,11 @@ For example::
     qc.measure_all()
 
     # Execute the circuit using the "circuit-runner" program.
-    runtime_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
+    program_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
     options = {'backend_name': backend.name()}
     job = provider.runtime.run(program_id="circuit-runner",
                                options=options,
-                               inputs=runtime_inputs)
+                               inputs=program_inputs)
 
     # Get runtime job result.
     result = job.result(decoder=RunnerResult)
@@ -146,7 +146,7 @@ the :meth:`RuntimeJob.stream_results` method. For example::
     # Stream interim results as soon as the job starts running.
     job = provider.runtime.run(program_id="circuit-runner",
                                options=options,
-                               inputs=runtime_inputs,
+                               inputs=program_inputs,
                                callback=interim_result_callback)
 
 Uploading a program
