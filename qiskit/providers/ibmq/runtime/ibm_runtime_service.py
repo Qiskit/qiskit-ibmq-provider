@@ -464,7 +464,11 @@ class IBMRuntimeService:
         Returns:
             Decoded job data.
         """
-        backend = self._provider.get_backend(raw_data['backend'])
+        if self._provider.credentials.unique_id().to_tuple() != \
+                (raw_data['hub'], raw_data['group'], raw_data['project']):
+            backend = raw_data['backend']
+        else:
+            backend = self._provider.get_backend(raw_data['backend'])
 
         params = raw_data.get('params', {})
         if isinstance(params, list):

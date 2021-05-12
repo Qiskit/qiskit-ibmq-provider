@@ -12,7 +12,7 @@
 
 """Qiskit runtime job."""
 
-from typing import Any, Optional, Callable, Dict, Type
+from typing import Any, Optional, Callable, Dict, Type, Union
 import time
 import logging
 import asyncio
@@ -77,7 +77,7 @@ class RuntimeJob:
 
     def __init__(
             self,
-            backend: 'ibmqbackend.IBMQBackend',
+            backend: Union['ibmqbackend.IBMQBackend', str],
             api_client: RuntimeClient,
             ws_client: RuntimeWebsocketClient,
             job_id: str,
@@ -90,7 +90,7 @@ class RuntimeJob:
         """RuntimeJob constructor.
 
         Args:
-            backend: The backend instance used to run this job.
+            backend: The backend instance used to run this job or the backend name.
             api_client: Object for connecting to the server.
             ws_client: Object for connecting to the server via websocket.
             job_id: Job ID.
@@ -323,11 +323,12 @@ class RuntimeJob:
         """
         return self._job_id
 
-    def backend(self) -> Backend:
+    def backend(self) -> Union[Backend, str]:
         """Return the backend where this job was executed.
 
         Returns:
-            Backend used for the job.
+            Backend used for the job or the backend name if the job belongs to
+                a different provider.
         """
         return self._backend
 
