@@ -19,7 +19,7 @@ import time
 import random
 from contextlib import suppress
 
-from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramError,
@@ -74,6 +74,7 @@ def main(backend, user_messenger, **kwargs):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.backend = backend
+        cls.poll_time = 1 if backend.configuration().simulator else 5
         cls.provider = backend.provider()
         cls.program_id = cls.PROGRAM_PREFIX
         try:
@@ -190,8 +191,7 @@ def main(backend, user_messenger, **kwargs):
         """Test retrieving a queued job."""
         _ = self._run_program(iterations=10)
         job = self._run_program(iterations=2)
-        while job.status() != JobStatus.QUEUED:
-            time.sleep(1)
+        self._wait_for_status(job, JobStatus.QUEUED)
         rjob = self.provider.runtime.job(job.job_id())
         self.assertEqual(job.job_id(), rjob.job_id())
         self.assertEqual(self.program_id, rjob.program_id)
@@ -199,8 +199,7 @@ def main(backend, user_messenger, **kwargs):
     def test_retrieve_job_running(self):
         """Test retrieving a running job."""
         job = self._run_program(iterations=10)
-        while job.status() != JobStatus.RUNNING:
-            time.sleep(5)
+        self._wait_for_status(job, JobStatus.RUNNING)
         rjob = self.provider.runtime.job(job.job_id())
         self.assertEqual(job.job_id(), rjob.job_id())
         self.assertEqual(self.program_id, job.program_id)
@@ -242,8 +241,7 @@ def main(backend, user_messenger, **kwargs):
         """Test canceling a queued job."""
         _ = self._run_program(iterations=10)
         job = self._run_program(iterations=2)
-        while job.status() != JobStatus.QUEUED:
-            time.sleep(1)
+        self._wait_for_status(job, JobStatus.QUEUED)
         job.cancel()
         self.assertEqual(job.status(), JobStatus.CANCELLED)
         rjob = self.provider.runtime.job(job.job_id())
@@ -252,8 +250,7 @@ def main(backend, user_messenger, **kwargs):
     def test_cancel_job_running(self):
         """Test canceling a running job."""
         job = self._run_program(iterations=3)
-        while job.status() != JobStatus.RUNNING:
-            time.sleep(5)
+        self._wait_for_status(job, JobStatus.RUNNING)
         job.cancel()
         self.assertEqual(job.status(), JobStatus.CANCELLED)
         time.sleep(3)  # Wait a bit for DB to update.
@@ -276,8 +273,7 @@ def main(backend, user_messenger, **kwargs):
                     _ = self._run_program(iterations=10)
 
                 job = self._run_program(iterations=2)
-                while job.status() != status:
-                    time.sleep(5)
+                self._wait_for_status(job, status)
                 self.provider.runtime.delete_job(job.job_id())
                 with self.assertRaises(RuntimeJobNotFound):
                     self.provider.runtime.job(job.job_id())
@@ -321,11 +317,7 @@ def main(backend, user_messenger, **kwargs):
         iterations = 3
         job = self._run_program(iterations=iterations, interim_results=int_res)
 
-        for _ in range(10):
-            if job.status() == JobStatus.RUNNING:
-                break
-            time.sleep(1)
-        self.assertEqual(JobStatus.RUNNING, job.status())
+        self._wait_for_status(job, JobStatus.RUNNING)
         job.stream_results(result_callback)
         job.wait_for_final_state()
         self.assertEqual(iterations-1, final_it)
@@ -386,8 +378,7 @@ def main(backend, user_messenger, **kwargs):
 
                 job = self._run_program(iterations=iterations, interim_results="foo",
                                         callback=result_callback)
-                while job.status() != status:
-                    time.sleep(5)
+                self._wait_for_status(job, status)
                 job.cancel()
                 time.sleep(3)  # Wait for cleanup
                 self.assertIsNone(job._ws_client._ws)
@@ -512,3 +503,11 @@ def main(backend, user_messenger, **kwargs):
         self.log.info("Runtime job %s submitted.", job.job_id())
         self.to_cancel.append(job)
         return job
+
+    def _wait_for_status(self, job, status):
+        """Wait for job to reach a certain status."""
+        wait_time = 1 if status == JobStatus.QUEUED else self.poll_time
+        while job.status() not in JOB_FINAL_STATES + (status,):
+            time.sleep(wait_time)
+        if job.status() != status:
+            self.skipTest(f"Job {job.job_id()} unable to reach status {status}.")
