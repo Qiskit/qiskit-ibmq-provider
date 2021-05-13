@@ -471,7 +471,7 @@ class IBMQFactory:
 
             # Build the provider.
             try:
-                provider = AccountProvider(provider_credentials)
+                provider = AccountProvider(provider_credentials, self)
                 self._providers[provider_credentials.unique_id()] = provider
             except Exception:  # pylint: disable=broad-except
                 # Catch-all for errors instantiating the provider.

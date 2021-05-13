@@ -17,6 +17,7 @@ from typing import Dict, Callable, Optional, Union, List, Any, Type
 import json
 import copy
 
+from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .runtime_job import RuntimeJob
@@ -28,7 +29,9 @@ from .program.result_decoder import ResultDecoder
 from ..api.clients.runtime import RuntimeClient
 from ..api.clients.runtime_ws import RuntimeWebsocketClient
 from ..api.exceptions import RequestsApiError
-from ..exceptions import IBMQNotAuthorizedError, IBMQInputValueError
+from ..exceptions import IBMQNotAuthorizedError, IBMQInputValueError, IBMQProviderError
+from ..ibmqbackend import IBMQRetiredBackend
+from ..credentials import Credentials
 
 logger = logging.getLogger(__name__)
 
@@ -464,7 +467,24 @@ class IBMRuntimeService:
         Returns:
             Decoded job data.
         """
-        backend = self._provider.get_backend(raw_data['backend'])
+        hub = raw_data['hub']
+        group = raw_data['group']
+        project = raw_data['project']
+        if self._provider.credentials.unique_id().to_tuple() != (hub, group, project):
+            # Try to find the right backend
+            try:
+                original_provider = self._provider._factory.get_provider(hub, group, project)
+                backend = original_provider.get_backend(raw_data['backend'])
+            except (IBMQProviderError, QiskitBackendNotFoundError):
+                backend = IBMQRetiredBackend.from_name(
+                    backend_name=raw_data['backend'],
+                    provider=None,
+                    credentials=Credentials(token="", url="",
+                                            hub=hub, group=group, project=project),
+                    api=None
+                )
+        else:
+            backend = self._provider.get_backend(raw_data['backend'])
 
         params = raw_data.get('params', {})
         if isinstance(params, list):

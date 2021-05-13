@@ -24,7 +24,6 @@ from datetime import datetime
 from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.backend import Backend
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
 
 from .constants import API_TO_JOB_STATUS
 from .exceptions import RuntimeJobFailureError, RuntimeInvalidStateError, QiskitRuntimeError
@@ -77,7 +76,7 @@ class RuntimeJob:
 
     def __init__(
             self,
-            backend: 'ibmqbackend.IBMQBackend',
+            backend: Backend,
             api_client: RuntimeClient,
             ws_client: RuntimeWebsocketClient,
             job_id: str,
