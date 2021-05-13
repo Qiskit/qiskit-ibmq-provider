@@ -253,7 +253,7 @@ def main(backend, user_messenger, **kwargs):
         self._wait_for_status(job, JobStatus.RUNNING)
         job.cancel()
         self.assertEqual(job.status(), JobStatus.CANCELLED)
-        time.sleep(3)  # Wait a bit for DB to update.
+        time.sleep(10)  # Wait a bit for DB to update.
         rjob = self.provider.runtime.job(job.job_id())
         self.assertEqual(rjob.status(), JobStatus.CANCELLED)
 
