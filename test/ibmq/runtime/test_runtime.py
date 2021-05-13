@@ -311,7 +311,6 @@ class TestRuntime(IBMQTestCase):
 
     def test_different_providers(self):
         """Test retrieving job submitted with different provider."""
-        # self.runtime = IBMRuntimeService(mock.MagicMock(sepc=AccountProvider))
         program_id = self._upload_program()
         job = self._run_program(program_id)
         cred = Credentials(token="", url="", hub="hub2", group="group2", project="project2")
