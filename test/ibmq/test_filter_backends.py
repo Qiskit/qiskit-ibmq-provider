@@ -83,7 +83,8 @@ class TestBackendFilters(IBMQTestCase):
     def test_filter_least_busy_reservation(self):
         """Test filtering by least busy function, with reservations."""
         backend = reservations = None
-        for backend in self.provider.backends(simulator=False, operational=True):
+        for backend in self.provider.backends(simulator=False, operational=True,
+                                              status_msg='active'):
             reservations = backend.reservations()
             if reservations:
                 break
@@ -101,7 +102,8 @@ class TestBackendFilters(IBMQTestCase):
         self.assertEqual(least_busy([backend], None), backend)
 
         backs = [backend]
-        for back in self.provider.backends(simulator=False, operational=True):
+        for back in self.provider.backends(simulator=False, operational=True,
+                                           status_msg='active'):
             if back.name() != backend.name():
                 backs.append(back)
                 break
