@@ -25,6 +25,7 @@ from qiskit.providers.backend import BackendV1 as Backend
 from qiskit.providers.basebackend import BaseBackend
 from qiskit.transpiler import Layout
 from qiskit.providers.ibmq.runtime import runtime_job  # pylint: disable=unused-import
+from qiskit.providers.ibmq import ibmqfactory  # pylint: disable=unused-import
 
 from .api.clients import AccountClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
@@ -96,15 +97,17 @@ class AccountProvider(Provider):
         in Jupyter Notebook and the Python interpreter.
     """
 
-    def __init__(self, credentials: Credentials) -> None:
+    def __init__(self, credentials: Credentials, factory: 'ibmqfactory.IBMQFactory') -> None:
         """AccountProvider constructor.
 
         Args:
             credentials: IBM Quantum Experience credentials.
+            factory: IBM Quantum account.
         """
         super().__init__()
 
         self.credentials = credentials
+        self._factory = factory
         self._api_client = AccountClient(credentials,
                                          **credentials.connection_parameters())
 

@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes the issue wherein a ``QiskitBackendNotFoundError`` exception is raised
+    when retrieving a runtime job that was submitted using a different provider
+    than the one used for retrival.
