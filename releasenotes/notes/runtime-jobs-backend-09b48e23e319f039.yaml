@@ -1,11 +1,4 @@
 ---
-upgrade:
-  - |
-    Method :meth:`qiskit.providers.ibmq.runtime.RuntimeJob.backend` can now
-    return a string if the provider used to retrive the job is different
-    from the provider used to submit the runtime job. The method continues to
-    return a :class:`~qiskit.providers.ibmq.IBMQBackend` instance if the
-    providers are the same.
 fixes:
   - |
     Fixes the issue wherein a ``QiskitBackendNotFoundError`` exception is raised

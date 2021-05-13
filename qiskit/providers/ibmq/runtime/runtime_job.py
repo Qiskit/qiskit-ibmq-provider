@@ -12,7 +12,7 @@
 
 """Qiskit runtime job."""
 
-from typing import Any, Optional, Callable, Dict, Type, Union
+from typing import Any, Optional, Callable, Dict, Type
 import time
 import logging
 import asyncio
@@ -24,7 +24,6 @@ from datetime import datetime
 from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.backend import Backend
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.providers.ibmq import ibmqbackend  # pylint: disable=unused-import
 
 from .constants import API_TO_JOB_STATUS
 from .exceptions import RuntimeJobFailureError, RuntimeInvalidStateError, QiskitRuntimeError
@@ -77,7 +76,7 @@ class RuntimeJob:
 
     def __init__(
             self,
-            backend: Union['ibmqbackend.IBMQBackend', str],
+            backend: Backend,
             api_client: RuntimeClient,
             ws_client: RuntimeWebsocketClient,
             job_id: str,
@@ -90,7 +89,7 @@ class RuntimeJob:
         """RuntimeJob constructor.
 
         Args:
-            backend: The backend instance used to run this job or the backend name.
+            backend: The backend instance used to run this job.
             api_client: Object for connecting to the server.
             ws_client: Object for connecting to the server via websocket.
             job_id: Job ID.
@@ -323,12 +322,11 @@ class RuntimeJob:
         """
         return self._job_id
 
-    def backend(self) -> Union[Backend, str]:
+    def backend(self) -> Backend:
         """Return the backend where this job was executed.
 
         Returns:
-            Backend used for the job or the backend name if the job belongs to
-                a different provider.
+            Backend used for the job.
         """
         return self._backend
 

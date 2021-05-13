@@ -24,13 +24,13 @@ import random
 import numpy as np
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder, RuntimeDecoder
 from qiskit.providers.ibmq.accountprovider import AccountProvider
+from qiskit.providers.ibmq.credentials import Credentials
+from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder, RuntimeDecoder
 from qiskit.providers.ibmq.runtime import IBMRuntimeService, RuntimeJob
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeProgramNotFound,
                                                       RuntimeJobFailureError)
 from qiskit.providers.ibmq.runtime.runtime_program import ProgramParameter, ProgramResult
-
 
 from ...ibmqtestcase import IBMQTestCase
 from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRuntimeJob, CancelableRuntimeJob,
@@ -308,6 +308,16 @@ class TestRuntime(IBMQTestCase):
         program = self.runtime.program(program_id)
         self.assertEqual(update_metadata['max_execution_time'], program.max_execution_time)
         self.assertEqual(update_metadata["version"], program.version)
+
+    def test_different_providers(self):
+        """Test retrieving job submitted with different provider."""
+        # self.runtime = IBMRuntimeService(mock.MagicMock(sepc=AccountProvider))
+        program_id = self._upload_program()
+        job = self._run_program(program_id)
+        cred = Credentials(token="", url="", hub="hub2", group="group2", project="project2")
+        self.runtime._provider.credentials = cred
+        rjob = self.runtime.job(job.job_id())
+        self.assertIsNotNone(rjob.backend())
 
     def _upload_program(self, name=None, max_execution_time=300):
         """Upload a new program."""
