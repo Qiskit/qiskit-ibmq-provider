@@ -23,7 +23,7 @@ class BackendJobLimit:
     method.
 
     Attributes:
-        maximum_jobs: The maximum number of concurrent jobs this account is 
+        maximum_jobs: The maximum number of concurrent jobs this account is
             allowed to submit to this backend, with this provider.
         running_jobs: The current number of active jobs on this backend, with
             this provider.
