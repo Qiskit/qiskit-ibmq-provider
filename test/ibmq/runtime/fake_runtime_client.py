@@ -135,10 +135,22 @@ class CancelableRuntimeJob(BaseFakeRuntimeJob):
         "RUNNING"
     ]
 
+    def __init__(self, *args, **kwargs):
+        """Initialize a cancellable job."""
+        super().__init__(*args, **kwargs)
+        self._cancelled = False
+
     def cancel(self):
         """Cancel the job."""
         self._future.cancel()
-        self._status = "CANCELLED"
+        self._cancelled = True
+
+    def to_dict(self):
+        """Convert to dictionary format."""
+        data = super().to_dict()
+        if self._cancelled:
+            data['status'] = "CANCELLED"
+        return data
 
 
 class CustomResultRuntimeJob(BaseFakeRuntimeJob):
