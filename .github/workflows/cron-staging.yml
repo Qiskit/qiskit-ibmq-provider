@@ -39,3 +39,28 @@ jobs:
           pip install -c constraints.txt -e .
       - name: Run Tests
         run: make runtime_integration
+  experiment-integration:
+    name: experiment-integration
+    runs-on: macOS-latest
+    env:
+      QE_STAGING_TOKEN: ${{ secrets.QE_STAGING_TOKEN }}
+      QE_STAGING_URL: ${{ secrets.QE_STAGING_URL }}
+      QE_STAGING_DEVICE: "backend1"
+      USE_STAGING_CREDENTIALS: True
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_IN_PARALLEL: True
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U -c constraints.txt -r requirements-dev.txt
+          pip install -U -c constraints.txt git+https://github.com/jyu00/qiskit-terra.git@experiment-class
+          pip install -c constraints.txt -e .
+      - name: Run Tests
+        run: make runtime_integration

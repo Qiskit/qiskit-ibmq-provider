@@ -33,7 +33,7 @@ from .credentials import Credentials
 from .ibmqbackendservice import IBMQBackendService, IBMQDeprecatedBackendService
 from .utils.json_decoder import decode_backend_configuration
 from .random.ibmqrandomservice import IBMQRandomService
-from .experiment.experimentservice import ExperimentService
+from .experiment.experimentservice import IBMExperimentService
 from .runtime.ibm_runtime_service import IBMRuntimeService
 from .exceptions import IBMQNotAuthorizedError, IBMQInputValueError
 from .runner_result import RunnerResult
@@ -118,7 +118,7 @@ class AccountProvider(Provider):
 
         # Initialize other services.
         self._random = IBMQRandomService(self) if credentials.extractor_url else None
-        self._experiment = ExperimentService(self) if credentials.experiment_url else None
+        self._experiment = IBMExperimentService(self) if credentials.experiment_url else None
         self._runtime = IBMRuntimeService(self) \
             if credentials.runtime_url else None
 
@@ -343,7 +343,7 @@ class AccountProvider(Provider):
         return self._backend
 
     @property
-    def experiment(self) -> ExperimentService:
+    def experiment(self) -> IBMExperimentService:
         """Return the experiment service.
 
         Returns:

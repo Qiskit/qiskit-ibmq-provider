@@ -10,30 +10,25 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utilities for working with IBM Quantum Experience experiments."""
+"""Utilities for working with IBM Quantum experiments."""
 
-from functools import wraps
-from typing import Callable, Any
+from typing import Generator
+from contextlib import contextmanager
 
-from qiskit.providers.ibmq.experiment import experiment  # pylint: disable=unused-import
+from qiskit.providers.experiment.exceptions import ExperimentEntryNotFound, ExperimentEntryExists
 
-from .exceptions import ExperimentError
+from ..api.exceptions import RequestsApiError
+from ..exceptions import IBMQApiError
 
 
-def requires_experiment_uuid(func: Callable) -> Callable:
-    """Decorator that signals that the function requires an experiment UUID.
-
-    Args:
-        func: test function to be decorated.
-
-    Returns:
-        callable: the decorated function.
-    """
-    @wraps(func)
-    def _wrapper(expr: 'experiment.Experiment', *args: Any, **kwargs: Any) -> Any:
-        if not expr.uuid:
-            raise ExperimentError(
-                "{} requires the UUID of this experiment to be known.".format(func.__name__))
-        return func(expr, *args, **kwargs)
-
-    return _wrapper
+@contextmanager
+def map_api_error(error_msg: str = "") -> Generator[None, None, None]:
+    """Convert an ``RequestsApiError`` to a user facing error."""
+    try:
+        yield
+    except RequestsApiError as api_err:
+        if api_err.status_code == 409:
+            raise ExperimentEntryExists(error_msg + f" {api_err}") from None
+        if api_err.status_code == 404:
+            raise ExperimentEntryNotFound(error_msg + f" {api_err}") from None
+        raise IBMQApiError(f"Failed to process the request: {api_err}") from None

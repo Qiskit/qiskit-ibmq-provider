@@ -55,7 +55,8 @@ class ExperimentClient(BaseClient):
             exclude_public: Optional[bool] = False,
             public_only: Optional[bool] = False,
             exclude_mine: Optional[bool] = False,
-            mine_only: Optional[bool] = False
+            mine_only: Optional[bool] = False,
+            sort_by: Optional[str] = None
     ) -> Dict:
         """Retrieve experiments, with optional filtering.
 
@@ -74,13 +75,23 @@ class ExperimentClient(BaseClient):
             public_only: Whether or not to only return experiments with a public share level.
             exclude_mine: Whether or not to exclude experiments where I am the owner.
             mine_only: Whether or not to only return experiments where I am the owner.
+            sort_by: Sorting order.
 
         Returns:
             A list of experiments and the marker, if applicable.
         """
         resp = self.base_api.experiments(
-            limit, marker, backend_name, experiment_type, start_time, device_components, tags,
-            hub, group, project, exclude_public, public_only, exclude_mine, mine_only)
+            limit=limit,
+            marker=marker,
+            backend_name=backend_name,
+            experiment_type=experiment_type,
+            start_time=start_time,
+            device_components=device_components,
+            tags=tags,
+            hub=hub, group=group, project=project,
+            exclude_public=exclude_public, public_only=public_only,
+            exclude_mine=exclude_mine, mine_only=mine_only,
+            sort_by=sort_by)
         return resp
 
     def experiment_get(self, experiment_id: str) -> Dict:
@@ -201,8 +212,10 @@ class ExperimentClient(BaseClient):
             device_components: Optional[List[str]] = None,
             experiment_uuid: Optional[str] = None,
             result_type: Optional[str] = None,
-            quality: Optional[List[str]] = None,
-            verified: Optional[bool] = None
+            quality: Optional[Union[str, List[str]]] = None,
+            verified: Optional[bool] = None,
+            tags: Optional[List[str]] = None,
+            sort_by: Optional[str] = None
     ) -> Dict:
         """Return a list of analysis results.
 
@@ -214,14 +227,25 @@ class ExperimentClient(BaseClient):
             experiment_uuid: Experiment UUID used for filtering.
             result_type: Analysis result type used for filtering.
             quality: Quality value used for filtering.
-            verified: Indicates whether this result has been verified..
+            verified: Indicates whether this result has been verified.
+            tags: Filter by tags assigned to analysis results.
+            sort_by: Indicates how the output should be sorted.
 
         Returns:
             A list of analysis results and the marker, if applicable.
         """
         resp = self.base_api.analysis_results(
-            limit, marker, backend_name, device_components, experiment_uuid,
-            result_type, quality, verified)
+            limit=limit,
+            marker=marker,
+            backend_name=backend_name,
+            device_components=device_components,
+            experiment_uuid=experiment_uuid,
+            result_type=result_type,
+            quality=quality,
+            verified=verified,
+            tags=tags,
+            sort_by=sort_by
+        )
         return resp
 
     def analysis_result_upload(self, result: Dict) -> Dict:

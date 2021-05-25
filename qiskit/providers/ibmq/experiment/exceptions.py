@@ -12,11 +12,12 @@
 
 """Exceptions related to IBM Quantum Experience experiments."""
 
+from qiskit.providers.experiment.exceptions import ExperimentError
 
 from ..exceptions import IBMQError
 
 
-class ExperimentError(IBMQError):
+class IBMQExperimentError(IBMQError, ExperimentError):
     """Base class for errors raised by the experiment modules."""
     pass
 
