@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2017, 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 
-.PHONY: lint style test mypy test1 test2 test3 runtime_integration
+.PHONY: lint style test mypy test1 test2 test3 runtime_integration experiment_integration
 
 lint:
 	pylint -rn qiskit/providers/ibmq test
