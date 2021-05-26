@@ -209,7 +209,7 @@ class AccountProvider(Provider):
             translation_method: Optional[str] = None,
             seed_transpiler: Optional[int] = None,
             optimization_level: int = 1,
-            init_qubits: Optional[bool] = True,
+            init_qubits: bool = True,
             rep_delay: Optional[float] = None,
             transpiler_options: Optional[dict] = None,
             measurement_error_mitigation: bool = False,
