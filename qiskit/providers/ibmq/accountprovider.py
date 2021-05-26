@@ -228,6 +228,9 @@ class AccountProvider(Provider):
                 Transpiler options are automatically grabbed from backend configuration
                 and properties unless otherwise specified.
 
+            shots: Number of repetitions of each circuit, for sampling. If not specified,
+                the backend default is used.
+
             initial_layout: Initial position of virtual qubits on physical qubits.
 
             layout_method: Name of layout selection pass ('trivial', 'dense',
@@ -246,16 +249,13 @@ class AccountProvider(Provider):
                 transpilation time.
                 If None, level 1 will be chosen as default.
 
-            shots: Number of repetitions of each circuit, for sampling. If not specified,
-                the backend default is used.
+            init_qubits: Whether to reset the qubits to the ground state for each shot.
 
             rep_delay: Delay between programs in seconds. Only supported on certain
                 backends (``backend.configuration().dynamic_reprate_enabled`` ). If supported,
                 ``rep_delay`` will be used instead of ``rep_time`` and must be from the
                 range supplied by the backend (``backend.configuration().rep_delay_range``).
                 Default is given by ``backend.configuration().default_rep_delay``.
-
-            init_qubits: Whether to reset the qubits to the ground state for each shot.
 
             transpiler_options: Additional transpiler options.
 
