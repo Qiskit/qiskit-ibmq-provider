@@ -16,6 +16,7 @@ import logging
 from typing import Dict, List, Optional, Any, Callable, Union
 from collections import OrderedDict
 import traceback
+import copy
 
 from qiskit.providers import ProviderV1 as Provider  # type: ignore[attr-defined]
 from qiskit.providers.models import (QasmBackendConfiguration,
@@ -207,11 +208,11 @@ class AccountProvider(Provider):
             routing_method: Optional[str] = None,
             translation_method: Optional[str] = None,
             seed_transpiler: Optional[int] = None,
-            optimization_level: Optional[int] = None,
+            optimization_level: int = 1,
             init_qubits: Optional[bool] = True,
             rep_delay: Optional[float] = None,
             transpiler_options: Optional[dict] = None,
-            measurement_error_mitigation: Optional[bool] = False,
+            measurement_error_mitigation: bool = False,
             **run_config: Dict
     ) -> 'runtime_job.RuntimeJob':
         """Execute the input circuit(s) on a backend using the runtime service.
@@ -245,7 +246,8 @@ class AccountProvider(Provider):
                 transpilation time.
                 If None, level 1 will be chosen as default.
 
-            shots: Number of repetitions of each circuit, for sampling. Default: 1024.
+            shots: Number of repetitions of each circuit, for sampling. If not specified,
+                the backend default is used.
 
             rep_delay: Delay between programs in seconds. Only supported on certain
                 backends (``backend.configuration().dynamic_reprate_enabled`` ). If supported,
@@ -264,21 +266,28 @@ class AccountProvider(Provider):
         Returns:
             Runtime job.
         """
-        inputs = {
-            'circuits': circuits,
-            'initial_layout': initial_layout,
-            'seed_transpiler': seed_transpiler,
-            'optimization_level': optimization_level,
-            'layout_method': layout_method,
-            'shots': shots,
-            'routing_method': routing_method,
-            'translation_method': translation_method,
-            'rep_delay': rep_delay,
-            'init_qubits': init_qubits,
-            'transpiler_options': transpiler_options,
-            'measurement_error_mitigation': measurement_error_mitigation
-        }
-        inputs.update(run_config)
+        inputs = copy.deepcopy(run_config)  # type: Dict[str, Any]
+        inputs['circuits'] = circuits
+        inputs['optimization_level'] = optimization_level
+        inputs['init_qubits'] = init_qubits
+        inputs['measurement_error_mitigation'] = measurement_error_mitigation
+        if shots:
+            inputs['shots'] = shots
+        if initial_layout:
+            inputs['initial_layout'] = initial_layout
+        if layout_method:
+            inputs['layout_method'] = layout_method
+        if routing_method:
+            inputs['routing_method'] = routing_method
+        if translation_method:
+            inputs['translation_method'] = translation_method
+        if seed_transpiler:
+            inputs['seed_transpiler'] = seed_transpiler
+        if rep_delay:
+            inputs['rep_delay'] = rep_delay
+        if transpiler_options:
+            inputs['transpiler_options'] = transpiler_options
+
         options = {'backend_name': backend.name()}
         return self.runtime.run('circuit-runner', options=options, inputs=inputs,
                                 result_decoder=RunnerResult)
