@@ -26,6 +26,7 @@ from qiskit.providers.experiment import AnalysisResultV1 as AnalysisResult
 from qiskit.providers.experiment.constants import ResultQuality
 from qiskit.providers.experiment.exceptions import ExperimentEntryNotFound
 from qiskit.providers.ibmq.experiment import IBMExperimentService
+from qiskit.tools.visualization import HAS_MATPLOTLIB
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_provider, requires_device
@@ -233,6 +234,19 @@ class TestExperimentDataIntegration(IBMQTestCase):
                 exp_data.add_figure(figure=hello_bytes, figure_name=figure_name, save_figure=True)
                 rexp = self.provider.experiment.experiment(exp_data.experiment_id)
                 self.assertEqual(rexp.figure(idx), hello_bytes)
+
+    @skipIf(not HAS_MATPLOTLIB, "matplotlib not available.")
+    def test_add_figure_plot(self):
+        """Test adding a matplotlib figure."""
+        import matplotlib.pyplot as plt
+        figure, ax = plt.subplots()
+        ax.plot([1, 2, 3])
+
+        exp_data = self._create_experiment_data()
+        exp_data.add_figures(figure, save_figure=True)
+
+        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
+        self.assertTrue(rexp.figure(0))
 
     def test_add_figure_file(self):
         """Test adding a figure file."""
