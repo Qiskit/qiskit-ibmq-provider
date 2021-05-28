@@ -444,7 +444,8 @@ def main(backend, user_messenger, **kwargs):
         """Test run_circuit"""
         job = self.provider.run_circuits(
             ReferenceCircuits.bell(), backend=self.backend, shots=100)
-        job.result()
+        counts = job.result().get_counts()
+        self.assertEqual(100, sum(counts.values()))
 
     def test_job_creation_date(self):
         """Test job creation date."""

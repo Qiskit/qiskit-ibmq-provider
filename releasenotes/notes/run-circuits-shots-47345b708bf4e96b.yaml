@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes the issue that uses ``shots=1`` instead of the documented default
+    when no ``shots`` is specified for
+    :meth:`~qiskit.providers.ibmq.AccountProvider.run_circuits`.
