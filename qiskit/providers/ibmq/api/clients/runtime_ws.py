@@ -9,21 +9,21 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+# pylint: disable=unused-argument
 
 """Client for accessing IBM Quantum runtime service."""
 
 import logging
-import asyncio
-from typing import Any
-from ssl import SSLError
+import time
+from typing import Any, Dict, Optional
 import queue
 import traceback
+from urllib.parse import urlparse
 
-from websockets import connect, ConnectionClosed
-from websockets.client import WebSocketClientProtocol
-from websockets.exceptions import InvalidURI
+from websocket import WebSocketApp
 
-from ..exceptions import WebsocketError, WebsocketRetryableError
+from ...credentials import Credentials
+from ..exceptions import WebsocketError
 
 logger = logging.getLogger(__name__)
 
@@ -36,50 +36,76 @@ class RuntimeWebsocketClient:
 
     def __init__(
             self,
-            websocket_url: str,
-            access_token: str
+            credentials: Credentials,
+            job_id: str
     ) -> None:
         """WebsocketClient constructor.
 
         Args:
-            websocket_url: URL for websocket communication with runtime service.
-            access_token: Access token for IBM Quantum Experience.
+            credentials: Account credentials.
+            job_id: ID of the job.
         """
-        self._websocket_url = websocket_url.rstrip('/')
-        self._access_token = access_token
-        self._header = {"X-Access-Token": self._access_token}
+        self._ws_url = credentials.runtime_url.replace('https', 'wss').rstrip('/')
+        self._header = {"X-Access-Token": credentials.access_token}
+        self._proxy_params = self._get_proxy_params(credentials)
         self._ws = None
+        self._connect_ack = False
+        self._job_id = job_id
+        self._result_queue = None  # type: Optional[queue.Queue]
+        self._normal_close = False
+        self._current_retry = 0
 
-    async def _connect(self, url: str) -> WebSocketClientProtocol:
-        """Authenticate with the websocket server and return the connection.
+    def on_open(self, wsa: WebSocketApp) -> None:
+        """Called when websocket connection established.
 
-        Returns:
-            An open websocket connection.
-
-        Raises:
-            WebsocketRetryableError: If the connection to the websocket server could
-                not be established.
+        Args:
+            wsa: WebSocketApp object.
         """
-        try:
-            logger.debug('Starting new websocket connection: %s', url)
-            websocket = await connect(url, extra_headers=self._header)
-            await websocket.recv()  # Ack from server
+        logger.debug("Runtime websocket connection established for job %s", self._job_id)
 
-        # Isolate specific exceptions, so they are not retried.
-        except (SSLError, InvalidURI) as ex:
-            raise ex
+    def on_message(self, wsa: WebSocketApp, message: str) -> None:
+        """Called when websocket message received.
 
-        # pylint: disable=broad-except
-        except Exception as ex:
-            exception_to_raise = WebsocketRetryableError('Failed to connect to the server.')
-            raise exception_to_raise from ex
+        Args:
+            wsa: WebSocketApp object.
+            message: Message received.
+        """
+        if not self._connect_ack:
+            self._connect_ack = True
+        else:
+            self._result_queue.put_nowait(message)
+        self._current_retry = 0
 
-        logger.debug("Runtime websocket connection established.")
-        return websocket
+    def on_close(self, wsa: WebSocketApp, status_code: int, msg: str) -> None:
+        """Called when websocket connection clsed.
 
-    async def job_results(
+        Args:
+            wsa: WebSocketApp object.
+            status_code: Status code.
+            msg: Close message.
+        """
+        if status_code == 1000:
+            logger.debug("Websocket connection for job %s closed.", self._job_id)
+            self._normal_close = True
+        else:
+            logger.info("Websocket connection closed unexpectedly while streaming "
+                        "results for runtime job %s: status code=%s, message=%s",
+                        self._job_id, status_code, msg)
+
+    def on_error(self, wsa: WebSocketApp, error: Exception) -> None:
+        """Called when a websocket error occurred.
+
+        Args:
+            wsa: WebSocketApp object.
+            error: Encountered error.
+        """
+        logger.info(
+            "A websocket error occurred while streaming results for runtime job %s:\n%s",
+            self._job_id, "".join(traceback.format_exception(
+                type(error), error, getattr(error, '__traceback__', ""))))
+
+    def job_results(
             self,
-            job_id: str,
             result_queue: queue.Queue,
             max_retries: int = 5,
             backoff_factor: float = 0.5
@@ -87,7 +113,6 @@ class RuntimeWebsocketClient:
         """Return the interim result of a runtime job.
 
         Args:
-            job_id: ID of the job.
             result_queue: Queue used to hold response received from the server.
             max_retries: Max number of retries.
             backoff_factor: Backoff factor used to calculate the
@@ -100,49 +125,79 @@ class RuntimeWebsocketClient:
             WebsocketError: If a websocket error occurred.
             WebsocketRetryableError: If a websocket error occurred and maximum retry reached.
         """
-        url = '{}/stream/jobs/{}'.format(self._websocket_url, job_id)
+        self._result_queue = result_queue
+        url = '{}/stream/jobs/{}'.format(self._ws_url, self._job_id)
 
-        current_retry = 0
-
-        while current_retry <= max_retries:
+        while self._current_retry <= max_retries:
+            self._ws = WebSocketApp(url,
+                                    header=self._header,
+                                    on_open=self.on_open,
+                                    on_message=self.on_message,
+                                    on_error=self.on_error,
+                                    on_close=self.on_close)
             try:
-                if self._ws is None:
-                    self._ws = await self._connect(url)
-                while True:
-                    try:
-                        response = await self._ws.recv()
-                        result_queue.put_nowait(response)
-                        current_retry = 0  # Reset counter after a good receive.
-                    except ConnectionClosed as ex:
-                        if ex.code == 1000:  # Job has finished.
-                            return
-                        exception_to_raise = WebsocketRetryableError(
-                            f"Connection with websocket for job {job_id} "
-                            f"closed unexpectedly: {ex.code}")
-                        raise exception_to_raise
+                logger.debug('Starting new websocket connection: %s using proxy %s',
+                             url, self._proxy_params)
+                self._ws.run_forever(**self._proxy_params)
 
-            except asyncio.CancelledError:
-                logger.debug("Streaming is cancelled.")
-                return
-            except WebsocketRetryableError as ex:
-                logger.debug("A websocket error occurred while streaming "
-                             "results for runtime job %s:\n%s", job_id, traceback.format_exc())
-                current_retry += 1
-                if current_retry > max_retries:
-                    raise ex
+                if self._normal_close:
+                    return
 
-                backoff_time = self._backoff_time(backoff_factor, current_retry)
-                logger.info("Retrying websocket after %s seconds. Attemp %s",
-                            backoff_time, current_retry)
-                await asyncio.sleep(backoff_time)  # Block asyncio loop for given backoff time.
-                continue  # Continues next iteration after `finally` block.
+                self._current_retry += 1
+                if self._current_retry > max_retries:
+                    raise WebsocketError(f"A websocket error occurred while streaming "
+                                         f"results for runtime job {self._job_id}")
             finally:
-                await self.disconnect()
+                self.disconnect()
+
+            backoff_time = self._backoff_time(backoff_factor, self._current_retry)
+            logger.info("Retrying websocket after %s seconds. Attemp %s",
+                        backoff_time, self._current_retry)
+            time.sleep(backoff_time)
 
         # Execution should not reach here, sanity check.
         exception_message = 'Max retries exceeded: Failed to establish a websocket ' \
                             'connection due to a network error.'
         raise WebsocketError(exception_message)
+
+    def _get_proxy_params(self, credentials: Credentials) -> Dict:
+        """Extract proxy information.
+
+        Returns:
+            Proxy information to be used by the websocket client.
+        """
+        conn_data = credentials.connection_parameters()
+        out = {}
+
+        if "proxies" in conn_data:
+            proxies = conn_data['proxies']
+            url_parts = urlparse(self._ws_url)
+            proxy_keys = [
+                self._ws_url,
+                'wss',
+                'https',
+                'all://' + url_parts.hostname,
+                'all'
+                ]
+            for key in proxy_keys:
+                if key in proxies:
+                    proxy_parts = urlparse(proxies[key], scheme="http")
+                    out['http_proxy_host'] = proxy_parts.hostname
+                    out['http_proxy_port'] = proxy_parts.port
+                    out['proxy_type'] = \
+                        "http" if proxy_parts.scheme.startswith("http") else proxy_parts.scheme
+                    if proxy_parts.username and proxy_parts.password:
+                        out['http_proxy_auth'] = (proxy_parts.username, proxy_parts.password)
+                    break
+
+        if "auth" in conn_data:
+            out['http_proxy_auth'] = (credentials.proxies['username_ntlm'],
+                                      credentials.proxies['password_ntlm'])
+
+        if out:
+            logger.debug("Using proxy %s", out)
+
+        return out
 
     def _backoff_time(self, backoff_factor: float, current_retry_attempt: int) -> float:
         """Calculate the backoff time to wait for.
@@ -160,9 +215,14 @@ class RuntimeWebsocketClient:
         backoff_time = backoff_factor * (2 ** (current_retry_attempt - 1))
         return min(self.BACKOFF_MAX, backoff_time)
 
-    async def disconnect(self) -> None:
-        """Close the websocket connection."""
+    def disconnect(self, normal: bool = False) -> None:
+        """Close the websocket connection.
+
+        Args:
+            normal: Whether it's a normal disconnect.
+        """
         if self._ws is not None:
             logger.debug("Closing runtime websocket connection.")  # type: ignore[unreachable]
-            await self._ws.close()
+            self._normal_close = normal
+            self._ws.close()
             self._ws = None

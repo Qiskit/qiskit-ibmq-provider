@@ -1,0 +1,15 @@
+---
+upgrade:
+  - |
+    ``qiskit-ibmq-provider`` now requires a new package ``websocket-client``. The
+    package has been added to the `requirements.txt` file.
+fixes:
+  - |
+    Streaming runtime program interim results with proxies is now supported.
+    You can specify the proxies to use when enabling the account as usual,
+    for example::
+
+      from qiskit import IBMQ
+
+      proxies = {'urls': {'https://127.0.0.1:8085'}}
+      provider = IBMQ.enable_account(API_TOKEN, proxies=proxies)

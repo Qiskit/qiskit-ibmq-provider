@@ -27,7 +27,7 @@ from .exceptions import (QiskitRuntimeError, RuntimeDuplicateProgramError, Runti
                          RuntimeJobNotFound)
 from .program.result_decoder import ResultDecoder
 from ..api.clients.runtime import RuntimeClient
-from ..api.clients.runtime_ws import RuntimeWebsocketClient
+
 from ..api.exceptions import RequestsApiError
 from ..exceptions import IBMQNotAuthorizedError, IBMQInputValueError, IBMQProviderError
 from ..ibmqbackend import IBMQRetiredBackend
@@ -231,7 +231,7 @@ class IBMRuntimeService:
         backend = self._provider.get_backend(backend_name)
         job = RuntimeJob(backend=backend,
                          api_client=self._api_client,
-                         ws_client=RuntimeWebsocketClient(self._ws_url, self._access_token),
+                         credentials=self._provider.credentials,
                          job_id=response['id'], program_id=program_id, params=inputs,
                          user_callback=callback,
                          result_decoder=result_decoder)
@@ -498,7 +498,7 @@ class IBMRuntimeService:
         decoded = json.loads(params, cls=RuntimeDecoder)
         return RuntimeJob(backend=backend,
                           api_client=self._api_client,
-                          ws_client=RuntimeWebsocketClient(self._ws_url, self._access_token),
+                          credentials=self._provider.credentials,
                           job_id=raw_data['id'],
                           program_id=raw_data.get('program', {}).get('id', ""),
                           params=decoded,
