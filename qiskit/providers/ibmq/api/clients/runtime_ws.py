@@ -74,7 +74,7 @@ class RuntimeWebsocketClient:
             self._connect_ack = True
         else:
             self._result_queue.put_nowait(message)
-        self._current_retry = 0
+            self._current_retry = 0
 
     def on_close(self, wsa: WebSocketApp, status_code: int, msg: str) -> None:
         """Called when websocket connection clsed.
@@ -129,6 +129,7 @@ class RuntimeWebsocketClient:
         url = '{}/stream/jobs/{}'.format(self._ws_url, self._job_id)
 
         while self._current_retry <= max_retries:
+            self._connect_ack = False
             self._ws = WebSocketApp(url,
                                     header=self._header,
                                     on_open=self.on_open,

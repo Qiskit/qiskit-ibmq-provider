@@ -22,9 +22,9 @@ import threading
 
 import websockets
 
-from qiskit.providers.ibmq.api.clients.runtime_ws import RuntimeWebsocketClient
 from qiskit.providers.ibmq.runtime import RuntimeJob
 from qiskit.providers.ibmq.runtime.exceptions import RuntimeInvalidStateError
+from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.test.mock.fake_qasm_simulator import FakeQasmSimulator
 
 from ...ibmqtestcase import IBMQTestCase
@@ -223,10 +223,12 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
 
     def _get_job(self, callback=None, job_id=JOB_ID_PROGRESS_DONE):
         """Get a runtime job."""
-        ws_client = RuntimeWebsocketClient(self.VALID_URL, "my_token")
+        cred = Credentials(token="my_token", url="", services={"runtime": self.VALID_URL})
+        # ws_client = RuntimeWebsocketClient(cred, job_id)
+        # ws_client._ws_url = self.VALID_URL
         job = RuntimeJob(backend=FakeQasmSimulator(),
                          api_client=BaseFakeRuntimeClient(),
-                         ws_client=ws_client,
+                         credentials=cred,
                          job_id=job_id,
                          program_id="my-program",
                          user_callback=callback)

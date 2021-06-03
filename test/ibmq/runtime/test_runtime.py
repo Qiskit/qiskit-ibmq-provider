@@ -63,7 +63,10 @@ class TestRuntime(IBMQTestCase):
     def setUp(self):
         """Initial test setup."""
         super().setUp()
-        self.runtime = IBMRuntimeService(mock.MagicMock(sepc=AccountProvider))
+        provider = mock.MagicMock(spec=AccountProvider)
+        provider.credentials = Credentials(
+            token="", url="", services={"runtime": "https://quantum-computing.ibm.com"})
+        self.runtime = IBMRuntimeService(provider)
         self.runtime._api_client = BaseFakeRuntimeClient()
 
     def test_coder(self):
@@ -313,8 +316,10 @@ class TestRuntime(IBMQTestCase):
         """Test retrieving job submitted with different provider."""
         program_id = self._upload_program()
         job = self._run_program(program_id)
-        cred = Credentials(token="", url="", hub="hub2", group="group2", project="project2")
+        cred = Credentials(token="", url="", hub="hub2", group="group2", project="project2",
+                           services={"runtime": "https://quantum-computing.ibm.com"})
         self.runtime._provider.credentials = cred
+        self.runtime._provider._factory = mock.MagicMock()
         rjob = self.runtime.job(job.job_id())
         self.assertIsNotNone(rjob.backend())
 
