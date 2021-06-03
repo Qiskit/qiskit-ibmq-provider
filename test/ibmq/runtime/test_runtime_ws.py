@@ -224,8 +224,6 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
     def _get_job(self, callback=None, job_id=JOB_ID_PROGRESS_DONE):
         """Get a runtime job."""
         cred = Credentials(token="my_token", url="", services={"runtime": self.VALID_URL})
-        # ws_client = RuntimeWebsocketClient(cred, job_id)
-        # ws_client._ws_url = self.VALID_URL
         job = RuntimeJob(backend=FakeQasmSimulator(),
                          api_client=BaseFakeRuntimeClient(),
                          credentials=cred,
