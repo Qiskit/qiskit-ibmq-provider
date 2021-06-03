@@ -176,6 +176,7 @@ class RuntimeWebsocketClient:
             proxy_keys = [
                 self._ws_url,
                 'wss',
+                'https://' + url_parts.hostname,
                 'https',
                 'all://' + url_parts.hostname,
                 'all'
@@ -194,9 +195,6 @@ class RuntimeWebsocketClient:
         if "auth" in conn_data:
             out['http_proxy_auth'] = (credentials.proxies['username_ntlm'],
                                       credentials.proxies['password_ntlm'])
-
-        if out:
-            logger.debug("Using proxy %s", out)
 
         return out
 
