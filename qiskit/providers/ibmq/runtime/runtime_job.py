@@ -242,6 +242,27 @@ class RuntimeJob:
             return
         self._ws_client.disconnect(normal=True)
 
+    def logs(self) -> str:
+        """Return job logs.
+
+        Note:
+            Job logs are only available after the job finishes.
+
+        Returns:
+            Job logs, including standard output and error.
+
+        Raises:
+            QiskitRuntimeError: If a network error occurred.
+        """
+        if self.status() not in JOB_FINAL_STATES:
+            logger.warning("Job logs are only available after the job finishes.")
+        try:
+            return self._api_client.job_logs(self.job_id())
+        except RequestsApiError as err:
+            if err.status_code == 404:
+                return ""
+            raise QiskitRuntimeError(f"Failed to get job logs: {err}") from None
+
     def _is_streaming(self) -> bool:
         """Return whether job results are being streamed.
 
