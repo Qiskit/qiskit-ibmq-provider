@@ -55,7 +55,7 @@ def main(backend, user_messenger, **kwargs):
     interim_results = kwargs.pop('interim_results', {})
     final_result = kwargs.pop("final_result", {})
     for it in range(iterations):
-        qc = prepare_circuits(backend)        
+        qc = prepare_circuits(backend)
         user_messenger.publish({"iteration": it, "interim_results": interim_results})
         backend.run(qc).result()
 
