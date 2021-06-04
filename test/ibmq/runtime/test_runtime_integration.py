@@ -17,7 +17,8 @@ import os
 import uuid
 import time
 import random
-from contextlib import suppress
+from contextlib import suppress, contextmanager
+import subprocess
 
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -64,8 +65,12 @@ def main(backend, user_messenger, **kwargs):
         "max_execution_time": 600,
         "description": "Qiskit test program"
     }
-
     PROGRAM_PREFIX = 'qiskit-test'
+
+    TEST_IP_ADDRESS = '127.0.0.1'
+    VALID_PROXY_PORT = 8085
+    INVALID_PROXY_PORT = 6666
+    VALID_PROXIES = {'https': 'http://{}:{}'.format(TEST_IP_ADDRESS, VALID_PROXY_PORT)}
 
     @classmethod
     @requires_runtime_device
@@ -91,16 +96,15 @@ def main(backend, user_messenger, **kwargs):
     def tearDownClass(cls) -> None:
         """Class level teardown."""
         super().tearDownClass()
-        try:
+        with suppress(Exception):
             cls.provider.runtime.delete_program(cls.program_id)
-        except Exception:  # pylint: disable=broad-except
-            pass
 
     def setUp(self) -> None:
         """Test level setup."""
         super().setUp()
         self.to_delete = []
         self.to_cancel = []
+        self.proxy_process = None
 
     def tearDown(self) -> None:
         """Test level teardown."""
@@ -116,6 +120,11 @@ def main(backend, user_messenger, **kwargs):
                 job.cancel()
             with suppress(Exception):
                 self.provider.runtime.delete_job(job.job_id())
+
+        if self.proxy_process is not None and self.proxy_process.returncode is None:
+            self.proxy_process.stdout.close()  # close the IO buffer
+            self.proxy_process.terminate()  # initiate process termination
+            self.proxy_process.wait()  # wait for the process to terminate
 
     def test_runtime_service(self):
         """Test getting runtime service."""
@@ -244,6 +253,7 @@ def main(backend, user_messenger, **kwargs):
         self._wait_for_status(job, JobStatus.QUEUED)
         job.cancel()
         self.assertEqual(job.status(), JobStatus.CANCELLED)
+        time.sleep(10)  # Wait a bit for DB to update.
         rjob = self.provider.runtime.job(job.job_id())
         self.assertEqual(rjob.status(), JobStatus.CANCELLED)
 
@@ -389,12 +399,10 @@ def main(backend, user_messenger, **kwargs):
         final_result = get_complex_types()
         job = self._run_program(final_result=final_result)
         result = job.result(decoder=SerializableClassDecoder)
-        # self._assert_complex_types_equal(final_result, result)
         self.assertEqual(final_result, result)
 
         rresults = self.provider.runtime.job(job.job_id()).result(decoder=SerializableClassDecoder)
         self.assertEqual(final_result, rresults)
-        # self._assert_complex_types_equal(final_result, rresults)
 
     def test_job_status(self):
         """Test job status."""
@@ -457,6 +465,38 @@ def main(backend, user_messenger, **kwargs):
         for rjob in rjobs:
             self.assertTrue(rjob.creation_date)
 
+    def test_websocket_proxy(self):
+        """Test connecting to websocket via proxy."""
+        def result_callback(job_id, interim_result):  # pylint: disable=unused-argument
+            nonlocal callback_called
+            callback_called = True
+
+        self._start_proxy_server()
+        callback_called = False
+
+        with use_proxies(self.provider, self.VALID_PROXIES):
+            job = self._run_program(iterations=1, callback=result_callback)
+            job.wait_for_final_state()
+
+        self.assertTrue(callback_called)
+
+    def test_websocket_proxy_invalid_port(self):
+        """Test connecting to websocket via invalid proxy port."""
+        def result_callback(job_id, interim_result):  # pylint: disable=unused-argument
+            nonlocal callback_called
+            callback_called = True
+
+        callback_called = False
+        invalid_proxy = {'https': 'http://{}:{}'.format(self.TEST_IP_ADDRESS,
+                                                        self.INVALID_PROXY_PORT)}
+        with use_proxies(self.provider, invalid_proxy):
+            self.provider.credentials.proxies = {'urls': invalid_proxy}
+            with self.assertLogs('qiskit.providers.ibmq', 'WARNING') as log_cm:
+                job = self._run_program(iterations=1, callback=result_callback)
+                job.wait_for_final_state()
+            self.assertIn("WebsocketError", ','.join(log_cm.output))
+        self.assertFalse(callback_called)
+
     def _validate_program(self, program):
         """Validate a program."""
         self.assertTrue(program)
@@ -512,3 +552,19 @@ def main(backend, user_messenger, **kwargs):
             time.sleep(wait_time)
         if job.status() != status:
             self.skipTest(f"Job {job.job_id()} unable to reach status {status}.")
+
+    def _start_proxy_server(self):
+        """Start a proxy server."""
+        command = ['pproxy', '-v', '-l', 'http://{}:{}'.format(
+            self.TEST_IP_ADDRESS, self.VALID_PROXY_PORT)]
+        self.proxy_process = subprocess.Popen(command, stdout=subprocess.PIPE)
+
+
+@contextmanager
+def use_proxies(provider, proxies):
+    """Context manager to set and restore proxies setting."""
+    try:
+        provider.credentials.proxies = {'urls': proxies}
+        yield
+    finally:
+        provider.credentials.proxies = None
