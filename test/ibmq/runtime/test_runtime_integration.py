@@ -40,6 +40,7 @@ class TestRuntimeIntegration(IBMQTestCase):
 
     RUNTIME_PROGRAM = """
 import random
+import warnings
 
 from qiskit import transpile
 from qiskit.circuit.random import random_circuit
@@ -59,6 +60,8 @@ def main(backend, user_messenger, **kwargs):
         backend.run(qc).result()
 
     user_messenger.publish(final_result, final=True)
+    print("this is a stdout message")
+    warnings.warn("this is a stderr message")
     """
 
     RUNTIME_PROGRAM_METADATA = {
@@ -496,6 +499,16 @@ def main(backend, user_messenger, **kwargs):
                 job.wait_for_final_state()
             self.assertIn("WebsocketError", ','.join(log_cm.output))
         self.assertFalse(callback_called)
+
+    def test_job_logs(self):
+        """Test job logs."""
+        job = self._run_program(final_result="foo")
+        with self.assertLogs('qiskit.providers.ibmq', 'WARN'):
+            job.logs()
+        job.wait_for_final_state()
+        job_logs = job.logs()
+        self.assertIn("this is a stdout message", job_logs)
+        self.assertIn("this is a stderr message", job_logs)
 
     def _validate_program(self, program):
         """Validate a program."""

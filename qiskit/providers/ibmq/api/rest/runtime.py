@@ -229,7 +229,8 @@ class ProgramJob(RestAdapterBase):
     URL_MAP = {
         'self': '',
         'results': '/results',
-        'cancel': '/cancel'
+        'cancel': '/cancel',
+        'logs': '/logs'
     }
 
     def __init__(
@@ -264,7 +265,7 @@ class ProgramJob(RestAdapterBase):
         """Return program job results.
 
         Returns:
-            JSON response.
+            Job results.
         """
         response = self.session.get(self.get_url('results'))
         return response.text
@@ -272,3 +273,11 @@ class ProgramJob(RestAdapterBase):
     def cancel(self) -> None:
         """Cancel the job."""
         self.session.post(self.get_url('cancel'))
+
+    def logs(self) -> str:
+        """Retrieve job logs.
+
+        Returns:
+            Job logs.
+        """
+        return self.session.get(self.get_url('logs')).text
