@@ -70,6 +70,7 @@ class RuntimeWebsocketClient:
             wsa: WebSocketApp object.
             message: Message received.
         """
+        # First message is an ACK
         if not self._connect_ack:
             self._connect_ack = True
         else:
@@ -149,7 +150,7 @@ class RuntimeWebsocketClient:
                     raise WebsocketError(f"A websocket error occurred while streaming "
                                          f"results for runtime job {self._job_id}")
             finally:
-                self.disconnect()
+                self.disconnect(self._normal_close)
 
             backoff_time = self._backoff_time(backoff_factor, self._current_retry)
             logger.info("Retrying websocket after %s seconds. Attemp %s",

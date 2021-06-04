@@ -224,7 +224,7 @@ class RuntimeJob:
             RuntimeInvalidStateError: If a callback function is already streaming results or
                 if the job already finished.
         """
-        if (self._ws_client_future is not None) and (not self._ws_client_future.done()):
+        if self._is_streaming():
             raise RuntimeInvalidStateError("A callback function is already streaming results.")
 
         if self._status in JOB_FINAL_STATES:
@@ -238,9 +238,23 @@ class RuntimeJob:
 
     def cancel_result_streaming(self) -> None:
         """Cancel result streaming."""
-        if (self._ws_client_future is None) or (self._ws_client_future.done()):
+        if not self._is_streaming():
             return
         self._ws_client.disconnect(normal=True)
+
+    def _is_streaming(self) -> bool:
+        """Return whether job results are being streamed.
+
+        Returns:
+            Whether job results are being streamed.
+        """
+        if self._ws_client_future is None:
+            return False
+
+        if self._ws_client_future.done():
+            return False
+
+        return True
 
     def _start_websocket_client(
             self,
