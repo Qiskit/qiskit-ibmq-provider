@@ -1,0 +1,4 @@
+---
+upgrade:
+  - |
+    Added option to execute ``providers.run`` with ProvidersRequestParams, rather than simply a Dict object, which for auto-complete features to be used.
