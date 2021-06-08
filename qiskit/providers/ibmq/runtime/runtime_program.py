@@ -13,8 +13,9 @@
 """Qiskit runtime program."""
 
 import logging
-from typing import Optional, List, NamedTuple, Dict, Tuple
+from typing import Optional, List, NamedTuple, Dict
 from types import SimpleNamespace
+from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 
 
 logger = logging.getLogger(__name__)
@@ -185,10 +186,7 @@ class RuntimeProgram:
         Returns:
             Parameter definitions for this program.
         """
-        namespace = SimpleNamespace()
-        for param in self._parameters:
-            setattr(namespace, param.name, None)
-        return ParameterNamespace(self._parameters, namespace)
+        return ParameterNamespace(self._parameters)
 
     @property
     def return_values(self) -> List['ProgramResult']:
@@ -261,60 +259,76 @@ class ProgramResult(NamedTuple):
     description: str
     type: str
 
-
-class ParameterNamespace:
+class ParameterNamespace(SimpleNamespace):
     """ An abstraction for SimpleNamespace that offers param validation.
+
+    Note: Unused/Unnecessary params does not cause error (still validates)
 
     Args:
         params (List[ProgramParameter]): The program's input parameters
-        ns (SimpleNamespace): The namespace storing the input parameters being used
 
+    Raises
+        IBMQInputValueException on validation fail
     """
 
-    def __init__(self, params: List[ProgramParameter], ns: SimpleNamespace):
-        self.namespace = ns
-        self.__params = {}
-        self.__required: List[str] = []
+    def __init__(self, params: List[ProgramParameter]):
+        super().__init__()
+        # Allow access to the raw program parameters list
+        self.params_list = params
+        # For localized logic, create store of parameters in dictionary
+        self.__program_params: dict = {}
 
         for param in params:
-             # (1) Add parameters to a dict by name
-            self.__params[param.name] = param
-            # (2) If they are required, add to list of required fields.
-            if param.required:
-                self.__required.append(param.name)
+            # (1) Add parameters to a dict by name
+            setattr(self, param.name, None)
+            # (2) Store the program params for validation
+            self.__program_params[param.name] = param
 
-    def validate(self) -> Tuple[bool, str]:
+    def validate(self) -> None:
         """Validates the user's usage of the program's inputs
 
-        Returns:
-            bool - if the validation was successful
-            str - message
+        Raises:
+            IBMQInputValueError if validation fails
         """
-        reached = {}
-        # Iterate through the user's stored inputs
-        for key, val in self.namespace.__dict__.items():
-            reached[key] = True
-            # Check there exists a program param of that name.
-            try:
-                param: ProgramParameter = self.__params[key]
-            except KeyError:
-                return False, 'key (%s) not allowable!' % key
-            # Check program param of that name is of same type
-            if str(type(val).__name__) != param.type:
-                return False, 'key (%s) is incorrect type! (%s != %s)' % \
-                (key, str(type(val).__name__), param.type)
-            # Check for empty value
-            if not val and param.required:
-                return False, 'key (%s) is missing required value!' % key
-        # Check that all required fields are included in user's inputs (in `self.namespace`)
-        for param in self.__required:
-            try:
-                reached[param]
-            except KeyError:
-                return False, 'key (%s) is missing required value!' % param
-        # All checks passed
-        return True, 'Success'
 
-    def program_parameters(self) -> List[ProgramParameter]:
-        """ extract only the program's parameters. """
-        return list(self.__params.values())
+        # Iterate through the user's stored inputs
+        for param_name, program_param in self.__program_params.items():
+            # Set invariants: User-specified parameter value (value) and whether it's required (req)
+            value = None
+            req = program_param.required
+            # Check there exists a program parameter of that name.
+            try:
+                # Get the value currently stored for this parameter (user-adjusted)
+                value = self.__dict__[param_name]
+            except AttributeError:
+                if req:
+                    raise IBMQInputValueError('Param (%s) missing required value!' % param_name)
+            # Check for empty value
+            if not value or value is None:
+                if req:
+                    raise IBMQInputValueError('Param (%s) missing required value!' % param_name)
+
+            value_type = type(value).__name__
+            # Check program param of that name is of same type
+            if value is not None and value_type != program_param.type:
+                raise IBMQInputValueError('Parameter (%s) is incorrect type! (%s != %s)' % \
+                                          (param_name, value_type, program_param.type))
+
+    def __str__(self) -> str:
+        """Creates string representation of object"""
+
+        # ProgramParameter object (str)
+        def param_str(param: ProgramParameter) -> str:
+            return "------------\n<> Name        : %s\n<> Type        : %s\
+        \n<> Description : %s\n<> Required?   : %s\n" % \
+                    (param.name, param.type, param.description, param.required)
+
+        # List of ProgramParameter objects (str)
+        program_params_str = ''.join([param_str(param) for
+                                      param in self.__program_params.values()])
+        # List of other stored entries (str)
+        stored_values_str = '\n'.join(
+            ['<> Entry: {:<40} <> Value: {}'.format(key, str(val))
+             for key, val in self.__dict__.items()])
+        return "\nParameterNamespace: \n -- Program Parameters -- \
+        \n%s \n -- Stored Values -- \n%s" % (program_params_str, stored_values_str)

@@ -24,6 +24,7 @@ import random
 import numpy as np
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder, RuntimeDecoder
@@ -164,19 +165,21 @@ class TestRuntime(IBMQTestCase):
 
     def test_program_params_validation(self):
         """Test program parameters validation process"""
-        program_id = self._upload_program()
-        program = self.runtime.program(program_id=program_id)
+        program_id = self.runtime.upload_program(
+            data="foo".encode(), metadata=self.DEFAULT_METADATA)
+        program = self.runtime.program(program_id)
         params: ParameterNamespace = program.parameters
+        params.param1 = 'Hello, World'
         # Check OK params
-        self.assertTrue(params.validate()[0])
+        params.validate()
+        # Check OK params - contains unnecessary param
+        params.param3 = 'Hello, World'
+        params.validate()
         # Check bad params - missing required param
-        params.namespace.param1 = None
-        self.assertFalse(params.validate()[0])
-        params.namespace.param1 = 'foo'
-        # Check bad params - contain invalid param
-        params.namespace.param3 = 'Hello, World'
-        self.assertFalse(params.validate()[0])
-
+        params.param1 = None
+        with self.assertRaises(IBMQInputValueError):
+            params.validate()
+        params.param1 = 'foo'
 
     def test_run_program_failed(self):
         """Test a failed program execution."""
@@ -311,7 +314,7 @@ class TestRuntime(IBMQTestCase):
                                  program.backend_requirements)
                 self.assertEqual([ProgramParameter(**param) for param in
                                   self.DEFAULT_METADATA['parameters']],
-                                 program.parameters.program_parameters())
+                                 program.parameters.params_list)
                 self.assertEqual([ProgramResult(**ret) for ret in
                                   self.DEFAULT_METADATA['return_values']],
                                  program.return_values)

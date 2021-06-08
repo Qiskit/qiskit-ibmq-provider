@@ -69,7 +69,8 @@ class IBMRuntimeService:
 
         # Execute the circuit using the "circuit-runner" program.
         program = provider.runtime.program(program_id="circuit-runner")
-        program_params = program.parameters().namespace
+        program_params = program.parameters()
+        program_params.param1 = 123
         program_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
         options = {'backend_name': backend.name()}
         job = provider.runtime.run(program_id="circuit-runner",
@@ -223,10 +224,8 @@ class IBMRuntimeService:
             raise IBMQInputValueError('"backend_name" is required field in "options"')
         # If using params object, extract as dictionary
         if isinstance(inputs, ParameterNamespace):
-            if not inputs.validate():
-                raise IBMQInputValueError('Input parameters are inconsistent \
-                    with program parameters.')
-            inputs = dict(inputs.namespace)
+            inputs.validate()
+            inputs = dict(inputs)
 
         backend_name = options['backend_name']
         params_str = json.dumps(inputs, cls=RuntimeEncoder)
