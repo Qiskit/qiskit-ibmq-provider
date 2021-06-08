@@ -21,8 +21,8 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .runtime_job import RuntimeJob
-from .runtime_program import RuntimeProgram, ProgramParameter, ProgramResult
-from .utils import ProviderRequestParams, RuntimeEncoder, RuntimeDecoder
+from .runtime_program import RuntimeProgram, ProgramParameter, ProgramResult, ParameterNamespace
+from .utils import RuntimeEncoder, RuntimeDecoder
 from .exceptions import (QiskitRuntimeError, RuntimeDuplicateProgramError, RuntimeProgramNotFound,
                          RuntimeJobNotFound)
 from .program.result_decoder import ResultDecoder
@@ -54,7 +54,6 @@ class IBMRuntimeService:
 
         from qiskit import IBMQ, QuantumCircuit
         from qiskit.providers.ibmq import RunnerResult
-        from qiskit.providers.ibmq.runtime import ProviderRequestParams as Info
 
         provider = IBMQ.load_account()
         backend = provider.backend.ibmq_montreal
@@ -69,7 +68,9 @@ class IBMRuntimeService:
         qc.measure_all()
 
         # Execute the circuit using the "circuit-runner" program.
-        program_inputs = Info(circuits=circuit, measurement_error_mitigation=True)
+        program = provider.runtime.program(program_id="circuit-runner")
+        program_params = program.parameters().namespace
+        program_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
         options = {'backend_name': backend.name()}
         job = provider.runtime.run(program_id="circuit-runner",
                                    options=options,
@@ -191,7 +192,7 @@ class IBMRuntimeService:
             self,
             program_id: str,
             options: Dict,
-            inputs: Union[Dict, ProviderRequestParams],
+            inputs: Union[Dict, ParameterNamespace],
             callback: Optional[Callable] = None,
             result_decoder: Optional[Type[ResultDecoder]] = None
     ) -> RuntimeJob:
@@ -221,8 +222,11 @@ class IBMRuntimeService:
         if 'backend_name' not in options:
             raise IBMQInputValueError('"backend_name" is required field in "options"')
         # If using params object, extract as dictionary
-        if isinstance(inputs, ProviderRequestParams):
-            inputs = dict(inputs)
+        if isinstance(inputs, ParameterNamespace):
+            if not inputs.validate():
+                raise IBMQInputValueError('Input parameters are inconsistent \
+                    with program parameters.')
+            inputs = dict(inputs.namespace)
 
         backend_name = options['backend_name']
         params_str = json.dumps(inputs, cls=RuntimeEncoder)

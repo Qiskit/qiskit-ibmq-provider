@@ -30,7 +30,8 @@ from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder, RuntimeDecoder
 from qiskit.providers.ibmq.runtime import IBMRuntimeService, RuntimeJob
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeProgramNotFound,
                                                       RuntimeJobFailureError)
-from qiskit.providers.ibmq.runtime.runtime_program import ProgramParameter, ProgramResult
+from qiskit.providers.ibmq.runtime.runtime_program import (
+    ParameterNamespace, ProgramParameter, ProgramResult)
 
 from ...ibmqtestcase import IBMQTestCase
 from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRuntimeJob, CancelableRuntimeJob,
@@ -49,9 +50,8 @@ class TestRuntime(IBMQTestCase):
         "version": "0.1",
         "backend_requirements": {"min_num_qubits":  5},
         "parameters": [
-            {"name": "param1", "description": "Some parameter.",
-             "type": "integer", "required": True}
-        ],
+            {'name':'param1', 'description': 'Desc 1', 'type': 'str', 'required': True},
+            {'name':'param2', 'description': 'Desc 2', 'type': 'int', 'required': False}],
         "return_values": [
             {"name": "ret_val", "description": "Some return value.", "type": "string"}
         ],
@@ -161,6 +161,22 @@ class TestRuntime(IBMQTestCase):
         job.wait_for_final_state()
         self.assertEqual(job.status(), JobStatus.DONE)
         self.assertTrue(job.result())
+
+    def test_program_params_validation(self):
+        """Test program parameters validation process"""
+        program_id = self._upload_program()
+        program = self.runtime.program(program_id=program_id)
+        params: ParameterNamespace = program.parameters
+        # Check OK params
+        self.assertTrue(params.validate()[0])
+        # Check bad params - missing required param
+        params.namespace.param1 = None
+        self.assertFalse(params.validate()[0])
+        params.namespace.param1 = 'foo'
+        # Check bad params - contain invalid param
+        params.namespace.param3 = 'Hello, World'
+        self.assertFalse(params.validate()[0])
+
 
     def test_run_program_failed(self):
         """Test a failed program execution."""
@@ -295,7 +311,7 @@ class TestRuntime(IBMQTestCase):
                                  program.backend_requirements)
                 self.assertEqual([ProgramParameter(**param) for param in
                                   self.DEFAULT_METADATA['parameters']],
-                                 program.parameters)
+                                 program.parameters.program_parameters())
                 self.assertEqual([ProgramResult(**ret) for ret in
                                   self.DEFAULT_METADATA['return_values']],
                                  program.return_values)

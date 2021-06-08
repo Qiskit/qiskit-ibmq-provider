@@ -13,7 +13,9 @@
 """Qiskit runtime program."""
 
 import logging
-from typing import Optional, List, NamedTuple, Dict
+from typing import Optional, List, NamedTuple, Dict, Tuple
+from types import SimpleNamespace
+
 
 logger = logging.getLogger(__name__)
 
@@ -177,13 +179,16 @@ class RuntimeProgram:
         return self._description
 
     @property
-    def parameters(self) -> List['ProgramParameter']:
+    def parameters(self) -> 'ParameterNamespace':
         """Program parameter definitions.
 
         Returns:
             Parameter definitions for this program.
         """
-        return self._parameters
+        namespace = SimpleNamespace()
+        for param in self._parameters:
+            setattr(namespace, param.name, None)
+        return ParameterNamespace(self._parameters, namespace)
 
     @property
     def return_values(self) -> List['ProgramResult']:
@@ -255,3 +260,61 @@ class ProgramResult(NamedTuple):
     name: str
     description: str
     type: str
+
+
+class ParameterNamespace:
+    """ An abstraction for SimpleNamespace that offers param validation.
+
+    Args:
+        params (List[ProgramParameter]): The program's input parameters
+        ns (SimpleNamespace): The namespace storing the input parameters being used
+
+    """
+
+    def __init__(self, params: List[ProgramParameter], ns: SimpleNamespace):
+        self.namespace = ns
+        self.__params = {}
+        self.__required: List[str] = []
+
+        for param in params:
+             # (1) Add parameters to a dict by name
+            self.__params[param.name] = param
+            # (2) If they are required, add to list of required fields.
+            if param.required:
+                self.__required.append(param.name)
+
+    def validate(self) -> Tuple[bool, str]:
+        """Validates the user's usage of the program's inputs
+
+        Returns:
+            bool - if the validation was successful
+            str - message
+        """
+        reached = {}
+        # Iterate through the user's stored inputs
+        for key, val in self.namespace.__dict__.items():
+            reached[key] = True
+            # Check there exists a program param of that name.
+            try:
+                param: ProgramParameter = self.__params[key]
+            except KeyError:
+                return False, 'key (%s) not allowable!' % key
+            # Check program param of that name is of same type
+            if str(type(val).__name__) != param.type:
+                return False, 'key (%s) is incorrect type! (%s != %s)' % \
+                (key, str(type(val).__name__), param.type)
+            # Check for empty value
+            if not val and param.required:
+                return False, 'key (%s) is missing required value!' % key
+        # Check that all required fields are included in user's inputs (in `self.namespace`)
+        for param in self.__required:
+            try:
+                reached[param]
+            except KeyError:
+                return False, 'key (%s) is missing required value!' % param
+        # All checks passed
+        return True, 'Success'
+
+    def program_parameters(self) -> List[ProgramParameter]:
+        """ extract only the program's parameters. """
+        return list(self.__params.values())

@@ -14,14 +14,13 @@
 """Utility functions for the runtime service."""
 
 import json
-from typing import Any, NamedTuple, Union, List, Dict, Optional
+from typing import Any
 import base64
 
 import dill
 import numpy as np
 
 from qiskit.result import Result
-from qiskit.circuit import QuantumCircuit
 
 
 class RuntimeEncoder(json.JSONEncoder):
@@ -65,19 +64,3 @@ class RuntimeDecoder(json.JSONDecoder):
                 decoded = base64.standard_b64decode(obj['__value__'])
                 return dill.loads(decoded)
         return obj
-
-
-class ProviderRequestParams(NamedTuple):
-    """ Request Parameters for the Providers module """
-    circuits: Union[QuantumCircuit, List[QuantumCircuit]]
-    shots: Optional[int] = 1024
-    initial_layout: Optional[Union[Dict, List]] = None
-    layout_method: Optional[str] = None
-    routing_method: Optional[str] = None
-    translation_method: Optional[str] = None
-    seed_transpiler: Optional[int] = 1
-    optimization_level: Optional[int] = 0
-    init_qubits: Optional[bool] = True
-    rep_delay: Optional[float] = 0.0
-    transpiler_options: Optional[dict] = None
-    measurement_error_mitigation: Optional[bool] = None
