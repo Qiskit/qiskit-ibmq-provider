@@ -20,14 +20,14 @@ from qiskit import transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.test import slow_test
 from qiskit.providers import JobTimeoutError
-from qiskit.providers.ibmq.api.clients.websocket import (
-    WebsocketClient, WebsocketAuthenticationMessage)
+from qiskit.providers.ibmq.api.clients.websocket import WebsocketAuthenticationMessage
 from qiskit.providers.ibmq.api.clients import AccountClient
 from qiskit.providers.jobstatus import JobStatus
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_provider, requires_device
 from ...utils import most_busy_backend, cancel_job
+from ...proxy_server import MockProxyServer, use_proxies
 
 
 class TestWebsocketIntegration(IBMQTestCase):
@@ -99,24 +99,24 @@ class TestWebsocketIntegration(IBMQTestCase):
 
     def test_websockets_retry_bad_url(self):
         """Test http retry after websocket error due to an invalid URL."""
-        job = self.sim_backend.run(self.bell)
 
-        saved_websocket_url = job._api_client.client_ws.websocket_url
+        job = self.sim_backend.run(self.bell)
+        saved_websocket_url = job._api_client._credentials.websockets_url
+
         try:
             # Use fake websocket address.
-            job._api_client.client_ws.websocket_url = 'wss://wss.localhost'
+            job._api_client._credentials.websockets_url = 'wss://wss.localhost'
 
             # _wait_for_completion() should retry with http successfully
             # after getting websockets error.
             job._wait_for_completion()
         finally:
-            job._api_client.client_ws.websocket_url = saved_websocket_url
+            job._api_client._credentials.websockets_url = saved_websocket_url
 
         self.assertIs(job._status, JobStatus.DONE)
 
-    @mock.patch.object(WebsocketClient, '_authentication_message',
-                       return_value=WebsocketAuthenticationMessage(
-                           type_='authentication', data='phantom_token'))
+    @mock.patch.object(WebsocketAuthenticationMessage, 'as_json',
+                       return_value='foo')
     def test_websockets_retry_bad_auth(self, _):
         """Test http retry after websocket error due to a failed authentication."""
         job = self.sim_backend.run(self.bell)
@@ -193,3 +193,28 @@ class TestWebsocketIntegration(IBMQTestCase):
         if not result_q.empty():
             message = result_q.get_nowait()
             self.fail(message)
+
+    def test_websocket_proxy(self):
+        """Test connecting to websocket via a proxy."""
+        MockProxyServer(self, self.log).start()
+        job = self.sim_backend.run(self.bell, shots=1)
+
+        # Manually disable the non-websocket polling.
+        job._api_client._job_final_status_polling = self._job_final_status_polling
+        with use_proxies(self.provider, MockProxyServer.VALID_PROXIES):
+            result = job.result()
+
+        self.assertEqual(result.status, 'COMPLETED')
+
+    def test_websocket_proxy_invalid_port(self):
+        """Test connecting to websocket via invalid proxy port."""
+        MockProxyServer(self, self.log).start()
+        job = self.sim_backend.run(self.bell, shots=1)
+
+        invalid_proxy = {'https': 'http://{}:{}'.format(MockProxyServer.PROXY_IP_ADDRESS,
+                                                        MockProxyServer.INVALID_PROXY_PORT)}
+        with use_proxies(self.provider, invalid_proxy):
+            with self.assertLogs('qiskit.providers.ibmq', 'INFO') as log_cm:
+                job.wait_for_final_state()
+
+        self.assertIn("retrying using HTTP", ','.join(log_cm.output))

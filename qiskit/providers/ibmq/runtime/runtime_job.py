@@ -102,7 +102,6 @@ class RuntimeJob:
         self._job_id = job_id
         self._backend = backend
         self._api_client = api_client
-        self._ws_client = RuntimeWebsocketClient(credentials, job_id)
         self._results = None
         self._params = params or {}
         self._creation_date = creation_date
@@ -113,6 +112,11 @@ class RuntimeJob:
         # Used for streaming
         self._ws_client_future = None  # type: Optional[futures.Future]
         self._result_queue = queue.Queue()  # type: queue.Queue
+        self._ws_client = RuntimeWebsocketClient(
+            websocket_url=credentials.runtime_url.replace('https', 'wss'),
+            credentials=credentials,
+            job_id=job_id,
+            message_queue=self._result_queue)
 
         if user_callback is not None:
             self.stream_results(user_callback)
@@ -230,8 +234,7 @@ class RuntimeJob:
         if self._status in JOB_FINAL_STATES:
             raise RuntimeInvalidStateError("Job already finished.")
 
-        self._ws_client_future = self._executor.submit(self._start_websocket_client,
-                                                       result_queue=self._result_queue)
+        self._ws_client_future = self._executor.submit(self._start_websocket_client)
         self._executor.submit(self._stream_results,
                               result_queue=self._result_queue, user_callback=callback,
                               decoder=decoder)
@@ -240,7 +243,7 @@ class RuntimeJob:
         """Cancel result streaming."""
         if not self._is_streaming():
             return
-        self._ws_client.disconnect(normal=True)
+        self._ws_client.disconnect()
 
     def logs(self) -> str:
         """Return job logs.
@@ -278,17 +281,12 @@ class RuntimeJob:
         return True
 
     def _start_websocket_client(
-            self,
-            result_queue: queue.Queue
+            self
     ) -> None:
-        """Start websocket client to stream results.
-
-        Args:
-            result_queue: Queue used to pass messages.
-        """
+        """Start websocket client to stream results."""
         try:
             logger.debug("Start websocket client for job %s", self.job_id())
-            self._ws_client.job_results(result_queue)
+            self._ws_client.job_results()
         except Exception:  # pylint: disable=broad-except
             logger.warning(
                 "An error occurred while streaming results "

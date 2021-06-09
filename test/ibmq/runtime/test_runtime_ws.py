@@ -12,15 +12,7 @@
 
 """Test for the Websocket client."""
 
-import sys
-import asyncio
-import warnings
-from contextlib import suppress
 import time
-from concurrent.futures import ThreadPoolExecutor
-import threading
-
-import websockets
 
 from qiskit.providers.ibmq.runtime import RuntimeJob
 from qiskit.providers.ibmq.runtime.exceptions import RuntimeInvalidStateError
@@ -28,69 +20,23 @@ from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.test.mock.fake_qasm_simulator import FakeQasmSimulator
 
 from ...ibmqtestcase import IBMQTestCase
-from .websocket_server import (websocket_handler, JOB_ID_PROGRESS_DONE, JOB_ID_ALREADY_DONE,
-                               JOB_ID_RETRY_SUCCESS, JOB_ID_RETRY_FAILURE,
-                               JOB_PROGRESS_RESULT_COUNT)
+from ...ws_server import MockWsServer
+from .ws_handler import (websocket_handler, JOB_ID_PROGRESS_DONE, JOB_ID_ALREADY_DONE,
+                         JOB_ID_RETRY_SUCCESS, JOB_ID_RETRY_FAILURE,
+                         JOB_PROGRESS_RESULT_COUNT)
 from .fake_runtime_client import BaseFakeRuntimeClient
 
 
 class TestRuntimeWebsocketClient(IBMQTestCase):
     """Tests for the the websocket client against a mock server."""
 
-    TEST_IP_ADDRESS = '127.0.0.1'
-    INVALID_PORT = 9876
-    VALID_PORT = 8765
-    VALID_URL = f"ws://{TEST_IP_ADDRESS}:{VALID_PORT}"
-
-    _executor = ThreadPoolExecutor()
-
     @classmethod
     def setUpClass(cls):
         """Initial class level setup."""
         super().setUpClass()
-
         # Launch the mock server.
-        cls._ws_stop_event = threading.Event()
-        cls._ws_start_event = threading.Event()
-        cls._future = cls._executor.submit(cls._ws_server)
-        cls._ws_start_event.wait(5)
-
-    @classmethod
-    def _ws_server(cls):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        # Launch the mock server.
-        # pylint: disable=no-member
-        start_server = websockets.serve(websocket_handler, cls.TEST_IP_ADDRESS, cls.VALID_PORT)
-        cls.server = loop.run_until_complete(start_server)
-        cls._ws_start_event.set()
-
-        # A bit hacky but we need to keep the loop running to serve the request.
-        # An there's no easy way to interrupt a run_forever.
-        while not cls._ws_stop_event.is_set():
-            loop.run_until_complete(asyncio.sleep(1))
-
-        cls.server.close()
-        loop.run_until_complete(cls.server.wait_closed())
-
-        with warnings.catch_warnings():
-            # Suppress websockets deprecation warning
-            warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-            warnings.filterwarnings("ignore", category=DeprecationWarning)
-            # Manually cancel any pending asyncio tasks.
-            if sys.version_info[0:2] < (3, 9):
-                pending = asyncio.Task.all_tasks()
-            else:
-                pending = asyncio.all_tasks(loop)
-        for task in pending:
-            task.cancel()
-            try:
-                with suppress(asyncio.CancelledError):
-                    loop.run_until_complete(task)
-            except Exception as err:  # pylint: disable=broad-except
-                cls.log.error("An error %s occurred canceling task %s. "
-                              "Traceback:", str(err), str(task))
-                task.print_stack()
+        cls.server = MockWsServer(websocket_handler, cls.log)
+        cls.server.start()
 
     @classmethod
     def tearDownClass(cls):
@@ -98,8 +44,7 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         super().tearDownClass()
 
         # Close the mock server.
-        cls._ws_stop_event.set()
-        cls._future.result()
+        cls.server.stop()
 
     def test_interim_result_callback(self):
         """Test interim result callback."""
@@ -223,7 +168,8 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
 
     def _get_job(self, callback=None, job_id=JOB_ID_PROGRESS_DONE):
         """Get a runtime job."""
-        cred = Credentials(token="my_token", url="", services={"runtime": self.VALID_URL})
+        cred = Credentials(token="my_token", url="",
+                           services={"runtime": MockWsServer.VALID_WS_URL})
         job = RuntimeJob(backend=FakeQasmSimulator(),
                          api_client=BaseFakeRuntimeClient(),
                          credentials=cred,
