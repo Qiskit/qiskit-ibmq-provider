@@ -39,7 +39,7 @@ class RuntimeProgram:
 
         # To retrieve metadata of a single program.
         program = provider.runtime.program(program_id='circuit-runner')
-        print(f"Program {program.name} takes parameters {program.parameters}")
+        print(f"Program {program.name} takes parameters {program.parameter}")
     """
 
     def __init__(
@@ -75,9 +75,9 @@ class RuntimeProgram:
         self._max_execution_time = max_execution_time
         self._version = version
         self._backend_requirements = backend_requirements or {}
-        self._parameters = []
-        self._return_values = []
-        self._interim_results = []
+        self._parameters: List[ProgramParameter] = []
+        self._return_values: List[ProgramResult] = []
+        self._interim_results: List[ProgramResult] = []
         self._creation_date = creation_date
 
         if parameters:
@@ -147,7 +147,7 @@ class RuntimeProgram:
             "max_execution_time": self.max_execution_time,
             "version": self.version,
             "backend_requirements": self.backend_requirements,
-            "parameters": self.parameters,
+            "parameters": self.parameter,
             "return_values": self.return_values,
             "interim_results": self.interim_results
         }
@@ -180,7 +180,7 @@ class RuntimeProgram:
         return self._description
 
     @property
-    def parameters(self) -> 'ParameterNamespace':
+    def parameter(self) -> 'ParameterNamespace':
         """Program parameter definitions.
 
         Returns:
@@ -308,27 +308,27 @@ class ParameterNamespace(SimpleNamespace):
                 if req:
                     raise IBMQInputValueError('Param (%s) missing required value!' % param_name)
 
-            value_type = type(value).__name__
-            # Check program param of that name is of same type
-            if value is not None and value_type != program_param.type:
-                raise IBMQInputValueError('Parameter (%s) is incorrect type! (%s != %s)' % \
-                                          (param_name, value_type, program_param.type))
 
     def __str__(self) -> str:
         """Creates string representation of object"""
-
-        # ProgramParameter object (str)
-        def param_str(param: ProgramParameter) -> str:
-            return "------------\n<> Name        : %s\n<> Type        : %s\
-        \n<> Description : %s\n<> Required?   : %s\n" % \
-                    (param.name, param.type, param.description, param.required)
-
+        # Header
+        header = '| {:10.10} | {:12.12} | {:12.12} ' \
+                 '| {:8.8} | {:>15} |'.format(
+                     'Name',
+                     'Value',
+                     'Type',
+                     'Required',
+                     'Description'
+                     )
         # List of ProgramParameter objects (str)
-        program_params_str = ''.join([param_str(param) for
-                                      param in self.__program_params.values()])
-        # List of other stored entries (str)
-        stored_values_str = '\n'.join(
-            ['<> Entry: {:<40} <> Value: {}'.format(key, str(val))
-             for key, val in self.__dict__.items()])
-        return "\nParameterNamespace: \n -- Program Parameters -- \
-        \n%s \n -- Stored Values -- \n%s" % (program_params_str, stored_values_str)
+        params_str = '\n'.join([
+            '| {:10.10} | {:12.12} | {:12.12}| {:8.8} | {:>15} |'.format(
+                param.name,
+                str(getattr(self, param.name, 'None')),
+                param.type,
+                str(param.required),
+                param.description
+            ) for param in self.__program_params.values()])
+
+        return "ParameterNamespace (Values):\n%s\n%s\n%s" \
+               % (header, '-' * len(header), params_str)

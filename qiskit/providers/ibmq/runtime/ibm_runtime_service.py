@@ -68,14 +68,12 @@ class IBMRuntimeService:
         qc.measure_all()
 
         # Execute the circuit using the "circuit-runner" program.
-        program = provider.runtime.program(program_id="circuit-runner")
-        program_params = program.parameters()
-        program_params.param1 = 123
-        program_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
+        param = provider.runtime.program(program_id="circuit-runner").parameter
+        param.param1 = 123
         options = {'backend_name': backend.name()}
         job = provider.runtime.run(program_id="circuit-runner",
                                    options=options,
-                                   inputs=program_inputs)
+                                   inputs=param)
 
         # Get runtime job result.
         result = job.result(decoder=RunnerResult)
@@ -339,7 +337,7 @@ class IBMRuntimeService:
         Returns:
             Merged metadata.
         """
-        upd_metadata = {}
+        upd_metadata: dict = {}
         if metadata is not None:
             if isinstance(metadata, str):
                 with open(metadata, 'r') as file:

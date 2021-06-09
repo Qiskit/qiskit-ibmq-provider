@@ -1,4 +1,8 @@
 ---
 upgrade:
   - |
-    Added option to execute ``providers.run`` with ProvidersRequestParams, rather than simply a Dict object, which for auto-complete features to be used.
+    The `inputs` parameter to 
+    :meth:`qiskit.providers.ibmq.runtime.ibmq_runtime_service.run` 
+    method can now be specified as a
+    :class:`qiskit.providers.ibmq.runtime.runtime_program.ParameterNamespace`
+    to support auto-complete features.

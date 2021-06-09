@@ -102,13 +102,12 @@ For example::
     qc.measure_all()
 
     # Execute the circuit using the "circuit-runner" program.
-    program = provider.runtime.program(program_id='circuit-runner')
-    program_params = program.parameters().namespace
-    program_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
+    param = provider.runtime.program(program_id="circuit-runner").parameter
+    param.param1 = 123
     options = {'backend_name': backend.name()}
     job = provider.runtime.run(program_id="circuit-runner",
-                               options=options,
-                               inputs=program_inputs)
+                            options=options,
+                            inputs=params)
 
     # Get runtime job result.
     result = job.result(decoder=RunnerResult)
@@ -215,6 +214,8 @@ Classes
    UserMessenger
    ProgramBackend
    ResultDecoder
+   RuntimeEncoder
+   RuntimeDecoder
 """
 
 from .ibm_runtime_service import IBMRuntimeService
