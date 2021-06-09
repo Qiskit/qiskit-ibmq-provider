@@ -239,8 +239,8 @@ class TestExperimentDataIntegration(IBMQTestCase):
     def test_add_figure_plot(self):
         """Test adding a matplotlib figure."""
         import matplotlib.pyplot as plt
-        figure, ax = plt.subplots()
-        ax.plot([1, 2, 3])
+        figure, axes = plt.subplots()
+        axes.plot([1, 2, 3])
 
         exp_data = self._create_experiment_data()
         exp_data.add_figures(figure, save_figure=True)

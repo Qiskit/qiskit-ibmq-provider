@@ -28,7 +28,7 @@ from qiskit.providers.experiment.exceptions import ExperimentEntryNotFound
 from qiskit.providers.experiment.constants import ResultQuality
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 
-from test.ibmqtestcase import IBMQTestCase
+from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_provider, requires_device
 
 
