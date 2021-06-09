@@ -140,7 +140,7 @@ class IBMQBackend(Backend):
                        meas_return=MeasReturnType.AVERAGE,
                        memory_slots=None, memory_slot_size=100,
                        rep_time=None, rep_delay=None,
-                       init_qubits=True)
+                       init_qubits=True, use_measure_esp=None)
 
     @deprecate_arguments({'qobj': 'circuits'})
     def run(
@@ -167,6 +167,7 @@ class IBMQBackend(Backend):
             rep_delay: Optional[float] = None,
             init_qubits: Optional[bool] = None,
             parameter_binds: Optional[List[Dict[Parameter, float]]] = None,
+            use_measure_esp: Optional[bool] = None,
             **run_config: Dict
     ) -> IBMQJob:
         """Run on the backend.
@@ -242,6 +243,10 @@ class IBMQBackend(Backend):
                 executed across all experiments; e.g., if parameter_binds is a
                 length-n list, and there are m experiments, a total of m x n
                 experiments will be run (one for each experiment/bind pair).
+            use_measure_esp: Whether to use ESP (excited state promoted) readout for the final
+                measurement in each circuit. ESP readout can offer higher fidelity than standard
+                measurement sequences. See `here <https://arxiv.org/pdf/2008.08571.pdf>`_.
+                Default: ``True`` if backend supports ESP readout, else ``False``.
             **run_config: Extra arguments used to configure the run.
 
         Returns:
@@ -300,6 +305,7 @@ class IBMQBackend(Backend):
                 rep_time=rep_time,
                 rep_delay=rep_delay,
                 init_qubits=init_qubits,
+                use_measure_esp=use_measure_esp,
                 **run_config)
             if parameter_binds:
                 run_config_dict['parameter_binds'] = parameter_binds
