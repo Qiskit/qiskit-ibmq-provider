@@ -243,7 +243,7 @@ class IBMQBackend(Backend):
                 executed across all experiments; e.g., if parameter_binds is a
                 length-n list, and there are m experiments, a total of m x n
                 experiments will be run (one for each experiment/bind pair).
-            use_measure_esp: Whether to use ESP (excited state promoted) readout for the final
+            use_measure_esp: Whether to use excited state promoted (ESP) readout for the final
                 measurement in each circuit. ESP readout can offer higher fidelity than standard
                 measurement sequences. See `here <https://arxiv.org/pdf/2008.08571.pdf>`_.
                 Default: ``True`` if backend supports ESP readout, else ``False``.
