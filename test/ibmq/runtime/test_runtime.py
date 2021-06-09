@@ -51,8 +51,8 @@ class TestRuntime(IBMQTestCase):
         "version": "0.1",
         "backend_requirements": {"min_num_qubits":  5},
         "parameters": [
-            {'name':'param1', 'description': 'Desc 1', 'type': 'str', 'required': True},
-            {'name':'param2', 'description': 'Desc 2', 'type': 'int', 'required': False}],
+            {'name': 'param1', 'description': 'Desc 1', 'type': 'str', 'required': True},
+            {'name': 'param2', 'description': 'Desc 2', 'type': 'int', 'required': False}],
         "return_values": [
             {"name": "ret_val", "description": "Some return value.", "type": "string"}
         ],

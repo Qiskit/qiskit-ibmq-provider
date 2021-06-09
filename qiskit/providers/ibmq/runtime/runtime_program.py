@@ -259,6 +259,7 @@ class ProgramResult(NamedTuple):
     description: str
     type: str
 
+
 class ParameterNamespace(SimpleNamespace):
     """ An abstraction for SimpleNamespace that offers param validation.
 
@@ -307,7 +308,6 @@ class ParameterNamespace(SimpleNamespace):
             if not value or value is None:
                 if req:
                     raise IBMQInputValueError('Param (%s) missing required value!' % param_name)
-
 
     def __str__(self) -> str:
         """Creates string representation of object"""
