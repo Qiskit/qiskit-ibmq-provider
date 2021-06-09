@@ -275,7 +275,7 @@ class ParameterNamespace(SimpleNamespace):
     def __init__(self, params: List[ProgramParameter]):
         super().__init__()
         # Allow access to the raw program parameters list
-        self.params_list = params
+        self.metadata = params
         # For localized logic, create store of parameters in dictionary
         self.__program_params: dict = {}
 

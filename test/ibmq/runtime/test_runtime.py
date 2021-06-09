@@ -314,7 +314,7 @@ class TestRuntime(IBMQTestCase):
                                  program.backend_requirements)
                 self.assertEqual([ProgramParameter(**param) for param in
                                   self.DEFAULT_METADATA['parameters']],
-                                 program.parameter.params_list)
+                                 program.parameter.metadata)
                 self.assertEqual([ProgramResult(**ret) for ret in
                                   self.DEFAULT_METADATA['return_values']],
                                  program.return_values)
