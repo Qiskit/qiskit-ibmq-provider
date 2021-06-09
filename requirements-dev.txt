@@ -1,4 +1,4 @@
-mypy
+mypy==0.812
 pycodestyle
 pylint==2.4.4
 vcrpy
