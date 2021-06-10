@@ -40,7 +40,7 @@ class WebsocketMessage(ABC):
             type_: Message type.
             data: Message data
         """
-        self.type_ = type_
+        self._type = type_
         self._data = data
 
     @property
@@ -50,7 +50,7 @@ class WebsocketMessage(ABC):
 
     def as_json(self) -> str:
         """Return a JSON representation of the message."""
-        return json.dumps({'type': self.type_, 'data': self.data})
+        return json.dumps({'type': self._type, 'data': self._data})
 
 
 class WebsocketAuthenticationMessage(WebsocketMessage):
@@ -67,15 +67,6 @@ class WebsocketAuthenticationMessage(WebsocketMessage):
 
 class WebsocketResponseMethod(WebsocketMessage):
     """Container for a message received via websockets."""
-
-    def __init__(self, type_: str, data: Dict[str, Any]) -> None:
-        """WebsocketResponseMethod constructor.
-
-        Args:
-            type_: Message type.
-            data: Message data.
-        """
-        super().__init__(type_=type_, data=data)
 
     @classmethod
     def from_json(cls, json_string: str) -> 'WebsocketResponseMethod':
@@ -96,6 +87,7 @@ class WebsocketResponseMethod(WebsocketMessage):
 class WebsocketClient(BaseWebsocketClient):
     """Client for websocket communication with the IBM Quantum API."""
 
+    _API_STATUS_INTERNAL_ERROR = 4001
     _API_STATUS_JOB_DONE = 4002
     _API_STATUS_JOB_NOT_FOUND = 4003
 

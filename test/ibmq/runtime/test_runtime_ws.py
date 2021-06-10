@@ -57,7 +57,7 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         job = self._get_job(callback=result_callback)
         time.sleep(JOB_PROGRESS_RESULT_COUNT+2)
         self.assertEqual(JOB_PROGRESS_RESULT_COUNT, len(results))
-        self.assertIsNotNone(job._ws_client._server_close_code)
+        self.assertFalse(job._ws_client.connected)
 
     def test_stream_results(self):
         """Test streaming results."""
@@ -71,7 +71,7 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         job.stream_results(callback=result_callback)
         time.sleep(JOB_PROGRESS_RESULT_COUNT+2)
         self.assertEqual(JOB_PROGRESS_RESULT_COUNT, len(results))
-        self.assertIsNotNone(job._ws_client._server_close_code)
+        self.assertFalse(job._ws_client.connected)
 
     def test_duplicate_streaming(self):
         """Testing duplicate streaming."""
@@ -98,7 +98,7 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         time.sleep(1)
         job.cancel_result_streaming()
         time.sleep(1)
-        self.assertIsNotNone(job._ws_client._server_close_code)
+        self.assertFalse(job._ws_client.connected)
 
     def test_cancel_closed_streaming(self):
         """Test canceling streaming that's already closed."""
@@ -111,7 +111,7 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         job = self._get_job(callback=result_callback, job_id=JOB_ID_ALREADY_DONE)
         time.sleep(2)
         job.cancel_result_streaming()
-        self.assertIsNotNone(job._ws_client._server_close_code)
+        self.assertFalse(job._ws_client.connected)
 
     def test_completed_job(self):
         """Test callback from completed job."""
@@ -124,7 +124,7 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         job = self._get_job(callback=result_callback, job_id=JOB_ID_ALREADY_DONE)
         time.sleep(2)
         self.assertEqual(0, len(results))
-        self.assertIsNotNone(job._ws_client._server_close_code)
+        self.assertFalse(job._ws_client.connected)
 
     def test_completed_job_stream(self):
         """Test streaming from completed job."""
@@ -138,7 +138,7 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         job.stream_results(callback=result_callback)
         time.sleep(2)
         self.assertEqual(0, len(results))
-        self.assertIsNotNone(job._ws_client._server_close_code)
+        self.assertFalse(job._ws_client.connected)
 
     def test_websocket_retry_success(self):
         """Test successful retry."""
@@ -151,7 +151,7 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         job = self._get_job(job_id=JOB_ID_RETRY_SUCCESS, callback=result_callback)
         time.sleep(JOB_PROGRESS_RESULT_COUNT+2)
         self.assertEqual(JOB_PROGRESS_RESULT_COUNT, len(results))
-        self.assertIsNotNone(job._ws_client._server_close_code)
+        self.assertFalse(job._ws_client.connected)
 
     def test_websocket_retry_failure(self):
         """Test failed retry."""
@@ -164,7 +164,7 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         job = self._get_job(job_id=JOB_ID_RETRY_FAILURE, callback=result_callback)
         time.sleep(20)  # Need to wait for all retries.
         self.assertEqual(0, len(results))
-        self.assertIsNotNone(job._ws_client._server_close_code)
+        self.assertFalse(job._ws_client.connected)
 
     def _get_job(self, callback=None, job_id=JOB_ID_PROGRESS_DONE):
         """Get a runtime job."""

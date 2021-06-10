@@ -35,7 +35,7 @@ class RuntimeWebsocketClient(BaseWebsocketClient):
         """WebsocketClient constructor.
 
         Args:
-            websocket_url: URL for websocket communication with IBM Quantum Experience.
+            websocket_url: URL for websocket communication with IBM Quantum.
             credentials: Account credentials.
             job_id: Job ID.
             message_queue: Queue used to hold received messages.

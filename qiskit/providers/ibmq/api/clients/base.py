@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 # pylint: disable=unused-argument
 
-"""Base client for accessing IBM Quantum."""
+"""Base clients for accessing IBM Quantum."""
 
 import logging
 from typing import Optional, Any, Dict
@@ -42,6 +42,7 @@ class WebsocketClientCloseCode(enum.IntEnum):
     NORMAL = 1
     TIMEOUT = 2
     PROTOCOL_ERROR = 3
+    CANCEL = 4
 
 
 class BaseWebsocketClient(BaseClient, ABC):
@@ -57,7 +58,7 @@ class BaseWebsocketClient(BaseClient, ABC):
             job_id: str,
             message_queue: Optional[Queue] = None
     ) -> None:
-        """WebsocketClient constructor.
+        """BaseWebsocketClient constructor.
 
         Args:
             websocket_url: URL for websocket communication with IBM Quantum Experience.
@@ -74,6 +75,8 @@ class BaseWebsocketClient(BaseClient, ABC):
         self._ws: Optional[WebSocketApp] = None
 
         self._authenticated = False
+        self._cancelled = False
+        self.connected = False
         self._last_message: Any = None
         self._current_retry = 0
         self._server_close_code = STATUS_ABNORMAL_CLOSED
@@ -87,6 +90,10 @@ class BaseWebsocketClient(BaseClient, ABC):
             wsa: WebSocketApp object.
         """
         logger.debug("Websocket connection established for job %s", self._job_id)
+        self.connected = True
+        if self._cancelled:
+            # Immediately disconnect if pre-cancelled.
+            self.disconnect(WebsocketClientCloseCode.CANCEL)
 
     def on_message(self, wsa: WebSocketApp, message: str) -> None:
         """Called when websocket message received.
@@ -99,6 +106,7 @@ class BaseWebsocketClient(BaseClient, ABC):
             self._handle_message(message)
         except Exception as err:  # pylint: disable=broad-except
             self._error = self._format_exception(err)
+            self.disconnect(WebsocketClientCloseCode.PROTOCOL_ERROR)
 
     @abstractmethod
     def _handle_message(self, message: str) -> None:
@@ -119,6 +127,7 @@ class BaseWebsocketClient(BaseClient, ABC):
         """
         # Assume abnormal close if no code is given.
         self._server_close_code = status_code or STATUS_ABNORMAL_CLOSED
+        self.connected = False
         logger.debug("Websocket connection for job %s closed. status code=%s, message=%s",
                      self._job_id, status_code, msg)
 
@@ -152,6 +161,8 @@ class BaseWebsocketClient(BaseClient, ABC):
             WebsocketError: If the websocket connection ended unexpectedly.
             WebsocketTimeoutError: If the operation timed out.
         """
+        self._reset_state()
+        self._cancelled = False
 
         while self._current_retry <= retries:
             self._ws = WebSocketApp(url,
@@ -165,11 +176,13 @@ class BaseWebsocketClient(BaseClient, ABC):
                              url, self._proxy_params)
                 self._reset_state()
                 self._ws.run_forever(**self._proxy_params)
+                self.connected = False
 
                 # Handle path-specific errors
                 self._handle_stream_iteration()
 
-                if self._client_close_code == WebsocketClientCloseCode.NORMAL:
+                if self._client_close_code in (WebsocketClientCloseCode.NORMAL,
+                                               WebsocketClientCloseCode.CANCEL):
                     # If we closed the connection with a normal code.
                     return self._last_message
 
@@ -197,7 +210,7 @@ class BaseWebsocketClient(BaseClient, ABC):
             finally:
                 self.disconnect(None)
 
-            # Sleep, and then `continue` with retrying.
+            # Sleep then retry.
             backoff_time = self._backoff_time(backoff_factor, self._current_retry)
             logger.info('Retrying get_job_status via websocket after %s seconds: '
                         'Attempt #%s', backoff_time, self._current_retry)
@@ -244,6 +257,8 @@ class BaseWebsocketClient(BaseClient, ABC):
             logger.debug("Client closing websocket connection with code %s.", close_code)
             self._client_close_code = close_code
             self._ws.close()
+        if close_code == WebsocketClientCloseCode.CANCEL:
+            self._cancelled = True
 
     def _format_exception(self, error: Exception) -> str:
         """Format the exception.
@@ -260,6 +275,7 @@ class BaseWebsocketClient(BaseClient, ABC):
     def _reset_state(self) -> None:
         """Reset state for a new connection."""
         self._authenticated = False
+        self.connected = False
         self._error = None
         self._server_close_code = None
         self._client_close_code = None

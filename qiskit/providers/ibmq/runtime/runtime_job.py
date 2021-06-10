@@ -27,7 +27,7 @@ from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from .constants import API_TO_JOB_STATUS
 from .exceptions import RuntimeJobFailureError, RuntimeInvalidStateError, QiskitRuntimeError
 from .program.result_decoder import ResultDecoder
-from ..api.clients import RuntimeClient, RuntimeWebsocketClient
+from ..api.clients import RuntimeClient, RuntimeWebsocketClient, WebsocketClientCloseCode
 from ..exceptions import IBMQError
 from ..api.exceptions import RequestsApiError
 from ..utils.converters import utc_to_local
@@ -243,7 +243,7 @@ class RuntimeJob:
         """Cancel result streaming."""
         if not self._is_streaming():
             return
-        self._ws_client.disconnect()
+        self._ws_client.disconnect(WebsocketClientCloseCode.CANCEL)
 
     def logs(self) -> str:
         """Return job logs.
