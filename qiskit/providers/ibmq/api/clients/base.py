@@ -244,7 +244,6 @@ class BaseWebsocketClient(BaseClient, ABC):
             logger.debug("Client closing websocket connection with code %s.", close_code)
             self._client_close_code = close_code
             self._ws.close()
-            self._ws = None
 
     def _format_exception(self, error: Exception) -> str:
         """Format the exception.
@@ -262,5 +261,5 @@ class BaseWebsocketClient(BaseClient, ABC):
         """Reset state for a new connection."""
         self._authenticated = False
         self._error = None
-        self._server_close_code = STATUS_ABNORMAL_CLOSED
+        self._server_close_code = None
         self._client_close_code = None

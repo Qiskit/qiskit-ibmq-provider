@@ -301,7 +301,7 @@ def main(backend, user_messenger, **kwargs):
         job.wait_for_final_state()
         self.assertEqual(iterations-1, final_it)
         self.assertFalse(callback_err)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_stream_results(self):
         """Test stream_results method."""
@@ -325,7 +325,7 @@ def main(backend, user_messenger, **kwargs):
         job.wait_for_final_state()
         self.assertEqual(iterations-1, final_it)
         self.assertFalse(callback_err)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_stream_results_done(self):
         """Test streaming interim results after job is done."""
@@ -341,7 +341,7 @@ def main(backend, user_messenger, **kwargs):
         job.stream_results(result_callback)
         time.sleep(2)
         self.assertFalse(called_back)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_callback_error(self):
         """Test error in callback method."""
@@ -361,7 +361,7 @@ def main(backend, user_messenger, **kwargs):
 
         self.assertIn("Kaboom", ', '.join(err_cm.output))
         self.assertEqual(iterations-1, final_it)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_callback_cancel_job(self):
         """Test canceling a running job while streaming results."""
@@ -384,7 +384,7 @@ def main(backend, user_messenger, **kwargs):
                 self._wait_for_status(job, status)
                 job.cancel()
                 time.sleep(3)  # Wait for cleanup
-                self.assertIsNone(job._ws_client._ws)
+                self.assertIsNotNone(job._ws_client._server_close_code)
                 self.assertLess(final_it, iterations)
 
     def test_final_result(self):

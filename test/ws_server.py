@@ -63,6 +63,7 @@ class MockWsServer:
 
         self._ws_stop_event = asyncio.Event()
 
+        # pylint: disable=no-member
         start_server = websockets.serve(self._handler, self.WS_IP_ADDRESS, self.WS_PORT)
         server = self._server_loop.run_until_complete(start_server)
         start_event.set()
