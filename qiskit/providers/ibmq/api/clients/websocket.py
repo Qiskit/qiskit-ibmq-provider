@@ -45,8 +45,13 @@ class WebsocketMessage(ABC):
 
     @property
     def data(self) -> Any:
-        """Return the message data."""
+        """Return message data."""
         return self._data
+
+    @property
+    def type(self) -> str:
+        """Return message type."""
+        return self._type
 
     def as_json(self) -> str:
         """Return a JSON representation of the message."""
@@ -121,7 +126,7 @@ class WebsocketClient(BaseWebsocketClient):
             message: Authentication response message.
         """
         auth_response = WebsocketResponseMethod.from_json(message)
-        if auth_response.type_ != "authenticated":
+        if auth_response.type != "authenticated":
             self._error = message
             self.disconnect(WebsocketClientCloseCode.PROTOCOL_ERROR)
         else:

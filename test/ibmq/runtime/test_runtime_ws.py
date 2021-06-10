@@ -97,7 +97,7 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         job = self._get_job(callback=result_callback)
         time.sleep(1)
         job.cancel_result_streaming()
-        time.sleep(1)
+        time.sleep(2)
         self.assertFalse(job._ws_client.connected)
 
     def test_cancel_closed_streaming(self):
