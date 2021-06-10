@@ -283,7 +283,7 @@ class ParameterNamespace(SimpleNamespace):
             self.__program_params[param.name] = param
 
     @property
-    def metadata(self):
+    def metadata(self) -> List[ProgramParameter]:
         """Returns the parameter metadata"""
         return self.__metadata
 
