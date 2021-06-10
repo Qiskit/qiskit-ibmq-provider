@@ -1,5 +1,6 @@
 ---
 features:
   - |
-    Add support for the ``use_measure_esp`` flag, which defines whether to use excited state
-    promoted (ESP) readout for the last measurement in each circuit.
+    Add support for the ``use_measure_esp`` flag in the
+    :meth:`qiskit.providers.ibmq.IBMQBackend.run` method. If ``True``, the final measurement in each
+    circuit will use excited state promoted (ESP) readout.

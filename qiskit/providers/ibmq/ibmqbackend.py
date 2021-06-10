@@ -246,7 +246,9 @@ class IBMQBackend(Backend):
             use_measure_esp: Whether to use excited state promoted (ESP) readout for the final
                 measurement in each circuit. ESP readout can offer higher fidelity than standard
                 measurement sequences. See `here <https://arxiv.org/pdf/2008.08571.pdf>`_.
-                Default: ``True`` if backend supports ESP readout, else ``False``.
+                Default: ``True`` if backend supports ESP readout, else ``False``. Backend support
+                for ESP readout is determined by the flag ``measure_esp_enabled`` in
+                ``backend.configuration()``.
             **run_config: Extra arguments used to configure the run.
 
         Returns:
