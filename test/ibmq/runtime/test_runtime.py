@@ -168,7 +168,7 @@ class TestRuntime(IBMQTestCase):
         program_id = self.runtime.upload_program(
             data="foo".encode(), metadata=self.DEFAULT_METADATA)
         program = self.runtime.program(program_id)
-        params: ParameterNamespace = program.parameter
+        params: ParameterNamespace = program.parameters()
         params.param1 = 'Hello, World'
         # Check OK params
         params.validate()
@@ -314,7 +314,7 @@ class TestRuntime(IBMQTestCase):
                                  program.backend_requirements)
                 self.assertEqual([ProgramParameter(**param) for param in
                                   self.DEFAULT_METADATA['parameters']],
-                                 program.parameter.metadata)
+                                 program.parameters().metadata)
                 self.assertEqual([ProgramResult(**ret) for ret in
                                   self.DEFAULT_METADATA['return_values']],
                                  program.return_values)

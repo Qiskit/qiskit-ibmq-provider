@@ -54,6 +54,7 @@ class IBMRuntimeService:
 
         from qiskit import IBMQ, QuantumCircuit
         from qiskit.providers.ibmq import RunnerResult
+        from provider.runtime import program
 
         provider = IBMQ.load_account()
         backend = provider.backend.ibmq_montreal
@@ -67,13 +68,17 @@ class IBMRuntimeService:
         qc.cx(0, 1)
         qc.measure_all()
 
-        # Execute the circuit using the "circuit-runner" program.
-        param = provider.runtime.program(program_id="circuit-runner").parameter
-        param.param1 = 123
+        # Set the "circuit-runner" program parameters
+        params = program(program_id="circuit-runner").parameters()
+        params.circuits = qc
+
+        # Configure backend options
         options = {'backend_name': backend.name()}
+
+        # Execute the circuit using the "circuit-runner" program.
         job = provider.runtime.run(program_id="circuit-runner",
                                    options=options,
-                                   inputs=param)
+                                   inputs=params)
 
         # Get runtime job result.
         result = job.result(decoder=RunnerResult)

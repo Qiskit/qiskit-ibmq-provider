@@ -91,6 +91,8 @@ For example::
 
     from qiskit import IBMQ, QuantumCircuit
     from qiskit.providers.ibmq import RunnerResult
+    from provider.runtime import program
+
 
     provider = IBMQ.load_account()
     backend = provider.backend.ibmq_montreal
@@ -101,10 +103,14 @@ For example::
     qc.cx(0, 1)
     qc.measure_all()
 
-    # Execute the circuit using the "circuit-runner" program.
-    param = provider.runtime.program(program_id="circuit-runner").parameter
-    param.param1 = 123
+    # Set the "circuit-runner" program parameters
+    params = program(program_id="circuit-runner").parameters()
+    params.circuits = qc
+
+    # Configure backend options
     options = {'backend_name': backend.name()}
+
+    # Execute the circuit using the "circuit-runner" program.
     job = provider.runtime.run(program_id="circuit-runner",
                             options=options,
                             inputs=params)
@@ -216,11 +222,12 @@ Classes
    ResultDecoder
    RuntimeEncoder
    RuntimeDecoder
+   ParameterNamespace
 """
 
 from .ibm_runtime_service import IBMRuntimeService
 from .runtime_job import RuntimeJob
-from .runtime_program import RuntimeProgram
+from .runtime_program import RuntimeProgram, ParameterNamespace
 from .program.user_messenger import UserMessenger
 from .program.program_backend import ProgramBackend
 from .program.result_decoder import ResultDecoder

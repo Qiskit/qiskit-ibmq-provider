@@ -39,7 +39,7 @@ class RuntimeProgram:
 
         # To retrieve metadata of a single program.
         program = provider.runtime.program(program_id='circuit-runner')
-        print(f"Program {program.name} takes parameters {program.parameter}")
+        print(f"Program {program.name} takes parameters {program.parameters()}")
     """
 
     def __init__(
@@ -147,10 +147,18 @@ class RuntimeProgram:
             "max_execution_time": self.max_execution_time,
             "version": self.version,
             "backend_requirements": self.backend_requirements,
-            "parameters": self.parameter,
+            "parameters": self.parameters(),
             "return_values": self.return_values,
             "interim_results": self.interim_results
         }
+
+    def parameters(self) -> 'ParameterNamespace':
+        """Program parameter definitions.
+
+        Returns:
+            Parameter definitions for this program.
+        """
+        return ParameterNamespace(self._parameters)
 
     @property
     def program_id(self) -> str:
@@ -178,15 +186,6 @@ class RuntimeProgram:
             Program description.
         """
         return self._description
-
-    @property
-    def parameter(self) -> 'ParameterNamespace':
-        """Program parameter definitions.
-
-        Returns:
-            Parameter definitions for this program.
-        """
-        return ParameterNamespace(self._parameters)
 
     @property
     def return_values(self) -> List['ProgramResult']:
@@ -263,16 +262,14 @@ class ProgramResult(NamedTuple):
 class ParameterNamespace(SimpleNamespace):
     """ An abstraction for SimpleNamespace that offers param validation.
 
-    Note: Unused/Unnecessary params does not cause error (still validates)
-
-    Args:
-        params (List[ProgramParameter]): The program's input parameters
-
-    Raises
-        IBMQInputValueException on validation fail
-    """
+    Note: Unused/Unnecessary params does not cause error (still validates) """
 
     def __init__(self, params: List[ProgramParameter]):
+        """ParameterNamespace constructor.
+
+            Args:
+                params (List[ProgramParameter]): The program's input parameters
+        """
         super().__init__()
         # Allow access to the raw program parameters list
         self.__metadata = params
@@ -287,6 +284,7 @@ class ParameterNamespace(SimpleNamespace):
 
     @property
     def metadata(self):
+        """Returns the parameter metadata"""
         return self.__metadata
 
     def validate(self) -> None:
@@ -299,19 +297,17 @@ class ParameterNamespace(SimpleNamespace):
         # Iterate through the user's stored inputs
         for param_name, program_param in self.__program_params.items():
             # Set invariants: User-specified parameter value (value) and whether it's required (req)
-            value = None
-            req = program_param.required
+            value = getattr(self, param_name, None)
             # Check there exists a program parameter of that name.
-            try:
-                # Get the value currently stored for this parameter (user-adjusted)
-                value = self.__dict__[param_name]
-            except AttributeError:
-                if req:
-                    raise IBMQInputValueError('Param (%s) missing required value!' % param_name)
-            # Check for empty value
-            if not value or value is None:
-                if req:
-                    raise IBMQInputValueError('Param (%s) missing required value!' % param_name)
+            if value is None and program_param.required:
+                raise IBMQInputValueError('Param (%s) missing required value!' % param_name)
+
+            value_type = type(value).__name__
+            # Check program param of that name is of same type
+            if value is not None and value_type != program_param.type:
+                raise IBMQInputValueError('Parameter (%s) is incorrect type! (%s != %s)' % \
+                                          (param_name, value_type, program_param.type))
+
 
     def __str__(self) -> str:
         """Creates string representation of object"""
