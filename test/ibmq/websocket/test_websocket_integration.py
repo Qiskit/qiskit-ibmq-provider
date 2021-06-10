@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2018, 2019.
+# (C) Copyright IBM 2018, 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -20,7 +20,7 @@ from qiskit import transpile
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.test import slow_test
 from qiskit.providers import JobTimeoutError
-from qiskit.providers.ibmq.api.clients.websocket import WebsocketAuthenticationMessage
+from qiskit.providers.ibmq.api.clients import websocket
 from qiskit.providers.ibmq.api.clients import AccountClient
 from qiskit.providers.jobstatus import JobStatus
 
@@ -115,13 +115,13 @@ class TestWebsocketIntegration(IBMQTestCase):
 
         self.assertIs(job._status, JobStatus.DONE)
 
-    @mock.patch.object(WebsocketAuthenticationMessage, 'as_json',
-                       return_value='foo')
-    def test_websockets_retry_bad_auth(self, _):
+    def test_websockets_retry_bad_auth(self):
         """Test http retry after websocket error due to a failed authentication."""
         job = self.sim_backend.run(self.bell)
 
-        with mock.patch.object(AccountClient, 'job_status',
+        with mock.patch.object(websocket.WebsocketAuthenticationMessage, 'as_json',
+                               return_value='foo'), \
+             mock.patch.object(AccountClient, 'job_status',
                                side_effect=job._api_client.job_status) as mocked_wait:
             job._wait_for_completion()
             self.assertIs(job._status, JobStatus.DONE)
