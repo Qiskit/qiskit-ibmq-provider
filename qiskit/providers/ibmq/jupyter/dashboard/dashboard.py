@@ -13,7 +13,7 @@
 """The core IBM Quantum Experience dashboard launcher."""
 
 import threading
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Any, Optional, Union
 
 import ipywidgets as wid
 from IPython.display import display, Javascript
@@ -22,10 +22,16 @@ from qiskit.tools.events.pubsub import Subscriber
 from qiskit.exceptions import QiskitError
 from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
-
+from qiskit.providers.ibmq.runtime.runtime_job import RuntimeJob
 from ... import IBMQ
-from .job_widgets import (make_clear_button,
-                          make_labels, create_job_widget)
+from .job_widgets import (
+    create_job_widget_runtime,
+    make_jobs_clear_button,
+    make_rt_jobs_clear_button,
+    make_labels as make_job_labels,
+    make_rt_labels as make_rt_job_labels,
+    create_job_widget)
+from .runtime_program_widget import make_labels as make_program_labels, create_program_widget
 from .backend_widget import make_backend_widget
 from .backend_update import update_backend_info
 from .watcher_monitor import _job_monitor
@@ -85,7 +91,8 @@ class IQXDashboard(Subscriber):
 
         # A list of job widgets. Each represents a job and has 5 children:
         # close button, Job ID, backend, status, and estimated start time.
-        self.jobs = []  # type: List
+        self.jobs = []     # type: List
+        self.rt_jobs = []  # type: List
 
         self._init_subscriber()
         self.dashboard = None  # type: Optional[AccordionWithThread]
@@ -94,11 +101,30 @@ class IQXDashboard(Subscriber):
         # are named tuples of ``IBMQBackend`` instances and a list of provider names.
         self.backend_dict = None  # type: Optional[Dict[str, BackendWithProviders]]
 
+        # Runtime program dictionary. keys = RuntimeProgram.id, vals=RuntimeProgram.name
+        self.rt_program_name_lookup: Dict = {}
+
         # Jobs tab on the dashboard.
         self.job_viewer = None  # type: Optional[wid.VBox]
-        self._clear_jobs_button = make_clear_button(self)  # type: wid.GridBox
-        self._jobs_labels = make_labels()  # type: wid.HBox
+        self._clear_jobs_button = make_jobs_clear_button(self)  # type: wid.GridBox
+        self._jobs_labels = make_job_labels()  # type: wid.HBox
+        # Runtime Jobs tab on the dashboard
+        self.rt_job_viewer = None  # type: Optional[wid.VBox]
+        self._clear_rt_jobs_button = make_rt_jobs_clear_button(self)  # type: wid.GridBox
+        self._rt_jobs_labels = make_rt_job_labels()  # type: wid.HBox
+
         self.refresh_jobs_board()
+        self.refresh_rt_jobs_board()
+
+        # Runtime Display
+
+        # A list of runtime programs. Each has a name and description.
+        self.runtime_programs = {}
+        # Runtime tab on the dashboard.
+        self.runtime_viewer = None  # type: Optional[wid.VBox]
+        self.runtime_labels = make_program_labels()  # type: wid.HBox
+        self._get_runtime_programs()
+        self.refresh_runtime()
 
     def _get_backends(self) -> None:
         """Get all the backends accessible with this account."""
@@ -118,11 +144,51 @@ class IQXDashboard(Subscriber):
 
         self.backend_dict = ibmq_backends
 
+    def _get_runtime_programs(self) -> None:
+        """Get all the runtime programs on this account."""
+
+        programs = {}
+        self.rt_program_name_lookup = {}
+        for pro in IBMQ.providers():
+            # Store the programs in a dictionary.
+            # A dictionary here is to allow them to be filtered/sectioned in later
+            # implementions
+            pro_name = "{hub}/{group}/{project}".format(hub=pro.credentials.hub,
+                                                        group=pro.credentials.group,
+                                                        project=pro.credentials.project)
+            programs[pro_name] = pro.runtime.programs()
+
+            # Fill in the lookup dictionary.
+            # This dictionary is to reduce API calls for showing `name`
+            # prop of Jobs' parent program on the Dashboard UI
+            for prog in programs[pro_name]:
+                self.rt_program_name_lookup[prog.program_id] = prog.name
+        self.runtime_programs = programs
+
     def refresh_jobs_board(self) -> None:
         """Refresh the job viewer."""
         if self.job_viewer is not None:
             self.job_viewer.children = [self._clear_jobs_button,
                                         self._jobs_labels] + list(reversed(self.jobs))
+
+    def refresh_rt_jobs_board(self) -> None:
+        """Refresh the runtime job viewer."""
+        if self.rt_job_viewer is not None:
+            self.rt_job_viewer.children = [self._clear_rt_jobs_button,
+                                           self._rt_jobs_labels] + list(reversed(self.rt_jobs))
+
+    def refresh_runtime(self) -> None:
+        """Refresh the runtime viewer."""
+        if self.runtime_viewer is not None:
+
+            self.runtime_viewer.children = [self.runtime_labels]
+
+            # TODO: Integrate the keys here (hub info) into view
+            # as sections
+            for _, programs in self.runtime_programs.items():
+                for pro in programs:
+                    program_pane = create_program_widget(pro)
+                    self.runtime_viewer.children += (program_pane, )
 
     def refresh_device_list(self) -> None:
         """Refresh the list of devices."""
@@ -138,6 +204,8 @@ class IQXDashboard(Subscriber):
         """Starts the dashboard."""
         self.dashboard = build_dashboard_widget()
         self.job_viewer = self.dashboard.children[0].children[1]
+        self.runtime_viewer = self.dashboard.children[0].children[2]
+        self.rt_job_viewer = self.dashboard.children[0].children[3]
         self._get_backends()
         self.refresh_device_list()
         self.dashboard._thread = threading.Thread(target=update_backend_info,
@@ -145,6 +213,8 @@ class IQXDashboard(Subscriber):
         self.dashboard._thread.do_run = True
         self.dashboard._thread.start()
         self.refresh_jobs_board()
+        self.refresh_rt_jobs_board()
+        self.refresh_runtime()
 
     def stop_dashboard(self) -> None:
         """Stops the dashboard."""
@@ -219,13 +289,43 @@ class IQXDashboard(Subscriber):
                                         status.name, 0,
                                         status.value))
 
-    def clear_done(self) -> None:
+    def cancel_rt_job(self, job_id: str) -> None:
+        """Cancel a runtime job in the watcher.
+
+        Args:
+            job_id: ID of the job to cancel.
+
+        Raises:
+            Exception: If job ID is not found.
+        """
+        do_pop = False
+        ind = None
+        for idx, job in enumerate(self.rt_jobs):
+            if job.job_id == job_id:
+                do_pop = True
+                ind = idx
+                break
+        if not do_pop:
+            raise Exception('Job is not found.')
+        if self.rt_jobs[ind].children[3].value not in ['CANCELLED',
+                                                       'DONE',
+                                                       'ERROR']:
+            try:
+                self.rt_jobs[ind].job.cancel()
+                status = self.rt_jobs[ind].job.status()
+            except IBMQJobApiError:
+                pass
+            else:
+                self.update_single_job((self.rt_jobs[ind].job_id,
+                                        status.name, 0,
+                                        status.value))
+
+    def clear_jobs_done(self) -> None:
         """Clear the done jobs from the list."""
         _temp_jobs = []
         do_refresh = False
         for job in self.jobs:
-            job_str = job.children[3].value
-            if not (('DONE' in job_str) or ('CANCELLED' in job_str) or ('ERROR' in job_str)):
+            if not (job.status == 'DONE' or job.status == 'CANCELLED' or job.status == 'ERROR'):
                 _temp_jobs.append(job)
             else:
                 job.close()
@@ -234,10 +334,24 @@ class IQXDashboard(Subscriber):
             self.jobs = _temp_jobs
             self.refresh_jobs_board()
 
+    def clear_rt_jobs_done(self) -> None:
+        """Clear the done runtime jobs from the list."""
+        _temp_jobs = []
+        do_refresh = False
+        for job in self.rt_jobs:
+            if not (job.status == 'DONE' or job.status == 'CANCELLED' or job.status == 'ERROR'):
+                _temp_jobs.append(job)
+            else:
+                job.close()
+                do_refresh = True
+        if do_refresh:
+            self.rt_jobs = _temp_jobs
+            self.refresh_rt_jobs_board()
+
     def _init_subscriber(self) -> None:
         """Initializes a subscriber that listens to job start events."""
 
-        def _add_job(job: IBMQJob) -> None:
+        def _add_job(job: Union[IBMQJob, RuntimeJob]) -> None:
             """Callback function when a job start event is received.
 
             When a job starts, this function creates a job widget and adds
@@ -247,23 +361,36 @@ class IQXDashboard(Subscriber):
                 job: Job to start watching.
             """
             status = job.status()
-            queue_info = job.queue_info()
-            position = queue_info.position if queue_info else None
-            est_time = queue_info.estimated_start_time if queue_info else None
-            job_widget = create_job_widget(self, job,
-                                           job.backend().name(),
-                                           status.name,
-                                           position,
-                                           est_time)
-            self.jobs.append(job_widget)
+            if isinstance(job, IBMQJob):
+                queue_info = job.queue_info()
+                position = queue_info.position if queue_info else None
+                est_time = queue_info.estimated_start_time if queue_info else None
+                job_widget = create_job_widget(self, job,
+                                               job.backend().name(),
+                                               status.name,
+                                               position,
+                                               est_time)
+                self.jobs.append(job_widget)
+            else:
+                # The job is a runtime job.
+                prog_name = self.rt_program_name_lookup[job.program_id]
+                job_widget = create_job_widget_runtime(self, job, status.name, prog_name)
+                self.rt_jobs.append(job_widget)
+
             _job_monitor(job, status, self)
 
             if len(self.jobs) > 50:
-                self.clear_done()
+                self.clear_jobs_done()
             else:
                 self.refresh_jobs_board()
 
+            if len(self.rt_jobs) > 50:
+                self.clear_rt_jobs_done()
+            else:
+                self.refresh_rt_jobs_board()
+
         self.subscribe("ibmq.job.start", _add_job)
+        self.subscribe("ibmq.runtimejob.start", _add_job)
 
 
 def build_dashboard_widget() -> AccordionWithThread:
@@ -288,9 +415,20 @@ def build_dashboard_widget() -> AccordionWithThread:
     jobs_box = wid.VBox(layout=wid.Layout(max_width='740px',
                                           min_width='740px',
                                           justify_content='flex-start'))
-    tabs.children = [device_list, jobs_box]
+
+    rt_programs_box = wid.VBox(layout=wid.Layout(max_width='740px',
+                                                 min_width='740px',
+                                                 justify_content='flex-start'))
+
+    rt_jobs_box = wid.VBox(layout=wid.Layout(max_width='740px',
+                                             min_width='740px',
+                                             justify_content='flex-start'))
+
+    tabs.children = [device_list, jobs_box, rt_programs_box, rt_jobs_box]
     tabs.set_title(0, 'Devices')
     tabs.set_title(1, 'Jobs')
+    tabs.set_title(2, 'Programs (Runtime)')
+    tabs.set_title(3, 'Jobs (Runtime)')
 
     acc = AccordionWithThread(children=[tabs],
                               layout=wid.Layout(width='auto',
@@ -299,12 +437,34 @@ def build_dashboard_widget() -> AccordionWithThread:
 
     acc._device_list = acc.children[0].children[0].children[0]
 
-    acc.set_title(0, 'IQX Dashboard')
+    acc.set_title(0, 'IBM Quantum dashboard')
     acc.selected_index = None
     acc.layout.visibility = 'hidden'
     display(acc)
-    acc._dom_classes = ['job_widget']
+    acc._dom_classes = ['job_widget', 'rt_programs', 'rt_jobs']
     display(Javascript("""$('div.job_widget')
+        .detach()
+        .appendTo($('#header'))
+        .css({
+            'z-index': 999,
+             'position': 'fixed',
+            'box-shadow': '5px 5px 5px -3px black',
+            'opacity': 0.95,
+            'float': 'left,'
+        })
+        """))
+    display(Javascript("""$('div.rt_programs')
+        .detach()
+        .appendTo($('#header'))
+        .css({
+            'z-index': 999,
+             'position': 'fixed',
+            'box-shadow': '5px 5px 5px -3px black',
+            'opacity': 0.95,
+            'float': 'left,'
+        })
+        """))
+    display(Javascript("""$('div.rt_jobs')
         .detach()
         .appendTo($('#header'))
         .css({

@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    The IBM Quantum Dashboard (renamed in this upgrade) will now display
+    runtime programs and jobs.

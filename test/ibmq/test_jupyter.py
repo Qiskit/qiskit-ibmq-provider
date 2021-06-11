@@ -26,6 +26,8 @@ from qiskit.providers.ibmq.jupyter.dashboard.backend_widget import make_backend_
 from qiskit.providers.ibmq.jupyter.dashboard.utils import BackendWithProviders
 from qiskit.providers.ibmq.jupyter.dashboard.job_widgets import create_job_widget
 from qiskit.providers.ibmq.jupyter.dashboard.watcher_monitor import _job_checker
+from qiskit.providers.ibmq.jupyter.dashboard.runtime_program_widget import create_program_widget
+from qiskit.providers.ibmq.runtime.runtime_program import RuntimeProgram
 
 from ..decorators import requires_provider
 from ..ibmqtestcase import IBMQTestCase
@@ -114,6 +116,14 @@ class TestIQXDashboard(IBMQTestCase):
         backend = self.provider.get_backend('ibmq_qasm_simulator')
         job = backend.run(transpile(ReferenceCircuits.bell(), backend))
         create_job_widget(mock.MagicMock(), job, backend=backend.name(), status=job.status().value)
+
+    def test_runtime_widget(self):
+        """Test runtime tab."""
+        # 1. Create runtime progran
+        program = RuntimeProgram(program_name='test-name', program_id='test-id',
+                                 description='test-description')
+        # 2. Create runtime widget
+        create_program_widget(program)
 
     def test_watcher_monitor(self):
         """Test job watcher."""
