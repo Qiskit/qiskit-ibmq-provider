@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2018, 2019.
+# (C) Copyright IBM 2018, 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -10,113 +10,74 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Client for communicating with the IBM Quantum Experience API via websocket."""
+"""Client for communicating with the IBM Quantum API via websocket."""
 
-import sys
-import asyncio
 import json
 import logging
-import time
-from abc import ABC, abstractmethod
-from typing import Dict, Union, Optional, Any
-from concurrent import futures
-from ssl import SSLError
+from abc import ABC
+from typing import Dict, Any
 
-import nest_asyncio
-from websockets import connect, ConnectionClosed
-from websockets.client import WebSocketClientProtocol
-from websockets.exceptions import InvalidURI
+from websocket import WebSocketApp, STATUS_NORMAL
 
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
-from qiskit.providers.ibmq.utils.utils import RefreshQueue, filter_data
-from ..exceptions import (WebsocketError, WebsocketTimeoutError,
+from qiskit.providers.ibmq.utils.utils import filter_data
+from ..exceptions import (WebsocketError,
                           WebsocketIBMQProtocolError,
                           WebsocketAuthenticationError)
 from ..rest.utils.data_mapper import map_job_status_response
-from .base import BaseClient
-
+from .base import BaseWebsocketClient, WebsocketClientCloseCode
 
 logger = logging.getLogger(__name__)
-
-# WindowsProactorEventLoopPolicy raises an exception in tornado (used by Jupyter)
-# and causes a hang with websockets.
-if sys.platform.startswith('win') and sys.version_info[:3] >= (3, 8, 0) and \
-        isinstance(asyncio.get_event_loop_policy(), asyncio.WindowsProactorEventLoopPolicy):
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-# `asyncio` by design does not allow event loops to be nested. Jupyter (really
-# tornado) has its own event loop already so we need to patch it.
-# Patch asyncio to allow nested use of `loop.run_until_complete()`.
-# Before applying the patch, check if an event loop is available otherwise
-# create one and set it active, also register cleanup for end
-try:
-    LOOP = asyncio.get_event_loop()
-except RuntimeError:
-    LOOP = asyncio.new_event_loop()
-nest_asyncio.apply(LOOP)
 
 
 class WebsocketMessage(ABC):
     """Container for a message sent or received via websockets."""
 
-    def __init__(self, type_: str) -> None:
+    def __init__(self, type_: str, data: Any) -> None:
         """WebsocketMessage constructor.
 
         Args:
             type_: Message type.
+            data: Message data
         """
-        self.type_ = type_
+        self._type = type_
+        self._data = data
 
-    @abstractmethod
-    def get_data(self) -> Union[str, Dict[str, str]]:
-        """Return the message data."""
-        pass
+    @property
+    def data(self) -> Any:
+        """Return message data."""
+        return self._data
+
+    @property
+    def type(self) -> str:
+        """Return message type."""
+        return self._type
 
     def as_json(self) -> str:
         """Return a JSON representation of the message."""
-        return json.dumps({'type': self.type_, 'data': self.get_data()})
+        return json.dumps({'type': self._type, 'data': self._data})
 
 
 class WebsocketAuthenticationMessage(WebsocketMessage):
     """Container for an authentication message sent via websockets."""
 
-    def __init__(self, type_: str, data: str) -> None:
+    def __init__(self, access_token: str) -> None:
         """WebsocketAuthenticationMessage constructor.
 
         Args:
-            type_: Message type.
-            data: Message data.
+            access_token: Access token.
         """
-        super().__init__(type_)
-        self.data = data
-
-    def get_data(self) -> str:
-        """Return the message data."""
-        return self.data
+        super().__init__(type_='authentication', data=access_token)
 
 
 class WebsocketResponseMethod(WebsocketMessage):
     """Container for a message received via websockets."""
 
-    def __init__(self, type_: str, data: Dict[str, Any]) -> None:
-        """WebsocketResponseMethod constructor.
-
-        Args:
-            type_: Message type.
-            data: Message data.
-        """
-        super().__init__(type_)
-        self.data = data
-
-    def get_data(self) -> Dict[str, Any]:
-        """Return the message data."""
-        return self.data
-
     @classmethod
-    def from_bytes(cls, json_string: bytes) -> 'WebsocketResponseMethod':
-        """Instantiate a message from a bytes response."""
+    def from_json(cls, json_string: str) -> 'WebsocketResponseMethod':
+        """Instantiate a message from a JSON response."""
         try:
-            parsed_dict = json.loads(json_string.decode('utf8'))
+            parsed_dict = json.loads(json_string)
         except (ValueError, AttributeError) as ex:
             exception_to_raise = WebsocketIBMQProtocolError(
                 'Unable to parse the message received from the server: {!r}'.format(json_string))
@@ -128,84 +89,72 @@ class WebsocketResponseMethod(WebsocketMessage):
         return cls(parsed_dict['type'], parsed_dict.get('data', None))
 
 
-class WebsocketClient(BaseClient):
-    """Client for websocket communication with the IBM Quantum Experience API."""
+class WebsocketClient(BaseWebsocketClient):
+    """Client for websocket communication with the IBM Quantum API."""
 
-    BACKOFF_MAX = 8
-    """Maximum time to wait between retries."""
+    _API_STATUS_INTERNAL_ERROR = 4001
+    _API_STATUS_JOB_DONE = 4002
+    _API_STATUS_JOB_NOT_FOUND = 4003
 
-    def __init__(self, websocket_url: str, access_token: str) -> None:
-        """WebsocketClient constructor.
+    def on_open(self, wsa: WebSocketApp) -> None:
+        """Called when websocket connection established.
 
         Args:
-            websocket_url: URL for websocket communication with IBM Quantum Experience.
-            access_token: Access token for IBM Quantum Experience.
+            wsa: WebSocketApp object.
         """
-        self.websocket_url = websocket_url.rstrip('/')
-        self.access_token = access_token
+        super().on_open(wsa)
+        # Authenticate against the server.
+        auth_request = WebsocketAuthenticationMessage(access_token=self._access_token)
+        self._ws.send(auth_request.as_json())
 
-    async def _connect(self, url: str) -> WebSocketClientProtocol:
-        """Authenticate with the websocket server and return the connection.
+    def _handle_message(self, message: str) -> None:
+        """Handle received message.
 
-        Returns:
-            An open websocket connection.
-
-        Raises:
-            WebsocketError: If the connection to the websocket server could
-                not be established.
-            WebsocketAuthenticationError: If the connection to the websocket
-                was established, but the authentication failed.
-            WebsocketIBMQProtocolError: If the connection to the websocket
-                server was established, but the answer was unexpected.
+        Args:
+            message: Message received.
         """
-        try:
-            logger.debug('Starting new websocket connection: %s', url)
-            websocket = await connect(url)
+        if not self._authenticated:
+            # First message is an auth ACK
+            self._handle_auth_response(message)
+        else:
+            self._handle_status_response(message)
 
-        # Isolate specific exceptions, so they are not retried in `get_job_status`.
-        except (SSLError, InvalidURI) as ex:
-            raise ex
+    def _handle_auth_response(self, message: str) -> None:
+        """Handle authentication response.
 
-        # pylint: disable=broad-except
-        except Exception as ex:
-            exception_to_raise = WebsocketError('Failed to connect to the server.')
+        Args:
+            message: Authentication response message.
+        """
+        auth_response = WebsocketResponseMethod.from_json(message)
+        if auth_response.type != "authenticated":
+            self._error = message
+            self.disconnect(WebsocketClientCloseCode.PROTOCOL_ERROR)
+        else:
+            self._authenticated = True
 
-            logger.info('An exception occurred. Raising "%s" from "%s"',
-                        repr(exception_to_raise), repr(ex))
-            raise exception_to_raise from ex
+    def _handle_status_response(self, message: str) -> None:
+        """Handle status response.
 
-        try:
-            # Authenticate against the server.
-            auth_request = self._authentication_message()
-            await websocket.send(auth_request.as_json())
+        Args:
+            message: Status response message.
+        """
+        response = WebsocketResponseMethod.from_json(message)
+        if logger.getEffectiveLevel() is logging.DEBUG:
+            logger.debug('Received message from websocket: %s',
+                         filter_data(response.data))
+        self._last_message = map_job_status_response(response.data)
+        if self._message_queue is not None:
+            self._message_queue.put(self._last_message)
+        self._current_retry = 0
 
-            # Verify that the server acknowledged our authentication.
-            auth_response_raw = await websocket.recv()
+        job_status = response.data.get('status')
+        if job_status and ApiJobStatus(job_status) in API_JOB_FINAL_STATES:
+            self.disconnect()
 
-            auth_response = WebsocketResponseMethod.from_bytes(
-                auth_response_raw)  # type: ignore[arg-type]
-
-            if auth_response.type_ != 'authenticated':
-                raise WebsocketIBMQProtocolError('Failed to authenticate against the server: {}'
-                                                 .format(auth_response.as_json()))
-        except ConnectionClosed as ex:
-            await websocket.close()
-            exception_to_raise = WebsocketAuthenticationError(
-                'Unexpected error occurred when authenticating against the server.')
-
-            logger.info('An exception occurred. Raising "%s" from "%s"',
-                        repr(exception_to_raise), repr(ex))
-            raise exception_to_raise from ex
-
-        return websocket
-
-    async def get_job_status(
+    def get_job_status(
             self,
-            job_id: str,
-            timeout: Optional[float] = None,
             retries: int = 5,
-            backoff_factor: float = 0.5,
-            status_queue: Optional[RefreshQueue] = None
+            backoff_factor: float = 0.5
     ) -> Dict[str, str]:
         """Return the status of a job.
 
@@ -229,12 +178,9 @@ class WebsocketClient(BaseClient):
                number of retries is met.
 
         Args:
-            job_id: ID of the job.
-            timeout: Timeout value, in seconds.
             retries: Max number of retries.
             backoff_factor: Backoff factor used to calculate the
                 time to wait between retries.
-            status_queue: Queue used to share the latest status.
 
         Returns:
             The final API response for the status of the job, as a dictionary that
@@ -244,134 +190,19 @@ class WebsocketClient(BaseClient):
             WebsocketError: If the websocket connection ended unexpectedly.
             WebsocketTimeoutError: If the timeout has been reached.
         """
-        url = '{}/jobs/{}/status/v/1'.format(self.websocket_url, job_id)
+        url = '{}/jobs/{}/status/v/1'.format(self._websocket_url, self._job_id)
+        return self.stream(url=url, retries=retries, backoff_factor=backoff_factor)
 
-        original_timeout = timeout
-        start_time = time.time()
-        attempt_retry = True  # By default, attempt to retry if the websocket connection closes.
-        current_retry_attempt = 0
-        last_status = None
-        websocket = None
+    def _handle_stream_iteration(self) -> None:
+        """Handle a streaming iteration."""
+        if not self._authenticated:
+            raise WebsocketAuthenticationError(
+                f"Failed to authenticate against the server: {self._error}")
 
-        while current_retry_attempt <= retries:
-            try:
-                websocket = await self._connect(url)
-                # Read messages from the server until the connection is closed or
-                # a timeout has been reached.
-                while True:
-                    try:
-                        if timeout:
-                            response_raw = await asyncio.wait_for(
-                                websocket.recv(), timeout=timeout)
+        if self._server_close_code == self._API_STATUS_JOB_DONE:
+            self._server_close_code = STATUS_NORMAL
 
-                            # Decrease the timeout.
-                            timeout = original_timeout - (time.time() - start_time)
-                        else:
-                            response_raw = await websocket.recv()
-
-                        response = WebsocketResponseMethod.from_bytes(
-                            response_raw)  # type: ignore[arg-type]
-                        if logger.getEffectiveLevel() is logging.DEBUG:
-                            logger.debug('Received message from websocket: %s',
-                                         filter_data(response.get_data()))
-                        last_status = map_job_status_response(response.get_data())
-
-                        # Share the new status.
-                        if status_queue is not None:
-                            status_queue.put(last_status)
-
-                        # Successfully received and parsed a message, reset retry counter.
-                        current_retry_attempt = 0
-
-                        job_status = response.data.get('status')
-                        if (job_status and
-                                ApiJobStatus(job_status) in API_JOB_FINAL_STATES):
-                            return last_status
-
-                        if timeout and timeout <= 0:
-                            raise WebsocketTimeoutError('Timeout reached while getting job status.')
-
-                    except (futures.TimeoutError, asyncio.TimeoutError):
-                        # Timeout during our wait.
-                        raise WebsocketTimeoutError(
-                            'Timeout reached while getting job status.') from None
-                    except ConnectionClosed as ex:
-                        # From the API:
-                        # 4001: closed due to an internal errors
-                        # 4002: closed on purpose (no more updates to send)
-                        # 4003: closed due to job not found.
-                        message = 'Unexpected error'
-                        if ex.code == 4001:
-                            message = 'Internal server error'
-                        elif ex.code == 4002:
-                            logger.debug("Websocket connection closed with code 4002: %s", str(ex))
-                            if status_queue is not None:
-                                status_queue.put(last_status)
-                            return last_status  # type: ignore[return-value]
-                        elif ex.code == 4003:
-                            attempt_retry = False  # No point in retrying.
-                            message = 'Job id not found'
-
-                        exception_to_raise = WebsocketError(
-                            'Connection with websocket closed unexpectedly: '
-                            '{}(status_code={})'.format(message, ex.code))
-
-                        logger.info('An exception occurred. Raising "%s" from "%s"',
-                                    repr(exception_to_raise), repr(ex))
-                        raise exception_to_raise from ex
-
-            except WebsocketError as ex:
-                logger.info('A websocket error occurred while getting job status: %s', str(ex))
-
-                # Specific `WebsocketError` exceptions that are not worth retrying.
-                if isinstance(ex, (WebsocketTimeoutError, WebsocketIBMQProtocolError)):
-                    logger.info('The websocket error that occurred could not '
-                                'be retried: %s', str(ex))
-                    raise ex
-
-                # Check whether the websocket error should be retried.
-                current_retry_attempt = current_retry_attempt + 1
-                if (current_retry_attempt > retries) or (not attempt_retry):
-                    logger.info('Max retries exceeded: Failed to establish a websocket '
-                                'connection due to a network error.')
-                    raise ex
-
-                # Sleep, and then `continue` with retrying.
-                backoff_time = self._backoff_time(backoff_factor, current_retry_attempt)
-                logger.info('Retrying get_job_status via websocket after %s seconds: '
-                            'Attempt #%s', backoff_time, current_retry_attempt)
-                await asyncio.sleep(backoff_time)  # Block asyncio loop for given backoff time.
-
-                continue  # Continues next iteration after `finally` block.
-
-            finally:
-                if websocket is not None:
-                    await websocket.close()
-
-        # Execution should not reach here, sanity check.
-        exception_message = 'Max retries exceeded: Failed to establish a websocket ' \
-                            'connection due to a network error.'
-
-        logger.info(exception_message)
-        raise WebsocketError(exception_message)
-
-    def _backoff_time(self, backoff_factor: float, current_retry_attempt: int) -> float:
-        """Calculate the backoff time to wait for.
-
-        Exponential backoff time formula::
-            {backoff_factor} * (2 ** (current_retry_attempt - 1))
-
-        Args:
-            backoff_factor: Backoff factor, in seconds.
-            current_retry_attempt: Current number of retry attempts.
-
-        Returns:
-            The number of seconds to wait for, before making the next retry attempt.
-        """
-        backoff_time = backoff_factor * (2 ** (current_retry_attempt - 1))
-        return min(self.BACKOFF_MAX, backoff_time)
-
-    def _authentication_message(self) -> 'WebsocketAuthenticationMessage':
-        """Return the message used for authenticating with the server."""
-        return WebsocketAuthenticationMessage(type_='authentication',
-                                              data=self.access_token)
+        if self._server_close_code == self._API_STATUS_JOB_NOT_FOUND:
+            raise WebsocketError(
+                f"Connection with websocket closed with code {self._server_close_code}: "
+                f"Job ID {self._job_id} not found.")
