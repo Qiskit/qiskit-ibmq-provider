@@ -97,7 +97,8 @@ class TestRuntimeWebsocketClient(IBMQTestCase):
         job = self._get_job(callback=result_callback)
         time.sleep(1)
         job.cancel_result_streaming()
-        for _ in range(5):
+        for _ in range(10):
+            self.log.debug("Waiting for client to finish disconnect.")
             if not job._ws_client.connected:
                 break
             time.sleep(1)

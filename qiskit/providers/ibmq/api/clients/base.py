@@ -178,6 +178,8 @@ class BaseWebsocketClient(BaseClient, ABC):
                 self._ws.run_forever(**self._proxy_params)
                 self.connected = False
 
+                logger.debug("Websocket run_forever finished.")
+
                 # Handle path-specific errors
                 self._handle_stream_iteration()
 
