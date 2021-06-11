@@ -17,8 +17,6 @@ import sys
 import time
 import threading
 
-# pylint:disable=unused-import
-from qiskit.providers.ibmq.jupyter.dashboard.dashboard import IQXDashboard
 from qiskit.providers.ibmq.runtime.runtime_job import RuntimeJob
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob

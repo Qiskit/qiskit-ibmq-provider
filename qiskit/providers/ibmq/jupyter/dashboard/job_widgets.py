@@ -16,8 +16,6 @@ from typing import Optional
 from datetime import datetime
 import ipywidgets as widgets
 
-# pylint:disable=unused-import
-from qiskit.providers.ibmq.jupyter.dashboard.dashboard import IQXDashboard
 from qiskit.providers.ibmq.runtime.runtime_job import RuntimeJob
 from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 
