@@ -54,10 +54,9 @@ class IBMRuntimeService:
 
         from qiskit import IBMQ, QuantumCircuit
         from qiskit.providers.ibmq import RunnerResult
-        from provider.runtime import program
 
         provider = IBMQ.load_account()
-        backend = provider.backend.ibmq_montreal
+        backend = provider.backend.ibmq_qasm_simulator
 
         # List all available programs.
         provider.runtime.pprint_programs()
@@ -69,8 +68,9 @@ class IBMRuntimeService:
         qc.measure_all()
 
         # Set the "circuit-runner" program parameters
-        params = program(program_id="circuit-runner").parameters()
+        params = provider.runtime.program(program_id="circuit-runner").parameters()
         params.circuits = qc
+        params.measurement_error_mitigation = True
 
         # Configure backend options
         options = {'backend_name': backend.name()}

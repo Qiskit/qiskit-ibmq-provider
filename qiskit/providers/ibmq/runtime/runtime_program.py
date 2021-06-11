@@ -39,7 +39,7 @@ class RuntimeProgram:
 
         # To retrieve metadata of a single program.
         program = provider.runtime.program(program_id='circuit-runner')
-        print(f"Program {program.name} takes parameters {program.parameters()}")
+        print(f"Program {program.name} takes parameters {program.parameters().metadata}")
     """
 
     def __init__(
@@ -153,10 +153,16 @@ class RuntimeProgram:
         }
 
     def parameters(self) -> 'ParameterNamespace':
-        """Program parameter definitions.
+        """Program parameter namespace.
 
+        You can use the returned namespace to assign parameter values and pass
+        the namespace to :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.run`.
+        The namespace allows you to use auto-completion to find program parameters.
+
+        Note that each call to this method returns a new namespace instance and
+        does not include any modification to the previous instance.
         Returns:
-            Parameter definitions for this program.
+            Program parameter namespace.
         """
         return ParameterNamespace(self._parameters)
 
@@ -260,15 +266,17 @@ class ProgramResult(NamedTuple):
 
 
 class ParameterNamespace(SimpleNamespace):
-    """ An abstraction for SimpleNamespace that offers param validation.
+    """ A namespace for program parameters with validation.
 
-    Note: Unused/Unnecessary params does not cause error (still validates) """
+    This class provides a namespace for program parameters with auto-completion
+    and validation support.
+    """
 
     def __init__(self, params: List[ProgramParameter]):
         """ParameterNamespace constructor.
 
-            Args:
-                params (List[ProgramParameter]): The program's input parameters
+        Args:
+            params: The program's input parameters.
         """
         super().__init__()
         # Allow access to the raw program parameters list
@@ -288,7 +296,11 @@ class ParameterNamespace(SimpleNamespace):
         return self.__metadata
 
     def validate(self) -> None:
-        """Validates the user's usage of the program's inputs
+        """Validate program input values.
+
+        Note:
+            This method only verifies that required parameters have values. It
+            does not fail the validation if the namepsace has extraneous parameters.
 
         Raises:
             IBMQInputValueError if validation fails
@@ -301,13 +313,6 @@ class ParameterNamespace(SimpleNamespace):
             # Check there exists a program parameter of that name.
             if value is None and program_param.required:
                 raise IBMQInputValueError('Param (%s) missing required value!' % param_name)
-
-            value_type = type(value).__name__
-            # Check program param of that name is of same type
-            if value is not None and value_type != program_param.type:
-                raise IBMQInputValueError('Parameter (%s) is incorrect type! (%s != %s)' % \
-                                          (param_name, value_type, program_param.type))
-
 
     def __str__(self) -> str:
         """Creates string representation of object"""
