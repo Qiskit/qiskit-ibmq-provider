@@ -1,0 +1,7 @@
+---
+upgrade:
+  - |
+    ``qiskit-ibmq-provider`` now uses a new package ``websocket-client`` as its
+    websocket client, and packages ``websockets`` and ``nest-asyncio`` are no
+    longer required. ``setup.py`` and ``requirements.txt`` have been updated
+    accordingly.
