@@ -3,7 +3,7 @@ features:
   - |
     A new backend configuration attribute ``input_allowed`` now tells you the
     types of input supported by the backend. Valid input types are ``job``, which
-    means circuit jobs, and ``runtime``, which means runtime jobs.
+    means circuit jobs, and ``runtime``, which means Qiskit Runtime.
 
     You can also use ``input_allowed`` in backend filtering. For example::
 

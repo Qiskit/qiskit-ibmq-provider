@@ -105,6 +105,7 @@ class IBMQBackendService:
                 remote backends.
             min_num_qubits: Minimum number of qubits the backend has to have.
             input_allowed: Filter by the types of input the backend supports.
+                Valid input types are ``job`` (circuit job) and ``runtime`` (Qiskit Runtime).
                 For example, ``inputs_allowed='runtime'`` will return all backends
                 that support Qiskit Runtime. If a list is given, the backend must
                 support all types specified in the list.
