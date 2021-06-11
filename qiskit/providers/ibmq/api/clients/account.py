@@ -12,9 +12,9 @@
 
 """Client for accessing an individual IBM Quantum Experience account."""
 
-import asyncio
 import logging
 import time
+from threading import Timer
 
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
@@ -31,7 +31,7 @@ from ..rest.backend import Backend
 from ..session import RetrySession
 from ..exceptions import ApiIBMQProtocolError
 from .base import BaseClient
-from .websocket import WebsocketClient
+from .websocket import WebsocketClient, WebsocketClientCloseCode
 
 logger = logging.getLogger(__name__)
 
@@ -41,25 +41,23 @@ class AccountClient(BaseClient):
 
     def __init__(
             self,
-            access_token: str,
             credentials: Credentials,
             **request_kwargs: Any
     ) -> None:
         """AccountClient constructor.
 
         Args:
-            access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
             **request_kwargs: Arguments for the request ``Session``.
         """
-        self._session = RetrySession(credentials.base_url, access_token, **request_kwargs)
+        self._session = RetrySession(
+            credentials.base_url, credentials.access_token, **request_kwargs)
         # base_api is used to handle endpoints that don't include h/g/p.
         # account_api is for h/g/p.
         self.base_api = Api(self._session)
         self.account_api = Account(session=self._session, hub=credentials.hub,
                                    group=credentials.group, project=credentials.project)
-        self.client_ws = WebsocketClient(credentials.websockets_url, access_token)
-        self._use_websockets = (not credentials.proxies)
+        self._credentials = credentials
 
     # Backend-related public functions.
 
@@ -364,21 +362,20 @@ class AccountClient(BaseClient):
         """
         status_response = None
         # Attempt to use websocket if available.
-        if self._use_websockets:
-            start_time = time.time()
-            try:
-                status_response = self._job_final_status_websocket(
-                    job_id=job_id, timeout=timeout, status_queue=status_queue)
-            except WebsocketTimeoutError as ex:
-                logger.info('Timeout checking job status using websocket, '
-                            'retrying using HTTP: %s', ex)
-            except (RuntimeError, WebsocketError) as ex:
-                logger.info('Error checking job status using websocket, '
-                            'retrying using HTTP: %s', ex)
+        start_time = time.time()
+        try:
+            status_response = self._job_final_status_websocket(
+                job_id=job_id, timeout=timeout, status_queue=status_queue)
+        except WebsocketTimeoutError as ex:
+            logger.info('Timeout checking job status using websocket, '
+                        'retrying using HTTP: %s', ex)
+        except (RuntimeError, WebsocketError) as ex:
+            logger.info('Error checking job status using websocket, '
+                        'retrying using HTTP: %s', ex)
 
-            # Adjust timeout for HTTP retry.
-            if timeout is not None:
-                timeout -= (time.time() - start_time)
+        # Adjust timeout for HTTP retry.
+        if timeout is not None:
+            timeout -= (time.time() - start_time)
 
         if not status_response:
             # Use traditional http requests if websocket not available or failed.
@@ -404,23 +401,26 @@ class AccountClient(BaseClient):
             Job status.
 
         Raises:
-            RuntimeError: If an unexpected error occurred while getting the event loop.
             WebsocketError: If the websocket connection ended unexpectedly.
             WebsocketTimeoutError: If the timeout has been reached.
         """
-        # As mentioned in `websocket.py`, in jupyter we need to use
-        # `nest_asyncio` to allow nested event loops.
+        ws_client = WebsocketClient(
+            websocket_url=self._credentials.websockets_url.rstrip('/'),
+            credentials=self._credentials,
+            job_id=job_id,
+            message_queue=status_queue
+        )
+        timer = None
+        if timeout:
+            timer = Timer(timeout, ws_client.disconnect,
+                          kwargs={'close_code': WebsocketClientCloseCode.TIMEOUT})
+            timer.start()
+
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError as ex:
-            # Event loop may not be set in a child thread.
-            if 'There is no current event loop' in str(ex):
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            else:
-                raise
-        return loop.run_until_complete(
-            self.client_ws.get_job_status(job_id, timeout=timeout, status_queue=status_queue))
+            return ws_client.get_job_status()
+        finally:
+            if timer:
+                timer.cancel()
 
     def _job_final_status_polling(
             self,

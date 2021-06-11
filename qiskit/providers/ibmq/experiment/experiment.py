@@ -46,7 +46,8 @@ class Experiment:
             group: Optional[str] = None,
             project: Optional[str] = None,
             share_level: Optional[Union[ExperimentShareLevel, str]] = None,
-            owner: Optional[str] = None
+            owner: Optional[str] = None,
+            notes: Optional[str] = None
     ):
         """Experiment constructor.
 
@@ -81,6 +82,7 @@ class Experiment:
 
             owner: The user ID for the owner of the experiment. This is set by the
                 server when the experiment is uploaded and should not be set by a user.
+            notes: Notes about the experiment.
 
         Raises:
             ExperimentError: If the provider does not offer experiment services.
@@ -93,6 +95,7 @@ class Experiment:
         self.tags = tags or []
         self.type = experiment_type
         self.share_level = share_level  # type: ignore[assignment]
+        self.notes = notes
         self._owner = owner
         self._analysis_results = analysis_results
         self._plot_names = plot_names or []
@@ -121,6 +124,7 @@ class Experiment:
         self.tags = remote_data.get('tags', [])
         self.type = remote_data['type']
         self.share_level = ExperimentShareLevel(remote_data['visibility'])
+        self.notes = remote_data['notes']
         self._owner = remote_data['owner']
         self._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
         self._uuid = remote_data['uuid']
@@ -270,7 +274,8 @@ class Experiment:
             group=remote_data.get('group_id'),
             project=remote_data.get('project_id'),
             share_level=remote_data['visibility'],
-            owner=remote_data['owner'])
+            owner=remote_data['owner'],
+            notes=remote_data['notes'])
         experiment._creation_datetime = str_to_utc(remote_data['created_at'])
         experiment._updated_datetime = str_to_utc(remote_data.get('updated_at', None))
         return experiment
@@ -278,9 +283,9 @@ class Experiment:
     def __repr__(self) -> str:
         attr_str = (
             'uuid="{}", backend_name="{}", type="{}", hub="{}", group="{}", '
-            'project="{}", share_level="{}", owner="{}"').format(
+            'project="{}", share_level="{}", owner="{}", notes="{}"').format(
                 self.uuid, self.backend_name, self.type, self.hub, self.group, self.project,
-                self.share_level, self.owner)
+                self.share_level, self.owner, self.notes)
         for attr in ['extra', 'tags']:
             val = getattr(self, attr)
             if val is not None:

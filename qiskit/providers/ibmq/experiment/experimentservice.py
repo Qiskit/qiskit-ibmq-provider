@@ -73,19 +73,17 @@ class ExperimentService:
 
     def __init__(
             self,
-            provider: 'accountprovider.AccountProvider',
-            access_token: str
+            provider: 'accountprovider.AccountProvider'
     ) -> None:
         """IBMQBackendService constructor.
 
         Args:
             provider: IBM Quantum Experience account provider.
-            access_token: IBM Quantum Experience access token.
         """
         super().__init__()
 
         self._provider = provider
-        self._api_client = ExperimentClient(access_token, provider.credentials)
+        self._api_client = ExperimentClient(provider.credentials)
 
     def backends(self) -> List[Dict]:
         """Return a list of backends.
@@ -234,6 +232,8 @@ class ExperimentService:
             data['uuid'] = experiment.uuid
         if experiment.share_level:
             data['visibility'] = experiment.share_level.value
+        if experiment.notes:
+            data['notes'] = experiment.notes
         response_data = self._api_client.experiment_upload(data)
         experiment.update_from_remote_data(response_data)
 
@@ -268,6 +268,7 @@ class ExperimentService:
 
                 * end_datetime
                 * share_level (visibility)
+                * notes (use empty string to clear notes)
 
         Args:
             experiment: Experiment to be updated.
@@ -277,6 +278,9 @@ class ExperimentService:
             data['end_time'] = experiment.end_datetime.isoformat()
         if experiment.share_level:
             data['visibility'] = experiment.share_level.value
+        # notes can be cleared with an empty string so check for None
+        if experiment.notes is not None:
+            data['notes'] = experiment.notes or None
 
         if not data:    # Nothing to update.
             return

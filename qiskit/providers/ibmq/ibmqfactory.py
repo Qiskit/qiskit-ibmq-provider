@@ -461,6 +461,7 @@ class IBMQFactory:
             # Build credentials.
             provider_credentials = Credentials(
                 credentials.token,
+                access_token=auth_client.current_access_token(),
                 url=service_urls['http'],
                 websockets_url=service_urls['ws'],
                 proxies=credentials.proxies,
@@ -470,8 +471,7 @@ class IBMQFactory:
 
             # Build the provider.
             try:
-                provider = AccountProvider(provider_credentials,
-                                           auth_client.current_access_token())
+                provider = AccountProvider(provider_credentials, self)
                 self._providers[provider_credentials.unique_id()] = provider
             except Exception:  # pylint: disable=broad-except
                 # Catch-all for errors instantiating the provider.

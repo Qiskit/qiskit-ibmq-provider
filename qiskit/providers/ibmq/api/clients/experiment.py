@@ -29,16 +29,14 @@ class ExperimentClient(BaseClient):
 
     def __init__(
             self,
-            access_token: str,
             credentials: Credentials
     ) -> None:
         """ExperimentClient constructor.
 
         Args:
-            access_token: IBM Quantum Experience access token.
             credentials: Account credentials.
         """
-        self._session = RetrySession(credentials.experiment_url, access_token,
+        self._session = RetrySession(credentials.experiment_url, credentials.access_token,
                                      **credentials.connection_parameters())
         self.base_api = Api(self._session)
 

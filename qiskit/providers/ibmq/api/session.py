@@ -290,7 +290,7 @@ class RetrySession(Session):
                     logger.debug("Response uber-trace-id: %s", ex.response.headers['uber-trace-id'])
                 except Exception:  # pylint: disable=broad-except
                     # the response did not contain the expected json.
-                    message += ". {}".format(ex.response.text)
+                    message += f". {ex.response.text}"
 
             if self.access_token:
                 message = message.replace(self.access_token, '...')

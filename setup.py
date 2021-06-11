@@ -17,14 +17,14 @@ import os
 from setuptools import setup
 
 REQUIREMENTS = [
-    "nest-asyncio>=1.0.0,!=1.1.0",
-    "qiskit-terra>=0.16",
+    "qiskit-terra>=0.17.3",
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
-    "websockets>=8",
     "numpy>=1.13",
     "urllib3>=1.21.1",
-    "python-dateutil>=2.8.0"
+    "python-dateutil>=2.8.0",
+    "dill>=0.3",
+    "websocket-client>=1.0.1"
 ]
 
 # Handle version.
@@ -81,7 +81,9 @@ setup(
               'qiskit.providers.ibmq.jupyter',
               'qiskit.providers.ibmq.jupyter.dashboard',
               'qiskit.providers.ibmq.random',
-              'qiskit.providers.ibmq.experiment'],
+              'qiskit.providers.ibmq.experiment',
+              'qiskit.providers.ibmq.runtime',
+              'qiskit.providers.ibmq.runtime.program'],
     install_requires=REQUIREMENTS,
     include_package_data=True,
     python_requires=">=3.6",

@@ -13,13 +13,20 @@
 """Provider for a single IBM Quantum Experience account."""
 
 import logging
-from typing import Dict, List, Optional, Any, Callable
+from typing import Dict, List, Optional, Any, Callable, Union
 from collections import OrderedDict
 import traceback
+import copy
 
 from qiskit.providers import ProviderV1 as Provider  # type: ignore[attr-defined]
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
+from qiskit.circuit import QuantumCircuit
+from qiskit.providers.backend import BackendV1 as Backend
+from qiskit.providers.basebackend import BaseBackend
+from qiskit.transpiler import Layout
+from qiskit.providers.ibmq.runtime import runtime_job  # pylint: disable=unused-import
+from qiskit.providers.ibmq import ibmqfactory  # pylint: disable=unused-import
 
 from .api.clients import AccountClient
 from .ibmqbackend import IBMQBackend, IBMQSimulator
@@ -28,7 +35,9 @@ from .ibmqbackendservice import IBMQBackendService, IBMQDeprecatedBackendService
 from .utils.json_decoder import decode_backend_configuration
 from .random.ibmqrandomservice import IBMQRandomService
 from .experiment.experimentservice import ExperimentService
+from .runtime.ibm_runtime_service import IBMRuntimeService
 from .exceptions import IBMQNotAuthorizedError, IBMQInputValueError
+from .runner_result import RunnerResult
 
 logger = logging.getLogger(__name__)
 
@@ -89,18 +98,18 @@ class AccountProvider(Provider):
         in Jupyter Notebook and the Python interpreter.
     """
 
-    def __init__(self, credentials: Credentials, access_token: str) -> None:
+    def __init__(self, credentials: Credentials, factory: 'ibmqfactory.IBMQFactory') -> None:
         """AccountProvider constructor.
 
         Args:
             credentials: IBM Quantum Experience credentials.
-            access_token: IBM Quantum Experience access token.
+            factory: IBM Quantum account.
         """
         super().__init__()
 
         self.credentials = credentials
-        self._api_client = AccountClient(access_token,
-                                         credentials,
+        self._factory = factory
+        self._api_client = AccountClient(credentials,
                                          **credentials.connection_parameters())
 
         # Initialize the internal list of backends.
@@ -109,14 +118,15 @@ class AccountProvider(Provider):
         self.backends = IBMQDeprecatedBackendService(self.backend)  # type: ignore[assignment]
 
         # Initialize other services.
-        self._random = IBMQRandomService(self, access_token) \
-            if credentials.extractor_url else None
-        self._experiment = ExperimentService(self, access_token) \
-            if credentials.experiment_url else None
+        self._random = IBMQRandomService(self) if credentials.extractor_url else None
+        self._experiment = ExperimentService(self) if credentials.experiment_url else None
+        self._runtime = IBMRuntimeService(self) \
+            if credentials.runtime_url else None
 
         self._services = {'backend': self._backend,
                           'random': self._random,
-                          'experiment': self._experiment}
+                          'experiment': self._experiment,
+                          'runtime': self._runtime}
 
     def backends(
             self,
@@ -188,6 +198,100 @@ class AccountProvider(Provider):
 
         return ret
 
+    def run_circuits(
+            self,
+            circuits: Union[QuantumCircuit, List[QuantumCircuit]],
+            backend: Union[Backend, BaseBackend],
+            shots: Optional[int] = None,
+            initial_layout: Optional[Union[Layout, Dict, List]] = None,
+            layout_method: Optional[str] = None,
+            routing_method: Optional[str] = None,
+            translation_method: Optional[str] = None,
+            seed_transpiler: Optional[int] = None,
+            optimization_level: int = 1,
+            init_qubits: bool = True,
+            rep_delay: Optional[float] = None,
+            transpiler_options: Optional[dict] = None,
+            measurement_error_mitigation: bool = False,
+            **run_config: Dict
+    ) -> 'runtime_job.RuntimeJob':
+        """Execute the input circuit(s) on a backend using the runtime service.
+
+        Note:
+            This method uses the IBM Quantum runtime service which is not
+            available to all accounts.
+
+        Args:
+            circuits: Circuit(s) to execute.
+
+            backend: Backend to execute circuits on.
+                Transpiler options are automatically grabbed from backend configuration
+                and properties unless otherwise specified.
+
+            shots: Number of repetitions of each circuit, for sampling. If not specified,
+                the backend default is used.
+
+            initial_layout: Initial position of virtual qubits on physical qubits.
+
+            layout_method: Name of layout selection pass ('trivial', 'dense',
+                'noise_adaptive', 'sabre').
+                Sometimes a perfect layout can be available in which case the layout_method
+                may not run.
+
+            routing_method: Name of routing pass ('basic', 'lookahead', 'stochastic', 'sabre')
+
+            translation_method: Name of translation pass ('unroller', 'translator', 'synthesis')
+
+            seed_transpiler: Sets random seed for the stochastic parts of the transpiler.
+
+            optimization_level: How much optimization to perform on the circuits.
+                Higher levels generate more optimized circuits, at the expense of longer
+                transpilation time.
+                If None, level 1 will be chosen as default.
+
+            init_qubits: Whether to reset the qubits to the ground state for each shot.
+
+            rep_delay: Delay between programs in seconds. Only supported on certain
+                backends (``backend.configuration().dynamic_reprate_enabled`` ). If supported,
+                ``rep_delay`` will be used instead of ``rep_time`` and must be from the
+                range supplied by the backend (``backend.configuration().rep_delay_range``).
+                Default is given by ``backend.configuration().default_rep_delay``.
+
+            transpiler_options: Additional transpiler options.
+
+            measurement_error_mitigation: Whether to apply measurement error mitigation.
+
+            **run_config: Extra arguments used to configure the circuit execution.
+
+        Returns:
+            Runtime job.
+        """
+        inputs = copy.deepcopy(run_config)  # type: Dict[str, Any]
+        inputs['circuits'] = circuits
+        inputs['optimization_level'] = optimization_level
+        inputs['init_qubits'] = init_qubits
+        inputs['measurement_error_mitigation'] = measurement_error_mitigation
+        if shots:
+            inputs['shots'] = shots
+        if initial_layout:
+            inputs['initial_layout'] = initial_layout
+        if layout_method:
+            inputs['layout_method'] = layout_method
+        if routing_method:
+            inputs['routing_method'] = routing_method
+        if translation_method:
+            inputs['translation_method'] = translation_method
+        if seed_transpiler:
+            inputs['seed_transpiler'] = seed_transpiler
+        if rep_delay:
+            inputs['rep_delay'] = rep_delay
+        if transpiler_options:
+            inputs['transpiler_options'] = transpiler_options
+
+        options = {'backend_name': backend.name()}
+        return self.runtime.run('circuit-runner', options=options, inputs=inputs,
+                                result_decoder=RunnerResult)
+
     def service(self, name: str) -> Any:
         """Return the specified service.
 
@@ -217,6 +321,26 @@ class AccountProvider(Provider):
             All services available to this provider.
         """
         return {key: val for key, val in self._services.items() if val is not None}
+
+    def has_service(self, name: str) -> bool:
+        """Check if this provider has access to the service.
+
+        Args:
+            name: Name of the service.
+
+        Returns:
+            Whether the provider has access to the service.
+
+        Raises:
+            IBMQInputValueError: If an unknown service name is specified.
+        """
+        if name not in self._services:
+            raise IBMQInputValueError(f"Unknown service {name} specified.")
+
+        if self._services[name] is None:
+            return False
+
+        return True
 
     @property
     def backend(self) -> IBMQBackendService:
@@ -257,7 +381,22 @@ class AccountProvider(Provider):
         if self._random:
             return self._random
         else:
-            raise IBMQNotAuthorizedError("You are not authorized to use the random number service.")
+            raise IBMQNotAuthorizedError("You are not authorized to use the service.")
+
+    @property
+    def runtime(self) -> IBMRuntimeService:
+        """Return the runtime service.
+
+        Returns:
+            The runtime service instance.
+
+        Raises:
+            IBMQNotAuthorizedError: If the account is not authorized to use the service.
+        """
+        if self._runtime:
+            return self._runtime
+        else:
+            raise IBMQNotAuthorizedError("You are not authorized to use the runtime service.")
 
     def __eq__(
             self,

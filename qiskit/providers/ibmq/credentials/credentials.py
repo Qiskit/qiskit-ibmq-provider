@@ -48,7 +48,8 @@ class Credentials:
             project: Optional[str] = None,
             proxies: Optional[Dict] = None,
             verify: bool = True,
-            services: Optional[Dict] = None
+            services: Optional[Dict] = None,
+            access_token: Optional[str] = None
     ) -> None:
         """Credentials constructor.
 
@@ -62,8 +63,10 @@ class Credentials:
             proxies: Proxy configuration.
             verify: If ``False``, ignores SSL certificates errors.
             services: Additional services for this account.
+            access_token: IBM Quantum access token.
         """
         self.token = token
+        self.access_token = access_token
         (self.url, self.base_url,
          self.hub, self.group, self.project) = _unify_ibmq_url(
              url, hub, group, project)
@@ -75,13 +78,16 @@ class Credentials:
         services = services or {}
         self.extractor_url = services.get('extractorsService', None)
         self.experiment_url = services.get('resultsDB', None)
+        self.runtime_url = services.get('runtime', None)
 
     def is_ibmq(self) -> bool:
         """Return whether the credentials represent an IBM Quantum Experience account."""
         return all([self.hub, self.group, self.project])
 
     def __eq__(self, other: object) -> bool:
-        return self.__dict__ == other.__dict__
+        if not isinstance(other, Credentials):
+            return False
+        return (self.token == other.token) & (self.unique_id() == other.unique_id())
 
     def unique_id(self) -> HubGroupProject:
         """Return a value that uniquely identifies these credentials.
