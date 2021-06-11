@@ -89,6 +89,7 @@ class IBMQBackendService:
             filters: Optional[Callable[[List[IBMQBackend]], bool]] = None,
             timeout: Optional[float] = None,
             min_num_qubits: Optional[int] = None,
+            input_allowed: Optional[Union[str, List[str]]] = None,
             **kwargs: Any
     ) -> List[IBMQBackend]:
         """Return all backends accessible via this provider, subject to optional filtering.
@@ -103,6 +104,10 @@ class IBMQBackendService:
             timeout: Maximum number of seconds to wait for the discovery of
                 remote backends.
             min_num_qubits: Minimum number of qubits the backend has to have.
+            input_allowed: Filter by the types of input the backend supports.
+                For example, ``inputs_allowed='runtime'`` will return all backends
+                that support Qiskit Runtime. If a list is given, the backend must
+                support all types specified in the list.
             kwargs: Simple filters that specify a ``True``/``False`` criteria in the
                 backend configuration, backends status, or provider credentials.
                 An example to get the operational backends with 5 qubits::
@@ -130,6 +135,12 @@ class IBMQBackendService:
         if min_num_qubits:
             backends = list(filter(
                 lambda b: b.configuration().n_qubits >= min_num_qubits, backends))
+
+        if input_allowed:
+            if not isinstance(input_allowed, list):
+                input_allowed = [input_allowed]
+            backends = list(filter(
+                lambda b: set(input_allowed) <= set(b.configuration().input_allowed), backends))
 
         return filter_backends(backends, filters=filters, **kwargs)
 
