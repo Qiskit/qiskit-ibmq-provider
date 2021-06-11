@@ -161,6 +161,7 @@ class RuntimeProgram:
 
         Note that each call to this method returns a new namespace instance and
         does not include any modification to the previous instance.
+        
         Returns:
             Program parameter namespace.
         """
@@ -303,7 +304,7 @@ class ParameterNamespace(SimpleNamespace):
             does not fail the validation if the namepsace has extraneous parameters.
 
         Raises:
-            IBMQInputValueError if validation fails
+            IBMQInputValueError: if validation fails
         """
 
         # Iterate through the user's stored inputs

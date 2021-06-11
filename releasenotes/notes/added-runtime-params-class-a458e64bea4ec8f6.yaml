@@ -1,8 +1,18 @@
 ---
+features:
+  - |
+    The `inputs` parameter to
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.run`
+    method can now be specified as a
+    :class:`qiskit.providers.ibmq.runtime.ParameterNamespace` instance which
+    supports auto-complete features. You can use
+    :meth:`qiskit.providers.ibmq.runtime.RuntimeProgram.parameters` to retrieve
+    an ``ParameterNamespace`` instance.
 upgrade:
   - |
-    The `inputs` parameter to 
-    :meth:`qiskit.providers.ibmq.runtime.ibmq_runtime_service.run` 
-    method can now be specified as a
-    :class:`qiskit.providers.ibmq.runtime.runtime_program.ParameterNamespace`
-    to support auto-complete features.
+    :meth:`qiskit.providers.ibmq.runtime.RuntimeProgram.parameters` is now a 
+    method that returns a
+    :class:`qiskit.providers.ibmq.runtime.ParameterNamespace` instance, which
+    you can use to fill in runtime program parameter values and pass to
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.run`.
+    
