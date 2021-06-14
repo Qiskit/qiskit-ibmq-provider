@@ -16,10 +16,15 @@ from typing import Optional, List, Dict, Union, Tuple, Any
 from datetime import datetime
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
-
+from qiskit.providers.ibmq.credentials.credentials import Credentials
+from qiskit.providers.ibmq.credentials.configrc import store_credentials
 from .experiment import Experiment
 from .analysis_result import AnalysisResult, DeviceComponent
-from .exceptions import ExperimentNotFoundError, AnalysisResultNotFoundError, PlotNotFoundError
+from .exceptions import (
+    ExperimentNotFoundError,
+    AnalysisResultNotFoundError,
+    PlotNotFoundError,
+    OptionNotFoundError)
 from .constants import ResultQuality
 from ..utils.converters import local_to_utc_str
 from ..api.clients.experiment import ExperimentClient
@@ -84,6 +89,7 @@ class ExperimentService:
 
         self._provider = provider
         self._api_client = ExperimentClient(provider.credentials)
+        self._credentials: Credentials = provider.credentials
 
     def backends(self) -> List[Dict]:
         """Return a list of backends.
@@ -308,6 +314,30 @@ class ExperimentService:
             experiment = experiment.uuid
         raw_data = self._api_client.experiment_delete(experiment)
         return Experiment.from_remote_data(self._provider, raw_data)
+
+    def options(self) -> Dict:
+        """Returns all saved experiment options"""
+        return self._credentials.options
+
+    def option(self, name: str) -> object:
+        """ Returns the value of the experiment option
+
+        Return:
+            the experiment option's value
+        Raises:
+            OptionNotFoundError: if option does not exist
+        """
+        try:
+            return self._credentials.options[name]
+        except KeyError:
+            raise OptionNotFoundError('ExperimentService.option("{}") does not exist!'.format(name))
+
+    def set_option(self, auto_save: bool = None) -> None:
+        """Sets saved experiment options"""
+        if auto_save is not None:
+            self._credentials.options['auto_save'] = auto_save
+        # Store the credentials
+        store_credentials(self._credentials)
 
     def analysis_results(
             self,

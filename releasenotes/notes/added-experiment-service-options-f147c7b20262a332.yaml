@@ -1,0 +1,20 @@
+---
+features:
+  - |
+    A user can now interact with service options via 
+    :class:`qiskit.providers.ibmq.experiment.experimentservice.ExperimentService`.
+    At this point in time, the only service option is `auto_save`.
+
+    Usage examples::
+
+      provider.experiment.set_options(auto_save=True)  # use this option in the session and save to disk
+      provider.experiment.option('auto_save')  # return specified option
+      provider.experiment.options()  # return all saved options
+
+upgrade:
+  - |
+    :class:`qiskit.providers.ibmq.experiment.experimentservice.ExperimentService`
+    now can interfaces the (new) `options` property of the 
+    :class:`qiskit.providers.ibmq.credentials.credentials.Credentials` class.
+    This property represents service options stored in the `.qiskitrc` file.
+

@@ -29,6 +29,8 @@ DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
                                      '.qiskit', 'qiskitrc')
 """Default location of the configuration file."""
 
+ACTIVE_EXPERIMENT_OPTIONS = [('auto_save', bool)]
+
 
 def read_credentials_from_qiskitrc(
         filename: Optional[str] = None
@@ -83,7 +85,17 @@ def read_credentials_from_qiskitrc(
                 # Delete `default_provider`, since it's not used by the `Credentials` constructor.
                 del single_credentials['default_provider']
 
-            new_credentials = Credentials(**single_credentials)  # type: ignore[arg-type]
+            # Retrieve experiment options
+            # Criteria: It is (1) an active option and (2) a value was found for it
+            options = {}
+            for opt, opt_type in ACTIVE_EXPERIMENT_OPTIONS:
+                if opt in single_credentials.keys():
+                    options[opt] = opt_type(  # type: ignore[assignment]
+                        single_credentials[opt])
+                    del single_credentials[opt]
+
+            new_credentials = Credentials(options=options,
+                                          **single_credentials)  # type: ignore[arg-type]
 
             credentials_dict[new_credentials.unique_id()] = new_credentials
 
@@ -113,6 +125,14 @@ def write_qiskit_rc(
         credentials_dict = {key: getattr(credentials_obj, key) for key in
                             ['token', 'url', 'proxies', 'verify']
                             if getattr(credentials_obj, key)}
+
+        # Handle `Credential.options` (i.e add valid options to dict)
+        active_option_names = [name for name, _ in ACTIVE_EXPERIMENT_OPTIONS]
+        for name, val in credentials_obj.options.items():
+            # If option is a valid, active experiment option,
+            # Add it directly to the credential dictionary
+            if name in active_option_names:
+                credentials_dict[name] = val
 
         # Save the default provider to disk, if specified.
         if default_provider_to_store:

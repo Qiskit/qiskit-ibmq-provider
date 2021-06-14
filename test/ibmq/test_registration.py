@@ -12,8 +12,10 @@
 
 """Test the registration and credentials modules."""
 
+from collections import OrderedDict
 import logging
 import os
+from typing import Generator
 import warnings
 from io import StringIO
 from contextlib import contextmanager
@@ -48,7 +50,7 @@ PROXIES = {
 class TestCredentials(IBMQTestCase):
     """Tests for the credential modules."""
 
-    def test_load_account_no_credentials(self):
+    def test_load_account_no_credentials(self) -> None:
         """Test ``load_account()`` with no credentials available."""
         with custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             with self.assertRaises(IBMQAccountError) as context_manager:
@@ -56,7 +58,7 @@ class TestCredentials(IBMQTestCase):
 
         self.assertIn('No IBM Quantum Experience credentials found', str(context_manager.exception))
 
-    def test_store_credentials_overwrite(self):
+    def test_store_credentials_overwrite(self) -> None:
         """Test overwriting qiskitrc credentials."""
         credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
         credentials2 = Credentials('QISKITRC_TOKEN_2', url=QE2_AUTH_URL)
@@ -84,7 +86,7 @@ class TestCredentials(IBMQTestCase):
         # Ensure that the credentials are the overwritten ones.
         self.assertEqual(factory._credentials, credentials2)
 
-    def test_environ_over_qiskitrc(self):
+    def test_environ_over_qiskitrc(self) -> None:
         """Test credential discovery order."""
         credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
 
@@ -102,14 +104,14 @@ class TestCredentials(IBMQTestCase):
 class TestCredentialsKwargs(IBMQTestCase):
     """Test for ``Credentials.connection_parameters()``."""
 
-    def test_no_proxy_params(self):
+    def test_no_proxy_params(self) -> None:
         """Test when no proxy parameters are passed."""
         no_params_expected_result = {'verify': True}
         no_params_credentials = Credentials('dummy_token', 'https://dummy_url')
         result = no_params_credentials.connection_parameters()
         self.assertDictEqual(no_params_expected_result, result)
 
-    def test_verify_param(self):
+    def test_verify_param(self) -> None:
         """Test 'verify' arg is acknowledged."""
         false_verify_expected_result = {'verify': False}
         false_verify_credentials = Credentials(
@@ -117,7 +119,30 @@ class TestCredentialsKwargs(IBMQTestCase):
         result = false_verify_credentials.connection_parameters()
         self.assertDictEqual(false_verify_expected_result, result)
 
-    def test_proxy_param(self):
+    def test_options_param(self) -> None:
+        """Test options param is acknowledged."""
+        # Iterate through qiskitrc credentials
+        for auth, i in enumerate(read_credentials_from_qiskitrc()):
+            if not isinstance(auth, OrderedDict):
+                continue
+            # Read auto_save value
+            hgp, creds = tuple(auth.items())[0]
+            cred_autosave = bool(creds.options['auto_save'])
+            # Flip it & save
+            creds.options = {'auto_save': not cred_autosave}
+            store_credentials(creds,
+                              default_provider=(hgp if hgp.hub is not None else None),
+                              overwrite=False)
+            # Re-read & verify auto_save value flipped
+            _, creds = tuple(list(read_credentials_from_qiskitrc())[i].items())[0]
+            self.assertEqual(not cred_autosave, bool(creds.options['auto_save']))
+            # reset
+            creds.options = {'auto_save': cred_autosave}
+            store_credentials(creds,
+                              default_provider=(hgp if hgp.hub is not None else None),
+                              overwrite=False)
+
+    def test_proxy_param(self) -> None:
         """Test using only proxy urls (no NTLM credentials)."""
         urls = {'http': 'localhost:8080', 'https': 'localhost:8080'}
         proxies_only_expected_result = {'verify': True, 'proxies': urls}
@@ -126,7 +151,7 @@ class TestCredentialsKwargs(IBMQTestCase):
         result = proxies_only_credentials.connection_parameters()
         self.assertDictEqual(proxies_only_expected_result, result)
 
-    def test_proxies_param_with_ntlm(self):
+    def test_proxies_param_with_ntlm(self) -> None:
         """Test proxies with NTLM credentials."""
         urls = {'http': 'localhost:8080', 'https': 'localhost:8080'}
         proxies_with_ntlm_dict = {
@@ -154,7 +179,7 @@ class TestCredentialsKwargs(IBMQTestCase):
         result.pop('auth')
         self.assertDictEqual(ntlm_expected_result, result)
 
-    def test_malformed_proxy_param(self):
+    def test_malformed_proxy_param(self) -> None:
         """Test input with malformed nesting of the proxies dictionary."""
         urls = {'http': 'localhost:8080', 'https': 'localhost:8080'}
         malformed_nested_proxies_dict = {'proxies': urls}
@@ -167,7 +192,7 @@ class TestCredentialsKwargs(IBMQTestCase):
         result = malformed_nested_credentials.connection_parameters()
         self.assertDictEqual(expected_result, result)
 
-    def test_malformed_ntlm_params(self):
+    def test_malformed_ntlm_params(self) -> None:
         """Test input with malformed NTLM credentials."""
         urls = {'http': 'localhost:8080', 'https': 'localhost:8080'}
         malformed_ntlm_credentials_dict = {
@@ -188,7 +213,7 @@ class TestCredentialsKwargs(IBMQTestCase):
 class TestIBMQAccountUpdater(IBMQTestCase):
     """Tests for the ``update_credentials()`` helper."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Initial test setup."""
         super().setUp()
 
@@ -196,14 +221,14 @@ class TestIBMQAccountUpdater(IBMQTestCase):
         self.patcher = patch('sys.stdout', new=StringIO())
         self.patcher.start()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         """Test cleanup."""
         super().tearDown()
 
         # Reenable stdout output.
         self.patcher.stop()
 
-    def assertCorrectApi2Credentials(self, token, credentials_dict):
+    def assertCorrectApi2Credentials(self, token, credentials_dict) -> None:
         """Asserts that there is only one credentials belonging to API 2."""
         self.assertEqual(len(credentials_dict), 1)
         credentials = list(credentials_dict.values())[0]
@@ -214,7 +239,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
         if token:
             self.assertEqual(credentials.token, token)
 
-    def test_qe_credentials(self):
+    def test_qe_credentials(self) -> None:
         """Test converting QE credentials."""
         with custom_qiskitrc():
             store_credentials(Credentials('A', url=QE_URL))
@@ -224,7 +249,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             loaded_accounts, _ = read_credentials_from_qiskitrc()
             self.assertCorrectApi2Credentials('A', loaded_accounts)
 
-    def test_qconsole_credentials(self):
+    def test_qconsole_credentials(self) -> None:
         """Test converting Qconsole credentials."""
         with custom_qiskitrc():
             store_credentials(Credentials('A',
@@ -235,7 +260,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             loaded_accounts, _ = read_credentials_from_qiskitrc()
             self.assertCorrectApi2Credentials('A', loaded_accounts)
 
-    def test_proxy_credentials(self):
+    def test_proxy_credentials(self) -> None:
         """Test converting credentials with proxy values."""
         with custom_qiskitrc():
             store_credentials(Credentials('A',
@@ -251,7 +276,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             credentials = list(loaded_accounts.values())[0]
             self.assertEqual(credentials.proxies, PROXIES)
 
-    def test_multiple_credentials(self):
+    def test_multiple_credentials(self) -> None:
         """Test converting multiple credentials."""
         with custom_qiskitrc():
             store_credentials(Credentials('A', url=QE2_AUTH_URL))
@@ -267,7 +292,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             # the qiskitrc, which is not guaranteed.
             self.assertCorrectApi2Credentials(None, loaded_accounts)
 
-    def test_api2_non_auth_credentials(self):
+    def test_api2_non_auth_credentials(self) -> None:
         """Test converting api 2 non auth credentials."""
         with custom_qiskitrc():
             store_credentials(Credentials('A', url=QE2_URL))
@@ -277,7 +302,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             loaded_accounts, _ = read_credentials_from_qiskitrc()
             self.assertCorrectApi2Credentials('A', loaded_accounts)
 
-    def test_auth2_credentials(self):
+    def test_auth2_credentials(self) -> None:
         """Test converting already API 2 auth credentials."""
         with custom_qiskitrc():
             store_credentials(Credentials('A', url=QE2_AUTH_URL))
@@ -286,7 +311,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             # No credentials should be returned.
             self.assertIsNone(credentials)
 
-    def test_unknown_credentials(self):
+    def test_unknown_credentials(self) -> None:
         """Test converting credentials with an unknown URL."""
         with custom_qiskitrc():
             store_credentials(Credentials('A', url='UNKNOWN_URL'))
@@ -301,7 +326,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
 
 # Context managers
 
-def _mocked_initialize_provider(self, credentials: Credentials):
+def _mocked_initialize_provider(self, credentials: Credentials) -> None:
     """Mock ``_initialize_provider()``, just storing the credentials."""
     self._credentials = credentials
 
