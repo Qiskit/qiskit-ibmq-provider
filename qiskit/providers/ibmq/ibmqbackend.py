@@ -259,7 +259,9 @@ class IBMQBackend(Backend):
                 the job.
             IBMQBackendApiProtocolError: If an unexpected value received from
                  the server.
-            IBMQBackendValueError: If an input parameter value is not valid.
+            IBMQBackendValueError:
+                - If an input parameter value is not valid.
+                - If ESP readout is used and the backend does not support this.
         """
         # pylint: disable=arguments-differ
         if job_share_level:
@@ -279,6 +281,14 @@ class IBMQBackend(Backend):
         sim_method = None
         if self.configuration().simulator:
             sim_method = getattr(self.configuration(), 'simulation_method', None)
+
+        measure_esp_enabled = getattr(self.configuration(), "measure_esp_enabled", False)
+        use_measure_esp = use_measure_esp or measure_esp_enabled
+        if use_measure_esp and not measure_esp_enabled:
+            raise IBMQBackendValueError(
+                "ESP readout not supported on this device. Please make sure the flag "
+                "'use_measure_esp' is unset or set to 'False'."
+            )
 
         if isinstance(circuits, (QasmQobj, PulseQobj)):
             if not self.qobj_warning_issued:
