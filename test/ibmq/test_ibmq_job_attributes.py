@@ -318,7 +318,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
             self.sim_backend._api_client = BaseFakeAccountClient()
             setattr(self.sim_backend._configuration, "measure_esp_enabled", True)
             job = self.sim_backend.run(self.bell, use_measure_esp=True)
-            self.assertEqual(job.qobj().config.use_measure_esp, True)
+            self.assertEqual(job.backend_options()["use_measure_esp"], True)
         finally:
             delattr(self.sim_backend._configuration, "measure_esp_enabled")
             self.sim_backend._api_client = saved_api
