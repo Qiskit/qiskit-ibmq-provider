@@ -92,8 +92,9 @@ For example::
     from qiskit import IBMQ, QuantumCircuit
     from qiskit.providers.ibmq import RunnerResult
 
+
     provider = IBMQ.load_account()
-    backend = provider.backend.ibmq_montreal
+    backend = provider.backend.ibmq_qasm_simulator
 
     # Create a circuit.
     qc = QuantumCircuit(2, 2)
@@ -101,12 +102,18 @@ For example::
     qc.cx(0, 1)
     qc.measure_all()
 
-    # Execute the circuit using the "circuit-runner" program.
-    program_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
+    # Set the "circuit-runner" program parameters
+    params = provider.runtime.program(program_id="circuit-runner").parameters()
+    params.circuits = qc
+    params.measurement_error_mitigation = True
+
+    # Configure backend options
     options = {'backend_name': backend.name()}
+
+    # Execute the circuit using the "circuit-runner" program.
     job = provider.runtime.run(program_id="circuit-runner",
-                               options=options,
-                               inputs=program_inputs)
+                            options=options,
+                            inputs=params)
 
     # Get runtime job result.
     result = job.result(decoder=RunnerResult)
@@ -136,7 +143,7 @@ the :meth:`RuntimeJob.stream_results` method. For example::
     from qiskit import IBMQ, QuantumCircuit
 
     provider = IBMQ.load_account()
-    backend = provider.backend.ibmq_montreal
+    backend = provider.backend.ibmq_qasm_simulator
 
     def interim_result_callback(job_id, interim_result):
         print(interim_result)
@@ -213,11 +220,14 @@ Classes
    UserMessenger
    ProgramBackend
    ResultDecoder
+   RuntimeEncoder
+   RuntimeDecoder
+   ParameterNamespace
 """
 
 from .ibm_runtime_service import IBMRuntimeService
 from .runtime_job import RuntimeJob
-from .runtime_program import RuntimeProgram
+from .runtime_program import RuntimeProgram, ParameterNamespace
 from .program.user_messenger import UserMessenger
 from .program.program_backend import ProgramBackend
 from .program.result_decoder import ResultDecoder
