@@ -21,7 +21,7 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .runtime_job import RuntimeJob
-from .runtime_program import RuntimeProgram, ProgramParameter, ProgramResult
+from .runtime_program import RuntimeProgram, ProgramParameter, ProgramResult, ParameterNamespace
 from .utils import RuntimeEncoder, RuntimeDecoder
 from .exceptions import (QiskitRuntimeError, RuntimeDuplicateProgramError, RuntimeProgramNotFound,
                          RuntimeJobNotFound)
@@ -56,7 +56,7 @@ class IBMRuntimeService:
         from qiskit.providers.ibmq import RunnerResult
 
         provider = IBMQ.load_account()
-        backend = provider.backend.ibmq_montreal
+        backend = provider.backend.ibmq_qasm_simulator
 
         # List all available programs.
         provider.runtime.pprint_programs()
@@ -67,12 +67,18 @@ class IBMRuntimeService:
         qc.cx(0, 1)
         qc.measure_all()
 
-        # Execute the circuit using the "circuit-runner" program.
-        program_inputs = {'circuits': circuit, 'measurement_error_mitigation': True}
+        # Set the "circuit-runner" program parameters
+        params = provider.runtime.program(program_id="circuit-runner").parameters()
+        params.circuits = qc
+        params.measurement_error_mitigation = True
+
+        # Configure backend options
         options = {'backend_name': backend.name()}
+
+        # Execute the circuit using the "circuit-runner" program.
         job = provider.runtime.run(program_id="circuit-runner",
                                    options=options,
-                                   inputs=program_inputs)
+                                   inputs=params)
 
         # Get runtime job result.
         result = job.result(decoder=RunnerResult)
@@ -190,7 +196,7 @@ class IBMRuntimeService:
             self,
             program_id: str,
             options: Dict,
-            inputs: Dict,
+            inputs: Union[Dict, ParameterNamespace],
             callback: Optional[Callable] = None,
             result_decoder: Optional[Type[ResultDecoder]] = None
     ) -> RuntimeJob:
@@ -219,6 +225,10 @@ class IBMRuntimeService:
         """
         if 'backend_name' not in options:
             raise IBMQInputValueError('"backend_name" is required field in "options"')
+        # If using params object, extract as dictionary
+        if isinstance(inputs, ParameterNamespace):
+            inputs.validate()
+            inputs = dict(inputs)
 
         backend_name = options['backend_name']
         params_str = json.dumps(inputs, cls=RuntimeEncoder)
@@ -332,7 +342,7 @@ class IBMRuntimeService:
         Returns:
             Merged metadata.
         """
-        upd_metadata = {}
+        upd_metadata: dict = {}
         if metadata is not None:
             if isinstance(metadata, str):
                 with open(metadata, 'r') as file:
