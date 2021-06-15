@@ -262,9 +262,10 @@ class AccountProvider(Provider):
 
             measurement_error_mitigation: Whether to apply measurement error mitigation.
 
-            use_measure_esp: Whether to use excited state promoted (ESP) readout for the final
-                measurement in each circuit. ESP readout can offer higher fidelity than standard
-                measurement sequences. See `here <https://arxiv.org/pdf/2008.08571.pdf>`_.
+            use_measure_esp: Whether to use excited state promoted (ESP) readout for measurements
+                which are the final instruction on a qubit. ESP readout can offer higher fidelity
+                than standard measurement sequences. See
+                `here <https://arxiv.org/pdf/2008.08571.pdf>`_.
 
             **run_config: Extra arguments used to configure the circuit execution.
 
