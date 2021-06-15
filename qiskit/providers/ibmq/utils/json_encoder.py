@@ -33,7 +33,7 @@ class IQXJsonEncoder(json.JSONEncoder):
         if isinstance(o, ParameterExpression):
             try:
                 return float(o)
-            except TypeError:
+            except (TypeError, RuntimeError):
                 val = complex(o)
                 return val.real, val.imag
         return json.JSONEncoder.default(self, o)
