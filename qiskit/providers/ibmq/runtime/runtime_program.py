@@ -161,6 +161,7 @@ class RuntimeProgram:
 
         Note that each call to this method returns a new namespace instance and
         does not include any modification to the previous instance.
+
         Returns:
             Program parameter namespace.
         """
