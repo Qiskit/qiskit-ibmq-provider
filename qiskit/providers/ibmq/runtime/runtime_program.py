@@ -14,6 +14,9 @@
 
 import logging
 from typing import Optional, List, NamedTuple, Dict
+from types import SimpleNamespace
+from qiskit.providers.ibmq.exceptions import IBMQInputValueError
+
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +39,7 @@ class RuntimeProgram:
 
         # To retrieve metadata of a single program.
         program = provider.runtime.program(program_id='circuit-runner')
-        print(f"Program {program.name} takes parameters {program.parameters}")
+        print(f"Program {program.name} takes parameters {program.parameters().metadata}")
     """
 
     def __init__(
@@ -72,9 +75,9 @@ class RuntimeProgram:
         self._max_execution_time = max_execution_time
         self._version = version
         self._backend_requirements = backend_requirements or {}
-        self._parameters = []
-        self._return_values = []
-        self._interim_results = []
+        self._parameters: List[ProgramParameter] = []
+        self._return_values: List[ProgramResult] = []
+        self._interim_results: List[ProgramResult] = []
         self._creation_date = creation_date
 
         if parameters:
@@ -144,10 +147,25 @@ class RuntimeProgram:
             "max_execution_time": self.max_execution_time,
             "version": self.version,
             "backend_requirements": self.backend_requirements,
-            "parameters": self.parameters,
+            "parameters": self.parameters(),
             "return_values": self.return_values,
             "interim_results": self.interim_results
         }
+
+    def parameters(self) -> 'ParameterNamespace':
+        """Program parameter namespace.
+
+        You can use the returned namespace to assign parameter values and pass
+        the namespace to :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.run`.
+        The namespace allows you to use auto-completion to find program parameters.
+
+        Note that each call to this method returns a new namespace instance and
+        does not include any modification to the previous instance.
+
+        Returns:
+            Program parameter namespace.
+        """
+        return ParameterNamespace(self._parameters)
 
     @property
     def program_id(self) -> str:
@@ -175,15 +193,6 @@ class RuntimeProgram:
             Program description.
         """
         return self._description
-
-    @property
-    def parameters(self) -> List['ProgramParameter']:
-        """Program parameter definitions.
-
-        Returns:
-            Parameter definitions for this program.
-        """
-        return self._parameters
 
     @property
     def return_values(self) -> List['ProgramResult']:
@@ -255,3 +264,77 @@ class ProgramResult(NamedTuple):
     name: str
     description: str
     type: str
+
+
+class ParameterNamespace(SimpleNamespace):
+    """ A namespace for program parameters with validation.
+
+    This class provides a namespace for program parameters with auto-completion
+    and validation support.
+    """
+
+    def __init__(self, params: List[ProgramParameter]):
+        """ParameterNamespace constructor.
+
+        Args:
+            params: The program's input parameters.
+        """
+        super().__init__()
+        # Allow access to the raw program parameters list
+        self.__metadata = params
+        # For localized logic, create store of parameters in dictionary
+        self.__program_params: dict = {}
+
+        for param in params:
+            # (1) Add parameters to a dict by name
+            setattr(self, param.name, None)
+            # (2) Store the program params for validation
+            self.__program_params[param.name] = param
+
+    @property
+    def metadata(self) -> List[ProgramParameter]:
+        """Returns the parameter metadata"""
+        return self.__metadata
+
+    def validate(self) -> None:
+        """Validate program input values.
+
+        Note:
+            This method only verifies that required parameters have values. It
+            does not fail the validation if the namepsace has extraneous parameters.
+
+        Raises:
+            IBMQInputValueError if validation fails
+        """
+
+        # Iterate through the user's stored inputs
+        for param_name, program_param in self.__program_params.items():
+            # Set invariants: User-specified parameter value (value) and whether it's required (req)
+            value = getattr(self, param_name, None)
+            # Check there exists a program parameter of that name.
+            if value is None and program_param.required:
+                raise IBMQInputValueError('Param (%s) missing required value!' % param_name)
+
+    def __str__(self) -> str:
+        """Creates string representation of object"""
+        # Header
+        header = '| {:10.10} | {:12.12} | {:12.12} ' \
+                 '| {:8.8} | {:>15} |'.format(
+                     'Name',
+                     'Value',
+                     'Type',
+                     'Required',
+                     'Description'
+                     )
+        # List of ProgramParameter objects (str)
+        params_str = '\n'.join([
+            '| {:10.10} | {:12.12} | {:12.12}| {:8.8} | {:>15} |'.format(
+                param.name,
+                str(getattr(self, param.name, 'None')),
+                param.type,
+                str(param.required),
+                param.description
+            ) for param in self.__program_params.values()])
+
+        return "ParameterNamespace (Values):\n%s\n%s\n%s" \
+               % (header, '-' * len(header), params_str)
