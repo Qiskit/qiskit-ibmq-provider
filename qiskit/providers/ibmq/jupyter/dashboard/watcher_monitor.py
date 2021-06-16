@@ -17,14 +17,14 @@ import sys
 import time
 import threading
 
-from qiskit.providers.ibmq.runtime.runtime_job import RuntimeJob
+from qiskit.providers.job import JobV1 as Job
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 
+from .utils import JobType, get_job_type
 from ...utils.converters import duration_difference
 
 
-def _job_monitor(job: Union[IBMQJob, RuntimeJob],
+def _job_monitor(job: Job,
                  status: JobStatus,
                  watcher: 'IQXDashboard') -> None:
     """Monitor the status of an ``IBMQJob`` instance.
@@ -34,12 +34,11 @@ def _job_monitor(job: Union[IBMQJob, RuntimeJob],
         status: Job status.
         watcher: Job watcher instance.
     """
-    target = _job_checker_runtime if isinstance(job, RuntimeJob) else _job_checker
-    thread = threading.Thread(target=target, args=(job, status, watcher))
+    thread = threading.Thread(target=_job_checker, args=(job, status, watcher))
     thread.start()
 
 
-def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> None:
+def _job_checker(job: Job, status: JobStatus, watcher: 'IQXDashboard') -> None:
     """A simple job status checker.
 
     Args:
@@ -47,6 +46,8 @@ def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> No
         status: Job status.
         watcher: Job watcher instance.
     """
+    job_type = get_job_type(job)
+
     prev_status_name = None
     prev_queue_pos = None
     interval = 2
@@ -59,35 +60,42 @@ def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> No
             exception_count = 0
 
             if status.name == 'QUEUED':
-                queue_pos = job.queue_position()
-                if queue_pos != prev_queue_pos:
-                    queue_info = job.queue_info()
-                    if queue_info and queue_info.estimated_start_time:
-                        est_time = duration_difference(queue_info.estimated_start_time)
-                        prev_est_time = est_time
-                    else:
-                        est_time = prev_est_time
+                if job_type == JobType.IBMQ:
+                    queue_pos = job.queue_position()
+                    if queue_pos != prev_queue_pos:
+                        queue_info = job.queue_info()
+                        if queue_info and queue_info.estimated_start_time:
+                            est_time = duration_difference(queue_info.estimated_start_time)
+                            prev_est_time = est_time
+                        else:
+                            est_time = prev_est_time
 
-                    update_info = (job.job_id(), status.name+' ({})'.format(queue_pos),
-                                   est_time, status.value)
+                        update_info = (job.job_id(), status.name+' ({})'.format(queue_pos),
+                                       est_time, status.value)
 
-                    watcher.update_single_job(update_info)
-                    if queue_pos is not None:
-                        interval = max(queue_pos, 2)
-                    else:
-                        interval = 2
-                    prev_queue_pos = queue_pos
+                        watcher.update_single_job(update_info)
+                        if queue_pos is not None:
+                            interval = max(queue_pos, 2)
+                        else:
+                            interval = 2
+                        prev_queue_pos = queue_pos
+                else:
+                    update_info = (job.job_id(), status.name)
+                    # Update the job on the dashboard
+                    watcher.update_single_job(job_type, update_info)
 
             elif status.name != prev_status_name:
                 msg = status.name
                 if msg == 'RUNNING':
-                    job_mode = job.scheduling_mode()
+                    # Note: As of now, all Runtime jobs are considered priority jobs.
+                    job_mode = job.scheduling_mode() if job_type == JobType.IBMQ else 'PRIORITY'
                     if job_mode:
                         msg += ' [{}]'.format(job_mode[0].upper())
 
                 update_info = (job.job_id(), msg, 0, status.value)
 
-                watcher.update_single_job(update_info)
+                # Update the job on the dashboard
+                watcher.update_single_job(job_type, update_info)
                 interval = 2
                 prev_status_name = status.name
 
@@ -96,47 +104,6 @@ def _job_checker(job: IBMQJob, status: JobStatus, watcher: 'IQXDashboard') -> No
             exception_count += 1
             if exception_count == 5:
                 update_info = (job.job_id(), 'NA', 0, "Could not query job.")
-                watcher.update_single_job(update_info)
-                sys.exit()
-
-
-def _job_checker_runtime(job: RuntimeJob, status: JobStatus, watcher: 'IQXDashboard') -> None:
-    """A simple runtime job status checker.
-
-    Args:
-        job: The job to check.
-        status: Job status.
-        watcher: Job watcher instance.
-    """
-    prev_status_name = None
-    interval = 2
-    exception_count = 0
-    while status.name not in ['DONE', 'CANCELLED', 'ERROR']:
-        time.sleep(interval)
-        try:
-            status = job.status()
-            exception_count = 0
-
-            if status.name == 'QUEUED':
-                update_info = (job.job_id(), status.name, 0, status.value)
-                watcher.update_single_job(update_info)
-
-            elif status.name != prev_status_name:
-                msg = status.name
-                if msg == 'RUNNING':
-                    job_mode = job.scheduling_mode()
-                    if job_mode:
-                        msg += ' [{}]'.format(job_mode[0].upper())
-
-                update_info = (job.job_id(), msg, 0, status.value)
-
-                watcher.update_single_job(update_info)
-                prev_status_name = status.name
-
-        # pylint: disable=broad-except
-        except Exception:
-            exception_count += 1
-            if exception_count == 5:
-                update_info = (job.job_id(), 'NA', 0, "Could not query job.")
-                watcher.update_single_job(update_info)
+                # Update the job on the dashboard
+                watcher.update_single_job(job_type, update_info)
                 sys.exit()

@@ -12,30 +12,32 @@
 
 """The core IBM Quantum Experience dashboard launcher."""
 
-import threading
-from typing import List, Tuple, Dict, Any, Optional, Union
+from typing import List, Tuple, Dict, Any, Optional
 
+import threading
 import ipywidgets as wid
-from IPython.display import display, Javascript
 from IPython.core.magic import line_magic, Magics, magics_class
+from IPython.display import display, Javascript
+
 from qiskit.tools.events.pubsub import Subscriber
-from qiskit.exceptions import QiskitError
 from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
-from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
-from qiskit.providers.ibmq.runtime.runtime_job import RuntimeJob
-from ... import IBMQ
-from .job_widgets import (
-    create_job_widget_runtime,
-    make_jobs_clear_button,
-    make_rt_jobs_clear_button,
-    make_labels as make_job_labels,
-    make_rt_labels as make_rt_job_labels,
-    create_job_widget)
+from qiskit.providers.job import JobV1 as Job
+from qiskit.exceptions import QiskitError
+
 from .runtime_program_widget import make_labels as make_program_labels, create_program_widget
+from .constants import EXP_JOB_STATUS_LIST, EXP_JOB_STATUS_COLORS_LIST
+from .utils import BackendWithProviders, JobType, get_job_type
 from .backend_widget import make_backend_widget
 from .backend_update import update_backend_info
 from .watcher_monitor import _job_monitor
-from .utils import BackendWithProviders
+
+from ... import IBMQ
+from .job_widgets import (
+    make_clear_button,
+    make_labels,
+    make_rt_labels,
+    updated_widget_str,
+    create_job_widget)
 
 
 class AccordionWithThread(wid.Accordion):
@@ -106,15 +108,15 @@ class IQXDashboard(Subscriber):
 
         # Jobs tab on the dashboard.
         self.job_viewer = None  # type: Optional[wid.VBox]
-        self._clear_jobs_button = make_jobs_clear_button(self)  # type: wid.GridBox
-        self._jobs_labels = make_job_labels()  # type: wid.HBox
+        self._clear_jobs_button = make_clear_button(self, JobType.IBMQ)  # type: wid.GridBox
+        self._jobs_labels = make_labels()  # type: wid.HBox
         # Runtime Jobs tab on the dashboard
         self.rt_job_viewer = None  # type: Optional[wid.VBox]
-        self._clear_rt_jobs_button = make_rt_jobs_clear_button(self)  # type: wid.GridBox
-        self._rt_jobs_labels = make_rt_job_labels()  # type: wid.HBox
+        self._clear_rt_jobs_button = make_clear_button(self, JobType.Runtime)  # type: wid.GridBox
+        self._rt_jobs_labels = make_rt_labels()  # type: wid.HBox
 
-        self.refresh_jobs_board()
-        self.refresh_rt_jobs_board()
+        self.refresh_jobs_board(JobType.Runtime)
+        self.refresh_jobs_board(JobType.IBMQ)
 
         # Runtime Display
 
@@ -124,7 +126,7 @@ class IQXDashboard(Subscriber):
         self.runtime_viewer = None  # type: Optional[wid.VBox]
         self.runtime_labels = make_program_labels()  # type: wid.HBox
         self._get_runtime_programs()
-        self.refresh_runtime()
+        self.refresh_runtime_programs()
 
     def _get_backends(self) -> None:
         """Get all the backends accessible with this account."""
@@ -165,19 +167,20 @@ class IQXDashboard(Subscriber):
                 self.rt_program_name_lookup[prog.program_id] = prog.name
         self.runtime_programs = programs
 
-    def refresh_jobs_board(self) -> None:
-        """Refresh the job viewer."""
-        if self.job_viewer is not None:
+    def refresh_jobs_board(self, job_type: JobType) -> None:
+        """Refresh the job viewer.
+
+        Args:
+            job_type: the job type
+        """
+        if job_type == JobType.IBMQ and self.job_viewer is not None:
             self.job_viewer.children = [self._clear_jobs_button,
                                         self._jobs_labels] + list(reversed(self.jobs))
-
-    def refresh_rt_jobs_board(self) -> None:
-        """Refresh the runtime job viewer."""
-        if self.rt_job_viewer is not None:
+        elif job_type == JobType.Runtime and self.rt_job_viewer is not None:
             self.rt_job_viewer.children = [self._clear_rt_jobs_button,
                                            self._rt_jobs_labels] + list(reversed(self.rt_jobs))
 
-    def refresh_runtime(self) -> None:
+    def refresh_runtime_programs(self) -> None:
         """Refresh the runtime viewer."""
         if self.runtime_viewer is not None:
 
@@ -202,19 +205,23 @@ class IQXDashboard(Subscriber):
 
     def start_dashboard(self) -> None:
         """Starts the dashboard."""
+        # Build the dashboard and initialize tab views
         self.dashboard = build_dashboard_widget()
         self.job_viewer = self.dashboard.children[0].children[1]
         self.runtime_viewer = self.dashboard.children[0].children[2]
         self.rt_job_viewer = self.dashboard.children[0].children[3]
+        # Fetch backend device info
         self._get_backends()
         self.refresh_device_list()
         self.dashboard._thread = threading.Thread(target=update_backend_info,
                                                   args=(self.dashboard._device_list,))
         self.dashboard._thread.do_run = True
         self.dashboard._thread.start()
-        self.refresh_jobs_board()
-        self.refresh_rt_jobs_board()
-        self.refresh_runtime()
+        # Update jobs info
+        self.refresh_jobs_board(JobType.Runtime)
+        self.refresh_jobs_board(JobType.IBMQ)
+        # Update runtime program info
+        self.refresh_runtime_programs()
 
     def stop_dashboard(self) -> None:
         """Stops the dashboard."""
@@ -224,134 +231,125 @@ class IQXDashboard(Subscriber):
             self.dashboard.close()
         self.dashboard = None
 
-    def update_single_job(self, update_info: Tuple) -> None:
+    def update_single_job(self, job_type: JobType, update_info: Tuple) -> None:
         """Update a single job instance.
 
         Args:
-            update_info: Updated job info containing job ID,
-                status string, est time, and status value.
+            job_type: The job type
+            update_info: Updated job info.
+                For an IBMQ Job, contains:
+                    job ID (str)
+                    status (str)
+                    est time (int)
+                For a Runtime job, contains:
+                    job ID (str)
+                    status (str)
         """
+        # Get constant-place fields from update info
         job_id = update_info[0]
-        found_job = False
-        ind = None
-        for idx, job in enumerate(self.jobs):
-            if job.job_id == job_id:
-                found_job = True
-                ind = idx
-                break
-        if found_job:
-            job_wid = self.jobs[ind]
-            # update status
-            if update_info[1] == 'DONE':
-                stat = "<font style='color:#34BC6E'>{}</font>".format(update_info[1])
-            elif update_info[1] == 'ERROR':
-                stat = "<font style='color:#DC267F'>{}</font>".format(update_info[1])
-            elif update_info[1] == 'CANCELLED':
-                stat = "<font style='color:#FFB000'>{}</font>".format(update_info[1])
-            else:
-                stat = update_info[1]
-            job_wid.children[3].value = stat
+        status = update_info[1]
+        # Establish which jobs list to use (Runtime or IBMQ)
+        jobs_list = self.rt_jobs if job_type == JobType.Runtime else self.jobs
+        # Find job widget with correct `job_id`
+        jobw = next((job for job in jobs_list if getattr(job, 'job_id') == job_id), None)
+        backend = jobw.job.backend()
+        if jobw is None:
+            return
+        # Set the widget's job status (used for convenience)
+        jobw.status = status
+        # Adjust the UI display
+        btn, _, css = jobw.children
+        if job_type == JobType.IBMQ:
             # update estimated start time.
             if update_info[2] == 0:
                 est_start = '-'
             else:
                 est_start = str(update_info[2])
-            job_wid.children[4].value = est_start
+            # update status
+            for target_status, color in zip(EXP_JOB_STATUS_LIST, EXP_JOB_STATUS_COLORS_LIST):
+                if target_status == status:
+                    # rebuild the job widget
+                    # note: `children` stored as tuple so must rebuild entirely
+                    jobw.children = [
+                        btn,
+                        wid.HTML(updated_widget_str(
+                            [job_id, backend, status, est_start],
+                            ['black', 'black', color, 'black'])),
+                        css]
+        else:
+            # retrieve remaining input fields `created_at`
+            program_name = self.rt_program_name_lookup.get(jobw.job.program_id, '-')
+            created_at = jobw.job.creation_date.strftime("%m/%d/%y, %H:%M") \
+                if jobw.job.creation_date else ''
+            # update status
+            for target_status, color in zip(EXP_JOB_STATUS_LIST, EXP_JOB_STATUS_COLORS_LIST):
+                if target_status == status:
+                    # rebuild the job widget
+                    # note: `children` stored as tuple so must rebuild entirely
+                    jobw.children = [
+                        btn,
+                        wid.HTML(updated_widget_str(
+                            [job_id, program_name, status, created_at],
+                            ['black', 'black', color, 'black'])),
+                        css]
 
-    def cancel_job(self, job_id: str) -> None:
+    def cancel_job(self, job_id: str, job_type: JobType) -> None:
         """Cancel a job in the watcher.
 
         Args:
             job_id: ID of the job to cancel.
+            job_type: the job type
 
         Raises:
             Exception: If job ID is not found.
         """
-        do_pop = False
-        ind = None
-        for idx, job in enumerate(self.jobs):
-            if job.job_id == job_id:
-                do_pop = True
-                ind = idx
-                break
-        if not do_pop:
+        # Establish which jobs widget list to use (Runtime or IBMQ)
+        jobs_wlist = self.rt_jobs if job_type == JobType.Runtime else self.jobs
+        # Find job widget with correct `job_id`
+        jobw = next((job for job in jobs_wlist if getattr(job, 'job_id') == job_id), None)
+        if jobw is None:
             raise Exception('Job is not found.')
-        if self.jobs[ind].children[3].value not in ['CANCELLED',
-                                                    'DONE',
-                                                    'ERROR']:
+        # If the job status is not active, Cancel.
+        if jobw.status not in ['CANCELLED', 'DONE', 'ERROR']:
             try:
-                self.jobs[ind].job.cancel()
-                status = self.jobs[ind].job.status()
+                jobw.job.cancel()
+                status = jobw.job.status()
             except IBMQJobApiError:
                 pass
             else:
-                self.update_single_job((self.jobs[ind].job_id,
-                                        status.name, 0,
-                                        status.value))
+                self.update_single_job(job_type, (job_id, status.name, 0, status.value))
 
-    def cancel_rt_job(self, job_id: str) -> None:
-        """Cancel a runtime job in the watcher.
+    def clear_done(self, job_type: JobType) -> None:
+        """Clear the done jobs from the list.
 
         Args:
-            job_id: ID of the job to cancel.
-
-        Raises:
-            Exception: If job ID is not found.
+            job_type: the job type
         """
-        do_pop = False
-        ind = None
-        for idx, job in enumerate(self.rt_jobs):
-            if job.job_id == job_id:
-                do_pop = True
-                ind = idx
-                break
-        if not do_pop:
-            raise Exception('Job is not found.')
-        if self.rt_jobs[ind].children[3].value not in ['CANCELLED',
-                                                       'DONE',
-                                                       'ERROR']:
-            try:
-                self.rt_jobs[ind].job.cancel()
-                status = self.rt_jobs[ind].job.status()
-            except IBMQJobApiError:
-                pass
-            else:
-                self.update_single_job((self.rt_jobs[ind].job_id,
-                                        status.name, 0,
-                                        status.value))
+        # Determine the list of job widgets to use
+        jobs = self.jobs if job_type == JobType.IBMQ else self.rt_jobs
 
-    def clear_jobs_done(self) -> None:
-        """Clear the done jobs from the list."""
-        _temp_jobs = []
+        active_jobs = []
         do_refresh = False
-        for job in self.jobs:
-            if not (job.status == 'DONE' or job.status == 'CANCELLED' or job.status == 'ERROR'):
-                _temp_jobs.append(job)
+        # Find the active jobs
+        for job in jobs:
+            if job.status not in ['DONE', 'CANCELLED', 'ERROR']:
+                active_jobs.append(job)
             else:
+                # Close the job and ensure the UI is refreshed
                 job.close()
                 do_refresh = True
+        # Refresh the UI with the active jobs
         if do_refresh:
-            self.jobs = _temp_jobs
-            self.refresh_jobs_board()
-
-    def clear_rt_jobs_done(self) -> None:
-        """Clear the done runtime jobs from the list."""
-        _temp_jobs = []
-        do_refresh = False
-        for job in self.rt_jobs:
-            if not (job.status == 'DONE' or job.status == 'CANCELLED' or job.status == 'ERROR'):
-                _temp_jobs.append(job)
+            if job_type == JobType.IBMQ:
+                self.jobs = active_jobs
             else:
-                job.close()
-                do_refresh = True
-        if do_refresh:
-            self.rt_jobs = _temp_jobs
-            self.refresh_rt_jobs_board()
+                self.rt_jobs = active_jobs
+        self.refresh_jobs_board(job_type)
 
     def _init_subscriber(self) -> None:
         """Initializes a subscriber that listens to job start events."""
 
-        def _add_job(job: Union[IBMQJob, RuntimeJob]) -> None:
+        def _add_job(job: Job) -> None:
             """Callback function when a job start event is received.
 
             When a job starts, this function creates a job widget and adds
@@ -360,35 +358,42 @@ class IQXDashboard(Subscriber):
             Args:
                 job: Job to start watching.
             """
+            # Get job status and type
             status = job.status()
-            if isinstance(job, IBMQJob):
+            job_type = get_job_type(job)
+
+            # Create a widget for the new job and add to list
+            if job_type == JobType.IBMQ:
                 queue_info = job.queue_info()
                 position = queue_info.position if queue_info else None
                 est_time = queue_info.estimated_start_time if queue_info else None
                 job_widget = create_job_widget(self, job,
                                                job.backend().name(),
                                                status.name,
-                                               position,
-                                               est_time)
+                                               queue_pos=position,
+                                               est_start_time=est_time)
                 self.jobs.append(job_widget)
+                jobs = self.jobs
             else:
                 # The job is a runtime job.
-                prog_name = self.rt_program_name_lookup[job.program_id]
-                job_widget = create_job_widget_runtime(self, job, status.name, prog_name)
+                prog_name = self.rt_program_name_lookup.get(job.program_id, '-')
+                job_widget = create_job_widget(self, job,
+                                               job._backend.name(),
+                                               status.name,
+                                               program_name=prog_name)
                 self.rt_jobs.append(job_widget)
+                jobs = self.rt_jobs
 
+            # Add a monitor for the new job
             _job_monitor(job, status, self)
 
-            if len(self.jobs) > 50:
-                self.clear_jobs_done()
+            # Clean and refresh UI
+            if len(jobs) > 50:
+                self.clear_done(job_type)
             else:
-                self.refresh_jobs_board()
+                self.refresh_jobs_board(job_type)
 
-            if len(self.rt_jobs) > 50:
-                self.clear_rt_jobs_done()
-            else:
-                self.refresh_rt_jobs_board()
-
+        # Listen for new jobs (IBMQJob, RuntimeJob)
         self.subscribe("ibmq.job.start", _add_job)
         self.subscribe("ibmq.runtimejob.start", _add_job)
 
@@ -443,28 +448,6 @@ def build_dashboard_widget() -> AccordionWithThread:
     display(acc)
     acc._dom_classes = ['job_widget', 'rt_programs', 'rt_jobs']
     display(Javascript("""$('div.job_widget')
-        .detach()
-        .appendTo($('#header'))
-        .css({
-            'z-index': 999,
-             'position': 'fixed',
-            'box-shadow': '5px 5px 5px -3px black',
-            'opacity': 0.95,
-            'float': 'left,'
-        })
-        """))
-    display(Javascript("""$('div.rt_programs')
-        .detach()
-        .appendTo($('#header'))
-        .css({
-            'z-index': 999,
-             'position': 'fixed',
-            'box-shadow': '5px 5px 5px -3px black',
-            'opacity': 0.95,
-            'float': 'left,'
-        })
-        """))
-    display(Javascript("""$('div.rt_jobs')
         .detach()
         .appendTo($('#header'))
         .css({

@@ -17,6 +17,7 @@ import ipywidgets as widgets
 
 # from qiskit.providers.ibmq.job.ibmqjob import IBMQJob
 from qiskit.providers.ibmq.runtime import RuntimeProgram
+from .constants import LIST_STYLE_WIDGET
 
 
 def make_labels() -> widgets.HBox:
@@ -46,7 +47,8 @@ def create_program_widget(program: RuntimeProgram) -> widgets.HBox:
     """
 
     div = "<div style='background-color: lightgrey; width: 2px'></div>"
-    labels_str = """<div class='rt_program_entry'>
+    labels_str = """
+    <div class='rt_program_entry'>
         <p style='width: 170px;'>{}</p>{}
         <p style='width: 475px;'>{}</p>
     </div>""".format(
@@ -55,30 +57,7 @@ def create_program_widget(program: RuntimeProgram) -> widgets.HBox:
         program.description
     )
     labels = widgets.HTML(value=labels_str)
-    styles = widgets.HTML(value="""<style>
-                                    .rt_program_entry {
-                                    display: flex;
-                                    z-index: 999;
-                                    box-shadow: 5px 5px 5px -3px black;
-                                    opacity: 0.95;
-                                    float: left;
-                                    letter-spacing: 1px;
-                                    padding: 3px;
-                                    }
-
-                                    .rt_program_entry p {
-                                        padding: 2px 0px 2px 7px;
-                                        white-space: nowrap;
-                                        overflow: hidden;
-                                        text-overflow: ellipsis;
-                                    }
-
-                                    .rt_program_clear_btn {
-                                        color: white;
-                                    }
-
-
-                                    </style>""")
+    styles = widgets.HTML(value=LIST_STYLE_WIDGET)
 
     grid = widgets.HBox(children=[labels, styles],
                         layout=widgets.Layout(min_width='690px',
