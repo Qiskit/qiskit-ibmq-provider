@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Add support for the ``use_measure_esp`` flag in the
+    :meth:`qiskit.providers.ibmq.IBMQBackend.run` method. If ``True``, the backend will use ESP
+    readout for all measurements which are the terminal instruction on that qubit. If used and
+    the backend does not support ESP readout, an error is raised.

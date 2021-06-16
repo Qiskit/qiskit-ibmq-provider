@@ -140,7 +140,7 @@ class IBMQBackend(Backend):
                        meas_return=MeasReturnType.AVERAGE,
                        memory_slots=None, memory_slot_size=100,
                        rep_time=None, rep_delay=None,
-                       init_qubits=True)
+                       init_qubits=True, use_measure_esp=None)
 
     @deprecate_arguments({'qobj': 'circuits'})
     def run(
@@ -167,6 +167,7 @@ class IBMQBackend(Backend):
             rep_delay: Optional[float] = None,
             init_qubits: Optional[bool] = None,
             parameter_binds: Optional[List[Dict[Parameter, float]]] = None,
+            use_measure_esp: Optional[bool] = None,
             **run_config: Dict
     ) -> IBMQJob:
         """Run on the backend.
@@ -242,6 +243,13 @@ class IBMQBackend(Backend):
                 executed across all experiments; e.g., if parameter_binds is a
                 length-n list, and there are m experiments, a total of m x n
                 experiments will be run (one for each experiment/bind pair).
+            use_measure_esp: Whether to use excited state promoted (ESP) readout for measurements
+                which are the terminal instruction to a qubit. ESP readout can offer higher fidelity
+                than standard measurement sequences. See
+                `here <https://arxiv.org/pdf/2008.08571.pdf>`_.
+                Default: ``True`` if backend supports ESP readout, else ``False``. Backend support
+                for ESP readout is determined by the flag ``measure_esp_enabled`` in
+                ``backend.configuration()``.
             **run_config: Extra arguments used to configure the run.
 
         Returns:
@@ -252,7 +260,9 @@ class IBMQBackend(Backend):
                 the job.
             IBMQBackendApiProtocolError: If an unexpected value received from
                  the server.
-            IBMQBackendValueError: If an input parameter value is not valid.
+            IBMQBackendValueError:
+                - If an input parameter value is not valid.
+                - If ESP readout is used and the backend does not support this.
         """
         # pylint: disable=arguments-differ
         if job_share_level:
@@ -272,6 +282,14 @@ class IBMQBackend(Backend):
         sim_method = None
         if self.configuration().simulator:
             sim_method = getattr(self.configuration(), 'simulation_method', None)
+
+        measure_esp_enabled = getattr(self.configuration(), "measure_esp_enabled", False)
+        use_measure_esp = use_measure_esp or measure_esp_enabled
+        if use_measure_esp and not measure_esp_enabled:
+            raise IBMQBackendValueError(
+                "ESP readout not supported on this device. Please make sure the flag "
+                "'use_measure_esp' is unset or set to 'False'."
+            )
 
         if isinstance(circuits, (QasmQobj, PulseQobj)):
             if not self.qobj_warning_issued:
@@ -300,6 +318,7 @@ class IBMQBackend(Backend):
                 rep_time=rep_time,
                 rep_delay=rep_delay,
                 init_qubits=init_qubits,
+                use_measure_esp=use_measure_esp,
                 **run_config)
             if parameter_binds:
                 run_config_dict['parameter_binds'] = parameter_binds
