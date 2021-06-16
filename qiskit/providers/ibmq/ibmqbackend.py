@@ -284,7 +284,9 @@ class IBMQBackend(Backend):
             sim_method = getattr(self.configuration(), 'simulation_method', None)
 
         measure_esp_enabled = getattr(self.configuration(), "measure_esp_enabled", False)
-        use_measure_esp = use_measure_esp or measure_esp_enabled
+        # set ``use_measure_esp`` to backend value if not set by user
+        if use_measure_esp is None:
+            use_measure_esp = measure_esp_enabled
         if use_measure_esp and not measure_esp_enabled:
             raise IBMQBackendValueError(
                 "ESP readout not supported on this device. Please make sure the flag "

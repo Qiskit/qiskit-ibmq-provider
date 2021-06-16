@@ -293,7 +293,7 @@ class AccountProvider(Provider):
             inputs['rep_delay'] = rep_delay
         if transpiler_options:
             inputs['transpiler_options'] = transpiler_options
-        if use_measure_esp:
+        if use_measure_esp is not None:
             inputs['use_measure_esp'] = use_measure_esp
 
         options = {'backend_name': backend.name()}

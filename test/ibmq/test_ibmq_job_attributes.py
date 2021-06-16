@@ -323,6 +323,36 @@ class TestIBMQJobAttributes(IBMQTestCase):
             delattr(self.sim_backend._configuration, "measure_esp_enabled")
             self.sim_backend._api_client = saved_api
 
+    def test_esp_readout_default_value(self):
+        """Test that ESP readout is set to backend support value if not specified."""
+        saved_api = self.sim_backend._api_client
+        try:
+            self.sim_backend._api_client = BaseFakeAccountClient()
+            # ESP readout not enabled on backend
+            setattr(self.sim_backend._configuration, "measure_esp_enabled", False)
+            job = self.sim_backend.run(self.bell)
+            self.assertEqual(job.backend_options()["use_measure_esp"], False)
+            # ESP readout enabled on backend
+            setattr(self.sim_backend._configuration, "measure_esp_enabled", True)
+            job = self.sim_backend.run(self.bell)
+            self.assertEqual(job.backend_options()["use_measure_esp"], True)
+        finally:
+            delattr(self.sim_backend._configuration, "measure_esp_enabled")
+            self.sim_backend._api_client = saved_api
+
+    def test_esp_readout_enabled_not_used(self):
+        """Test that ESP readout is not used if user sets to ``False``, even if backend supports it.
+        """
+        saved_api = self.sim_backend._api_client
+        try:
+            self.sim_backend._api_client = BaseFakeAccountClient()
+            setattr(self.sim_backend._configuration, "measure_esp_enabled", True)
+            job = self.sim_backend.run(self.bell, use_measure_esp=False)
+            self.assertEqual(job.backend_options()["use_measure_esp"], False)
+        finally:
+            delattr(self.sim_backend._configuration, "measure_esp_enabled")
+            self.sim_backend._api_client = saved_api
+
     def test_share_job_in_project(self):
         """Test successfully sharing a job within a shareable project."""
         job = self.sim_backend.run(self.bell, job_share_level='project')
