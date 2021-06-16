@@ -27,7 +27,7 @@ class BaseFakeProgram:
 
     def __init__(self, program_id, name, data, cost, description, version="1.0",
                  backend_requirements=None, parameters=None, return_values=None,
-                 interim_results=None):
+                 interim_results=None, visibility='private'):
         """Initialize a fake program."""
         self._id = program_id
         self._name = name
@@ -39,6 +39,7 @@ class BaseFakeProgram:
         self._parameters = parameters
         self._return_values = return_values
         self._interim_results = interim_results
+        self._visibility = visibility
 
     def to_dict(self, include_data=False):
         """Convert this program to a dictionary format."""
@@ -46,7 +47,8 @@ class BaseFakeProgram:
                'name': self._name,
                'cost': self._cost,
                'description': self._description,
-               'version': self._version}
+               'version': self._version,
+               'visibility': self._visibility}
         if include_data:
             out['data'] = self._data
         if self._backend_requirements:
@@ -207,7 +209,7 @@ class BaseFakeRuntimeClient:
 
     def program_create(self, program_data, name, description, max_execution_time, version="1.0",
                        backend_requirements=None, parameters=None, return_values=None,
-                       interim_results=None):
+                       interim_results=None, visibility='public'):
         """Create a program."""
         if isinstance(program_data, str):
             with open(program_data, 'rb') as file:
@@ -218,7 +220,8 @@ class BaseFakeRuntimeClient:
         self._programs[program_id] = BaseFakeProgram(
             program_id=program_id, name=name, data=program_data, cost=max_execution_time,
             description=description, version=version, backend_requirements=backend_requirements,
-            parameters=parameters, return_values=return_values, interim_results=interim_results)
+            parameters=parameters, return_values=return_values, interim_results=interim_results,
+            visibility=visibility)
         return {'id': program_id}
 
     def program_get(self, program_id: str):
@@ -265,6 +268,22 @@ class BaseFakeRuntimeClient:
         jobs = list(self._jobs.values())[skip:limit+skip]
         return {"jobs": [job.to_dict() for job in jobs],
                 "count": len(self._jobs)}
+
+    def program_set_visibility(self, program_id: str, visibility: str) -> None:
+        """Sets a program's visibility to public.
+
+        Args:
+            program_id: Program ID.
+            visibility: the visibility of the program (public/private)
+
+        Returns:
+            JSON
+        """
+        if visibility == 'private':
+            self._programs[program_id] = 'private'
+        if visibility == 'public':
+            self._programs[program_id] = 'public'
+        raise ValueError('Invalid program visibility (%s) specified!' % visibility)
 
     def job_results(self, job_id):
         """Get the results of a program job."""

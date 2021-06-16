@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    The user now has the ability to specify runtime program visibility (private/public)
+    in the
+    :class:`qiskit.providers.ibmq.runtime.ibm_runtime_service.IBMRuntimeService`
+    class.

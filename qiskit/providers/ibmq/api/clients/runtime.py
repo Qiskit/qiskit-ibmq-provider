@@ -106,6 +106,22 @@ class RuntimeClient:
         """
         return self.api.program(program_id).get_data()
 
+    def program_set_visibility(self, program_id: str, visibility: str) -> None:
+        """Sets a program's visibility to public.
+
+        Args:
+            program_id: Program ID.
+            visibility: the visibility of the program (public/private)
+
+        Returns:
+            JSON
+        """
+        if visibility == 'private':
+            self.api.program(program_id).make_private()
+        if visibility == 'public':
+            self.api.program(program_id).make_public()
+        raise ValueError('Invalid program visibility (%s) specified!' % visibility)
+
     def program_run(
             self,
             program_id: str,

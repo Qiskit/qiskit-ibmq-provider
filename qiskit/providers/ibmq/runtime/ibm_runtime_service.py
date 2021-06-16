@@ -396,6 +396,18 @@ class IBMRuntimeService:
         if program_id in self._programs:
             del self._programs[program_id]
 
+    def program_set_visibility(self, program_id: str, visibility: str) -> None:
+        """Sets a program's visibility to public.
+
+        Args:
+            program_id: Program ID.
+            visibility: the visibility of the program (public/private)
+
+        Returns:
+            JSON
+        """
+        self._api_client.program_set_visibility(program_id, visibility)
+
     def job(self, job_id: str) -> RuntimeJob:
         """Retrieve a runtime job.
 

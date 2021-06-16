@@ -180,7 +180,9 @@ class Program(RestAdapterBase):
     URL_MAP = {
         'self': '',
         'data': '/data',
-        'run': '/jobs'
+        'run': '/jobs',
+        'private': '/private',
+        'public': '/public'
     }
 
     _executor = futures.ThreadPoolExecutor()
@@ -212,6 +214,24 @@ class Program(RestAdapterBase):
         """
         url = self.get_url('data')
         return self.session.get(url).json()
+
+    def make_public(self) -> Dict[str, Any]:
+        """Return program information, including data.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('public')
+        return self.session.put(url).json()
+
+    def make_private(self) -> Dict[str, Any]:
+        """Return program information, including data.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('private')
+        return self.session.put(url).json()
 
     def delete(self) -> None:
         """Delete this program.

@@ -149,6 +149,11 @@ def main(backend, user_messenger, **kwargs):
         self.assertTrue(program)
         self.assertEqual(max_execution_time, program.max_execution_time)
 
+    def test_set_visibility(self):
+        """Test setting the visibility of a program."""
+        program_id = self._upload_program()
+        self.provider.runtime.program_set_visibility(program_id, 'private')
+
     def test_upload_program_conflict(self):
         """Test uploading a program with conflicting name."""
         name = self._get_program_name()
