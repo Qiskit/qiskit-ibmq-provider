@@ -213,6 +213,7 @@ class AccountProvider(Provider):
             rep_delay: Optional[float] = None,
             transpiler_options: Optional[dict] = None,
             measurement_error_mitigation: bool = False,
+            use_measure_esp: Optional[bool] = None,
             **run_config: Dict
     ) -> 'runtime_job.RuntimeJob':
         """Execute the input circuit(s) on a backend using the runtime service.
@@ -261,6 +262,11 @@ class AccountProvider(Provider):
 
             measurement_error_mitigation: Whether to apply measurement error mitigation.
 
+            use_measure_esp: Whether to use excited state promoted (ESP) readout for measurements
+                which are the final instruction on a qubit. ESP readout can offer higher fidelity
+                than standard measurement sequences. See
+                `here <https://arxiv.org/pdf/2008.08571.pdf>`_.
+
             **run_config: Extra arguments used to configure the circuit execution.
 
         Returns:
@@ -287,6 +293,8 @@ class AccountProvider(Provider):
             inputs['rep_delay'] = rep_delay
         if transpiler_options:
             inputs['transpiler_options'] = transpiler_options
+        if use_measure_esp:
+            inputs['use_measure_esp'] = use_measure_esp
 
         options = {'backend_name': backend.name()}
         return self.runtime.run('circuit-runner', options=options, inputs=inputs,
