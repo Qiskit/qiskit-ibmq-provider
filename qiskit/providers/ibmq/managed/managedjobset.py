@@ -24,7 +24,6 @@ from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
 from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 
 from .managedjob import ManagedJob
@@ -83,7 +82,6 @@ class ManagedJobSet:
             experiment_list: Union[List[List[QuantumCircuit]], List[List[Schedule]]],
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
-            job_share_level: ApiJobShareLevel,
             job_tags: Optional[List[str]] = None,
             **run_config: Any
     ) -> None:
@@ -93,7 +91,6 @@ class ManagedJobSet:
             experiment_list : Circuit(s) or pulse schedule(s) to execute.
             backend: Backend to execute the experiments on.
             executor: The thread pool used to submit jobs asynchronously.
-            job_share_level: Job share level.
             job_tags: Tags to be assigned to the job.
             run_config: Additional arguments used to configure the Qobj
                 assembly. Refer to the :func:`qiskit.compiler.assemble` documentation
@@ -117,9 +114,8 @@ class ManagedJobSet:
             mjob = ManagedJob(experiments_count=len(experiments), start_index=exp_index)
             logger.debug("Submitting job %s/%s for job set %s", i+1, total_jobs, self._name)
             mjob.submit(experiments, job_name=job_name, backend=backend,
-                        executor=executor, job_share_level=job_share_level,
-                        job_tags=self._tags+[self._id_long], submit_lock=self._job_submit_lock,
-                        **run_config)
+                        executor=executor, job_tags=self._tags+[self._id_long],
+                        submit_lock=self._job_submit_lock, **run_config)
             logger.debug("Job %s submitted", i+1)
             self._managed_jobs.append(mjob)
             exp_index += len(experiments)

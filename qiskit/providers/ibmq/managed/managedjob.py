@@ -25,7 +25,7 @@ from qiskit.pulse import Schedule
 from qiskit.result import Result
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.exceptions import JobError
-from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel, API_JOB_FINAL_STATES
+from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES
 
 from ..job.ibmqjob import IBMQJob
 from ..job.exceptions import IBMQJobTimeoutError
@@ -65,7 +65,6 @@ class ManagedJob:
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
             submit_lock: Lock,
-            job_share_level: ApiJobShareLevel,
             job_tags: Optional[List[str]] = None,
             **run_config: Dict
     ) -> None:
@@ -77,7 +76,6 @@ class ManagedJob:
             backend: Backend to execute the experiments on.
             executor: The thread pool used to submit the job.
             submit_lock: Lock used to synchronize job submission.
-            job_share_level: Job share level.
             job_tags: Tags to be assigned to the job.
             **run_config: Extra arguments used to configure the run.
         """
@@ -86,7 +84,7 @@ class ManagedJob:
         logger.debug("Submitting job %s in future", job_name)
         self.future = executor.submit(
             self._async_submit, circuits=circuits, job_name=job_name, backend=backend,
-            submit_lock=submit_lock, job_share_level=job_share_level, job_tags=job_tags,
+            submit_lock=submit_lock, job_tags=job_tags,
             **run_config)
         logger.debug("Job %s future obtained", job_name)
 
@@ -96,7 +94,6 @@ class ManagedJob:
             job_name: str,
             backend: IBMQBackend,
             submit_lock: Lock,
-            job_share_level: ApiJobShareLevel,
             job_tags: Optional[List[str]] = None,
             **run_config: Dict
     ) -> None:
@@ -107,7 +104,6 @@ class ManagedJob:
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
             submit_lock: Lock used to synchronize job submission.
-            job_share_level: Job share level.
             job_tags: Tags to be assigned to the job.
             **run_config: Extra arguments used to configure the run.
         """
@@ -121,7 +117,6 @@ class ManagedJob:
                     self.job = backend.run(
                         circuits,
                         job_name=job_name,
-                        job_share_level=job_share_level.value,
                         job_tags=job_tags,
                         **run_config)
                 except IBMQBackendJobLimitError:

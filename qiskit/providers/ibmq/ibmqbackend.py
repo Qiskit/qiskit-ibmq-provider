@@ -36,7 +36,7 @@ from qiskit.providers.models import (QasmBackendConfiguration,
 from qiskit.util import deprecate_arguments
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
-from .apiconstants import ApiJobShareLevel, ApiJobStatus, API_JOB_FINAL_STATES
+from .apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
 from .backendjoblimit import BackendJobLimit
@@ -148,7 +148,6 @@ class IBMQBackend(Backend):
             circuits: Union[QasmQobj, PulseQobj, QuantumCircuit, Schedule,
                             List[Union[QuantumCircuit, Schedule]]],
             job_name: Optional[str] = None,
-            job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
             experiment_id: Optional[str] = None,
             validate_qobj: bool = None,
@@ -185,17 +184,6 @@ class IBMQBackend(Backend):
             job_name: Custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 :meth:`jobs()` method. Job names do not need to be unique.
-            job_share_level: Allows sharing a job at the hub, group, project,
-                or global level. The possible job share levels are: ``global``, ``hub``,
-                ``group``, ``project``, and ``none``.
-
-                    * global: The job is public to any user.
-                    * hub: The job is shared between the users in the same hub.
-                    * group: The job is shared between the users in the same group.
-                    * project: The job is shared between the users in the same project.
-                    * none: The job is not shared at any level.
-
-                If the job share level is not specified, the job is not shared at any level.
             job_tags: Tags to be assigned to the job. The tags can subsequently be used
                 as a filter in the :meth:`jobs()` function call.
             experiment_id: Used to add a job to an "experiment", which is a collection
@@ -265,18 +253,6 @@ class IBMQBackend(Backend):
                 - If ESP readout is used and the backend does not support this.
         """
         # pylint: disable=arguments-differ
-        if job_share_level:
-            try:
-                api_job_share_level = ApiJobShareLevel(job_share_level.lower())
-            except ValueError:
-                valid_job_share_levels_str = ', '.join(level.value for level in ApiJobShareLevel)
-                raise IBMQBackendValueError(
-                    '"{}" is not a valid job share level. '
-                    'Valid job share levels are: {}.'
-                    .format(job_share_level, valid_job_share_levels_str)) from None
-        else:
-            api_job_share_level = ApiJobShareLevel.NONE
-
         validate_job_tags(job_tags, IBMQBackendValueError)
 
         sim_method = None
@@ -336,7 +312,7 @@ class IBMQBackend(Backend):
                           DeprecationWarning, stacklevel=3)
             if validate_qobj:
                 validate_qobj_against_schema(qobj)
-        return self._submit_job(qobj, job_name, api_job_share_level, job_tags, experiment_id)
+        return self._submit_job(qobj, job_name, job_tags, experiment_id)
 
     def _get_run_config(self, **kwargs: Any) -> Dict:
         """Return the consolidated runtime configuration."""
@@ -353,7 +329,6 @@ class IBMQBackend(Backend):
             self,
             qobj: Union[QasmQobj, PulseQobj],
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None,
             job_tags: Optional[List[str]] = None,
             experiment_id: Optional[str] = None
     ) -> IBMQJob:
@@ -365,7 +340,6 @@ class IBMQBackend(Backend):
                 name can subsequently be used as a filter in the
                 ``jobs()``method.
                 Job names do not need to be unique.
-            job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
             experiment_id: Used to add a job to an experiment.
 
@@ -391,7 +365,6 @@ class IBMQBackend(Backend):
                 backend_name=self.name(),
                 qobj_dict=qobj_dict,
                 job_name=job_name,
-                job_share_level=job_share_level,
                 job_tags=job_tags,
                 experiment_id=experiment_id)
         except ApiError as ex:
@@ -781,7 +754,6 @@ class IBMQSimulator(IBMQBackend):
             circuits: Union[QasmQobj, PulseQobj, QuantumCircuit, Schedule,
                             List[Union[QuantumCircuit, Schedule]]],
             job_name: Optional[str] = None,
-            job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
             experiment_id: Optional[str] = None,
             validate_qobj: bool = None,
@@ -801,8 +773,6 @@ class IBMQSimulator(IBMQBackend):
             job_name: Custom name to be assigned to the job. This job
                 name can subsequently be used as a filter in the
                 :meth:`jobs` method. Job names do not need to be unique.
-            job_share_level: Allows sharing a job at the hub, group, project and
-                global level (see :meth:`IBMQBackend.run()<IBMQBackend.run>` for more details).
             job_tags: Tags to be assigned to the jobs. The tags can subsequently be used
                 as a filter in the :meth:`IBMQBackend.jobs()<IBMQBackend.jobs>` method.
             experiment_id: Used to add a job to an "experiment", which is a collection
@@ -832,7 +802,7 @@ class IBMQSimulator(IBMQBackend):
             except AttributeError:
                 pass
         run_config.update(kwargs)
-        return super().run(circuits, job_name=job_name, job_share_level=job_share_level,
+        return super().run(circuits, job_name=job_name,
                            job_tags=job_tags, experiment_id=experiment_id,
                            validate_qobj=validate_qobj,
                            noise_model=noise_model, **run_config)

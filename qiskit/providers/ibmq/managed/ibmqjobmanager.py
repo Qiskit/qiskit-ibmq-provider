@@ -18,7 +18,6 @@ from concurrent import futures
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
-from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 from qiskit.providers.ibmq.utils import validate_job_tags
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 
@@ -90,7 +89,6 @@ class IBMQJobManager:
             backend: IBMQBackend,
             name: Optional[str] = None,
             max_experiments_per_job: Optional[int] = None,
-            job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
             **run_config: Any
     ) -> ManagedJobSet:
@@ -111,9 +109,6 @@ class IBMQJobManager:
                 the backend.
                 If the specified value is greater the maximum allowed by the
                 backend, the default is used.
-            job_share_level: Allow sharing the jobs at the hub, group, project, or
-                global level. The level can be one of: ``global``, ``hub``,
-                ``group``, ``project``, and ``none``.
             job_tags: Tags to be assigned to the jobs. The tags can
                 subsequently be used as a filter in the
                 :meth:`IBMQBackend.jobs()<qiskit.providers.ibmq.ibmqbackend.IBMQBackend.jobs()>`
@@ -145,18 +140,6 @@ class IBMQJobManager:
             raise IBMQJobManagerInvalidStateError(
                 'Pulse schedules found, but the backend does not support pulse schedules.')
 
-        # Validate job share level
-        if job_share_level:
-            try:
-                api_job_share_level = ApiJobShareLevel(job_share_level.lower())
-            except ValueError:
-                valid_job_share_levels_str = ', '.join(level.value for level in ApiJobShareLevel)
-                raise IBMQJobManagerInvalidStateError(
-                    '"{}" is not a valid job share level. Valid job share levels are: {}'.format(
-                        job_share_level, valid_job_share_levels_str)) from None
-        else:
-            api_job_share_level = ApiJobShareLevel.NONE
-
         validate_job_tags(job_tags, IBMQJobManagerInvalidStateError)
 
         if not isinstance(backend, IBMQBackend):
@@ -169,7 +152,7 @@ class IBMQJobManager:
 
         job_set = ManagedJobSet(name=name)
         job_set.run(experiment_list, backend=backend, executor=self._executor,
-                    job_share_level=api_job_share_level, job_tags=job_tags, **run_config)
+                    job_tags=job_tags, **run_config)
         self._job_sets.append(job_set)
 
         return job_set
