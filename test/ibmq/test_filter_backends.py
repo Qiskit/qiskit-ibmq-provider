@@ -128,11 +128,24 @@ class TestBackendFilters(IBMQTestCase):
     def test_filter_min_num_qubits(self):
         """Test filtering by minimum number of qubits."""
         filtered_backends = self.provider.backends(
-            min_num_qubits=10, simulator=False,
+            min_num_qubits=5, simulator=False,
             filters=lambda b: b.configuration().quantum_volume >= 10)
 
         self.assertTrue(filtered_backends)
         for backend in filtered_backends[:5]:
             with self.subTest(backend=backend):
-                self.assertGreaterEqual(backend.configuration().n_qubits, 10)
+                self.assertGreaterEqual(backend.configuration().n_qubits, 5)
                 self.assertTrue(backend.configuration().quantum_volume, 10)
+
+    def test_filter_input_allowed(self):
+        """Test filtering by input allowed"""
+        subtests = ('job', ['job'], ['job', 'runtime'])
+
+        for input_type in subtests:
+            with self.subTest(input_type=input_type):
+                filtered = self.provider.backends(input_allowed=input_type)
+                self.assertTrue(filtered)
+                if not isinstance(input_type, list):
+                    input_type = [input_type]
+                for backend in filtered[:5]:
+                    self.assertTrue(set(input_type) <= set(backend.configuration().input_allowed))
