@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder
+from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 
 
 class BaseFakeProgram:
@@ -276,14 +277,15 @@ class BaseFakeRuntimeClient:
             program_id: Program ID.
             visibility: the visibility of the program (public/private)
 
-        Returns:
-            JSON
+        Raises:
+            IBMQInputValueError: if visibility is invalid (valid options are private and public)
+
         """
         if visibility == 'private':
             self._programs[program_id] = 'private'
         if visibility == 'public':
             self._programs[program_id] = 'public'
-        raise ValueError('Invalid program visibility (%s) specified!' % visibility)
+        raise IBMQInputValueError('Invalid program visibility (%s) specified!' % visibility)
 
     def job_results(self, job_id):
         """Get the results of a program job."""

@@ -17,6 +17,7 @@ from typing import List, Dict, Union, Optional
 
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.session import RetrySession
+from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 
 from ..rest.runtime import Runtime
 
@@ -113,14 +114,15 @@ class RuntimeClient:
             program_id: Program ID.
             visibility: the visibility of the program (public/private)
 
-        Returns:
-            JSON
+        Raises:
+            IBMQInputValueError: if visibility is invalid (valid options are private and public)
+
         """
         if visibility == 'private':
             self.api.program(program_id).make_private()
         if visibility == 'public':
             self.api.program(program_id).make_public()
-        raise ValueError('Invalid program visibility (%s) specified!' % visibility)
+        raise IBMQInputValueError('Invalid program visibility (%s) specified!' % visibility)
 
     def program_run(
             self,

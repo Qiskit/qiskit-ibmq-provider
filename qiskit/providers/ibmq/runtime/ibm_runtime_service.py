@@ -403,8 +403,6 @@ class IBMRuntimeService:
             program_id: Program ID.
             visibility: the visibility of the program (public/private)
 
-        Returns:
-            JSON
         """
         self._api_client.program_set_visibility(program_id, visibility)
 
