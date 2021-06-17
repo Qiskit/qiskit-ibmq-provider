@@ -46,6 +46,7 @@ class IBMQFactory:
         """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
+        self.__lazy_loaded = True # type: bool
 
     # Account management functions.
 
@@ -104,7 +105,7 @@ class IBMQFactory:
                 'URL. Valid authentication URL: {}.'.format(credentials.url, QX_AUTH_URL))
 
         # Initialize the providers.
-        self._initialize_providers(credentials)
+        self._initialize_providers(credentials, lazy=True)
 
         # Prevent edge case where no hubs are available.
         providers = self.providers()
@@ -189,8 +190,9 @@ class IBMQFactory:
                            'account in the session will be replaced.')
             self.disable_account()
 
-        self._initialize_providers(credentials)
-
+        # Lazy load providers
+        self._initialize_providers(credentials, lazy=True)
+        
         # Prevent edge case where no hubs are available.
         providers = self.providers()
         if not providers:
@@ -393,6 +395,10 @@ class IBMQFactory:
         if project:
             filters.append(lambda hgp: hgp.project == project)
 
+        # If not all providers were loaded, should load now
+        if self.__lazy_loaded:
+            self._initialize_providers(self._credentials)
+
         providers = [provider for key, provider in self._providers.items()
                      if all(f(key) for f in filters)]
 
@@ -444,11 +450,12 @@ class IBMQFactory:
                                        **credentials.connection_parameters())
         return version_finder.version()
 
-    def _initialize_providers(self, credentials: Credentials) -> None:
+    def _initialize_providers(self, credentials: Credentials, lazy: bool = False) -> None:
         """Authenticate against IBM Quantum Experience and populate the providers.
 
         Args:
             credentials: Credentials for IBM Quantum Experience.
+            lazy: Use lazy-tyle loading (usually just during construction)
         """
         auth_client = AuthClient(credentials.token,
                                  credentials.base_url,
@@ -473,7 +480,11 @@ class IBMQFactory:
             try:
                 provider = AccountProvider(provider_credentials, self)
                 self._providers[provider_credentials.unique_id()] = provider
+                if lazy:
+                    self.__lazy_loaded = True
+                    return
             except Exception:  # pylint: disable=broad-except
                 # Catch-all for errors instantiating the provider.
                 logger.warning('Unable to instantiate provider for %s: %s',
                                hub_info, traceback.format_exc())
+        self.__lazy_loaded = False
