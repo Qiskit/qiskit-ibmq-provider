@@ -38,6 +38,7 @@ def updated_widget_str(fields: List[str] = [], colors: List[str] = ['black'] * 4
         div=LIST_COL_DIV
     )
 
+
 def make_clear_button(watcher: 'IQXDashboard', job_type: JobType) -> widgets.GridBox:
     """Makes the clear button.
 
