@@ -17,8 +17,7 @@ import os
 import uuid
 import time
 import random
-from contextlib import suppress, contextmanager
-import subprocess
+from contextlib import suppress
 
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -31,6 +30,7 @@ from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramErr
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_runtime_device
+from ...proxy_server import MockProxyServer, use_proxies
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
@@ -69,11 +69,6 @@ def main(backend, user_messenger, **kwargs):
         "description": "Qiskit test program"
     }
     PROGRAM_PREFIX = 'qiskit-test'
-
-    TEST_IP_ADDRESS = '127.0.0.1'
-    VALID_PROXY_PORT = 8085
-    INVALID_PROXY_PORT = 6666
-    VALID_PROXIES = {'https': 'http://{}:{}'.format(TEST_IP_ADDRESS, VALID_PROXY_PORT)}
 
     @classmethod
     @requires_runtime_device
@@ -123,11 +118,6 @@ def main(backend, user_messenger, **kwargs):
                 job.cancel()
             with suppress(Exception):
                 self.provider.runtime.delete_job(job.job_id())
-
-        if self.proxy_process is not None and self.proxy_process.returncode is None:
-            self.proxy_process.stdout.close()  # close the IO buffer
-            self.proxy_process.terminate()  # initiate process termination
-            self.proxy_process.wait()  # wait for the process to terminate
 
     def test_runtime_service(self):
         """Test getting runtime service."""
@@ -311,7 +301,7 @@ def main(backend, user_messenger, **kwargs):
         job.wait_for_final_state()
         self.assertEqual(iterations-1, final_it)
         self.assertFalse(callback_err)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_stream_results(self):
         """Test stream_results method."""
@@ -335,7 +325,7 @@ def main(backend, user_messenger, **kwargs):
         job.wait_for_final_state()
         self.assertEqual(iterations-1, final_it)
         self.assertFalse(callback_err)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_stream_results_done(self):
         """Test streaming interim results after job is done."""
@@ -351,7 +341,7 @@ def main(backend, user_messenger, **kwargs):
         job.stream_results(result_callback)
         time.sleep(2)
         self.assertFalse(called_back)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_callback_error(self):
         """Test error in callback method."""
@@ -371,7 +361,7 @@ def main(backend, user_messenger, **kwargs):
 
         self.assertIn("Kaboom", ', '.join(err_cm.output))
         self.assertEqual(iterations-1, final_it)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_callback_cancel_job(self):
         """Test canceling a running job while streaming results."""
@@ -394,7 +384,7 @@ def main(backend, user_messenger, **kwargs):
                 self._wait_for_status(job, status)
                 job.cancel()
                 time.sleep(3)  # Wait for cleanup
-                self.assertIsNone(job._ws_client._ws)
+                self.assertIsNotNone(job._ws_client._server_close_code)
                 self.assertLess(final_it, iterations)
 
     def test_final_result(self):
@@ -474,10 +464,10 @@ def main(backend, user_messenger, **kwargs):
             nonlocal callback_called
             callback_called = True
 
-        self._start_proxy_server()
+        MockProxyServer(self, self.log).start()
         callback_called = False
 
-        with use_proxies(self.provider, self.VALID_PROXIES):
+        with use_proxies(self.provider, MockProxyServer.VALID_PROXIES):
             job = self._run_program(iterations=1, callback=result_callback)
             job.wait_for_final_state()
 
@@ -490,10 +480,9 @@ def main(backend, user_messenger, **kwargs):
             callback_called = True
 
         callback_called = False
-        invalid_proxy = {'https': 'http://{}:{}'.format(self.TEST_IP_ADDRESS,
-                                                        self.INVALID_PROXY_PORT)}
+        invalid_proxy = {'https': 'http://{}:{}'.format(MockProxyServer.PROXY_IP_ADDRESS,
+                                                        MockProxyServer.INVALID_PROXY_PORT)}
         with use_proxies(self.provider, invalid_proxy):
-            self.provider.credentials.proxies = {'urls': invalid_proxy}
             with self.assertLogs('qiskit.providers.ibmq', 'WARNING') as log_cm:
                 job = self._run_program(iterations=1, callback=result_callback)
                 job.wait_for_final_state()
@@ -565,19 +554,3 @@ def main(backend, user_messenger, **kwargs):
             time.sleep(wait_time)
         if job.status() != status:
             self.skipTest(f"Job {job.job_id()} unable to reach status {status}.")
-
-    def _start_proxy_server(self):
-        """Start a proxy server."""
-        command = ['pproxy', '-v', '-l', 'http://{}:{}'.format(
-            self.TEST_IP_ADDRESS, self.VALID_PROXY_PORT)]
-        self.proxy_process = subprocess.Popen(command, stdout=subprocess.PIPE)
-
-
-@contextmanager
-def use_proxies(provider, proxies):
-    """Context manager to set and restore proxies setting."""
-    try:
-        provider.credentials.proxies = {'urls': proxies}
-        yield
-    finally:
-        provider.credentials.proxies = None

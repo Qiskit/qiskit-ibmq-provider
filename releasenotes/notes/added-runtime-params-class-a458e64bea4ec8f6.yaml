@@ -15,4 +15,3 @@ upgrade:
     :class:`qiskit.providers.ibmq.runtime.ParameterNamespace` instance, which
     you can use to fill in runtime program parameter values and pass to
     :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.run`.
-    

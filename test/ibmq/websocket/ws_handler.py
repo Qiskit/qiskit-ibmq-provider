@@ -112,7 +112,7 @@ async def handle_token_retry_success(websocket):
 
 async def handle_token_retry_failure(websocket):
     """Continually close the socket, until both the first attempt and retry fail."""
-    await websocket.close()
+    await websocket.close(code=4001)
 
 
 async def handle_token_job_not_found(websocket):
