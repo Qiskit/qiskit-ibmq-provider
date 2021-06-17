@@ -108,7 +108,7 @@ class IBMQFactory:
         self._initialize_providers(credentials, lazy=True)
 
         # Prevent edge case where no hubs are available.
-        providers = self.providers()
+        providers = [provider for _, provider in self._providers.items()]
         if not providers:
             logger.warning('No Hub/Group/Projects could be found for this '
                            'account.')
@@ -194,7 +194,7 @@ class IBMQFactory:
         self._initialize_providers(credentials, lazy=True)
         
         # Prevent edge case where no hubs are available.
-        providers = self.providers()
+        providers = [provider for _, provider in self._providers.items()]
         if not providers:
             logger.warning('No Hub/Group/Projects could be found for this account.')
             return None
