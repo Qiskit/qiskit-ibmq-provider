@@ -46,7 +46,7 @@ class IBMQFactory:
         """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
-        self.__lazy_loaded = True # type: bool
+        self.__lazy_loaded = True  # type: bool
 
     # Account management functions.
 
@@ -192,7 +192,7 @@ class IBMQFactory:
 
         # Lazy load providers
         self._initialize_providers(credentials, lazy=True)
-        
+
         # Prevent edge case where no hubs are available.
         providers = [provider for _, provider in self._providers.items()]
         if not providers:
