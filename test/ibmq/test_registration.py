@@ -15,7 +15,6 @@
 from collections import OrderedDict
 import logging
 import os
-from typing import Generator
 import warnings
 from io import StringIO
 from contextlib import contextmanager
