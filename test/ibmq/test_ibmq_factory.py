@@ -342,9 +342,9 @@ class TestIBMQFactoryProvider(IBMQTestCase):
     def test_providers_with_filter(self):
         """Test providers() with a filter."""
         provider = self.factory.providers(
-            hub=self.credentials.hub,
-            group=self.credentials.group,
-            project=self.credentials.project)[0]
+            hub= self.credentials.hub,
+            group= self.credentials.group,
+            project= self.credentials.project)[0]
         self.assertEqual(self.provider, provider)
 
     def test_providers_no_filter(self):
