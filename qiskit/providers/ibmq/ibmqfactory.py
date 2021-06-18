@@ -46,7 +46,6 @@ class IBMQFactory:
         """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
-        self.__lazy_loaded = True  # type: bool
 
     # Account management functions.
 
@@ -104,8 +103,9 @@ class IBMQFactory:
                 'The URL specified ({}) is not an IBM Quantum Experience authentication '
                 'URL. Valid authentication URL: {}.'.format(credentials.url, QX_AUTH_URL))
 
+
         # Initialize the providers.
-        self._initialize_providers(credentials, lazy=True)
+        self._initialize_provider(credentials)
 
         # Prevent edge case where no hubs are available.
         providers = [provider for _, provider in self._providers.items()]
@@ -191,7 +191,7 @@ class IBMQFactory:
             self.disable_account()
 
         # Lazy load providers
-        self._initialize_providers(credentials, lazy=True)
+        self._initialize_provider(credentials)
 
         # Prevent edge case where no hubs are available.
         providers = [provider for _, provider in self._providers.items()]
@@ -216,6 +216,17 @@ class IBMQFactory:
                                         .format(str(ex))) from None
 
         return default_provider
+
+    def load_provider(self, provider_id: str) -> AccountProvider:
+        """Loads a provider by its id (hub/group/project)
+
+        Args:
+            provider_id: the provider id
+
+        Returns:
+            AccountProvider: the provider
+        """
+        return self._initialize_provider(self._credentials, provider_id)
 
     @staticmethod
     def save_account(
@@ -395,10 +406,6 @@ class IBMQFactory:
         if project:
             filters.append(lambda hgp: hgp.project == project)
 
-        # If not all providers were loaded, should load now
-        if self.__lazy_loaded:
-            self._initialize_providers(self._credentials)
-
         providers = [provider for key, provider in self._providers.items()
                      if all(f(key) for f in filters)]
 
@@ -450,41 +457,56 @@ class IBMQFactory:
                                        **credentials.connection_parameters())
         return version_finder.version()
 
-    def _initialize_providers(self, credentials: Credentials, lazy: bool = False) -> None:
+    def _initialize_provider(self, credentials: Credentials,
+                             target_id: Optional[str] = None) -> AccountProvider:
         """Authenticate against IBM Quantum Experience and populate the providers.
 
         Args:
             credentials: Credentials for IBM Quantum Experience.
-            lazy: Use lazy-tyle loading (usually just during construction)
+            target_id: the id for the target provider to initialize
+                If left empty, initializes the default provider
+
+        Raises:
+            IBMQProviderError: if provider with ID `target_id` does not exist.
+
+        Returns:
+            AccountProvider: the provider
         """
+        self._credentials = credentials
+
         auth_client = AuthClient(credentials.token,
                                  credentials.base_url,
                                  **credentials.connection_parameters())
         service_urls = auth_client.current_service_urls()
-        user_hubs = auth_client.user_hubs()
+        user_hubs: List[Dict] = auth_client.user_hubs()
 
-        self._credentials = credentials
-        for hub_info in user_hubs:
-            # Build credentials.
-            provider_credentials = Credentials(
-                credentials.token,
-                access_token=auth_client.current_access_token(),
-                url=service_urls['http'],
-                websockets_url=service_urls['ws'],
-                proxies=credentials.proxies,
-                verify=credentials.verify,
-                services=service_urls.get('services', {}),
-                **hub_info, )
+        if len(user_hubs) == 0:
+            raise IBMQProviderError('Provider cannot exist. The auth client provided has no hubs.')
 
-            # Build the provider.
-            try:
-                provider = AccountProvider(provider_credentials, self)
-                self._providers[provider_credentials.unique_id()] = provider
-                if lazy:
-                    self.__lazy_loaded = True
-                    return
-            except Exception:  # pylint: disable=broad-except
-                # Catch-all for errors instantiating the provider.
-                logger.warning('Unable to instantiate provider for %s: %s',
-                               hub_info, traceback.format_exc())
-        self.__lazy_loaded = False
+        for hub in user_hubs:
+            # Format the hub's id
+            hub_id = '{}/{}/{}'.format(hub['hub'], hub['group'], hub['project'])
+            if target_id is None or hub_id == target_id:
+
+                # Build the credentials
+                creds = Credentials(
+                    credentials.token,
+                    access_token=auth_client.current_access_token(),
+                    url=service_urls['http'],
+                    websockets_url=service_urls['ws'],
+                    proxies=credentials.proxies,
+                    verify=credentials.verify,
+                    services=service_urls.get('services', {}),
+                    **hub, )
+
+                # Build the provider.
+                try:
+                    provider = AccountProvider(creds, self)
+                    self._providers[creds.unique_id()] = provider
+                    return provider
+                except Exception:  # pylint: disable=broad-except
+                    # Catch-all for errors instantiating the provider.
+                    logger.warning('Unable to instantiate provider for %s: %s',
+                                hub, traceback.format_exc())
+
+        raise IBMQProviderError('Instantiable Provider with ID (%s) does not exist.' % target_id)
