@@ -288,12 +288,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
         # Cancel job so it doesn't consume more resources.
         cancel_job(job)
 
-    def test_invalid_job_share_level(self):
-        """Test setting a non existent share level for a job."""
-        with self.assertRaises(IBMQBackendValueError) as context_manager:
-            self.sim_backend.run(self.bell, job_share_level='invalid_job_share_level')
-        self.assertIn('not a valid job share', context_manager.exception.message)
-
     def test_esp_readout_not_enabled(self):
         """Test that an error is thrown is ESP readout is used and the backend does not support it.
         """
@@ -352,14 +346,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
         finally:
             delattr(self.sim_backend._configuration, "measure_esp_enabled")
             self.sim_backend._api_client = saved_api
-
-    def test_share_job_in_project(self):
-        """Test successfully sharing a job within a shareable project."""
-        job = self.sim_backend.run(self.bell, job_share_level='project')
-
-        retrieved_job = self.sim_backend.retrieve_job(job.job_id())
-        self.assertEqual(retrieved_job.share_level(), 'project',
-                         "Job {} has incorrect share level".format(job.job_id()))
 
     def test_job_tags_or(self):
         """Test using job tags with an or operator."""

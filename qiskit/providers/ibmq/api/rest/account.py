@@ -133,7 +133,6 @@ class Account(RestAdapterBase):
             self,
             backend_name: str,
             job_name: Optional[str] = None,
-            job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
             experiment_id: Optional[str] = None
     ) -> Dict[str, Any]:
@@ -142,7 +141,6 @@ class Account(RestAdapterBase):
         Args:
             backend_name: The name of the backend.
             job_name: Custom name to be assigned to the job.
-            job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
             experiment_id: Used to add a job to an experiment.
 
@@ -158,9 +156,6 @@ class Account(RestAdapterBase):
 
         if job_name:
             payload['name'] = job_name
-
-        if job_share_level:
-            payload['shareLevel'] = job_share_level
 
         if job_tags:
             payload['tags'] = job_tags
