@@ -105,7 +105,7 @@ class BaseFakeRuntimeJob:
     def _auto_progress(self) -> None:
         """Automatically update job status."""
         for status in self._job_progress:
-            time.sleep(0.5)
+            time.sleep(2.25)
             self._status = status
 
         if self._status == "COMPLETED":

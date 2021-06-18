@@ -21,7 +21,7 @@ from qiskit.providers.job import JobV1 as Job
 
 class JobType(Enum):
     """The type of an executed job"""
-    IBMQ = 1
+    Circuit = 1
     Runtime = 2
 
 def get_job_type(job: Job) -> JobType:
@@ -35,7 +35,7 @@ def get_job_type(job: Job) -> JobType:
 
     """
     # pylint: disable=unidiomatic-typecheck
-    return JobType.Runtime if type(job) == RuntimeJob else JobType.IBMQ
+    return JobType.Runtime if type(job) == RuntimeJob else JobType.Circuit
 
 
 BackendWithProviders = namedtuple('BackendWithProviders', ['backend', 'providers'])

@@ -37,7 +37,7 @@ def make_labels() -> widgets.HBox:
 
 
 def create_program_widget(program: RuntimeProgram) -> widgets.HBox:
-    """Create a widget corresponding to a particular job instance.
+    """Create a widget corresponding to a particular program.
 
     Args:
         program: the program
@@ -48,7 +48,7 @@ def create_program_widget(program: RuntimeProgram) -> widgets.HBox:
 
     div = "<div style='background-color: lightgrey; width: 2px'></div>"
     labels_str = """
-    <div class='rt_program_entry'>
+    <div class='row_item'>
         <p style='width: 170px;'>{}</p>{}
         <p style='width: 475px;'>{}</p>
     </div>""".format(
@@ -60,8 +60,8 @@ def create_program_widget(program: RuntimeProgram) -> widgets.HBox:
     styles = widgets.HTML(value=LIST_STYLE_WIDGET)
 
     grid = widgets.HBox(children=[labels, styles],
-                        layout=widgets.Layout(min_width='690px',
-                                              max_width='690px'))
+                        layout=widgets.Layout(min_width='700px',
+                                              max_width='700px'))
     grid.program = program
 
     return grid

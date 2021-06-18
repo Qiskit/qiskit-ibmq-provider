@@ -13,6 +13,7 @@
 """Tests for Jupyter tools."""
 
 from datetime import datetime, timedelta
+import time
 from unittest import mock
 import uuid
 
@@ -24,7 +25,8 @@ from qiskit.providers.ibmq.jupyter.dashboard.backend_widget import make_backend_
 from qiskit.providers.ibmq.jupyter.dashboard.utils import BackendWithProviders, JobType
 from qiskit.providers.ibmq.jupyter.dashboard.job_widgets import create_job_widget
 from qiskit.providers.ibmq.jupyter.dashboard.dashboard import _IQX_DASHBOARD, IQXDashboardMagic
-from qiskit.providers.ibmq.jupyter.dashboard.watcher_monitor import _job_checker
+from qiskit.providers.ibmq.jupyter.dashboard.watcher_monitor import (
+    job_monitor, CircuitJobMonitor, RuntimeJobMonitor)
 from qiskit.providers.ibmq.jupyter.dashboard.runtime_program_widget import create_program_widget
 from qiskit.providers.ibmq.jupyter.qubits_widget import qubits_tab
 from qiskit.providers.ibmq.jupyter.config_widget import config_tab
@@ -101,6 +103,89 @@ class TestBackendInfo(IBMQTestCase):
                 jobs_tab(backend)
 
 
+class TestJobMonitor(IBMQTestCase):
+    """Tests the job monitor"""
+
+    @classmethod
+    @requires_provider
+    def setUpClass(cls, provider) -> None:
+        """Class constants setup"""
+        # pylint: disable=arguments-differ
+        super().setUpClass()
+        cls.provider = provider
+        # Simulated backends
+        cls.sim_backend: IBMQBackend = provider.get_backend('ibmq_qasm_simulator')
+        # Dummy runtime API
+        cls.runtime = BaseFakeRuntimeClient()
+        # Dummy credentials
+        cls.credentials = Credentials(
+            token="", url="", services={"runtime": "https://quantum-computing.ibm.com"})
+
+    def test_monitor_queue_circuit(self) -> None:
+        """Tests a circuit monitors `_set_queue` function"""
+        job = self.create_circuit_job()
+        monitor = CircuitJobMonitor(job, mock.MagicMock())
+        # Now we have to "trick" the monitor into updating
+        monitor._prev_queue_pos = 'N/A'
+        monitor._set_job_queued()
+
+    def test_monitor_queue_runtime(self) -> None:
+        """Tests a runtime monitors `_set_queue` function"""
+        job = self.create_runtime_job()
+        RuntimeJobMonitor(job, mock.MagicMock())._set_job_queued()
+
+    def test_watcher_monitor_runtime(self) -> None:
+        """Tests the `job_monitor` function for runtime job"""
+        job = self.create_runtime_job()
+        job_monitor(job, watcher=mock.MagicMock())
+        while job.status().name != 'DONE':
+            time.sleep(1)
+
+    def test_watcher_monitor_circuit(self) -> None:
+        """Tests the `job_monitor` function for circuit job"""
+        job = self.create_circuit_job()
+        job_monitor(job, watcher=mock.MagicMock())
+        while job.status().name != 'DONE':
+            time.sleep(1)
+
+    @classmethod
+    def create_runtime_job(cls) -> RuntimeJob:
+        """Executes a circuit on Runtime. (Test)
+
+        Returns:
+            RuntimeJob: the job
+        """
+        program_id = cls._upload_program()['id']
+        job_id = cls.runtime.program_run(program_id=program_id,
+                                         credentials=cls.credentials,
+                                         backend_name='test-backend',
+                                         params='')['id']
+        job = cls.runtime._get_job(job_id).job()
+        return job
+
+    def create_circuit_job(self) -> IBMQJob:
+        """ Creates a circuit job via IBMQJobManager
+
+        Returns:
+            IBMQJob: the job
+        """
+        job = self.sim_backend.run(transpile(ReferenceCircuits.bell(), self.sim_backend))
+        job._wait_for_completion()
+        return job
+
+    @classmethod
+    def _upload_program(cls):
+        """Upload a new program."""
+        name = uuid.uuid4().hex
+        data = "def main() {}"
+        program_id = cls.runtime.program_create(
+            program_data=data.encode(),
+            name=name,
+            description='A Test program',
+            max_execution_time=300)
+        return program_id
+
+
 class TestIQXDashboard(IBMQTestCase):
     """Test backend information Jupyter widget."""
 
@@ -131,12 +216,10 @@ class TestIQXDashboard(IBMQTestCase):
         # Startup IQX Dashboard
         IQXDashboardMagic().iqx_dashboard()
         self.dash = _IQX_DASHBOARD
-        self.dash.runtime_programs = {
-            't-hub/t-grp/t-proj': [
-                RuntimeProgram(
-                    program_name='test-name',
-                    program_id='test-id',
-                    description='test-description')]}
+        self.dash.runtime_programs = [
+            RuntimeProgram(program_name='test-name',
+                           program_id='test-id',
+                           description='test-description')]
 
     def tearDown(self) -> None:
         """Test level tear down."""
@@ -163,7 +246,7 @@ class TestIQXDashboard(IBMQTestCase):
     def test_dashboard_refresh(self) -> None:
         """Test refreshing the dashboard"""
         self.dash.refresh_jobs_board(JobType.Runtime)
-        self.dash.refresh_jobs_board(JobType.IBMQ)
+        self.dash.refresh_jobs_board(JobType.Circuit)
         self.dash.refresh_device_list()
         self.dash.refresh_runtime_programs()
 
@@ -171,19 +254,19 @@ class TestIQXDashboard(IBMQTestCase):
         """Test updating a job on the dashboard"""
         circ_job = self.circ_job or self.create_circuit_job()
         rt_job = self.rt_job or self.create_runtime_job()
-        self.dash.update_single_job(JobType.IBMQ, (circ_job.job_id(), 'QUEUED', 1))
+        self.dash.update_single_job(JobType.Circuit, (circ_job.job_id(), 'QUEUED', 1))
         self.dash.update_single_job(JobType.Runtime, (rt_job.job_id(), 'RUNNING'))
 
     def test_dashboard_cancel(self) -> None:
         """Test cancelling a job on the dashboard"""
         circ_job = self.circ_job or self.create_circuit_job()
         rt_job = self.rt_job or self.create_runtime_job()
-        self.dash.cancel_job(job_id=circ_job.job_id(), job_type=JobType.IBMQ)
+        self.dash.cancel_job(job_id=circ_job.job_id(), job_type=JobType.Circuit)
         self.dash.cancel_job(job_id=rt_job.job_id(), job_type=JobType.Runtime)
 
     def test_dashboard_clear(self) -> None:
         """Test clearing inactive jobs from the dashboard"""
-        self.dash.clear_done(JobType.IBMQ)
+        self.dash.clear_done(JobType.Circuit)
         self.dash.clear_done(JobType.Runtime)
 
     def create_circuit_job(self, use_api: bool = True) -> IBMQJob:
@@ -196,7 +279,9 @@ class TestIQXDashboard(IBMQTestCase):
             IBMQJob: the job
         """
         if use_api:
-            return self.sim_backend.run(transpile(ReferenceCircuits.bell(), self.sim_backend))
+            job = self.sim_backend.run(transpile(ReferenceCircuits.bell(), self.sim_backend))
+            job._wait_for_completion()
+            return job
         return self.fake_backend.run(assemble(ReferenceCircuits.bell()))
 
     @classmethod
@@ -248,12 +333,6 @@ class TestIQXDashboard(IBMQTestCase):
                                  description='test-description')
         # 2. Create runtime widget
         create_program_widget(program)
-
-    def test_watcher_monitor(self):
-        """Test job watcher."""
-        backend = self.sim_backend
-        job = backend.run(transpile(ReferenceCircuits.bell(), backend))
-        _job_checker(job=job, status=job.status(), watcher=mock.MagicMock())
 
 
 def _get_backends(provider):

@@ -12,98 +12,132 @@
 
 """A module of widgets for job monitoring."""
 
-from typing import Union
+from abc import abstractmethod
+from typing import Tuple
 import sys
 import time
 import threading
 
 from qiskit.providers.job import JobV1 as Job
-from qiskit.providers.jobstatus import JobStatus
+from qiskit.providers.ibmq.runtime import RuntimeJob
+from qiskit.providers.ibmq.job import IBMQJob
 
-from .utils import JobType, get_job_type
+
+from .utils import get_job_type
 from ...utils.converters import duration_difference
 
+class JobMonitor:
+    """Monitors a job for updates to display to the dashboard"""
+    def __init__(self, job: Job, watcher: 'IQXDashboard') -> None:
+        """Creates a JobMonitor.
 
-def _job_monitor(job: Job,
-                 status: JobStatus,
-                 watcher: 'IQXDashboard') -> None:
+        Args:
+            job: the job`
+            watcher: the dashboard
+        """
+        self.job = job
+        self._job_type = get_job_type(job)
+        self._watcher = watcher
+        self._prev_status_name = None
+        self._interval = 0.5
+        self._exception_count = 0
+
+    def _update(self, info: Tuple) -> None:
+        """Updates the watcher with the provided info"""
+        self._watcher.update_single_job(self._job_type, info)
+
+    @abstractmethod
+    def _set_job_queued(self) -> None:
+        """Perform updates particular to the QUEUED phase"""
+        pass
+
+    def start(self):
+        """Start the monitor"""
+        status = self.job.status()
+        while status.name not in ['DONE', 'CANCELLED', 'ERROR']:
+            time.sleep(self._interval)
+            try:
+                status = self.job.status()
+                self._exception_count = 0
+                if status.name == 'QUEUED':
+                    self._set_job_queued()
+                elif status.name != self._prev_status_name:
+
+                    msg = status.name
+                    info = (self.job.job_id(), msg, 0, status.value)
+
+                    # Update the job on the dashboard
+                    self._update(info)
+
+                    self._interval = 2
+                    self._prev_status_name = status.name
+
+            # pylint: disable=broad-except
+            except Exception:
+                self._exception_count += 1
+                if self._exception_count == 5:
+                    info = (self.job.job_id(), 'NA', 0, "Could not query job.")
+                    # Update the job on the dashboard
+                    self._update(info)
+                    sys.exit()
+
+class RuntimeJobMonitor(JobMonitor):
+    """Monitors a runtime job for updates to display to dashboard"""
+
+    def __init__(self, job: RuntimeJob, watcher: 'IQXDashboard') -> None:
+        super().__init__(job, watcher)
+
+    def _set_job_queued(self) -> None:
+        info = (self.job.job_id(), self.job.status().name)
+        # Update the job on the dashboard
+        self._update(info)
+
+class CircuitJobMonitor(JobMonitor):
+    """Monitors a circuit job for updates to display to dashboard"""
+
+    def __init__(self, job: IBMQJob, watcher: 'IQXDashboard') -> None:
+        super().__init__(job, watcher)
+        self._prev_queue_pos = None
+        self._prev_est_time = ''
+
+    def _set_job_queued(self) -> None:
+        status = self.job.status()
+        info = (self.job.job_id(), status.name)
+        # Update the job on the dashboard
+        queue_pos = self.job.queue_position()
+        if queue_pos != self._prev_queue_pos:
+            queue_info = self.job.queue_info()
+            # If we have access to the time info, prepare it
+            if queue_info and queue_info.estimated_start_time:
+                est_time = duration_difference(queue_info.estimated_start_time)
+                self._prev_est_time = est_time
+            else:
+                est_time = self._prev_est_time
+
+            info = (self.job.job_id(), status.name+' ({})'.format(queue_pos),
+                    est_time, status.value)
+
+            self._update(info)
+            if queue_pos is not None:
+                self._interval = max(queue_pos, 2)
+            else:
+                self._interval = 2
+            self._prev_queue_pos = queue_pos
+        self._update(info)
+
+
+def _create_monitor(job: Job, watcher: 'IQXDashboard') -> JobMonitor:
+    monitor = RuntimeJobMonitor(job, watcher) if isinstance(job, RuntimeJob) \
+        else CircuitJobMonitor(job, watcher)
+    monitor.start()
+    return monitor
+
+def job_monitor(job: Job, watcher: 'IQXDashboard') -> None:
     """Monitor the status of an ``IBMQJob`` instance.
 
     Args:
         job: Job to monitor.
-        status: Job status.
         watcher: Job watcher instance.
     """
-    thread = threading.Thread(target=_job_checker, args=(job, status, watcher))
+    thread = threading.Thread(target=_create_monitor, args=(job, watcher))
     thread.start()
-
-
-def _job_checker(job: Job, status: JobStatus, watcher: 'IQXDashboard') -> None:
-    """A simple job status checker.
-
-    Args:
-        job: The job to check.
-        status: Job status.
-        watcher: Job watcher instance.
-    """
-    job_type = get_job_type(job)
-
-    prev_status_name = None
-    prev_queue_pos = None
-    interval = 2
-    exception_count = 0
-    prev_est_time = ''
-    while status.name not in ['DONE', 'CANCELLED', 'ERROR']:
-        time.sleep(interval)
-        try:
-            status = job.status()
-            exception_count = 0
-
-            if status.name == 'QUEUED':
-                if job_type == JobType.IBMQ:
-                    queue_pos = job.queue_position()
-                    if queue_pos != prev_queue_pos:
-                        queue_info = job.queue_info()
-                        if queue_info and queue_info.estimated_start_time:
-                            est_time = duration_difference(queue_info.estimated_start_time)
-                            prev_est_time = est_time
-                        else:
-                            est_time = prev_est_time
-
-                        update_info = (job.job_id(), status.name+' ({})'.format(queue_pos),
-                                       est_time, status.value)
-
-                        watcher.update_single_job(update_info)
-                        if queue_pos is not None:
-                            interval = max(queue_pos, 2)
-                        else:
-                            interval = 2
-                        prev_queue_pos = queue_pos
-                else:
-                    update_info = (job.job_id(), status.name)
-                    # Update the job on the dashboard
-                    watcher.update_single_job(job_type, update_info)
-
-            elif status.name != prev_status_name:
-                msg = status.name
-                if msg == 'RUNNING':
-                    # Note: As of now, all Runtime jobs are considered priority jobs.
-                    job_mode = job.scheduling_mode() if job_type == JobType.IBMQ else 'PRIORITY'
-                    if job_mode:
-                        msg += ' [{}]'.format(job_mode[0].upper())
-
-                update_info = (job.job_id(), msg, 0, status.value)
-
-                # Update the job on the dashboard
-                watcher.update_single_job(job_type, update_info)
-                interval = 2
-                prev_status_name = status.name
-
-        # pylint: disable=broad-except
-        except Exception:
-            exception_count += 1
-            if exception_count == 5:
-                update_info = (job.job_id(), 'NA', 0, "Could not query job.")
-                # Update the job on the dashboard
-                watcher.update_single_job(job_type, update_info)
-                sys.exit()
