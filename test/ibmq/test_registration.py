@@ -309,7 +309,7 @@ def _mocked_initialize_provider(self, credentials: Credentials):
 @contextmanager
 def mock_ibmq_provider():
     """Mock the initialization of ``IBMQFactory``, so it does not query the API."""
-    patcher = patch.object(IBMQFactory, '_initialize_providers',
+    patcher = patch.object(IBMQFactory, '_initialize_provider',
                            side_effect=_mocked_initialize_provider,
                            autospec=True)
     patcher2 = patch.object(IBMQFactory, '_check_api_version',
