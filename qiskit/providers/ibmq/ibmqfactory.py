@@ -103,7 +103,6 @@ class IBMQFactory:
                 'The URL specified ({}) is not an IBM Quantum Experience authentication '
                 'URL. Valid authentication URL: {}.'.format(credentials.url, QX_AUTH_URL))
 
-
         # Initialize the providers.
         self._initialize_provider(credentials)
 
@@ -507,6 +506,6 @@ class IBMQFactory:
                 except Exception:  # pylint: disable=broad-except
                     # Catch-all for errors instantiating the provider.
                     logger.warning('Unable to instantiate provider for %s: %s',
-                                hub, traceback.format_exc())
+                                   hub, traceback.format_exc())
 
         raise IBMQProviderError('Instantiable Provider with ID (%s) does not exist.' % target_id)

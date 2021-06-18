@@ -332,9 +332,9 @@ class TestIBMQFactoryProvider(IBMQTestCase):
 
     def test_load_provider(self):
         """Test load a single provider (default)."""
-        hub=self.credentials.hub
-        group=self.credentials.group
-        project=self.credentials.project
+        hub= self.credentials.hub
+        group= self.credentials.group
+        project= self.credentials.project
         provider_id = '{}/{}/{}'.format(hub, group, project)
         provider = self.factory.load_provider(provider_id)
         self.assertIsNotNone(provider)
