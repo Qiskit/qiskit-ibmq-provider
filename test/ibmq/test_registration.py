@@ -301,6 +301,7 @@ class TestIBMQAccountUpdater(IBMQTestCase):
 
 # Context managers
 
+# pylint: disable=unused-argument
 def _mocked_initialize_provider(self):
     """Mock ``_initialize_provider()``."""
 

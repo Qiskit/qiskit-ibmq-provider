@@ -17,7 +17,6 @@ from typing import Dict, List, Union, Callable, Optional, Any
 from collections import OrderedDict
 import traceback
 
-from .api.exceptions import RequestsApiError
 from .accountprovider import AccountProvider
 from .api.clients import AuthClient, VersionClient
 from .credentials import Credentials, discover_credentials
@@ -108,13 +107,6 @@ class IBMQFactory:
 
         # Setup credential info
         self._credentials = credentials
-        try:
-            self._auth_client = AuthClient(credentials.token,
-                                           credentials.base_url,
-                                           **credentials.connection_parameters())  # type: ignore
-            self._auth_client_hubs: List[Dict] = self._auth_client.user_hubs()  # type: ignore
-        except RequestsApiError:
-            logger.warning('Could not establish API connection with provided credentials.')
 
         # Initialize the providers.
         self._initialize_provider()
@@ -204,13 +196,6 @@ class IBMQFactory:
 
         # Setup credential info
         self._credentials = credentials
-        try:
-            self._auth_client = AuthClient(credentials.token,
-                                           credentials.base_url,
-                                           **credentials.connection_parameters())  # type: ignore
-            self._auth_client_hubs: List[Dict] = self._auth_client.user_hubs()  # type: ignore
-        except RequestsApiError:
-            logger.warning('Could not establish API connection with provided credentials.')
 
         # Initialize the providers.
         self._initialize_provider()
@@ -448,14 +433,6 @@ class IBMQFactory:
         if providers and len(providers) == 1:
             return providers[0]
 
-        # Load provider and retry
-        self._initialize_provider(hub, group, project)
-        providers = self.providers(hub, group, project)
-
-        # Test success
-        if providers and len(providers) == 0:
-            return providers[0]
-
         # Test fail: too many matches
         if providers and len(providers) > 1:
             raise IBMQProviderError('More than one provider matches the specified criteria.'
@@ -496,32 +473,14 @@ class IBMQFactory:
         Returns:
             AccountProvider: the provider
         """
-        if not self._auth_client:
-            raise IBMQProviderError('Invalid account credentials. Cannot initialize provider.')
-
-        service_urls = self._auth_client.current_service_urls()
-        user_hubs = self._auth_client_hubs
-
-        filters = []
-
-        if hub:
-            filters.append(lambda hgp: hgp['hub'] == hub)
-        if group:
-            filters.append(lambda hgp: hgp['group'] == group)
-        if project:
-            filters.append(lambda hgp: hgp['project'] == project)
-
-        # If all are none, load lazily
-        # note: this prevents a "load all"
+        auth_client = AuthClient(self._credentials.token,
+                                 self._credentials.base_url,
+                                 **self._credentials.connection_parameters())
+        service_urls = auth_client.current_service_urls()
+        user_hubs = auth_client.user_hubs()
 
         if len(user_hubs) == 0:
             raise IBMQProviderError('Provider cannot exist. The auth client provided has no hubs.')
-
-        if not (hub or group or project):
-            user_hubs = user_hubs[:1]  # Loads default only
-        else:
-            user_hubs = [uhub for uhub in user_hubs
-                         if all(f(uhub) for f in filters)]
 
         # Successfully added a provider
         success = False
@@ -534,7 +493,7 @@ class IBMQFactory:
             # Build the credentials
             creds = Credentials(
                 self._credentials.token,
-                access_token=self._auth_client.current_access_token(),
+                access_token=auth_client.current_access_token(),
                 url=service_urls['http'],
                 websockets_url=service_urls['ws'],
                 proxies=self._credentials.proxies,
