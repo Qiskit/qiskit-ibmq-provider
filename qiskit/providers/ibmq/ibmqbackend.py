@@ -20,7 +20,8 @@ from typing import Dict, List, Union, Optional, Any
 from datetime import datetime as python_datetime
 
 from qiskit.compiler import assemble
-from qiskit.circuit import QuantumCircuit, Parameter
+from qiskit.circuit import QuantumCircuit, Parameter, Delay
+from qiskit.circuit.duration import duration_in_dt
 from qiskit.pulse import Schedule, LoConfig
 from qiskit.pulse.channels import PulseChannel
 from qiskit.qobj import QasmQobj, PulseQobj, validate_qobj_against_schema
@@ -102,6 +103,7 @@ class IBMQBackend(Backend):
     """
 
     qobj_warning_issued = False
+    id_warning_issued = False
 
     def __init__(
             self,
@@ -285,6 +287,9 @@ class IBMQBackend(Backend):
                 "ESP readout not supported on this device. Please make sure the flag "
                 "'use_measure_esp' is unset or set to 'False'."
             )
+
+        if sim_method is None:
+            self._deprecate_id_instruction(circuits)
 
         if isinstance(circuits, (QasmQobj, PulseQobj)):
             if not self.qobj_warning_issued:
@@ -745,6 +750,97 @@ class IBMQBackend(Backend):
                 self.hub, self.group, self.project)
         return "<{}('{}') from IBMQ({})>".format(
             self.__class__.__name__, self.name(), credentials_info)
+
+    def _deprecate_id_instruction(
+            self,
+            circuits: Union[QasmQobj, PulseQobj, QuantumCircuit, Schedule,
+                            List[Union[QuantumCircuit, Schedule]]]
+    ) -> None:
+        """Raise a DeprecationWarning if any circuit contains an 'id' instruction.
+
+        Additionally, if 'delay' is a 'supported_instruction', replace each 'id'
+        instruction (in-place) with the equivalent ('sx'-length) 'delay' instruction.
+
+        Args:
+            circuits: The individual or list of :class:`~qiskit.circuits.QuantumCircuit` or
+                :class:`~qiskit.pulse.Schedule` objects passed to
+                :meth:`IBMQBackend.run()<IBMQBackend.run>`. Modified in-place.
+
+        Returns:
+            None
+        """
+
+        if isinstance(circuits, PulseQobj):
+            return
+
+        id_support = 'id' in getattr(self.configuration(), 'basis_gates', [])
+        delay_support = 'delay' in getattr(self.configuration(), 'supported_instructions', [])
+
+        if isinstance(circuits, QasmQobj):
+            circuit_has_id = any(instr.name == 'id'
+                                 for experiment in circuits.experiments
+                                 for instr in experiment.instructions)
+        else:
+            if not isinstance(circuits, List):
+                circuits = [circuits]
+
+            circuit_has_id = any(instr.name == 'id'
+                                 for circuit in circuits
+                                 if isinstance(circuit, QuantumCircuit)
+                                 for instr, qargs, cargs in circuit.data)
+
+        if not circuit_has_id:
+            return
+
+        if not self.id_warning_issued:
+            if id_support:
+                warnings.warn("Support for the 'id' instruction has been deprecated "
+                              "from IBM hardware backends. Any 'id' instructions "
+                              "will be replaced with their equivalent 'delay' instruction. "
+                              "Please use the 'delay' instruction instead.", DeprecationWarning,
+                              stacklevel=4)
+            elif delay_support:
+                warnings.warn("Support for the 'id' instruction has been removed "
+                              "from IBM hardware backends. Any 'id' instructions "
+                              "will be replaced with their equivalent 'delay' instruction. "
+                              "Please use the 'delay' instruction instead.", DeprecationWarning,
+                              stacklevel=4)
+            else:
+                warnings.warn("Support for the 'id' instruction has been removed "
+                              "from IBM hardware backends. Please use the 'delay' "
+                              "instruction instead.", DeprecationWarning,
+                              stacklevel=4)
+
+            self.id_warning_issued = True
+
+        if not delay_support:
+            return
+
+        dt_in_s = self.configuration().dt
+
+        if isinstance(circuits, QasmQobj):
+            for experiment in circuits.experiments:
+                for instr in experiment.instructions:
+                    if instr.name == 'id':
+                        sx_duration = self.properties().gate_length('sx', instr.qubits[0])
+                        sx_duration_in_dt = duration_in_dt(sx_duration, dt_in_s)
+
+                        instr.name = 'delay'
+                        instr.params = [sx_duration_in_dt]
+        else:
+            for circuit in circuits:
+                if isinstance(circuit, Schedule):
+                    continue
+
+                for idx, (instr, qargs, cargs) in enumerate(circuit.data):
+                    if instr.name == 'id':
+
+                        sx_duration = self.properties().gate_length('sx', qargs[0].index)
+                        sx_duration_in_dt = duration_in_dt(sx_duration, dt_in_s)
+
+                        delay_instr = Delay(sx_duration_in_dt)
+
+                        circuit.data[idx] = (delay_instr, qargs, cargs)
 
 
 class IBMQSimulator(IBMQBackend):
