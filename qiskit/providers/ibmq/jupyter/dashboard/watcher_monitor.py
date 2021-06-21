@@ -32,7 +32,7 @@ class JobMonitor:
         """Creates a JobMonitor.
 
         Args:
-            job: the job`
+            job: the job
             watcher: the dashboard
         """
         self.job = job
