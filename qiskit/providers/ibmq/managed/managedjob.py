@@ -65,7 +65,7 @@ class ManagedJob:
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
             submit_lock: Lock,
-            job_share_level: ApiJobShareLevel,
+            job_share_level: Optional[ApiJobShareLevel] = None,
             job_tags: Optional[List[str]] = None,
             **run_config: Dict
     ) -> None:
