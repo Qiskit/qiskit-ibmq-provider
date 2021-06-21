@@ -325,26 +325,23 @@ class TestIBMQFactoryProvider(IBMQTestCase):
             project=self.credentials.project)
         self.assertEqual(self.provider, provider)
 
-    def test_load_provider_default(self):
+    def test_load_providers_default(self):
         """Test load a single provider (default)."""
-        provider = self.factory.load_provider(None)
-        self.assertIsNotNone(provider)
+        self.factory.load_providers(None)
 
-    def test_load_provider(self):
+    def test_load_providers(self):
         """Test load a single provider (default)."""
-        hub= self.credentials.hub
-        group= self.credentials.group
-        project= self.credentials.project
-        provider_id = '{}/{}/{}'.format(hub, group, project)
-        provider = self.factory.load_provider(provider_id)
-        self.assertIsNotNone(provider)
+        hub = self.credentials.hub
+        group = self.credentials.group
+        project = self.credentials.project
+        self.factory.load_providers(hub, group, project)
 
     def test_providers_with_filter(self):
         """Test providers() with a filter."""
         provider = self.factory.providers(
-            hub= self.credentials.hub,
-            group= self.credentials.group,
-            project= self.credentials.project)[0]
+            hub=self.credentials.hub,
+            group=self.credentials.group,
+            project=self.credentials.project)[0]
         self.assertEqual(self.provider, provider)
 
     def test_providers_no_filter(self):

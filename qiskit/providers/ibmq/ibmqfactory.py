@@ -158,7 +158,7 @@ class IBMQFactory:
         try:
             stored_credentials, stored_provider_hgp = discover_credentials()
         except HubGroupProjectInvalidStateError as ex:
-            raise IBMQAccountCredentialsInvalidFormat(
+            raise IBMQAccountCredentialsInvalidFormat(  # pylint: disable=bad-exception-context
                 'The default provider (hub/group/project) stored on disk could not '
                 'be parsed: {}'.format(str(ex))) from ex
 
@@ -216,16 +216,20 @@ class IBMQFactory:
 
         return default_provider
 
-    def load_provider(self, provider_id: str) -> AccountProvider:
+    def load_providers(self,
+                       hub: Optional[str] = None,
+                       group: Optional[str] = None,
+                       project: Optional[str] = None) -> None:
         """Loads a provider by its id (hub/group/project)
 
         Args:
-            provider_id: the provider id
+            hub: Name of the hub to use.
+            group: Name of the group to use.
+            project: Name of the project to use.
 
-        Returns:
-            AccountProvider: the provider
         """
-        return self._initialize_provider(self._credentials, provider_id)
+
+        self._initialize_provider(self._credentials, hub, group, project)
 
     @staticmethod
     def save_account(
@@ -457,13 +461,16 @@ class IBMQFactory:
         return version_finder.version()
 
     def _initialize_provider(self, credentials: Credentials,
-                             target_id: Optional[str] = None) -> AccountProvider:
+                             hub: Optional[str] = None,
+                             group: Optional[str] = None,
+                             project: Optional[str] = None) -> None:
         """Authenticate against IBM Quantum Experience and populate the providers.
 
         Args:
             credentials: Credentials for IBM Quantum Experience.
-            target_id: the id for the target provider to initialize
-                If left empty, initializes the default provider
+            hub: Name of the hub to use.
+            group: Name of the group to use.
+            project: Name of the project to use.
 
         Raises:
             IBMQProviderError: if provider with ID `target_id` does not exist.
@@ -479,33 +486,52 @@ class IBMQFactory:
         service_urls = auth_client.current_service_urls()
         user_hubs: List[Dict] = auth_client.user_hubs()
 
+        filters = []
+
+        if hub:
+            filters.append(lambda hgp: hgp['hub'] == hub)
+        if group:
+            filters.append(lambda hgp: hgp['group'] == group)
+        if project:
+            filters.append(lambda hgp: hgp['project'] == project)
+
+        # If all are none, load lazily
+        # note: this prevents a "load all"
+
         if len(user_hubs) == 0:
             raise IBMQProviderError('Provider cannot exist. The auth client provided has no hubs.')
 
-        for hub in user_hubs:
-            # Format the hub's id
-            hub_id = '{}/{}/{}'.format(hub['hub'], hub['group'], hub['project'])
-            if target_id is None or hub_id == target_id:
+        if not (hub or group or project):
+            user_hubs = user_hubs[:1]  # Loads default only
+        else:
+            user_hubs = [uhub for uhub in user_hubs
+                         if all(f(uhub) for f in filters)]
 
-                # Build the credentials
-                creds = Credentials(
-                    credentials.token,
-                    access_token=auth_client.current_access_token(),
-                    url=service_urls['http'],
-                    websockets_url=service_urls['ws'],
-                    proxies=credentials.proxies,
-                    verify=credentials.verify,
-                    services=service_urls.get('services', {}),
-                    **hub, )
+        # Successfully added a provider
+        success = False
 
-                # Build the provider.
-                try:
-                    provider = AccountProvider(creds, self)
-                    self._providers[creds.unique_id()] = provider
-                    return provider
-                except Exception:  # pylint: disable=broad-except
-                    # Catch-all for errors instantiating the provider.
-                    logger.warning('Unable to instantiate provider for %s: %s',
-                                   hub, traceback.format_exc())
+        for uhub in user_hubs:
+            # Build the credentials
+            creds = Credentials(
+                credentials.token,
+                access_token=auth_client.current_access_token(),
+                url=service_urls['http'],
+                websockets_url=service_urls['ws'],
+                proxies=credentials.proxies,
+                verify=credentials.verify,
+                services=service_urls.get('services', {}),
+                **uhub, )
 
-        raise IBMQProviderError('Instantiable Provider with ID (%s) does not exist.' % target_id)
+            # Build the provider.
+            try:
+                provider = AccountProvider(creds, self)
+                self._providers[creds.unique_id()] = provider
+                success = True
+            except Exception:  # pylint: disable=broad-except
+                # Catch-all for errors instantiating the provider.
+                logger.warning('Unable to instantiate provider for %s: %s',
+                               uhub, traceback.format_exc())
+
+        if not success:
+            target_id = '{}/{}/{}'.format(str(hub), str(group), str(project))
+            logger.warning('Unable to instantiate any provider for %s', target_id)
