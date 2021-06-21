@@ -301,9 +301,8 @@ class TestIBMQAccountUpdater(IBMQTestCase):
 
 # Context managers
 
-def _mocked_initialize_provider(self, credentials: Credentials):
-    """Mock ``_initialize_provider()``, just storing the credentials."""
-    self._credentials = credentials
+def _mocked_initialize_provider(self):
+    """Mock ``_initialize_provider()``."""
 
 
 @contextmanager

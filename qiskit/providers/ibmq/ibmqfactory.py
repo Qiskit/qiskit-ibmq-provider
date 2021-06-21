@@ -17,6 +17,7 @@ from typing import Dict, List, Union, Callable, Optional, Any
 from collections import OrderedDict
 import traceback
 
+from .api.exceptions import RequestsApiError
 from .accountprovider import AccountProvider
 from .api.clients import AuthClient, VersionClient
 from .credentials import Credentials, discover_credentials
@@ -46,7 +47,7 @@ class IBMQFactory:
         """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
-        self._auth_client = None
+        self._auth_client: AuthClient = None
         self._auth_client_hubs = None
 
     # Account management functions.
@@ -107,16 +108,19 @@ class IBMQFactory:
 
         # Setup credential info
         self._credentials = credentials
-        self._auth_client = AuthClient(credentials.token,
-                                       credentials.base_url,
-                                       **credentials.connection_parameters())
-        self._auth_client_hubs: List[Dict] = self._auth_client.user_hubs()
+        try:
+            self._auth_client = AuthClient(credentials.token,
+                                           credentials.base_url,
+                                           **credentials.connection_parameters())  # type: ignore
+            self._auth_client_hubs: List[Dict] = self._auth_client.user_hubs()  # type: ignore
+        except RequestsApiError:
+            logger.warning('Could not establish API connection with provided credentials.')
 
         # Initialize the providers.
         self._initialize_provider()
 
         # Prevent edge case where no hubs are available.
-        providers = [provider for _, provider in self._providers.items()]
+        providers = self.providers()
         if not providers:
             logger.warning('No Hub/Group/Projects could be found for this '
                            'account.')
@@ -200,16 +204,19 @@ class IBMQFactory:
 
         # Setup credential info
         self._credentials = credentials
-        self._auth_client = AuthClient(credentials.token,
-                                       credentials.base_url,
-                                       **credentials.connection_parameters())
-        self._auth_client_hubs: List[Dict] = self._auth_client.user_hubs()
+        try:
+            self._auth_client = AuthClient(credentials.token,
+                                           credentials.base_url,
+                                           **credentials.connection_parameters())  # type: ignore
+            self._auth_client_hubs: List[Dict] = self._auth_client.user_hubs()  # type: ignore
+        except RequestsApiError:
+            logger.warning('Could not establish API connection with provided credentials.')
 
         # Initialize the providers.
         self._initialize_provider()
 
         # Prevent edge case where no hubs are available.
-        providers = [provider for _, provider in self._providers.items()]
+        providers = self.providers()
         if not providers:
             logger.warning('No Hub/Group/Projects could be found for this account.')
             return None
@@ -489,6 +496,9 @@ class IBMQFactory:
         Returns:
             AccountProvider: the provider
         """
+        if not self._auth_client:
+            raise IBMQProviderError('Invalid account credentials. Cannot initialize provider.')
+
         service_urls = self._auth_client.current_service_urls()
         user_hubs = self._auth_client_hubs
 
