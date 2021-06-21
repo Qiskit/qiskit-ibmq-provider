@@ -20,7 +20,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, wait
 
 from qiskit.test.mock.backends.poughkeepsie.fake_poughkeepsie import FakePoughkeepsie
-from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES, ApiJobShareLevel
+from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError, UserTimeoutExceededError
 
 
@@ -64,7 +64,7 @@ class BaseFakeJob:
     ]
 
     def __init__(self, executor, job_id, qobj, backend_name, job_tags=None,
-                 share_level=None, job_name=None):
+                 job_name=None):
         """Initialize a fake job."""
         self._job_id = job_id
         self._status = ApiJobStatus.CREATING
@@ -72,7 +72,6 @@ class BaseFakeJob:
         self._future = executor.submit(self._auto_progress)
         self._result = None
         self._backend_name = backend_name
-        self._share_level = share_level
         self._job_tags = job_tags
         self._job_name = job_name
 
@@ -103,8 +102,6 @@ class BaseFakeJob:
             'creation_date': '2019-01-01T13:15:58.425972',
             '_backend_info': {'name': self._backend_name}
         }
-        if self._share_level:
-            data['share_level'] = self._share_level
         if self._job_tags:
             data['tags'] = self._job_tags.copy()
         if self._job_name:
@@ -205,7 +202,7 @@ class BaseFakeAccountClient:
             job_data.reverse()
         return job_data
 
-    def job_submit(self, backend_name, qobj_dict, job_name, job_share_level,
+    def job_submit(self, backend_name, qobj_dict, job_name,
                    job_tags, *_args, **_kwargs):
         """Submit a Qobj to a device."""
         if self._job_limit != -1 and self._unfinished_jobs() >= self._job_limit:
@@ -214,7 +211,6 @@ class BaseFakeAccountClient:
                 'maximum number of concurrent jobs, Error code: 3458.')
 
         new_job_id = uuid.uuid4().hex
-        job_share_level = job_share_level or ApiJobShareLevel.NONE
         job_class = self._job_class.pop() \
             if isinstance(self._job_class, list) else self._job_class
         new_job = job_class(
@@ -222,7 +218,6 @@ class BaseFakeAccountClient:
             job_id=new_job_id,
             qobj=qobj_dict,
             backend_name=backend_name,
-            share_level=job_share_level.value,
             job_tags=job_tags,
             job_name=job_name)
         self._jobs[new_job_id] = new_job
