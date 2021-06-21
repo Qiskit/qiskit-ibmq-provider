@@ -46,6 +46,8 @@ class IBMQFactory:
         """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
+        self._auth_client = None
+        self._auth_client_hubs = None
 
     # Account management functions.
 
@@ -103,8 +105,15 @@ class IBMQFactory:
                 'The URL specified ({}) is not an IBM Quantum Experience authentication '
                 'URL. Valid authentication URL: {}.'.format(credentials.url, QX_AUTH_URL))
 
+        # Setup credential info
+        self._credentials = credentials
+        self._auth_client = AuthClient(credentials.token,
+                                       credentials.base_url,
+                                       **credentials.connection_parameters())
+        self._auth_client_hubs: List[Dict] = self._auth_client.user_hubs()
+
         # Initialize the providers.
-        self._initialize_provider(credentials)
+        self._initialize_provider()
 
         # Prevent edge case where no hubs are available.
         providers = [provider for _, provider in self._providers.items()]
@@ -189,8 +198,15 @@ class IBMQFactory:
                            'account in the session will be replaced.')
             self.disable_account()
 
-        # Lazy load providers
-        self._initialize_provider(credentials)
+        # Setup credential info
+        self._credentials = credentials
+        self._auth_client = AuthClient(credentials.token,
+                                       credentials.base_url,
+                                       **credentials.connection_parameters())
+        self._auth_client_hubs: List[Dict] = self._auth_client.user_hubs()
+
+        # Initialize the providers.
+        self._initialize_provider()
 
         # Prevent edge case where no hubs are available.
         providers = [provider for _, provider in self._providers.items()]
@@ -215,21 +231,6 @@ class IBMQFactory:
                                         .format(str(ex))) from None
 
         return default_provider
-
-    def load_providers(self,
-                       hub: Optional[str] = None,
-                       group: Optional[str] = None,
-                       project: Optional[str] = None) -> None:
-        """Loads a provider by its id (hub/group/project)
-
-        Args:
-            hub: Name of the hub to use.
-            group: Name of the group to use.
-            project: Name of the project to use.
-
-        """
-
-        self._initialize_provider(self._credentials, hub, group, project)
 
     @staticmethod
     def save_account(
@@ -411,7 +412,6 @@ class IBMQFactory:
 
         providers = [provider for key, provider in self._providers.items()
                      if all(f(key) for f in filters)]
-
         return providers
 
     def get_provider(
@@ -434,18 +434,30 @@ class IBMQFactory:
             IBMQProviderError: If no provider matches the specified criteria,
                 or more than one provider matches the specified criteria.
         """
+        # Attempt to retrieve provider
         providers = self.providers(hub, group, project)
 
-        if not providers:
-            raise IBMQProviderError('No provider matches the specified criteria: '
-                                    'hub = {}, group = {}, project = {}'
-                                    .format(hub, group, project))
-        if len(providers) > 1:
+        # Test success
+        if providers and len(providers) == 1:
+            return providers[0]
+
+        # Load provider and retry
+        self._initialize_provider(hub, group, project)
+        providers = self.providers(hub, group, project)
+
+        # Test success
+        if providers and len(providers) == 0:
+            return providers[0]
+
+        # Test fail: too many matches
+        if providers and len(providers) > 1:
             raise IBMQProviderError('More than one provider matches the specified criteria.'
                                     'hub = {}, group = {}, project = {}'
                                     .format(hub, group, project))
-
-        return providers[0]
+        # fail: no matches
+        raise IBMQProviderError('No provider matches the specified criteria: '
+                                'hub = {}, group = {}, project = {}'
+                                .format(hub, group, project))
 
     # Private functions.
 
@@ -460,14 +472,13 @@ class IBMQFactory:
                                        **credentials.connection_parameters())
         return version_finder.version()
 
-    def _initialize_provider(self, credentials: Credentials,
+    def _initialize_provider(self,
                              hub: Optional[str] = None,
                              group: Optional[str] = None,
                              project: Optional[str] = None) -> None:
         """Authenticate against IBM Quantum Experience and populate the providers.
 
         Args:
-            credentials: Credentials for IBM Quantum Experience.
             hub: Name of the hub to use.
             group: Name of the group to use.
             project: Name of the project to use.
@@ -478,13 +489,8 @@ class IBMQFactory:
         Returns:
             AccountProvider: the provider
         """
-        self._credentials = credentials
-
-        auth_client = AuthClient(credentials.token,
-                                 credentials.base_url,
-                                 **credentials.connection_parameters())
-        service_urls = auth_client.current_service_urls()
-        user_hubs: List[Dict] = auth_client.user_hubs()
+        service_urls = self._auth_client.current_service_urls()
+        user_hubs = self._auth_client_hubs
 
         filters = []
 
@@ -511,21 +517,25 @@ class IBMQFactory:
         success = False
 
         for uhub in user_hubs:
+            # If credential is already stored, do nothing
+            cred_id = HubGroupProject(uhub['hub'], uhub['group'], uhub['project'])
+            if self._providers.get(cred_id):
+                continue
             # Build the credentials
             creds = Credentials(
-                credentials.token,
-                access_token=auth_client.current_access_token(),
+                self._credentials.token,
+                access_token=self._auth_client.current_access_token(),
                 url=service_urls['http'],
                 websockets_url=service_urls['ws'],
-                proxies=credentials.proxies,
-                verify=credentials.verify,
+                proxies=self._credentials.proxies,
+                verify=self._credentials.verify,
                 services=service_urls.get('services', {}),
                 **uhub, )
 
             # Build the provider.
             try:
                 provider = AccountProvider(creds, self)
-                self._providers[creds.unique_id()] = provider
+                self._providers[cred_id] = provider
                 success = True
             except Exception:  # pylint: disable=broad-except
                 # Catch-all for errors instantiating the provider.
