@@ -113,7 +113,7 @@ class AccountProvider(Provider):
                                          **credentials.connection_parameters())
 
         # Initialize the internal list of backends.
-        self.__backends = None
+        self.__backends = {}
         self._backend = IBMQBackendService(self)
         self.backends = IBMQDeprecatedBackendService(self.backend)  # type: ignore[assignment]
 
@@ -136,11 +136,11 @@ class AccountProvider(Provider):
             Dict[str, IBMQBackend]: the backends
         """
         if not self.__backends:
-            self.__backends = self._discover_remote_backends()  # pylint: disable=assignment
+            self.__backends = self._discover_remote_backends()
         return self.__backends
 
     @_backends.setter
-    def _backends(self, value: Dict) -> None:
+    def _backends(self, value: Dict[str, IBMQBackend]) -> None:
         """Sets the value for the account's backends.
 
         Args:
