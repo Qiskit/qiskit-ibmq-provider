@@ -206,7 +206,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         rresult = rexp.analysis_result(0)
         self._verify_analysis_result(aresult, rresult)
 
-    def _verify_analysis_result(self, expected: AnalysisResult, actual: AnalysisResult):
+    def _verify_analysis_result(self, expected, actual):
         """Verify the input analysis result."""
         self.assertEqual(expected.result_id, actual.result_id)
         self.assertEqual(expected.result_type, actual.result_type)
