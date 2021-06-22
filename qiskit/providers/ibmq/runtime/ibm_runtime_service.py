@@ -402,10 +402,19 @@ class IBMRuntimeService:
 
         Args:
             program_id: Program ID.
-            public: Make the program visible to all.
-                if False, visible to just your account (e.g for testing)
+            public: If ``True``, make the program visible to all.
+                If ``False``, make the program visible to just your account.
+
+        Raises:
+            RuntimeJobNotFound: if program not found (404)
+            QiskitRuntimeError: if update failed (401, 403)
         """
-        self._api_client.set_program_visibility(program_id, public)
+        try:
+            self._api_client.set_program_visibility(program_id, public)
+        except RequestsApiError as ex:
+            if ex.status_code == 404:
+                raise RuntimeJobNotFound(f"Program not found: {ex.message}") from None
+            raise QiskitRuntimeError(f"Failed to set program visibility: {ex}") from None
 
     def job(self, job_id: str) -> RuntimeJob:
         """Retrieve a runtime job.

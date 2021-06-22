@@ -274,8 +274,8 @@ class BaseFakeRuntimeClient:
 
         Args:
             program_id: Program ID.
-            public: Make the program visible to all.
-                if False, visible to just your account (e.g for testing)
+            public: If ``True``, make the program visible to all.
+                If ``False``, make the program visible to just your account.
 
         Raises:
             IBMQBackendApiError: if visibility is invalid (valid options are private and public)

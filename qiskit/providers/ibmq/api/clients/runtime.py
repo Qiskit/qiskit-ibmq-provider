@@ -17,7 +17,6 @@ from typing import List, Dict, Union, Optional
 
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.session import RetrySession
-from qiskit.providers.ibmq.exceptions import IBMQBackendApiError
 
 from ..rest.runtime import Runtime
 
@@ -112,22 +111,14 @@ class RuntimeClient:
 
         Args:
             program_id: Program ID.
-            public: Make the program visible to all.
-                if False, visible to just your account (e.g for testing)
-
-        Raises:
-            IBMQBackendApiError: if visibility is invalid (valid options are private and public)
+            public: If ``True``, make the program visible to all.
+                If ``False``, make the program visible to just your account.
 
         """
-
         if public:
-            res = self.api.program(program_id).make_public()
+            self.api.program(program_id).make_public()
         else:
-            res = self.api.program(program_id).make_private()
-
-        if res['status'] >= 300:
-            raise IBMQBackendApiError('Could not set program visibility. Status code: %d'
-                                      % res['status'])
+            self.api.program(program_id).make_private()
 
     def program_run(
             self,

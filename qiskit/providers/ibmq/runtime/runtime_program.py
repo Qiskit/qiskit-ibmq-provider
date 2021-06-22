@@ -69,7 +69,7 @@ class RuntimeProgram:
             version: Program version.
             backend_requirements: Backend requirements.
             creation_date: Program creation date.
-            is_public: Program is visible to all. If false, only visible to you.
+            is_public: ``True`` if program is visible to all. ``False`` if it's only visible to you.
         """
         self._name = program_name
         self._id = program_id
@@ -176,7 +176,7 @@ class RuntimeProgram:
         """Program ID.
 
         Returns:
-            str: Program ID.
+            Program ID.
         """
         return self._id
 
@@ -185,7 +185,7 @@ class RuntimeProgram:
         """Program name.
 
         Returns:
-            str: Program name.
+            Program name.
         """
         return self._name
 
@@ -194,7 +194,7 @@ class RuntimeProgram:
         """Program description.
 
         Returns:
-            str: Program description.
+            Program description.
         """
         return self._description
 
@@ -203,7 +203,7 @@ class RuntimeProgram:
         """Program return value definitions.
 
         Returns:
-            List: Return value definitions for this program.
+            Return value definitions for this program.
         """
         return self._return_values
 
@@ -212,7 +212,7 @@ class RuntimeProgram:
         """Program interim result definitions.
 
         Returns:
-            List: Interim result definitions for this program.
+            Interim result definitions for this program.
         """
         return self._interim_results
 
@@ -223,7 +223,7 @@ class RuntimeProgram:
         A program execution exceeding this time will be forcibly terminated.
 
         Returns:
-            int: Maximum execution time.
+            Maximum execution time.
         """
         return self._max_execution_time
 
@@ -232,7 +232,7 @@ class RuntimeProgram:
         """Program version.
 
         Returns:
-            str: Program version.
+            Program version.
         """
         return self._version
 
@@ -241,7 +241,7 @@ class RuntimeProgram:
         """Backend requirements.
 
         Returns:
-            Dict: Backend requirements for this program.
+            Backend requirements for this program.
         """
         return self._backend_requirements
 
@@ -250,16 +250,16 @@ class RuntimeProgram:
         """Program creation date.
 
         Returns:
-            str: Program creation date.
+            Program creation date.
         """
         return self._creation_date
 
     @property
     def is_public(self) -> bool:
-        """The program is viewable to all.
+        """Whether the program is visible to all.
 
         Returns:
-            bool: the program is public
+            the program is public
         """
         return self._is_public
 

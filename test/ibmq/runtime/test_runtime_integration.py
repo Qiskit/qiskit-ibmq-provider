@@ -155,12 +155,12 @@ def main(backend, user_messenger, **kwargs):
         program_id = self._upload_program()
         # Get the initial visibility
         prog: RuntimeProgram = self.provider.runtime.program(program_id)
-        start_vis = prog.to_dict()['is_public']
+        start_vis = prog.is_public
         # Flip the original value
         self.provider.runtime.set_program_visibility(program_id, not start_vis)
         # Get the new visibility
         prog: RuntimeProgram = self.provider.runtime.program(program_id, refresh=True)
-        end_vis = prog.to_dict()['is_public']
+        end_vis = prog.is_public
         # Verify changed
         self.assertEqual(not start_vis, end_vis)
 
