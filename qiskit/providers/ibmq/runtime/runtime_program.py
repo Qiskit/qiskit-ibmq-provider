@@ -261,7 +261,7 @@ class RuntimeProgram:
         Returns:
             bool: the program is public
         """
-        return self._creation_date
+        return self._is_public
 
 
 class ProgramParameter(NamedTuple):
