@@ -129,7 +129,7 @@ class AccountProvider(Provider):
                           'runtime': self._runtime}
 
     @property
-    def _backends(self):
+    def _backends(self) -> Dict[str, IBMQBackend]:
         """Gets the backends for the provider, if not loaded.
 
         Returns:
@@ -141,6 +141,11 @@ class AccountProvider(Provider):
 
     @_backends.setter
     def _backends(self, value):
+        """Sets the value for the account's backends.
+
+        Args:
+            value: the backends
+        """
         self.__backends = value
 
     def backends(
