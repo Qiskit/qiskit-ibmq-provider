@@ -136,11 +136,11 @@ class AccountProvider(Provider):
             Dict[str, IBMQBackend]: the backends
         """
         if not self.__backends:
-            self.__backends = self._discover_remote_backends()
+            self.__backends = self._discover_remote_backends()  # pylint: disable=assignment
         return self.__backends
 
     @_backends.setter
-    def _backends(self, value):
+    def _backends(self, value: Dict) -> None:
         """Sets the value for the account's backends.
 
         Args:
