@@ -22,6 +22,7 @@ from contextlib import suppress
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
+from qiskit.providers.ibmq.runtime.runtime_program import RuntimeProgram
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramError,
                                                       RuntimeProgramNotFound,
                                                       RuntimeJobFailureError,
@@ -152,7 +153,16 @@ def main(backend, user_messenger, **kwargs):
     def test_set_visibility(self):
         """Test setting the visibility of a program."""
         program_id = self._upload_program()
-        self.provider.runtime.program_set_visibility(program_id, 'private')
+        # Get the initial visibility
+        prog: RuntimeProgram = self.provider.runtime.program(program_id)
+        start_vis = prog.to_dict()['is_public']
+        # Flip the original value
+        self.provider.runtime.set_program_visibility(program_id, not start_vis)
+        # Get the new visibility
+        prog: RuntimeProgram = self.provider.runtime.program(program_id, refresh=True)
+        end_vis = prog.to_dict()['is_public']
+        # Verify changed
+        self.assertEqual(not start_vis, end_vis)
 
     def test_upload_program_conflict(self):
         """Test uploading a program with conflicting name."""

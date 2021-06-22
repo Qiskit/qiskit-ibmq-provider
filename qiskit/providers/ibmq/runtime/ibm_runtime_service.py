@@ -190,7 +190,8 @@ class IBMRuntimeService:
                               max_execution_time=response.get('cost', 0),
                               creation_date=response.get('creationDate', ""),
                               version=response.get('version', "0"),
-                              backend_requirements=backend_req)
+                              backend_requirements=backend_req,
+                              is_public=response.get('isPublic', False))
 
     def run(
             self,
@@ -396,15 +397,15 @@ class IBMRuntimeService:
         if program_id in self._programs:
             del self._programs[program_id]
 
-    def program_set_visibility(self, program_id: str, visibility: str) -> None:
-        """Sets a program's visibility to public.
+    def set_program_visibility(self, program_id: str, public: bool) -> None:
+        """Sets a program's visibility.
 
         Args:
             program_id: Program ID.
-            visibility: the visibility of the program (public/private)
-
+            public: Make the program visible to all.
+                if False, visible to just your account (e.g for testing)
         """
-        self._api_client.program_set_visibility(program_id, visibility)
+        self._api_client.set_program_visibility(program_id, public)
 
     def job(self, job_id: str) -> RuntimeJob:
         """Retrieve a runtime job.

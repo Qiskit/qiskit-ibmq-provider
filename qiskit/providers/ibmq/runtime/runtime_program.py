@@ -53,7 +53,8 @@ class RuntimeProgram:
             max_execution_time: int = 0,
             version: str = "0",
             backend_requirements: Optional[Dict] = None,
-            creation_date: str = ""
+            creation_date: str = "",
+            is_public: bool = False
     ) -> None:
         """RuntimeProgram constructor.
 
@@ -68,6 +69,7 @@ class RuntimeProgram:
             version: Program version.
             backend_requirements: Backend requirements.
             creation_date: Program creation date.
+            is_public: Program is visible to all. If false, only visible to you.
         """
         self._name = program_name
         self._id = program_id
@@ -79,6 +81,7 @@ class RuntimeProgram:
         self._return_values: List[ProgramResult] = []
         self._interim_results: List[ProgramResult] = []
         self._creation_date = creation_date
+        self._is_public = is_public
 
         if parameters:
             for param in parameters:
@@ -149,7 +152,8 @@ class RuntimeProgram:
             "backend_requirements": self.backend_requirements,
             "parameters": self.parameters(),
             "return_values": self.return_values,
-            "interim_results": self.interim_results
+            "interim_results": self.interim_results,
+            "is_public": self._is_public
         }
 
     def parameters(self) -> 'ParameterNamespace':
@@ -172,7 +176,7 @@ class RuntimeProgram:
         """Program ID.
 
         Returns:
-            Program ID.
+            str: Program ID.
         """
         return self._id
 
@@ -181,7 +185,7 @@ class RuntimeProgram:
         """Program name.
 
         Returns:
-            Program name.
+            str: Program name.
         """
         return self._name
 
@@ -190,7 +194,7 @@ class RuntimeProgram:
         """Program description.
 
         Returns:
-            Program description.
+            str: Program description.
         """
         return self._description
 
@@ -199,7 +203,7 @@ class RuntimeProgram:
         """Program return value definitions.
 
         Returns:
-            Return value definitions for this program.
+            List: Return value definitions for this program.
         """
         return self._return_values
 
@@ -208,7 +212,7 @@ class RuntimeProgram:
         """Program interim result definitions.
 
         Returns:
-            Interim result definitions for this program.
+            List: Interim result definitions for this program.
         """
         return self._interim_results
 
@@ -219,7 +223,7 @@ class RuntimeProgram:
         A program execution exceeding this time will be forcibly terminated.
 
         Returns:
-            Maximum execution time.
+            int: Maximum execution time.
         """
         return self._max_execution_time
 
@@ -228,7 +232,7 @@ class RuntimeProgram:
         """Program version.
 
         Returns:
-            Program version.
+            str: Program version.
         """
         return self._version
 
@@ -237,7 +241,7 @@ class RuntimeProgram:
         """Backend requirements.
 
         Returns:
-            Backend requirements for this program.
+            Dict: Backend requirements for this program.
         """
         return self._backend_requirements
 
@@ -246,7 +250,16 @@ class RuntimeProgram:
         """Program creation date.
 
         Returns:
-            Program creation date.
+            str: Program creation date.
+        """
+        return self._creation_date
+
+    @property
+    def is_public(self) -> bool:
+        """The program is viewable to all.
+
+        Returns:
+            bool: the program is public
         """
         return self._creation_date
 

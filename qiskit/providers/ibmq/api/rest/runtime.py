@@ -222,7 +222,8 @@ class Program(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('public')
-        return self.session.put(url).json()
+        sess = self.session.put(url)
+        return {'status': sess.status_code}
 
     def make_private(self) -> Dict[str, Any]:
         """Return program information, including data.
@@ -231,7 +232,8 @@ class Program(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('private')
-        return self.session.put(url).json()
+        sess = self.session.put(url)
+        return {'status': sess.status_code}
 
     def delete(self) -> None:
         """Delete this program.

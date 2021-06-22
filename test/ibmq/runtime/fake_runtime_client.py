@@ -20,7 +20,6 @@ from concurrent.futures import ThreadPoolExecutor
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError
 from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder
-from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 
 
 class BaseFakeProgram:
@@ -28,7 +27,7 @@ class BaseFakeProgram:
 
     def __init__(self, program_id, name, data, cost, description, version="1.0",
                  backend_requirements=None, parameters=None, return_values=None,
-                 interim_results=None, visibility='private'):
+                 interim_results=None, is_public=False):
         """Initialize a fake program."""
         self._id = program_id
         self._name = name
@@ -40,7 +39,7 @@ class BaseFakeProgram:
         self._parameters = parameters
         self._return_values = return_values
         self._interim_results = interim_results
-        self._visibility = visibility
+        self._is_public = is_public
 
     def to_dict(self, include_data=False):
         """Convert this program to a dictionary format."""
@@ -49,7 +48,7 @@ class BaseFakeProgram:
                'cost': self._cost,
                'description': self._description,
                'version': self._version,
-               'visibility': self._visibility}
+               'is_public': self._is_public}
         if include_data:
             out['data'] = self._data
         if self._backend_requirements:
@@ -73,7 +72,7 @@ class BaseFakeRuntimeJob:
         "COMPLETED"
     ]
 
-    _executor = ThreadPoolExecutor()
+    _executor = ThreadPoolExecutor()  # pylint: disable=bad-option-value,consider-using-with
 
     def __init__(self, job_id, program_id, hub, group, project, backend_name, params):
         """Initialize a fake job."""
@@ -210,7 +209,7 @@ class BaseFakeRuntimeClient:
 
     def program_create(self, program_data, name, description, max_execution_time, version="1.0",
                        backend_requirements=None, parameters=None, return_values=None,
-                       interim_results=None, visibility='public'):
+                       interim_results=None, is_public=False):
         """Create a program."""
         if isinstance(program_data, str):
             with open(program_data, 'rb') as file:
@@ -222,7 +221,7 @@ class BaseFakeRuntimeClient:
             program_id=program_id, name=name, data=program_data, cost=max_execution_time,
             description=description, version=version, backend_requirements=backend_requirements,
             parameters=parameters, return_values=return_values, interim_results=interim_results,
-            visibility=visibility)
+            is_public=is_public)
         return {'id': program_id}
 
     def program_get(self, program_id: str):
@@ -270,22 +269,19 @@ class BaseFakeRuntimeClient:
         return {"jobs": [job.to_dict() for job in jobs],
                 "count": len(self._jobs)}
 
-    def program_set_visibility(self, program_id: str, visibility: str) -> None:
-        """Sets a program's visibility to public.
+    def set_program_visibility(self, program_id: str, public: bool) -> None:
+        """Sets a program's visibility.
 
         Args:
             program_id: Program ID.
-            visibility: the visibility of the program (public/private)
+            public: Make the program visible to all.
+                if False, visible to just your account (e.g for testing)
 
         Raises:
-            IBMQInputValueError: if visibility is invalid (valid options are private and public)
+            IBMQBackendApiError: if visibility is invalid (valid options are private and public)
 
         """
-        if visibility == 'private':
-            self._programs[program_id] = 'private'
-        if visibility == 'public':
-            self._programs[program_id] = 'public'
-        raise IBMQInputValueError('Invalid program visibility (%s) specified!' % visibility)
+        self._programs[program_id]._is_public = public
 
     def job_results(self, job_id):
         """Get the results of a program job."""
