@@ -16,11 +16,14 @@
 import json
 from typing import Any
 import base64
+import io
+import zlib
 
 import dill
 import numpy as np
 
 from qiskit.result import Result
+from qiskit.circuit import QuantumCircuit, qpy_serialization
 
 
 class RuntimeEncoder(json.JSONEncoder):
@@ -31,6 +34,14 @@ class RuntimeEncoder(json.JSONEncoder):
             return {'__type__': 'array', '__value__': obj.tolist()}
         if isinstance(obj, complex):
             return {'__type__': 'complex', '__value__': [obj.real, obj.imag]}
+        if isinstance(obj, QuantumCircuit):
+            # Serialize, compress, encode.
+            qpy_buffer = io.BytesIO()
+            qpy_serialization.dump(qpy_buffer, obj)
+            qpy_buffer.seek(0)
+            encoded = base64.standard_b64encode(zlib.compress(qpy_buffer.read()))
+            qpy_buffer.close()
+            return {'__type__': 'qpy', '__value__': encoded.decode('utf-8')}
         if isinstance(obj, Result):
             return {'__type__': 'result', '__value__': obj.to_dict()}
         if hasattr(obj, 'to_json'):
@@ -56,6 +67,13 @@ class RuntimeDecoder(json.JSONDecoder):
                 return val[0] + 1j * val[1]
             if obj['__type__'] == 'array':
                 return np.array(obj['__value__'])
+            if obj['__type__'] == 'qpy':
+                qpy_buffer = io.BytesIO()
+                qpy_buffer.write(zlib.decompress(base64.standard_b64decode(obj['__value__'])))
+                qpy_buffer.seek(0)
+                data = qpy_serialization.load(qpy_buffer)[0]
+                qpy_buffer.close()
+                return data
             if obj['__type__'] == 'result':
                 return Result.from_dict(obj['__value__'])
             if obj['__type__'] == 'to_json':

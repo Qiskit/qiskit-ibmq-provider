@@ -16,13 +16,17 @@ import json
 import os
 from io import StringIO
 from unittest.mock import patch
-from unittest import mock
+from unittest import mock, skipIf
 import uuid
 import time
 import random
 
 import numpy as np
 from qiskit.result import Result
+from qiskit import QuantumCircuit
+from qiskit.version import VERSION as terra_version
+from qiskit.test.reference_circuits import ReferenceCircuits
+from qiskit.circuit.library import EfficientSU2
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
@@ -100,6 +104,25 @@ class TestRuntime(IBMQTestCase):
         self.assertEqual(decoded, data)
         self.assertIsInstance(decoded_result, Result)
         self.assertTrue((decoded_array == orig_array).all())
+
+    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
+    def test_encoder_qc(self):
+        """Test runtime encoder and decoder for circuits."""
+        bell = ReferenceCircuits.bell()
+        unbound = EfficientSU2(num_qubits=4, reps=1, entanglement='linear')
+        subtests = (
+            bell,
+            unbound,
+            [bell, unbound]
+        )
+        for circ in subtests:
+            with self.subTest(circ=circ):
+                encoded = json.dumps(circ, cls=RuntimeEncoder)
+                self.assertIsInstance(encoded, str)
+                decoded = json.loads(encoded, cls=RuntimeDecoder)
+                if not isinstance(circ, list):
+                    decoded = [decoded]
+                self.assertTrue(all(isinstance(item, QuantumCircuit) for item in decoded))
 
     def test_list_programs(self):
         """Test listing programs."""
