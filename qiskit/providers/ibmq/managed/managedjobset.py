@@ -19,6 +19,7 @@ import time
 import logging
 import uuid
 import threading
+import warnings
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
@@ -83,7 +84,7 @@ class ManagedJobSet:
             experiment_list: Union[List[List[QuantumCircuit]], List[List[Schedule]]],
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
-            job_share_level: ApiJobShareLevel,
+            job_share_level: Optional[ApiJobShareLevel] = None,
             job_tags: Optional[List[str]] = None,
             **run_config: Any
     ) -> None:
@@ -102,6 +103,11 @@ class ManagedJobSet:
         Raises:
             IBMQJobManagerInvalidStateError: If the jobs were already submitted.
         """
+        if job_share_level:
+            warnings.warn("The `job_share_level` keyword is no longer supported "
+                          "and will be removed in a future release.",
+                          Warning, stacklevel=2)
+
         if self._managed_jobs:
             raise IBMQJobManagerInvalidStateError(
                 'The jobs for this managed job set have already been submitted.')
@@ -117,9 +123,8 @@ class ManagedJobSet:
             mjob = ManagedJob(experiments_count=len(experiments), start_index=exp_index)
             logger.debug("Submitting job %s/%s for job set %s", i+1, total_jobs, self._name)
             mjob.submit(experiments, job_name=job_name, backend=backend,
-                        executor=executor, job_share_level=job_share_level,
-                        job_tags=self._tags+[self._id_long], submit_lock=self._job_submit_lock,
-                        **run_config)
+                        executor=executor, job_tags=self._tags+[self._id_long],
+                        submit_lock=self._job_submit_lock, **run_config)
             logger.debug("Job %s submitted", i+1)
             self._managed_jobs.append(mjob)
             exp_index += len(experiments)
