@@ -30,14 +30,19 @@ class RuntimeEncoder(json.JSONEncoder):
     """JSON Encoder used by runtime service."""
 
     def default(self, obj: Any) -> Any:  # pylint: disable=arguments-differ
-        if hasattr(obj, 'tolist'):
-            return {'__type__': 'array', '__value__': obj.tolist()}
+        if isinstance(obj, np.ndarray):
+            np_buffer = io.BytesIO()
+            np.save(np_buffer, obj, allow_pickle=False)
+            np_buffer.seek(0)
+            encoded = base64.standard_b64encode(zlib.compress(np_buffer.read()))
+            np_buffer.close()
+            return {'__type__': 'ndarray', '__value__': encoded.decode('utf-8')}
         if isinstance(obj, complex):
             return {'__type__': 'complex', '__value__': [obj.real, obj.imag]}
         if isinstance(obj, QuantumCircuit):
             # Serialize, compress, encode.
             qpy_buffer = io.BytesIO()
-            qpy_serialization.dump(qpy_buffer, obj)
+            qpy_serialization.dump(obj, qpy_buffer)
             qpy_buffer.seek(0)
             encoded = base64.standard_b64encode(zlib.compress(qpy_buffer.read()))
             qpy_buffer.close()
@@ -65,8 +70,13 @@ class RuntimeDecoder(json.JSONDecoder):
             if obj['__type__'] == 'complex':
                 val = obj['__value__']
                 return val[0] + 1j * val[1]
-            if obj['__type__'] == 'array':
-                return np.array(obj['__value__'])
+            if obj['__type__'] == 'ndarray':
+                np_buffer = io.BytesIO()
+                np_buffer.write(zlib.decompress(base64.standard_b64decode(obj['__value__'])))
+                np_buffer.seek(0)
+                data = np.load(np_buffer)
+                np_buffer.close()
+                return data
             if obj['__type__'] == 'qpy':
                 qpy_buffer = io.BytesIO()
                 qpy_buffer.write(zlib.decompress(base64.standard_b64decode(obj['__value__'])))
