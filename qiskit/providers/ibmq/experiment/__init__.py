@@ -45,7 +45,7 @@ Classes
     DeviceComponent
 
 Exceptions
-=========
+==========
 
 .. autosummary::
     :toctree: ../stubs/

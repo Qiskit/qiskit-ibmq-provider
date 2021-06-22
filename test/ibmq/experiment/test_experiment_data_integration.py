@@ -160,7 +160,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
         self._verify_experiment_data(exp_data, rexp)
 
-    def _verify_experiment_data(self, expected: StoredData, actual: StoredData):
+    def _verify_experiment_data(self, expected, actual):
         """Verify the input experiment data."""
         self.assertEqual(expected.experiment_id, actual.experiment_id)
         self.assertEqual(expected.job_ids, actual.job_ids)
