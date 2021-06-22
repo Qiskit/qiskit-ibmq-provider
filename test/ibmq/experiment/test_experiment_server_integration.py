@@ -24,9 +24,7 @@ from dateutil import tz
 
 from qiskit.providers.ibmq.experiment.constants import ExperimentShareLevel
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
-from qiskit.providers.ibmq.experiment import (IBMExperimentService,
-                                              ResultQuality,
-                                              IBMExperimentEntryExists,
+from qiskit.providers.ibmq.experiment import (ResultQuality,
                                               IBMExperimentEntryNotFound)
 
 from ...ibmqtestcase import IBMQTestCase
@@ -118,6 +116,7 @@ class TestExperimentServerIntegration(IBMQTestCase):
             """Custom ExperimentData class."""
             @classmethod
             def from_data(cls, **kwargs):
+                """Restore from data."""
                 return cls(**kwargs)
 
         experiments = self.provider.experiment.experiments(experiment_class=MyExperimentData)
@@ -902,6 +901,7 @@ class TestExperimentServerIntegration(IBMQTestCase):
             """Custom AnalysisResult class."""
             @classmethod
             def from_data(cls, **kwargs):
+                """Restore from data."""
                 return cls(**kwargs)
 
         results = self.provider.experiment.analysis_results(result_class=MyAnalysisResult)

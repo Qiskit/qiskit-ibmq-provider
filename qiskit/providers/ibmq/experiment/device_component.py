@@ -19,40 +19,40 @@ class DeviceComponent(ABC):
     """Class representing a device component."""
 
     @abstractmethod
-    def __str__(self):
+    def __str__(self) -> str:
         pass
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__}({str(self)})>"
 
 
 class Qubit(DeviceComponent):
     """Class representing a qubit device component."""
 
-    def __init__(self, index: int):
+    def __init__(self, index: int) -> None:
         self._index = index
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Q{self._index}"
 
 
 class Resonator(DeviceComponent):
     """Class representing a resonator device component."""
 
-    def __init__(self, index: int):
+    def __init__(self, index: int) -> None:
         self._index = index
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"R{self._index}"
 
 
 class UnknownComponent(DeviceComponent):
     """Class representing unknown device component."""
 
-    def __init__(self, component: str):
+    def __init__(self, component: str) -> None:
         self._component = component
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self._component
 
 

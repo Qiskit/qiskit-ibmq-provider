@@ -22,7 +22,7 @@ from qiskit.providers.models.backendproperties import BackendProperties
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator, IBMQBackend
 from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
-from qiskit.providers.ibmq.experiment.experimentservice import IBMExperimentService
+from qiskit.providers.ibmq.experiment import IBMExperimentService
 from qiskit.providers.ibmq.random.ibmqrandomservice import IBMQRandomService
 
 from ..decorators import requires_provider, requires_device

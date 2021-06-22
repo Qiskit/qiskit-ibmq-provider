@@ -23,7 +23,6 @@ from qiskit.providers import JobStatus
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.ibmq.experiment import (IBMExperimentService,
                                               ResultQuality,
-                                              IBMExperimentEntryExists,
                                               IBMExperimentEntryNotFound)
 from qiskit.tools.visualization import HAS_MATPLOTLIB
 
@@ -453,7 +452,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
     def _create_experiment_data(self):
         """Create an experiment data."""
         exp_data = StoredData(backend=self.backend,
-                                  experiment_type="qiskit_test")
+                              experiment_type="qiskit_test")
         exp_data.save()
         self.experiments_to_delete.append(exp_data.experiment_id)
         return exp_data

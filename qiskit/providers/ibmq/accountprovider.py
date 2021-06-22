@@ -33,7 +33,7 @@ from .credentials import Credentials
 from .ibmqbackendservice import IBMQBackendService, IBMQDeprecatedBackendService
 from .utils.json_decoder import decode_backend_configuration
 from .random.ibmqrandomservice import IBMQRandomService
-from .experiment.experimentservice import IBMExperimentService
+from .experiment import IBMExperimentService
 from .runtime.ibm_runtime_service import IBMRuntimeService
 from .exceptions import IBMQNotAuthorizedError, IBMQInputValueError
 from .runner_result import RunnerResult

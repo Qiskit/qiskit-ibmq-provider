@@ -20,7 +20,7 @@ Experiment (:mod:`qiskit.providers.ibmq.experiment`)
 Modules related to IBM Quantum experiment service.
 
 You can use the experiment service to query, upload, and retrieve
-experiments, experiment plots, and analysis results. For example::
+experiments, experiment figures, and analysis results. For example::
 
     from qiskit import IBMQ
     provider = IBMQ.load_account()
@@ -42,6 +42,7 @@ Classes
 
     IBMExperimentService
     ResultQuality
+    DeviceComponent
 
 Exceptions
 =========
@@ -56,4 +57,5 @@ Exceptions
 
 from .ibm_experiment_service import IBMExperimentService
 from .constants import ResultQuality
+from .device_component import DeviceComponent
 from .exceptions import IBMExperimentError, IBMExperimentEntryExists, IBMExperimentEntryNotFound

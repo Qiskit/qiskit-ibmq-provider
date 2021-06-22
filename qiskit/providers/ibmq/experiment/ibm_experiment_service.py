@@ -32,7 +32,7 @@ from ..ibmqbackend import IBMQRetiredBackend
 from ..exceptions import IBMQApiError
 
 logger = logging.getLogger(__name__)
-T = TypeVar('T')
+ExperimentClass = TypeVar('ExperimentClass')
 
 
 class IBMExperimentService:
@@ -53,31 +53,28 @@ class IBMExperimentService:
         experiments = provider.experiment.experiments()
 
         # Retrieve experiments with filtering.
-        experiment_filtered = provider.experiment.experiments(backend_name='foo')
+        experiment_filtered = provider.experiment.experiments(backend_name='ibmq_athens')
 
         # Retrieve a specific experiment using its ID.
         experiment = provider.experiment.experiment(EXPERIMENT_ID)
 
         # Upload a new experiment.
-        from qiskit.providers.ibmq.experiment import Experiment
-        new_exp = Experiment(
-            provider=provider,
-            backend_name=backend_name,
-            experiment_type='test',
-            tags=['qiskit-test']
+        new_experiment_id = provider.experiment.create_experiment(
+            experiment_type="T1",
+            backend_name="ibmq_athens",
+            metadata={"qubits": 5}
         )
-        provider.experiment.upload_experiment(new_exp)
 
         # Update an experiment.
-        new_exp.end_datetime = datetime.now()
-        provider.experiment.update_experiment(new_exp)
+        provider.experiment.update_experiment(
+            experiment_id=EXPERIMENT_ID,
+            share_level="Group"
+        )
 
         # Delete an experiment.
         provider.experiment.delete_experiment(EXPERIMENT_ID)
 
-    Similar syntax applies to analysis results and experiment plots. Classes
-    :class:`Experiment` and :class:`AnalysisResult` encapsulate data of an
-    experiment and an analysis result, respectively.
+    Similar syntax applies to analysis results and experiment figures.
     """
 
     def __init__(
@@ -282,8 +279,8 @@ class IBMExperimentService:
     def experiment(
             self,
             experiment_id: str,
-            experiment_class: Optional[Type[T]] = None
-    ) -> Union[SimpleNamespace, T]:
+            experiment_class: Optional[Type[ExperimentClass]] = None
+    ) -> Union[SimpleNamespace, ExperimentClass]:
         """Retrieve a previously stored experiment.
 
         Args:
@@ -308,7 +305,7 @@ class IBMExperimentService:
     def experiments(
             self,
             limit: Optional[int] = 10,
-            experiment_class: Optional[Type[T]] = None,
+            experiment_class: Optional[Type[ExperimentClass]] = None,
             device_components: Optional[List[Union[str, DeviceComponent]]] = None,
             device_components_operator: Optional[str] = None,
             experiment_type: Optional[str] = None,
@@ -327,7 +324,7 @@ class IBMExperimentService:
             mine_only: Optional[bool] = False,
             sort_by: Optional[Union[str, List[str]]] = None,
             **filters: Any
-    ) -> List[Union[SimpleNamespace, T]]:
+    ) -> List[Union[SimpleNamespace, ExperimentClass]]:
         """Retrieve all experiments, with optional filtering.
 
         By default, results returned are as inclusive as possible. For example,
@@ -483,8 +480,8 @@ class IBMExperimentService:
     def _api_to_experiment_data(
             self,
             raw_data: Dict,
-            experiment_class: Optional[Type[T]] = None
-    ) -> Union[SimpleNamespace, T]:
+            experiment_class: Optional[Type[ExperimentClass]] = None
+    ) -> Union[SimpleNamespace, ExperimentClass]:
         """Convert API response to experiment data.
 
         Args:
@@ -529,7 +526,7 @@ class IBMExperimentService:
         if experiment_class is None:
             return SimpleNamespace(**out_dict)
 
-        return experiment_class.from_data(**out_dict)
+        return experiment_class.from_data(**out_dict)  # type: Ignore[attr-defined]
 
     def _convert_dt(
             self,
@@ -737,8 +734,8 @@ class IBMExperimentService:
     def analysis_result(
             self,
             result_id: str,
-            result_class: Optional[Type[T]] = None
-    ) -> Union[SimpleNamespace, T]:
+            result_class: Optional[Type[ExperimentClass]] = None
+    ) -> Union[SimpleNamespace, ExperimentClass]:
         """Retrieve a previously stored experiment.
 
         Args:
@@ -763,7 +760,7 @@ class IBMExperimentService:
     def analysis_results(
             self,
             limit: Optional[int] = 10,
-            result_class: Optional[Type[T]] = None,
+            result_class: Optional[Type[ExperimentClass]] = None,
             device_components: Optional[List[Union[str, DeviceComponent]]] = None,
             device_components_operator: Optional[str] = None,
             experiment_id: Optional[str] = None,
@@ -776,7 +773,7 @@ class IBMExperimentService:
             tags_operator: Optional[str] = "OR",
             sort_by: Optional[Union[str, List[str]]] = None,
             **filters: Any
-    ) -> List[Union[SimpleNamespace, T]]:
+    ) -> List[Union[SimpleNamespace, ExperimentClass]]:
         """Retrieve all analysis results, with optional filtering.
 
         Args:
@@ -1002,8 +999,8 @@ class IBMExperimentService:
     def _api_to_analysis_result(
             self,
             raw_data: Dict,
-            result_class: Optional[Type[T]] = None
-    ) -> Union[SimpleNamespace, T]:
+            result_class: Optional[Type[ExperimentClass]] = None
+    ) -> Union[SimpleNamespace, ExperimentClass]:
         """Map API response to an AnalysisResult instance.
 
         Args:
