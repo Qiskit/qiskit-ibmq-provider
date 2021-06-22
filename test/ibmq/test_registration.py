@@ -301,15 +301,15 @@ class TestIBMQAccountUpdater(IBMQTestCase):
 
 # Context managers
 
-# pylint: disable=unused-argument
-def _mocked_initialize_provider(self):
-    """Mock ``_initialize_provider()``."""
+def _mocked_initialize_provider(self, credentials: Credentials):
+    """Mock ``_initialize_provider()``, just storing the credentials."""
+    self._credentials = credentials
 
 
 @contextmanager
 def mock_ibmq_provider():
     """Mock the initialization of ``IBMQFactory``, so it does not query the API."""
-    patcher = patch.object(IBMQFactory, '_initialize_provider',
+    patcher = patch.object(IBMQFactory, '_initialize_providers',
                            side_effect=_mocked_initialize_provider,
                            autospec=True)
     patcher2 = patch.object(IBMQFactory, '_check_api_version',

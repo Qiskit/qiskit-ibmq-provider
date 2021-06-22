@@ -46,8 +46,6 @@ class IBMQFactory:
         """IBMQFactory constructor."""
         self._credentials = None  # type: Optional[Credentials]
         self._providers = OrderedDict()  # type: Dict[HubGroupProject, AccountProvider]
-        self._auth_client: AuthClient = None
-        self._auth_client_hubs = None
 
     # Account management functions.
 
@@ -105,11 +103,8 @@ class IBMQFactory:
                 'The URL specified ({}) is not an IBM Quantum Experience authentication '
                 'URL. Valid authentication URL: {}.'.format(credentials.url, QX_AUTH_URL))
 
-        # Setup credential info
-        self._credentials = credentials
-
         # Initialize the providers.
-        self._initialize_provider()
+        self._initialize_providers(credentials)
 
         # Prevent edge case where no hubs are available.
         providers = self.providers()
@@ -163,7 +158,7 @@ class IBMQFactory:
         try:
             stored_credentials, stored_provider_hgp = discover_credentials()
         except HubGroupProjectInvalidStateError as ex:
-            raise IBMQAccountCredentialsInvalidFormat(  # pylint: disable=bad-exception-context
+            raise IBMQAccountCredentialsInvalidFormat(
                 'The default provider (hub/group/project) stored on disk could not '
                 'be parsed: {}'.format(str(ex))) from ex
 
@@ -194,11 +189,7 @@ class IBMQFactory:
                            'account in the session will be replaced.')
             self.disable_account()
 
-        # Setup credential info
-        self._credentials = credentials
-
-        # Initialize the providers.
-        self._initialize_provider()
+        self._initialize_providers(credentials)
 
         # Prevent edge case where no hubs are available.
         providers = self.providers()
@@ -404,6 +395,7 @@ class IBMQFactory:
 
         providers = [provider for key, provider in self._providers.items()
                      if all(f(key) for f in filters)]
+
         return providers
 
     def get_provider(
@@ -426,22 +418,18 @@ class IBMQFactory:
             IBMQProviderError: If no provider matches the specified criteria,
                 or more than one provider matches the specified criteria.
         """
-        # Attempt to retrieve provider
         providers = self.providers(hub, group, project)
 
-        # Test success
-        if providers and len(providers) == 1:
-            return providers[0]
-
-        # Test fail: too many matches
-        if providers and len(providers) > 1:
+        if not providers:
+            raise IBMQProviderError('No provider matches the specified criteria: '
+                                    'hub = {}, group = {}, project = {}'
+                                    .format(hub, group, project))
+        if len(providers) > 1:
             raise IBMQProviderError('More than one provider matches the specified criteria.'
                                     'hub = {}, group = {}, project = {}'
                                     .format(hub, group, project))
-        # fail: no matches
-        raise IBMQProviderError('No provider matches the specified criteria: '
-                                'hub = {}, group = {}, project = {}'
-                                .format(hub, group, project))
+
+        return providers[0]
 
     # Private functions.
 
@@ -456,61 +444,36 @@ class IBMQFactory:
                                        **credentials.connection_parameters())
         return version_finder.version()
 
-    def _initialize_provider(self,
-                             hub: Optional[str] = None,
-                             group: Optional[str] = None,
-                             project: Optional[str] = None) -> None:
+    def _initialize_providers(self, credentials: Credentials) -> None:
         """Authenticate against IBM Quantum Experience and populate the providers.
 
         Args:
-            hub: Name of the hub to use.
-            group: Name of the group to use.
-            project: Name of the project to use.
-
-        Raises:
-            IBMQProviderError: if provider with ID `target_id` does not exist.
-
-        Returns:
-            AccountProvider: the provider
+            credentials: Credentials for IBM Quantum Experience.
         """
-        auth_client = AuthClient(self._credentials.token,
-                                 self._credentials.base_url,
-                                 **self._credentials.connection_parameters())
+        auth_client = AuthClient(credentials.token,
+                                 credentials.base_url,
+                                 **credentials.connection_parameters())
         service_urls = auth_client.current_service_urls()
         user_hubs = auth_client.user_hubs()
 
-        if len(user_hubs) == 0:
-            raise IBMQProviderError('Provider cannot exist. The auth client provided has no hubs.')
-
-        # Successfully added a provider
-        success = False
-
-        for uhub in user_hubs:
-            # If credential is already stored, do nothing
-            cred_id = HubGroupProject(uhub['hub'], uhub['group'], uhub['project'])
-            if self._providers.get(cred_id):
-                continue
-            # Build the credentials
-            creds = Credentials(
-                self._credentials.token,
+        self._credentials = credentials
+        for hub_info in user_hubs:
+            # Build credentials.
+            provider_credentials = Credentials(
+                credentials.token,
                 access_token=auth_client.current_access_token(),
                 url=service_urls['http'],
                 websockets_url=service_urls['ws'],
-                proxies=self._credentials.proxies,
-                verify=self._credentials.verify,
+                proxies=credentials.proxies,
+                verify=credentials.verify,
                 services=service_urls.get('services', {}),
-                **uhub, )
+                **hub_info, )
 
             # Build the provider.
             try:
-                provider = AccountProvider(creds, self)
-                self._providers[cred_id] = provider
-                success = True
+                provider = AccountProvider(provider_credentials, self)
+                self._providers[provider_credentials.unique_id()] = provider
             except Exception:  # pylint: disable=broad-except
                 # Catch-all for errors instantiating the provider.
                 logger.warning('Unable to instantiate provider for %s: %s',
-                               uhub, traceback.format_exc())
-
-        if not success:
-            target_id = '{}/{}/{}'.format(str(hub), str(group), str(project))
-            logger.warning('Unable to instantiate any provider for %s', target_id)
+                               hub_info, traceback.format_exc())
