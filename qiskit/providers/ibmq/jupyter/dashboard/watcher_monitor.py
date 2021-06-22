@@ -26,6 +26,7 @@ from qiskit.providers.ibmq.job import IBMQJob
 from .utils import get_job_type
 from ...utils.converters import duration_difference
 
+
 # pylint: disable=too-few-public-methods
 class JobMonitor:
     """Monitors a job for updates to display to the dashboard"""
@@ -81,6 +82,7 @@ class JobMonitor:
                     # Update the job on the dashboard
                     self._update(info)
                     sys.exit()
+
 
 class RuntimeJobMonitor(JobMonitor):
     """Monitors a runtime job for updates to display to dashboard"""
