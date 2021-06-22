@@ -16,7 +16,7 @@ import json
 import os
 from io import StringIO
 from unittest.mock import patch
-from unittest import mock, skipIf
+from unittest import mock
 import uuid
 import time
 import random
@@ -24,7 +24,6 @@ import random
 import numpy as np
 from qiskit.result import Result
 from qiskit import QuantumCircuit
-from qiskit.version import VERSION as terra_version
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.circuit.library import EfficientSU2
 from qiskit.providers.jobstatus import JobStatus
@@ -105,7 +104,6 @@ class TestRuntime(IBMQTestCase):
         self.assertIsInstance(decoded_result, Result)
         self.assertTrue((decoded_array == orig_array).all())
 
-    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
     def test_encoder_qc(self):
         """Test runtime encoder and decoder for circuits."""
         bell = ReferenceCircuits.bell()
