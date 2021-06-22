@@ -113,7 +113,7 @@ class AccountProvider(Provider):
                                          **credentials.connection_parameters())
 
         # Initialize the internal list of backends.
-        self.__backends = {}
+        self.__backends: Dict[str, IBMQBackend] = {}
         self._backend = IBMQBackendService(self)
         self.backends = IBMQDeprecatedBackendService(self.backend)  # type: ignore[assignment]
 
