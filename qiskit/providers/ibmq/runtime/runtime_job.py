@@ -15,7 +15,6 @@
 from typing import Any, Optional, Callable, Dict, Type
 import time
 import logging
-import asyncio
 from concurrent import futures
 import traceback
 import queue
@@ -28,10 +27,11 @@ from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from .constants import API_TO_JOB_STATUS
 from .exceptions import RuntimeJobFailureError, RuntimeInvalidStateError, QiskitRuntimeError
 from .program.result_decoder import ResultDecoder
-from ..api.clients import RuntimeClient, RuntimeWebsocketClient
+from ..api.clients import RuntimeClient, RuntimeWebsocketClient, WebsocketClientCloseCode
 from ..exceptions import IBMQError
 from ..api.exceptions import RequestsApiError
 from ..utils.converters import utc_to_local
+from ..credentials import Credentials
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ class RuntimeJob:
             self,
             backend: Backend,
             api_client: RuntimeClient,
-            ws_client: RuntimeWebsocketClient,
+            credentials: Credentials,
             job_id: str,
             program_id: str,
             params: Optional[Dict] = None,
@@ -91,7 +91,7 @@ class RuntimeJob:
         Args:
             backend: The backend instance used to run this job.
             api_client: Object for connecting to the server.
-            ws_client: Object for connecting to the server via websocket.
+            credentials: Account credentials.
             job_id: Job ID.
             program_id: ID of the program this job is for.
             params: Job parameters.
@@ -102,7 +102,6 @@ class RuntimeJob:
         self._job_id = job_id
         self._backend = backend
         self._api_client = api_client
-        self._ws_client = ws_client
         self._results = None
         self._params = params or {}
         self._creation_date = creation_date
@@ -111,10 +110,13 @@ class RuntimeJob:
         self._result_decoder = result_decoder
 
         # Used for streaming
-        self._streaming = False
-        self._streaming_loop = None
-        self._streaming_task = None
+        self._ws_client_future = None  # type: Optional[futures.Future]
         self._result_queue = queue.Queue()  # type: queue.Queue
+        self._ws_client = RuntimeWebsocketClient(
+            websocket_url=credentials.runtime_url.replace('https', 'wss'),
+            credentials=credentials,
+            job_id=job_id,
+            message_queue=self._result_queue)
 
         if user_callback is not None:
             self.stream_results(user_callback)
@@ -226,54 +228,71 @@ class RuntimeJob:
             RuntimeInvalidStateError: If a callback function is already streaming results or
                 if the job already finished.
         """
-        if self._streaming:
+        if self._is_streaming():
             raise RuntimeInvalidStateError("A callback function is already streaming results.")
 
         if self._status in JOB_FINAL_STATES:
             raise RuntimeInvalidStateError("Job already finished.")
 
-        self._executor.submit(self._start_websocket_client,
-                              result_queue=self._result_queue)
+        self._ws_client_future = self._executor.submit(self._start_websocket_client)
         self._executor.submit(self._stream_results,
                               result_queue=self._result_queue, user_callback=callback,
                               decoder=decoder)
 
     def cancel_result_streaming(self) -> None:
         """Cancel result streaming."""
-        if not self._streaming:
+        if not self._is_streaming():
             return
-        self._streaming_loop.call_soon_threadsafe(self._streaming_task.cancel)
+        self._ws_client.disconnect(WebsocketClientCloseCode.CANCEL)
+
+    def logs(self) -> str:
+        """Return job logs.
+
+        Note:
+            Job logs are only available after the job finishes.
+
+        Returns:
+            Job logs, including standard output and error.
+
+        Raises:
+            QiskitRuntimeError: If a network error occurred.
+        """
+        if self.status() not in JOB_FINAL_STATES:
+            logger.warning("Job logs are only available after the job finishes.")
+        try:
+            return self._api_client.job_logs(self.job_id())
+        except RequestsApiError as err:
+            if err.status_code == 404:
+                return ""
+            raise QiskitRuntimeError(f"Failed to get job logs: {err}") from None
+
+    def _is_streaming(self) -> bool:
+        """Return whether job results are being streamed.
+
+        Returns:
+            Whether job results are being streamed.
+        """
+        if self._ws_client_future is None:
+            return False
+
+        if self._ws_client_future.done():
+            return False
+
+        return True
 
     def _start_websocket_client(
-            self,
-            result_queue: queue.Queue
+            self
     ) -> None:
-        """Start websocket client to stream results.
-
-        Args:
-            result_queue: Queue used to pass messages.
-        """
+        """Start websocket client to stream results."""
         try:
-            # Need new loop for the thread.
-            self._streaming_loop = asyncio.new_event_loop()  # type: ignore[assignment]
-            asyncio.set_event_loop(self._streaming_loop)
-            # TODO - use asyncio.create_task() when 3.6 is dropped.
-            self._streaming_task = self._streaming_loop.create_task(
-                self._ws_client.job_results(self._job_id, result_queue))
-            self._streaming = True
-
             logger.debug("Start websocket client for job %s", self.job_id())
-            self._streaming_loop.run_until_complete(self._streaming_task)
+            self._ws_client.job_results()
         except Exception:  # pylint: disable=broad-except
             logger.warning(
                 "An error occurred while streaming results "
                 "from the server for job %s:\n%s", self.job_id(), traceback.format_exc())
         finally:
             self._result_queue.put_nowait(self._POISON_PILL)
-            if self._streaming_loop is not None:
-                self._streaming_loop.run_until_complete(  # type: ignore[unreachable]
-                    self._ws_client.disconnect())
-            self._streaming = False
 
     def _stream_results(
             self,

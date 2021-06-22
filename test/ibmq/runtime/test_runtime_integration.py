@@ -30,6 +30,7 @@ from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramErr
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_runtime_device
+from ...proxy_server import MockProxyServer, use_proxies
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
@@ -39,6 +40,7 @@ class TestRuntimeIntegration(IBMQTestCase):
 
     RUNTIME_PROGRAM = """
 import random
+import warnings
 
 from qiskit import transpile
 from qiskit.circuit.random import random_circuit
@@ -58,13 +60,14 @@ def main(backend, user_messenger, **kwargs):
         backend.run(qc).result()
 
     user_messenger.publish(final_result, final=True)
+    print("this is a stdout message")
+    warnings.warn("this is a stderr message")
     """
 
     RUNTIME_PROGRAM_METADATA = {
         "max_execution_time": 600,
         "description": "Qiskit test program"
     }
-
     PROGRAM_PREFIX = 'qiskit-test'
 
     @classmethod
@@ -91,16 +94,15 @@ def main(backend, user_messenger, **kwargs):
     def tearDownClass(cls) -> None:
         """Class level teardown."""
         super().tearDownClass()
-        try:
+        with suppress(Exception):
             cls.provider.runtime.delete_program(cls.program_id)
-        except Exception:  # pylint: disable=broad-except
-            pass
 
     def setUp(self) -> None:
         """Test level setup."""
         super().setUp()
         self.to_delete = []
         self.to_cancel = []
+        self.proxy_process = None
 
     def tearDown(self) -> None:
         """Test level teardown."""
@@ -244,6 +246,7 @@ def main(backend, user_messenger, **kwargs):
         self._wait_for_status(job, JobStatus.QUEUED)
         job.cancel()
         self.assertEqual(job.status(), JobStatus.CANCELLED)
+        time.sleep(10)  # Wait a bit for DB to update.
         rjob = self.provider.runtime.job(job.job_id())
         self.assertEqual(rjob.status(), JobStatus.CANCELLED)
 
@@ -298,7 +301,7 @@ def main(backend, user_messenger, **kwargs):
         job.wait_for_final_state()
         self.assertEqual(iterations-1, final_it)
         self.assertFalse(callback_err)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_stream_results(self):
         """Test stream_results method."""
@@ -322,7 +325,7 @@ def main(backend, user_messenger, **kwargs):
         job.wait_for_final_state()
         self.assertEqual(iterations-1, final_it)
         self.assertFalse(callback_err)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_stream_results_done(self):
         """Test streaming interim results after job is done."""
@@ -338,7 +341,7 @@ def main(backend, user_messenger, **kwargs):
         job.stream_results(result_callback)
         time.sleep(2)
         self.assertFalse(called_back)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_callback_error(self):
         """Test error in callback method."""
@@ -358,7 +361,7 @@ def main(backend, user_messenger, **kwargs):
 
         self.assertIn("Kaboom", ', '.join(err_cm.output))
         self.assertEqual(iterations-1, final_it)
-        self.assertIsNone(job._ws_client._ws)
+        self.assertIsNotNone(job._ws_client._server_close_code)
 
     def test_callback_cancel_job(self):
         """Test canceling a running job while streaming results."""
@@ -381,7 +384,7 @@ def main(backend, user_messenger, **kwargs):
                 self._wait_for_status(job, status)
                 job.cancel()
                 time.sleep(3)  # Wait for cleanup
-                self.assertIsNone(job._ws_client._ws)
+                self.assertIsNotNone(job._ws_client._server_close_code)
                 self.assertLess(final_it, iterations)
 
     def test_final_result(self):
@@ -389,12 +392,10 @@ def main(backend, user_messenger, **kwargs):
         final_result = get_complex_types()
         job = self._run_program(final_result=final_result)
         result = job.result(decoder=SerializableClassDecoder)
-        # self._assert_complex_types_equal(final_result, result)
         self.assertEqual(final_result, result)
 
         rresults = self.provider.runtime.job(job.job_id()).result(decoder=SerializableClassDecoder)
         self.assertEqual(final_result, rresults)
-        # self._assert_complex_types_equal(final_result, rresults)
 
     def test_job_status(self):
         """Test job status."""
@@ -444,7 +445,8 @@ def main(backend, user_messenger, **kwargs):
         """Test run_circuit"""
         job = self.provider.run_circuits(
             ReferenceCircuits.bell(), backend=self.backend, shots=100)
-        job.result()
+        counts = job.result().get_counts()
+        self.assertEqual(100, sum(counts.values()))
 
     def test_job_creation_date(self):
         """Test job creation date."""
@@ -455,6 +457,47 @@ def main(backend, user_messenger, **kwargs):
         rjobs = self.provider.runtime.jobs(limit=2)
         for rjob in rjobs:
             self.assertTrue(rjob.creation_date)
+
+    def test_websocket_proxy(self):
+        """Test connecting to websocket via proxy."""
+        def result_callback(job_id, interim_result):  # pylint: disable=unused-argument
+            nonlocal callback_called
+            callback_called = True
+
+        MockProxyServer(self, self.log).start()
+        callback_called = False
+
+        with use_proxies(self.provider, MockProxyServer.VALID_PROXIES):
+            job = self._run_program(iterations=1, callback=result_callback)
+            job.wait_for_final_state()
+
+        self.assertTrue(callback_called)
+
+    def test_websocket_proxy_invalid_port(self):
+        """Test connecting to websocket via invalid proxy port."""
+        def result_callback(job_id, interim_result):  # pylint: disable=unused-argument
+            nonlocal callback_called
+            callback_called = True
+
+        callback_called = False
+        invalid_proxy = {'https': 'http://{}:{}'.format(MockProxyServer.PROXY_IP_ADDRESS,
+                                                        MockProxyServer.INVALID_PROXY_PORT)}
+        with use_proxies(self.provider, invalid_proxy):
+            with self.assertLogs('qiskit.providers.ibmq', 'WARNING') as log_cm:
+                job = self._run_program(iterations=1, callback=result_callback)
+                job.wait_for_final_state()
+            self.assertIn("WebsocketError", ','.join(log_cm.output))
+        self.assertFalse(callback_called)
+
+    def test_job_logs(self):
+        """Test job logs."""
+        job = self._run_program(final_result="foo")
+        with self.assertLogs('qiskit.providers.ibmq', 'WARN'):
+            job.logs()
+        job.wait_for_final_state()
+        job_logs = job.logs()
+        self.assertIn("this is a stdout message", job_logs)
+        self.assertIn("this is a stderr message", job_logs)
 
     def _validate_program(self, program):
         """Validate a program."""

@@ -13,12 +13,12 @@
 """Job Manager used to manage jobs for IBM Quantum Experience."""
 
 import logging
+import warnings
 from typing import List, Optional, Union, Any
 from concurrent import futures
 
 from qiskit.circuit import QuantumCircuit
 from qiskit.pulse import Schedule
-from qiskit.providers.ibmq.apiconstants import ApiJobShareLevel
 from qiskit.providers.ibmq.utils import validate_job_tags
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 
@@ -145,17 +145,10 @@ class IBMQJobManager:
             raise IBMQJobManagerInvalidStateError(
                 'Pulse schedules found, but the backend does not support pulse schedules.')
 
-        # Validate job share level
         if job_share_level:
-            try:
-                api_job_share_level = ApiJobShareLevel(job_share_level.lower())
-            except ValueError:
-                valid_job_share_levels_str = ', '.join(level.value for level in ApiJobShareLevel)
-                raise IBMQJobManagerInvalidStateError(
-                    '"{}" is not a valid job share level. Valid job share levels are: {}'.format(
-                        job_share_level, valid_job_share_levels_str)) from None
-        else:
-            api_job_share_level = ApiJobShareLevel.NONE
+            warnings.warn("The `job_share_level` keyword is no longer supported "
+                          "and will be removed in a future release.",
+                          Warning, stacklevel=2)
 
         validate_job_tags(job_tags, IBMQJobManagerInvalidStateError)
 
@@ -169,7 +162,7 @@ class IBMQJobManager:
 
         job_set = ManagedJobSet(name=name)
         job_set.run(experiment_list, backend=backend, executor=self._executor,
-                    job_share_level=api_job_share_level, job_tags=job_tags, **run_config)
+                    job_tags=job_tags, **run_config)
         self._job_sets.append(job_set)
 
         return job_set

@@ -36,7 +36,7 @@ from qiskit.providers.models import (QasmBackendConfiguration,
 from qiskit.util import deprecate_arguments
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
-from .apiconstants import ApiJobShareLevel, ApiJobStatus, API_JOB_FINAL_STATES
+from .apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
 from .backendjoblimit import BackendJobLimit
@@ -140,7 +140,7 @@ class IBMQBackend(Backend):
                        meas_return=MeasReturnType.AVERAGE,
                        memory_slots=None, memory_slot_size=100,
                        rep_time=None, rep_delay=None,
-                       init_qubits=True)
+                       init_qubits=True, use_measure_esp=None)
 
     @deprecate_arguments({'qobj': 'circuits'})
     def run(
@@ -167,6 +167,7 @@ class IBMQBackend(Backend):
             rep_delay: Optional[float] = None,
             init_qubits: Optional[bool] = None,
             parameter_binds: Optional[List[Dict[Parameter, float]]] = None,
+            use_measure_esp: Optional[bool] = None,
             **run_config: Dict
     ) -> IBMQJob:
         """Run on the backend.
@@ -242,6 +243,13 @@ class IBMQBackend(Backend):
                 executed across all experiments; e.g., if parameter_binds is a
                 length-n list, and there are m experiments, a total of m x n
                 experiments will be run (one for each experiment/bind pair).
+            use_measure_esp: Whether to use excited state promoted (ESP) readout for measurements
+                which are the terminal instruction to a qubit. ESP readout can offer higher fidelity
+                than standard measurement sequences. See
+                `here <https://arxiv.org/pdf/2008.08571.pdf>`_.
+                Default: ``True`` if backend supports ESP readout, else ``False``. Backend support
+                for ESP readout is determined by the flag ``measure_esp_enabled`` in
+                ``backend.configuration()``.
             **run_config: Extra arguments used to configure the run.
 
         Returns:
@@ -252,26 +260,31 @@ class IBMQBackend(Backend):
                 the job.
             IBMQBackendApiProtocolError: If an unexpected value received from
                  the server.
-            IBMQBackendValueError: If an input parameter value is not valid.
+            IBMQBackendValueError:
+                - If an input parameter value is not valid.
+                - If ESP readout is used and the backend does not support this.
         """
         # pylint: disable=arguments-differ
         if job_share_level:
-            try:
-                api_job_share_level = ApiJobShareLevel(job_share_level.lower())
-            except ValueError:
-                valid_job_share_levels_str = ', '.join(level.value for level in ApiJobShareLevel)
-                raise IBMQBackendValueError(
-                    '"{}" is not a valid job share level. '
-                    'Valid job share levels are: {}.'
-                    .format(job_share_level, valid_job_share_levels_str)) from None
-        else:
-            api_job_share_level = ApiJobShareLevel.NONE
+            warnings.warn("The `job_share_level` keyword is no longer supported "
+                          "and will be removed in a future release.",
+                          Warning, stacklevel=3)
 
         validate_job_tags(job_tags, IBMQBackendValueError)
 
         sim_method = None
         if self.configuration().simulator:
             sim_method = getattr(self.configuration(), 'simulation_method', None)
+
+        measure_esp_enabled = getattr(self.configuration(), "measure_esp_enabled", False)
+        # set ``use_measure_esp`` to backend value if not set by user
+        if use_measure_esp is None:
+            use_measure_esp = measure_esp_enabled
+        if use_measure_esp and not measure_esp_enabled:
+            raise IBMQBackendValueError(
+                "ESP readout not supported on this device. Please make sure the flag "
+                "'use_measure_esp' is unset or set to 'False'."
+            )
 
         if isinstance(circuits, (QasmQobj, PulseQobj)):
             if not self.qobj_warning_issued:
@@ -300,6 +313,7 @@ class IBMQBackend(Backend):
                 rep_time=rep_time,
                 rep_delay=rep_delay,
                 init_qubits=init_qubits,
+                use_measure_esp=use_measure_esp,
                 **run_config)
             if parameter_binds:
                 run_config_dict['parameter_binds'] = parameter_binds
@@ -315,7 +329,7 @@ class IBMQBackend(Backend):
                           DeprecationWarning, stacklevel=3)
             if validate_qobj:
                 validate_qobj_against_schema(qobj)
-        return self._submit_job(qobj, job_name, api_job_share_level, job_tags, experiment_id)
+        return self._submit_job(qobj, job_name, job_tags, experiment_id)
 
     def _get_run_config(self, **kwargs: Any) -> Dict:
         """Return the consolidated runtime configuration."""
@@ -332,7 +346,6 @@ class IBMQBackend(Backend):
             self,
             qobj: Union[QasmQobj, PulseQobj],
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None,
             job_tags: Optional[List[str]] = None,
             experiment_id: Optional[str] = None
     ) -> IBMQJob:
@@ -344,7 +357,6 @@ class IBMQBackend(Backend):
                 name can subsequently be used as a filter in the
                 ``jobs()``method.
                 Job names do not need to be unique.
-            job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
             experiment_id: Used to add a job to an experiment.
 
@@ -370,7 +382,6 @@ class IBMQBackend(Backend):
                 backend_name=self.name(),
                 qobj_dict=qobj_dict,
                 job_name=job_name,
-                job_share_level=job_share_level,
                 job_tags=job_tags,
                 experiment_id=experiment_id)
         except ApiError as ex:
@@ -797,6 +808,10 @@ class IBMQSimulator(IBMQBackend):
             The job to be executed.
         """
         # pylint: disable=arguments-differ
+        if job_share_level:
+            warnings.warn("The `job_share_level` keyword is no longer supported "
+                          "and will be removed in a future release.",
+                          Warning, stacklevel=3)
         if backend_options is not None:
             warnings.warn("Use of `backend_options` is deprecated and will "
                           "be removed in a future release."
@@ -811,7 +826,7 @@ class IBMQSimulator(IBMQBackend):
             except AttributeError:
                 pass
         run_config.update(kwargs)
-        return super().run(circuits, job_name=job_name, job_share_level=job_share_level,
+        return super().run(circuits, job_name=job_name,
                            job_tags=job_tags, experiment_id=experiment_id,
                            validate_qobj=validate_qobj,
                            noise_model=noise_model, **run_config)

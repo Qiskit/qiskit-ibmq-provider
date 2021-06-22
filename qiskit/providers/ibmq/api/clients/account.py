@@ -12,15 +12,14 @@
 
 """Client for accessing an individual IBM Quantum Experience account."""
 
-import asyncio
 import logging
 import time
+from threading import Timer
 
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 
-from qiskit.providers.ibmq.apiconstants import (API_JOB_FINAL_STATES, ApiJobStatus,
-                                                ApiJobShareLevel)
+from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
 from qiskit.providers.ibmq.utils.utils import RefreshQueue
 from qiskit.providers.ibmq.credentials import Credentials
 
@@ -31,7 +30,7 @@ from ..rest.backend import Backend
 from ..session import RetrySession
 from ..exceptions import ApiIBMQProtocolError
 from .base import BaseClient
-from .websocket import WebsocketClient
+from .websocket import WebsocketClient, WebsocketClientCloseCode
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +56,7 @@ class AccountClient(BaseClient):
         self.base_api = Api(self._session)
         self.account_api = Account(session=self._session, hub=credentials.hub,
                                    group=credentials.group, project=credentials.project)
-        self.client_ws = WebsocketClient(credentials.websockets_url, credentials.access_token)
-        self._use_websockets = (not credentials.proxies)
+        self._credentials = credentials
 
     # Backend-related public functions.
 
@@ -181,7 +179,6 @@ class AccountClient(BaseClient):
             backend_name: str,
             qobj_dict: Dict[str, Any],
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None,
             job_tags: Optional[List[str]] = None,
             experiment_id: Optional[str] = None
     ) -> Dict[str, Any]:
@@ -191,7 +188,6 @@ class AccountClient(BaseClient):
             backend_name: The name of the backend.
             qobj_dict: The ``Qobj`` to be executed, as a dictionary.
             job_name: Custom name to be assigned to the job.
-            job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
             experiment_id: Used to add a job to an experiment.
 
@@ -202,14 +198,11 @@ class AccountClient(BaseClient):
             RequestsApiError: If an error occurred communicating with the server.
         """
         # pylint: disable=missing-raises-doc
-        # Check for the job share level.
-        _job_share_level = job_share_level.value if job_share_level else None
 
         # Create a remote job instance on the server.
         job_info = self.account_api.create_remote_job(
             backend_name,
             job_name=job_name,
-            job_share_level=_job_share_level,
             job_tags=job_tags,
             experiment_id=experiment_id)
 
@@ -363,21 +356,20 @@ class AccountClient(BaseClient):
         """
         status_response = None
         # Attempt to use websocket if available.
-        if self._use_websockets:
-            start_time = time.time()
-            try:
-                status_response = self._job_final_status_websocket(
-                    job_id=job_id, timeout=timeout, status_queue=status_queue)
-            except WebsocketTimeoutError as ex:
-                logger.info('Timeout checking job status using websocket, '
-                            'retrying using HTTP: %s', ex)
-            except (RuntimeError, WebsocketError) as ex:
-                logger.info('Error checking job status using websocket, '
-                            'retrying using HTTP: %s', ex)
+        start_time = time.time()
+        try:
+            status_response = self._job_final_status_websocket(
+                job_id=job_id, timeout=timeout, status_queue=status_queue)
+        except WebsocketTimeoutError as ex:
+            logger.info('Timeout checking job status using websocket, '
+                        'retrying using HTTP: %s', ex)
+        except (RuntimeError, WebsocketError) as ex:
+            logger.info('Error checking job status using websocket, '
+                        'retrying using HTTP: %s', ex)
 
-            # Adjust timeout for HTTP retry.
-            if timeout is not None:
-                timeout -= (time.time() - start_time)
+        # Adjust timeout for HTTP retry.
+        if timeout is not None:
+            timeout -= (time.time() - start_time)
 
         if not status_response:
             # Use traditional http requests if websocket not available or failed.
@@ -403,23 +395,26 @@ class AccountClient(BaseClient):
             Job status.
 
         Raises:
-            RuntimeError: If an unexpected error occurred while getting the event loop.
             WebsocketError: If the websocket connection ended unexpectedly.
             WebsocketTimeoutError: If the timeout has been reached.
         """
-        # As mentioned in `websocket.py`, in jupyter we need to use
-        # `nest_asyncio` to allow nested event loops.
+        ws_client = WebsocketClient(
+            websocket_url=self._credentials.websockets_url.rstrip('/'),
+            credentials=self._credentials,
+            job_id=job_id,
+            message_queue=status_queue
+        )
+        timer = None
+        if timeout:
+            timer = Timer(timeout, ws_client.disconnect,
+                          kwargs={'close_code': WebsocketClientCloseCode.TIMEOUT})
+            timer.start()
+
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError as ex:
-            # Event loop may not be set in a child thread.
-            if 'There is no current event loop' in str(ex):
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            else:
-                raise
-        return loop.run_until_complete(
-            self.client_ws.get_job_status(job_id, timeout=timeout, status_queue=status_queue))
+            return ws_client.get_job_status()
+        finally:
+            if timer:
+                timer.cancel()
 
     def _job_final_status_polling(
             self,

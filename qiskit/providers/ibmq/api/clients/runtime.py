@@ -188,6 +188,17 @@ class RuntimeClient:
         """
         self.api.program_job(job_id).delete()
 
+    def job_logs(self, job_id: str) -> str:
+        """Get the job logs.
+
+        Args:
+            job_id: Program job ID.
+
+        Returns:
+            Job logs.
+        """
+        return self.api.program_job(job_id).logs()
+
     def logout(self) -> None:
         """Clear authorization cache."""
         self.api.logout()
