@@ -18,7 +18,7 @@ import ipywidgets as widgets
 from qiskit.providers.job import JobV1
 from .utils import JobType, get_job_type
 from .constants import LIST_COL_DIV, LIST_STYLE_WIDGET, DASH_JOB_HTML, \
-DASH_RT_JOB_HTML, CIRC_JOB_LABELS, RT_JOB_LABELS
+    DASH_RT_JOB_HTML, CIRC_JOB_LABELS, RT_JOB_LABELS
 
 
 # Represents an updated widget's HTML string
@@ -42,6 +42,7 @@ def updated_widget_str(job_type: JobType,
         *colors,
         div=LIST_COL_DIV
     )
+
 
 def make_clear_button(watcher: 'IQXDashboard', job_type: JobType) -> widgets.GridBox:
     """Makes the clear button.
@@ -83,7 +84,6 @@ def make_labels(job_type: JobType) -> widgets.HBox:
     Returns:
         The labels widget.
     """
-
 
     labels = CIRC_JOB_LABELS if job_type == JobType.Circuit else RT_JOB_LABELS
 

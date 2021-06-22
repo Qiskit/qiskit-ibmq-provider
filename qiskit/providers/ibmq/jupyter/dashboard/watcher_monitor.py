@@ -26,6 +26,7 @@ from qiskit.providers.ibmq.job import IBMQJob
 from .utils import get_job_type
 from ...utils.converters import duration_difference
 
+# pylint: disable=too-few-public-methods
 class JobMonitor:
     """Monitors a job for updates to display to the dashboard"""
     def __init__(self, job: Job, watcher: 'IQXDashboard') -> None:
@@ -85,22 +86,37 @@ class RuntimeJobMonitor(JobMonitor):
     """Monitors a runtime job for updates to display to dashboard"""
 
     def __init__(self, job: RuntimeJob, watcher: 'IQXDashboard') -> None:
+        """Initialize a runtime job
+
+        Args:
+            job: the job
+            watcher: the dashboard
+        """
         super().__init__(job, watcher)
 
     def _set_job_queued(self) -> None:
+        """Perform queued updates"""
         info = (self.job.job_id(), self.job.status().name)
         # Update the job on the dashboard
         self._update(info)
+
 
 class CircuitJobMonitor(JobMonitor):
     """Monitors a circuit job for updates to display to dashboard"""
 
     def __init__(self, job: IBMQJob, watcher: 'IQXDashboard') -> None:
+        """Initialize a circuit job
+
+        Args:
+            job: the job
+            watcher: the dashboard
+        """
         super().__init__(job, watcher)
         self._prev_queue_pos = None
         self._prev_est_time = ''
 
     def _set_job_queued(self) -> None:
+        """Perform queued updates"""
         status = self.job.status()
         info = (self.job.job_id(), status.name)
         # Update the job on the dashboard
@@ -127,10 +143,20 @@ class CircuitJobMonitor(JobMonitor):
 
 
 def _create_monitor(job: Job, watcher: 'IQXDashboard') -> JobMonitor:
+    """Create a monitor for the job.
+
+    Args:
+        job: the job
+        watcher: the watcher to recieve updates
+
+    Returns:
+        JobMonitor: the monitor
+    """
     monitor = RuntimeJobMonitor(job, watcher) if isinstance(job, RuntimeJob) \
         else CircuitJobMonitor(job, watcher)
     monitor.start()
     return monitor
+
 
 def job_monitor(job: Job, watcher: 'IQXDashboard') -> None:
     """Monitor the status of an ``IBMQJob`` instance.

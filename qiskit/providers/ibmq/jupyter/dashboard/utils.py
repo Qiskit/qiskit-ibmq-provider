@@ -24,6 +24,7 @@ class JobType(Enum):
     Circuit = 1
     Runtime = 2
 
+
 def get_job_type(job: Job) -> JobType:
     """Get job type (JobType) for the Job object
 
