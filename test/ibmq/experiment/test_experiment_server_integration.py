@@ -18,15 +18,16 @@ from unittest import mock, SkipTest, skipIf
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 import re
+from types import SimpleNamespace
 
 from dateutil import tz
 
 from qiskit.providers.ibmq.experiment.constants import ExperimentShareLevel
-from qiskit.providers.experiment import ExperimentDataV1 as ExperimentData
-from qiskit.providers.experiment import AnalysisResultV1 as AnalysisResult
-from qiskit.providers.experiment.exceptions import ExperimentEntryNotFound
-from qiskit.providers.experiment.constants import ResultQuality
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
+from qiskit.providers.ibmq.experiment import (IBMExperimentService,
+                                              ResultQuality,
+                                              IBMExperimentEntryExists,
+                                              IBMExperimentEntryNotFound)
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_provider, requires_device
@@ -102,7 +103,6 @@ class TestExperimentServerIntegration(IBMQTestCase):
 
         found = False
         for exp in experiments:
-            self.assertTrue(isinstance(exp, ExperimentData))
             self.assertTrue(exp.experiment_id, "{} does not have an ID!".format(exp))
             for dt_attr in ['start_datetime', 'creation_datetime',
                             'end_datetime', 'updated_datetime']:
@@ -114,9 +114,11 @@ class TestExperimentServerIntegration(IBMQTestCase):
 
     def test_experiments_class(self):
         """Test retrieving experiments using a different class."""
-        class MyExperimentData(ExperimentData):
+        class MyExperimentData(SimpleNamespace):
             """Custom ExperimentData class."""
-            pass
+            @classmethod
+            def from_data(cls, **kwargs):
+                return cls(**kwargs)
 
         experiments = self.provider.experiment.experiments(experiment_class=MyExperimentData)
         for exp in experiments:
@@ -233,11 +235,11 @@ class TestExperimentServerIntegration(IBMQTestCase):
                     tags=tags, tags_operator=operator)
                 ref_expr_found = False
                 for expr in experiments:
-                    msg = "Tags {} not fond in experiment tags {}".format(tags, expr.tags())
+                    msg = "Tags {} not fond in experiment tags {}".format(tags, expr.tags)
                     if operator == 'AND':
-                        self.assertTrue(all(f_tag in expr.tags() for f_tag in tags), msg)
+                        self.assertTrue(all(f_tag in expr.tags for f_tag in tags), msg)
                     else:
-                        self.assertTrue(any(f_tag in expr.tags() for f_tag in tags), msg)
+                        self.assertTrue(any(f_tag in expr.tags for f_tag in tags), msg)
                     if expr.experiment_id == exp_id:
                         ref_expr_found = True
                 self.assertTrue(ref_expr_found == found,
@@ -511,9 +513,9 @@ class TestExperimentServerIntegration(IBMQTestCase):
         self.assertEqual(credentials.project, new_exp.project)  # pylint: disable=no-member
         self.assertEqual("qiskit_test", new_exp.experiment_type)
         self.assertEqual(self.backend.name(), new_exp.backend.name())
-        self.assertEqual({"foo": "bar"}, new_exp.metadata())
+        self.assertEqual({"foo": "bar"}, new_exp.metadata)
         self.assertEqual(["job1", "job2"], new_exp.job_ids)
-        self.assertEqual(["qiskit_test"], new_exp.tags())
+        self.assertEqual(["qiskit_test"], new_exp.tags)
         self.assertEqual("some notes", new_exp.notes)
         self.assertEqual(ExperimentShareLevel.PROJECT.value, new_exp.share_level)
         self.assertTrue(new_exp.creation_datetime)
@@ -538,9 +540,9 @@ class TestExperimentServerIntegration(IBMQTestCase):
         )
 
         rexp = self.provider.experiment.experiment(new_exp_id)
-        self.assertEqual({"foo": "bar"}, rexp.metadata())
+        self.assertEqual({"foo": "bar"}, rexp.metadata)
         self.assertEqual(["job1", "job2"], rexp.job_ids)
-        self.assertEqual(["qiskit_test"], rexp.tags())
+        self.assertEqual(["qiskit_test"], rexp.tags)
         self.assertEqual("some notes", rexp.notes)
         self.assertEqual(ExperimentShareLevel.PROJECT.value, rexp.share_level)
         self.assertTrue(rexp.end_datetime)
@@ -552,7 +554,7 @@ class TestExperimentServerIntegration(IBMQTestCase):
         with mock.patch('builtins.input', lambda _: 'y'):
             self.provider.experiment.delete_experiment(new_exp_id)
 
-        with self.assertRaises(ExperimentEntryNotFound) as ex_cm:
+        with self.assertRaises(IBMExperimentEntryNotFound) as ex_cm:
             self.provider.experiment.experiment(new_exp_id)
         self.assertIn("Not Found for url", ex_cm.exception.message)
 
@@ -578,10 +580,10 @@ class TestExperimentServerIntegration(IBMQTestCase):
         rresult = self.provider.experiment.analysis_result(aresult_id)
         self.assertEqual(exp_id, rresult.experiment_id)
         self.assertEqual("qiskit_test", rresult.result_type)
-        self.assertEqual(fit, rresult.data())
+        self.assertEqual(fit, rresult.result_data)
         self.assertEqual(self.device_components,
                          [str(comp) for comp in rresult.device_components])
-        self.assertEqual(["qiskit_test"], rresult.tags())
+        self.assertEqual(["qiskit_test"], rresult.tags)
         self.assertEqual(ResultQuality.GOOD, rresult.quality)
         self.assertTrue(rresult.verified)
         self.assertEqual(result_id, rresult.result_id)
@@ -604,8 +606,8 @@ class TestExperimentServerIntegration(IBMQTestCase):
 
         rresult = self.provider.experiment.analysis_result(result_id)
         self.assertEqual(result_id, rresult.result_id)
-        self.assertEqual(fit, rresult.data())
-        self.assertEqual(["qiskit_test"], rresult.tags())
+        self.assertEqual(fit, rresult.result_data)
+        self.assertEqual(["qiskit_test"], rresult.tags)
         self.assertEqual(ResultQuality.GOOD, rresult.quality)
         self.assertTrue(rresult.verified)
         self.assertEqual(chisq, rresult.chisq)
@@ -616,9 +618,8 @@ class TestExperimentServerIntegration(IBMQTestCase):
         results = self.provider.experiment.analysis_results()
         found = False
         for res in results:
-            self.assertTrue(isinstance(res, AnalysisResult))
             self.assertIsInstance(res.verified, bool)
-            self.assertIsInstance(res.data(), dict)
+            self.assertIsInstance(res.result_data, dict)
             self.assertTrue(res.result_id, "{} does not have an uuid!".format(res))
             for dt_attr in ['creation_datetime', 'updated_datetime']:
                 if getattr(res, dt_attr, None):
@@ -818,11 +819,11 @@ class TestExperimentServerIntegration(IBMQTestCase):
                     tags=tags, tags_operator=operator)
                 res_found = False
                 for res in results:
-                    msg = "Tags {} not fond in result tags {}".format(tags, res.tags())
+                    msg = "Tags {} not fond in result tags {}".format(tags, res.tags)
                     if operator == 'AND':
-                        self.assertTrue(all(f_tag in res.tags() for f_tag in tags), msg)
+                        self.assertTrue(all(f_tag in res.tags for f_tag in tags), msg)
                     else:
-                        self.assertTrue(any(f_tag in res.tags() for f_tag in tags), msg)
+                        self.assertTrue(any(f_tag in res.tags for f_tag in tags), msg)
                     if res.result_id == result_id:
                         res_found = True
                 self.assertTrue(res_found == found,
@@ -897,9 +898,11 @@ class TestExperimentServerIntegration(IBMQTestCase):
 
     def test_analysis_results_class(self):
         """Test retrieving analysis results using a different class."""
-        class MyAnalysisResult(AnalysisResult):
+        class MyAnalysisResult(SimpleNamespace):
             """Custom AnalysisResult class."""
-            pass
+            @classmethod
+            def from_data(cls, **kwargs):
+                return cls(**kwargs)
 
         results = self.provider.experiment.analysis_results(result_class=MyAnalysisResult)
         for res in results:
@@ -912,7 +915,7 @@ class TestExperimentServerIntegration(IBMQTestCase):
         with mock.patch('builtins.input', lambda _: 'y'):
             self.provider.experiment.delete_analysis_result(result_id)
 
-        with self.assertRaises(ExperimentEntryNotFound):
+        with self.assertRaises(IBMExperimentEntryNotFound):
             self.provider.experiment.analysis_result(result_id)
 
     def test_backend_components(self):
@@ -1021,7 +1024,7 @@ class TestExperimentServerIntegration(IBMQTestCase):
         )
         with mock.patch('builtins.input', lambda _: 'y'):
             self.provider.experiment.delete_figure(expr_id, figure_name)
-        self.assertRaises(ExperimentEntryNotFound,
+        self.assertRaises(IBMExperimentEntryNotFound,
                           self.provider.experiment.figure, expr_id, figure_name)
 
     def _create_experiment(

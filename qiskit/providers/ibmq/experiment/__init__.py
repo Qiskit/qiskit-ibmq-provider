@@ -35,12 +35,25 @@ package, which allows you to create different types of experiments (for example,
 
 
 Classes
-=========
+=======
 
 .. autosummary::
     :toctree: ../stubs/
 
     IBMExperimentService
+    ResultQuality
+
+Exceptions
+=========
+
+.. autosummary::
+    :toctree: ../stubs/
+
+    IBMExperimentError
+    IBMExperimentEntryExists
+    IBMExperimentEntryNotFound
 """
 
-from .experimentservice import IBMExperimentService
+from .ibm_experiment_service import IBMExperimentService
+from .constants import ResultQuality
+from .exceptions import IBMExperimentError, IBMExperimentEntryExists, IBMExperimentEntryNotFound

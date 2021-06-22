@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2020.
+# (C) Copyright IBM 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -15,8 +15,7 @@
 from typing import Generator
 from contextlib import contextmanager
 
-from qiskit.providers.experiment.exceptions import ExperimentEntryNotFound, ExperimentEntryExists
-
+from .exceptions import IBMExperimentEntryNotFound, IBMExperimentEntryExists
 from ..api.exceptions import RequestsApiError
 from ..exceptions import IBMQApiError
 
@@ -28,7 +27,7 @@ def map_api_error(error_msg: str = "") -> Generator[None, None, None]:
         yield
     except RequestsApiError as api_err:
         if api_err.status_code == 409:
-            raise ExperimentEntryExists(error_msg + f" {api_err}") from None
+            raise IBMExperimentEntryExists(error_msg + f" {api_err}") from None
         if api_err.status_code == 404:
-            raise ExperimentEntryNotFound(error_msg + f" {api_err}") from None
+            raise IBMExperimentEntryNotFound(error_msg + f" {api_err}") from None
         raise IBMQApiError(f"Failed to process the request: {api_err}") from None

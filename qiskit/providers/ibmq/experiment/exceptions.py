@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2020.
+# (C) Copyright IBM 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -12,23 +12,17 @@
 
 """Exceptions related to IBM Quantum Experience experiments."""
 
-from qiskit.providers.experiment.exceptions import ExperimentError
-
 from ..exceptions import IBMQError
 
 
-class IBMQExperimentError(IBMQError, ExperimentError):
-    """Base class for errors raised by the experiment modules."""
+class IBMExperimentError(IBMQError):
+    """Base class for errors raised by the experiment service modules."""
     pass
 
 
-class ExperimentNotFoundError(ExperimentError):
-    """Error raised when an experiment cannot be found."""
+class IBMExperimentEntryNotFound(IBMExperimentError):
+    """Errors raised when an experiment entry cannot be found."""
 
 
-class AnalysisResultNotFoundError(ExperimentError):
-    """Error raised when an analysis result cannot be found."""
-
-
-class PlotNotFoundError(ExperimentError):
-    """Error raised when a plot cannot be found."""
+class IBMExperimentEntryExists(IBMExperimentError):
+    """Errors raised when an experiment entry already exists."""

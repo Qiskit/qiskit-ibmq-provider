@@ -21,18 +21,26 @@ import numpy as np
 from qiskit import transpile
 from qiskit.providers import JobStatus
 from qiskit.test.reference_circuits import ReferenceCircuits
-from qiskit.providers.experiment import ExperimentDataV1 as ExperimentData
-from qiskit.providers.experiment import AnalysisResultV1 as AnalysisResult
-from qiskit.providers.experiment.constants import ResultQuality
-from qiskit.providers.experiment.exceptions import ExperimentEntryNotFound
-from qiskit.providers.ibmq.experiment import IBMExperimentService
+from qiskit.providers.ibmq.experiment import (IBMExperimentService,
+                                              ResultQuality,
+                                              IBMExperimentEntryExists,
+                                              IBMExperimentEntryNotFound)
 from qiskit.tools.visualization import HAS_MATPLOTLIB
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_provider, requires_device
 
 
+try:
+    from qiskit_experiments.stored_data import StoredDataV1 as StoredData
+    from qiskit_experiments.stored_data import AnalysisResultV1 as AnalysisResult
+    HAS_QISKIT_EXPERIMENTS = True
+except ImportError:
+    HAS_QISKIT_EXPERIMENTS = False
+
+
 @skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
+@skipIf(not HAS_QISKIT_EXPERIMENTS, "Requires qiskit-experiments")
 class TestExperimentDataIntegration(IBMQTestCase):
     """Test experiment service with experiment data."""
 
@@ -50,6 +58,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         if not cls.device_components:
             raise SkipTest("No device components found.")
         cls.circuit = transpile(ReferenceCircuits.bell(), cls.backend)
+        cls.experiment = cls.provider.experiment
 
     @classmethod
     @requires_provider
@@ -75,13 +84,13 @@ class TestExperimentDataIntegration(IBMQTestCase):
         for result_uuid in self.results_to_delete:
             try:
                 with mock.patch('builtins.input', lambda _: 'y'):
-                    self.provider.experiment.delete_analysis_result(result_uuid)
+                    self.experiment.delete_analysis_result(result_uuid)
             except Exception as err:    # pylint: disable=broad-except
                 self.log.info("Unable to delete analysis result %s: %s", result_uuid, err)
         for expr_uuid in self.experiments_to_delete:
             try:
                 with mock.patch('builtins.input', lambda _: 'y'):
-                    self.provider.experiment.delete_experiment(expr_uuid)
+                    self.experiment.delete_experiment(expr_uuid)
             except Exception as err:    # pylint: disable=broad-except
                 self.log.info("Unable to delete experiment %s: %s", expr_uuid, err)
         for job in self.jobs_to_cancel:
@@ -91,11 +100,11 @@ class TestExperimentDataIntegration(IBMQTestCase):
 
     def test_service_options(self):
         """Test service options."""
-        self.assertFalse(self.provider.experiment.option['auto_save'])
+        self.assertFalse(self.experiment.option['auto_save'])
 
     def test_add_data_job(self):
         """Test add job to experiment data."""
-        exp_data = ExperimentData(backend=self.backend, experiment_type="qiskit_test")
+        exp_data = StoredData(backend=self.backend, experiment_type="qiskit_test")
         transpiled = transpile(ReferenceCircuits.bell(), self.backend)
         transpiled.metadata = {"foo": "bar"}
         job = self._run_circuit(transpiled)
@@ -111,12 +120,12 @@ class TestExperimentDataIntegration(IBMQTestCase):
     def test_new_experiment_data(self):
         """Test creating a new experiment data."""
         metadata = {"complex": 2 + 3j, "numpy": np.zeros(2)}
-        exp_data = ExperimentData(backend=self.backend,
-                                  experiment_type="qiskit_test",
-                                  tags=["foo", "bar"],
-                                  share_level="hub",
-                                  metadata=metadata,
-                                  notes="some notes")
+        exp_data = StoredData(backend=self.backend,
+                              experiment_type="qiskit_test",
+                              tags=["foo", "bar"],
+                              share_level="hub",
+                              metadata=metadata,
+                              notes="some notes")
 
         job_ids = []
         for _ in range(2):
@@ -128,7 +137,8 @@ class TestExperimentDataIntegration(IBMQTestCase):
         self.experiments_to_delete.append(exp_data.experiment_id)
 
         credentials = self.provider.credentials
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
+        self.assertIsInstance(rexp, StoredData)
         self._verify_experiment_data(exp_data, rexp)
         self.assertEqual(credentials.hub, rexp.hub)  # pylint: disable=no-member
         self.assertEqual(credentials.group, rexp.group)  # pylint: disable=no-member
@@ -148,10 +158,10 @@ class TestExperimentDataIntegration(IBMQTestCase):
         exp_data.notes = "some notes"
         exp_data.save()
 
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
         self._verify_experiment_data(exp_data, rexp)
 
-    def _verify_experiment_data(self, expected: ExperimentData, actual: ExperimentData):
+    def _verify_experiment_data(self, expected: StoredData, actual: StoredData):
         """Verify the input experiment data."""
         self.assertEqual(expected.experiment_id, actual.experiment_id)
         self.assertEqual(expected.job_ids, actual.job_ids)
@@ -174,11 +184,11 @@ class TestExperimentDataIntegration(IBMQTestCase):
                                  quality=ResultQuality.GOOD,
                                  verified=True,
                                  tags=["foo", "bar"],
-                                 service=self.provider.experiment)
+                                 service=self.experiment)
         exp_data.add_analysis_result(aresult)
         exp_data.save_all()
 
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
         rresult = rexp.analysis_result(0)
         self._verify_analysis_result(aresult, rresult)
 
@@ -193,7 +203,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         aresult.update_tags(["foo", "bar"])
         aresult.save()
 
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
         rresult = rexp.analysis_result(0)
         self._verify_analysis_result(aresult, rresult)
 
@@ -217,10 +227,10 @@ class TestExperimentDataIntegration(IBMQTestCase):
         with mock.patch('builtins.input', lambda _: 'y'):
             exp_data.delete_analysis_result(0)
             exp_data.save_all()
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
-        self.assertRaises(ExperimentEntryNotFound, rexp.analysis_result, aresult.result_id)
-        self.assertRaises(ExperimentEntryNotFound,
-                          self.provider.experiment.analysis_result, aresult.result_id)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
+        self.assertRaises(IBMExperimentEntryNotFound, rexp.analysis_result, aresult.result_id)
+        self.assertRaises(IBMExperimentEntryNotFound,
+                          self.experiment.analysis_result, aresult.result_id)
 
     def test_add_figure(self):
         """Test adding a figure to the experiment data."""
@@ -232,7 +242,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         for idx, figure_name in enumerate(sub_tests):
             with self.subTest(figure_name=figure_name):
                 exp_data.add_figure(figure=hello_bytes, figure_name=figure_name, save_figure=True)
-                rexp = self.provider.experiment.experiment(exp_data.experiment_id)
+                rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
                 self.assertEqual(rexp.figure(idx), hello_bytes)
 
     @skipIf(not HAS_MATPLOTLIB, "matplotlib not available.")
@@ -245,7 +255,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         exp_data = self._create_experiment_data()
         exp_data.add_figures(figure, save_figure=True)
 
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
         self.assertTrue(rexp.figure(0))
 
     def test_add_figure_file(self):
@@ -258,7 +268,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
             file.write(hello_bytes)
 
         exp_data.add_figure(figure=file_name, save_figure=True)
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
         self.assertEqual(rexp.figure(0), hello_bytes)
 
     def test_update_figure(self):
@@ -273,7 +283,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         friend_bytes = str.encode("hello friend")
         exp_data.add_figure(figure=friend_bytes, figure_name=figure_name,
                             overwrite=True, save_figure=True)
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
         self.assertEqual(rexp.figure(0), friend_bytes)
         self.assertEqual(rexp.figure(figure_name), friend_bytes)
 
@@ -288,10 +298,10 @@ class TestExperimentDataIntegration(IBMQTestCase):
             exp_data.delete_figure(0)
             exp_data.save_all()
 
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
-        self.assertRaises(ExperimentEntryNotFound, rexp.figure, figure_name)
-        self.assertRaises(ExperimentEntryNotFound,
-                          self.provider.experiment.figure, exp_data.experiment_id, figure_name)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
+        self.assertRaises(IBMExperimentEntryNotFound, rexp.figure, figure_name)
+        self.assertRaises(IBMExperimentEntryNotFound,
+                          self.experiment.figure, exp_data.experiment_id, figure_name)
 
     def test_save_all(self):
         """Test saving all."""
@@ -306,7 +316,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         exp_data.add_figure(hello_bytes, figure_name="hello.svg")
         exp_data.save_all()
 
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
         self.assertEqual(["foo", "bar"], rexp.tags())
         self.assertEqual(aresult.result_id, rexp.analysis_result(0).result_id)
         self.assertEqual(hello_bytes, rexp.figure(0))
@@ -316,18 +326,18 @@ class TestExperimentDataIntegration(IBMQTestCase):
         with mock.patch('builtins.input', lambda _: 'y'):
             exp_data.save_all()
 
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
-        self.assertRaises(ExperimentEntryNotFound, rexp.figure, "hello.svg")
-        self.assertRaises(ExperimentEntryNotFound, rexp.analysis_result, aresult.result_id)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
+        self.assertRaises(IBMExperimentEntryNotFound, rexp.figure, "hello.svg")
+        self.assertRaises(IBMExperimentEntryNotFound, rexp.analysis_result, aresult.result_id)
 
     def test_set_service_job(self):
         """Test setting service with a job."""
-        exp_data = ExperimentData(experiment_type="qiskit_test")
+        exp_data = StoredData(experiment_type="qiskit_test")
         job = self._run_circuit()
         exp_data.add_data(job)
         exp_data.save()
 
-        rexp = self.provider.experiment.experiment(exp_data.experiment_id)
+        rexp = self.experiment.experiment(exp_data.experiment_id, StoredData)
         self.assertEqual([job.job_id()], rexp.job_ids)
 
     def test_auto_save_experiment(self):
@@ -430,7 +440,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
 
     def test_block_for_jobs(self):
         """Test blocking for jobs"""
-        exp_data = ExperimentData(backend=self.backend, experiment_type="qiskit_test")
+        exp_data = StoredData(backend=self.backend, experiment_type="qiskit_test")
         jobs = []
         for _ in range(2):
             job = self._run_circuit()
@@ -442,7 +452,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
 
     def _create_experiment_data(self):
         """Create an experiment data."""
-        exp_data = ExperimentData(backend=self.backend,
+        exp_data = StoredData(backend=self.backend,
                                   experiment_type="qiskit_test")
         exp_data.save()
         self.experiments_to_delete.append(exp_data.experiment_id)

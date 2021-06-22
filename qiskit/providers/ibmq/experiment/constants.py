@@ -13,44 +13,25 @@
 """Experiment constants."""
 
 import enum
-from typing import Any
-
-from qiskit.providers.experiment.constants import ResultQuality
 
 
-# class ResultQuality(enum.Enum):
-#     """Possible values for analysis result quality."""
-#
-#     def __new__(cls, description: str, ranking: int = 0) -> 'ResultQuality':
-#         # ranking is defaulted to 0 to silence linter.
-#         obj = object.__new__(cls)
-#         obj._value_ = description
-#         obj.ranking = ranking
-#         return obj
-#
-#     def __ge__(self, other: Any) -> bool:
-#         if self.__class__ is other.__class__:
-#             return self.ranking >= other.ranking  # type: ignore[attr-defined]
-#         return NotImplemented
-#
-#     def __gt__(self, other: Any) -> bool:
-#         if self.__class__ is other.__class__:
-#             return self.ranking > other.ranking  # type: ignore[attr-defined]
-#         return NotImplemented
-#
-#     def __le__(self, other: Any) -> bool:
-#         if self.__class__ is other.__class__:
-#             return self.ranking <= other.ranking  # type: ignore[attr-defined]
-#         return NotImplemented
-#
-#     def __lt__(self, other: Any) -> bool:
-#         if self.__class__ is other.__class__:
-#             return self.ranking < other.ranking  # type: ignore[attr-defined]
-#         return NotImplemented
-#
-#     BAD = 'Bad', 1
-#     UNKNOWN = 'No Information', 2
-#     GOOD = 'Good', 3
+class ExperimentShareLevel(enum.Enum):
+    """Possible values for experiment share level (visibility)."""
+
+    PRIVATE = 'private'  # The experiment is only visible to its owner
+    PROJECT = 'project'  # The experiment is shared within its project
+    GROUP = 'group'      # The experiment is shared within its group
+    HUB = 'hub'          # The experiment is shared within its hub
+    PUBLIC = 'public'    # The experiment is shared publicly regardless of provider
+
+
+class ResultQuality(enum.Enum):
+    """Possible values for analysis result quality."""
+
+    BAD = "BAD"
+    GOOD = "GOOD"
+    UNKNOWN = "UNKNOWN"
+
 
 RESULT_QUALITY_FROM_API = {
     "Good": ResultQuality.GOOD,
@@ -64,13 +45,3 @@ RESULT_QUALITY_TO_API = {
     ResultQuality.BAD: "Bad",
     ResultQuality.UNKNOWN: "No Information",
 }
-
-
-class ExperimentShareLevel(enum.Enum):
-    """Possible values for experiment share level (visibility)."""
-
-    PRIVATE = 'private'  # The experiment is only visible to its owner
-    PROJECT = 'project'  # The experiment is shared within its project
-    GROUP = 'group'      # The experiment is shared within its group
-    HUB = 'hub'          # The experiment is shared within its hub
-    PUBLIC = 'public'    # The experiment is shared publicly regardless of provider

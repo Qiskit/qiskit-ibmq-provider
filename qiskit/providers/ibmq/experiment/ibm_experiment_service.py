@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2020.
+# (C) Copyright IBM 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -13,20 +13,18 @@
 """IBM Quantum Experience experiment service."""
 
 import logging
-from typing import Optional, List, Dict, Union, Tuple, Any, Type
+from typing import Optional, List, Dict, Union, Tuple, Any, Type, TypeVar
 from datetime import datetime
 from collections import defaultdict
+from types import SimpleNamespace
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
-from qiskit.providers.experiment import ExperimentServiceV1
-from qiskit.providers.experiment import ExperimentDataV1 as ExperimentData
-from qiskit.providers.experiment.device_component import DeviceComponent, to_component
-from qiskit.providers.experiment import AnalysisResultV1 as AnalysisResult
-from qiskit.providers.experiment.constants import ResultQuality
 
-from .constants import ExperimentShareLevel, RESULT_QUALITY_FROM_API, RESULT_QUALITY_TO_API
+from .constants import (ExperimentShareLevel, ResultQuality,
+                        RESULT_QUALITY_FROM_API, RESULT_QUALITY_TO_API)
 from .utils import map_api_error
+from .device_component import DeviceComponent, to_component
 from ..utils.converters import local_to_utc_str, utc_to_local
 from ..api.clients.experiment import ExperimentClient
 from ..api.exceptions import RequestsApiError
@@ -34,9 +32,10 @@ from ..ibmqbackend import IBMQRetiredBackend
 from ..exceptions import IBMQApiError
 
 logger = logging.getLogger(__name__)
+T = TypeVar('T')
 
 
-class IBMExperimentService(ExperimentServiceV1):
+class IBMExperimentService:
     """Provides experiment related services.
 
     This class is the main interface to invoke IBM Quantum
@@ -283,17 +282,19 @@ class IBMExperimentService(ExperimentServiceV1):
     def experiment(
             self,
             experiment_id: str,
-            experiment_class: Type[ExperimentData] = ExperimentData
-    ) -> ExperimentData:
+            experiment_class: Optional[Type[T]] = None
+    ) -> Union[SimpleNamespace, T]:
         """Retrieve a previously stored experiment.
 
         Args:
             experiment_id: Experiment ID.
-            experiment_class: An ``ExperimentData`` class used to instantiate the
-                return data objects.
+            experiment_class: Class used to instantiate the returned data object.
+                If a class is provided, its ``from_data()`` class method is called
+                with the retrieved data, and its return value is returned.
 
         Returns:
-            Retrieved experiment.
+            A ``SimpleNamespace`` containing the retrieved experiment data if `experiment_class`
+            is ``None``. Otherwise an instance of the `experiment_class` class.
 
         Raises:
             ExperimentEntryNotFound: If the experiment does not exist.
@@ -307,7 +308,7 @@ class IBMExperimentService(ExperimentServiceV1):
     def experiments(
             self,
             limit: Optional[int] = 10,
-            experiment_class: Type[ExperimentData] = ExperimentData,
+            experiment_class: Optional[Type[T]] = None,
             device_components: Optional[List[Union[str, DeviceComponent]]] = None,
             device_components_operator: Optional[str] = None,
             experiment_type: Optional[str] = None,
@@ -326,7 +327,7 @@ class IBMExperimentService(ExperimentServiceV1):
             mine_only: Optional[bool] = False,
             sort_by: Optional[Union[str, List[str]]] = None,
             **filters: Any
-    ) -> List[ExperimentData]:
+    ) -> List[Union[SimpleNamespace, T]]:
         """Retrieve all experiments, with optional filtering.
 
         By default, results returned are as inclusive as possible. For example,
@@ -337,8 +338,9 @@ class IBMExperimentService(ExperimentServiceV1):
 
         Args:
             limit: Number of experiments to retrieve. ``None`` indicates no limit.
-            experiment_class: An ``ExperimentData`` class used to instantiate the
-                return data objects.
+            experiment_class: Class used to instantiate the returned data object.
+                If a class is provided, its ``from_data()`` class method is called
+                with the retrieved data, and its return value is returned.
             device_components: Filter by device components.
             device_components_operator: Operator used when filtering by device components.
                 Valid values are ``None`` and "contains":
@@ -401,7 +403,10 @@ class IBMExperimentService(ExperimentServiceV1):
             **filters: Additional filtering keywords that are not supported and will be ignored.
 
         Returns:
-            A list of experiments.
+            A list of experiments. Each experiment is a ``SimpleNamespace`` containing the
+            retrieved experiment data if `experiment_class`
+            is ``None``. Otherwise each experiment is an instance of the
+            `experiment_class` class.
 
         Raises:
             ValueError: If an invalid parameter value is specified.
@@ -478,8 +483,8 @@ class IBMExperimentService(ExperimentServiceV1):
     def _api_to_experiment_data(
             self,
             raw_data: Dict,
-            experiment_class: Type[ExperimentData] = ExperimentData
-    ) -> ExperimentData:
+            experiment_class: Optional[Type[T]] = None
+    ) -> Union[SimpleNamespace, T]:
         """Convert API response to experiment data.
 
         Args:
@@ -488,7 +493,8 @@ class IBMExperimentService(ExperimentServiceV1):
                 return data objects.
 
         Returns:
-            An ``ExperimentData`` instance.
+            A ``SimpleNamespace`` containing the retrieved experiment data if `experiment_class`
+            is ``None``. Otherwise an instance of the `experiment_class` class.
         """
         backend_name = raw_data['device_name']
         try:
@@ -504,21 +510,26 @@ class IBMExperimentService(ExperimentServiceV1):
         self._convert_dt(raw_data.get('end_time', None), extra_data, 'end_datetime')
         self._convert_dt(raw_data.get('updated_at', None), extra_data, 'updated_datetime')
 
-        return experiment_class.from_data(experiment_type=raw_data['type'],
-                                          backend=backend,
-                                          experiment_id=raw_data['uuid'],
-                                          tags=raw_data.get("tags", None),
-                                          job_ids=raw_data['jobs'],
-                                          share_level=raw_data.get("visibility", None),
-                                          metadata=raw_data.get("extra", None),
-                                          figure_names=raw_data.get("plot_names", None),
-                                          notes=raw_data.get("notes", ""),
-                                          hub=raw_data.get("hub_id", ""),
-                                          group=raw_data.get("group_id", ""),
-                                          project=raw_data.get("project_id", ""),
-                                          owner=raw_data.get("owner", ""),
-                                          **extra_data
-                                          )
+        out_dict = {
+            "experiment_type": raw_data['type'],
+            "backend": backend,
+            "experiment_id": raw_data['uuid'],
+            "tags": raw_data.get("tags", None),
+            "job_ids": raw_data['jobs'],
+            "share_level": raw_data.get("visibility", None),
+            "metadata": raw_data.get("extra", None),
+            "figure_names": raw_data.get("plot_names", None),
+            "notes": raw_data.get("notes", ""),
+            "hub": raw_data.get("hub_id", ""),
+            "group": raw_data.get("group_id", ""),
+            "project": raw_data.get("project_id", ""),
+            "owner": raw_data.get("owner", ""),
+            **extra_data
+        }
+        if experiment_class is None:
+            return SimpleNamespace(**out_dict)
+
+        return experiment_class.from_data(**out_dict)
 
     def _convert_dt(
             self,
@@ -726,17 +737,19 @@ class IBMExperimentService(ExperimentServiceV1):
     def analysis_result(
             self,
             result_id: str,
-            result_class: Type[AnalysisResult] = AnalysisResult
-    ) -> AnalysisResult:
+            result_class: Optional[Type[T]] = None
+    ) -> Union[SimpleNamespace, T]:
         """Retrieve a previously stored experiment.
 
         Args:
             result_id: Analysis result ID.
-            result_class: An ``AnalysisResult`` class used to instantiate the
-                return data objects.
+            result_class: Class used to instantiate the returned data object.
+                If a class is provided, its ``from_data()`` class method is called
+                with the retrieved data, and its return value is returned.
 
         Returns:
-            Retrieved analysis result.
+            A ``SimpleNamespace`` containing the retrieved analysis result if `result_class`
+            is ``None``. Otherwise an instance of the `result_class` class.
 
         Raises:
             ExperimentEntryNotFound: If the analysis result does not exist.
@@ -750,7 +763,7 @@ class IBMExperimentService(ExperimentServiceV1):
     def analysis_results(
             self,
             limit: Optional[int] = 10,
-            result_class: Type[AnalysisResult] = AnalysisResult,
+            result_class: Optional[Type[T]] = None,
             device_components: Optional[List[Union[str, DeviceComponent]]] = None,
             device_components_operator: Optional[str] = None,
             experiment_id: Optional[str] = None,
@@ -763,13 +776,14 @@ class IBMExperimentService(ExperimentServiceV1):
             tags_operator: Optional[str] = "OR",
             sort_by: Optional[Union[str, List[str]]] = None,
             **filters: Any
-    ) -> List[AnalysisResult]:
+    ) -> List[Union[SimpleNamespace, T]]:
         """Retrieve all analysis results, with optional filtering.
 
         Args:
             limit: Number of analysis results to retrieve.
-            result_class: An ``AnalysisResult`` class used to instantiate the
-                return data objects.
+            result_class: Class used to instantiate the returned data object.
+                If a class is provided, its ``from_data()`` method is called
+                with the retrieved data, and its return value is returned.
             device_components: Filter by device components.
             device_components_operator: Operator used when filtering by device components.
                 Valid values are ``None`` and "contains":
@@ -819,7 +833,9 @@ class IBMExperimentService(ExperimentServiceV1):
             **filters: Additional filtering keywords that are not supported and will be ignored.
 
         Returns:
-            A list of analysis results.
+            A list of analysis results. Each analysis result is either a ``SimpleNamespace``
+            containing the retrieved analysis result, if `result_class`
+            is ``None``, or an instance of the `result_class` class.
 
         Raises:
             ValueError: If an invalid parameter value is specified.
@@ -894,7 +910,7 @@ class IBMExperimentService(ExperimentServiceV1):
         if qual_set_len == 3:
             return None
 
-        # TODO fix good/bad when 436 is done
+        # TODO fix good/bad when server issue 436 is done
         quality_map = {
             frozenset({ResultQuality.GOOD, ResultQuality.UNKNOWN}):
                 f"ge:{RESULT_QUALITY_TO_API[ResultQuality.UNKNOWN]}",
@@ -986,17 +1002,19 @@ class IBMExperimentService(ExperimentServiceV1):
     def _api_to_analysis_result(
             self,
             raw_data: Dict,
-            result_class: Type[AnalysisResult]
-    ) -> AnalysisResult:
+            result_class: Optional[Type[T]] = None
+    ) -> Union[SimpleNamespace, T]:
         """Map API response to an AnalysisResult instance.
 
         Args:
             raw_data: API response data.
-            result_class: An ``AnalysisResult`` class used to instantiate the
-                return data objects.
+            result_class: Class used to instantiate the returned data object.
+                If a class is provided, its ``from_data()`` class method is called
+                with the retrieved data, and its return value is returned.
 
         Returns:
-            An ``AnalysisResult`` instance.
+            A ``SimpleNamespace`` containing the retrieved analysis result if `result_class`
+            is ``None``. Otherwise an instance of the `result_class` class.
         """
         extra_data = {}
 
@@ -1015,16 +1033,22 @@ class IBMExperimentService(ExperimentServiceV1):
         self._convert_dt(raw_data.get('created_at', None), extra_data, 'creation_datetime')
         self._convert_dt(raw_data.get('updated_at', None), extra_data, 'updated_datetime')
 
-        return result_class.from_data(result_data=raw_data.get('fit', {}),
-                                      result_type=raw_data.get('type', None),
-                                      device_components=raw_data.get('device_components', []),
-                                      experiment_id=raw_data.get('experiment_uuid'),
-                                      result_id=raw_data.get('uuid', None),
-                                      quality=quality,
-                                      verified=raw_data.get('verified', False),
-                                      tags=raw_data.get('tags', []),
-                                      service=self,
-                                      **extra_data)
+        out_dict = {
+            "result_data": raw_data.get('fit', {}),
+            "result_type": raw_data.get('type', None),
+            "device_components": raw_data.get('device_components', []),
+            "experiment_id": raw_data.get('experiment_uuid'),
+            "result_id": raw_data.get('uuid', None),
+            "quality": quality,
+            "verified": raw_data.get('verified', False),
+            "tags": raw_data.get('tags', []),
+            "service": self,
+            **extra_data
+        }
+        if result_class is None:
+            return SimpleNamespace(**out_dict)
+
+        return result_class.from_data(**out_dict)
 
     def delete_analysis_result(
             self,
