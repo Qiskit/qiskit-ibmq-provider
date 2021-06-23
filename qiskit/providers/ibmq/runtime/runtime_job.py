@@ -121,6 +121,7 @@ class RuntimeJob(Job):
         if user_callback is not None:
             self.stream_results(user_callback)
 
+    # pylint: disable=arguments-differ
     def result(
             self,
             timeout: Optional[float] = None,

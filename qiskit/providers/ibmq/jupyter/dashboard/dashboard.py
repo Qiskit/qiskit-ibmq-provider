@@ -172,8 +172,9 @@ class DashItem():
         """
         self.title = title
         self.box = VBox(layout=Layout(width='760px',
-                                     max_height='650px'))
+                                      max_height='650px'))
 
+    # pylint: disable=invalid-name
     def ui(self) -> widgets.Widget:
         """Get the content box (widget) for the dashboard item.
 
@@ -230,7 +231,7 @@ class JobUI(DashItem, Subscriber):
             pass
 
         job_widget = create_job_widget(self, job,
-                                        program_name=prog_name)
+                                       program_name=prog_name)
 
         self.jobs.append(job_widget)
 
@@ -307,8 +308,7 @@ class CircuitJobUI(JobUI):
         """
         if not jobs:
             jobs = self.jobs
-        self.box.children = [self._clear_button,
-                                           self._labels] + list(reversed(jobs))
+        self.box.children = [self._clear_button, self._labels] + list(reversed(jobs))
 
     def update_job(self, update_info: Tuple) -> None:
         update_job(self.jobs, update_info)
@@ -351,8 +351,7 @@ class RuntimeJobUI(JobUI):
         """
         if not jobs:
             jobs = self.jobs
-        self.box.children = [self._clear_button,
-                                           self._labels] + list(reversed(jobs))
+        self.box.children = [self._clear_button, self._labels] + list(reversed(jobs))
 
     def update_job(self, update_info: Tuple) -> None:
         update_job(self.jobs, update_info, self.program_name_lookup)
@@ -456,8 +455,7 @@ class DevicesUI(DashItem):
     def setup_device_ui(self) -> None:
         """Setup the devices list UI"""
         self.box = wid.VBox(children=[],
-                       layout=wid.Layout(width='740px',
-                                         height='100%'))
+                            layout=wid.Layout(width='740px', height='100%'))
 
     def refresh(self) -> None:
         for _wid in self.box.children:
@@ -473,7 +471,7 @@ class DevicesUI(DashItem):
         self.setup_device_ui()
         self._get_backends()
         self._update_thread = threading.Thread(target=update_backend_info,
-                                                  args=(self.box,))
+                                               args=(self.box,))
         self._update_thread.do_run = True
         self._update_thread.start()
         self.refresh()
@@ -524,10 +522,9 @@ def accordion(items: List[DashItem]) -> Accordion:
         tabs.set_title(i, item.title)
 
     acc = Accordion(children=[tabs],
-                          layout=Layout(width='auto',
-                                            max_height='700px',
-                                            border='1px solid black'
-                                            ))
+                    layout=Layout(width='auto',
+                                  max_height='700px',
+                                  border='1px solid black'))
     acc.set_title(0, 'IBM Quantum Dashboard')
     acc.selected_index = None
     acc.layout.visibility = 'hidden'
