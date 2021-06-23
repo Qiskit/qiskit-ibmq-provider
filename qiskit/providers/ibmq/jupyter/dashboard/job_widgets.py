@@ -44,12 +44,11 @@ def updated_widget_str(job_type: JobType,
     )
 
 
-def make_clear_button(watcher: 'IQXDashboard', job_type: JobType) -> widgets.GridBox:
+def make_clear_button(watcher: 'JobUI') -> widgets.GridBox:
     """Makes the clear button.
 
     Args:
         watcher: The watcher widget instance.
-        job_type: the job type to have their list cleared
 
     Returns:
         The clear button widget.
@@ -64,7 +63,7 @@ def make_clear_button(watcher: 'IQXDashboard', job_type: JobType) -> widgets.Gri
 
     def on_clear_button_clicked(_):
         """Clear finished jobs."""
-        watcher.clear_done(job_type)
+        watcher.clear_done()
 
     clear.on_click(on_clear_button_clicked)
 
@@ -123,7 +122,7 @@ def make_rt_labels() -> widgets.HBox:
     return labels
 
 
-def create_job_widget(watcher: 'IQXDashboard',
+def create_job_widget(watcher: 'JobUI',
                       job: JobV1,
                       **kwargs) -> widgets.HBox:
     """Create a widget corresponding to a particular job instance.
@@ -177,7 +176,7 @@ def create_job_widget(watcher: 'IQXDashboard',
 
     def cancel_on_click(_):
         """Cancel the job."""
-        watcher.cancel_job(job_id, job_type)
+        watcher.cancel_job(job_id)
     close_button.on_click(cancel_on_click)
 
     # Generate the widget grid with the button and HTML table widgets

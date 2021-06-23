@@ -30,7 +30,7 @@ from ...utils.converters import duration_difference
 # pylint: disable=too-few-public-methods
 class JobMonitor:
     """Monitors a job for updates to display to the dashboard"""
-    def __init__(self, job: Job, watcher: 'IQXDashboard') -> None:
+    def __init__(self, job: Job, watcher: 'JobUI') -> None:
         """Creates a JobMonitor.
 
         Args:
@@ -46,7 +46,7 @@ class JobMonitor:
 
     def _update(self, info: Tuple) -> None:
         """Updates the watcher with the provided info"""
-        self._watcher.update_single_job(self._job_type, info)
+        self._watcher.update_job(info)
 
     @abstractmethod
     def _set_job_queued(self) -> None:
@@ -87,7 +87,7 @@ class JobMonitor:
 class RuntimeJobMonitor(JobMonitor):
     """Monitors a runtime job for updates to display to dashboard"""
 
-    def __init__(self, job: RuntimeJob, watcher: 'IQXDashboard') -> None:
+    def __init__(self, job: RuntimeJob, watcher: 'JobUI') -> None:
         """Initialize a runtime job
 
         Args:
@@ -98,7 +98,7 @@ class RuntimeJobMonitor(JobMonitor):
 
     def _set_job_queued(self) -> None:
         """Perform queued updates"""
-        info = (self.job.job_id(), self.job.status().name)
+        info = (self.job.job_id(), 'QUEUED')
         # Update the job on the dashboard
         self._update(info)
 
@@ -106,7 +106,7 @@ class RuntimeJobMonitor(JobMonitor):
 class CircuitJobMonitor(JobMonitor):
     """Monitors a circuit job for updates to display to dashboard"""
 
-    def __init__(self, job: IBMQJob, watcher: 'IQXDashboard') -> None:
+    def __init__(self, job: IBMQJob, watcher: 'JobUI') -> None:
         """Initialize a circuit job
 
         Args:
@@ -120,6 +120,11 @@ class CircuitJobMonitor(JobMonitor):
     def _set_job_queued(self) -> None:
         """Perform queued updates"""
         status = self.job.status()
+        # Verify still in QUEUED. Otherwise, just show the status
+        if status.name != 'QUEUED':
+            info = (self.job.job_id(), status.name, 0, status.value)
+            self._update(info)
+            return
         info = (self.job.job_id(), status.name)
         # Update the job on the dashboard
         queue_pos = self.job.queue_position()
@@ -144,7 +149,7 @@ class CircuitJobMonitor(JobMonitor):
         self._update(info)
 
 
-def _create_monitor(job: Job, watcher: 'IQXDashboard') -> JobMonitor:
+def _create_monitor(job: Job, watcher: 'JobUI') -> JobMonitor:
     """Create a monitor for the job.
 
     Args:
@@ -160,7 +165,7 @@ def _create_monitor(job: Job, watcher: 'IQXDashboard') -> JobMonitor:
     return monitor
 
 
-def job_monitor(job: Job, watcher: 'IQXDashboard') -> None:
+def job_monitor(job: Job, watcher: 'JobUI') -> None:
     """Monitor the status of an ``IBMQJob`` instance.
 
     Args:

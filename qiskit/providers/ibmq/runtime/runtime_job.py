@@ -13,14 +13,13 @@
 """Qiskit runtime job."""
 
 from typing import Any, Optional, Callable, Dict, Type
-import time
 import logging
 from concurrent import futures
 import traceback
 import queue
 from datetime import datetime
 
-from qiskit.providers.exceptions import JobTimeoutError
+from qiskit.providers.job import JobV1 as Job
 from qiskit.providers.backend import Backend
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 
@@ -36,7 +35,7 @@ from ..credentials import Credentials
 logger = logging.getLogger(__name__)
 
 
-class RuntimeJob:
+class RuntimeJob(Job):
     """Representation of a runtime program execution.
 
     A new ``RuntimeJob`` instance is returned when you call
@@ -99,6 +98,7 @@ class RuntimeJob:
             user_callback: User callback function.
             result_decoder: A :class:`ResultDecoder` subclass used to decode job results.
         """
+        super().__init__(backend, job_id)
         self._job_id = job_id
         self._backend = backend
         self._api_client = api_client
@@ -182,31 +182,6 @@ class RuntimeJob:
             except KeyError:
                 raise IBMQError(f"Unknown status: {response['status']}")
         return self._status
-
-    def wait_for_final_state(
-            self,
-            timeout: Optional[float] = None,
-            wait: float = 5
-    ) -> None:
-        """Poll the job status until it progresses to a final state such as ``DONE`` or ``ERROR``.
-
-        Args:
-            timeout: Seconds to wait for the job. If ``None``, wait indefinitely.
-            wait: Seconds between queries.
-
-        Raises:
-            JobTimeoutError: If the job does not reach a final state before the
-                specified timeout.
-        """
-        start_time = time.time()
-        status = self.status()
-        while status not in JOB_FINAL_STATES:
-            elapsed_time = time.time() - start_time
-            if timeout is not None and elapsed_time >= timeout:
-                raise JobTimeoutError(
-                    'Timeout while waiting for job {}.'.format(self.job_id()))
-            time.sleep(wait)
-            status = self.status()
 
     def stream_results(
             self,
@@ -333,21 +308,19 @@ class RuntimeJob:
         except queue.Empty:
             pass
 
-    def job_id(self) -> str:
-        """Return a unique ID identifying the job.
+    def submit(self) -> None:
+        """Unsupported method.
 
-        Returns:
-            Job ID.
+        Note:
+            This method is not supported, please use
+            :meth:`~qiskit.providers.ibmq.ibmqbackend.IBMQBackend.run`
+            to submit a job.
+
+        Raises:
+            NotImplementedError: Upon invocation.
         """
-        return self._job_id
-
-    def backend(self) -> Backend:
-        """Return the backend where this job was executed.
-
-        Returns:
-            Backend used for the job.
-        """
-        return self._backend
+        raise NotImplementedError("job.submit() is not supported. Please use "
+                                  "IBMQBackend.run() to submit a job.")
 
     @property
     def inputs(self) -> Dict:

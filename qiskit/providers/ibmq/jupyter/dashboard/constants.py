@@ -57,18 +57,18 @@ DASH_JOB_HTML = """<div class='row_item'>
         <p style='width: 175px; color: {4};'>{0}</p>{div}
         <p style='width: 150px; color: {5};'>{1}</p>{div}
         <p style='width: 150px; color: {6};'>{2}</p>{div}
-        <p style='width: 100px; color: {7};'>{3}</p>
+        <p style='width: 175px; color: {7};'>{3}</p>
     </div>"""
 DASH_RT_JOB_HTML = """<div class='row_item'>
         <p style='width: 150px; color: {5};'>{0}</p>{div}
-        <p style='width: 125px; color: {6};'>{1}</p>{div}
+        <p style='width: 150px; color: {6};'>{1}</p>{div}
         <p style='width: 150px; color: {7};'>{2}</p>{div}
         <p style='width: 75px; color: {8};'>{3}</p>{div}
-        <p style='width: 100px; color: {9};'>{4}</p>
+        <p style='width: 125px; color: {9};'>{4}</p>
     </div>"""
 
-CIRC_JOB_LABELS = [('Job ID', 175), ('Backend', 150), ('Status', 150), ('Est. Start Time', 100)]
+CIRC_JOB_LABELS = [('Job ID', 175), ('Backend', 150), ('Status', 150), ('Est. Start Time', 175)]
 """ The labels and widths for the circuit jobs dashboard rows"""
-RT_JOB_LABELS = [('Job ID', 150), ('Backend', 125), ('Program Name', 150),
-                 ('Status', 75), ('Created At', 100)]
+RT_JOB_LABELS = [('Job ID', 150), ('Backend', 150), ('Program Name', 150),
+                 ('Status', 75), ('Created At', 125)]
 """ The labels and widths for the runtime jobs dashboard rows"""
