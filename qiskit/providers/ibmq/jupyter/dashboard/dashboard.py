@@ -42,6 +42,7 @@ from .job_widgets import (
     updated_widget_str,
     create_job_widget)
 
+
 def _add_device_to_list(backend: BackendWithProviders,
                         device_list: wid.VBox) -> None:
     """Add the backend to the device list widget.
@@ -52,6 +53,7 @@ def _add_device_to_list(backend: BackendWithProviders,
     """
     device_pane = make_backend_widget(backend)
     device_list.children = list(device_list.children) + [device_pane]
+
 
 def update_job(jobs_wlist: List[HBox],
                update_info: Tuple,
@@ -112,6 +114,7 @@ def update_job(jobs_wlist: List[HBox],
                         ['black', 'black', 'black', color, 'black'])),
                     css]
 
+
 def cancel_job(jobs_wlist: List[HBox], job_id: str, name_lookup: Dict = None) -> None:
     """Cancel a job in the watcher.
 
@@ -136,6 +139,7 @@ def cancel_job(jobs_wlist: List[HBox], job_id: str, name_lookup: Dict = None) ->
             pass
         else:
             update_job(jobs_wlist, (job_id, status.name, 0, status.value), name_lookup)
+
 
 def clear_done(jobs_wlist: List[HBox], refresh: Callable[[List], None]) -> None:
     """Clear the done jobs from the list.
@@ -543,6 +547,7 @@ def accordion(items: List[DashItem]) -> Accordion:
         """))
     acc.layout.visibility = 'visible'
     return acc
+
 
 class IBMQDashboard:
     """The IBM Quantum Experience Dashboard"""

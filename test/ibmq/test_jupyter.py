@@ -206,7 +206,7 @@ class TestIQXDashboard(IBMQTestCase):
         # Dummy runtime API
         cls.runtime = BaseFakeRuntimeClient()
 
-         # The jobs to be used for testing
+        # The jobs to be used for testing
         cls.circ_job = None
         cls.rt_job = None
 
