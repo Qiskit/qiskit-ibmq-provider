@@ -23,9 +23,14 @@ import random
 
 import numpy as np
 from qiskit.result import Result
-from qiskit import QuantumCircuit
+from qiskit.circuit import Parameter, QuantumCircuit
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.circuit.library import EfficientSU2
+from qiskit.opflow import (PauliSumOp, MatrixOp, PauliOp, CircuitOp, EvolvedOp,
+                           TaperedPauliSumOp, Z2Symmetries, I, X, Y, Z,
+                           StateFn, CircuitStateFn, DictStateFn, VectorStateFn, OperatorStateFn,
+                           CVaRMeasurement, ComposedOp, SummedOp, TensoredOp)
+from qiskit.quantum_info import SparsePauliOp, Pauli, PauliTable, Statevector
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
@@ -40,8 +45,7 @@ from qiskit.providers.ibmq.runtime.runtime_program import (
 from ...ibmqtestcase import IBMQTestCase
 from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRuntimeJob, CancelableRuntimeJob,
                                   CustomResultRuntimeJob)
-from .utils import (SerializableClass, UnserializableClass, SerializableClassDecoder,
-                    get_complex_types)
+from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
 class TestRuntime(IBMQTestCase):
@@ -88,7 +92,6 @@ class TestRuntime(IBMQTestCase):
                 "array": np.array([[1, 2, 3], [4, 5, 6]]),
                 "result": result,
                 "sclass": SerializableClass("foo"),
-                "usclass": UnserializableClass("bar"),
                 }
         encoded = json.dumps(data, cls=RuntimeEncoder)
         decoded = json.loads(encoded, cls=RuntimeDecoder)
@@ -104,7 +107,7 @@ class TestRuntime(IBMQTestCase):
         self.assertIsInstance(decoded_result, Result)
         self.assertTrue((decoded_array == orig_array).all())
 
-    def test_encoder_qc(self):
+    def test_coder_qc(self):
         """Test runtime encoder and decoder for circuits."""
         bell = ReferenceCircuits.bell()
         unbound = EfficientSU2(num_qubits=4, reps=1, entanglement='linear')
@@ -121,6 +124,49 @@ class TestRuntime(IBMQTestCase):
                 if not isinstance(circ, list):
                     decoded = [decoded]
                 self.assertTrue(all(isinstance(item, QuantumCircuit) for item in decoded))
+
+    def test_coder_operators(self):
+        """Test runtime encoder and decoder for operators."""
+        x = Parameter("x")
+        y = x + 1
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        coeffs = np.array([1, 2, 3, 4, 5, 6])
+        table = PauliTable.from_labels(["III", "IXI", "IYY", "YIZ", "XYZ", "III"])
+        op = (2.0 * I ^ I)
+        z2_symmetries = Z2Symmetries(
+            [Pauli("IIZI"), Pauli("ZIII")], [Pauli("IIXI"), Pauli("XIII")], [1, 3], [-1, 1]
+        )
+
+        subtests = (
+            PauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[2]), coeff=3),
+            PauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[1]), coeff=y),
+            PauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[1 + 2j]), coeff=3 - 2j),
+            PauliSumOp.from_list([("II", -1.052373245772859), ("IZ", 0.39793742484318045)]),
+            PauliSumOp(SparsePauliOp(table, coeffs), coeff=10),
+            MatrixOp(primitive=np.array([[0, -1j], [1j, 0]]), coeff=x),
+            PauliOp(primitive=Pauli("Y"), coeff=x),
+            CircuitOp(qc, coeff=x),
+            EvolvedOp(op, coeff=x),
+            TaperedPauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[2]), z2_symmetries),
+            StateFn(qc, coeff=x),
+            CircuitStateFn(qc, is_measurement=True),
+            DictStateFn("1" * 3, is_measurement=True),
+            VectorStateFn(np.ones(2 ** 3, dtype=complex)),
+            OperatorStateFn(CircuitOp(QuantumCircuit(1))),
+            Statevector([1, 0]),
+            CVaRMeasurement(Z, 0.2),
+            ComposedOp([op, (X ^ Y ^ Z).to_circuit_op()]),
+            SummedOp([X ^ X * 2, Y ^ Y], 2),
+            TensoredOp([(X ^ Y), (Z ^ I)]),
+            (Z ^ Z) ^ (I ^ 2),
+        )
+        for op in subtests:
+            with self.subTest(op=op):
+                encoded = json.dumps(op, cls=RuntimeEncoder)
+                self.assertIsInstance(encoded, str)
+                decoded = json.loads(encoded, cls=RuntimeDecoder)
+                self.assertEqual(op, decoded)
 
     def test_list_programs(self):
         """Test listing programs."""
