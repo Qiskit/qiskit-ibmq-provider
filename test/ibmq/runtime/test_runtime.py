@@ -16,7 +16,7 @@ import json
 import os
 from io import StringIO
 from unittest.mock import patch
-from unittest import mock
+from unittest import mock, skipIf
 import uuid
 import time
 import random
@@ -31,6 +31,7 @@ from qiskit.opflow import (PauliSumOp, MatrixOp, PauliOp, CircuitOp, EvolvedOp,
                            StateFn, CircuitStateFn, DictStateFn, VectorStateFn, OperatorStateFn,
                            CVaRMeasurement, ComposedOp, SummedOp, TensoredOp)
 from qiskit.quantum_info import SparsePauliOp, Pauli, PauliTable, Statevector
+from qiskit.version import VERSION as terra_version
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
@@ -107,6 +108,7 @@ class TestRuntime(IBMQTestCase):
         self.assertIsInstance(decoded_result, Result)
         self.assertTrue((decoded_array == orig_array).all())
 
+    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
     def test_coder_qc(self):
         """Test runtime encoder and decoder for circuits."""
         bell = ReferenceCircuits.bell()
@@ -125,6 +127,7 @@ class TestRuntime(IBMQTestCase):
                     decoded = [decoded]
                 self.assertTrue(all(isinstance(item, QuantumCircuit) for item in decoded))
 
+    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
     def test_coder_operators(self):
         """Test runtime encoder and decoder for operators."""
         x = Parameter("x")
