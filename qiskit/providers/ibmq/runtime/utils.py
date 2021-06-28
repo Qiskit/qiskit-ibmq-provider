@@ -26,8 +26,13 @@ import importlib
 import numpy as np
 
 from qiskit.result import Result
-from qiskit.circuit import QuantumCircuit, qpy_serialization
+from qiskit.circuit import QuantumCircuit
 from qiskit.circuit import ParameterExpression, Instruction
+
+# TODO: remove when Terra 0.18 is released.
+from qiskit.version import VERSION as terra_version
+if terra_version >= "0.18":
+    from qiskit.circuit import qpy_serialization
 
 
 def _serialize_and_encode(
@@ -153,6 +158,15 @@ class RuntimeEncoder(json.JSONEncoder):
             return {'__type__': 'ndarray', '__value__': value}
         if isinstance(obj, set):
             return {'__type__': 'set', '__value__': list(obj)}
+        if isinstance(obj, Result):
+            return {'__type__': 'Result', '__value__': obj.to_dict()}
+        if hasattr(obj, 'to_json'):
+            return {'__type__': 'to_json', '__value__': obj.to_json()}
+
+        # TODO: remove when Terra 0.18 is released.
+        if terra_version < "0.18":
+            return super().default(obj)
+
         if isinstance(obj, QuantumCircuit):
             value = _serialize_and_encode(
                 data=obj,
@@ -174,10 +188,6 @@ class RuntimeEncoder(json.JSONEncoder):
         serializer = SerializableClass()
         if serializer.is_supported(obj.__class__.__name__):
             return {'__type__': obj.__class__.__name__, '__value__': serializer.serialize(obj)}
-        if isinstance(obj, Result):
-            return {'__type__': 'Result', '__value__': obj.to_dict()}
-        if hasattr(obj, 'to_json'):
-            return {'__type__': 'to_json', '__value__': obj.to_json()}
 
         return super().default(obj)
 
