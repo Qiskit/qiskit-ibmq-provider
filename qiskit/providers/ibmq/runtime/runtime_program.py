@@ -259,7 +259,7 @@ class RuntimeProgram:
         """Whether the program is visible to all.
 
         Returns:
-            the program is public
+            Whether the program is public.
         """
         return self._is_public
 

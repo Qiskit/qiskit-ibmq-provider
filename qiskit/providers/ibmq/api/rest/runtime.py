@@ -215,25 +215,15 @@ class Program(RestAdapterBase):
         url = self.get_url('data')
         return self.session.get(url).json()
 
-    def make_public(self) -> Dict[str, Any]:
-        """Return program information, including data.
-
-        Returns:
-            JSON response.
-        """
+    def make_public(self) -> None:
+        """Sets a runtime program's visibility to public."""
         url = self.get_url('public')
-        sess = self.session.put(url)
-        return {'status': sess.status_code}
+        self.session.put(url)
 
     def make_private(self) -> Dict[str, Any]:
-        """Return program information, including data.
-
-        Returns:
-            JSON response.
-        """
+        """Sets a runtime program's visibility to private."""
         url = self.get_url('private')
-        sess = self.session.put(url)
-        return {'status': sess.status_code}
+        self.session.put(url)
 
     def delete(self) -> None:
         """Delete this program.
