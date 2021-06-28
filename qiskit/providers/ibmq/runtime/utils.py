@@ -82,7 +82,7 @@ def _decode_and_deserialize(data: str, deserializer: Callable, decompress: bool 
 class SerializableClass:
     """A lazy loading wrapper to get serializable classes."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """SerializableClass constructor."""
         self._classes = {"PrimitiveOp", "PauliSumOp", "PauliOp", "CircuitOp",
                          "EvolvedOp", "MatrixOp", "TaperedPauliSumOp", "Operator",
@@ -91,9 +91,9 @@ class SerializableClass:
                          "OperatorStateFn", "CVaRMeasurement", "Statevector",
                          "ComposedOp", "SummedOp", "TensoredOp"
                          }
-        self._mapper = {}
+        self._mapper: Dict[str, Any] = {}
 
-    def _load_classes(self):
+    def _load_classes(self) -> None:
         """Load all the supported classes."""
         modules = {"qiskit.opflow",
                    "qiskit.quantum_info"}
