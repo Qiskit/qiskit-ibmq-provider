@@ -14,7 +14,7 @@
 
 import threading
 import json
-from typing import Optional, Dict
+from typing import Dict
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 

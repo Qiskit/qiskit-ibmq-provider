@@ -26,7 +26,7 @@ from qiskit.providers.ibmq.managed.ibmqjobmanager import IBMQJobManager
 from qiskit.providers.ibmq.managed.managedresults import ManagedResults
 from qiskit.providers.ibmq.managed import managedjob
 from qiskit.providers.ibmq.managed.exceptions import (
-    IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable, IBMQJobManagerInvalidStateError)
+    IBMQJobManagerJobNotFound, IBMQManagedResultDataNotAvailable)
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.test.reference_circuits import ReferenceCircuits
 
@@ -237,21 +237,6 @@ class TestIBMQJobManager(IBMQTestCase):
                                          mjob.job.qobj().experiments[exp_index].header.name)
                 rjob_set.results()
                 self.assertEqual(rjob_set.statuses(), [JobStatus.DONE]*len(job_set.jobs()))
-
-    def test_share_job_in_project(self):
-        """Test sharing managed jobs within a project."""
-        job_set = self._jm.run([self._qc]*2, backend=self.fake_api_backend,
-                               max_experiments_per_job=1, job_share_level="project")
-        for job in job_set.jobs():
-            job.refresh()
-            self.assertEqual(job.share_level(), 'project',
-                             "Job {} has incorrect share level".format(job.job_id()))
-
-    def test_invalid_job_share_level(self):
-        """Test setting a non existent share level for managed jobs."""
-        self.assertRaises(IBMQJobManagerInvalidStateError, self._jm.run,
-                          [self._qc]*2, backend=self.fake_api_backend,
-                          job_share_level="invalid_job_share_level")
 
     def test_job_tags(self):
         """Test job tags for managed jobs."""

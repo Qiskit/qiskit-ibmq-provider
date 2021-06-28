@@ -16,7 +16,7 @@ import os
 import uuid
 from unittest import mock, SkipTest, skipIf
 from datetime import datetime, timedelta
-from typing import Optional, Union, Dict
+from typing import Optional, Union
 
 from qiskit.providers.ibmq.experiment.experiment import Experiment
 from qiskit.providers.ibmq.experiment.analysis_result import AnalysisResult, DeviceComponent
