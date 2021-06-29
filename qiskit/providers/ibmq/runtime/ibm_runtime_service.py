@@ -418,13 +418,14 @@ class IBMRuntimeService:
         return self._decode_job(response)
 
     def jobs(self, limit: int = 10, skip: int = 0, pending: bool = None) -> List[RuntimeJob]:
-        """Retrieve all runtime jobs.
+        """Retrieve all runtime jobs, subject to optional filtering.
 
         Args:
             limit: Number of jobs to retrieve.
             skip: Starting index for the job retrieval.
-            pending: Returns 'QUEUED' and 'RUNNING' jobs if True,
-                returns 'DONE', 'CANCELLED' and 'ERROR' jobs if False.
+            pending: Filter by job pending state. If ``True``, 'QUEUED' and 'RUNNING'
+                jobs are included. If ``False``, 'DONE', 'CANCELLED' and 'ERROR' jobs
+                are included.
 
         Returns:
             A list of runtime jobs.
