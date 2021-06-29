@@ -276,10 +276,6 @@ class BaseFakeRuntimeClient:
             program_id: Program ID.
             public: If ``True``, make the program visible to all.
                 If ``False``, make the program visible to just your account.
-
-        Raises:
-            IBMQBackendApiError: if visibility is invalid (valid options are private and public)
-
         """
         self._programs[program_id]._is_public = public
 
