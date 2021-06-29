@@ -65,7 +65,7 @@ class ManagedJob:
             backend: IBMQBackend,
             executor: ThreadPoolExecutor,
             submit_lock: Lock,
-            job_share_level: ApiJobShareLevel,
+            job_share_level: Optional[ApiJobShareLevel] = None,
             job_tags: Optional[List[str]] = None,
             **run_config: Dict
     ) -> None:
@@ -81,12 +81,16 @@ class ManagedJob:
             job_tags: Tags to be assigned to the job.
             **run_config: Extra arguments used to configure the run.
         """
+        if job_share_level:
+            warnings.warn("The `job_share_level` keyword is no longer supported "
+                          "and will be removed in a future release.",
+                          Warning, stacklevel=2)
 
         # Submit the job in its own future.
         logger.debug("Submitting job %s in future", job_name)
         self.future = executor.submit(
             self._async_submit, circuits=circuits, job_name=job_name, backend=backend,
-            submit_lock=submit_lock, job_share_level=job_share_level, job_tags=job_tags,
+            submit_lock=submit_lock, job_tags=job_tags,
             **run_config)
         logger.debug("Job %s future obtained", job_name)
 
@@ -96,7 +100,6 @@ class ManagedJob:
             job_name: str,
             backend: IBMQBackend,
             submit_lock: Lock,
-            job_share_level: ApiJobShareLevel,
             job_tags: Optional[List[str]] = None,
             **run_config: Dict
     ) -> None:
@@ -107,7 +110,6 @@ class ManagedJob:
             job_name: Name of the job.
             backend: Backend to execute the experiments on.
             submit_lock: Lock used to synchronize job submission.
-            job_share_level: Job share level.
             job_tags: Tags to be assigned to the job.
             **run_config: Extra arguments used to configure the run.
         """
@@ -121,7 +123,6 @@ class ManagedJob:
                     self.job = backend.run(
                         circuits,
                         job_name=job_name,
-                        job_share_level=job_share_level.value,
                         job_tags=job_tags,
                         **run_config)
                 except IBMQBackendJobLimitError:
