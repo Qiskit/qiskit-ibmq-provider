@@ -22,6 +22,7 @@ import time
 import random
 
 import numpy as np
+import scipy.sparse
 from qiskit.result import Result
 from qiskit.circuit import Parameter, QuantumCircuit
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -29,7 +30,7 @@ from qiskit.circuit.library import EfficientSU2
 from qiskit.opflow import (PauliSumOp, MatrixOp, PauliOp, CircuitOp, EvolvedOp,
                            TaperedPauliSumOp, Z2Symmetries, I, X, Y, Z,
                            StateFn, CircuitStateFn, DictStateFn, VectorStateFn, OperatorStateFn,
-                           CVaRMeasurement, ComposedOp, SummedOp, TensoredOp)
+                           SparseVectorStateFn, CVaRMeasurement, ComposedOp, SummedOp, TensoredOp)
 from qiskit.quantum_info import SparsePauliOp, Pauli, PauliTable, Statevector
 from qiskit.version import VERSION as terra_version
 from qiskit.providers.jobstatus import JobStatus
@@ -140,6 +141,8 @@ class TestRuntime(IBMQTestCase):
         z2_symmetries = Z2Symmetries(
             [Pauli("IIZI"), Pauli("ZIII")], [Pauli("IIXI"), Pauli("XIII")], [1, 3], [-1, 1]
         )
+        isqrt2 = 1 / np.sqrt(2)
+        sparse = scipy.sparse.csr_matrix([[0, isqrt2, 0, isqrt2]])
 
         subtests = (
             PauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[2]), coeff=3),
@@ -157,9 +160,10 @@ class TestRuntime(IBMQTestCase):
             DictStateFn("1" * 3, is_measurement=True),
             VectorStateFn(np.ones(2 ** 3, dtype=complex)),
             OperatorStateFn(CircuitOp(QuantumCircuit(1))),
+            SparseVectorStateFn(sparse),
             Statevector([1, 0]),
             CVaRMeasurement(Z, 0.2),
-            ComposedOp([op, (X ^ Y ^ Z).to_circuit_op()]),
+            ComposedOp([(X ^ Y ^ Z), (Z ^ X ^ Y ^ Z).to_matrix_op()]),
             SummedOp([X ^ X * 2, Y ^ Y], 2),
             TensoredOp([(X ^ Y), (Z ^ I)]),
             (Z ^ Z) ^ (I ^ 2),

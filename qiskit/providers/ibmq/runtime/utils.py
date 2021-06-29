@@ -24,10 +24,16 @@ import inspect
 import importlib
 
 import numpy as np
+try:
+    import scipy.sparse
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
 
 from qiskit.result import Result
 from qiskit.circuit import QuantumCircuit
 from qiskit.circuit import ParameterExpression, Instruction
+from qiskit.opflow import OperatorBase
 
 # TODO: remove when Terra 0.18 is released.
 from qiskit.version import VERSION as terra_version
@@ -89,12 +95,8 @@ class SerializableClass:
 
     def __init__(self) -> None:
         """SerializableClass constructor."""
-        self._classes = {"PrimitiveOp", "PauliSumOp", "PauliOp", "CircuitOp",
-                         "EvolvedOp", "MatrixOp", "TaperedPauliSumOp", "Operator",
-                         "Pauli", "PauliTable", "SparsePauliOp", "Z2Symmetries",
-                         "StateFn", "DictStateFn", "VectorStateFn", "CircuitStateFn",
-                         "OperatorStateFn", "CVaRMeasurement", "Statevector",
-                         "ComposedOp", "SummedOp", "TensoredOp"
+        self._classes = {"Operator", "Pauli", "PauliTable", "SparsePauliOp",
+                         "Z2Symmetries", "Statevector"
                          }
         self._mapper: Dict[str, Any] = {}
 
@@ -105,26 +107,25 @@ class SerializableClass:
         for mod in modules:
             importlib.import_module(mod)
             for name, obj in inspect.getmembers(sys.modules[mod], inspect.isclass):
-                if self.is_supported(name):
-                    self._mapper[name] = obj
+                self._mapper[name] = obj
 
-    def is_supported(self, class_name: str) -> bool:
-        """Return whether the class is supported.
+    def is_supported(self, obj: Any) -> bool:
+        """Return whether the object is supported.
 
         Args:
-            class_name: Name of the class.
+            obj: Object to check.
 
         Returns:
-            Whether the class is supported.
+            Whether the object is supported.
         """
-        return class_name in self._classes
+        # All `OperatorBase` subclasses are supported.
+        if isinstance(obj, OperatorBase):
+            return True
+        return obj.__class__.__name__ in self._classes
 
     def serialize(self, obj: Any) -> Dict:
         """Return the object in JSON serializable format."""
-        name = obj.__class__.__name__
-        if name in self._classes:
-            return obj.settings
-        raise ValueError(f"Unable to encode class {name}")
+        return obj.settings
 
     def deserialize(self, name: str, value: Dict) -> Any:
         """Deserialize the JSON string.
@@ -162,6 +163,9 @@ class RuntimeEncoder(json.JSONEncoder):
             return {'__type__': 'Result', '__value__': obj.to_dict()}
         if hasattr(obj, 'to_json'):
             return {'__type__': 'to_json', '__value__': obj.to_json()}
+        if HAS_SCIPY and isinstance(obj, scipy.sparse.spmatrix):
+            value = _serialize_and_encode(obj, scipy.sparse.save_npz, compress=False)
+            return {'__type__': 'spmatrix', '__value__': value}
 
         # TODO: remove when Terra 0.18 is released.
         if terra_version < "0.18":
@@ -186,8 +190,9 @@ class RuntimeEncoder(json.JSONEncoder):
             return {'__type__': 'Instruction', '__value__': value}
 
         serializer = SerializableClass()
-        if serializer.is_supported(obj.__class__.__name__):
-            return {'__type__': obj.__class__.__name__, '__value__': serializer.serialize(obj)}
+        if serializer.is_supported(obj):
+            return {'__type__': 'settings', '__class__': obj.__class__.__name__,
+                    '__value__': serializer.serialize(obj)}
 
         return super().default(obj)
 
@@ -219,10 +224,12 @@ class RuntimeDecoder(json.JSONDecoder):
                 return _decode_and_deserialize(
                     obj_val, qpy_serialization._read_instruction, False)
             serializer = SerializableClass()
-            if serializer.is_supported(obj_type):
-                return serializer.deserialize(obj_type, obj_val)
+            if obj_type == 'settings':
+                return serializer.deserialize(obj['__class__'], obj_val)
             if obj_type == 'Result':
                 return Result.from_dict(obj_val)
+            if obj_type == 'spmatrix':
+                return _decode_and_deserialize(obj_val, scipy.sparse.load_npz, False)
             if obj_type == 'to_json':
                 return obj_val
         return obj
