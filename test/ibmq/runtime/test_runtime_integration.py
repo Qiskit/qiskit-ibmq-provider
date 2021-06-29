@@ -162,7 +162,7 @@ def main(backend, user_messenger, **kwargs):
         prog: RuntimeProgram = self.provider.runtime.program(program_id, refresh=True)
         end_vis = prog.is_public
         # Verify changed
-        self.assertEqual(not start_vis, end_vis)
+        self.assertNotEqual(start_vis, end_vis)
 
     def test_upload_program_conflict(self):
         """Test uploading a program with conflicting name."""
