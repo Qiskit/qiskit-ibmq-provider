@@ -180,7 +180,9 @@ class Program(RestAdapterBase):
     URL_MAP = {
         'self': '',
         'data': '/data',
-        'run': '/jobs'
+        'run': '/jobs',
+        'private': '/private',
+        'public': '/public'
     }
 
     _executor = futures.ThreadPoolExecutor()
@@ -212,6 +214,16 @@ class Program(RestAdapterBase):
         """
         url = self.get_url('data')
         return self.session.get(url).json()
+
+    def make_public(self) -> None:
+        """Sets a runtime program's visibility to public."""
+        url = self.get_url('public')
+        self.session.put(url)
+
+    def make_private(self) -> None:
+        """Sets a runtime program's visibility to private."""
+        url = self.get_url('private')
+        self.session.put(url)
 
     def delete(self) -> None:
         """Delete this program.
