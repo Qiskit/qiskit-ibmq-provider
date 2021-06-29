@@ -220,7 +220,7 @@ class Program(RestAdapterBase):
         url = self.get_url('public')
         self.session.put(url)
 
-    def make_private(self) -> Dict[str, Any]:
+    def make_private(self) -> None:
         """Sets a runtime program's visibility to private."""
         url = self.get_url('private')
         self.session.put(url)
