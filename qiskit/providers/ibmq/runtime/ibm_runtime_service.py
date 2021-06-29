@@ -190,7 +190,8 @@ class IBMRuntimeService:
                               max_execution_time=response.get('cost', 0),
                               creation_date=response.get('creationDate', ""),
                               version=response.get('version', "0"),
-                              backend_requirements=backend_req)
+                              backend_requirements=backend_req,
+                              is_public=response.get('isPublic', False))
 
     def run(
             self,
@@ -395,6 +396,25 @@ class IBMRuntimeService:
 
         if program_id in self._programs:
             del self._programs[program_id]
+
+    def set_program_visibility(self, program_id: str, public: bool) -> None:
+        """Sets a program's visibility.
+
+        Args:
+            program_id: Program ID.
+            public: If ``True``, make the program visible to all.
+                If ``False``, make the program visible to just your account.
+
+        Raises:
+            RuntimeJobNotFound: if program not found (404)
+            QiskitRuntimeError: if update failed (401, 403)
+        """
+        try:
+            self._api_client.set_program_visibility(program_id, public)
+        except RequestsApiError as ex:
+            if ex.status_code == 404:
+                raise RuntimeJobNotFound(f"Program not found: {ex.message}") from None
+            raise QiskitRuntimeError(f"Failed to set program visibility: {ex}") from None
 
     def job(self, job_id: str) -> RuntimeJob:
         """Retrieve a runtime job.
