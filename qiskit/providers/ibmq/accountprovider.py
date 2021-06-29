@@ -113,7 +113,7 @@ class AccountProvider(Provider):
                                          **credentials.connection_parameters())
 
         # Initialize the internal list of backends.
-        self._backends = self._discover_remote_backends()
+        self.__backends: Dict[str, IBMQBackend] = {}
         self._backend = IBMQBackendService(self)
         self.backends = IBMQDeprecatedBackendService(self.backend)  # type: ignore[assignment]
 
@@ -127,6 +127,26 @@ class AccountProvider(Provider):
                           'random': self._random,
                           'experiment': self._experiment,
                           'runtime': self._runtime}
+
+    @property
+    def _backends(self) -> Dict[str, IBMQBackend]:
+        """Gets the backends for the provider, if not loaded.
+
+        Returns:
+            Dict[str, IBMQBackend]: the backends
+        """
+        if not self.__backends:
+            self.__backends = self._discover_remote_backends()
+        return self.__backends
+
+    @_backends.setter
+    def _backends(self, value: Dict[str, IBMQBackend]) -> None:
+        """Sets the value for the account's backends.
+
+        Args:
+            value: the backends
+        """
+        self.__backends = value
 
     def backends(
             self,

@@ -627,9 +627,10 @@ class IBMQJob(Job):
         Returns:
             The share level of the job.
         """
-        if not self._share_level and not self._refreshed:
-            self.refresh()
-        return self._share_level
+        warnings.warn("`IBMQJob.share_level()` method is no longer supported "
+                      "and will be removed in a future release.",
+                      Warning, stacklevel=2)
+        return 'none'
 
     def time_per_step(self) -> Optional[Dict]:
         """Return the date and time information on each step of the job processing.
@@ -777,7 +778,6 @@ class IBMQJob(Job):
         self._use_object_storage = (self._kind == ApiJobKind.QOBJECT_STORAGE)
         self._status, self._queue_info = \
             self._get_status_position(self._api_status, api_response.pop('info_queue', None))
-        self._share_level = api_response.pop('share_level', 'none')
         self._set_client_version(api_response.pop('client_info', None))
         self._set_result(api_response.pop('result', None))
         self._experiment_id = api_response.pop('experiment_id', None)
