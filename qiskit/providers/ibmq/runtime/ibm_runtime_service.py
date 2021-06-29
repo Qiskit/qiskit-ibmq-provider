@@ -437,12 +437,15 @@ class IBMRuntimeService:
             raise QiskitRuntimeError(f"Failed to delete job: {ex}") from None
         return self._decode_job(response)
 
-    def jobs(self, limit: int = 10, skip: int = 0) -> List[RuntimeJob]:
-        """Retrieve all runtime jobs.
+    def jobs(self, limit: int = 10, skip: int = 0, pending: bool = None) -> List[RuntimeJob]:
+        """Retrieve all runtime jobs, subject to optional filtering.
 
         Args:
             limit: Number of jobs to retrieve.
             skip: Starting index for the job retrieval.
+            pending: Filter by job pending state. If ``True``, 'QUEUED' and 'RUNNING'
+                jobs are included. If ``False``, 'DONE', 'CANCELLED' and 'ERROR' jobs
+                are included.
 
         Returns:
             A list of runtime jobs.
@@ -451,7 +454,10 @@ class IBMRuntimeService:
         current_page_limit = limit or 20
 
         while True:
-            job_page = self._api_client.jobs_get(limit=current_page_limit, skip=skip)["jobs"]
+            job_page = self._api_client.jobs_get(
+                limit=current_page_limit,
+                skip=skip,
+                pending=pending)["jobs"]
             if not job_page:
                 # Stop if there are no more jobs returned by the server.
                 break
@@ -542,7 +548,7 @@ class IBMRuntimeService:
         to clear its cache.
 
         Note:
-            Invoking this method ONLY when your access level to the runtime
+            Invoke this method ONLY when your access level to the runtime
             service has changed - for example, the first time your account is
             given the authority to upload a program.
         """

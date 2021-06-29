@@ -254,6 +254,34 @@ def main(backend, user_messenger, **kwargs):
         rjob_ids = {rjob.job_id() for rjob in rjobs}
         self.assertTrue(rjob_ids.issubset(job_ids))
 
+    def test_retrieve_pending_jobs(self):
+        """Test retrieving pending jobs (QUEUED, RUNNING)."""
+        job = self._run_program(iterations=10)
+        self._wait_for_status(job, JobStatus.RUNNING)
+        rjobs = self.provider.runtime.jobs(pending=True)
+        found = False
+        for rjob in rjobs:
+            if rjob.job_id() == job.job_id():
+                self.assertEqual(job.program_id, rjob.program_id)
+                self.assertEqual(job.inputs, rjob.inputs)
+                found = True
+                break
+        self.assertTrue(found, f"Pending job {job.job_id()} not retrieved.")
+
+    def test_retrieve_returned_jobs(self):
+        """Test retrieving returned jobs (COMPLETED, FAILED, CANCELLED)."""
+        job = self._run_program()
+        job.wait_for_final_state()
+        rjobs = self.provider.runtime.jobs(pending=False)
+        found = False
+        for rjob in rjobs:
+            if rjob.job_id() == job.job_id():
+                self.assertEqual(job.program_id, rjob.program_id)
+                self.assertEqual(job.inputs, rjob.inputs)
+                found = True
+                break
+        self.assertTrue(found, f"Returned job {job.job_id()} not retrieved.")
+
     def test_cancel_job_queued(self):
         """Test canceling a queued job."""
         _ = self._run_program(iterations=10)
