@@ -19,7 +19,6 @@ from typing import Any, Callable, Dict
 import base64
 import io
 import zlib
-import sys
 import inspect
 import importlib
 
@@ -33,7 +32,6 @@ except ImportError:
 from qiskit.result import Result
 from qiskit.circuit import QuantumCircuit
 from qiskit.circuit import ParameterExpression, Instruction
-from qiskit.opflow import OperatorBase
 
 # TODO: remove when Terra 0.18 is released.
 from qiskit.version import VERSION as terra_version
@@ -90,62 +88,25 @@ def _decode_and_deserialize(data: str, deserializer: Callable, decompress: bool 
     return orig
 
 
-class SerializableClass:
-    """A lazy loading wrapper to get serializable classes."""
+def deserialize_from_settings(mod_name: str, class_name: str, settings: Dict) -> Any:
+    """Deserialize an object from its settings.
 
-    def __init__(self) -> None:
-        """SerializableClass constructor."""
-        self._classes = {"Operator", "Pauli", "PauliTable", "SparsePauliOp",
-                         "Z2Symmetries", "Statevector"
-                         }
-        self._mapper: Dict[str, Any] = {}
+    Args:
+        mod_name: Name of the module.
+        class_name: Name of the class.
+        settings: Object settings.
 
-    def _load_classes(self) -> None:
-        """Load all the supported classes."""
-        modules = {"qiskit.opflow",
-                   "qiskit.quantum_info"}
-        for mod in modules:
-            importlib.import_module(mod)
-            for name, obj in inspect.getmembers(sys.modules[mod], inspect.isclass):
-                self._mapper[name] = obj
+    Returns:
+        Deserialized object.
 
-    def is_supported(self, obj: Any) -> bool:
-        """Return whether the object is supported.
-
-        Args:
-            obj: Object to check.
-
-        Returns:
-            Whether the object is supported.
-        """
-        # All `OperatorBase` subclasses are supported.
-        if isinstance(obj, OperatorBase):
-            return True
-        return obj.__class__.__name__ in self._classes
-
-    def serialize(self, obj: Any) -> Dict:
-        """Return the object in JSON serializable format."""
-        return obj.settings
-
-    def deserialize(self, name: str, value: Dict) -> Any:
-        """Deserialize the JSON string.
-
-        Args:
-            name: Name of the class.
-            value: Serialized format of the object.
-
-        Returns:
-            Deserialized object.
-
-        Raises:
-            ValueError: If the string cannot be deserialized.
-        """
-        if not self._mapper:
-            self._load_classes()
-        try:
-            return self._mapper[name](**value)
-        except Exception as err:
-            raise ValueError(f"Unable to decode class {name}.") from err
+    Raises:
+        ValueError: If unable to find the class.
+    """
+    mod = importlib.import_module(mod_name)
+    for name, clz in inspect.getmembers(mod, inspect.isclass):
+        if name == class_name:
+            return clz(**settings)
+    raise ValueError(f"Unable to find class {class_name} in module {mod_name}")
 
 
 class RuntimeEncoder(json.JSONEncoder):
@@ -189,10 +150,11 @@ class RuntimeEncoder(json.JSONEncoder):
                 data=obj, serializer=qpy_serialization._write_instruction, compress=False)
             return {'__type__': 'Instruction', '__value__': value}
 
-        serializer = SerializableClass()
-        if serializer.is_supported(obj):
-            return {'__type__': 'settings', '__class__': obj.__class__.__name__,
-                    '__value__': serializer.serialize(obj)}
+        if hasattr(obj, "settings"):
+            return {'__type__': 'settings',
+                    '__module__': obj.__class__.__module__,
+                    '__class__': obj.__class__.__name__,
+                    '__value__': obj.settings}
 
         return super().default(obj)
 
@@ -223,9 +185,12 @@ class RuntimeDecoder(json.JSONDecoder):
             if obj_type == 'Instruction':
                 return _decode_and_deserialize(
                     obj_val, qpy_serialization._read_instruction, False)
-            serializer = SerializableClass()
             if obj_type == 'settings':
-                return serializer.deserialize(obj['__class__'], obj_val)
+                return deserialize_from_settings(
+                    mod_name=obj['__module__'],
+                    class_name=obj['__class__'],
+                    settings=obj_val
+                )
             if obj_type == 'Result':
                 return Result.from_dict(obj_val)
             if obj_type == 'spmatrix':

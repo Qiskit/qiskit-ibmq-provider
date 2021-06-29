@@ -20,6 +20,8 @@ from unittest import mock, skipIf
 import uuid
 import time
 import random
+import subprocess
+import tempfile
 
 import numpy as np
 import scipy.sparse
@@ -174,6 +176,36 @@ class TestRuntime(IBMQTestCase):
                 self.assertIsInstance(encoded, str)
                 decoded = json.loads(encoded, cls=RuntimeDecoder)
                 self.assertEqual(op, decoded)
+
+    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
+    def test_decoder_import(self):
+        """Test runtime decoder importing modules."""
+        script = """
+import sys
+import json
+from qiskit.providers.ibmq.runtime import RuntimeDecoder
+if __name__ == '__main__':
+    obj = json.loads(sys.argv[1], cls=RuntimeDecoder)
+    print(obj.__class__.__name__)
+"""
+        temp_fp = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        self.addCleanup(os.remove, temp_fp.name)
+        temp_fp.write(script)
+        temp_fp.close()
+
+        subtests = (
+            PauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[2]), coeff=3),
+            DictStateFn("1" * 3, is_measurement=True),
+            Statevector([1, 0]),
+        )
+        for op in subtests:
+            with self.subTest(op=op):
+                encoded = json.dumps(op, cls=RuntimeEncoder)
+                self.assertIsInstance(encoded, str)
+                cmd = ["python", temp_fp.name, encoded]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                      universal_newlines=True, check=True)
+                self.assertIn(op.__class__.__name__, proc.stdout)
 
     def test_list_programs(self):
         """Test listing programs."""
