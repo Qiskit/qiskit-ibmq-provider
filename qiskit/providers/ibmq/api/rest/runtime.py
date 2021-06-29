@@ -150,22 +150,26 @@ class Runtime(RestAdapterBase):
         data = json.dumps(payload)
         return self.session.post(url, data=data).json()
 
-    def jobs_get(self, limit: int = None, skip: int = None) -> Dict:
+    def jobs_get(self, limit: int = None, skip: int = None, pending: bool = None) -> Dict:
         """Get a list of job data.
 
         Args:
             limit: Number of results to return.
             skip: Number of results to skip.
+            pending: Returns 'QUEUED' and 'RUNNING' jobs if True,
+                returns 'DONE', 'CANCELLED' and 'ERROR' jobs if False.
 
         Returns:
             JSON response.
         """
         url = self.get_url('jobs')
-        payload = {}
+        payload: Dict[str, Union[int, str]] = {}
         if limit:
             payload['limit'] = limit
         if skip:
             payload['offset'] = skip
+        if pending is not None:
+            payload['pending'] = 'true' if pending else 'false'
         return self.session.get(url, params=payload).json()
 
     def logout(self) -> None:
