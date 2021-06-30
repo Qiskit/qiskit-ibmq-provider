@@ -199,9 +199,9 @@ class AccountProvider(Provider):
 
             try:
                 decode_backend_configuration(raw_config)
-                if raw_config.get('open_pulse', False):
+                try:
                     config = PulseBackendConfiguration.from_dict(raw_config)
-                else:
+                except (KeyError, TypeError):
                     config = QasmBackendConfiguration.from_dict(raw_config)
                 backend_cls = IBMQSimulator if config.simulator else IBMQBackend
                 ret[config.backend_name] = backend_cls(
