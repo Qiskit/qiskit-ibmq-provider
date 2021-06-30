@@ -22,6 +22,7 @@ from contextlib import suppress
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
+from qiskit.providers.ibmq.runtime.runtime_program import RuntimeProgram
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramError,
                                                       RuntimeProgramNotFound,
                                                       RuntimeJobFailureError,
@@ -149,6 +150,20 @@ def main(backend, user_messenger, **kwargs):
         self.assertTrue(program)
         self.assertEqual(max_execution_time, program.max_execution_time)
 
+    def test_set_visibility(self):
+        """Test setting the visibility of a program."""
+        program_id = self._upload_program()
+        # Get the initial visibility
+        prog: RuntimeProgram = self.provider.runtime.program(program_id)
+        start_vis = prog.is_public
+        # Flip the original value
+        self.provider.runtime.set_program_visibility(program_id, not start_vis)
+        # Get the new visibility
+        prog: RuntimeProgram = self.provider.runtime.program(program_id, refresh=True)
+        end_vis = prog.is_public
+        # Verify changed
+        self.assertNotEqual(start_vis, end_vis)
+
     def test_upload_program_conflict(self):
         """Test uploading a program with conflicting name."""
         name = self._get_program_name()
@@ -238,6 +253,34 @@ def main(backend, user_messenger, **kwargs):
         job_ids = {job.job_id() for job in jobs}
         rjob_ids = {rjob.job_id() for rjob in rjobs}
         self.assertTrue(rjob_ids.issubset(job_ids))
+
+    def test_retrieve_pending_jobs(self):
+        """Test retrieving pending jobs (QUEUED, RUNNING)."""
+        job = self._run_program(iterations=10)
+        self._wait_for_status(job, JobStatus.RUNNING)
+        rjobs = self.provider.runtime.jobs(pending=True)
+        found = False
+        for rjob in rjobs:
+            if rjob.job_id() == job.job_id():
+                self.assertEqual(job.program_id, rjob.program_id)
+                self.assertEqual(job.inputs, rjob.inputs)
+                found = True
+                break
+        self.assertTrue(found, f"Pending job {job.job_id()} not retrieved.")
+
+    def test_retrieve_returned_jobs(self):
+        """Test retrieving returned jobs (COMPLETED, FAILED, CANCELLED)."""
+        job = self._run_program()
+        job.wait_for_final_state()
+        rjobs = self.provider.runtime.jobs(pending=False)
+        found = False
+        for rjob in rjobs:
+            if rjob.job_id() == job.job_id():
+                self.assertEqual(job.program_id, rjob.program_id)
+                self.assertEqual(job.inputs, rjob.inputs)
+                found = True
+                break
+        self.assertTrue(found, f"Returned job {job.job_id()} not retrieved.")
 
     def test_cancel_job_queued(self):
         """Test canceling a queued job."""
