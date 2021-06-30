@@ -1,0 +1,8 @@
+---
+upgrade:
+  - |
+    The ``open_pulse`` flag in backend configuration no longer indicates
+    whether a backend supports pulse-level control. As a result,
+    :meth:`qiskit.providers.ibmq.IBMQBackend.configuration` may return a
+    :class:`~qiskit.providers.models.PulseBackendConfiguration` instance even
+    if its ``open_pulse`` flag is ``False``.

@@ -16,13 +16,25 @@ import json
 import os
 from io import StringIO
 from unittest.mock import patch
-from unittest import mock
+from unittest import mock, skipIf
 import uuid
 import time
 import random
+import subprocess
+import tempfile
 
 import numpy as np
+import scipy.sparse
 from qiskit.result import Result
+from qiskit.circuit import Parameter, QuantumCircuit
+from qiskit.test.reference_circuits import ReferenceCircuits
+from qiskit.circuit.library import EfficientSU2
+from qiskit.opflow import (PauliSumOp, MatrixOp, PauliOp, CircuitOp, EvolvedOp,
+                           TaperedPauliSumOp, Z2Symmetries, I, X, Y, Z,
+                           StateFn, CircuitStateFn, DictStateFn, VectorStateFn, OperatorStateFn,
+                           SparseVectorStateFn, CVaRMeasurement, ComposedOp, SummedOp, TensoredOp)
+from qiskit.quantum_info import SparsePauliOp, Pauli, PauliTable, Statevector
+from qiskit.version import VERSION as terra_version
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
@@ -37,8 +49,7 @@ from qiskit.providers.ibmq.runtime.runtime_program import (
 from ...ibmqtestcase import IBMQTestCase
 from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRuntimeJob, CancelableRuntimeJob,
                                   CustomResultRuntimeJob)
-from .utils import (SerializableClass, UnserializableClass, SerializableClassDecoder,
-                    get_complex_types)
+from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
 class TestRuntime(IBMQTestCase):
@@ -85,7 +96,6 @@ class TestRuntime(IBMQTestCase):
                 "array": np.array([[1, 2, 3], [4, 5, 6]]),
                 "result": result,
                 "sclass": SerializableClass("foo"),
-                "usclass": UnserializableClass("bar"),
                 }
         encoded = json.dumps(data, cls=RuntimeEncoder)
         decoded = json.loads(encoded, cls=RuntimeDecoder)
@@ -100,6 +110,102 @@ class TestRuntime(IBMQTestCase):
         self.assertEqual(decoded, data)
         self.assertIsInstance(decoded_result, Result)
         self.assertTrue((decoded_array == orig_array).all())
+
+    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
+    def test_coder_qc(self):
+        """Test runtime encoder and decoder for circuits."""
+        bell = ReferenceCircuits.bell()
+        unbound = EfficientSU2(num_qubits=4, reps=1, entanglement='linear')
+        subtests = (
+            bell,
+            unbound,
+            [bell, unbound]
+        )
+        for circ in subtests:
+            with self.subTest(circ=circ):
+                encoded = json.dumps(circ, cls=RuntimeEncoder)
+                self.assertIsInstance(encoded, str)
+                decoded = json.loads(encoded, cls=RuntimeDecoder)
+                if not isinstance(circ, list):
+                    decoded = [decoded]
+                self.assertTrue(all(isinstance(item, QuantumCircuit) for item in decoded))
+
+    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
+    def test_coder_operators(self):
+        """Test runtime encoder and decoder for operators."""
+        x = Parameter("x")
+        y = x + 1
+        qc = QuantumCircuit(1)
+        qc.h(0)
+        coeffs = np.array([1, 2, 3, 4, 5, 6])
+        table = PauliTable.from_labels(["III", "IXI", "IYY", "YIZ", "XYZ", "III"])
+        op = (2.0 * I ^ I)
+        z2_symmetries = Z2Symmetries(
+            [Pauli("IIZI"), Pauli("ZIII")], [Pauli("IIXI"), Pauli("XIII")], [1, 3], [-1, 1]
+        )
+        isqrt2 = 1 / np.sqrt(2)
+        sparse = scipy.sparse.csr_matrix([[0, isqrt2, 0, isqrt2]])
+
+        subtests = (
+            PauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[2]), coeff=3),
+            PauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[1]), coeff=y),
+            PauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[1 + 2j]), coeff=3 - 2j),
+            PauliSumOp.from_list([("II", -1.052373245772859), ("IZ", 0.39793742484318045)]),
+            PauliSumOp(SparsePauliOp(table, coeffs), coeff=10),
+            MatrixOp(primitive=np.array([[0, -1j], [1j, 0]]), coeff=x),
+            PauliOp(primitive=Pauli("Y"), coeff=x),
+            CircuitOp(qc, coeff=x),
+            EvolvedOp(op, coeff=x),
+            TaperedPauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[2]), z2_symmetries),
+            StateFn(qc, coeff=x),
+            CircuitStateFn(qc, is_measurement=True),
+            DictStateFn("1" * 3, is_measurement=True),
+            VectorStateFn(np.ones(2 ** 3, dtype=complex)),
+            OperatorStateFn(CircuitOp(QuantumCircuit(1))),
+            SparseVectorStateFn(sparse),
+            Statevector([1, 0]),
+            CVaRMeasurement(Z, 0.2),
+            ComposedOp([(X ^ Y ^ Z), (Z ^ X ^ Y ^ Z).to_matrix_op()]),
+            SummedOp([X ^ X * 2, Y ^ Y], 2),
+            TensoredOp([(X ^ Y), (Z ^ I)]),
+            (Z ^ Z) ^ (I ^ 2),
+        )
+        for op in subtests:
+            with self.subTest(op=op):
+                encoded = json.dumps(op, cls=RuntimeEncoder)
+                self.assertIsInstance(encoded, str)
+                decoded = json.loads(encoded, cls=RuntimeDecoder)
+                self.assertEqual(op, decoded)
+
+    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
+    def test_decoder_import(self):
+        """Test runtime decoder importing modules."""
+        script = """
+import sys
+import json
+from qiskit.providers.ibmq.runtime import RuntimeDecoder
+if __name__ == '__main__':
+    obj = json.loads(sys.argv[1], cls=RuntimeDecoder)
+    print(obj.__class__.__name__)
+"""
+        temp_fp = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        self.addCleanup(os.remove, temp_fp.name)
+        temp_fp.write(script)
+        temp_fp.close()
+
+        subtests = (
+            PauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[2]), coeff=3),
+            DictStateFn("1" * 3, is_measurement=True),
+            Statevector([1, 0]),
+        )
+        for op in subtests:
+            with self.subTest(op=op):
+                encoded = json.dumps(op, cls=RuntimeEncoder)
+                self.assertIsInstance(encoded, str)
+                cmd = ["python", temp_fp.name, encoded]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                      universal_newlines=True, check=True)
+                self.assertIn(op.__class__.__name__, proc.stdout)
 
     def test_list_programs(self):
         """Test listing programs."""
