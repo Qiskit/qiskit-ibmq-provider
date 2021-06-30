@@ -53,7 +53,8 @@ class RuntimeProgram:
             max_execution_time: int = 0,
             version: str = "0",
             backend_requirements: Optional[Dict] = None,
-            creation_date: str = ""
+            creation_date: str = "",
+            is_public: bool = False
     ) -> None:
         """RuntimeProgram constructor.
 
@@ -68,6 +69,7 @@ class RuntimeProgram:
             version: Program version.
             backend_requirements: Backend requirements.
             creation_date: Program creation date.
+            is_public: ``True`` if program is visible to all. ``False`` if it's only visible to you.
         """
         self._name = program_name
         self._id = program_id
@@ -79,6 +81,7 @@ class RuntimeProgram:
         self._return_values: List[ProgramResult] = []
         self._interim_results: List[ProgramResult] = []
         self._creation_date = creation_date
+        self._is_public = is_public
 
         if parameters:
             for param in parameters:
@@ -149,7 +152,8 @@ class RuntimeProgram:
             "backend_requirements": self.backend_requirements,
             "parameters": self.parameters(),
             "return_values": self.return_values,
-            "interim_results": self.interim_results
+            "interim_results": self.interim_results,
+            "is_public": self._is_public
         }
 
     def parameters(self) -> 'ParameterNamespace':
@@ -249,6 +253,15 @@ class RuntimeProgram:
             Program creation date.
         """
         return self._creation_date
+
+    @property
+    def is_public(self) -> bool:
+        """Whether the program is visible to all.
+
+        Returns:
+            Whether the program is public.
+        """
+        return self._is_public
 
 
 class ProgramParameter(NamedTuple):

@@ -106,6 +106,20 @@ class RuntimeClient:
         """
         return self.api.program(program_id).get_data()
 
+    def set_program_visibility(self, program_id: str, public: bool) -> None:
+        """Sets a program's visibility.
+
+        Args:
+            program_id: Program ID.
+            public: If ``True``, make the program visible to all.
+                If ``False``, make the program visible to just your account.
+
+        """
+        if public:
+            self.api.program(program_id).make_public()
+        else:
+            self.api.program(program_id).make_private()
+
     def program_run(
             self,
             program_id: str,
@@ -149,17 +163,19 @@ class RuntimeClient:
         logger.debug("Runtime job get response: %s", response)
         return response
 
-    def jobs_get(self, limit: int = None, skip: int = None) -> Dict:
+    def jobs_get(self, limit: int = None, skip: int = None, pending: bool = None) -> Dict:
         """Get job data for all jobs.
 
         Args:
             limit: Number of results to return.
             skip: Number of results to skip.
+            pending: Returns 'QUEUED' and 'RUNNING' jobs if True,
+                returns 'DONE', 'CANCELLED' and 'ERROR' jobs if False.
 
         Returns:
             JSON response.
         """
-        return self.api.jobs_get(limit=limit, skip=skip)
+        return self.api.jobs_get(limit=limit, skip=skip, pending=pending)
 
     def job_results(self, job_id: str) -> str:
         """Get the results of a program job.
