@@ -24,7 +24,7 @@ from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.backend import Backend
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 
-from .constants import API_TO_JOB_STATUS
+from .constants import API_TO_JOB_ERROR_MESSAGE, API_TO_JOB_STATUS
 from .exceptions import RuntimeJobFailureError, RuntimeInvalidStateError, QiskitRuntimeError
 from .program.result_decoder import ResultDecoder
 from ..api.clients import RuntimeClient, RuntimeWebsocketClient, WebsocketClientCloseCode
@@ -107,6 +107,7 @@ class RuntimeJob:
         self._creation_date = creation_date
         self._program_id = program_id
         self._status = JobStatus.INITIALIZING
+        self._error_message = None  # type: Optional[str]
         self._result_decoder = result_decoder
 
         # Used for streaming
@@ -143,10 +144,9 @@ class RuntimeJob:
         _decoder = decoder or self._result_decoder
         if not self._results or (_decoder != self._result_decoder):  # type: ignore[unreachable]
             self.wait_for_final_state(timeout=timeout, wait=wait)
-            result_raw = self._api_client.job_results(job_id=self.job_id())
             if self._status == JobStatus.ERROR:
-                raise RuntimeJobFailureError(f"Unable to retrieve result for job {self.job_id()}. "
-                                             f"Job has failed:\n{result_raw}")
+                raise RuntimeJobFailureError(self.error_message())
+            result_raw = self._api_client.job_results(job_id=self.job_id())
             self._results = _decoder.decode(result_raw)
         return self._results
 
@@ -171,17 +171,18 @@ class RuntimeJob:
 
         Returns:
             Status of this job.
-
-        Raises:
-            IBMQError: If an unknown status is returned from the server.
         """
-        if self._status not in JOB_FINAL_STATES:
-            response = self._api_client.job_get(job_id=self.job_id())
-            try:
-                self._status = API_TO_JOB_STATUS[response['status'].upper()]
-            except KeyError:
-                raise IBMQError(f"Unknown status: {response['status']}")
+        self._set_status_and_error_message()
         return self._status
+
+    def error_message(self) -> Optional[str]:
+        """Returns the reason if the job failed.
+
+        Returns:
+            Error message string or ``None``.
+        """
+        self._set_status_and_error_message()
+        return self._error_message
 
     def wait_for_final_state(
             self,
@@ -265,6 +266,40 @@ class RuntimeJob:
             if err.status_code == 404:
                 return ""
             raise QiskitRuntimeError(f"Failed to get job logs: {err}") from None
+
+    def _set_status_and_error_message(self) -> None:
+        """Fetch and set status and error message."""
+        if self._status not in JOB_FINAL_STATES:
+            response = self._api_client.job_get(job_id=self.job_id())
+            self._set_status(response)
+            self._set_error_message(response)
+
+    def _set_status(self, job_response: Dict) -> None:
+        """Set status.
+
+        Args:
+            job_response: Job response from runtime API.
+
+        Raises:
+            IBMQError: If an unknown status is returned from the server.
+        """
+        try:
+            self._status = API_TO_JOB_STATUS[job_response['status'].upper()]
+        except KeyError:
+            raise IBMQError(f"Unknown status: {job_response['status']}")
+
+    def _set_error_message(self, job_response: Dict) -> None:
+        """Set error message if the job failed.
+
+        Args:
+            job_response: Job response from runtime API.
+        """
+        if self._status == JobStatus.ERROR:
+            job_result_raw = self._api_client.job_results(job_id=self.job_id())
+            self._error_message = API_TO_JOB_ERROR_MESSAGE[job_response['status'].upper()].format(
+                self.job_id(), job_result_raw)
+        else:
+            self._error_message = None
 
     def _is_streaming(self) -> bool:
         """Return whether job results are being streamed.

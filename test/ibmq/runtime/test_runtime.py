@@ -41,14 +41,15 @@ from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder, RuntimeDecoder
 from qiskit.providers.ibmq.runtime import IBMRuntimeService, RuntimeJob
+from qiskit.providers.ibmq.runtime.constants import API_TO_JOB_ERROR_MESSAGE
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeProgramNotFound,
                                                       RuntimeJobFailureError)
 from qiskit.providers.ibmq.runtime.runtime_program import (
     ParameterNamespace, ProgramParameter, ProgramResult)
 
 from ...ibmqtestcase import IBMQTestCase
-from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRuntimeJob, CancelableRuntimeJob,
-                                  CustomResultRuntimeJob)
+from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRanTooLongRuntimeJob,
+                                  FailedRuntimeJob, CancelableRuntimeJob, CustomResultRuntimeJob)
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
@@ -291,7 +292,21 @@ if __name__ == '__main__':
         """Test a failed program execution."""
         job = self._run_program(job_classes=FailedRuntimeJob)
         job.wait_for_final_state()
+        job_result_raw = self.runtime._api_client.job_results(job.job_id())
         self.assertEqual(JobStatus.ERROR, job.status())
+        self.assertEqual(API_TO_JOB_ERROR_MESSAGE['FAILED'].format(
+            job.job_id(), job_result_raw), job.error_message())
+        with self.assertRaises(RuntimeJobFailureError):
+            job.result()
+
+    def test_run_program_failed_ran_too_long(self):
+        """Test a program that failed since it ran longer than maxiumum execution time."""
+        job = self._run_program(job_classes=FailedRanTooLongRuntimeJob)
+        job.wait_for_final_state()
+        job_result_raw = self.runtime._api_client.job_results(job.job_id())
+        self.assertEqual(JobStatus.ERROR, job.status())
+        self.assertEqual(API_TO_JOB_ERROR_MESSAGE['CANCELLED - RAN TOO LONG'].format(
+            job.job_id(), job_result_raw), job.error_message())
         with self.assertRaises(RuntimeJobFailureError):
             job.result()
 
