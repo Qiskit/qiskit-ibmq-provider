@@ -118,6 +118,14 @@ class IBMQBackend(Backend):
             credentials: IBM Quantum Experience credentials.
             api_client: IBM Quantum Experience client used to communicate with the server.
         """
+        # TODO this should be eventually provided by ibmq-provider.
+        # add alignment information
+        # this information will be used for measurement instruction alignment and
+        # pulse duration validation.
+        configuration_dict = configuration.to_dict()
+        configuration_dict["alignment"] = 16
+        configuration = type(configuration).from_dict(configuration_dict)
+
         super().__init__(provider=provider, configuration=configuration)
 
         self._api_client = api_client
