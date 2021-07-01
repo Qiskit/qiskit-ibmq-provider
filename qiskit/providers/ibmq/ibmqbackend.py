@@ -122,9 +122,13 @@ class IBMQBackend(Backend):
         # add alignment information
         # this information will be used for measurement instruction alignment and
         # pulse duration validation.
-        configuration_dict = configuration.to_dict()
-        configuration_dict["alignment"] = 16
-        configuration = type(configuration).from_dict(configuration_dict)
+        try:
+            configuration_dict = configuration.to_dict()
+            configuration_dict["alignment"] = 16
+            configuration = type(configuration).from_dict(configuration_dict)
+        except TypeError:
+            # Mock unittest object is provided
+            pass
 
         super().__init__(provider=provider, configuration=configuration)
 
