@@ -26,5 +26,6 @@ API_TO_JOB_STATUS = {
 
 API_TO_JOB_ERROR_MESSAGE = {
     'FAILED': 'Job {} has failed:\n{}',
-    'CANCELLED - RAN TOO LONG': 'Job {} ran longer than maximum execution time. Job was cancelled:\n{}'
+    'CANCELLED - RAN TOO LONG': 'Job {} ran longer than maximum execution time. '
+                                'Job was cancelled:\n{}'
 }
