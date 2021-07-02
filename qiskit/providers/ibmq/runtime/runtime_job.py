@@ -145,7 +145,7 @@ class RuntimeJob:
         if not self._results or (_decoder != self._result_decoder):  # type: ignore[unreachable]
             self.wait_for_final_state(timeout=timeout, wait=wait)
             if self._status == JobStatus.ERROR:
-                raise RuntimeJobFailureError(self.error_message())
+                raise RuntimeJobFailureError(f"Unable to retrieve job result. {self.error_message()}")
             result_raw = self._api_client.job_results(job_id=self.job_id())
             self._results = _decoder.decode(result_raw)
         return self._results
