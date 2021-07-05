@@ -25,6 +25,15 @@ import tempfile
 
 import numpy as np
 import scipy.sparse
+from qiskit.algorithms.optimizers import (
+    ADAM,
+    GSLS,
+    IMFIL,
+    SPSA,
+    SNOBFIT,
+    L_BFGS_B,
+    NELDER_MEAD,
+)
 from qiskit.result import Result
 from qiskit.circuit import Parameter, QuantumCircuit
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -177,6 +186,29 @@ class TestRuntime(IBMQTestCase):
                 self.assertIsInstance(encoded, str)
                 decoded = json.loads(encoded, cls=RuntimeDecoder)
                 self.assertEqual(op, decoded)
+
+    @skipIf(terra_version < "0.18", "Need Terra >= 0.18")
+    def test_coder_optimizers(self):
+        """Test runtime encoder and decoder for circuits."""
+        subtests = (
+            (ADAM, {"maxiter": 100, "amsgrad": True}),
+            (GSLS, {"maxiter": 50, "min_step_size": 0.01}),
+            (IMFIL, {"maxiter": 20}),
+            (SPSA, {"maxiter": 10, "learning_rate": 0.01, "perturbation": 0.1}),
+            (SNOBFIT, {"maxiter": 200, "maxfail": 20}),
+            # some SciPy optimizers only work with default arguments due to Qiskit/qiskit-terra#6682
+            (L_BFGS_B, {}),
+            (NELDER_MEAD, {}),
+        )
+        for opt_cls, settings in subtests:
+            with self.subTest(opt_cls=opt_cls):
+                optimizer = opt_cls(**settings)
+                encoded = json.dumps(optimizer, cls=RuntimeEncoder)
+                self.assertIsInstance(encoded, str)
+                decoded = json.loads(encoded, cls=RuntimeDecoder)
+                self.assertTrue(isinstance(decoded, opt_cls))
+                for key, value in settings.items():
+                    self.assertEqual(decoded.settings[key], value)
 
     @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
     def test_decoder_import(self):
