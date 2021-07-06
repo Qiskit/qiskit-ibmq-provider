@@ -793,7 +793,7 @@ class IBMQBackend(Backend):
             return
 
         if not self.id_warning_issued:
-            if id_support:
+            if id_support and delay_support:
                 warnings.warn("Support for the 'id' instruction has been deprecated "
                               "from IBM hardware backends. Any 'id' instructions "
                               "will be replaced with their equivalent 'delay' instruction. "
