@@ -776,6 +776,9 @@ class IBMQBackend(Backend):
         id_support = 'id' in getattr(self.configuration(), 'basis_gates', [])
         delay_support = 'delay' in getattr(self.configuration(), 'supported_instructions', [])
 
+        if not delay_support:
+            return
+
         if isinstance(circuits, QasmQobj):
             circuit_has_id = any(instr.name == 'id'
                                  for experiment in circuits.experiments
@@ -799,22 +802,14 @@ class IBMQBackend(Backend):
                               "will be replaced with their equivalent 'delay' instruction. "
                               "Please use the 'delay' instruction instead.", DeprecationWarning,
                               stacklevel=4)
-            elif delay_support:
+            else:
                 warnings.warn("Support for the 'id' instruction has been removed "
                               "from IBM hardware backends. Any 'id' instructions "
                               "will be replaced with their equivalent 'delay' instruction. "
                               "Please use the 'delay' instruction instead.", DeprecationWarning,
                               stacklevel=4)
-            else:
-                warnings.warn("Support for the 'id' instruction has been removed "
-                              "from IBM hardware backends. Please use the 'delay' "
-                              "instruction instead.", DeprecationWarning,
-                              stacklevel=4)
 
             self.id_warning_issued = True
-
-        if not delay_support:
-            return
 
         dt_in_s = self.configuration().dt
 
