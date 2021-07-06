@@ -288,7 +288,7 @@ class IBMQBackend(Backend):
                 "'use_measure_esp' is unset or set to 'False'."
             )
 
-        if sim_method is None:
+        if not self.configuration().simulator:
             self._deprecate_id_instruction(circuits)
 
         if isinstance(circuits, (QasmQobj, PulseQobj)):
