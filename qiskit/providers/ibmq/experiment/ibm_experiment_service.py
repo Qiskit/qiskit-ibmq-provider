@@ -946,7 +946,7 @@ class IBMExperimentService:
                                      f'device_components_operator value. Valid values '
                                      f'are ``None`` and "contains"')
                 device_components = \
-                    "contains:" + ','.join(device_components)  # type: ignore[assignment]
+                    "contains:" + ','.join(device_components)  # type: ignore[arg-type]
 
         if item_type and item_type_operator:
             if item_type_operator != "like":
