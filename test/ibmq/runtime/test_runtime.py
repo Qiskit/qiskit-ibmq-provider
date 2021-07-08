@@ -320,6 +320,14 @@ if __name__ == '__main__':
             params.validate()
         params.param1 = 'foo'
 
+    def test_program_params_namespace(self):
+        """Test running a program using parameter namespace."""
+        program_id = self.runtime.upload_program(
+            data="foo".encode(), metadata=self.DEFAULT_METADATA)
+        params = self.runtime.program(program_id).parameters()
+        params.param1 = "Hello World"
+        self._run_program(program_id, inputs=params)
+
     def test_run_program_failed(self):
         """Test a failed program execution."""
         job = self._run_program(job_classes=FailedRuntimeJob)
