@@ -27,7 +27,7 @@ class BaseFakeProgram:
 
     def __init__(self, program_id, name, data, cost, description, version="1.0",
                  backend_requirements=None, parameters=None, return_values=None,
-                 interim_results=None):
+                 interim_results=None, is_public=False):
         """Initialize a fake program."""
         self._id = program_id
         self._name = name
@@ -39,6 +39,7 @@ class BaseFakeProgram:
         self._parameters = parameters
         self._return_values = return_values
         self._interim_results = interim_results
+        self._is_public = is_public
 
     def to_dict(self, include_data=False):
         """Convert this program to a dictionary format."""
@@ -46,7 +47,8 @@ class BaseFakeProgram:
                'name': self._name,
                'cost': self._cost,
                'description': self._description,
-               'version': self._version}
+               'version': self._version,
+               'is_public': self._is_public}
         if include_data:
             out['data'] = self._data
         if self._backend_requirements:
@@ -70,20 +72,25 @@ class BaseFakeRuntimeJob:
         "COMPLETED"
     ]
 
-    _executor = ThreadPoolExecutor()
+    _executor = ThreadPoolExecutor()  # pylint: disable=bad-option-value,consider-using-with
 
-    def __init__(self, job_id, program_id, hub, group, project, backend_name, params):
+    def __init__(self, job_id, program_id, hub, group, project, backend_name, final_status,
+                 params):
         """Initialize a fake job."""
         self._job_id = job_id
-        self._status = "QUEUED"
+        self._status = final_status or "QUEUED"
         self._program_id = program_id
         self._hub = hub
         self._group = group
         self._project = project
         self._backend_name = backend_name
         self._params = params
-        self._future = self._executor.submit(self._auto_progress)
-        self._result = None
+        if final_status is None:
+            self._future = self._executor.submit(self._auto_progress)
+            self._result = None
+        elif final_status == "COMPLETED":
+            self._result = json.dumps("foo")
+        self._final_status = final_status
 
     def _auto_progress(self):
         """Automatically update job status."""
@@ -124,6 +131,23 @@ class FailedRuntimeJob(BaseFakeRuntimeJob):
         super()._auto_progress()
 
         if self._status == "FAILED":
+            self._result = "Kaboom!"
+
+
+class FailedRanTooLongRuntimeJob(BaseFakeRuntimeJob):
+    """Class for faking a failed runtime job."""
+
+    _job_progress = [
+        "QUEUED",
+        "RUNNING",
+        "CANCELLED - RAN TOO LONG"
+    ]
+
+    def _auto_progress(self):
+        """Automatically update job status."""
+        super()._auto_progress()
+
+        if self._status == "CANCELLED - RAN TOO LONG":
             self._result = "Kaboom!"
 
 
@@ -185,11 +209,12 @@ class TimedRuntimeJob(BaseFakeRuntimeJob):
 class BaseFakeRuntimeClient:
     """Base class for faking the runtime client."""
 
-    def __init__(self, job_classes=None, job_kwargs=None):
+    def __init__(self, job_classes=None, final_status=None, job_kwargs=None):
         """Initialize a fake runtime client."""
         self._programs = {}
         self._jobs = {}
         self._job_classes = job_classes or []
+        self._final_status = final_status
         self._job_kwargs = job_kwargs or {}
 
     def set_job_classes(self, classes):
@@ -197,6 +222,10 @@ class BaseFakeRuntimeClient:
         if not isinstance(classes, list):
             classes = [classes]
         self._job_classes = classes
+
+    def set_final_status(self, final_status):
+        """Set job status to passed in final status instantly."""
+        self._final_status = final_status
 
     def list_programs(self):
         """List all progrmas."""
@@ -207,7 +236,7 @@ class BaseFakeRuntimeClient:
 
     def program_create(self, program_data, name, description, max_execution_time, version="1.0",
                        backend_requirements=None, parameters=None, return_values=None,
-                       interim_results=None):
+                       interim_results=None, is_public=False):
         """Create a program."""
         if isinstance(program_data, str):
             with open(program_data, 'rb') as file:
@@ -218,7 +247,8 @@ class BaseFakeRuntimeClient:
         self._programs[program_id] = BaseFakeProgram(
             program_id=program_id, name=name, data=program_data, cost=max_execution_time,
             description=description, version=version, backend_requirements=backend_requirements,
-            parameters=parameters, return_values=return_values, interim_results=interim_results)
+            parameters=parameters, return_values=return_values, interim_results=interim_results,
+            is_public=is_public)
         return {'id': program_id}
 
     def program_get(self, program_id: str):
@@ -244,7 +274,7 @@ class BaseFakeRuntimeClient:
         job = job_cls(job_id=job_id, program_id=program_id,
                       hub=credentials.hub, group=credentials.group,
                       project=credentials.project, backend_name=backend_name,
-                      params=params, **self._job_kwargs)
+                      params=params, final_status=self._final_status, **self._job_kwargs)
         self._jobs[job_id] = job
         return {'id': job_id}
 
@@ -258,13 +288,29 @@ class BaseFakeRuntimeClient:
         """Get the specific job."""
         return self._get_job(job_id).to_dict()
 
-    def jobs_get(self, limit=None, skip=None):
+    def jobs_get(self, limit=None, skip=None, pending=None):
         """Get all jobs."""
+        pending_statuses = ['QUEUED', 'RUNNING']
+        returned_statuses = ['COMPLETED', 'FAILED', 'CANCELLED']
         limit = limit or len(self._jobs)
         skip = skip or 0
-        jobs = list(self._jobs.values())[skip:limit+skip]
+        jobs = list(self._jobs.values())
+        if pending is not None:
+            job_status_list = pending_statuses if pending else returned_statuses
+            jobs = [job for job in jobs if job._status in job_status_list]
+        jobs = jobs[skip:limit+skip]
         return {"jobs": [job.to_dict() for job in jobs],
                 "count": len(self._jobs)}
+
+    def set_program_visibility(self, program_id: str, public: bool) -> None:
+        """Sets a program's visibility.
+
+        Args:
+            program_id: Program ID.
+            public: If ``True``, make the program visible to all.
+                If ``False``, make the program visible to just your account.
+        """
+        self._programs[program_id]._is_public = public
 
     def job_results(self, job_id):
         """Get the results of a program job."""

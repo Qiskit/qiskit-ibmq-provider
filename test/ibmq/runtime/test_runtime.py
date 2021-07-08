@@ -25,6 +25,15 @@ import tempfile
 
 import numpy as np
 import scipy.sparse
+from qiskit.algorithms.optimizers import (
+    ADAM,
+    GSLS,
+    IMFIL,
+    SPSA,
+    SNOBFIT,
+    L_BFGS_B,
+    NELDER_MEAD,
+)
 from qiskit.result import Result
 from qiskit.circuit import Parameter, QuantumCircuit
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -41,14 +50,15 @@ from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder, RuntimeDecoder
 from qiskit.providers.ibmq.runtime import IBMRuntimeService, RuntimeJob
+from qiskit.providers.ibmq.runtime.constants import API_TO_JOB_ERROR_MESSAGE
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeProgramNotFound,
                                                       RuntimeJobFailureError)
 from qiskit.providers.ibmq.runtime.runtime_program import (
     ParameterNamespace, ProgramParameter, ProgramResult)
 
 from ...ibmqtestcase import IBMQTestCase
-from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRuntimeJob, CancelableRuntimeJob,
-                                  CustomResultRuntimeJob)
+from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRanTooLongRuntimeJob,
+                                  FailedRuntimeJob, CancelableRuntimeJob, CustomResultRuntimeJob)
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
@@ -175,6 +185,30 @@ class TestRuntime(IBMQTestCase):
                 decoded = json.loads(encoded, cls=RuntimeDecoder)
                 self.assertEqual(op, decoded)
 
+    @skipIf(terra_version < "0.18", "Need Terra >= 0.18")
+    def test_coder_optimizers(self):
+        """Test runtime encoder and decoder for circuits."""
+        subtests = (
+            (ADAM, {"maxiter": 100, "amsgrad": True}),
+            (GSLS, {"maxiter": 50, "min_step_size": 0.01}),
+            (IMFIL, {"maxiter": 20}),
+            (SPSA, {"maxiter": 10, "learning_rate": 0.01, "perturbation": 0.1}),
+            (SNOBFIT, {"maxiter": 200, "maxfail": 20}),
+            # some SciPy optimizers only work with default arguments due to Qiskit/qiskit-terra#6682
+            (L_BFGS_B, {}),
+            (NELDER_MEAD, {}),
+        )
+        for opt_cls, settings in subtests:
+            with self.subTest(opt_cls=opt_cls):
+                optimizer = opt_cls(**settings)
+                encoded = json.dumps(optimizer, cls=RuntimeEncoder)
+                self.assertIsInstance(encoded, str)
+                decoded = json.loads(encoded, cls=RuntimeDecoder)
+                self.assertTrue(isinstance(decoded, opt_cls))
+                for key, value in settings.items():
+                    self.assertEqual(decoded.settings[key], value)
+
+    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
     def test_decoder_import(self):
         """Test runtime decoder importing modules."""
         script = """
@@ -288,7 +322,21 @@ if __name__ == '__main__':
         """Test a failed program execution."""
         job = self._run_program(job_classes=FailedRuntimeJob)
         job.wait_for_final_state()
+        job_result_raw = self.runtime._api_client.job_results(job.job_id())
         self.assertEqual(JobStatus.ERROR, job.status())
+        self.assertEqual(API_TO_JOB_ERROR_MESSAGE['FAILED'].format(
+            job.job_id(), job_result_raw), job.error_message())
+        with self.assertRaises(RuntimeJobFailureError):
+            job.result()
+
+    def test_run_program_failed_ran_too_long(self):
+        """Test a program that failed since it ran longer than maxiumum execution time."""
+        job = self._run_program(job_classes=FailedRanTooLongRuntimeJob)
+        job.wait_for_final_state()
+        job_result_raw = self.runtime._api_client.job_results(job.job_id())
+        self.assertEqual(JobStatus.ERROR, job.status())
+        self.assertEqual(API_TO_JOB_ERROR_MESSAGE['CANCELLED - RAN TOO LONG'].format(
+            job.job_id(), job_result_raw), job.error_message())
         with self.assertRaises(RuntimeJobFailureError):
             job.result()
 
@@ -341,6 +389,82 @@ if __name__ == '__main__':
             jobs.append(self._run_program(program_id))
         rjobs = self.runtime.jobs(skip=4, limit=2)
         self.assertEqual(2, len(rjobs))
+
+    def test_jobs_pending(self):
+        """Test retrieving pending jobs (QUEUED, RUNNING)."""
+        jobs = []
+        program_id = self._upload_program()
+        (jobs, pending_jobs_count, _) = self._populate_jobs_with_all_statuses(
+            jobs=jobs, program_id=program_id)
+        rjobs = self.runtime.jobs(pending=True)
+        self.assertEqual(pending_jobs_count, len(rjobs))
+
+    def test_jobs_limit_pending(self):
+        """Test retrieving pending jobs (QUEUED, RUNNING) with limit."""
+        jobs = []
+        program_id = self._upload_program()
+        (jobs, *_) = self._populate_jobs_with_all_statuses(jobs=jobs, program_id=program_id)
+        limit = 4
+        rjobs = self.runtime.jobs(limit=limit, pending=True)
+        self.assertEqual(limit, len(rjobs))
+
+    def test_jobs_skip_pending(self):
+        """Test retrieving pending jobs (QUEUED, RUNNING) with skip."""
+        jobs = []
+        program_id = self._upload_program()
+        (jobs, pending_jobs_count, _) = self._populate_jobs_with_all_statuses(
+            jobs=jobs, program_id=program_id)
+        skip = 4
+        rjobs = self.runtime.jobs(skip=skip, pending=True)
+        self.assertEqual(pending_jobs_count - skip, len(rjobs))
+
+    def test_jobs_limit_skip_pending(self):
+        """Test retrieving pending jobs (QUEUED, RUNNING) with limit and skip."""
+        jobs = []
+        program_id = self._upload_program()
+        (jobs, *_) = self._populate_jobs_with_all_statuses(jobs=jobs, program_id=program_id)
+        limit = 2
+        skip = 3
+        rjobs = self.runtime.jobs(limit=limit, skip=skip, pending=True)
+        self.assertEqual(limit, len(rjobs))
+
+    def test_jobs_returned(self):
+        """Test retrieving returned jobs (COMPLETED, FAILED, CANCELLED)."""
+        jobs = []
+        program_id = self._upload_program()
+        (jobs, _, returned_jobs_count) = self._populate_jobs_with_all_statuses(
+            jobs=jobs, program_id=program_id)
+        rjobs = self.runtime.jobs(pending=False)
+        self.assertEqual(returned_jobs_count, len(rjobs))
+
+    def test_jobs_limit_returned(self):
+        """Test retrieving returned jobs (COMPLETED, FAILED, CANCELLED) with limit."""
+        jobs = []
+        program_id = self._upload_program()
+        (jobs, *_) = self._populate_jobs_with_all_statuses(jobs=jobs, program_id=program_id)
+        limit = 6
+        rjobs = self.runtime.jobs(limit=limit, pending=False)
+        self.assertEqual(limit, len(rjobs))
+
+    def test_jobs_skip_returned(self):
+        """Test retrieving returned jobs (COMPLETED, FAILED, CANCELLED) with skip."""
+        jobs = []
+        program_id = self._upload_program()
+        (jobs, _, returned_jobs_count) = self._populate_jobs_with_all_statuses(
+            jobs=jobs, program_id=program_id)
+        skip = 4
+        rjobs = self.runtime.jobs(skip=skip, pending=False)
+        self.assertEqual(returned_jobs_count - skip, len(rjobs))
+
+    def test_jobs_limit_skip_returned(self):
+        """Test retrieving returned jobs (COMPLETED, FAILED, CANCELLED) with limit and skip."""
+        jobs = []
+        program_id = self._upload_program()
+        (jobs, *_) = self._populate_jobs_with_all_statuses(jobs=jobs, program_id=program_id)
+        limit = 6
+        skip = 2
+        rjobs = self.runtime.jobs(limit=limit, skip=skip, pending=False)
+        self.assertEqual(limit, len(rjobs))
 
     def test_cancel_job(self):
         """Test canceling a job."""
@@ -456,13 +580,36 @@ if __name__ == '__main__':
             description="A test program")
         return program_id
 
-    def _run_program(self, program_id=None, inputs=None, job_classes=None, decoder=None):
+    def _run_program(self, program_id=None, inputs=None, job_classes=None, final_status=None,
+                     decoder=None):
         """Run a program."""
         options = {'backend_name': "some_backend"}
-        if job_classes:
+        if final_status is not None:
+            self.runtime._api_client.set_final_status(final_status)
+        elif job_classes:
             self.runtime._api_client.set_job_classes(job_classes)
         if program_id is None:
             program_id = self._upload_program()
         job = self.runtime.run(program_id=program_id, inputs=inputs,
                                options=options, result_decoder=decoder)
         return job
+
+    def _populate_jobs_with_all_statuses(self, jobs, program_id):
+        pending_jobs_count = 0
+        returned_jobs_count = 0
+        for _ in range(3):
+            jobs.append(self._run_program(program_id, final_status='RUNNING'))
+            pending_jobs_count += 1
+        for _ in range(4):
+            jobs.append(self._run_program(program_id, final_status='COMPLETED'))
+            returned_jobs_count += 1
+        for _ in range(2):
+            jobs.append(self._run_program(program_id, final_status='QUEUED'))
+            pending_jobs_count += 1
+        for _ in range(3):
+            jobs.append(self._run_program(program_id, final_status='FAILED'))
+            returned_jobs_count += 1
+        for _ in range(2):
+            jobs.append(self._run_program(program_id, final_status='CANCELLED'))
+            returned_jobs_count += 1
+        return (jobs, pending_jobs_count, returned_jobs_count)

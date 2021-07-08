@@ -136,7 +136,6 @@ class RuntimeEncoder(json.JSONEncoder):
             value = _serialize_and_encode(
                 data=obj, serializer=qpy_serialization._write_instruction, compress=False)
             return {'__type__': 'Instruction', '__value__': value}
-
         if hasattr(obj, "settings"):
             return {'__type__': 'settings',
                     '__module__': obj.__class__.__module__,
