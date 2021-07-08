@@ -16,7 +16,6 @@ import logging
 from typing import Optional, List, Dict, Union, Tuple, Any
 from datetime import datetime
 from collections import defaultdict
-from types import SimpleNamespace
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
@@ -147,7 +146,7 @@ class IBMExperimentService:
             Experiment ID.
 
         Raises:
-            ExperimentEntryExists: If the experiment already exits.
+            IBMExperimentEntryExists: If the experiment already exits.
             IBMQApiError: If the request to the server failed.
         """
         # pylint: disable=arguments-differ
@@ -207,7 +206,7 @@ class IBMExperimentService:
             kwargs: Additional experiment attributes that are not supported and will be ignored.
 
         Raises:
-            ExperimentEntryNotFound: If the experiment does not exist.
+            IBMExperimentEntryNotFound: If the experiment does not exist.
             IBMQApiError: If the request to the server failed.
         """
         # pylint: disable=arguments-differ
@@ -278,17 +277,17 @@ class IBMExperimentService:
     def experiment(
             self,
             experiment_id: str
-    ) -> SimpleNamespace:
+    ) -> Dict:
         """Retrieve a previously stored experiment.
 
         Args:
             experiment_id: Experiment ID.
 
         Returns:
-            A ``SimpleNamespace`` containing the retrieved experiment data.
+            Retrieved experiment data.
 
         Raises:
-            ExperimentEntryNotFound: If the experiment does not exist.
+            IBMExperimentEntryNotFound: If the experiment does not exist.
             IBMQApiError: If the request to the server failed.
         """
         with map_api_error(f"Experiment {experiment_id} not found."):
@@ -317,7 +316,7 @@ class IBMExperimentService:
             mine_only: Optional[bool] = False,
             sort_by: Optional[Union[str, List[str]]] = None,
             **filters: Any
-    ) -> List[SimpleNamespace]:
+    ) -> List[Dict]:
         """Retrieve all experiments, with optional filtering.
 
         By default, results returned are as inclusive as possible. For example,
@@ -390,7 +389,7 @@ class IBMExperimentService:
             **filters: Additional filtering keywords that are not supported and will be ignored.
 
         Returns:
-            A list of experiments. Each experiment is a ``SimpleNamespace`` containing the
+            A list of experiments. Each experiment is a dictionary containing the
             retrieved experiment data.
 
         Raises:
@@ -468,15 +467,14 @@ class IBMExperimentService:
     def _api_to_experiment_data(
             self,
             raw_data: Dict,
-    ) -> SimpleNamespace:
+    ) -> Dict:
         """Convert API response to experiment data.
 
         Args:
             raw_data: API response
 
         Returns:
-            A ``SimpleNamespace`` containing the retrieved experiment data if `experiment_class`
-            is ``None``. Otherwise an instance of the `experiment_class` class.
+            Converted experiment data.
         """
         backend_name = raw_data['device_name']
         try:
@@ -486,7 +484,7 @@ class IBMExperimentService:
                                                    provider=self._provider,
                                                    credentials=self._provider.credentials,
                                                    api=None)
-        extra_data = {}  # type: Dict[str, Any]
+        extra_data: Dict[str, Any] = {}
         self._convert_dt(raw_data.get('created_at', None), extra_data, 'creation_datetime')
         self._convert_dt(raw_data.get('start_time', None), extra_data, 'start_datetime')
         self._convert_dt(raw_data.get('end_time', None), extra_data, 'end_datetime')
@@ -508,7 +506,7 @@ class IBMExperimentService:
             "owner": raw_data.get("owner", ""),
             **extra_data
         }
-        return SimpleNamespace(**out_dict)
+        return out_dict
 
     def _convert_dt(
             self,
@@ -586,7 +584,7 @@ class IBMExperimentService:
             Analysis result ID.
 
         Raises:
-            ExperimentEntryExists: If the analysis result already exits.
+            IBMExperimentEntryExists: If the analysis result already exits.
             IBMQApiError: If the request to the server failed.
         """
         # pylint: disable=arguments-differ
@@ -644,7 +642,7 @@ class IBMExperimentService:
                 and will be ignored.
 
         Raises:
-            ExperimentEntryNotFound: If the analysis result does not exist.
+            IBMExperimentEntryNotFound: If the analysis result does not exist.
             IBMQApiError: If the request to the server failed.
         """
         # pylint: disable=arguments-differ
@@ -716,17 +714,17 @@ class IBMExperimentService:
     def analysis_result(
             self,
             result_id: str,
-    ) -> SimpleNamespace:
+    ) -> Dict:
         """Retrieve a previously stored experiment.
 
         Args:
             result_id: Analysis result ID.
 
         Returns:
-            A ``SimpleNamespace`` containing the retrieved analysis result.
+            Retrieved analysis result.
 
         Raises:
-            ExperimentEntryNotFound: If the analysis result does not exist.
+            IBMExperimentEntryNotFound: If the analysis result does not exist.
             IBMQApiError: If the request to the server failed.
         """
         with map_api_error(f"Analysis result {result_id} not found."):
@@ -749,7 +747,7 @@ class IBMExperimentService:
             tags_operator: Optional[str] = "OR",
             sort_by: Optional[Union[str, List[str]]] = None,
             **filters: Any
-    ) -> List[SimpleNamespace]:
+    ) -> List[Dict]:
         """Retrieve all analysis results, with optional filtering.
 
         Args:
@@ -777,7 +775,8 @@ class IBMExperimentService:
                   both ``foo1`` and ``1foo``.
 
             backend_name: Backend name used for filtering.
-            quality: Quality value used for filtering.
+            quality: Quality value used for filtering. If a list is given, analysis results
+                whose quality value is in the list will be included.
             verified: Indicates whether this result has been verified..
             tags: Filter by tags assigned to analysis results. This can be used
                 with `tags_operator` for granular filtering.
@@ -803,7 +802,7 @@ class IBMExperimentService:
             **filters: Additional filtering keywords that are not supported and will be ignored.
 
         Returns:
-            A list of analysis results. Each analysis result is either a ``SimpleNamespace``
+            A list of analysis results. Each analysis result is a dictionary
             containing the retrieved analysis result.
 
         Raises:
@@ -868,28 +867,20 @@ class IBMExperimentService:
         if not isinstance(quality, list):
             quality = [quality]
 
-        qual_set = set()
+        api_quals = []
         for qual in quality:
             if isinstance(qual, str):
                 qual = ResultQuality(qual.upper())
-            qual_set.add(qual)
-        qual_set_len = len(qual_set)
-        if qual_set_len == 1:
-            return RESULT_QUALITY_TO_API[list(qual_set)[0]]
-        if qual_set_len == 3:
+            api_qual = RESULT_QUALITY_TO_API[qual]
+            if api_qual not in api_quals:
+                api_quals.append(api_qual)
+
+        if len(api_quals) == 1:
+            return api_quals[0]
+        if len(api_quals) == len(ResultQuality):
             return None
 
-        # TODO fix good/bad when server issue 436 is done
-        quality_map = {
-            frozenset({ResultQuality.GOOD, ResultQuality.UNKNOWN}):
-                f"ge:{RESULT_QUALITY_TO_API[ResultQuality.UNKNOWN]}",
-            # frozenset({ResultQuality.GOOD, ResultQuality.BAD}):
-            #     [f"ge:{RESULT_QUALITY_TO_API[ResultQuality.GOOD]}",
-            #      f"le:{RESULT_QUALITY_TO_API[ResultQuality.BAD]}"],
-            frozenset({ResultQuality.UNKNOWN, ResultQuality.BAD}):
-                f"le:{RESULT_QUALITY_TO_API[ResultQuality.UNKNOWN]}"
-        }
-        return quality_map[frozenset(qual_set)]
+        return "in:" + ",".join(api_quals)
 
     def _filtering_to_api(
             self,
@@ -955,7 +946,7 @@ class IBMExperimentService:
                                      f'device_components_operator value. Valid values '
                                      f'are ``None`` and "contains"')
                 device_components = \
-                    "contains:" + ','.join(str(device_components))  # type: ignore[assignment]
+                    "contains:" + ','.join(device_components)  # type: ignore[assignment]
 
         if item_type and item_type_operator:
             if item_type_operator != "like":
@@ -971,15 +962,14 @@ class IBMExperimentService:
     def _api_to_analysis_result(
             self,
             raw_data: Dict,
-    ) -> SimpleNamespace:
+    ) -> Dict:
         """Map API response to an AnalysisResult instance.
 
         Args:
             raw_data: API response data.
 
         Returns:
-            A ``SimpleNamespace`` containing the retrieved analysis result if `result_class`
-            is ``None``. Otherwise an instance of the `result_class` class.
+            Converted analysis result data.
         """
         extra_data = {}
 
@@ -1010,7 +1000,7 @@ class IBMExperimentService:
             "service": self,
             **extra_data
         }
-        return SimpleNamespace(**out_dict)
+        return out_dict
 
     def delete_analysis_result(
             self,
@@ -1060,7 +1050,7 @@ class IBMExperimentService:
             A tuple of the name and size of the saved figure.
 
         Raises:
-            ExperimentEntryExists: If the figure already exits.
+            IBMExperimentEntryExists: If the figure already exits.
             IBMQApiError: If the request to the server failed.
         """
         if figure_name is None:
@@ -1092,7 +1082,7 @@ class IBMExperimentService:
             A tuple of the name and size of the saved figure.
 
         Raises:
-            ExperimentEntryNotFound: If the figure does not exist.
+            IBMExperimentEntryNotFound: If the figure does not exist.
             IBMQApiError: If the request to the server failed.
         """
         with map_api_error(f"Figure {figure_name} not found."):
@@ -1119,7 +1109,7 @@ class IBMExperimentService:
             content of the figure in bytes.
 
         Raises:
-            ExperimentEntryNotFound: If the figure does not exist.
+            IBMExperimentEntryNotFound: If the figure does not exist.
             IBMQApiError: If the request to the server failed.
         """
         with map_api_error(f"Figure {figure_name} not found."):
