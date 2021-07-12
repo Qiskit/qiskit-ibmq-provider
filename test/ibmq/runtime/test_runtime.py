@@ -43,7 +43,6 @@ from qiskit.opflow import (PauliSumOp, MatrixOp, PauliOp, CircuitOp, EvolvedOp,
                            StateFn, CircuitStateFn, DictStateFn, VectorStateFn, OperatorStateFn,
                            SparseVectorStateFn, CVaRMeasurement, ComposedOp, SummedOp, TensoredOp)
 from qiskit.quantum_info import SparsePauliOp, Pauli, PauliTable, Statevector
-from qiskit.version import VERSION as terra_version
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
@@ -185,7 +184,6 @@ class TestRuntime(IBMQTestCase):
                 decoded = json.loads(encoded, cls=RuntimeDecoder)
                 self.assertEqual(op, decoded)
 
-    @skipIf(terra_version < "0.18", "Need Terra >= 0.18")
     def test_coder_optimizers(self):
         """Test runtime encoder and decoder for circuits."""
         subtests = (
@@ -208,7 +206,6 @@ class TestRuntime(IBMQTestCase):
                 for key, value in settings.items():
                     self.assertEqual(decoded.settings[key], value)
 
-    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
     def test_decoder_import(self):
         """Test runtime decoder importing modules."""
         script = """
