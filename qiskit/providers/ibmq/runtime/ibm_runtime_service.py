@@ -229,7 +229,7 @@ class IBMRuntimeService:
         # If using params object, extract as dictionary
         if isinstance(inputs, ParameterNamespace):
             inputs.validate()
-            inputs = dict(inputs)
+            inputs = vars(inputs)
 
         backend_name = options['backend_name']
         params_str = json.dumps(inputs, cls=RuntimeEncoder)
