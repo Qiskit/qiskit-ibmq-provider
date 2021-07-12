@@ -34,6 +34,7 @@ from qiskit.circuit import QuantumCircuit, qpy_serialization
 from qiskit.circuit import ParameterExpression, Instruction
 from qiskit.circuit.library import BlueprintCircuit
 
+
 def _serialize_and_encode(
         data: Any,
         serializer: Callable,
