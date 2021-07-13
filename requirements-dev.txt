@@ -24,3 +24,4 @@ nbconvert>=5.3.1
 qiskit_rng
 qiskit-aer
 websockets>=8
+scikit-quant>=0.8.2
