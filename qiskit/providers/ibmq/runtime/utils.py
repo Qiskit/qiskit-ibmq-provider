@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2020.
+# (C) Copyright IBM 2020, 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -30,13 +30,9 @@ except ImportError:
     HAS_SCIPY = False
 
 from qiskit.result import Result
-from qiskit.circuit import QuantumCircuit
+from qiskit.circuit import QuantumCircuit, qpy_serialization
 from qiskit.circuit import ParameterExpression, Instruction
-
-# TODO: remove when Terra 0.18 is released.
-from qiskit.version import VERSION as terra_version
-if terra_version >= "0.18":
-    from qiskit.circuit import qpy_serialization
+from qiskit.circuit.library import BlueprintCircuit
 
 
 def _serialize_and_encode(
@@ -124,15 +120,10 @@ class RuntimeEncoder(json.JSONEncoder):
             return {'__type__': 'Result', '__value__': obj.to_dict()}
         if hasattr(obj, 'to_json'):
             return {'__type__': 'to_json', '__value__': obj.to_json()}
-        if HAS_SCIPY and isinstance(obj, scipy.sparse.spmatrix):
-            value = _serialize_and_encode(obj, scipy.sparse.save_npz, compress=False)
-            return {'__type__': 'spmatrix', '__value__': value}
-
-        # TODO: remove when Terra 0.18 is released.
-        if terra_version < "0.18":
-            return super().default(obj)
-
         if isinstance(obj, QuantumCircuit):
+            # TODO Remove the decompose when terra 6713 is released.
+            if isinstance(obj, BlueprintCircuit):
+                obj = obj.decompose()
             value = _serialize_and_encode(
                 data=obj,
                 serializer=lambda buff, data: qpy_serialization.dump(data, buff)
@@ -149,13 +140,14 @@ class RuntimeEncoder(json.JSONEncoder):
             value = _serialize_and_encode(
                 data=obj, serializer=qpy_serialization._write_instruction, compress=False)
             return {'__type__': 'Instruction', '__value__': value}
-
         if hasattr(obj, "settings"):
             return {'__type__': 'settings',
                     '__module__': obj.__class__.__module__,
                     '__class__': obj.__class__.__name__,
                     '__value__': obj.settings}
-
+        if HAS_SCIPY and isinstance(obj, scipy.sparse.spmatrix):
+            value = _serialize_and_encode(obj, scipy.sparse.save_npz, compress=False)
+            return {'__type__': 'spmatrix', '__value__': value}
         return super().default(obj)
 
 
