@@ -496,7 +496,8 @@ class ExperimentService:
             self,
             experiment: Union[Experiment, str],
             plot: Union[str, bytes],
-            plot_name: str
+            plot_name: str,
+            sync_upload: bool = False
     ) -> Dict:
         """Update an experiment plot.
 
@@ -504,6 +505,9 @@ class ExperimentService:
             experiment: The ``Experiment`` object or the experiment UUID.
             plot: Name of the plot file or plot data to upload.
             plot_name: Name of the plot to update.
+            sync_upload: By default the server will upload the plot file
+                to backend storage asynchronously. Set this to True to make
+                that synchronous.
 
         Returns:
             A dictionary with name and size of the uploaded plot.
@@ -511,7 +515,8 @@ class ExperimentService:
         if isinstance(experiment, Experiment):
             experiment = experiment.uuid
 
-        return self._api_client.experiment_plot_update(experiment, plot, plot_name)
+        return self._api_client.experiment_plot_update(experiment, plot, plot_name,
+                                                       sync_upload=sync_upload)
 
     def delete_plot(
             self,

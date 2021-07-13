@@ -131,22 +131,32 @@ class ExperimentPlot(RestAdapterBase):
         url = self.get_url('self')
         self.session.delete(url)
 
-    def update(self, plot: Union[bytes, str]) -> Dict:
+    def update(
+            self,
+            plot: Union[bytes, str],
+            sync_upload: bool = False
+    ) -> Dict:
         """Update an experiment plot.
 
         Args:
             plot: Plot file name or data to upload.
+            sync_upload: By default the server will upload the plot file
+                to backend storage asynchronously. Set this to True to make
+                that synchronous.
 
         Returns:
             JSON response.
         """
         url = self.get_url('self')
+        headers = {
+            'x-sync-upload': str(sync_upload)
+        }
         if isinstance(plot, str):
             with open(plot, 'rb') as file:
                 data = {'plot': (self.plot_name, file)}
-                response = self.session.put(url, files=data).json()
+                response = self.session.put(url, files=data, headers=headers).json()
         else:
             data = {'plot': (self.plot_name, plot)}  # type: ignore[dict-item]
-            response = self.session.put(url, files=data).json()
+            response = self.session.put(url, files=data, headers=headers).json()
 
         return response
