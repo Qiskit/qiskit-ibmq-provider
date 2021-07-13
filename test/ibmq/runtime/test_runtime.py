@@ -16,7 +16,7 @@ import json
 import os
 from io import StringIO
 from unittest.mock import patch
-from unittest import mock
+from unittest import mock, skipIf
 import uuid
 import time
 import random
@@ -184,6 +184,7 @@ class TestRuntime(IBMQTestCase):
                 decoded = json.loads(encoded, cls=RuntimeDecoder)
                 self.assertEqual(op, decoded)
 
+    @skipIf(os.name == 'nt', 'Test not supported on Windows')
     def test_coder_optimizers(self):
         """Test runtime encoder and decoder for circuits."""
         subtests = (
