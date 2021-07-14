@@ -43,7 +43,7 @@ class TestExperiment(IBMQTestCase):
         super().setUpClass()
         try:
             cls.provider = cls._setup_provider()    # pylint: disable=no-value-for-parameter
-            cls.experiments = cls.provider.experiment.experiments()
+            cls.experiments = cls.provider.experiment.experiments(tags=['qiskit-tests'])
             cls.device_components = cls.provider.experiment.device_components()
         except Exception:
             raise SkipTest("Not authorized to use experiment service.")
@@ -108,7 +108,7 @@ class TestExperiment(IBMQTestCase):
         backend_name = self.experiments[0].backend_name
         ref_uuid = self.experiments[0].uuid
         backend_experiments = self.provider.experiment.experiments(
-            backend_name=backend_name, limit=None)
+            backend_name=backend_name, tags=['qiskit-tests'], limit=None)
 
         found = False
         for exp in backend_experiments:
@@ -122,7 +122,7 @@ class TestExperiment(IBMQTestCase):
         """Test retrieving all experiments for a specific type."""
         expr_type = self.experiments[0].type
         ref_uuid = self.experiments[0].uuid
-        backend_experiments = self.provider.experiment.experiments(type=expr_type, limit=None)
+        backend_experiments = self.provider.experiment.experiments(type=expr_type, tags=['qiskit-tests'], limit=None)
 
         found = False
         for exp in backend_experiments:
@@ -150,7 +150,7 @@ class TestExperiment(IBMQTestCase):
         for start_dt, end_dt, expected, title in sub_tests:
             with self.subTest(title=title):
                 backend_experiments = self.provider.experiment.experiments(
-                    start_datetime=start_dt, end_datetime=end_dt, limit=None)
+                    start_datetime=start_dt, end_datetime=end_dt, tags=['qiskit-tests'], limit=None)
                 found = False
                 for exp in backend_experiments:
                     if start_dt:
@@ -505,7 +505,7 @@ class TestExperiment(IBMQTestCase):
                                          result.uuid, result.device_components, dev_comp))
 
                 f_experiments = self.provider.experiment.experiments(
-                    device_components=dev_comp, limit=None)
+                    device_components=dev_comp, tags=['qiskit-tests'], limit=None)
                 for exp in f_experiments[:5]:
                     found = False
                     result_dev_comp = []
