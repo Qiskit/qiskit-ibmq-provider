@@ -8,6 +8,25 @@ features:
     supports auto-complete features. You can use
     :meth:`qiskit.providers.ibmq.runtime.RuntimeProgram.parameters` to retrieve
     an ``ParameterNamespace`` instance.
+
+    For example::
+
+        from qiskit import IBMQ
+
+        provider = IBMQ.load_account()
+
+        # Set the "sample-program" program parameters.
+        params = provider.runtime.program(program_id="sample-program").parameters()
+        params.iterations = 2
+
+        # Configure backend options
+        options = {'backend_name': 'ibmq_qasm_simulator'}
+
+        # Execute the circuit using the "circuit-runner" program.
+        job = provider.runtime.run(program_id="sample-program",
+                                   options=options,
+                                   inputs=params)
+
 upgrade:
   - |
     :meth:`qiskit.providers.ibmq.runtime.RuntimeProgram.parameters` is now a 
