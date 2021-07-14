@@ -122,7 +122,8 @@ class TestExperiment(IBMQTestCase):
         """Test retrieving all experiments for a specific type."""
         expr_type = self.experiments[0].type
         ref_uuid = self.experiments[0].uuid
-        backend_experiments = self.provider.experiment.experiments(type=expr_type, tags=['qiskit-tests'], limit=None)
+        backend_experiments = self.provider.experiment.experiments(
+            type=expr_type, tags=['qiskit-tests'], limit=None)
 
         found = False
         for exp in backend_experiments:
