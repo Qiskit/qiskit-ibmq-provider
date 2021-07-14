@@ -469,7 +469,8 @@ class ExperimentService:
             self,
             experiment: Union[Experiment, str],
             plot: Union[str, bytes],
-            plot_name: Optional[str] = None
+            plot_name: Optional[str] = None,
+            sync_upload: bool = True
     ) -> Dict:
         """Upload an experiment plot.
 
@@ -478,6 +479,9 @@ class ExperimentService:
             plot: Name of the plot file or plot data to upload.
             plot_name: Name of the plot. If ``None``, the plot file name, if
                 given, or a generated name is used.
+            sync_upload: By default the server will upload the plot file
+                to backend storage asynchronously. Set this to False to use
+                that behavior and not block the upload.
 
         Returns:
             A dictionary with name and size of the uploaded plot.
@@ -490,7 +494,8 @@ class ExperimentService:
                 plot_name = plot
             else:
                 plot_name = "plot_{}.svg".format(datetime.now().isoformat())
-        return self._api_client.experiment_plot_upload(experiment, plot, plot_name)
+        return self._api_client.experiment_plot_upload(experiment, plot, plot_name,
+                                                       sync_upload=sync_upload)
 
     def update_plot(
             self,
