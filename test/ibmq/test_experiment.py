@@ -688,9 +688,7 @@ class TestExperiment(IBMQTestCase):
 
         # Update the plot we just uploaded.
         friend_bytes = str.encode("hello friend!")
-        # Upload the plot synchronously since we will immediately download it.
-        response = self.provider.experiment.update_plot(new_exp.uuid, friend_bytes, plot_name,
-                                                        sync_upload=True)
+        response = self.provider.experiment.update_plot(new_exp.uuid, friend_bytes, plot_name)
         self.assertEqual(response['name'], plot_name)
         rplot = self.provider.experiment.retrieve_plot(new_exp.uuid, plot_name)
         self.assertEqual(rplot, friend_bytes, "Retrieved plot not equal updated plot.")

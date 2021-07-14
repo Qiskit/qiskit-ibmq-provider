@@ -134,15 +134,15 @@ class ExperimentPlot(RestAdapterBase):
     def update(
             self,
             plot: Union[bytes, str],
-            sync_upload: bool = False
+            sync_upload: bool = True
     ) -> Dict:
         """Update an experiment plot.
 
         Args:
             plot: Plot file name or data to upload.
             sync_upload: By default the server will upload the plot file
-                to backend storage asynchronously. Set this to True to make
-                that synchronous.
+                to backend storage asynchronously. Set this to False to use
+                that behavior and not block the upload.
 
         Returns:
             JSON response.
