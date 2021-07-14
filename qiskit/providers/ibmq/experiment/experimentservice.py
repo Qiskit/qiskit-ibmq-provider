@@ -24,7 +24,7 @@ from .exceptions import (
     ExperimentNotFoundError,
     AnalysisResultNotFoundError,
     PlotNotFoundError,
-    OptionNotFoundError)
+    PreferenceNotFoundError)
 from .constants import ResultQuality
 from ..utils.converters import local_to_utc_str
 from ..api.clients.experiment import ExperimentClient
@@ -315,27 +315,42 @@ class ExperimentService:
         raw_data = self._api_client.experiment_delete(experiment)
         return Experiment.from_remote_data(self._provider, raw_data)
 
-    def options(self) -> Dict:
-        """Returns all saved experiment options"""
-        return self._credentials.options
+    def preferences(self) -> Dict:
+        """Returns all saved experiment preferences.
+        These are configurable, persistent preferences the application will use
+        when using the `ExperimentService`.
 
-    def option(self, name: str) -> object:
-        """ Returns the value of the experiment option
+        Returns:
+            Dict: the experiment preferences
+        """
+        return self._credentials.preferences
 
-        Return:
-            the experiment option's value
+    def preference(self, name: str) -> object:
+        """Returns the value of the experiment preference.
+
+        Args:
+            name: the name of the preference
+
         Raises:
-            OptionNotFoundError: if option does not exist
+            PreferenceNotFoundError: if preference does not exist
+
+        Returns:
+            the experiment preference's value
         """
         try:
-            return self._credentials.options[name]
+            return self._credentials.preferences['experiment'][name]
         except KeyError:
-            raise OptionNotFoundError('ExperimentService.option("{}") does not exist!'.format(name))
+            raise PreferenceNotFoundError(
+                'ExperimentService.preference("{}") does not exist!'.format(name))
 
-    def set_option(self, auto_save: bool = None) -> None:
-        """Sets saved experiment options"""
+    def set_preferences(self, auto_save: bool = None) -> None:
+        """Sets persisting experiment preferences.
+
+        Args:
+            auto_save: Automatially save the experiment.
+        """
         if auto_save is not None:
-            self._credentials.options['auto_save'] = auto_save
+            self._credentials.preferences['experiment']['auto_save'] = auto_save
         # Store the credentials
         store_credentials(self._credentials)
 

@@ -48,7 +48,7 @@ class Credentials:
             project: Optional[str] = None,
             proxies: Optional[Dict] = None,
             verify: bool = True,
-            options: Optional[Dict] = None,
+            preferences: Optional[Dict] = None,
             services: Optional[Dict] = None,
             access_token: Optional[str] = None
     ) -> None:
@@ -63,7 +63,8 @@ class Credentials:
             project: The project to use.
             proxies: Proxy configuration.
             verify: If ``False``, ignores SSL certificates errors.
-            options: Experiment configuration options.
+            preferences: Application preferences. Used for dictating preferred
+                action in services like the `ExperimentService`.
             services: Additional services for this account.
             access_token: IBM Quantum access token.
         """
@@ -75,7 +76,7 @@ class Credentials:
         self.websockets_url = websockets_url
         self.proxies = proxies or {}
         self.verify = verify
-        self.options = options or {'auto_save': True}
+        self.preferences = preferences or {'experiment': {'auto_save': False}}
 
         # Initialize additional service URLs.
         services = services or {}

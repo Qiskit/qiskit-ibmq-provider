@@ -16,8 +16,9 @@ import os
 import uuid
 from unittest import mock, SkipTest, skipIf
 from datetime import datetime, timedelta
-from typing import Optional, Union, Dict
+from typing import Optional, Union
 
+from qiskit.providers.ibmq.experiment.experimentservice import ExperimentService
 from qiskit.providers.ibmq.experiment.experiment import Experiment
 from qiskit.providers.ibmq.experiment.analysis_result import AnalysisResult, DeviceComponent
 from qiskit.providers.ibmq.experiment.exceptions import (ExperimentNotFoundError,
@@ -719,6 +720,22 @@ class TestExperiment(IBMQTestCase):
         with self.assertRaises(ValueError) as context_manager:
             self.provider.experiment.analysis_results(limit=-1)
         self.assertIn("limit", str(context_manager.exception))
+
+    def test_experiment_service_prefs(self):
+        """Test accessing and modifying ExperimentService preferences."""
+
+        # Create an experiment service instance
+        service = ExperimentService(self.provider)
+        # Ensure there are more than 0 preferences
+        self.assertGreater(len(service.preferences().keys()), 0)
+        # Get the `auto_save` option
+        auto_save = service.preference('auto_save')
+        # Flip the `auto_save` option
+        service.set_preferences(auto_save=(not auto_save))
+        # Get the `auto_save` pref
+        self.assertEqual(service.preference('auto_save'), not auto_save)
+        # Reset
+        service.set_preferences(auto_save=auto_save)
 
     def _create_experiment(
             self,

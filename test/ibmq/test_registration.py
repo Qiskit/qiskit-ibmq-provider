@@ -12,7 +12,6 @@
 
 """Test the registration and credentials modules."""
 
-from collections import OrderedDict
 import logging
 import os
 import warnings
@@ -55,7 +54,8 @@ class TestCredentials(IBMQTestCase):
             with self.assertRaises(IBMQAccountError) as context_manager:
                 IBMQ.load_account()
 
-        self.assertIn('No IBM Quantum Experience credentials found', str(context_manager.exception))
+        self.assertIn('No IBM Quantum Experience credentials found',
+                      str(context_manager.exception))
 
     def test_store_credentials_overwrite(self) -> None:
         """Test overwriting qiskitrc credentials."""
@@ -117,29 +117,6 @@ class TestCredentialsKwargs(IBMQTestCase):
             'dummy_token', 'https://dummy_url', verify=False)
         result = false_verify_credentials.connection_parameters()
         self.assertDictEqual(false_verify_expected_result, result)
-
-    def test_options_param(self) -> None:
-        """Test options param is acknowledged."""
-        # Iterate through qiskitrc credentials
-        for auth, i in enumerate(read_credentials_from_qiskitrc()):
-            if not isinstance(auth, OrderedDict):
-                continue
-            # Read auto_save value
-            hgp, creds = tuple(auth.items())[0]
-            cred_autosave = bool(creds.options['auto_save'])
-            # Flip it & save
-            creds.options = {'auto_save': not cred_autosave}
-            store_credentials(creds,
-                              default_provider=(hgp if hgp.hub is not None else None),
-                              overwrite=False)
-            # Re-read & verify auto_save value flipped
-            _, creds = tuple(list(read_credentials_from_qiskitrc())[i].items())[0]
-            self.assertEqual(not cred_autosave, bool(creds.options['auto_save']))
-            # reset
-            creds.options = {'auto_save': cred_autosave}
-            store_credentials(creds,
-                              default_provider=(hgp if hgp.hub is not None else None),
-                              overwrite=False)
 
     def test_proxy_param(self) -> None:
         """Test using only proxy urls (no NTLM credentials)."""
