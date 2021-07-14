@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    The user can now set the visibility (private/public) of a Qiskit Runtime program using
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.set_program_visibility`.
