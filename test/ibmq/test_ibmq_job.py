@@ -391,10 +391,15 @@ class TestIBMQJob(IBMQTestCase):
 
         for db_filter in db_filters:
             with self.subTest(db_filter=db_filter):
+
                 job_list = self.provider.backend.jobs(
                     backend_name=self.sim_backend.name(), limit=2,
                     start_datetime=past_two_month, end_datetime=date_today, db_filter=db_filter)
+                
+                # Check the job list is non-empty
                 self.assertTrue(job_list)
+
+                # Check the datetimes align with datetime interval
                 for job in job_list:
                     self.assertTrue(
                         (past_two_month_tz_aware <= job.creation_date() <= date_today_tz_aware),
