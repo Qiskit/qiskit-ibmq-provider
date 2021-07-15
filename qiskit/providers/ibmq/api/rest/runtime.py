@@ -219,6 +219,11 @@ class Program(RestAdapterBase):
         url = self.get_url('data')
         return self.session.get(url).json()
 
+    def set_data(self, data: str) -> None:
+        """Set program information."""
+        url = self.get_url('data')
+        self.session.put(url, data=data)
+
     def make_public(self) -> None:
         """Sets a runtime program's visibility to public."""
         url = self.get_url('public')

@@ -259,7 +259,7 @@ class BaseFakeRuntimeClient:
 
     def program_get_data(self, program_id: str):
         """Return a specific program and its data."""
-        return self._programs[program_id].to_dict(iclude_data=True)
+        return self._programs[program_id].to_dict()
 
     def program_run(
             self,
@@ -311,6 +311,16 @@ class BaseFakeRuntimeClient:
                 If ``False``, make the program visible to just your account.
         """
         self._programs[program_id]._is_public = public
+
+    def update_program(self, program_id: str, program_str: str) -> None:
+        """Updates a program to the string specified.
+
+        Args:
+            program_id: Program ID
+            program_str: the new runtime program.
+
+        """
+        self._programs[program_id]._data = program_str
 
     def job_results(self, job_id):
         """Get the results of a program job."""
