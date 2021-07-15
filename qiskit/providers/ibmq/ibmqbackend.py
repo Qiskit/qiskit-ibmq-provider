@@ -201,6 +201,9 @@ class IBMQBackend(Backend):
                 as a filter in the :meth:`jobs()` function call.
             experiment_id: Used to add a job to an "experiment", which is a collection
                 of jobs and additional metadata.
+
+            The following arguments are NOT applicable if a Qobj is passed in.
+
             header: User input that will be attached to the job and will be
                 copied to the corresponding result header. Headers do not affect the run.
                 This replaces the old ``Qobj`` header.

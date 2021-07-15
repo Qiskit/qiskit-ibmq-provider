@@ -1,0 +1,5 @@
+---
+upgrade:
+  - |
+    :meth:`qiskit.providers.ibmq.ibmqbackend.IBMQBackend.run` no longer
+    accepts `validate_qobj` as a parameter.
