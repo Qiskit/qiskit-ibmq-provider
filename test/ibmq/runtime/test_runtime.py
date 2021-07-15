@@ -327,9 +327,7 @@ if __name__ == '__main__':
     def test_program_upload_data(self):
         """Test updating a program's string."""
         program_id = self._upload_program()
-        program_str = self.runtime.get_program_str(program_id)
-        self.assertIsNotNone(program_str)
-        self.assertGreater(len(program_str), 0)
+        self.runtime.update_program(program_id, 'print("Hello, Qiskit Provider.")')
 
     def test_run_program_failed(self):
         """Test a failed program execution."""

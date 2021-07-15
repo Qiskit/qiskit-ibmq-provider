@@ -312,15 +312,15 @@ class BaseFakeRuntimeClient:
         """
         self._programs[program_id]._is_public = public
 
-    def update_program(self, program_id: str, program_str: str) -> None:
+    def set_program_data(self, program_id: str, data: str) -> None:
         """Updates a program to the string specified.
 
         Args:
             program_id: Program ID
-            program_str: the new runtime program.
+            data: the new runtime program.
 
         """
-        self._programs[program_id]._data = program_str
+        self._programs[program_id]._data = data
 
     def job_results(self, job_id):
         """Get the results of a program job."""
