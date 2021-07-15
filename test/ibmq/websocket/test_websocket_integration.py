@@ -156,7 +156,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         """Test timeout checking status of a job via websockets."""
         backend = most_busy_backend(self.provider)
         job = backend.run(transpile(ReferenceCircuits.bell(), backend),
-                          validate_qobj=True, shots=backend.configuration().max_shots)
+                          shots=backend.configuration().max_shots)
 
         try:
             with self.assertRaises(JobTimeoutError):

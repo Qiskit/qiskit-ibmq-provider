@@ -24,7 +24,7 @@ from qiskit.circuit import QuantumCircuit, Parameter, Delay
 from qiskit.circuit.duration import duration_in_dt
 from qiskit.pulse import Schedule, LoConfig
 from qiskit.pulse.channels import PulseChannel
-from qiskit.qobj import QasmQobj, PulseQobj, validate_qobj_against_schema
+from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.qobj.utils import MeasLevel, MeasReturnType
 from qiskit.providers.backend import BackendV1 as Backend
 from qiskit.providers.options import Options
@@ -153,7 +153,6 @@ class IBMQBackend(Backend):
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
             experiment_id: Optional[str] = None,
-            validate_qobj: bool = None,
             header: Optional[Dict] = None,
             shots: Optional[int] = None,
             memory: Optional[bool] = None,
@@ -202,11 +201,6 @@ class IBMQBackend(Backend):
                 as a filter in the :meth:`jobs()` function call.
             experiment_id: Used to add a job to an "experiment", which is a collection
                 of jobs and additional metadata.
-            validate_qobj: DEPRECATED. If ``True``, run JSON schema validation against the
-                submitted payload. Only applicable if a Qobj is passed in.
-
-            The following arguments are NOT applicable if a Qobj is passed in.
-
             header: User input that will be attached to the job and will be
                 copied to the corresponding result header. Headers do not affect the run.
                 This replaces the old ``Qobj`` header.
@@ -326,14 +320,6 @@ class IBMQBackend(Backend):
                 run_config_dict['method'] = sim_method
             qobj = assemble(circuits, self, **run_config_dict)
 
-        if validate_qobj is not None:
-            warnings.warn("The `validate_qobj` keyword is deprecated and will "
-                          "be removed in a future release. "
-                          "You can pull the schemas from the Qiskit/ibmq-schemas "
-                          "repo and directly validate your payloads with that.",
-                          DeprecationWarning, stacklevel=3)
-            if validate_qobj:
-                validate_qobj_against_schema(qobj)
         return self._submit_job(qobj, job_name, job_tags, experiment_id)
 
     def _get_run_config(self, **kwargs: Any) -> Dict:
@@ -865,7 +851,6 @@ class IBMQSimulator(IBMQBackend):
             job_share_level: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
             experiment_id: Optional[str] = None,
-            validate_qobj: bool = None,
             backend_options: Optional[Dict] = None,
             noise_model: Any = None,
             **kwargs: Dict
@@ -888,8 +873,6 @@ class IBMQSimulator(IBMQBackend):
                 as a filter in the :meth:`IBMQBackend.jobs()<IBMQBackend.jobs>` method.
             experiment_id: Used to add a job to an "experiment", which is a collection
                 of jobs and additional metadata.
-            validate_qobj: DEPRECATED. If ``True``, run JSON schema validation against the
-                submitted payload.
             backend_options: DEPRECATED dictionary of backend options for the execution.
             noise_model: Noise model.
             kwargs: Additional runtime configuration options. They take
@@ -919,7 +902,6 @@ class IBMQSimulator(IBMQBackend):
         run_config.update(kwargs)
         return super().run(circuits, job_name=job_name,
                            job_tags=job_tags, experiment_id=experiment_id,
-                           validate_qobj=validate_qobj,
                            noise_model=noise_model, **run_config)
 
 
