@@ -248,6 +248,7 @@ class Api(RestAdapterBase):
             experiment_uuid: Optional[str] = None,
             result_type: Optional[str] = None,
             quality: Optional[List[str]] = None,
+            tags: Optional[List[str]] = None,
             verified: Optional[bool] = None
     ) -> Dict:
         """Return all analysis results.
@@ -260,6 +261,7 @@ class Api(RestAdapterBase):
             experiment_uuid: Experiment UUID used for filtering.
             result_type: Analysis result type used for filtering.
             quality: Quality value used for filtering.
+            tags: Tags used for filtering.
             verified: Indicates whether this result has been verified..
 
         Returns:
@@ -281,6 +283,8 @@ class Api(RestAdapterBase):
             params['limit'] = limit
         if marker:
             params['marker'] = marker
+        if tags:
+            params['tags'] = tags
         if verified is not None:
             params['verified'] = verified
         return self.session.get(url, params=params).json()

@@ -43,9 +43,17 @@ class TestExperiment(IBMQTestCase):
         super().setUpClass()
         try:
             cls.provider = cls._setup_provider()    # pylint: disable=no-value-for-parameter
-            cls.experiments = cls.provider.experiment.experiments(tags=['qiskit-tests'])
+            cls.experiments = cls.provider.experiment.experiments(tags=['qiskit-test'], limit=None)
             cls.device_components = cls.provider.experiment.device_components()
-        except Exception:
+            cls.BACKEND_NAME = 'ibmq_qasm_simulator'
+
+            # If first-time user, generate test data
+            if len(cls.experiments) == 0:
+                cls._create_initial_test_data()
+                cls.experiments = cls.provider.experiment.experiments(
+                    tags=['qiskit-test'], limit=None)
+
+        except Exception as ex:
             raise SkipTest("Not authorized to use experiment service.")
 
     @classmethod
@@ -105,10 +113,10 @@ class TestExperiment(IBMQTestCase):
 
     def test_experiments_with_backend(self):
         """Test retrieving all experiments for a specific backend."""
-        backend_name = self.experiments[0].backend_name
+        backend_name = self.BACKEND_NAME
         ref_uuid = self.experiments[0].uuid
         backend_experiments = self.provider.experiment.experiments(
-            backend_name=backend_name, tags=['qiskit-tests'], limit=None)
+            backend_name=backend_name, tags=['qiskit-test'], limit=None)
 
         found = False
         for exp in backend_experiments:
@@ -123,7 +131,7 @@ class TestExperiment(IBMQTestCase):
         expr_type = self.experiments[0].type
         ref_uuid = self.experiments[0].uuid
         backend_experiments = self.provider.experiment.experiments(
-            type=expr_type, tags=['qiskit-tests'], limit=None)
+            type=expr_type, tags=['qiskit-test'], limit=None)
 
         found = False
         for exp in backend_experiments:
@@ -151,7 +159,7 @@ class TestExperiment(IBMQTestCase):
         for start_dt, end_dt, expected, title in sub_tests:
             with self.subTest(title=title):
                 backend_experiments = self.provider.experiment.experiments(
-                    start_datetime=start_dt, end_datetime=end_dt, tags=['qiskit-tests'], limit=None)
+                    start_datetime=start_dt, end_datetime=end_dt, tags=['qiskit-test'], limit=None)
                 found = False
                 for exp in backend_experiments:
                     if start_dt:
@@ -401,14 +409,14 @@ class TestExperiment(IBMQTestCase):
 
     def test_reference_experiment_analysis_results(self):
         """Test referencing analysis results in an experiment."""
-        ref_result = self.provider.experiment.analysis_results()[0]
+        ref_result = self.provider.experiment.analysis_results(tags=['qiskit-test'])[0]
         experiment = self.provider.experiment.retrieve_experiment(ref_result.experiment_uuid)
         for result in experiment.analysis_results:
             self.assertEqual(result.experiment_uuid, ref_result.experiment_uuid)
 
     def test_get_analysis_results(self):
         """Test retrieving all analysis results."""
-        results = self.provider.experiment.analysis_results()
+        results = self.provider.experiment.analysis_results(tags=['qiskit-test'])
         for res in results:
             self.assertTrue(isinstance(res, AnalysisResult))
             self.assertIsInstance(res.verified, bool)
@@ -420,7 +428,7 @@ class TestExperiment(IBMQTestCase):
 
     def test_upload_analysis_result(self):
         """Test uploading an analysis result."""
-        ref_result = self.provider.experiment.analysis_results()[0]
+        ref_result = self.provider.experiment.analysis_results(tags=['qiskit-test'])[0]
         device_comp = self.device_components[0]
         new_experiment = self._create_experiment(device_comp.backend_name)
         new_result = AnalysisResult(experiment_uuid=new_experiment.uuid,
@@ -473,7 +481,7 @@ class TestExperiment(IBMQTestCase):
 
     def test_results_experiments_device_components(self):
         """Test filtering analysis results and experiments with device components."""
-        results = self.provider.experiment.analysis_results()
+        results = self.provider.experiment.analysis_results(tags=['qiskit-test'])
         sub_tests = []
         ref_result = None
         for res in results:
@@ -493,7 +501,7 @@ class TestExperiment(IBMQTestCase):
         for dev_comp, found in sub_tests:
             with self.subTest(dev_comp=dev_comp):
                 f_results = self.provider.experiment.analysis_results(
-                    device_components=dev_comp, limit=None)
+                    tags=['qiskit-test'], device_components=dev_comp, limit=None)
                 self.assertEqual(ref_result.uuid in [res.uuid for res in f_results], found,
                                  "Analysis result {} with device component {} (not)found "
                                  "unexpectedly when filter using device component={}. "
@@ -506,7 +514,7 @@ class TestExperiment(IBMQTestCase):
                                          result.uuid, result.device_components, dev_comp))
 
                 f_experiments = self.provider.experiment.experiments(
-                    device_components=dev_comp, tags=['qiskit-tests'], limit=None)
+                    device_components=dev_comp, tags=['qiskit-test'], limit=None)
                 for exp in f_experiments[:5]:
                     found = False
                     result_dev_comp = []
@@ -521,7 +529,7 @@ class TestExperiment(IBMQTestCase):
 
     def test_analysis_results_experiment_uuid(self):
         """Test filtering analysis results with experiment uuid."""
-        ref_result = self.provider.experiment.analysis_results()[0]
+        ref_result = self.provider.experiment.analysis_results(tags=['qiskit-test'])[0]
         sub_tests = [(ref_result.experiment_uuid, True)]
         for expr in self.experiments:
             if expr.uuid != ref_result.experiment_uuid:
@@ -531,7 +539,7 @@ class TestExperiment(IBMQTestCase):
         for expr_uuid, found in sub_tests:
             with self.subTest(expr_uuid=expr_uuid):
                 f_results = self.provider.experiment.analysis_results(
-                    experiment_id=expr_uuid, limit=None)
+                    tags=['qiskit-test'], experiment_id=expr_uuid, limit=None)
                 self.assertEqual(ref_result.uuid in [res.uuid for res in f_results], found,
                                  "Analysis result {} with experiment uuid {} (not)found "
                                  "unexpectedly when filter using experiment uuid={}. "
@@ -545,7 +553,7 @@ class TestExperiment(IBMQTestCase):
 
     def test_analysis_results_type(self):
         """Test filtering analysis results with type."""
-        all_results = self.provider.experiment.analysis_results()
+        all_results = self.provider.experiment.analysis_results(tags=['qiskit-test'])
         ref_result = all_results[0]
         sub_tests = [(ref_result.type, True)]
         for res in all_results:
@@ -556,7 +564,7 @@ class TestExperiment(IBMQTestCase):
         for res_type, found in sub_tests:
             with self.subTest(res_type=res_type):
                 f_results = self.provider.experiment.analysis_results(
-                    result_type=res_type, limit=None)
+                    result_type=res_type, tags=['qiskit-test'], limit=None)
                 self.assertEqual(ref_result.uuid in [res.uuid for res in f_results], found,
                                  "Analysis result {} with type {} (not)found unexpectedly "
                                  "when filter using type={}. Found={}.".format(
@@ -568,7 +576,7 @@ class TestExperiment(IBMQTestCase):
 
     def test_analysis_results_quality(self):
         """Test filtering analysis results with quality."""
-        all_results = self.provider.experiment.analysis_results()
+        all_results = self.provider.experiment.analysis_results(tags=['qiskit-test'])
         ref_result = all_results[0]
         # Find a result whose quality is in the middle.
         bad_good = [ResultQuality.BAD, ResultQuality.GOOD]  # pylint: disable=no-member
@@ -603,7 +611,8 @@ class TestExperiment(IBMQTestCase):
 
         for quality, found in sub_tests:
             with self.subTest(quality=quality):
-                f_results = self.provider.experiment.analysis_results(quality=quality, limit=None)
+                f_results = self.provider.experiment.analysis_results(
+                    quality=quality, tags=['qiskit-test'], limit=None)
                 self.assertEqual(ref_result.uuid in [res.uuid for res in f_results], found,
                                  "Analysis result {} with quality {} (not)found unexpectedly "
                                  "when filter using quality={}. Found={}.".format(
@@ -696,12 +705,17 @@ class TestExperiment(IBMQTestCase):
 
     def test_experiments_limit(self):
         """Test getting experiments with a limit."""
-        limits = [10, 1000, 1001]
+        # Get the total number of experiments
+        # Test [n-1, n, n+1]
+        n_exp = len(self.experiments)
+        limits = [n_exp - 1, n_exp, n_exp + 1]
+        expected = [n_exp - 1, n_exp, n_exp]
 
-        for limit in limits:
+        for limit, exp in zip(limits, expected):
             with self.subTest(limit=limit):
-                experiments = self.provider.experiment.experiments(limit=limit)
-                self.assertEqual(len(experiments), limit)
+                experiments = self.provider.experiment.experiments(
+                    tags=['qiskit-test'], limit=limit)
+                self.assertEqual(len(experiments), exp)
                 self.assertEqual(len({expr.uuid for expr in experiments}), len(experiments))
 
         with self.assertRaises(ValueError) as context_manager:
@@ -710,15 +724,20 @@ class TestExperiment(IBMQTestCase):
 
     def test_analysis_results_limit(self):
         """Test getting analysis results with a limit."""
-        limits = [10, 1000, 1001]
-        for limit in limits:
+        # Get the total number of analysis results
+        n_res = len(self.provider.experiment.analysis_results(tags=['qiskit-test'], limit=None))
+        # Test [n-1, n, n+1]
+        limits = [n_res - 1, n_res, n_res + 1]
+        expected = [n_res - 1, n_res, n_res]
+        for limit, exp in zip(limits, expected):
             with self.subTest(limit=limit):
-                results = self.provider.experiment.analysis_results(limit=limit)
-                self.assertEqual(len(results), limit)
+                results = self.provider.experiment.analysis_results(
+                    tags=['qiskit-test'], limit=limit)
+                self.assertEqual(len(results), exp)
                 self.assertEqual(len({res.uuid for res in results}), len(results))
 
         with self.assertRaises(ValueError) as context_manager:
-            self.provider.experiment.analysis_results(limit=-1)
+            self.provider.experiment.analysis_results(tags=['qiskit-test'], limit=-1)
         self.assertIn("limit", str(context_manager.exception))
 
     def _create_experiment(
@@ -726,9 +745,9 @@ class TestExperiment(IBMQTestCase):
             backend_name: Optional[str] = None,
             start_dt: Optional[datetime] = None,
             share_level: Optional[Union[ExperimentShareLevel, str]] = None,
-            notes: Optional[str] = None
+            notes: Optional[str] = None,
     ) -> Experiment:
-        backend_name = backend_name or self.experiments[0].backend_name
+        backend_name = backend_name or 'ibmq_qasm_simulator'
         new_exp = Experiment(  # pylint: disable=unexpected-keyword-arg
             provider=self.provider,
             backend_name=backend_name,
@@ -754,3 +773,30 @@ class TestExperiment(IBMQTestCase):
         self.provider.experiment.upload_analysis_result(new_result)
         self.results_to_delete.append(new_result.uuid)
         return new_result
+
+    @classmethod
+    def _create_initial_test_data(cls):
+        """Creates an initial push of test data."""
+        # Generate 3 pieces of data.
+        for _ in range(3):
+            # Create an experiment
+            exp = Experiment(  # pylint: disable=unexpected-keyword-arg
+                provider=cls.provider,
+                backend_name=cls.BACKEND_NAME,
+                experiment_type='test',
+                tags=['qiskit-test', 'qiskit-test-1'],  # 2 tags for multi-tag checks
+                start_datetime=datetime.now(),
+                share_level=ExperimentShareLevel.PUBLIC,
+                notes='test notes'
+            )
+            cls.provider.experiment.upload_experiment(exp)
+
+            # Create an analysis, based on the created experiment.
+            device_comp = cls.device_components[0]
+            fit = dict(value=41.456, variance=4.051)
+            new_result = AnalysisResult(experiment_uuid=exp.uuid,
+                                        fit=fit,
+                                        result_type="T1",
+                                        device_components=[device_comp.type],
+                                        tags=['qiskit-test'])
+            cls.provider.experiment.upload_analysis_result(new_result)

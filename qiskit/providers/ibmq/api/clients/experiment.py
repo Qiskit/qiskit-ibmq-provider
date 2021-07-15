@@ -202,6 +202,7 @@ class ExperimentClient(BaseClient):
             experiment_uuid: Optional[str] = None,
             result_type: Optional[str] = None,
             quality: Optional[List[str]] = None,
+            tags: Optional[List[str]] = None,
             verified: Optional[bool] = None
     ) -> Dict:
         """Return a list of analysis results.
@@ -214,14 +215,16 @@ class ExperimentClient(BaseClient):
             experiment_uuid: Experiment UUID used for filtering.
             result_type: Analysis result type used for filtering.
             quality: Quality value used for filtering.
+            tags: Tags used for filtering.
             verified: Indicates whether this result has been verified..
 
         Returns:
             A list of analysis results and the marker, if applicable.
         """
         resp = self.base_api.analysis_results(
-            limit, marker, backend_name, device_components, experiment_uuid,
-            result_type, quality, verified)
+            limit=limit, marker=marker, backend_name=backend_name,
+            device_components=device_components, experiment_uuid=experiment_uuid,
+            result_type=result_type, quality=quality, verified=verified, tags=tags)
         return resp
 
     def analysis_result_upload(self, result: Dict) -> Dict:

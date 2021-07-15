@@ -317,6 +317,8 @@ class ExperimentService:
             experiment_id: Optional[str] = None,
             result_type: Optional[str] = None,
             quality: Optional[List[Tuple[str, Union[str, ResultQuality]]]] = None,
+            tags: Optional[List[str]] = None,
+            tags_operator: Optional[str] = "OR",
             verified: Optional[bool] = None
     ) -> List[AnalysisResult]:
         """Retrieve all analysis results, with optional filtering.
@@ -335,6 +337,14 @@ class ExperimentService:
                 ``analysis_results(quality=[('ge', 'Bad'), ('lt', 'Good')])``
                 will return all analysis results with a quality of ``Bad`` and
                 ``No Information``.
+            tags: Filter by tags assigned to experiments.
+            tags_operator: Logical operator to use when filtering by job tags. Valid
+                values are "AND" and "OR":
+
+                    * If "AND" is specified, then an experiment must have all of the tags
+                      specified in `tags` to be included.
+                    * If "OR" is specified, then an experiment only needs to have any
+                      of the tags specified in `tags` to be included.
             verified: Indicates whether this result has been verified..
 
         Returns:
@@ -353,6 +363,17 @@ class ExperimentService:
                     qual = qual.value  # type: ignore[assignment]
                 qual_str = qual if op == 'eq' else "{}:{}".format(op, qual)
                 quality_list.append(qual_str)
+
+        tags_filter = None
+        if tags:
+            if tags_operator.upper() == 'OR':
+                tags_filter = 'any:' + ','.join(tags)
+            elif tags_operator.upper() == 'AND':
+                tags_filter = 'contains:' + ','.join(tags)
+            else:
+                raise ValueError('{} is not a valid `tags_operator`. Valid values are '
+                                 '"AND" and "OR".'.format(tags_operator))
+
         results = []
         marker = None
         while limit is None or limit > 0:
@@ -360,7 +381,7 @@ class ExperimentService:
                 limit=limit, marker=marker,
                 backend_name=backend_name, device_components=device_components,
                 experiment_uuid=experiment_id, result_type=result_type, quality=quality_list,
-                verified=verified)
+                tags=tags_filter, verified=verified)
             marker = raw_data.get('marker')
             for result in raw_data['analysis_results']:
                 results.append(AnalysisResult.from_remote_data(result))
