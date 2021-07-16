@@ -139,8 +139,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         self.experiments_to_delete.append(exp_data.experiment_id)
 
         credentials = self.provider.credentials
-        rexp_data = self.experiment.experiment(exp_data.experiment_id)
-        rexp = DbExperimentData.from_data(**rexp_data)
+        rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
         self._verify_experiment_data(exp_data, rexp)
         self.assertEqual(credentials.hub, rexp.hub)  # pylint: disable=no-member
         self.assertEqual(credentials.group, rexp.group)  # pylint: disable=no-member
@@ -160,8 +159,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         exp_data.notes = "some notes"
         exp_data.save()
 
-        rexp_dict = self.experiment.experiment(exp_data.experiment_id)
-        rexp = DbExperimentData.from_data(**rexp_dict)
+        rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
         self._verify_experiment_data(exp_data, rexp)
 
     def _verify_experiment_data(self, expected, actual):
@@ -189,11 +187,11 @@ class TestExperimentDataIntegration(IBMQTestCase):
                                  tags=["foo", "bar"],
                                  service=self.experiment)
         exp_data.add_analysis_results(aresult)
-        exp_data.save_all()
+        exp_data.save()
 
-        rresult = self.experiment.analysis_result(aresult.result_id)
-        self.assertEqual(exp_data.experiment_id, rresult["experiment_id"])
-        self._verify_analysis_result(aresult, AnalysisResult.from_data(**rresult))
+        rresult = AnalysisResult.load(aresult.result_id, self.experiment)
+        self.assertEqual(exp_data.experiment_id, rresult.experiment_id)
+        self._verify_analysis_result(aresult, rresult)
 
     def test_update_analysis_result(self):
         """Test updating an analysis result."""
@@ -206,8 +204,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         aresult.set_tags(["foo", "bar"])
         aresult.save()
 
-        rexp_dict = self.experiment.experiment(exp_data.experiment_id)
-        rexp = DbExperimentData.from_data(**rexp_dict)
+        rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
         rresult = rexp.analysis_results(0)
         self._verify_analysis_result(aresult, rresult)
 
@@ -232,9 +229,8 @@ class TestExperimentDataIntegration(IBMQTestCase):
         aresult, exp_data = self._create_analysis_result()
         with mock.patch('builtins.input', lambda _: 'y'):
             exp_data.delete_analysis_result(0)
-            exp_data.save_all()
-        rexp_dict = self.experiment.experiment(exp_data.experiment_id)
-        rexp = DbExperimentData.from_data(**rexp_dict)
+            exp_data.save()
+        rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
         self.assertRaises(DbExperimentEntryNotFound, rexp.analysis_results, aresult.result_id)
         self.assertRaises(IBMExperimentEntryNotFound,
                           self.experiment.analysis_result, aresult.result_id)
@@ -250,8 +246,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
             with self.subTest(figure_name=figure_name):
                 exp_data.add_figures(figures=hello_bytes, figure_names=figure_name,
                                      save_figure=True)
-                rexp_dict = self.experiment.experiment(exp_data.experiment_id)
-                rexp = DbExperimentData.from_data(**rexp_dict)
+                rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
                 self.assertEqual(rexp.figure(idx), hello_bytes)
 
     @skipIf(not HAS_MATPLOTLIB, "matplotlib not available.")
@@ -264,8 +259,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         exp_data = self._create_experiment_data()
         exp_data.add_figures(figure, save_figure=True)
 
-        rexp_dict = self.experiment.experiment(exp_data.experiment_id)
-        rexp = DbExperimentData.from_data(**rexp_dict)
+        rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
         self.assertTrue(rexp.figure(0))
 
     def test_add_figures_file(self):
@@ -278,8 +272,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
             file.write(hello_bytes)
 
         exp_data.add_figures(figures=file_name, save_figure=True)
-        rexp_dict = self.experiment.experiment(exp_data.experiment_id)
-        rexp = DbExperimentData.from_data(**rexp_dict)
+        rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
         self.assertEqual(rexp.figure(0), hello_bytes)
 
     def test_update_figure(self):
@@ -294,8 +287,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         friend_bytes = str.encode("hello friend")
         exp_data.add_figures(figures=friend_bytes, figure_names=figure_name,
                              overwrite=True, save_figure=True)
-        rexp_dict = self.experiment.experiment(exp_data.experiment_id)
-        rexp = DbExperimentData.from_data(**rexp_dict)
+        rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
         self.assertEqual(rexp.figure(0), friend_bytes)
         self.assertEqual(rexp.figure(figure_name), friend_bytes)
 
@@ -308,10 +300,9 @@ class TestExperimentDataIntegration(IBMQTestCase):
         exp_data.add_figures(figures=hello_bytes, figure_names=figure_name, save_figure=True)
         with mock.patch('builtins.input', lambda _: 'y'):
             exp_data.delete_figure(0)
-            exp_data.save_all()
+            exp_data.save()
 
-        rexp_dict = self.experiment.experiment(exp_data.experiment_id)
-        rexp = DbExperimentData.from_data(**rexp_dict)
+        rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
         self.assertRaises(IBMExperimentEntryNotFound, rexp.figure, figure_name)
         self.assertRaises(IBMExperimentEntryNotFound,
                           self.experiment.figure, exp_data.experiment_id, figure_name)
@@ -327,10 +318,9 @@ class TestExperimentDataIntegration(IBMQTestCase):
         exp_data.add_analysis_results(aresult)
         hello_bytes = str.encode("hello world")
         exp_data.add_figures(hello_bytes, figure_names="hello.svg")
-        exp_data.save_all()
+        exp_data.save()
 
-        rexp_dict = self.experiment.experiment(exp_data.experiment_id)
-        rexp = DbExperimentData.from_data(**rexp_dict)
+        rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
         self.assertEqual(["foo", "bar"], rexp.tags())
         self.assertEqual(aresult.result_id, rexp.analysis_results(0).result_id)
         self.assertEqual(hello_bytes, rexp.figure(0))
@@ -338,10 +328,9 @@ class TestExperimentDataIntegration(IBMQTestCase):
         exp_data.delete_analysis_result(0)
         exp_data.delete_figure(0)
         with mock.patch('builtins.input', lambda _: 'y'):
-            exp_data.save_all()
+            exp_data.save()
 
-        rexp_dict = self.experiment.experiment(exp_data.experiment_id)
-        rexp = DbExperimentData.from_data(**rexp_dict)
+        rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
         self.assertRaises(IBMExperimentEntryNotFound, rexp.figure, "hello.svg")
         self.assertRaises(DbExperimentEntryNotFound, rexp.analysis_results, aresult.result_id)
 
@@ -480,7 +469,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
                                  device_components=self.device_components,
                                  experiment_id=exp_data.experiment_id)
         exp_data.add_analysis_results(aresult)
-        exp_data.save_all()
+        exp_data.save()
         self.results_to_delete.append(aresult.result_id)
         return aresult, exp_data
 

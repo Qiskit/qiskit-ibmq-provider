@@ -27,7 +27,7 @@ from qiskit.providers.ibmq.experiment import (ResultQuality,
                                               IBMExperimentEntryNotFound)
 
 from ...ibmqtestcase import IBMQTestCase
-from ...decorators import requires_provider, requires_device
+from ...decorators import requires_provider
 
 
 @skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
@@ -39,10 +39,9 @@ class TestExperimentServerIntegration(IBMQTestCase):
         """Initial class level setup."""
         # pylint: disable=arguments-differ
         super().setUpClass()
-        cls.backend = cls._setup_backend()  # pylint: disable=no-value-for-parameter
         cls.provider = cls._setup_provider()  # pylint: disable=no-value-for-parameter
+        cls.backend = cls.provider.get_backend('ibmq_qasm_simulator')
         try:
-            # cls.experiments = cls.provider.experiment.experiments()
             cls.device_components = cls.provider.experiment.device_components(cls.backend.name())
         except Exception:
             raise SkipTest("Not authorized to use experiment service.")
@@ -52,12 +51,6 @@ class TestExperimentServerIntegration(IBMQTestCase):
     def _setup_provider(cls, provider):
         """Get the provider for the class."""
         return provider
-
-    @classmethod
-    @requires_device
-    def _setup_backend(cls, backend):
-        """Get a backend for the class."""
-        return backend
 
     def setUp(self) -> None:
         """Test level setup."""
