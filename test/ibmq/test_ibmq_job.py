@@ -55,7 +55,7 @@ class TestIBMQJob(IBMQTestCase):
         cls.provider = provider
         cls.sim_backend = provider.get_backend('ibmq_qasm_simulator')
         cls.bell = transpile(ReferenceCircuits.bell(), cls.sim_backend)
-        cls.sim_job = cls.sim_backend.run(cls.bell, validate_qobj=True)
+        cls.sim_job = cls.sim_backend.run(cls.bell)
         cls.last_month = datetime.now() - timedelta(days=30)
 
     @slow_test
@@ -64,7 +64,7 @@ class TestIBMQJob(IBMQTestCase):
         """Test running in a real device."""
         shots = 8192
         job = backend.run(transpile(ReferenceCircuits.bell(), backend=backend),
-                          validate_qobj=True, shots=shots)
+                          shots=shots)
 
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         result = job.result()
@@ -86,7 +86,7 @@ class TestIBMQJob(IBMQTestCase):
             qc.cx(qr[i], qr[i + 1])
         qc.measure(qr, cr)
         num_jobs = 5
-        job_array = [self.sim_backend.run(transpile([qc] * 20), validate_qobj=True, shots=2048)
+        job_array = [self.sim_backend.run(transpile([qc] * 20), shots=2048)
                      for _ in range(num_jobs)]
         timeout = 30
         start_time = time.time()
@@ -133,7 +133,7 @@ class TestIBMQJob(IBMQTestCase):
             qc.cx(qr[i], qr[i + 1])
         qc.measure(qr, cr)
         num_jobs = 3
-        job_array = [backend.run(transpile(qc, backend=backend), validate_qobj=True)
+        job_array = [backend.run(transpile(qc, backend=backend))
                      for _ in range(num_jobs)]
         time.sleep(3)  # give time for jobs to start (better way?)
         job_status = [job.status() for job in job_array]
@@ -205,8 +205,8 @@ class TestIBMQJob(IBMQTestCase):
         if not backend_2:
             raise SkipTest('Skipping test that requires multiple backends')
 
-        job_1 = backend_1.run(transpile(ReferenceCircuits.bell(), backend_1), validate_qobj=True)
-        job_2 = backend_2.run(transpile(ReferenceCircuits.bell(), backend_2), validate_qobj=True)
+        job_1 = backend_1.run(transpile(ReferenceCircuits.bell(), backend_1))
+        job_2 = backend_2.run(transpile(ReferenceCircuits.bell(), backend_2))
 
         # test a retrieved job's backend is the same as the queried backend
         self.assertEqual(backend_1.retrieve_job(job_1.job_id()).backend().name(),
@@ -583,8 +583,7 @@ class TestIBMQJob(IBMQTestCase):
     def test_wait_for_final_state_timeout(self):
         """Test waiting for job to reach final state times out."""
         backend = most_busy_backend(self.provider)
-        job = backend.run(transpile(ReferenceCircuits.bell(), backend=backend),
-                          validate_qobj=True)
+        job = backend.run(transpile(ReferenceCircuits.bell(), backend=backend))
         try:
             self.assertRaises(IBMQJobTimeoutError, job.wait_for_final_state, timeout=0.1)
         finally:
