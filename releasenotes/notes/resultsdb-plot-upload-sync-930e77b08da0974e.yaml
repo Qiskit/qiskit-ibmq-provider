@@ -1,5 +1,5 @@
 ---
-other:
+features:
   - |
     The methods
     :meth:`qiskit.providers.ibmq.experimentservice.ExperimentService.upload_plot`
