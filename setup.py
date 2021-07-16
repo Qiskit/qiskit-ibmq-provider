@@ -17,13 +17,12 @@ import os
 from setuptools import setup
 
 REQUIREMENTS = [
-    "qiskit-terra>=0.17.3",
+    "qiskit-terra>=0.18.0",
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
     "numpy>=1.13",
     "urllib3>=1.21.1",
     "python-dateutil>=2.8.0",
-    "dill>=0.3",
     "websocket-client>=1.0.1"
 ]
 
