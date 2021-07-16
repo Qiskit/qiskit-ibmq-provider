@@ -76,13 +76,28 @@ class Credentials:
         self.websockets_url = websockets_url
         self.proxies = proxies or {}
         self.verify = verify
-        self.preferences = preferences or {'experiment': {'auto_save': False}}
+        self.preferences = self._default_preferences
+        self.preferences.update(preferences or {})
 
         # Initialize additional service URLs.
         services = services or {}
         self.extractor_url = services.get('extractorsService', None)
         self.experiment_url = services.get('resultsDB', None)
         self.runtime_url = services.get('runtime', None)
+
+    @property
+    def _default_preferences(self) -> dict:
+        """The default preferences passed to the applications that use different services
+        which no effect on the service itself.
+
+        For example, if ``auto_save`` is set to ``True`` for the experiment service,
+        it tells the application that you prefer changes to be automatically saved.
+        It is up to the application to implement the preference.
+
+        Returns:
+            the default application preferences
+        """
+        return {'experiment': {'auto_save': False}}
 
     def is_ibmq(self) -> bool:
         """Return whether the credentials represent an IBM Quantum Experience account."""

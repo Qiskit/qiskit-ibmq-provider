@@ -29,22 +29,8 @@ DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
                                      '.qiskit', 'qiskitrc')
 """Default location of the configuration file."""
 
-
-def to_bool(val: str) -> bool:
-    """converts val to boolean obj.
-    Note: bool(x) always returns true.
-
-    Args:
-        val: a string val
-
-    Returns:
-        the converted boolean
-    """
-    return val.lower() == 'true'
-
-
 ACTIVE_PREFERENCES = {
-    'experiment': [('auto_save', to_bool)]
+    'experiment': {'auto_save': lambda val: val.lower() == 'true'}
 }
 
 
@@ -103,18 +89,28 @@ def read_credentials_from_qiskitrc(
 
             # Retrieve locally-stored preferences
             # Criteria: It is (1) an active pref and (2) a value was found for it
-            # WARNING: This kind of linear storage in the .qiskitrc becomes dangerous
-            #  when we have nested prefs (if conflicting names). Storage should move to JSON.
             preferences: Dict[str, Dict] = {}
+            preference_keys = []
             # pylint: disable=consider-iterating-dictionary
-            for category in ACTIVE_PREFERENCES.keys():
-                for opt, opt_type in ACTIVE_PREFERENCES[category]:
-                    if opt in single_credentials.keys():
-                        if not preferences.get(category):
-                            preferences[category] = {}
-                        preferences[category][opt] = opt_type(  # type: ignore[assignment]
-                            single_credentials[opt])
-                        del single_credentials[opt]
+            for cred in single_credentials.keys():
+                # Check if preference. Format: pref category item=value
+                if cred.find('pref ') == 0:
+                    # Parse string from format: pref category item=value
+                    pcred = cred[len('pref '):]
+                    cat = pcred[:pcred.find(' ')]
+                    item = pcred[pcred.find(' ')+1:]
+                    value = single_credentials[cred]
+                    # Get desired type
+                    val_type = ACTIVE_PREFERENCES[cat][item]
+                    if not preferences.get(cat):
+                        preferences[cat] = {}
+                    preferences[cat][item] = val_type(value)  # type: ignore[no-untyped-call]
+                    preference_keys.append(cred)
+
+            # Remove all preference keys from `single_credentials`
+            for key in preference_keys:
+                del single_credentials[key]
+
             new_credentials = Credentials(preferences=preferences,
                                           **single_credentials)  # type: ignore[arg-type]
 
@@ -147,18 +143,11 @@ def write_qiskit_rc(
                             ['token', 'url', 'proxies', 'verify']
                             if getattr(credentials_obj, key)}
 
-        # Handle `Credential.preferences` (i.e add valid prefs to dict)
-        active_pref_names = []
-        for category in ACTIVE_PREFERENCES.keys():  # pylint: disable=consider-iterating-dictionary
-            for name, _ in ACTIVE_PREFERENCES[category]:
-                active_pref_names.append(name)
-
-        for category in credentials_obj.preferences.keys():
-            for name, val in credentials_obj.preferences[category].items():
-                # If pref is a valid, active experiment pref,
-                # Add it directly to the credential dictionary
-                if name in active_pref_names:
-                    credentials_dict[name] = val
+        # Put the credentials' preferences in this format: pref category:item=value
+        for cat in credentials_obj.preferences.keys():
+            for item in credentials_obj.preferences[cat].keys():
+                credentials_dict['pref {} {}'.format(cat, item)
+                                 ] = credentials_obj.preferences[cat][item]
 
         # Save the default provider to disk, if specified.
         if default_provider_to_store:

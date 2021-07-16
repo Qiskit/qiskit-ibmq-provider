@@ -167,7 +167,8 @@ class ExperimentService:
             ValueError: If an invalid parameter value is specified.
         """
         if limit is not None and (not isinstance(limit, int) or limit <= 0):  # type: ignore
-            raise ValueError(f"{limit} is not a valid `limit`, which has to be a positive integer.")
+            raise ValueError(
+                f"{limit} is not a valid `limit`, which has to be a positive integer.")
 
         pgh_text = ['project', 'group', 'hub']
         pgh_val = [project, group, hub]
@@ -316,14 +317,17 @@ class ExperimentService:
         return Experiment.from_remote_data(self._provider, raw_data)
 
     def preferences(self) -> Dict:
-        """Returns all saved experiment preferences.
-        These are configurable, persistent preferences the application will use
-        when using the `ExperimentService`.
+        """Return all saved experiment preferences.
 
+        These are preferences passed to the applications that use this service
+        and have no effect on the service itself.
+        For example, if ``auto_save`` is set to ``True``, it tells the application,
+        such as ``qiskit-experiments``, that you prefer changes to be
+        automatically saved. It is up to the application to implement the preference.
         Returns:
             Dict: the experiment preferences
         """
-        return self._credentials.preferences
+        return self._credentials.preferences['experiment']
 
     def preference(self, name: str) -> object:
         """Returns the value of the experiment preference.
@@ -352,7 +356,7 @@ class ExperimentService:
         if auto_save is not None:
             self._credentials.preferences['experiment']['auto_save'] = auto_save
         # Store the credentials
-        store_credentials(self._credentials)
+        store_credentials(self._credentials, overwrite=True)
 
     def analysis_results(
             self,
@@ -389,7 +393,8 @@ class ExperimentService:
             ValueError: If an invalid parameter value is specified.
         """
         if limit is not None and (not isinstance(limit, int) or limit <= 0):  # type: ignore
-            raise ValueError(f"{limit} is not a valid `limit`, which has to be a positive integer.")
+            raise ValueError(
+                f"{limit} is not a valid `limit`, which has to be a positive integer.")
 
         quality_list = []
         if quality:

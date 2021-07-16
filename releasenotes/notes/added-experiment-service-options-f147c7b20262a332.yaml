@@ -11,7 +11,4 @@ features:
       provider.experiment.preference('auto_save')          # return specified preference
       provider.experiment.preferences()                    # return all saved preferences
 
-    :class:`qiskit.providers.ibmq.experiment.experimentservice.ExperimentService`
-    interfaces the (new) `preferences` property of the 
-    :class:`qiskit.providers.ibmq.credentials.credentials.Credentials` class.
-    This property represents service preferences stored in the `.qiskitrc` file.
+    Service preferences are stored in the `.qiskitrc` file.

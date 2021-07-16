@@ -27,10 +27,13 @@ from qiskit.providers.ibmq.experiment.exceptions import (ExperimentNotFoundError
 from qiskit.providers.ibmq.experiment.constants import ResultQuality, ExperimentShareLevel
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 from qiskit.providers.ibmq import IBMQ
-
+from qiskit.providers.ibmq.credentials import (
+    Credentials, discover_credentials, store_credentials)
+from qiskit.providers.ibmq.credentials.updater import QE2_AUTH_URL
 
 from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_provider
+from ..contextmanagers import custom_qiskitrc
 
 
 @skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
@@ -724,18 +727,34 @@ class TestExperiment(IBMQTestCase):
     def test_experiment_service_prefs(self):
         """Test accessing and modifying ExperimentService preferences."""
 
-        # Create an experiment service instance
-        service = ExperimentService(self.provider)
-        # Ensure there are more than 0 preferences
-        self.assertGreater(len(service.preferences().keys()), 0)
-        # Get the `auto_save` option
-        auto_save = service.preference('auto_save')
-        # Flip the `auto_save` option
-        service.set_preferences(auto_save=(not auto_save))
-        # Get the `auto_save` pref
-        self.assertEqual(service.preference('auto_save'), not auto_save)
-        # Reset
-        service.set_preferences(auto_save=auto_save)
+        with custom_qiskitrc():
+            # Set credentials to be stored in temp `.qiskitrc`
+            credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
+            store_credentials(credentials, overwrite=True)
+
+            # Get the credentials
+            credentials = list(dict(discover_credentials()[0]).values())[0]
+            # Verify default experiment preferences
+            self.assertFalse(credentials.preferences['experiment']['auto_save'])
+
+            # Setup an experiment service instance
+            self.provider.credentials = credentials
+            service = ExperimentService(self.provider)
+            # Ensure there are more than 0 preferences
+            self.assertGreater(len(service.preferences().keys()), 0)
+            # Get the `auto_save` option. Should default to False on custom `.qiskitrc`.
+            auto_save = service.preference('auto_save')
+            self.assertFalse(auto_save)
+            # Flip the `auto_save` option
+            service.set_preferences(auto_save=True)
+            # Verify the `ExperimentService` changes the value.
+            self.assertEqual(service.preference('auto_save'), True)
+            # Re-discover credentials and verify change in temp `.qiskitrc`.
+            credentials = list(dict(discover_credentials()[0]).values())[0]
+            self.assertEqual(credentials.preferences['experiment']['auto_save'], True)
+
+            # Reset
+            service.set_preferences(auto_save=auto_save)
 
     def _create_experiment(
             self,
