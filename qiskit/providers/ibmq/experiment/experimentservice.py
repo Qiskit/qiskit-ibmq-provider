@@ -337,7 +337,7 @@ class ExperimentService:
                 ``analysis_results(quality=[('ge', 'Bad'), ('lt', 'Good')])``
                 will return all analysis results with a quality of ``Bad`` and
                 ``No Information``.
-            tags: Filter by tags assigned to experiments.
+            tags: Filter by tags assigned to analysis results.
             tags_operator: Logical operator to use when filtering by job tags. Valid
                 values are "AND" and "OR":
 
