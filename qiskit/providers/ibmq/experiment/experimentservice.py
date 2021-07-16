@@ -338,7 +338,7 @@ class ExperimentService:
                 will return all analysis results with a quality of ``Bad`` and
                 ``No Information``.
             tags: Filter by tags assigned to analysis results.
-            tags_operator: Logical operator to use when filtering by job tags. Valid
+            tags_operator: Logical operator to use when filtering by tags. Valid
                 values are "AND" and "OR":
 
                     * If "AND" is specified, then an experiment must have all of the tags
