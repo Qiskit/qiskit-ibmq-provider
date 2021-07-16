@@ -20,7 +20,8 @@ from typing import Dict, List, Union, Optional, Any
 from datetime import datetime as python_datetime
 
 from qiskit.compiler import assemble
-from qiskit.circuit import QuantumCircuit, Parameter
+from qiskit.circuit import QuantumCircuit, Parameter, Delay
+from qiskit.circuit.duration import duration_in_dt
 from qiskit.pulse import Schedule, LoConfig
 from qiskit.pulse.channels import PulseChannel
 from qiskit.qobj import QasmQobj, PulseQobj, validate_qobj_against_schema
@@ -36,7 +37,7 @@ from qiskit.providers.models import (QasmBackendConfiguration,
 from qiskit.util import deprecate_arguments
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
-from .apiconstants import ApiJobShareLevel, ApiJobStatus, API_JOB_FINAL_STATES
+from .apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from .api.clients import AccountClient
 from .api.exceptions import ApiError
 from .backendjoblimit import BackendJobLimit
@@ -102,6 +103,7 @@ class IBMQBackend(Backend):
     """
 
     qobj_warning_issued = False
+    id_warning_issued = False
 
     def __init__(
             self,
@@ -266,16 +268,9 @@ class IBMQBackend(Backend):
         """
         # pylint: disable=arguments-differ
         if job_share_level:
-            try:
-                api_job_share_level = ApiJobShareLevel(job_share_level.lower())
-            except ValueError:
-                valid_job_share_levels_str = ', '.join(level.value for level in ApiJobShareLevel)
-                raise IBMQBackendValueError(
-                    '"{}" is not a valid job share level. '
-                    'Valid job share levels are: {}.'
-                    .format(job_share_level, valid_job_share_levels_str)) from None
-        else:
-            api_job_share_level = ApiJobShareLevel.NONE
+            warnings.warn("The `job_share_level` keyword is no longer supported "
+                          "and will be removed in a future release.",
+                          Warning, stacklevel=3)
 
         validate_job_tags(job_tags, IBMQBackendValueError)
 
@@ -292,6 +287,9 @@ class IBMQBackend(Backend):
                 "ESP readout not supported on this device. Please make sure the flag "
                 "'use_measure_esp' is unset or set to 'False'."
             )
+
+        if not self.configuration().simulator:
+            self._deprecate_id_instruction(circuits)
 
         if isinstance(circuits, (QasmQobj, PulseQobj)):
             if not self.qobj_warning_issued:
@@ -336,7 +334,7 @@ class IBMQBackend(Backend):
                           DeprecationWarning, stacklevel=3)
             if validate_qobj:
                 validate_qobj_against_schema(qobj)
-        return self._submit_job(qobj, job_name, api_job_share_level, job_tags, experiment_id)
+        return self._submit_job(qobj, job_name, job_tags, experiment_id)
 
     def _get_run_config(self, **kwargs: Any) -> Dict:
         """Return the consolidated runtime configuration."""
@@ -353,7 +351,6 @@ class IBMQBackend(Backend):
             self,
             qobj: Union[QasmQobj, PulseQobj],
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None,
             job_tags: Optional[List[str]] = None,
             experiment_id: Optional[str] = None
     ) -> IBMQJob:
@@ -365,7 +362,6 @@ class IBMQBackend(Backend):
                 name can subsequently be used as a filter in the
                 ``jobs()``method.
                 Job names do not need to be unique.
-            job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
             experiment_id: Used to add a job to an experiment.
 
@@ -391,7 +387,6 @@ class IBMQBackend(Backend):
                 backend_name=self.name(),
                 qobj_dict=qobj_dict,
                 job_name=job_name,
-                job_share_level=job_share_level,
                 job_tags=job_tags,
                 experiment_id=experiment_id)
         except ApiError as ex:
@@ -756,6 +751,92 @@ class IBMQBackend(Backend):
         return "<{}('{}') from IBMQ({})>".format(
             self.__class__.__name__, self.name(), credentials_info)
 
+    def _deprecate_id_instruction(
+            self,
+            circuits: Union[QasmQobj, PulseQobj, QuantumCircuit, Schedule,
+                            List[Union[QuantumCircuit, Schedule]]]
+    ) -> None:
+        """Raise a DeprecationWarning if any circuit contains an 'id' instruction.
+
+        Additionally, if 'delay' is a 'supported_instruction', replace each 'id'
+        instruction (in-place) with the equivalent ('sx'-length) 'delay' instruction.
+
+        Args:
+            circuits: The individual or list of :class:`~qiskit.circuits.QuantumCircuit` or
+                :class:`~qiskit.pulse.Schedule` objects passed to
+                :meth:`IBMQBackend.run()<IBMQBackend.run>`. Modified in-place.
+
+        Returns:
+            None
+        """
+
+        if isinstance(circuits, PulseQobj):
+            return
+
+        id_support = 'id' in getattr(self.configuration(), 'basis_gates', [])
+        delay_support = 'delay' in getattr(self.configuration(), 'supported_instructions', [])
+
+        if not delay_support:
+            return
+
+        if isinstance(circuits, QasmQobj):
+            circuit_has_id = any(instr.name == 'id'
+                                 for experiment in circuits.experiments
+                                 for instr in experiment.instructions)
+        else:
+            if not isinstance(circuits, List):
+                circuits = [circuits]
+
+            circuit_has_id = any(instr.name == 'id'
+                                 for circuit in circuits
+                                 if isinstance(circuit, QuantumCircuit)
+                                 for instr, qargs, cargs in circuit.data)
+
+        if not circuit_has_id:
+            return
+
+        if not self.id_warning_issued:
+            if id_support and delay_support:
+                warnings.warn("Support for the 'id' instruction has been deprecated "
+                              "from IBM hardware backends. Any 'id' instructions "
+                              "will be replaced with their equivalent 'delay' instruction. "
+                              "Please use the 'delay' instruction instead.", DeprecationWarning,
+                              stacklevel=4)
+            else:
+                warnings.warn("Support for the 'id' instruction has been removed "
+                              "from IBM hardware backends. Any 'id' instructions "
+                              "will be replaced with their equivalent 'delay' instruction. "
+                              "Please use the 'delay' instruction instead.", DeprecationWarning,
+                              stacklevel=4)
+
+            self.id_warning_issued = True
+
+        dt_in_s = self.configuration().dt
+
+        if isinstance(circuits, QasmQobj):
+            for experiment in circuits.experiments:
+                for instr in experiment.instructions:
+                    if instr.name == 'id':
+                        sx_duration = self.properties().gate_length('sx', instr.qubits[0])
+                        sx_duration_in_dt = duration_in_dt(sx_duration, dt_in_s)
+
+                        instr.name = 'delay'
+                        instr.params = [sx_duration_in_dt]
+        else:
+            for circuit in circuits:
+                if isinstance(circuit, Schedule):
+                    continue
+
+                for idx, (instr, qargs, cargs) in enumerate(circuit.data):
+                    if instr.name == 'id':
+
+                        sx_duration = self.properties().gate_length('sx', qargs[0].index)
+                        sx_duration_in_dt = duration_in_dt(sx_duration, dt_in_s)
+
+                        delay_instr = Delay(sx_duration_in_dt)
+
+                        circuit.data[idx] = (delay_instr, qargs, cargs)
+
 
 class IBMQSimulator(IBMQBackend):
     """Backend class interfacing with an IBM Quantum Experience simulator."""
@@ -818,6 +899,10 @@ class IBMQSimulator(IBMQBackend):
             The job to be executed.
         """
         # pylint: disable=arguments-differ
+        if job_share_level:
+            warnings.warn("The `job_share_level` keyword is no longer supported "
+                          "and will be removed in a future release.",
+                          Warning, stacklevel=3)
         if backend_options is not None:
             warnings.warn("Use of `backend_options` is deprecated and will "
                           "be removed in a future release."
@@ -832,7 +917,7 @@ class IBMQSimulator(IBMQBackend):
             except AttributeError:
                 pass
         run_config.update(kwargs)
-        return super().run(circuits, job_name=job_name, job_share_level=job_share_level,
+        return super().run(circuits, job_name=job_name,
                            job_tags=job_tags, experiment_id=experiment_id,
                            validate_qobj=validate_qobj,
                            noise_model=noise_model, **run_config)

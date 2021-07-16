@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    An optional boolean parameter `pending` has been added to
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.jobs`
+    and it allows filtering jobs by their status.
+    If `pending` is not specified all jobs are returned.
+    If `pending` is set to True, 'QUEUED' and 'RUNNING' jobs are returned.
+    If `pending` is set to False, 'DONE', 'ERROR' and 'CANCELLED' jobs are returned.

@@ -19,8 +19,7 @@ from threading import Timer
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 
-from qiskit.providers.ibmq.apiconstants import (API_JOB_FINAL_STATES, ApiJobStatus,
-                                                ApiJobShareLevel)
+from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
 from qiskit.providers.ibmq.utils.utils import RefreshQueue
 from qiskit.providers.ibmq.credentials import Credentials
 
@@ -180,7 +179,6 @@ class AccountClient(BaseClient):
             backend_name: str,
             qobj_dict: Dict[str, Any],
             job_name: Optional[str] = None,
-            job_share_level: Optional[ApiJobShareLevel] = None,
             job_tags: Optional[List[str]] = None,
             experiment_id: Optional[str] = None
     ) -> Dict[str, Any]:
@@ -190,7 +188,6 @@ class AccountClient(BaseClient):
             backend_name: The name of the backend.
             qobj_dict: The ``Qobj`` to be executed, as a dictionary.
             job_name: Custom name to be assigned to the job.
-            job_share_level: Level the job should be shared at.
             job_tags: Tags to be assigned to the job.
             experiment_id: Used to add a job to an experiment.
 
@@ -201,14 +198,11 @@ class AccountClient(BaseClient):
             RequestsApiError: If an error occurred communicating with the server.
         """
         # pylint: disable=missing-raises-doc
-        # Check for the job share level.
-        _job_share_level = job_share_level.value if job_share_level else None
 
         # Create a remote job instance on the server.
         job_info = self.account_api.create_remote_job(
             backend_name,
             job_name=job_name,
-            job_share_level=_job_share_level,
             job_tags=job_tags,
             experiment_id=experiment_id)
 
