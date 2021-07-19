@@ -132,7 +132,8 @@ class ExperimentClient(BaseClient):
             self,
             experiment_id: str,
             plot: Union[bytes, str],
-            plot_name: str
+            plot_name: str,
+            sync_upload: bool = True
     ) -> Dict:
         """Upload an experiment plot.
 
@@ -140,17 +141,23 @@ class ExperimentClient(BaseClient):
             experiment_id: Experiment UUID.
             plot: Plot file name or data to upload.
             plot_name: Name of the plot.
+            sync_upload: By default the server will upload the plot file
+                to backend storage asynchronously. Set this to False to use
+                that behavior and not block the upload.
 
         Returns:
             JSON response.
         """
-        return self.base_api.experiment(experiment_id).upload_plot(plot, plot_name)
+        return self.base_api.experiment(
+            experiment_id).upload_plot(
+                plot, plot_name, sync_upload=sync_upload)
 
     def experiment_plot_update(
             self,
             experiment_id: str,
             plot: Union[bytes, str],
-            plot_name: str
+            plot_name: str,
+            sync_upload: bool = True
     ) -> Dict:
         """Update an experiment plot.
 
@@ -158,11 +165,16 @@ class ExperimentClient(BaseClient):
             experiment_id: Experiment UUID.
             plot: Plot file name or data to upload.
             plot_name: Name of the plot.
+            sync_upload: By default the server will upload the plot file
+                to backend storage asynchronously. Set this to False to use
+                that behavior and not block the upload.
 
         Returns:
             JSON response.
         """
-        return self.base_api.experiment_plot(experiment_id, plot_name).update(plot)
+        return self.base_api.experiment_plot(
+            experiment_id, plot_name).update(
+                plot, sync_upload=sync_upload)
 
     def experiment_plot_get(self, experiment_id: str, plot_name: str) -> bytes:
         """Retrieve an experiment plot.
