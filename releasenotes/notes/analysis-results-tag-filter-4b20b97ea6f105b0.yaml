@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    Analysis results in :class:`qiskit.providers.ibmq.ExperimentService`
+    can now be filtered by tag.
+    e.g.
+    ```
+    service = ExperimentService(..)
+    service.analysis_results(tags=['sample-tag'])
+    ```

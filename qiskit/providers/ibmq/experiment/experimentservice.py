@@ -340,10 +340,9 @@ class ExperimentService:
             tags: Filter by tags assigned to analysis results.
             tags_operator: Logical operator to use when filtering by tags. Valid
                 values are "AND" and "OR":
-
-                    * If "AND" is specified, then an experiment must have all of the tags
+                    * If "AND" is specified, then the results must have all of the tags
                       specified in `tags` to be included.
-                    * If "OR" is specified, then an experiment only needs to have any
+                    * If "OR" is specified, then the results only need to have one
                       of the tags specified in `tags` to be included.
             verified: Indicates whether this result has been verified..
 
