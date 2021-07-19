@@ -69,24 +69,35 @@ class Experiment(RestAdapterBase):
         url = self.get_url('self')
         return self.session.delete(url).json()
 
-    def upload_plot(self, plot: Union[bytes, str], plot_name: str) -> Dict:
+    def upload_plot(
+            self,
+            plot: Union[bytes, str],
+            plot_name: str,
+            sync_upload: bool = True
+    ) -> Dict:
         """Upload a plot for the experiment.
 
         Args:
             plot: Plot file name or data to upload.
             plot_name: Name of the plot.
+            sync_upload: By default the server will upload the plot file
+                to backend storage asynchronously. Set this to False to use
+                that behavior and not block the upload.
 
         Returns:
             JSON response.
         """
         url = self.get_url('upload_plots')
+        headers = {
+            'x-sync-upload': str(sync_upload)
+        }
         if isinstance(plot, str):
             with open(plot, 'rb') as file:
                 data = {'plot': (plot_name, file)}
-                response = self.session.post(url, files=data).json()
+                response = self.session.post(url, files=data, headers=headers).json()
         else:
             data = {'plot': (plot_name, plot)}  # type: ignore[dict-item]
-            response = self.session.post(url, files=data).json()
+            response = self.session.post(url, files=data, headers=headers).json()
 
         return response
 
@@ -131,22 +142,32 @@ class ExperimentPlot(RestAdapterBase):
         url = self.get_url('self')
         self.session.delete(url)
 
-    def update(self, plot: Union[bytes, str]) -> Dict:
+    def update(
+            self,
+            plot: Union[bytes, str],
+            sync_upload: bool = True
+    ) -> Dict:
         """Update an experiment plot.
 
         Args:
             plot: Plot file name or data to upload.
+            sync_upload: By default the server will upload the plot file
+                to backend storage asynchronously. Set this to False to use
+                that behavior and not block the upload.
 
         Returns:
             JSON response.
         """
         url = self.get_url('self')
+        headers = {
+            'x-sync-upload': str(sync_upload)
+        }
         if isinstance(plot, str):
             with open(plot, 'rb') as file:
                 data = {'plot': (self.plot_name, file)}
-                response = self.session.put(url, files=data).json()
+                response = self.session.put(url, files=data, headers=headers).json()
         else:
             data = {'plot': (self.plot_name, plot)}  # type: ignore[dict-item]
-            response = self.session.put(url, files=data).json()
+            response = self.session.put(url, files=data, headers=headers).json()
 
         return response
