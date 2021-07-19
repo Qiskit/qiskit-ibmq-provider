@@ -113,8 +113,7 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         circuit.measure(qr[0], cr[0])
         circuit.x(qr[0]).c_if(cr, 1)
 
-        result = self.sim_backend.run(transpile(circuit, backend=self.sim_backend),
-                                      validate_qobj=True).result()
+        result = self.sim_backend.run(transpile(circuit, backend=self.sim_backend)).result()
         self.assertEqual(result.get_counts(circuit), {'0001': 1024})
 
     def test_new_sim_method(self):
