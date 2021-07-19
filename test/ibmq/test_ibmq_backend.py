@@ -20,7 +20,7 @@ from unittest.mock import patch
 
 from qiskit import QuantumCircuit, assemble, transpile
 from qiskit.providers.ibmq.api.rest.backend import Backend
-from qiskit.providers.ibmq.exceptions import IBMQJobApiError
+from qiskit.providers.ibmq.job import IBMQJobApiError
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
 from qiskit.providers.ibmq.runtime.runtime_job import RuntimeJob
