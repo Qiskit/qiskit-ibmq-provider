@@ -85,8 +85,7 @@ class TestWebsocketIntegration(IBMQTestCase):
     @requires_device
     def test_websockets_device(self, backend):
         """Test checking status of a job via websockets for a device."""
-        job = backend.run(self.bell,
-                          validate_qobj=True, shots=1)
+        job = backend.run(self.bell, shots=1)
 
         # Ensure job is deleted
         self.jobs_to_delete.append(job.job_id())
@@ -184,8 +183,7 @@ class TestWebsocketIntegration(IBMQTestCase):
     def test_websockets_timeout(self):
         """Test timeout checking status of a job via websockets."""
         backend = most_busy_backend(self.provider)
-        job = backend.run(self.bell,
-                          validate_qobj=True, shots=backend.configuration().max_shots)
+        job = backend.run(self.bell, shots=backend.configuration().max_shots)
 
         # Ensure job is deleted
         self.jobs_to_delete.append(job.job_id())
