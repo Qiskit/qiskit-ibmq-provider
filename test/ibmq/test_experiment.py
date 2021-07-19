@@ -783,11 +783,13 @@ class TestExperiment(IBMQTestCase):
         self.assertIn("limit", str(context_manager.exception))
 
     @classmethod
-    def _get_experiments(cls, tags=['qiskit-test'], **kwargs):  # pylint: disable=dangerous-default-value
+    # pylint: disable=dangerous-default-value
+    def _get_experiments(cls, tags=['qiskit-test'], **kwargs):
         return cls.provider.experiment.experiments(tags=tags, **kwargs)
 
     @classmethod
-    def _get_analysis_results(cls, tags=['qiskit-test'], **kwargs):  # pylint: disable=dangerous-default-value
+    # pylint: disable=dangerous-default-value
+    def _get_analysis_results(cls, tags=['qiskit-test'], **kwargs):
         return cls.provider.experiment.analysis_results(tags=tags, **kwargs)
 
     def _create_experiment(
