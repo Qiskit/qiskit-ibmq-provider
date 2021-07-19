@@ -12,22 +12,24 @@
 
 """Test for the Websocket client integration."""
 
-from unittest import mock
-from threading import Thread
 from queue import Queue
+from threading import Thread
+from typing import List
+from unittest import mock
 
 from qiskit import transpile
-from qiskit.test.reference_circuits import ReferenceCircuits
-from qiskit.test import slow_test
 from qiskit.providers import JobTimeoutError
-from qiskit.providers.ibmq.api.clients import websocket
-from qiskit.providers.ibmq.api.clients import AccountClient
+from qiskit.providers.ibmq.api.clients import AccountClient, websocket
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
 from qiskit.providers.jobstatus import JobStatus
+from qiskit.test import slow_test
+from qiskit.test.reference_circuits import ReferenceCircuits
 
+from ...decorators import requires_device, requires_provider
 from ...ibmqtestcase import IBMQTestCase
-from ...decorators import requires_provider, requires_device
-from ...utils import most_busy_backend, cancel_job
 from ...proxy_server import MockProxyServer, use_proxies
+from ...utils import cancel_job, most_busy_backend
 
 
 class TestWebsocketIntegration(IBMQTestCase):
@@ -40,8 +42,10 @@ class TestWebsocketIntegration(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.provider = provider
-        cls.sim_backend = provider.get_backend('ibmq_qasm_simulator')
+        cls.sim_backend: IBMQBackend = provider.get_backend('ibmq_qasm_simulator')
         cls.bell = transpile(ReferenceCircuits.bell(), cls.sim_backend)
+        # Setup list of jobs to check have been deleted.
+        cls.jobs_to_delete: List[str] = []
 
     def setUp(self):
         """Initial test setup."""
@@ -52,6 +56,12 @@ class TestWebsocketIntegration(IBMQTestCase):
         """Test tear down."""
         super().tearDown()
         self.sim_backend._api_client._job_final_status_polling = self.saved_status_polling
+        # Ensure all jobs are deleted.
+        for job_id in self.jobs_to_delete:
+            try:
+                self.provider.runtime.delete_job(job_id)
+            except RuntimeJobNotFound:
+                pass
 
     def _job_final_status_polling(self, *args, **kwargs):
         """Replaces the actual _job_final_status_polling and fails the test."""
@@ -61,6 +71,9 @@ class TestWebsocketIntegration(IBMQTestCase):
     def test_websockets_simulator(self):
         """Test checking status of a job via websockets for a simulator."""
         job = self.sim_backend.run(self.bell, shots=1)
+
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
 
         # Manually disable the non-websocket polling.
         job._api_client._job_final_status_polling = self._job_final_status_polling
@@ -72,8 +85,11 @@ class TestWebsocketIntegration(IBMQTestCase):
     @requires_device
     def test_websockets_device(self, backend):
         """Test checking status of a job via websockets for a device."""
-        job = backend.run(transpile(ReferenceCircuits.bell(), backend),
+        job = backend.run(self.bell,
                           validate_qobj=True, shots=1)
+
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
 
         # Manually disable the non-websocket polling.
         job._api_client._job_final_status_polling = self._job_final_status_polling
@@ -85,6 +101,9 @@ class TestWebsocketIntegration(IBMQTestCase):
     def test_websockets_job_final_state(self):
         """Test checking status of a job in a final state via websockets."""
         job = self.sim_backend.run(self.bell)
+
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
 
         job._wait_for_completion()
 
@@ -101,6 +120,10 @@ class TestWebsocketIntegration(IBMQTestCase):
         """Test http retry after websocket error due to an invalid URL."""
 
         job = self.sim_backend.run(self.bell)
+
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
+
         saved_websocket_url = job._api_client._credentials.websockets_url
 
         try:
@@ -119,10 +142,13 @@ class TestWebsocketIntegration(IBMQTestCase):
         """Test http retry after websocket error due to a failed authentication."""
         job = self.sim_backend.run(self.bell)
 
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
+
         with mock.patch.object(websocket.WebsocketAuthenticationMessage, 'as_json',
                                return_value='foo'), \
-             mock.patch.object(AccountClient, 'job_status',
-                               side_effect=job._api_client.job_status) as mocked_wait:
+            mock.patch.object(AccountClient, 'job_status',
+                              side_effect=job._api_client.job_status) as mocked_wait:
             job._wait_for_completion()
             self.assertIs(job._status, JobStatus.DONE)
             mocked_wait.assert_called_with(job.job_id())
@@ -137,6 +163,9 @@ class TestWebsocketIntegration(IBMQTestCase):
             return saved_job_status(saved_job_id)
 
         job = self.sim_backend.run(self.bell)
+
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
 
         # Save the originals.
         saved_job_id = job._job_id
@@ -155,8 +184,11 @@ class TestWebsocketIntegration(IBMQTestCase):
     def test_websockets_timeout(self):
         """Test timeout checking status of a job via websockets."""
         backend = most_busy_backend(self.provider)
-        job = backend.run(transpile(ReferenceCircuits.bell(), backend),
+        job = backend.run(self.bell,
                           validate_qobj=True, shots=backend.configuration().max_shots)
+
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
 
         try:
             with self.assertRaises(JobTimeoutError):
@@ -170,6 +202,10 @@ class TestWebsocketIntegration(IBMQTestCase):
         def _run_job_get_result(q):
             """Run a job and get its result."""
             job = self.sim_backend.run(self.bell)
+
+            # Ensure job is deleted
+            self.jobs_to_delete.append(job.job_id())
+
             # Manually disable the non-websocket polling.
             job._api_client._job_final_status_polling = self._job_final_status_polling
             job._wait_for_completion()
@@ -198,6 +234,9 @@ class TestWebsocketIntegration(IBMQTestCase):
         """Test connecting to websocket via a proxy."""
         MockProxyServer(self, self.log).start()
         job = self.sim_backend.run(self.bell, shots=1)
+
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
 
         # Manually disable the non-websocket polling.
         job._api_client._job_final_status_polling = self._job_final_status_polling

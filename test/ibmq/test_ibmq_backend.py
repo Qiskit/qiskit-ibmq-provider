@@ -12,21 +12,24 @@
 
 """IBMQBackend Test."""
 
-from inspect import getfullargspec
-from datetime import timedelta, datetime
 import warnings
+from datetime import datetime, timedelta
+from inspect import getfullargspec
 from unittest import SkipTest
 from unittest.mock import patch
 
-from qiskit import QuantumCircuit, transpile, assemble
-from qiskit.providers.models import QasmBackendConfiguration
-from qiskit.test.reference_circuits import ReferenceCircuits
+from qiskit import QuantumCircuit, assemble, transpile
+from qiskit.providers.ibmq.api.rest.backend import Backend
+from qiskit.providers.ibmq.exceptions import IBMQJobApiError
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
+from qiskit.providers.ibmq.runtime.runtime_job import RuntimeJob
+from qiskit.providers.models import QasmBackendConfiguration
+from qiskit.test.reference_circuits import ReferenceCircuits
 
-from ..ibmqtestcase import IBMQTestCase
 from ..decorators import requires_device, requires_provider
-from ..utils import get_pulse_schedule, cancel_job
+from ..ibmqtestcase import IBMQTestCase
+from ..utils import cancel_job, get_pulse_schedule
 
 
 class TestIBMQBackend(IBMQTestCase):
@@ -34,7 +37,7 @@ class TestIBMQBackend(IBMQTestCase):
 
     @classmethod
     @requires_device
-    def setUpClass(cls, backend):
+    def setUpClass(cls, backend: Backend):
         """Initial class level setup."""
         # pylint: disable=arguments-differ
         super().setUpClass()
@@ -164,7 +167,7 @@ class TestIBMQBackend(IBMQTestCase):
         self.assertEqual(qobj.config.meas_lo_freq, [6.5, 6.6])
         self.assertEqual(qobj.config.meas_level, 1)
         self.assertEqual(qobj.config.foo, 'foo')
-        cancel_job(job)
+        self._cancel_job(job)
 
     def test_sim_backend_options(self):
         """Test simulator backend options."""
@@ -208,6 +211,17 @@ class TestIBMQBackend(IBMQTestCase):
                 self.backend._deprecate_id_instruction(circuit_with_id)
 
             self.assertEqual(circuit_with_id.count_ops(), {'delay': 3})
+
+    def _cancel_job(self, job: RuntimeJob) -> None:
+        """Cancels a job.
+
+        Args:
+            job: job id
+        """
+        try:
+            job.cancel()
+        except IBMQJobApiError:
+            pass
 
 
 class TestIBMQBackendService(IBMQTestCase):

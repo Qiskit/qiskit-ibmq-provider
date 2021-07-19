@@ -12,20 +12,21 @@
 
 """Test serializing and deserializing data sent to the server."""
 
+from typing import Any, Dict, List, Optional
 from unittest import SkipTest, skipIf
-from typing import Any, Dict, Optional
 
 import dateutil.parser
-from qiskit.test.reference_circuits import ReferenceCircuits
-from qiskit.test import slow_test
-from qiskit.providers.ibmq import least_busy
-from qiskit import transpile, schedule, QuantumCircuit
-from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder
+from qiskit import QuantumCircuit, schedule, transpile
 from qiskit.circuit import Parameter
+from qiskit.providers.ibmq import least_busy
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
+from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder
+from qiskit.test import slow_test
+from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.version import VERSION as terra_version
 
 from ..decorators import requires_provider
-from ..utils import cancel_job
 from ..ibmqtestcase import IBMQTestCase
 
 
@@ -39,8 +40,19 @@ class TestSerialization(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.provider = provider
-        cls.sim_backend = provider.get_backend('ibmq_qasm_simulator')
+        cls.sim_backend: IBMQBackend = provider.get_backend('ibmq_qasm_simulator')
         cls.bell = transpile(ReferenceCircuits.bell(), backend=cls.sim_backend)
+        # Setup list of jobs to check have been deleted.
+        cls.jobs_to_delete: List[str] = []
+
+    def tearDown(self) -> None:
+        # Ensure all jobs are deleted.
+        for job_id in self.jobs_to_delete:
+            try:
+                self.provider.runtime.delete_job(job_id)
+            except RuntimeJobNotFound:
+                pass
+        return super().tearDown()
 
     def test_qasm_qobj(self):
         """Test serializing qasm qobj data."""
@@ -48,6 +60,11 @@ class TestSerialization(IBMQTestCase):
         rqobj = self.sim_backend.retrieve_job(job.job_id()).qobj()
 
         self.assertEqual(_array_to_list(job.qobj().to_dict()), rqobj.to_dict())
+
+        # Cancel the job
+        job.cancel()
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
 
     def test_pulse_qobj(self):
         """Test serializing pulse qobj data."""
@@ -64,14 +81,17 @@ class TestSerialization(IBMQTestCase):
         measure = inst_map.get('measure', range(config.n_qubits)) << x.duration
         schedules = x | measure
 
-        job = backend.run(schedules, meas_level=1, shots=256)
+        job = backend.run(schedules, meas_level=1, shots=128)
         rqobj = backend.retrieve_job(job.job_id()).qobj()
 
         # Convert numpy arrays to lists since they now get converted right
         # before being sent to the server.
         self.assertEqual(_array_to_list(job.qobj().to_dict()), rqobj.to_dict())
 
-        cancel_job(job)
+        # Cancel the job
+        job.cancel()
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
 
     def test_backend_configuration(self):
         """Test deserializing backend configuration."""
@@ -115,9 +135,15 @@ class TestSerialization(IBMQTestCase):
 
     def test_qasm_job_result(self):
         """Test deserializing a QASM job result."""
-        result = self.sim_backend.run(self.bell).result()
+        job = self.sim_backend.run(self.bell)
+        result = job.result()
 
         self._verify_data(result.to_dict(), ())
+
+        # Cancel the job
+        job.cancel()
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
 
     @slow_test
     def test_pulse_job_result(self):
@@ -132,6 +158,12 @@ class TestSerialization(IBMQTestCase):
         qc.measure([0], [0])
         sched = schedule(transpile(qc, backend=backend), backend=backend)
         job = backend.run(sched)
+
+        # Cancel the job
+        job.cancel()
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
+
         result = job.result()
 
         # Known keys that look like a serialized object.
@@ -198,7 +230,9 @@ def _find_potential_encoded(data: Any, c_key: str, tally: set) -> None:
 
 def _check_encoded(data):
     """Check if the input data is potentially in JSON serialized format."""
-    if isinstance(data, list) and len(data) == 2 and all(isinstance(x, (float, int)) for x in data):
+    if isinstance(
+            data, list) and len(data) == 2 and all(
+                isinstance(x, (float, int)) for x in data):
         return True
     elif isinstance(data, str):
         try:
