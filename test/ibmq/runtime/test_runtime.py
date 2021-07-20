@@ -25,6 +25,15 @@ import tempfile
 
 import numpy as np
 import scipy.sparse
+from qiskit.algorithms.optimizers import (
+    ADAM,
+    GSLS,
+    IMFIL,
+    SPSA,
+    SNOBFIT,
+    L_BFGS_B,
+    NELDER_MEAD,
+)
 from qiskit.result import Result
 from qiskit.circuit import Parameter, QuantumCircuit
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -34,21 +43,21 @@ from qiskit.opflow import (PauliSumOp, MatrixOp, PauliOp, CircuitOp, EvolvedOp,
                            StateFn, CircuitStateFn, DictStateFn, VectorStateFn, OperatorStateFn,
                            SparseVectorStateFn, CVaRMeasurement, ComposedOp, SummedOp, TensoredOp)
 from qiskit.quantum_info import SparsePauliOp, Pauli, PauliTable, Statevector
-from qiskit.version import VERSION as terra_version
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder, RuntimeDecoder
 from qiskit.providers.ibmq.runtime import IBMRuntimeService, RuntimeJob
+from qiskit.providers.ibmq.runtime.constants import API_TO_JOB_ERROR_MESSAGE
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeProgramNotFound,
                                                       RuntimeJobFailureError)
 from qiskit.providers.ibmq.runtime.runtime_program import (
     ParameterNamespace, ProgramParameter, ProgramResult)
 
 from ...ibmqtestcase import IBMQTestCase
-from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRuntimeJob, CancelableRuntimeJob,
-                                  CustomResultRuntimeJob)
+from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRanTooLongRuntimeJob,
+                                  FailedRuntimeJob, CancelableRuntimeJob, CustomResultRuntimeJob)
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
@@ -111,7 +120,6 @@ class TestRuntime(IBMQTestCase):
         self.assertIsInstance(decoded_result, Result)
         self.assertTrue((decoded_array == orig_array).all())
 
-    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
     def test_coder_qc(self):
         """Test runtime encoder and decoder for circuits."""
         bell = ReferenceCircuits.bell()
@@ -130,7 +138,6 @@ class TestRuntime(IBMQTestCase):
                     decoded = [decoded]
                 self.assertTrue(all(isinstance(item, QuantumCircuit) for item in decoded))
 
-    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
     def test_coder_operators(self):
         """Test runtime encoder and decoder for operators."""
         x = Parameter("x")
@@ -177,7 +184,29 @@ class TestRuntime(IBMQTestCase):
                 decoded = json.loads(encoded, cls=RuntimeDecoder)
                 self.assertEqual(op, decoded)
 
-    @skipIf(terra_version < '0.18', "Need Terra >= 0.18")
+    @skipIf(os.name == 'nt', 'Test not supported on Windows')
+    def test_coder_optimizers(self):
+        """Test runtime encoder and decoder for circuits."""
+        subtests = (
+            (ADAM, {"maxiter": 100, "amsgrad": True}),
+            (GSLS, {"maxiter": 50, "min_step_size": 0.01}),
+            (IMFIL, {"maxiter": 20}),
+            (SPSA, {"maxiter": 10, "learning_rate": 0.01, "perturbation": 0.1}),
+            (SNOBFIT, {"maxiter": 200, "maxfail": 20}),
+            # some SciPy optimizers only work with default arguments due to Qiskit/qiskit-terra#6682
+            (L_BFGS_B, {}),
+            (NELDER_MEAD, {}),
+        )
+        for opt_cls, settings in subtests:
+            with self.subTest(opt_cls=opt_cls):
+                optimizer = opt_cls(**settings)
+                encoded = json.dumps(optimizer, cls=RuntimeEncoder)
+                self.assertIsInstance(encoded, str)
+                decoded = json.loads(encoded, cls=RuntimeDecoder)
+                self.assertTrue(isinstance(decoded, opt_cls))
+                for key, value in settings.items():
+                    self.assertEqual(decoded.settings[key], value)
+
     def test_decoder_import(self):
         """Test runtime decoder importing modules."""
         script = """
@@ -287,11 +316,33 @@ if __name__ == '__main__':
             params.validate()
         params.param1 = 'foo'
 
+    def test_program_params_namespace(self):
+        """Test running a program using parameter namespace."""
+        program_id = self.runtime.upload_program(
+            data="foo".encode(), metadata=self.DEFAULT_METADATA)
+        params = self.runtime.program(program_id).parameters()
+        params.param1 = "Hello World"
+        self._run_program(program_id, inputs=params)
+
     def test_run_program_failed(self):
         """Test a failed program execution."""
         job = self._run_program(job_classes=FailedRuntimeJob)
         job.wait_for_final_state()
+        job_result_raw = self.runtime._api_client.job_results(job.job_id())
         self.assertEqual(JobStatus.ERROR, job.status())
+        self.assertEqual(API_TO_JOB_ERROR_MESSAGE['FAILED'].format(
+            job.job_id(), job_result_raw), job.error_message())
+        with self.assertRaises(RuntimeJobFailureError):
+            job.result()
+
+    def test_run_program_failed_ran_too_long(self):
+        """Test a program that failed since it ran longer than maxiumum execution time."""
+        job = self._run_program(job_classes=FailedRanTooLongRuntimeJob)
+        job.wait_for_final_state()
+        job_result_raw = self.runtime._api_client.job_results(job.job_id())
+        self.assertEqual(JobStatus.ERROR, job.status())
+        self.assertEqual(API_TO_JOB_ERROR_MESSAGE['CANCELLED - RAN TOO LONG'].format(
+            job.job_id(), job_result_raw), job.error_message())
         with self.assertRaises(RuntimeJobFailureError):
             job.result()
 

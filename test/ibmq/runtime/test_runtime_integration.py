@@ -21,6 +21,7 @@ from contextlib import suppress
 
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
+from qiskit.providers.ibmq.runtime.constants import API_TO_JOB_ERROR_MESSAGE
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 from qiskit.providers.ibmq.runtime.runtime_program import RuntimeProgram
 from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramError,
@@ -41,6 +42,7 @@ class TestRuntimeIntegration(IBMQTestCase):
 
     RUNTIME_PROGRAM = """
 import random
+import time
 import warnings
 
 from qiskit import transpile
@@ -53,9 +55,11 @@ def prepare_circuits(backend):
 
 def main(backend, user_messenger, **kwargs):
     iterations = kwargs['iterations']
+    sleep_per_iteration = kwargs.pop('sleep_per_iteration', 0)
     interim_results = kwargs.pop('interim_results', {})
     final_result = kwargs.pop("final_result", {})
     for it in range(iterations):
+        time.sleep(sleep_per_iteration)
         qc = prepare_circuits(backend)
         user_messenger.publish({"iteration": it, "interim_results": interim_results})
         backend.run(qc).result()
@@ -199,10 +203,33 @@ def main(backend, user_messenger, **kwargs):
         self.log.info("Runtime job %s submitted.", job.job_id())
 
         job.wait_for_final_state()
+        job_result_raw = self.provider.runtime._api_client.job_results(job.job_id())
         self.assertEqual(JobStatus.ERROR, job.status())
+        self.assertIn(API_TO_JOB_ERROR_MESSAGE['FAILED'].format(
+            job.job_id(), job_result_raw), job.error_message())
         with self.assertRaises(RuntimeJobFailureError) as err_cm:
             job.result()
         self.assertIn('KeyError', str(err_cm.exception))
+
+    def test_run_program_failed_ran_too_long(self):
+        """Test a program that failed since it ran longer than maxiumum execution time."""
+        max_execution_time = 60
+        inputs = {
+            'iterations': 1,
+            'sleep_per_iteration': 60
+        }
+        program_id = self._upload_program(max_execution_time=max_execution_time)
+        options = {'backend_name': self.backend.name()}
+        job = self.provider.runtime.run(program_id=program_id, inputs=inputs, options=options)
+        self.log.info("Runtime job %s submitted.", job.job_id())
+
+        job.wait_for_final_state()
+        job_result_raw = self.provider.runtime._api_client.job_results(job.job_id())
+        self.assertEqual(JobStatus.ERROR, job.status())
+        self.assertIn(API_TO_JOB_ERROR_MESSAGE['CANCELLED - RAN TOO LONG'].format(
+            job.job_id(), job_result_raw), job.error_message())
+        with self.assertRaises(RuntimeJobFailureError):
+            job.result()
 
     def test_retrieve_job_queued(self):
         """Test retrieving a queued job."""

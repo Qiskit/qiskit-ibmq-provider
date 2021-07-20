@@ -16,8 +16,10 @@ from inspect import getfullargspec
 from datetime import timedelta, datetime
 import warnings
 from unittest import SkipTest
+from unittest.mock import patch
 
-from qiskit import transpile, assemble
+from qiskit import QuantumCircuit, transpile, assemble
+from qiskit.providers.models import QasmBackendConfiguration
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
@@ -175,6 +177,37 @@ class TestIBMQBackend(IBMQTestCase):
         self.assertEqual(qobj.config.shots, 1024)
         self.assertTrue(qobj.config.memory)
         self.assertEqual(qobj.config.foo, 'foo')
+
+    def test_deprecate_id_instruction(self):
+        """Test replacement of 'id' Instructions with 'Delay' instructions."""
+
+        circuit_with_id = QuantumCircuit(2)
+        circuit_with_id.id(0)
+        circuit_with_id.id(0)
+        circuit_with_id.id(1)
+
+        config = QasmBackendConfiguration(
+            basis_gates=['id'],
+            supported_instructions=['delay'],
+            dt=0.25,
+            backend_name='test',
+            backend_version=0.0,
+            n_qubits=1,
+            gates=[],
+            local=False,
+            simulator=False,
+            conditional=False,
+            open_pulse=False,
+            memory=False,
+            max_shots=1,
+            coupling_map=None,
+        )
+
+        with patch.object(self.backend, 'configuration', return_value=config):
+            with self.assertWarnsRegex(DeprecationWarning, r"'id' instruction"):
+                self.backend._deprecate_id_instruction(circuit_with_id)
+
+            self.assertEqual(circuit_with_id.count_ops(), {'delay': 3})
 
 
 class TestIBMQBackendService(IBMQTestCase):

@@ -168,6 +168,23 @@ class FailedRuntimeJob(BaseFakeRuntimeJob):
             self._result = "Kaboom!"
 
 
+class FailedRanTooLongRuntimeJob(BaseFakeRuntimeJob):
+    """Class for faking a failed runtime job."""
+
+    _job_progress = [
+        "QUEUED",
+        "RUNNING",
+        "CANCELLED - RAN TOO LONG"
+    ]
+
+    def _auto_progress(self):
+        """Automatically update job status."""
+        super()._auto_progress()
+
+        if self._status == "CANCELLED - RAN TOO LONG":
+            self._result = "Kaboom!"
+
+
 class CancelableRuntimeJob(BaseFakeRuntimeJob):
     """Class for faking a cancelable runtime job."""
 

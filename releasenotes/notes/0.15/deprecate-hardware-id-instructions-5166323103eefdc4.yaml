@@ -1,0 +1,11 @@
+---
+deprecations:
+  - |
+    The ``id`` instruction has been deprecated on IBM hardware
+    backends. Instead, please use the ``delay`` instruction which
+    implements variable-length delays, specified in units of
+    ``dt``. When running a circuit containing an ``id`` instruction,
+    a warning will be raised on job submission and any ``id``
+    instructions in the job will be automatically replaced with their
+    equivalent ``delay`` instruction.
+
