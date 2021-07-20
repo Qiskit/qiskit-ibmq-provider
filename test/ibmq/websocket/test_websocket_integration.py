@@ -72,8 +72,7 @@ class TestWebsocketIntegration(IBMQTestCase):
     @requires_device
     def test_websockets_device(self, backend):
         """Test checking status of a job via websockets for a device."""
-        job = backend.run(transpile(ReferenceCircuits.bell(), backend),
-                          validate_qobj=True, shots=1)
+        job = backend.run(transpile(ReferenceCircuits.bell(), backend), shots=1)
 
         # Manually disable the non-websocket polling.
         job._api_client._job_final_status_polling = self._job_final_status_polling
@@ -156,7 +155,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         """Test timeout checking status of a job via websockets."""
         backend = most_busy_backend(self.provider)
         job = backend.run(transpile(ReferenceCircuits.bell(), backend),
-                          validate_qobj=True, shots=backend.configuration().max_shots)
+                          shots=backend.configuration().max_shots)
 
         try:
             with self.assertRaises(JobTimeoutError):
