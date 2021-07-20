@@ -144,7 +144,6 @@ class TestIQXDashboard(IBMQTestCase):
         cancel_job(job)
 
 
-
 def _get_backends(provider):
     """Return backends for testing."""
     backends = []
