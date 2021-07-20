@@ -12,6 +12,7 @@
 
 """Test serializing and deserializing data sent to the server."""
 
+import logging
 from test.utils import cancel_job
 from typing import Any, Dict, List, Optional
 from unittest import SkipTest, skipIf
@@ -29,6 +30,8 @@ from qiskit.version import VERSION as terra_version
 
 from ..decorators import requires_provider
 from ..ibmqtestcase import IBMQTestCase
+
+logger = logging.getLogger(__name__)
 
 
 class TestSerialization(IBMQTestCase):
@@ -53,7 +56,7 @@ class TestSerialization(IBMQTestCase):
             try:
                 self.provider.runtime.delete_job(job_id)
             except RuntimeJobNotFound:
-                pass
+                logger.info('Could not delete job {%s}', job_id)
 
     def test_qasm_qobj(self):
         """Test serializing qasm qobj data."""

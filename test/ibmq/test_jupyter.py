@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from test.utils import cancel_job
 from typing import List
 from unittest import mock
+import logging
 
 from qiskit import transpile
 from qiskit.providers.ibmq.jupyter.config_widget import config_tab
@@ -36,6 +37,8 @@ from qiskit.test.reference_circuits import ReferenceCircuits
 
 from ..decorators import requires_provider
 from ..ibmqtestcase import IBMQTestCase
+
+logger = logging.getLogger(__name__)
 
 
 class TestBackendInfo(IBMQTestCase):
@@ -116,7 +119,7 @@ class TestIQXDashboard(IBMQTestCase):
             try:
                 self.provider.runtime.delete_job(job_id)
             except RuntimeJobNotFound:
-                pass
+                logger.info('Could not delete job {%s}', job_id)
 
     def test_backend_widget(self):
         """Test devices tab."""

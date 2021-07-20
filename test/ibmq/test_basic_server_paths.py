@@ -15,6 +15,7 @@
 import time
 from datetime import datetime, timedelta
 from typing import List, Tuple
+import logging
 
 from qiskit import transpile
 from qiskit.providers.ibmq import least_busy
@@ -28,6 +29,8 @@ from qiskit.test.reference_circuits import ReferenceCircuits
 from ..decorators import requires_providers
 from ..ibmqtestcase import IBMQTestCase
 from ..utils import cancel_job
+
+logger = logging.getLogger(__name__)
 
 
 class TestBasicServerPaths(IBMQTestCase):
@@ -50,7 +53,7 @@ class TestBasicServerPaths(IBMQTestCase):
             try:
                 provider.runtime.delete_job(job_id)
             except RuntimeJobNotFound:
-                pass
+                logger.info('Could not delete job {%s}', job_id)
 
     @slow_test
     def test_job_submission(self):

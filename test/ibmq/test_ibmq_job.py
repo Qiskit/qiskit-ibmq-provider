@@ -14,6 +14,7 @@
 
 import copy
 import time
+import logging
 from datetime import datetime, timedelta
 from threading import Event, Thread
 from typing import List, Union
@@ -48,6 +49,8 @@ from ..ibmqtestcase import IBMQTestCase
 from ..utils import (cancel_job, most_busy_backend, submit_and_cancel,
                      submit_job_bad_shots, submit_job_one_bad_instr)
 
+logger = logging.getLogger(__name__)
+
 
 class TestIBMQJob(IBMQTestCase):
     """Test ibmqjob module."""
@@ -74,7 +77,7 @@ class TestIBMQJob(IBMQTestCase):
             try:
                 self.provider.runtime.delete_job(job_id)
             except RuntimeJobNotFound:
-                pass
+                logger.info('Could not delete job {%s}', job_id)
 
     @slow_test
     @requires_device

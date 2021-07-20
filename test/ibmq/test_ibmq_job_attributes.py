@@ -15,6 +15,7 @@
 import re
 import time
 import uuid
+import logging
 from datetime import datetime, timedelta
 from typing import List, Union
 from unittest import mock, skip
@@ -39,6 +40,8 @@ from ..ibmqtestcase import IBMQTestCase
 from ..utils import (cancel_job, get_large_circuit, most_busy_backend,
                      submit_job_bad_shots, submit_job_one_bad_instr,
                      update_job_tags_and_verify)
+
+logger = logging.getLogger(__name__)
 
 
 class TestIBMQJobAttributes(IBMQTestCase):
@@ -66,7 +69,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
             try:
                 self.provider.runtime.delete_job(job_id)
             except RuntimeJobNotFound:
-                pass
+                logger.info('Could not delete job {%s}', job_id)
 
     def setUp(self):
         """Initial test setup."""

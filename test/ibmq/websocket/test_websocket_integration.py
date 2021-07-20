@@ -16,6 +16,7 @@ from queue import Queue
 from threading import Thread
 from typing import List
 from unittest import mock
+import logging
 
 from qiskit import transpile
 from qiskit.circuit.quantumcircuit import QuantumCircuit
@@ -32,6 +33,8 @@ from ...decorators import requires_device, requires_provider
 from ...ibmqtestcase import IBMQTestCase
 from ...proxy_server import MockProxyServer, use_proxies
 from ...utils import cancel_job, most_busy_backend
+
+logger = logging.getLogger(__name__)
 
 
 class TestWebsocketIntegration(IBMQTestCase):
@@ -63,7 +66,7 @@ class TestWebsocketIntegration(IBMQTestCase):
             try:
                 self.provider.runtime.delete_job(job_id)
             except RuntimeJobNotFound:
-                pass
+                logger.info('Could not delete job {%s}', job_id)
 
     def _job_final_status_polling(self, *args, **kwargs):
         """Replaces the actual _job_final_status_polling and fails the test."""
