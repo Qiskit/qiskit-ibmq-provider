@@ -16,7 +16,7 @@ import copy
 import time
 from datetime import datetime, timedelta
 from threading import Event, Thread
-from typing import List
+from typing import List, Union
 from unittest import SkipTest, mock
 
 from dateutil import tz
@@ -36,6 +36,7 @@ from qiskit.providers.ibmq.job.exceptions import IBMQJobTimeoutError
 from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
 from qiskit.providers.ibmq.utils.converters import local_to_utc
 from qiskit.providers.ibmq.utils.utils import api_status_to_job_status
+from qiskit.providers.job import JobV1 as Job
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.result import Result
 from qiskit.test import slow_test
@@ -61,26 +62,26 @@ class TestIBMQJob(IBMQTestCase):
         cls.sim_backend: Backend = provider.get_backend('ibmq_qasm_simulator')
         cls.bell = transpile(ReferenceCircuits.bell(), cls.sim_backend)
         cls.sim_job = cls.sim_backend.run(cls.bell)
+        cls.sim_job.wait_for_final_state()
         cls.last_month = datetime.now() - timedelta(days=30)
         # Setup list of jobs to check have been deleted.
         cls.jobs_to_delete: List[str] = []
 
     def tearDown(self) -> None:
+        super().tearDown()
         # Ensure all jobs are deleted.
         for job_id in self.jobs_to_delete:
             try:
                 self.provider.runtime.delete_job(job_id)
             except RuntimeJobNotFound:
                 pass
-        return super().tearDown()
 
     @slow_test
     @requires_device
     def test_run_device(self, backend: Backend):
         """Test running in a real device."""
         shots = 8192
-        job = backend.run(transpile(ReferenceCircuits.bell(), backend=backend),
-                          shots=shots)
+        job = self._sim_job(backend=backend, shots=shots)
 
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         result = job.result()
@@ -92,9 +93,6 @@ class TestIBMQJob(IBMQTestCase):
         # guaranteed to have them.
         self.assertIsNotNone(job.properties())
 
-        # add job to jobs to remove
-        self.jobs_to_delete += job.job_id()
-
     def test_run_multiple_simulator(self):
         """Test running multiple jobs in a simulator."""
         num_qubits = 16
@@ -105,7 +103,7 @@ class TestIBMQJob(IBMQTestCase):
             qc.cx(qr[i], qr[i + 1])
         qc.measure(qr, cr)
         num_jobs = 3
-        job_array = [self.sim_backend.run(transpile([qc] * 20), shots=512)
+        job_array = [self._sim_job(qc=transpile([qc] * 20), shots=512)
                      for _ in range(num_jobs)]
         timeout = 30
         start_time = time.time()
@@ -140,9 +138,6 @@ class TestIBMQJob(IBMQTestCase):
         job_ids = [job.job_id() for job in job_array]
         self.assertEqual(sorted(job_ids), sorted(list(set(job_ids))))
 
-        # Ensure all jobs are deleted
-        self.jobs_to_delete.extend(job_ids)
-
     @slow_test
     @requires_device
     def test_run_multiple_device(self, backend: Backend):
@@ -155,7 +150,7 @@ class TestIBMQJob(IBMQTestCase):
             qc.cx(qr[i], qr[i + 1])
         qc.measure(qr, cr)
         num_jobs = 3
-        job_array = [backend.run(transpile(qc, backend=backend))
+        job_array = [self._sim_job(qc=transpile(qc, backend=backend))
                      for _ in range(num_jobs)]
         time.sleep(3)  # give time for jobs to start (better way?)
         job_status = [job.status() for job in job_array]
@@ -192,9 +187,6 @@ class TestIBMQJob(IBMQTestCase):
         job_ids = [job.job_id() for job in job_array]
         self.assertEqual(sorted(job_ids), sorted(list(set(job_ids))))
 
-        # Ensure all jobs are deleted
-        self.jobs_to_delete.extend(job_ids)
-
     def test_cancel(self):
         """Test job cancellation."""
         # Find the most busy backend
@@ -230,8 +222,8 @@ class TestIBMQJob(IBMQTestCase):
         if not backend_2:
             raise SkipTest('Skipping test that requires multiple backends')
 
-        job_1 = backend_1.run(transpile(ReferenceCircuits.bell(), backend_1))
-        job_2 = backend_2.run(transpile(ReferenceCircuits.bell(), backend_2))
+        job_1 = self._sim_job(backend=backend_1, qc=self.bell)
+        job_2 = self._sim_job(backend=backend_2, qc=self.bell)
 
         # test a retrieved job's backend is the same as the queried backend
         self.assertEqual(backend_1.retrieve_job(job_1.job_id()).backend().name(),
@@ -252,9 +244,6 @@ class TestIBMQJob(IBMQTestCase):
         # Cleanup
         for job in [job_1, job_2]:
             cancel_job(job)
-
-        # Ensure jobs are deleted
-        self.jobs_to_delete.extend([job_1.job_id(), job_2.job_id()])
 
     def test_retrieve_job_error(self):
         """Test retrieving an invalid job."""
@@ -314,7 +303,7 @@ class TestIBMQJob(IBMQTestCase):
         active_job_statuses = {api_status_to_job_status(status) for status in ApiJobStatus
                                if status not in API_JOB_FINAL_STATES}
 
-        job = backend.run(transpile(ReferenceCircuits.bell(), backend))
+        job = self._sim_job(backend=backend)
 
         active_jobs = backend.active_jobs()
         if not job.in_final_state():    # Job is still active.
@@ -328,13 +317,10 @@ class TestIBMQJob(IBMQTestCase):
         # Cancel job so it doesn't consume more resources.
         cancel_job(job)
 
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
-
     def test_retrieve_jobs_queued(self):
         """Test retrieving jobs that are queued."""
         backend = most_busy_backend(self.provider)
-        job = backend.run(transpile(ReferenceCircuits.bell(), backend))
+        job = self._sim_job(backend=backend)
 
         # Wait for the job to queue, run, or reach a final state.
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.QUEUED, JobStatus.RUNNING]
@@ -357,15 +343,9 @@ class TestIBMQJob(IBMQTestCase):
         # Cancel job so it doesn't consume more resources.
         cancel_job(job)
 
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
-
     def test_retrieve_jobs_running(self):
         """Test retrieving jobs that are running."""
-        job = self.sim_backend.run(self.bell)
-
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
+        job = self._sim_job()
 
         # Wait for the job to run, or reach a final state.
         leave_states = list(JOB_FINAL_STATES) + [JobStatus.RUNNING]
@@ -446,11 +426,8 @@ class TestIBMQJob(IBMQTestCase):
         qc = QuantumCircuit(3, 3)
         qc.h(0)
         qc.measure([0, 1, 2], [0, 1, 2])
-        job = self.sim_backend.run(transpile(qc, backend=self.sim_backend))
+        job = self._sim_job(qc=qc)
         job.wait_for_final_state()
-
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
 
         my_filter = {'backend.name': self.sim_backend.name(),
                      'summaryData.summary.qobj_config.n_qubits': 3,
@@ -490,11 +467,8 @@ class TestIBMQJob(IBMQTestCase):
 
     def test_retrieve_jobs_order(self):
         """Test retrieving jobs with different orders."""
-        job = self.sim_backend.run(self.bell)
+        job = self._sim_job()
         job.wait_for_final_state()
-
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
 
         newest_jobs = self.sim_backend.jobs(
             limit=10, status=JobStatus.DONE, descending=True, start_datetime=self.last_month)
@@ -534,11 +508,8 @@ class TestIBMQJob(IBMQTestCase):
         excited_sched = x | measure
         schedules = [ground_sched, excited_sched]
 
-        job = backend.run(schedules, meas_level=1, shots=256)
+        job = self._sim_job(qc=schedules, meas_level=1, shots=256)
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
-
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
 
         self.assertTrue(job.done(), "Job {} didn't complete successfully.".format(job.job_id()))
         self.assertIsNotNone(job.result(), "Job {} has no result.".format(job.job_id()))
@@ -616,10 +587,7 @@ class TestIBMQJob(IBMQTestCase):
                     # Put callback data in a dictionary to make it mutable.
                     callback_info = {'called': False, 'last call time': 0.0, 'last data': {}}
                     cancel_event = Event()
-                    job = self.sim_backend.run(self.bell)
-
-                    # Ensure job is deleted
-                    self.jobs_to_delete.append(job.job_id())
+                    job = self._sim_job()
 
                     # Cancel the job after a while.
                     Thread(target=job_canceller, args=(job, cancel_event, 7), daemon=True).start()
@@ -639,10 +607,7 @@ class TestIBMQJob(IBMQTestCase):
     def test_wait_for_final_state_timeout(self):
         """Test waiting for job to reach final state times out."""
         backend = most_busy_backend(self.provider)
-        job = backend.run(transpile(ReferenceCircuits.bell(), backend=backend))
-
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
+        job = self.sim_job(backend=backend)
 
         try:
             self.assertRaises(IBMQJobTimeoutError, job.wait_for_final_state, timeout=0.1)
@@ -668,7 +633,7 @@ class TestIBMQJob(IBMQTestCase):
                 with mock.patch.object(RestJob, fail_method,
                                        side_effect=_side_effect, autospec=True):
                     with self.assertRaises(IBMQBackendApiError):
-                        self.sim_backend.run(self.bell)
+                        self._sim_job()
 
                 self.assertTrue(job_id, "Job ID not saved.")
                 job = self.sim_backend.retrieve_job(job_id[0])
@@ -682,10 +647,20 @@ class TestIBMQJob(IBMQTestCase):
     def test_job_backend_options(self):
         """Test job backend options."""
         run_config = {'shots': 2048, 'memory': True}
-        job = self.sim_backend.run(self.bell, **run_config)
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
+        job = self._sim_job(**run_config)
         self.assertLessEqual(run_config.items(), job.backend_options().items())
 
     def test_job_header(self):
         """Test job header."""
+
+    def _sim_job(
+            self, backend: Backend = None,
+            qc: Union[QuantumCircuit, List[QuantumCircuit]] = None, **kwargs) -> Job:
+        # Default to the bell circuit
+        qc = qc or self.bell
+        backend = backend or self.sim_backend
+        # Simulate circuit
+        job = backend.run(self.bell, **kwargs)
+        # Ensure job is deleted
+        self.jobs_to_delete.append(job.job_id())
+        return job

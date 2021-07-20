@@ -13,11 +13,11 @@
 """Tests for Jupyter tools."""
 
 from datetime import datetime, timedelta
+from test.utils import cancel_job
 from typing import List
 from unittest import mock
 
 from qiskit import transpile
-from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError
 from qiskit.providers.ibmq.jupyter.config_widget import config_tab
 from qiskit.providers.ibmq.jupyter.dashboard.backend_widget import \
     make_backend_widget
@@ -30,7 +30,6 @@ from qiskit.providers.ibmq.jupyter.gates_widget import gates_tab
 from qiskit.providers.ibmq.jupyter.jobs_widget import jobs_tab
 from qiskit.providers.ibmq.jupyter.qubits_widget import qubits_tab
 from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
-from qiskit.providers.ibmq.runtime.runtime_job import RuntimeJob
 from qiskit.providers.ibmq.visualization.interactive.error_map import \
     iplot_error_map
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -111,13 +110,13 @@ class TestIQXDashboard(IBMQTestCase):
         cls.jobs_to_delete: List[str] = []
 
     def tearDown(self) -> None:
+        super().tearDown()
         # Ensure all jobs are deleted.
         for job_id in self.jobs_to_delete:
             try:
                 self.provider.runtime.delete_job(job_id)
             except RuntimeJobNotFound:
                 pass
-        return super().tearDown()
 
     def test_backend_widget(self):
         """Test devices tab."""
@@ -134,8 +133,7 @@ class TestIQXDashboard(IBMQTestCase):
         job = backend.run(transpile(ReferenceCircuits.bell(), backend))
         self.jobs_to_delete.append(job.job_id())
         create_job_widget(mock.MagicMock(), job, backend=backend.name(), status=job.status().value)
-
-        self._cancel_job(job)
+        cancel_job(job)
 
     def test_watcher_monitor(self):
         """Test job watcher."""
@@ -143,19 +141,8 @@ class TestIQXDashboard(IBMQTestCase):
         job = backend.run(transpile(ReferenceCircuits.bell(), backend))
         self.jobs_to_delete.append(job.job_id())
         _job_checker(job=job, status=job.status(), watcher=mock.MagicMock())
+        cancel_job(job)
 
-        self._cancel_job(job)
-
-    def _cancel_job(self, job: RuntimeJob) -> None:
-        """Cancels a job.
-
-        Args:
-            job: job id
-        """
-        try:
-            job.cancel()
-        except IBMQJobApiError:
-            pass
 
 
 def _get_backends(provider):

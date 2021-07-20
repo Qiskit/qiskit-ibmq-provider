@@ -20,9 +20,7 @@ from qiskit import transpile
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.exceptions import IBMQBackendJobLimitError
-from qiskit.providers.ibmq.job import IBMQJobApiError
 from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
-from qiskit.providers.ibmq.runtime.runtime_job import RuntimeJob
 from qiskit.providers.job import JobV1 as Job
 from qiskit.test import slow_test
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -46,13 +44,13 @@ class TestBasicServerPaths(IBMQTestCase):
         cls.jobs_to_delete: List[Tuple[AccountProvider, str]] = []
 
     def tearDown(self) -> None:
+        super().tearDown()
         # Ensure all jobs are deleted.
         for provider, job_id in self.jobs_to_delete:
             try:
                 provider.runtime.delete_job(job_id)
             except RuntimeJobNotFound:
                 pass
-        return super().tearDown()
 
     @slow_test
     def test_job_submission(self):
@@ -63,9 +61,6 @@ class TestBasicServerPaths(IBMQTestCase):
                 filters=lambda b: b.configuration().n_qubits >= 5))
             with self.subTest(desc=desc, backend=backend):
                 job = self._submit_job_with_retry(ReferenceCircuits.bell(), backend)
-
-                # Ensure job is deleted
-                self.jobs_to_delete.append((provider, job.job_id()))
 
                 # Fetch the results.
                 result = job.result()
@@ -84,9 +79,6 @@ class TestBasicServerPaths(IBMQTestCase):
             with self.subTest(desc=desc, backend=backend):
                 job = self._submit_job_with_retry(ReferenceCircuits.bell(), backend)
 
-                # Ensure job is deleted
-                self.jobs_to_delete.append((provider, job.job_id()))
-
                 self.assertIsNotNone(job.properties())
                 self.assertTrue(job.status())
                 # Cancel job so it doesn't consume more resources.
@@ -101,16 +93,13 @@ class TestBasicServerPaths(IBMQTestCase):
                 job = self._submit_job_with_retry(ReferenceCircuits.bell(), backend)
                 job_id = job.job_id()
 
-                # Ensure job is deleted
-                self.jobs_to_delete.append((provider, job_id))
-
                 retrieved_jobs = provider.backend.jobs(
                     backend_name=backend_name, start_datetime=self.last_week)
                 self.assertGreaterEqual(len(retrieved_jobs), 1)
                 retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
                 self.assertIn(job_id, retrieved_job_ids)
 
-                self._cancel_job(job)
+                cancel_job(job)
 
     def test_device_properties_and_defaults(self):
         """Test the properties and defaults for an open pulse device."""
@@ -142,21 +131,13 @@ class TestBasicServerPaths(IBMQTestCase):
         transpiled = transpile(circs, backend)
         for _ in range(max_retry):
             try:
+                # Execute job
                 job = backend.run(transpiled)
+                # Ensure job is deleted
+                self.jobs_to_delete.append((backend.provider(), job.job_id()))
                 return job
             except IBMQBackendJobLimitError as err:
                 limit_error = err
                 time.sleep(1)
 
         self.fail("Unable to submit job after {} retries: {}".format(max_retry, limit_error))
-
-    def _cancel_job(self, job: RuntimeJob) -> None:
-        """Cancels a job.
-
-        Args:
-            job: job id
-        """
-        try:
-            job.cancel()
-        except IBMQJobApiError:
-            pass

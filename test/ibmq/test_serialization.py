@@ -12,6 +12,7 @@
 
 """Test serializing and deserializing data sent to the server."""
 
+from test.utils import cancel_job
 from typing import Any, Dict, List, Optional
 from unittest import SkipTest, skipIf
 
@@ -46,13 +47,13 @@ class TestSerialization(IBMQTestCase):
         cls.jobs_to_delete: List[str] = []
 
     def tearDown(self) -> None:
+        super().tearDown()
         # Ensure all jobs are deleted.
         for job_id in self.jobs_to_delete:
             try:
                 self.provider.runtime.delete_job(job_id)
             except RuntimeJobNotFound:
                 pass
-        return super().tearDown()
 
     def test_qasm_qobj(self):
         """Test serializing qasm qobj data."""
@@ -62,7 +63,7 @@ class TestSerialization(IBMQTestCase):
         self.assertEqual(_array_to_list(job.qobj().to_dict()), rqobj.to_dict())
 
         # Cancel the job
-        job.cancel()
+        cancel_job(job)
         # Ensure job is deleted
         self.jobs_to_delete.append(job.job_id())
 
@@ -89,7 +90,7 @@ class TestSerialization(IBMQTestCase):
         self.assertEqual(_array_to_list(job.qobj().to_dict()), rqobj.to_dict())
 
         # Cancel the job
-        job.cancel()
+        cancel_job(job)
         # Ensure job is deleted
         self.jobs_to_delete.append(job.job_id())
 
@@ -141,7 +142,7 @@ class TestSerialization(IBMQTestCase):
         self._verify_data(result.to_dict(), ())
 
         # Cancel the job
-        job.cancel()
+        cancel_job(job)
         # Ensure job is deleted
         self.jobs_to_delete.append(job.job_id())
 
@@ -159,10 +160,10 @@ class TestSerialization(IBMQTestCase):
         sched = schedule(transpile(qc, backend=backend), backend=backend)
         job = backend.run(sched)
 
-        # Cancel the job
-        job.cancel()
         # Ensure job is deleted
         self.jobs_to_delete.append(job.job_id())
+        # Cancel the job
+        cancel_job(job)
 
         result = job.result()
 
