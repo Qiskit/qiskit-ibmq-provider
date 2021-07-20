@@ -331,7 +331,7 @@ if __name__ == '__main__':
         job_result_raw = self.runtime._api_client.job_results(job.job_id())
         self.assertEqual(JobStatus.ERROR, job.status())
         self.assertEqual(API_TO_JOB_ERROR_MESSAGE['FAILED'].format(
-            job.job_id(), job_result_raw), job.error_message())
+            job.job_id(), job_result_raw), job._error_message)
         with self.assertRaises(RuntimeJobFailureError):
             job.result()
 
@@ -342,7 +342,7 @@ if __name__ == '__main__':
         job_result_raw = self.runtime._api_client.job_results(job.job_id())
         self.assertEqual(JobStatus.ERROR, job.status())
         self.assertEqual(API_TO_JOB_ERROR_MESSAGE['CANCELLED - RAN TOO LONG'].format(
-            job.job_id(), job_result_raw), job.error_message())
+            job.job_id(), job_result_raw), job._error_message)
         with self.assertRaises(RuntimeJobFailureError):
             job.result()
 
