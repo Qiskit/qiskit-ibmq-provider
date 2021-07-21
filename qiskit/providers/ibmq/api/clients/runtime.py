@@ -106,12 +106,12 @@ class RuntimeClient:
         """
         return self.api.program(program_id).get_data()
 
-    def set_program_data(self, program_id: str, data: str) -> None:
+    def set_program_data(self, program_id: str, data: Union[bytes, str]) -> None:
         """Sets a program's data.
 
         Args:
             program_id: Program ID.
-            data: the program data
+            data: Name of the program file or program data to upload.
         """
         self.api.program(program_id).set_data(data=data)
 

@@ -416,19 +416,19 @@ class IBMRuntimeService:
                 raise RuntimeProgramNotFound(f"Program not found: {ex.message}") from None
             raise QiskitRuntimeError(f"Failed to set program visibility: {ex}") from None
 
-    def update_program(self, program_id: str, program_str: str) -> None:
+    def update_program(self, program_id: str, data: Union[bytes, str]) -> None:
         """Updates a program to the string specified.
 
         Args:
             program_id: Program ID
-            program_str: the new runtime program.
+            data: Name of the program file or program data to upload.
 
         Raises:
             RuntimeProgramNotFound: If the program doesn't exist.
             QiskitRuntimeError: If the request failed.
         """
         try:
-            self._api_client.set_program_data(program_id, data=program_str)
+            self._api_client.set_program_data(program_id, data=data)
         except RequestsApiError as ex:
             if ex.status_code == 404:
                 raise RuntimeProgramNotFound(f"Program not found: {ex.message}") from None
