@@ -13,6 +13,7 @@
 """Fake RuntimeClient."""
 
 import time
+from typing import Union
 import uuid
 import json
 from concurrent.futures import ThreadPoolExecutor
@@ -312,13 +313,12 @@ class BaseFakeRuntimeClient:
         """
         self._programs[program_id]._is_public = public
 
-    def set_program_data(self, program_id: str, data: str) -> None:
-        """Updates a program to the string specified.
+    def set_program_data(self, program_id: str, data: Union[bytes, str]) -> None:
+        """Sets a program's data.
 
         Args:
-            program_id: Program ID
-            data: the new runtime program.
-
+            program_id: Program ID.
+            data: Name of the program file or program data to upload.
         """
         self._programs[program_id]._data = data
 
