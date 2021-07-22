@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Updating a Qiskit Runtime program is now supported via:
+    :meth:`qiskit.providers.ibmq.IBMRuntimeService.update_program`.
