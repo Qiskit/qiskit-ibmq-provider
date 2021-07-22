@@ -228,9 +228,7 @@ class Program(RestAdapterBase):
         url = self.get_url('data')
         if isinstance(data, str):
             with open(data, 'r') as file:
-                data = file.read()
-        else:
-            data = data.decode()
+                data = file.read().encode()
         self.session.put(url, data=data, headers={'content-type': 'text/plain'})
 
     def make_public(self) -> None:

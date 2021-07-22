@@ -417,7 +417,7 @@ class IBMRuntimeService:
             raise QiskitRuntimeError(f"Failed to set program visibility: {ex}") from None
 
     def update_program(self, program_id: str, data: Union[bytes, str]) -> None:
-        """Updates a program to the string specified.
+        """Update a runtime program's data.
 
         Args:
             program_id: Program ID
@@ -426,12 +426,16 @@ class IBMRuntimeService:
         Raises:
             RuntimeProgramNotFound: If the program doesn't exist.
             QiskitRuntimeError: If the request failed.
+            IBMQNotAuthorizedError: If not authorized to update program
         """
         try:
             self._api_client.set_program_data(program_id, data=data)
         except RequestsApiError as ex:
             if ex.status_code == 404:
                 raise RuntimeProgramNotFound(f"Program not found: {ex.message}") from None
+            if ex.status_code == 403:
+                raise IBMQNotAuthorizedError(
+                    "You are not authorized to update this program.") from None
             raise QiskitRuntimeError(f"Failed to set program data: {ex}") from None
 
     def job(self, job_id: str) -> RuntimeJob:

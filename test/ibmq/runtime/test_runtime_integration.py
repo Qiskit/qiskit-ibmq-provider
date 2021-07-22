@@ -19,6 +19,7 @@ import time
 import random
 import tempfile
 from contextlib import suppress
+from qiskit.exceptions import QiskitError
 
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -155,8 +156,8 @@ def main(backend, user_messenger, **kwargs):
         self.assertTrue(program)
         self.assertEqual(max_execution_time, program.max_execution_time)
 
-    def test_update_program(self):
-        """Test updating a program.
+    def test_update_program_filepath(self):
+        """Test updating a program via byte-encoded string.
         NOTE: When an Qiskit Runtime API endpoint is created to GET
          a runtime program in plaintext, update this test to verify the
          program is modified.
@@ -165,11 +166,23 @@ def main(backend, user_messenger, **kwargs):
         program_id = self._upload_program()
         self.assertTrue(program_id)
         # Update the program data (last 2 lines differ from original)
-        new_program = str(self.RUNTIME_PROGRAM)
-        new_program.replace('warnings.warn("this is a stderr message")',
-                            'warnings.warn("this is not a stderr message")')
+        new_program = self.RUNTIME_PROGRAM.replace('warnings.warn("this is a stderr message")',
+                                                   'warnings.warn("this is not a stderr message")')
         # Execute with bytes
         self.provider.runtime.update_program(program_id, new_program.encode())
+
+    def test_update_program_bytes(self):
+        """Test updating a program via filepath.
+        NOTE: When an Qiskit Runtime API endpoint is created to GET
+         a runtime program in plaintext, update this test to verify the
+         program is modified.
+        """
+        # Create some program
+        program_id = self._upload_program()
+        self.assertTrue(program_id)
+        # Update the program data (last 2 lines differ from original)
+        new_program = self.RUNTIME_PROGRAM.replace('warnings.warn("this is a stderr message")',
+                                                   'warnings.warn("this is not a stderr message")')
         # Prepare file data
         pfile = tempfile.NamedTemporaryFile(mode="w+")
         pfile.write(new_program)
@@ -177,7 +190,7 @@ def main(backend, user_messenger, **kwargs):
         # Execute with filepath
         try:
             self.provider.runtime.update_program(program_id, fpath)
-        except (RuntimeProgramNotFound, RuntimeProgramNotFound) as err:
+        except QiskitError as err:
             pfile.close()
             self.fail(err.message)
 
