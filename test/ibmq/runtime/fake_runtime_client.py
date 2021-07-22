@@ -260,7 +260,7 @@ class BaseFakeRuntimeClient:
 
     def program_get_data(self, program_id: str):
         """Return a specific program and its data."""
-        return self._programs[program_id].to_dict()
+        return self._programs[program_id].to_dict(include_data=True)
 
     def program_run(
             self,
