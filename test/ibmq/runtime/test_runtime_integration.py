@@ -185,7 +185,7 @@ def main(backend, user_messenger, **kwargs):
                                                    'warnings.warn("this is not a stderr message")')
         # Prepare file data
         pfile = tempfile.NamedTemporaryFile(mode="w+")
-        pfile.write(new_program)
+        program_file.write(new_program)
         program_file_path = program_file.name
         # Execute with filepath
         try:
