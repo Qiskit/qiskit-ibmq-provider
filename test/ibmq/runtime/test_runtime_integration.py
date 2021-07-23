@@ -184,7 +184,7 @@ def main(backend, user_messenger, **kwargs):
         new_program = self.RUNTIME_PROGRAM.replace('warnings.warn("this is a stderr message")',
                                                    'warnings.warn("this is not a stderr message")')
         # Prepare file data
-        pfile = tempfile.NamedTemporaryFile(mode="w+")
+        program_file = tempfile.NamedTemporaryFile(mode="w+")
         program_file.write(new_program)
         program_file_path = program_file.name
         # Execute with filepath
