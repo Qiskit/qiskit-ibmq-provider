@@ -189,7 +189,7 @@ def main(backend, user_messenger, **kwargs):
         fpath = pfile.name
         # Execute with filepath
         try:
-            self.provider.runtime.update_program(program_id, fpath)
+            self.provider.runtime.update_program(program_id, program_file_path)
         except QiskitError as err:
             program_file.close()
             self.fail(err.message)
