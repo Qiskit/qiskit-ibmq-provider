@@ -156,7 +156,7 @@ def main(backend, user_messenger, **kwargs):
         self.assertTrue(program)
         self.assertEqual(max_execution_time, program.max_execution_time)
 
-    def test_update_program_filepath(self):
+    def test_update_program_bytes(self):
         """Test updating a program via byte-encoded string.
         NOTE: When an Qiskit Runtime API endpoint is created to GET
          a runtime program in plaintext, update this test to verify the
