@@ -186,7 +186,7 @@ def main(backend, user_messenger, **kwargs):
         # Prepare file data
         pfile = tempfile.NamedTemporaryFile(mode="w+")
         pfile.write(new_program)
-        fpath = pfile.name
+        program_file_path = program_file.name
         # Execute with filepath
         try:
             self.provider.runtime.update_program(program_id, program_file_path)
