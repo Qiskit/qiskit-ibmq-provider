@@ -171,7 +171,7 @@ def main(backend, user_messenger, **kwargs):
         # Execute with bytes
         self.provider.runtime.update_program(program_id, new_program.encode())
 
-    def test_update_program_bytes(self):
+    def test_update_program_filepath(self):
         """Test updating a program via filepath.
         NOTE: When an Qiskit Runtime API endpoint is created to GET
          a runtime program in plaintext, update this test to verify the
