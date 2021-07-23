@@ -191,7 +191,7 @@ def main(backend, user_messenger, **kwargs):
         try:
             self.provider.runtime.update_program(program_id, fpath)
         except QiskitError as err:
-            pfile.close()
+            program_file.close()
             self.fail(err.message)
 
     def test_set_visibility(self):
