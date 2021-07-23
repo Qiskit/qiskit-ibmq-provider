@@ -227,7 +227,7 @@ class Program(RestAdapterBase):
         """
         url = self.get_url('data')
         if isinstance(data, str):
-            with open(data, 'r') as file:
+            with open(data, 'rb') as file:
                 data = file
         self.session.put(url, data=data, headers={'content-type': 'text/plain'})
 
