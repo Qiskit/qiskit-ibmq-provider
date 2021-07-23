@@ -173,7 +173,7 @@ def main(backend, user_messenger, **kwargs):
 
     def test_update_program_filepath(self):
         """Test updating a program via filepath.
-        NOTE: When an Qiskit Runtime API endpoint is created to GET
+        NOTE: When a Qiskit Runtime API endpoint is created to GET
          a runtime program in plaintext, update this test to verify the
          program is modified.
         """
