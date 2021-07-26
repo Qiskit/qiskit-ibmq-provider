@@ -1033,7 +1033,8 @@ class IBMExperimentService:
             self,
             experiment_id: str,
             figure: Union[str, bytes],
-            figure_name: Optional[str] = None
+            figure_name: Optional[str] = None,
+            sync_upload: bool = True
     ) -> Tuple[str, int]:
         """Store a new figure in the database.
 
@@ -1045,6 +1046,8 @@ class IBMExperimentService:
             figure: Name of the figure file or figure data to store.
             figure_name: Name of the figure. If ``None``, the figure file name, if
                 given, or a generated name is used.
+            sync_upload: If ``True``, the plot will be uploaded synchronously.
+                Otherwise the upload will be asynchronous.
 
         Returns:
             A tuple of the name and size of the saved figure.
@@ -1062,14 +1065,16 @@ class IBMExperimentService:
             figure_name += ".svg"
 
         with map_api_error(f"Figure {figure_name} already exists."):
-            response = self._api_client.experiment_plot_upload(experiment_id, figure, figure_name)
+            response = self._api_client.experiment_plot_upload(experiment_id, figure, figure_name,
+                                                               sync_upload=sync_upload)
         return response['name'], response['size']
 
     def update_figure(
             self,
             experiment_id: str,
             figure: Union[str, bytes],
-            figure_name: str
+            figure_name: str,
+            sync_upload: bool = True
     ) -> Tuple[str, int]:
         """Update an existing figure.
 
@@ -1077,6 +1082,8 @@ class IBMExperimentService:
             experiment_id: Experiment ID.
             figure: Name of the figure file or figure data to store.
             figure_name: Name of the figure.
+            sync_upload: If ``True``, the plot will be uploaded synchronously.
+                Otherwise the upload will be asynchronous.
 
         Returns:
             A tuple of the name and size of the saved figure.
@@ -1086,7 +1093,8 @@ class IBMExperimentService:
             IBMQApiError: If the request to the server failed.
         """
         with map_api_error(f"Figure {figure_name} not found."):
-            response = self._api_client.experiment_plot_update(experiment_id, figure, figure_name)
+            response = self._api_client.experiment_plot_update(experiment_id, figure, figure_name,
+                                                               sync_upload=sync_upload)
 
         return response['name'], response['size']
 

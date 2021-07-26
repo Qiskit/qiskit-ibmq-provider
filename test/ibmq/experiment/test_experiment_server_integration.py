@@ -665,14 +665,14 @@ class TestExperimentServerIntegration(IBMQTestCase):
 
     def test_analysis_results_type_operator(self):
         """Test filtering analysis results with type operator."""
-        result_type = "qiskit_test"
+        result_type = "qiskit_test_1234"
         result_id = self._create_analysis_result(result_type=result_type)
 
         results = self.provider.experiment.analysis_results(
             result_type="foo", result_type_operator="like")
         self.assertNotIn(result_id, [res["result_id"] for res in results])
 
-        subtests = ["qiskit", "test"]
+        subtests = ["qiskit_test", "test_1234"]
         for filter_type in subtests:
             with self.subTest(filter_type=filter_type):
                 results = self.provider.experiment.analysis_results(
@@ -681,7 +681,7 @@ class TestExperimentServerIntegration(IBMQTestCase):
 
                 found = False
                 for res in results:
-                    self.assertEqual(result_type, res["result_type"])
+                    self.assertIn(filter_type, res["result_type"])
                     if res["result_id"] == result_id:
                         found = True
                 self.assertTrue(found, f"Result {result_id} not returned when filtering by "
