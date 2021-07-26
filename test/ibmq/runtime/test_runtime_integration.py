@@ -12,30 +12,30 @@
 
 """Tests for runtime service."""
 
-import unittest
 import os
-import uuid
-import time
 import random
 import tempfile
+import time
+import unittest
+import uuid
 from contextlib import suppress
+from unittest import skipIf
+
 from qiskit.exceptions import QiskitError
-
-from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
-from qiskit.test.reference_circuits import ReferenceCircuits
-from qiskit.providers.ibmq.runtime.constants import API_TO_JOB_ERROR_MESSAGE
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
+from qiskit.providers.ibmq.runtime.constants import API_TO_JOB_ERROR_MESSAGE
+from qiskit.providers.ibmq.runtime.exceptions import (
+    RuntimeDuplicateProgramError, RuntimeInvalidStateError,
+    RuntimeJobFailureError, RuntimeJobNotFound, RuntimeProgramNotFound)
 from qiskit.providers.ibmq.runtime.runtime_program import RuntimeProgram
-from qiskit.providers.ibmq.runtime.exceptions import (RuntimeDuplicateProgramError,
-                                                      RuntimeProgramNotFound,
-                                                      RuntimeJobFailureError,
-                                                      RuntimeInvalidStateError,
-                                                      RuntimeJobNotFound)
+from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
+from qiskit.test.reference_circuits import ReferenceCircuits
 
-from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_runtime_device
+from ...ibmqtestcase import IBMQTestCase
 from ...proxy_server import MockProxyServer, use_proxies
-from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
+from .utils import (SerializableClass, SerializableClassDecoder,
+                    get_complex_types)
 
 
 @unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
@@ -171,6 +171,7 @@ def main(backend, user_messenger, **kwargs):
         # Execute with bytes
         self.provider.runtime.update_program(program_id, new_program.encode())
 
+    @skipIf(os.name == 'nt', 'Test not supported on Windows')
     def test_update_program_filepath(self):
         """Test updating a program via filepath.
         NOTE: When a Qiskit Runtime API endpoint is created to GET
