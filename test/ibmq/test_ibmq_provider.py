@@ -113,8 +113,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
         # TODO Use circuit metadata for individual header when terra PR-5270 is released.
         # qobj.experiments[0].header.some_field = 'extra info'
 
-        job = backend.run(transpile(self.qc1, backend=backend),
-                          validate_qobj=True, qobj_header=custom_qobj_header)
+        job = backend.run(transpile(self.qc1, backend=backend), qobj_header=custom_qobj_header)
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         result = job.result()
         self.assertTrue(custom_qobj_header.items() <= job.header().items())
