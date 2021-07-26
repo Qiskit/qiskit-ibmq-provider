@@ -177,6 +177,8 @@ class RuntimeDecoder(json.JSONDecoder):
             if obj_type == 'Instruction':
                 return _decode_and_deserialize(
                     obj_val, qpy_serialization._read_instruction, False)
+            if obj_type == 'settings' and obj['__class__'] == 'QNSPSA':
+                obj_val.update({'fidelity': _placeholder_callable})
             if obj_type == 'settings':
                 return deserialize_from_settings(
                     mod_name=obj['__module__'],
@@ -190,3 +192,8 @@ class RuntimeDecoder(json.JSONDecoder):
             if obj_type == 'to_json':
                 return obj_val
         return obj
+
+
+def _placeholder_callable(self):
+    raise RuntimeError('This is a placeholder callable for deserialization. Please set it to '
+                       'an appropriate value before usage.')

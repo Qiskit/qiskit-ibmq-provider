@@ -29,6 +29,7 @@ from qiskit.algorithms.optimizers import (
     ADAM,
     GSLS,
     IMFIL,
+    QNSPSA,
     SPSA,
     SNOBFIT,
     L_BFGS_B,
@@ -192,6 +193,7 @@ class TestRuntime(IBMQTestCase):
             (GSLS, {"maxiter": 50, "min_step_size": 0.01}),
             (IMFIL, {"maxiter": 20}),
             (SPSA, {"maxiter": 10, "learning_rate": 0.01, "perturbation": 0.1}),
+            (QNSPSA, {"fidelity": lambda: 0, "maxiter": 25, "resamplings": {1: 100, 2: 50}}),
             (SNOBFIT, {"maxiter": 200, "maxfail": 20}),
             # some SciPy optimizers only work with default arguments due to Qiskit/qiskit-terra#6682
             (L_BFGS_B, {}),
@@ -204,6 +206,12 @@ class TestRuntime(IBMQTestCase):
                 self.assertIsInstance(encoded, str)
                 decoded = json.loads(encoded, cls=RuntimeDecoder)
                 self.assertTrue(isinstance(decoded, opt_cls))
+
+                # cannot serialize fidelity for QNSPSA, this is replaced by a placeholder in
+                # deserialization
+                if opt_cls == QNSPSA:
+                    settings.pop("fidelity")
+
                 for key, value in settings.items():
                     self.assertEqual(decoded.settings[key], value)
 
