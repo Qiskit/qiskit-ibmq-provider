@@ -219,16 +219,13 @@ class Program(RestAdapterBase):
         url = self.get_url('data')
         return self.session.get(url).json()
 
-    def set_data(self, data: Union[bytes, str]) -> None:
+    def set_data(self, data: bytes) -> None:
         """Set program information.
 
         Args:
             data: Name of the program file or program data to upload.
         """
         url = self.get_url('data')
-        if isinstance(data, str):
-            with open(data, 'rb') as file:
-                data = file
         self.session.put(url, data=data, headers={'content-type': 'text/plain'})
 
     def make_public(self) -> None:

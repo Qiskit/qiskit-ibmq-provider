@@ -12,6 +12,7 @@
 
 """Qiskit runtime service."""
 
+import base64
 import logging
 from typing import Dict, Callable, Optional, Union, List, Any, Type
 import json
@@ -424,10 +425,18 @@ class IBMRuntimeService:
             data: Name of the program file or program data to upload.
 
         Raises:
+            FileNotFoundError: If the data filepath does not exist.
             RuntimeProgramNotFound: If the program doesn't exist.
             QiskitRuntimeError: If the request failed.
             IBMQNotAuthorizedError: If not authorized to update program
         """
+        # Convert any file data into bytes
+        if isinstance(data, str):
+            with open(data, 'r') as file:
+                data = file.read().encode()
+        # Convert the bytes data into Base64
+        data = base64.b64encode(data)
+        # Set the new program data
         try:
             self._api_client.set_program_data(program_id, data=data)
         except RequestsApiError as ex:

@@ -324,10 +324,20 @@ if __name__ == '__main__':
         params.param1 = "Hello World"
         self._run_program(program_id, inputs=params)
 
-    def test_program_upload_data(self):
+    def test_program_upload_data_bytes(self):
         """Test updating a program's string."""
         program_id = self._upload_program()
-        self.runtime.update_program(program_id, 'print("Hello, Qiskit Provider.")')
+        self.runtime.update_program(program_id, 'print("Hello, Qiskit Provider.")'.encode())
+
+    def test_program_upload_data_filepath(self):
+        """Test updating a program's string."""
+        program_id = self._upload_program()
+        # Prepare file data
+        program_file = tempfile.NamedTemporaryFile(mode="w+")
+        program_file.write('print("Hello, Qiskit Provider.")')
+        program_file_path = program_file.name
+        # Update program
+        self.runtime.update_program(program_id, program_file_path)
 
     def test_run_program_failed(self):
         """Test a failed program execution."""
