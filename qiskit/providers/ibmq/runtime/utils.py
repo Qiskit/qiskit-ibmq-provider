@@ -21,6 +21,7 @@ import io
 import zlib
 import inspect
 import importlib
+import warnings
 
 import numpy as np
 try:
@@ -145,6 +146,9 @@ class RuntimeEncoder(json.JSONEncoder):
                     '__module__': obj.__class__.__module__,
                     '__class__': obj.__class__.__name__,
                     '__value__': obj.settings}
+        if callable(obj):
+            warnings.warn(f"Callable {obj} is not JSON serializable and will be set to None.")
+            return None
         if HAS_SCIPY and isinstance(obj, scipy.sparse.spmatrix):
             value = _serialize_and_encode(obj, scipy.sparse.save_npz, compress=False)
             return {'__type__': 'spmatrix', '__value__': value}
