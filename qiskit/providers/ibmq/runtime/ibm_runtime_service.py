@@ -581,12 +581,10 @@ class IBMRuntimeService:
             the encoded data
         """
         # Convert any file data into bytes
-        if isinstance(data, bytes):
-            return data
-        with open(data, 'r') as file:
-            data = file.read().encode()
-        # Convert the bytes data into Base64
-        data = base64.b64encode(data)
+        if isinstance(data, str):
+            with open(data, 'r') as file:
+                data = file.read().encode()
+        return base64.b64encode(data)
         return data
 
     def logout(self) -> None:
