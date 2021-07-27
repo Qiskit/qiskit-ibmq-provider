@@ -430,12 +430,8 @@ class IBMRuntimeService:
             QiskitRuntimeError: If the request failed.
             IBMQNotAuthorizedError: If not authorized to update program
         """
-        # Convert any file data into bytes
-        if isinstance(data, str):
-            with open(data, 'r') as file:
-                data = file.read().encode()
-        # Convert the bytes data into Base64
-        data = base64.b64encode(data)
+        # Encode program data
+        data = self._encode_program_data(data)
         # Set the new program data
         try:
             self._api_client.set_program_data(program_id, data=data)
@@ -570,6 +566,28 @@ class IBMRuntimeService:
                           program_id=raw_data.get('program', {}).get('id', ""),
                           params=decoded,
                           creation_date=raw_data.get('created', None))
+
+    def _encode_program_data(self, data: Union[bytes, str]) -> bytes:
+        """Encodes a runtime program data into Base64. Program data can be
+        either a filepath (str) or raw bytes.
+
+        Args:
+            data: the program data
+
+        Raises:
+            FileNotFoundError: If the data filepath does not exist.
+
+        Returns:
+            the encoded data
+        """
+        # Convert any file data into bytes
+        if isinstance(data, bytes):
+            return data
+        with open(data, 'r') as file:
+            data = file.read().encode()
+        # Convert the bytes data into Base64
+        data = base64.b64encode(data)
+        return data
 
     def logout(self) -> None:
         """Clears authorization cache on the server.

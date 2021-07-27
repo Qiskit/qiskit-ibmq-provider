@@ -25,6 +25,7 @@ from unittest.mock import patch
 
 import numpy as np
 import scipy.sparse
+from qiskit.exceptions import QiskitError
 from qiskit.algorithms.optimizers import (ADAM, GSLS, IMFIL, L_BFGS_B,
                                           NELDER_MEAD, SNOBFIT, SPSA)
 from qiskit.circuit import Parameter, QuantumCircuit
@@ -327,16 +328,25 @@ if __name__ == '__main__':
         program_id = self._upload_program()
         self.runtime.update_program(program_id, 'print("Hello, Qiskit Provider.")'.encode())
 
-    @skipIf(os.name == 'nt', 'Test not supported on Windows')
     def test_program_upload_data_filepath(self):
         """Test updating a program's string."""
         program_id = self._upload_program()
         # Prepare file data
-        program_file = tempfile.NamedTemporaryFile(mode="w+")
+        directory = os.path.dirname(__file__)
+        program_file_path = os.path.join(directory, "update-program-testfile.py")
+        program_file = open(program_file_path, "w+")
         program_file.write('print("Hello, Qiskit Provider.")')
-        program_file_path = program_file.name
+        program_file.close()
         # Update program
-        self.runtime.update_program(program_id, program_file_path)
+        try:
+            self.runtime.update_program(program_id, program_file_path)
+            # Remove temp file
+            os.remove(program_file_path)
+        except QiskitError as err:
+            # Remove temp file
+            os.remove(program_file_path)
+            # Fail test
+            self.fail(err.message)
 
     def test_run_program_failed(self):
         """Test a failed program execution."""

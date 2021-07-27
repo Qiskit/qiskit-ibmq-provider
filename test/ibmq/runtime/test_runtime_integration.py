@@ -14,12 +14,10 @@
 
 import os
 import random
-import tempfile
 import time
 import unittest
 import uuid
 from contextlib import suppress
-from unittest import skipIf
 
 from qiskit.exceptions import QiskitError
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
@@ -171,7 +169,6 @@ def main(backend, user_messenger, **kwargs):
         # Execute with bytes
         self.provider.runtime.update_program(program_id, new_program.encode())
 
-    @skipIf(os.name == 'nt', 'Test not supported on Windows')
     def test_update_program_filepath(self):
         """Test updating a program via filepath.
         NOTE: When a Qiskit Runtime API endpoint is created to GET
@@ -185,14 +182,20 @@ def main(backend, user_messenger, **kwargs):
         new_program = self.RUNTIME_PROGRAM.replace('warnings.warn("this is a stderr message")',
                                                    'warnings.warn("this is not a stderr message")')
         # Prepare file data
-        program_file = tempfile.NamedTemporaryFile(mode="w+")
+        directory = os.path.dirname(__file__)
+        program_file_path = os.path.join(directory, "update-program-testfile.py")
+        program_file = open(program_file_path, "w+")
         program_file.write(new_program)
-        program_file_path = program_file.name
+        program_file.close()
         # Execute with filepath
         try:
             self.provider.runtime.update_program(program_id, program_file_path)
+            # Remove temp file
+            os.remove(program_file_path)
         except QiskitError as err:
-            program_file.close()
+            # Remove temp file
+            os.remove(program_file_path)
+            # Fail test
             self.fail(err.message)
 
     def test_set_visibility(self):
