@@ -585,7 +585,6 @@ class IBMRuntimeService:
             with open(data, 'r') as file:
                 data = file.read().encode()
         return base64.b64encode(data)
-        return data
 
     def logout(self) -> None:
         """Clears authorization cache on the server.
