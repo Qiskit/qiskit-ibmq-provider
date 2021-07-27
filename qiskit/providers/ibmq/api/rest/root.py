@@ -161,7 +161,8 @@ class Api(RestAdapterBase):
             exclude_public: Optional[bool] = False,
             public_only: Optional[bool] = False,
             exclude_mine: Optional[bool] = False,
-            mine_only: Optional[bool] = False
+            mine_only: Optional[bool] = False,
+            sort_by: Optional[str] = None
     ) -> Dict:
         """Return experiment data.
 
@@ -180,6 +181,7 @@ class Api(RestAdapterBase):
             public_only: Whether or not to only return experiments with a public share level.
             exclude_mine: Whether or not to exclude experiments where I am the owner.
             mine_only: Whether or not to only return experiments where I am the owner.
+            sort_by: Sorting order.
 
         Returns:
             JSON response.
@@ -214,6 +216,9 @@ class Api(RestAdapterBase):
             params['owner'] = '!me'
         elif mine_only:
             params['owner'] = 'me'
+        if sort_by:
+            params['sort'] = sort_by
+        params['include_plot_names'] = "true"
         return self.session.get(url, params=params).json()
 
     def experiment_devices(self) -> Dict:
@@ -244,11 +249,13 @@ class Api(RestAdapterBase):
             limit: Optional[int],
             marker: Optional[str],
             backend_name: Optional[str] = None,
-            device_components: Optional[List[str]] = None,
+            device_components: Optional[Union[str, List[str]]] = None,
             experiment_uuid: Optional[str] = None,
             result_type: Optional[str] = None,
             quality: Optional[List[str]] = None,
-            verified: Optional[bool] = None
+            verified: Optional[bool] = None,
+            tags: Optional[List[str]] = None,
+            sort_by: Optional[str] = None
     ) -> Dict:
         """Return all analysis results.
 
@@ -260,7 +267,9 @@ class Api(RestAdapterBase):
             experiment_uuid: Experiment UUID used for filtering.
             result_type: Analysis result type used for filtering.
             quality: Quality value used for filtering.
-            verified: Indicates whether this result has been verified..
+            verified: Indicates whether this result has been verified.
+            tags: Filter by tags assigned to analysis results.
+            sort_by: Indicates how the output should be sorted.
 
         Returns:
             JSON response.
@@ -282,7 +291,11 @@ class Api(RestAdapterBase):
         if marker:
             params['marker'] = marker
         if verified is not None:
-            params['verified'] = verified
+            params["verified"] = "true" if verified else "false"
+        if tags:
+            params['tags'] = tags
+        if sort_by:
+            params['sort'] = sort_by
         return self.session.get(url, params=params).json()
 
     def analysis_result_upload(self, result: Dict) -> Dict:
