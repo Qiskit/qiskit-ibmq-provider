@@ -118,6 +118,7 @@ class IBMExperimentService:
             notes: Optional[str] = None,
             share_level: Optional[Union[str, ExperimentShareLevel]] = None,
             start_datetime: Optional[Union[str, datetime]] = None,
+            json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
             **kwargs: Any
     ) -> str:
         """Create a new experiment in the database.
@@ -141,6 +142,7 @@ class IBMExperimentService:
                 - hub: The experiment is shared within its hub
                 - public: The experiment is shared publicly regardless of provider
             start_datetime: Timestamp when the experiment started, in local time zone.
+            json_encoder: Custom JSON encoder to use to encode the experiment.
             kwargs: Additional experiment attributes that are not supported and will be ignored.
 
         Returns:
@@ -172,7 +174,7 @@ class IBMExperimentService:
                                                  start_dt=start_datetime))
 
         with map_api_error(f"Experiment {experiment_id} already exists."):
-            response_data = self._api_client.experiment_upload(data)
+            response_data = self._api_client.experiment_upload(json.dumps(data, cls=json_encoder))
         return response_data['uuid']
 
     def update_experiment(
@@ -184,6 +186,7 @@ class IBMExperimentService:
             tags: Optional[List[str]] = None,
             share_level: Optional[Union[str, ExperimentShareLevel]] = None,
             end_datetime: Optional[Union[str, datetime]] = None,
+            json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
             **kwargs: Any,
     ) -> None:
         """Update an existing experiment.
@@ -205,6 +208,7 @@ class IBMExperimentService:
                 - public: The experiment is shared publicly regardless of provider
 
             end_datetime: Timestamp for when the experiment ended, in local time.
+            json_encoder: Custom JSON encoder to use to encode the experiment.
             kwargs: Additional experiment attributes that are not supported and will be ignored.
 
         Raises:
@@ -228,7 +232,7 @@ class IBMExperimentService:
             return
 
         with map_api_error(f"Experiment {experiment_id} not found."):
-            self._api_client.experiment_update(experiment_id, data)
+            self._api_client.experiment_update(experiment_id, json.dumps(data, cls=json_encoder))
 
     def _experiment_data_to_api(
             self,
@@ -572,6 +576,7 @@ class IBMExperimentService:
             verified: bool = False,
             result_id: Optional[str] = None,
             chisq: Optional[float] = None,
+            json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
             **kwargs: Any,
     ) -> str:
         """Create a new analysis result in the database.
@@ -587,6 +592,7 @@ class IBMExperimentService:
             result_id: Analysis result ID. It must be in the ``uuid4`` format.
                 One will be generated if not supplied.
             chisq: chi^2 decimal value of the fit.
+            json_encoder: Custom JSON encoder to use to encode the analysis result.
             kwargs: Additional analysis result attributes that are not supported
                 and will be ignored.
 
@@ -625,7 +631,8 @@ class IBMExperimentService:
             chisq=chisq
         )
         with map_api_error(f"Analysis result {result_id} already exists."):
-            response = self._api_client.analysis_result_upload(request)
+            response = self._api_client.analysis_result_upload(
+                json.dumps(request, cls=json_encoder))
         return response['uuid']
 
     def update_analysis_result(
@@ -636,6 +643,7 @@ class IBMExperimentService:
             quality: Union[ResultQuality, str] = None,
             verified: bool = None,
             chisq: Optional[float] = None,
+            json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
             **kwargs: Any,
     ) -> None:
         """Update an existing analysis result.
@@ -647,6 +655,7 @@ class IBMExperimentService:
             verified: Whether the result quality has been verified.
             tags: Tags to be associated with the analysis result.
             chisq: chi^2 decimal value of the fit.
+            json_encoder: Custom JSON encoder to use to encode the analysis result.
             kwargs: Additional analysis result attributes that are not supported
                 and will be ignored.
 
@@ -669,7 +678,8 @@ class IBMExperimentService:
                                                verified=verified,
                                                chisq=chisq)
         with map_api_error(f"Analysis result {result_id} not found."):
-            self._api_client.analysis_result_update(result_id, request)
+            self._api_client.analysis_result_update(
+                result_id, json.dumps(request, cls=json_encoder))
 
     def _analysis_result_to_api(
             self,
