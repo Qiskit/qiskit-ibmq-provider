@@ -543,7 +543,7 @@ class TestExperimentServerIntegration(IBMQTestCase):
         aresult_id = self.provider.experiment.create_analysis_result(
             experiment_id=exp_id,
             result_type="qiskit_test",
-            data=fit,
+            result_data=fit,
             device_components=self.device_components,
             tags=["qiskit_test"],
             quality=ResultQuality.GOOD,
@@ -573,7 +573,7 @@ class TestExperimentServerIntegration(IBMQTestCase):
 
         self.provider.experiment.update_analysis_result(
             result_id=result_id,
-            data=fit,
+            result_data=fit,
             tags=["qiskit_test"],
             quality=ResultQuality.GOOD,
             verified=True,
@@ -991,7 +991,7 @@ class TestExperimentServerIntegration(IBMQTestCase):
         data = data or {}
         aresult_id = self.provider.experiment.create_analysis_result(
             experiment_id=experiment_id,
-            data=data,
+            result_data=data,
             result_type=result_type,
             **kwargs
         )
