@@ -45,7 +45,7 @@ jobs:
     env:
       QE_STAGING_TOKEN: ${{ secrets.QE_STAGING_TOKEN }}
       QE_STAGING_URL: ${{ secrets.QE_STAGING_URL }}
-      QE_STAGING_DEVICE: "backend1"
+      QE_STAGING_DEVICE: "ibmq_qasm_simulator"
       USE_STAGING_CREDENTIALS: True
       LOG_LEVEL: DEBUG
       STREAM_LOG: True
