@@ -62,4 +62,4 @@ jobs:
           pip install -U -c constraints.txt -r requirements-dev.txt
           pip install -c constraints.txt -e .
       - name: Run Tests
-        run: make runtime_integration
+        run: make experiment_integration
