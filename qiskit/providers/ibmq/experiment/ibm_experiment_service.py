@@ -450,7 +450,7 @@ class IBMExperimentService:
         marker = None
         while limit is None or limit > 0:
             with map_api_error(f"Request failed."):
-                raw_data = self._api_client.experiments(
+                response = self._api_client.experiments(
                     limit=limit,
                     marker=marker,
                     backend_name=backend_name,
@@ -464,7 +464,7 @@ class IBMExperimentService:
                     exclude_mine=exclude_mine,
                     mine_only=mine_only,
                     sort_by=converted["sort_by"])
-            raw_data = json.loads(raw_data, cls=json_decoder)
+            raw_data = json.loads(response, cls=json_decoder)
             marker = raw_data.get('marker')
             for exp in raw_data['experiments']:
                 experiments.append(self._api_to_experiment_data(exp))
@@ -851,7 +851,7 @@ class IBMExperimentService:
         marker = None
         while limit is None or limit > 0:
             with map_api_error("Request failed."):
-                raw_data = self._api_client.analysis_results(
+                response = self._api_client.analysis_results(
                     limit=limit,
                     marker=marker,
                     backend_name=backend_name,
@@ -863,7 +863,7 @@ class IBMExperimentService:
                     tags=converted["tags"],
                     sort_by=converted["sort_by"]
                 )
-            raw_data = json.loads(raw_data, cls=json_decoder)
+            raw_data = json.loads(response, cls=json_decoder)
             marker = raw_data.get('marker')
             for result in raw_data['analysis_results']:
                 results.append(self._api_to_analysis_result(result))
