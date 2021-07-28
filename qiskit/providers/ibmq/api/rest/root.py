@@ -163,7 +163,7 @@ class Api(RestAdapterBase):
             exclude_mine: Optional[bool] = False,
             mine_only: Optional[bool] = False,
             sort_by: Optional[str] = None
-    ) -> Dict:
+    ) -> str:
         """Return experiment data.
 
         Args:
@@ -184,7 +184,7 @@ class Api(RestAdapterBase):
             sort_by: Sorting order.
 
         Returns:
-            JSON response.
+            Response text.
         """
         url = self.get_url('experiments')
         params = {}  # type: Dict[str, Any]
@@ -218,8 +218,8 @@ class Api(RestAdapterBase):
             params['owner'] = 'me'
         if sort_by:
             params['sort'] = sort_by
-        params['include_plot_names'] = "true"
-        return self.session.get(url, params=params).json()
+
+        return self.session.get(url, params=params).text
 
     def experiment_devices(self) -> Dict:
         """Return experiment devices.
@@ -256,7 +256,7 @@ class Api(RestAdapterBase):
             verified: Optional[bool] = None,
             tags: Optional[List[str]] = None,
             sort_by: Optional[str] = None
-    ) -> Dict:
+    ) -> str:
         """Return all analysis results.
 
         Args:
@@ -272,7 +272,7 @@ class Api(RestAdapterBase):
             sort_by: Indicates how the output should be sorted.
 
         Returns:
-            JSON response.
+            Server response.
         """
         url = self.get_url('analysis_results')
         params = {}  # type: Dict[str, Any]
@@ -296,7 +296,7 @@ class Api(RestAdapterBase):
             params['tags'] = tags
         if sort_by:
             params['sort'] = sort_by
-        return self.session.get(url, params=params).json()
+        return self.session.get(url, params=params).text
 
     def analysis_result_upload(self, result: Dict) -> Dict:
         """Upload an analysis result.

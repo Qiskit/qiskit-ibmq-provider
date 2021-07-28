@@ -57,7 +57,7 @@ class ExperimentClient(BaseClient):
             exclude_mine: Optional[bool] = False,
             mine_only: Optional[bool] = False,
             sort_by: Optional[str] = None
-    ) -> Dict:
+    ) -> str:
         """Retrieve experiments, with optional filtering.
 
         Args:
@@ -94,7 +94,7 @@ class ExperimentClient(BaseClient):
             sort_by=sort_by)
         return resp
 
-    def experiment_get(self, experiment_id: str) -> Dict:
+    def experiment_get(self, experiment_id: str) -> str:
         """Get a specific experiment.
 
         Args:
@@ -228,7 +228,7 @@ class ExperimentClient(BaseClient):
             verified: Optional[bool] = None,
             tags: Optional[List[str]] = None,
             sort_by: Optional[str] = None
-    ) -> Dict:
+    ) -> str:
         """Return a list of analysis results.
 
         Args:
@@ -294,7 +294,7 @@ class ExperimentClient(BaseClient):
         """
         return self.base_api.analysis_result(result_id).delete()
 
-    def analysis_result_get(self, result_id: str) -> Dict:
+    def analysis_result_get(self, result_id: str) -> str:
         """Retrieve an analysis result.
 
         Args:
