@@ -19,6 +19,10 @@ Experiment (:mod:`qiskit.providers.ibmq.experiment`)
 
 Modules related to IBM Quantum experiment service.
 
+.. note::
+
+  This service is not available to all accounts.
+
 You can use the experiment service to query, upload, and retrieve
 experiments, experiment figures, and analysis results. For example::
 
@@ -31,7 +35,7 @@ attribute, which is an instance of the :class:`IBMExperimentService` class.
 
 This service is intended to be used in conjunction with the ``qiskit-experiments``
 package, which allows you to create different types of experiments (for example,
-:class:`~qiskit_experiments.characterization.T1Experiment`).
+:class:`qiskit_experiments.library.characterization.T1`).
 
 
 Classes

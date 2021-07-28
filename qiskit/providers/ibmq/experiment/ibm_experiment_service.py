@@ -10,10 +10,11 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""IBM Quantum Experience experiment service."""
+"""IBM Quantum experiment service."""
 
 import logging
-from typing import Optional, List, Dict, Union, Tuple, Any
+import json
+from typing import Optional, List, Dict, Union, Tuple, Any, Type
 from datetime import datetime
 from collections import defaultdict
 
@@ -23,7 +24,7 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from .constants import (ExperimentShareLevel, ResultQuality,
                         RESULT_QUALITY_FROM_API, RESULT_QUALITY_TO_API)
 from .utils import map_api_error
-from .device_component import DeviceComponent, to_component
+from .device_component import DeviceComponent
 from ..utils.converters import local_to_utc_str, utc_to_local
 from ..api.clients.experiment import ExperimentClient
 from ..api.exceptions import RequestsApiError
@@ -41,7 +42,7 @@ class IBMExperimentService:
     retrieve experiments, experiment figures, and analysis results. The
     ``experiment`` attribute of
     :class:`~qiskit.providers.ibmq.accountprovider.AccountProvider` is an
-    instance of this class, and the main syntax for using the services is
+    instance of this class, and the main syntax for using the service is
     ``provider.experiment.<action>``. For example::
 
         from qiskit import IBMQ
@@ -79,7 +80,7 @@ class IBMExperimentService:
             self,
             provider: 'accountprovider.AccountProvider'
     ) -> None:
-        """IBMQBackendService constructor.
+        """IBMExperimentService constructor.
 
         Args:
             provider: IBM Quantum Experience account provider.
@@ -99,7 +100,7 @@ class IBMExperimentService:
         return {"auto_save": False}
 
     def backends(self) -> List[Dict]:
-        """Return a list of backends.
+        """Return a list of backends that can be used for experiments.
 
         Returns:
             A list of backends.
@@ -151,7 +152,8 @@ class IBMExperimentService:
         """
         # pylint: disable=arguments-differ
         if kwargs:
-            logger.info("Keywords %s are not supported by IBM Quantum experiment service.",
+            logger.info("Keywords %s are not supported by IBM Quantum experiment service "
+                        "and will be ignored.",
                         kwargs.keys())
 
         data = {
@@ -211,7 +213,8 @@ class IBMExperimentService:
         """
         # pylint: disable=arguments-differ
         if kwargs:
-            logger.info("Keywords %s are not supported by IBM Quantum experiment service.",
+            logger.info("Keywords %s are not supported by IBM Quantum experiment service "
+                        "and will be ignored.",
                         kwargs.keys())
 
         data = self._experiment_data_to_api(metadata=metadata,
@@ -276,12 +279,14 @@ class IBMExperimentService:
 
     def experiment(
             self,
-            experiment_id: str
+            experiment_id: str,
+            json_decoder: Type[json.JSONDecoder] = json.JSONDecoder
     ) -> Dict:
         """Retrieve a previously stored experiment.
 
         Args:
             experiment_id: Experiment ID.
+            json_decoder: Custom JSON decoder to use to decode the retrieved experiment.
 
         Returns:
             Retrieved experiment data.
@@ -293,11 +298,12 @@ class IBMExperimentService:
         with map_api_error(f"Experiment {experiment_id} not found."):
             raw_data = self._api_client.experiment_get(experiment_id)
 
-        return self._api_to_experiment_data(raw_data)
+        return self._api_to_experiment_data(json.loads(raw_data, cls=json_decoder))
 
     def experiments(
             self,
             limit: Optional[int] = 10,
+            json_decoder: Type[json.JSONDecoder] = json.JSONDecoder,
             device_components: Optional[List[Union[str, DeviceComponent]]] = None,
             device_components_operator: Optional[str] = None,
             experiment_type: Optional[str] = None,
@@ -327,6 +333,7 @@ class IBMExperimentService:
 
         Args:
             limit: Number of experiments to retrieve. ``None`` indicates no limit.
+            json_decoder: Custom JSON decoder to use to decode the retrieved experiments.
             device_components: Filter by device components.
             device_components_operator: Operator used when filtering by device components.
                 Valid values are ``None`` and "contains":
@@ -379,9 +386,10 @@ class IBMExperimentService:
                 Cannot be ``True`` if `exclude_mine` is ``True``.
             sort_by: Specifies how the output should be sorted. This can be a single sorting
                 option or a list of options. Each option should contain a sort key
-                and a direction. Valid sort keys are "start_datetime" and "experiment_type".
+                and a direction, separated by a semicolon. Valid sort keys are
+                "start_datetime" and "experiment_type".
                 Valid directions are "asc" for ascending or "desc" for descending.
-                For example, ``sort_by=["experiment_type: asc", "start_datetime:desc"]`` will
+                For example, ``sort_by=["experiment_type:asc", "start_datetime:desc"]`` will
                 return an output list that is first sorted by experiment type in
                 ascending order, then by start datetime by descending order.
                 By default, experiments are sorted by ``start_datetime``
@@ -398,7 +406,8 @@ class IBMExperimentService:
         """
         # pylint: disable=arguments-differ
         if filters:
-            logger.info("Keywords %s are not supported by IBM Quantum experiment service.",
+            logger.info("Keywords %s are not supported by IBM Quantum experiment service "
+                        "and will be ignored.",
                         filters.keys())
 
         if limit is not None and (not isinstance(limit, int) or limit <= 0):  # type: ignore
@@ -455,6 +464,7 @@ class IBMExperimentService:
                     exclude_mine=exclude_mine,
                     mine_only=mine_only,
                     sort_by=converted["sort_by"])
+            raw_data = json.loads(raw_data, cls=json_decoder)
             marker = raw_data.get('marker')
             for exp in raw_data['experiments']:
                 experiments.append(self._api_to_experiment_data(exp))
@@ -553,7 +563,7 @@ class IBMExperimentService:
     def create_analysis_result(
             self,
             experiment_id: str,
-            data: Dict,
+            result_data: Dict,
             result_type: str,
             device_components: Optional[Union[List[Union[str, DeviceComponent]],
                                               str, DeviceComponent]] = None,
@@ -568,7 +578,7 @@ class IBMExperimentService:
 
         Args:
             experiment_id: ID of the experiment this result is for.
-            data: Result data to be stored.
+            result_data: Result data to be stored.
             result_type: Analysis result type.
             device_components: Target device components, such as qubits.
             tags: Tags to be associated with the analysis result.
@@ -589,7 +599,8 @@ class IBMExperimentService:
         """
         # pylint: disable=arguments-differ
         if kwargs:
-            logger.info("Keywords %s are not supported by IBM Quantum experiment service.",
+            logger.info("Keywords %s are not supported by IBM Quantum experiment service "
+                        "and will be ignored.",
                         kwargs.keys())
 
         components = []
@@ -597,9 +608,7 @@ class IBMExperimentService:
             if not isinstance(device_components, list):
                 device_components = [device_components]
             for comp in device_components:
-                if isinstance(comp, str):
-                    comp = to_component(comp)
-                components.append(comp)
+                components.append(str(comp))
 
         if isinstance(quality, str):
             quality = ResultQuality(quality.upper())
@@ -607,7 +616,7 @@ class IBMExperimentService:
         request = self._analysis_result_to_api(
             experiment_id=experiment_id,
             device_components=components,
-            data=data,
+            data=result_data,
             result_type=result_type,
             tags=tags,
             quality=quality,
@@ -622,7 +631,7 @@ class IBMExperimentService:
     def update_analysis_result(
             self,
             result_id: str,
-            data: Optional[Dict] = None,
+            result_data: Optional[Dict] = None,
             tags: Optional[List[str]] = None,
             quality: Union[ResultQuality, str] = None,
             verified: bool = None,
@@ -633,7 +642,7 @@ class IBMExperimentService:
 
         Args:
             result_id: Analysis result ID.
-            data: Result data to be stored.
+            result_data: Result data to be stored.
             quality: Quality of this analysis.
             verified: Whether the result quality has been verified.
             tags: Tags to be associated with the analysis result.
@@ -647,13 +656,14 @@ class IBMExperimentService:
         """
         # pylint: disable=arguments-differ
         if kwargs:
-            logger.info("Keywords %s are not supported by IBM Quantum experiment service.",
+            logger.info("Keywords %s are not supported by IBM Quantum experiment service "
+                        "and will be ignored.",
                         kwargs.keys())
 
         if isinstance(quality, str):
             quality = ResultQuality(quality.upper())
 
-        request = self._analysis_result_to_api(data=data,
+        request = self._analysis_result_to_api(data=result_data,
                                                tags=tags,
                                                quality=quality,
                                                verified=verified,
@@ -664,7 +674,7 @@ class IBMExperimentService:
     def _analysis_result_to_api(
             self,
             experiment_id: Optional[str] = None,
-            device_components: Optional[List[DeviceComponent]] = None,
+            device_components: Optional[List[str]] = None,
             data: Optional[Dict] = None,
             result_type: Optional[str] = None,
             tags: Optional[List[str]] = None,
@@ -694,7 +704,7 @@ class IBMExperimentService:
         if experiment_id:
             out["experiment_uuid"] = experiment_id
         if device_components:
-            out["device_components"] = [str(comp) for comp in device_components]
+            out["device_components"] = device_components
         if data:
             out["fit"] = data
         if result_type:
@@ -714,11 +724,13 @@ class IBMExperimentService:
     def analysis_result(
             self,
             result_id: str,
+            json_decoder: Type[json.JSONDecoder] = json.JSONDecoder
     ) -> Dict:
         """Retrieve a previously stored experiment.
 
         Args:
             result_id: Analysis result ID.
+            json_decoder: Custom JSON decoder to use to decode the retrieved analysis result.
 
         Returns:
             Retrieved analysis result.
@@ -730,11 +742,12 @@ class IBMExperimentService:
         with map_api_error(f"Analysis result {result_id} not found."):
             raw_data = self._api_client.analysis_result_get(result_id)
 
-        return self._api_to_analysis_result(raw_data)
+        return self._api_to_analysis_result(json.loads(raw_data, cls=json_decoder))
 
     def analysis_results(
             self,
             limit: Optional[int] = 10,
+            json_decoder: Type[json.JSONDecoder] = json.JSONDecoder,
             device_components: Optional[List[Union[str, DeviceComponent]]] = None,
             device_components_operator: Optional[str] = None,
             experiment_id: Optional[str] = None,
@@ -752,6 +765,7 @@ class IBMExperimentService:
 
         Args:
             limit: Number of analysis results to retrieve.
+            json_decoder: Custom JSON decoder to use to decode the retrieved analysis results.
             device_components: Filter by device components.
             device_components_operator: Operator used when filtering by device components.
                 Valid values are ``None`` and "contains":
@@ -811,7 +825,8 @@ class IBMExperimentService:
         """
         # pylint: disable=arguments-differ
         if filters:
-            logger.info("Keywords %s are not supported by IBM Quantum experiment service.",
+            logger.info("Keywords %s are not supported by IBM Quantum experiment service "
+                        "and will be ignored.",
                         filters.keys())
 
         if limit is not None and (not isinstance(limit, int) or limit <= 0):  # type: ignore
@@ -848,6 +863,7 @@ class IBMExperimentService:
                     tags=converted["tags"],
                     sort_by=converted["sort_by"]
                 )
+            raw_data = json.loads(raw_data, cls=json_decoder)
             marker = raw_data.get('marker')
             for result in raw_data['analysis_results']:
                 results.append(self._api_to_analysis_result(result))
