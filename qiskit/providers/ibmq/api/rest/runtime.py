@@ -69,6 +69,7 @@ class Runtime(RestAdapterBase):
             name: str,
             description: str,
             max_execution_time: int,
+            is_public: Optional[bool] = False,
             version: Optional[str] = None,
             backend_requirements: Optional[Dict] = None,
             parameters: Optional[Dict] = None,
@@ -82,6 +83,7 @@ class Runtime(RestAdapterBase):
             name: Name of the program.
             description: Program description.
             max_execution_time: Maximum execution time.
+            is_public: Whether the program should be public.
             version: Program version.
             backend_requirements: Backend requirements.
             parameters: Program parameters.
@@ -95,7 +97,8 @@ class Runtime(RestAdapterBase):
         data = {'name': name,
                 'cost': str(max_execution_time),
                 'description': description.encode(),
-                'max_execution_time': max_execution_time}
+                'max_execution_time': max_execution_time,
+                'isPublic': is_public}
         if version is not None:
             data['version'] = version
         if backend_requirements:

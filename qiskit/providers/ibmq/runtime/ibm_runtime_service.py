@@ -253,6 +253,7 @@ class IBMRuntimeService:
             data: Union[bytes, str],
             metadata: Optional[Union[Dict, str]] = None,
             name: Optional[str] = None,
+            is_public: Optional[bool] = None,
             max_execution_time: Optional[int] = None,
             description: Optional[str] = None,
             version: Optional[float] = None,
@@ -287,6 +288,7 @@ class IBMRuntimeService:
             name: Name of the program. Required if not specified via `metadata`.
             max_execution_time: Maximum execution time in seconds. Required if
                 not specified via `metadata`.
+            is_public: Whether the runtime program should be visible to the public.
             description: Program description. Required if not specified via `metadata`.
             version: Program version. The default is 1.0 if not specified.
             backend_requirements: Backend requirements.
@@ -306,7 +308,8 @@ class IBMRuntimeService:
         program_metadata = self._merge_metadata(
             initial={},
             metadata=metadata,
-            name=name, max_execution_time=max_execution_time, description=description,
+            name=name, max_execution_time=max_execution_time,
+            is_public=is_public, description=description,
             version=version, backend_requirements=backend_requirements,
             parameters=parameters,
             return_values=return_values, interim_results=interim_results)

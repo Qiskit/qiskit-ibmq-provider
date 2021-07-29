@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    A runtime program's visibility can now be specified on upload in:
+    :meth:`qiskit.providers.ibmq.api.rest.runtime.Runtime.create_program`.
