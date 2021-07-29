@@ -53,7 +53,6 @@ class TestExperimentDataIntegration(IBMQTestCase):
         if not cls.provider.has_service('experiment'):
             raise SkipTest("Not authorized to use experiment service.")
 
-        # cls.backend = cls._setup_backend()  # pylint: disable=no-value-for-parameter
         cls.backend = cls.provider.get_backend('ibmq_qasm_simulator')
         cls.device_components = cls.provider.experiment.device_components(cls.backend.name())
         if not cls.device_components:
