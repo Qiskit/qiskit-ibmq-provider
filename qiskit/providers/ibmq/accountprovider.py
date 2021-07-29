@@ -254,7 +254,7 @@ class AccountProvider(Provider):
                 provider=self,
                 credentials=self.credentials,
                 api_client=self._api_client)
-            setattr(self._backend, backend_name, to_python_identifier(back))
+            setattr(self._backend, to_python_identifier(back), back)
             return back
         except Exception:  # pylint: disable=broad-except
             raise IBMQBackendApiError(
