@@ -105,7 +105,7 @@ class ExperimentClient(BaseClient):
         """
         return self.base_api.experiment(experiment_id).retrieve()
 
-    def experiment_upload(self, data: Dict) -> Dict:
+    def experiment_upload(self, data: str) -> Dict:
         """Upload an experiment.
 
         Args:
@@ -116,7 +116,7 @@ class ExperimentClient(BaseClient):
         """
         return self.base_api.experiment_upload(data)
 
-    def experiment_update(self, experiment_id: str, new_data: Dict) -> Dict:
+    def experiment_update(self, experiment_id: str, new_data: str) -> Dict:
         """Update an experiment.
 
         Args:
@@ -260,7 +260,7 @@ class ExperimentClient(BaseClient):
         )
         return resp
 
-    def analysis_result_upload(self, result: Dict) -> Dict:
+    def analysis_result_upload(self, result: str) -> Dict:
         """Upload an analysis result.
 
         Args:
@@ -271,7 +271,7 @@ class ExperimentClient(BaseClient):
         """
         return self.base_api.analysis_result_upload(result)
 
-    def analysis_result_update(self, result_id: str, new_data: Dict) -> Dict:
+    def analysis_result_update(self, result_id: str, new_data: str) -> Dict:
         """Update an analysis result.
 
         Args:

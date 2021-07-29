@@ -20,6 +20,7 @@ from typing import Optional, Dict, Any
 import re
 
 from dateutil import tz
+import numpy as np
 
 from qiskit.providers.ibmq.experiment.constants import ExperimentShareLevel
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
@@ -28,6 +29,7 @@ from qiskit.providers.ibmq.experiment import (ResultQuality,
 
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_provider, requires_device
+from .utils import ExperimentEncoder, ExperimentDecoder
 
 
 @skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
@@ -968,6 +970,43 @@ class TestExperimentServerIntegration(IBMQTestCase):
         self.assertRaises(IBMExperimentEntryNotFound,
                           self.provider.experiment.figure, expr_id, figure_name)
 
+    def test_experiment_coders(self):
+        """Test custom encoder and decoder for an experiment."""
+        metadata = {"complex": 2 + 3j, "numpy": np.zeros(2)}
+        expr_id = self._create_experiment(metadata=metadata, json_encoder=ExperimentEncoder)
+        rexp = self.provider.experiment.experiment(expr_id, json_decoder=ExperimentDecoder)
+        rmetadata = rexp["metadata"]
+        self.assertEqual(metadata["complex"], rmetadata["complex"])
+        self.assertTrue((metadata["numpy"] == rmetadata["numpy"]).all())
+
+        new_metadata = {"complex": 4 + 5j, "numpy": np.ones(3)}
+        self.provider.experiment.update_experiment(
+            expr_id, metadata=new_metadata, json_encoder=ExperimentEncoder)
+        rexp = self.provider.experiment.experiment(expr_id, json_decoder=ExperimentDecoder)
+        rmetadata = rexp["metadata"]
+        self.assertEqual(new_metadata["complex"], rmetadata["complex"])
+        self.assertTrue((new_metadata["numpy"] == rmetadata["numpy"]).all())
+
+    def test_analysis_result_coders(self):
+        """Test custom encoder and decoder for an analysis result."""
+        data = {"complex": 2 + 3j, "numpy": np.zeros(2)}
+        result_id = self._create_analysis_result(
+            result_data=data, json_encoder=ExperimentEncoder)
+        rresult = self.provider.experiment.analysis_result(
+            result_id, json_decoder=ExperimentDecoder)
+        rdata = rresult["result_data"]
+        self.assertEqual(data["complex"], rdata["complex"])
+        self.assertTrue((data["numpy"] == rdata["numpy"]).all())
+
+        new_data = {"complex": 4 + 5j, "numpy": np.ones(3)}
+        self.provider.experiment.update_analysis_result(
+            result_id, result_data=new_data, json_encoder=ExperimentEncoder)
+        rresult = self.provider.experiment.analysis_result(
+            result_id, json_decoder=ExperimentDecoder)
+        rdata = rresult["result_data"]
+        self.assertEqual(new_data["complex"], rdata["complex"])
+        self.assertTrue((new_data["numpy"] == rdata["numpy"]).all())
+
     def _create_experiment(
             self,
             experiment_type: Optional[str] = None,
@@ -989,15 +1028,15 @@ class TestExperimentServerIntegration(IBMQTestCase):
             self,
             exp_id: Optional[str] = None,
             result_type: Optional[str] = None,
-            data: Optional[Dict] = None,
+            result_data: Optional[Dict] = None,
             **kwargs: Any):
         """Create a simple analysis result."""
         experiment_id = exp_id or self._create_experiment()
         result_type = result_type or "qiskit_test"
-        data = data or {}
+        result_data = result_data or {}
         aresult_id = self.provider.experiment.create_analysis_result(
             experiment_id=experiment_id,
-            result_data=data,
+            result_data=result_data,
             result_type=result_type,
             **kwargs
         )
