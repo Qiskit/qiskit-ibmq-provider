@@ -53,7 +53,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         if not cls.provider.has_service('experiment'):
             raise SkipTest("Not authorized to use experiment service.")
 
-        cls.backend = cls.provider.get_backend('ibmq_qasm_simulator')
+        cls.backend = cls._setup_backend()  # pylint: disable=no-value-for-parameter
         cls.device_components = cls.provider.experiment.device_components(cls.backend.name())
         if not cls.device_components:
             raise SkipTest("No device components found.")
@@ -137,7 +137,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         exp_data.save()
         self.experiments_to_delete.append(exp_data.experiment_id)
 
-        credentials = self.provider.credentials
+        credentials = self.backend.provider().credentials
         rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
         self._verify_experiment_data(exp_data, rexp)
         self.assertEqual(credentials.hub, rexp.hub)  # pylint: disable=no-member
