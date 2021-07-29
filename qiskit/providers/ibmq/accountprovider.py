@@ -212,7 +212,7 @@ class AccountProvider(Provider):
                     credentials=self.credentials,
                     api_client=self._api_client)
                 ret[config.backend_name] = back
-                setattr(self._backend, config.backend_name, to_python_identifier(back))
+                setattr(self._backend, to_python_identifier(config.backend_name), back)
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     'Remote backend "%s" for provider %s could not be instantiated due to an '
