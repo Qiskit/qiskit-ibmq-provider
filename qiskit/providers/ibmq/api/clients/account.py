@@ -71,6 +71,17 @@ class AccountClient(BaseClient):
         """
         return self.account_api.backends(timeout=timeout)
 
+    def backend_config(self, backend_name: str) -> Dict[str, Any]:
+        """Return the full configuration of the backend device.
+
+        Args:
+            backend_name: the backend name
+
+        Returns:
+            the full configuration
+        """
+        return self.account_api.backend(backend_name).configuration()
+
     def backend_status(self, backend_name: str) -> Dict[str, Any]:
         """Return the status of the backend.
 

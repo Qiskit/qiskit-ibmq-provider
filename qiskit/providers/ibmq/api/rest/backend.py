@@ -29,7 +29,8 @@ class Backend(RestAdapterBase):
         'pulse_defaults': '/defaults',
         'status': '/queue/status',
         'jobs_limit': '/jobsLimit',
-        'bookings': '/bookings/v2'
+        'bookings': '/bookings/v2',
+        'configuration': '/fullConfiguration'
     }
 
     def __init__(self, session: RetrySession, backend_name: str, url_prefix: str = '') -> None:
@@ -42,6 +43,15 @@ class Backend(RestAdapterBase):
         """
         self.backend_name = backend_name
         super().__init__(session, '{}/devices/{}'.format(url_prefix, backend_name))
+
+    def configuration(self) -> Dict[str, Any]:
+        """Return the backend full configuration.
+
+        Returns:
+            JSON response of backend configuration.
+        """
+        url = self.get_url('configuration')
+        return self.session.get(url).json()
 
     def properties(self, datetime: Optional[datetime] = None) -> Dict[str, Any]:
         """Return backend properties.

@@ -70,9 +70,8 @@ class IBMQBackendService:
         super().__init__()
 
         self._provider = provider
-        self._discover_backends()
 
-    def _discover_backends(self) -> None:
+    def discover_backends(self) -> None:
         """Discovers the remote backends for this provider, if not already known."""
         for backend in self._provider._backends.values():
             backend_name = to_python_identifier(backend.name())
