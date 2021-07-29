@@ -15,9 +15,9 @@
 import logging
 import os
 from ast import literal_eval
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from configparser import ConfigParser, ParsingError
-from typing import Dict, Tuple, Optional, Any
+from typing import Dict, Tuple, Optional, Any, Union
 
 from .credentials import Credentials
 from .hubgroupproject import HubGroupProject
@@ -29,7 +29,7 @@ DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
                                      '.qiskit', 'qiskitrc')
 """Default location of the configuration file."""
 
-ACTIVE_PREFERENCES = {
+_ACTIVE_PREFERENCES = {
     'experiment': {'auto_save': lambda val: val.lower() == 'true'}
 }
 
@@ -69,52 +69,34 @@ def read_credentials_from_qiskitrc(
     default_provider_hgp = None
 
     for name in config_parser.sections():
-        if name.startswith('ibmq'):
-            single_credentials = dict(config_parser.items(name))
-            # Individually convert keys to their right types.
-            # TODO: consider generalizing, moving to json configuration or a more
-            # robust alternative.
-            if 'proxies' in single_credentials.keys():
-                single_credentials['proxies'] = literal_eval(
-                    single_credentials['proxies'])
-            if 'verify' in single_credentials.keys():
-                single_credentials['verify'] = bool(  # type: ignore[assignment]
-                    single_credentials['verify'])
-            if 'default_provider' in single_credentials.keys():
-                default_provider_hgp = HubGroupProject.from_stored_format(
-                    single_credentials['default_provider'])
+        if not name.startswith('ibmq'):
+            continue
 
-                # Delete `default_provider`, since it's not used by the `Credentials` constructor.
-                del single_credentials['default_provider']
+        single_section = dict(config_parser.items(name))
+        configs: Dict[str, Union[str, bool]] = {}
+        preferences = defaultdict(dict)
+        # Individually convert keys to their right types.
+        # TODO: consider generalizing, moving to json configuration or a more
+        # robust alternative.
+        for key, val in single_section.items():
+            if key == 'proxies':
+                configs[key] = literal_eval(val)
+            elif key == 'verify':
+                configs[key] = config_parser[name].getboolean('verify')
+            elif key == 'default_provider':
+                default_provider_hgp = HubGroupProject.from_stored_format(val)
+            elif key.startswith('pref'):
+                # Check if preference. Format: pref,category,item=value
+                elems = key.split(',')
+                if len(elems) != 3:
+                    continue
+                _, pref_cat, pref_key = elems
+                if pref_cat not in _ACTIVE_PREFERENCES:
+                    continue
+                preferences[pref_cat][pref_key] = val
 
-            # Retrieve locally-stored preferences
-            # Criteria: It is (1) an active pref and (2) a value was found for it
-            preferences: Dict[str, Dict] = {}
-            preference_keys = []
-            # pylint: disable=consider-iterating-dictionary
-            for cred in single_credentials.keys():
-                # Check if preference. Format: pref category item=value
-                if cred.find('pref ') == 0:
-                    # Parse string from format: pref category item=value
-                    pcred = cred[len('pref '):]
-                    cat = pcred[:pcred.find(' ')]
-                    item = pcred[pcred.find(' ')+1:]
-                    value = single_credentials[cred]
-                    # Get desired type
-                    val_type = ACTIVE_PREFERENCES[cat][item]
-                    if not preferences.get(cat):
-                        preferences[cat] = {}
-                    preferences[cat][item] = val_type(value)  # type: ignore[no-untyped-call]
-                    preference_keys.append(cred)
-
-            # Remove all preference keys from `single_credentials`
-            for key in preference_keys:
-                del single_credentials[key]
-
-            new_credentials = Credentials(preferences=preferences,
-                                          **single_credentials)  # type: ignore[arg-type]
-
-            credentials_dict[new_credentials.unique_id()] = new_credentials
+        new_credentials = Credentials(preferences=preferences, **configs)  # type: ignore[arg-type]
+        credentials_dict[new_credentials.unique_id()] = new_credentials
 
     return credentials_dict, default_provider_hgp
 
@@ -143,11 +125,10 @@ def write_qiskit_rc(
                             ['token', 'url', 'proxies', 'verify']
                             if getattr(credentials_obj, key)}
 
-        # Put the credentials' preferences in this format: pref category:item=value
+        # Put the credentials' preferences in this format: pref,category,item=value
         for cat in credentials_obj.preferences.keys():
-            for item in credentials_obj.preferences[cat].keys():
-                credentials_dict['pref {} {}'.format(cat, item)
-                                 ] = credentials_obj.preferences[cat][item]
+            for pref_key, pref_val in credentials_obj.preferences[cat].items():
+                credentials_dict['pref,{},{}'.format(cat, pref_key)] = pref_val
 
         # Save the default provider to disk, if specified.
         if default_provider_to_store:

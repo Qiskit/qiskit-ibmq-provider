@@ -31,7 +31,3 @@ class AnalysisResultNotFoundError(ExperimentError):
 
 class PlotNotFoundError(ExperimentError):
     """Error raised when a plot cannot be found."""
-
-
-class PreferenceNotFoundError(ExperimentError):
-    """Error raised when an experiment service preference cannot be found."""

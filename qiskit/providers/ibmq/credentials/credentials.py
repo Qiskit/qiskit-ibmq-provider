@@ -31,7 +31,7 @@ TEMPLATE_IBMQ_HUBS = '{prefix}/Network/{hub}/Groups/{group}/Projects/{project}'
 
 
 class Credentials:
-    """IBM Quantum Experience account credentials.
+    """IBM Quantum Experience account credentials and preferences.
 
     Note:
         By convention, two credentials that have the same hub, group,
@@ -76,8 +76,9 @@ class Credentials:
         self.websockets_url = websockets_url
         self.proxies = proxies or {}
         self.verify = verify
-        self.preferences = self._default_preferences
-        self.preferences.update(preferences or {})
+        # self.preferences = self._default_preferences
+        # self.preferences.update(preferences or {})
+        self.preferences = preferences or {}
 
         # Initialize additional service URLs.
         services = services or {}
@@ -85,19 +86,19 @@ class Credentials:
         self.experiment_url = services.get('resultsDB', None)
         self.runtime_url = services.get('runtime', None)
 
-    @property
-    def _default_preferences(self) -> dict:
-        """The default preferences passed to the applications that use different services
-        which no effect on the service itself.
-
-        For example, if ``auto_save`` is set to ``True`` for the experiment service,
-        it tells the application that you prefer changes to be automatically saved.
-        It is up to the application to implement the preference.
-
-        Returns:
-            the default application preferences
-        """
-        return {'experiment': {'auto_save': False}}
+    # @property
+    # def _default_preferences(self) -> dict:
+    #     """The default preferences passed to the applications that use different services
+    #     which no effect on the service itself.
+    #
+    #     For example, if ``auto_save`` is set to ``True`` for the experiment service,
+    #     it tells the application that you prefer changes to be automatically saved.
+    #     It is up to the application to implement the preference.
+    #
+    #     Returns:
+    #         the default application preferences
+    #     """
+    #     return {'experiment': {'auto_save': False}}
 
     def is_ibmq(self) -> bool:
         """Return whether the credentials represent an IBM Quantum Experience account."""
