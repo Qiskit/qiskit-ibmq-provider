@@ -1,0 +1,5 @@
+---
+upgrade:
+  - |
+    :class:`qiskit.providers.ibmq.runtime.utils.RuntimeEncoder` now convert a
+    callable object to ``None``, since callables are not JSON serializable.
