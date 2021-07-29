@@ -261,7 +261,7 @@ class AccountProvider(Provider):
                 'Remote backend "{}" could not be instantiated due to an '
                 'invalid config.'.format(backend_name))
 
-    def get_backend(self, name=None, **kwargs) -> Union[IBMQBackend, Any]:
+    def get_backend(self, name: str = None, **kwargs: Dict[str, Any]) -> Union[IBMQBackend, Any]:
         try:
             return self.__backends[name]
         except KeyError:
