@@ -44,13 +44,13 @@ class TestExperimentPreferences(IBMQTestCase):
 
     def test_default_preferences(self):
         """Test getting default preferences."""
-        self.assertFalse(self.service.preferences()['auto_save'])
+        self.assertFalse(self.service.preferences['auto_save'])
 
     def test_set_preferences(self):
         """Test setting preferences."""
         with custom_qiskitrc(), no_envs(CREDENTIAL_ENV_VARS):
             self.service.save_preferences(auto_save=True)
-            self.assertTrue(self.service.preferences()['auto_save'])
+            self.assertTrue(self.service.preferences['auto_save'])
 
             # Read back from qiskitrc.
             _, stored_pref = read_credentials_from_qiskitrc()

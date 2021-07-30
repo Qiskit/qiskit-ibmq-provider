@@ -11,4 +11,4 @@ features:
     Usage examples::
 
       provider.experiment.save_preferences(auto_save=True) # set and save preferences
-      provider.experiment.preferences()                    # return all saved preferences
+      provider.experiment.preferences                      # return all saved preferences

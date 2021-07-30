@@ -1211,6 +1211,7 @@ class IBMExperimentService:
 
         return dict(components)
 
+    @property
     def preferences(self) -> Dict:
         """Return saved experiment preferences.
 
@@ -1245,4 +1246,4 @@ class IBMExperimentService:
 
         if update_cred:
             store_preferences(
-                {self._provider.credentials.unique_id(): {'experiment': self.preferences()}})
+                {self._provider.credentials.unique_id(): {'experiment': self.preferences}})
