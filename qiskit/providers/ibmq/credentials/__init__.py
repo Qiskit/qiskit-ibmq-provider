@@ -76,8 +76,8 @@ def discover_credentials(
         for the found credentials is ``{credentials_unique_id: Credentials}``,
         whereas the preferences is ``{credentials_unique_id: {category: {key: val}}}``.
     """
-    credentials_ = {}  # type: Dict[HubGroupProject, Credentials]
-    preferences = {}
+    credentials_: Dict[HubGroupProject, Credentials] = {}
+    preferences: Dict[HubGroupProject, Dict] = {}
 
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.

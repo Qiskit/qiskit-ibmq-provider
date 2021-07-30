@@ -48,9 +48,9 @@ class Credentials:
             project: Optional[str] = None,
             proxies: Optional[Dict] = None,
             verify: bool = True,
-            preferences: Optional[Dict] = None,
             services: Optional[Dict] = None,
             access_token: Optional[str] = None,
+            preferences: Optional[Dict] = None,
             default_provider: Optional[HubGroupProject] = None
     ) -> None:
         """Credentials constructor.
@@ -64,10 +64,10 @@ class Credentials:
             project: The project to use.
             proxies: Proxy configuration.
             verify: If ``False``, ignores SSL certificates errors.
-            preferences: Application preferences. Used for dictating preferred
-                action in services like the `ExperimentService`.
             services: Additional services for this account.
             access_token: IBM Quantum access token.
+            preferences: Application preferences. Used for dictating preferred
+                action in services like the `ExperimentService`.
             default_provider: Default provider to use.
         """
         self.token = token

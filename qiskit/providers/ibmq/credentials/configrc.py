@@ -66,8 +66,8 @@ def read_credentials_from_qiskitrc(
             'Error parsing file {}: {}'.format(filename, str(ex))) from ex
 
     # Build the credentials dictionary.
-    credentials_dict = {}  # type: ignore[var-annotated]
-    preferences = {}
+    credentials_dict: Dict[HubGroupProject, Credentials] = {}
+    preferences: Dict[HubGroupProject, Dict] = {}
 
     for name in config_parser.sections():
         if not name.startswith('ibmq'):
@@ -110,11 +110,11 @@ def _parse_preferences(pref_section: Dict) -> Dict[HubGroupProject, Dict]:
     """
     preferences: Dict[HubGroupProject, Dict] = defaultdict(dict)
     for key, val in pref_section.items():
-        # Preferences section format is category,hgp,item=value
+        # Preferences section format is hgp,category,item=value
         elems = key.split(',')
         if len(elems) != 3:
             continue
-        pref_cat, hgp, pref_key = elems
+        hgp, pref_cat, pref_key = elems
         try:
             val_type = _ACTIVE_PREFERENCES[pref_cat][pref_key]
         except KeyError:
@@ -176,13 +176,13 @@ def write_qiskit_rc(
 
     if preferences:
         unrolled_pref = {}
-        # Preferences section format is category,hgp,key=value.
+        # Preferences section format is hgp,category,key=value.
         # Input preferences format is {hgp: {cat: {pref_key: pref_val}}}.
-        for hgp, packed_val in preferences.items():
+        for hgp, hgp_val in preferences.items():
             hgp = hgp.to_stored_format()
-            for cat, cat_val in packed_val.items():
+            for cat, cat_val in hgp_val.items():
                 for pref, pref_val in cat_val.items():
-                    unrolled_pref[f"{cat},{hgp},{pref}"] = pref_val
+                    unrolled_pref[f"{hgp},{cat},{pref}"] = pref_val
         unrolled_credentials[_PREFERENCES_SECTION_NAME] = unrolled_pref
 
     # Write the configuration file.
@@ -245,7 +245,8 @@ def remove_credentials(
     except KeyError:
         raise CredentialsNotFoundError('The account {} does not exist in the configuration file.'
                                        .format(credentials.unique_id())) from None
-    write_qiskit_rc(credentials=stored_credentials, filename=filename)
+    write_qiskit_rc(credentials=stored_credentials, preferences=stored_preferences,
+                    filename=filename)
 
 
 def store_preferences(
@@ -263,7 +264,7 @@ def store_preferences(
     filename = filename or DEFAULT_QISKITRC_FILE
     stored_credentials, stored_preferences = read_credentials_from_qiskitrc(filename)
 
-    # Merge with existing preferences.
+    # Merge with existing preferences at category level.
     for hgp, hgp_val in preferences.items():
         merged_hgp = stored_preferences.get(hgp, {})
         merged_hgp.update(hgp_val)

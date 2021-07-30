@@ -302,6 +302,18 @@ class TestPreferences(IBMQTestCase):
             self.assertEqual(pref2, stored_pref)
             self.assertEqual(credentials2, stored_cred[credentials2.unique_id()])
 
+    def test_remove_credentials(self):
+        """Test removing credentials when preferences are set."""
+        preferences = self._get_pref_dict()
+        credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
+        with custom_qiskitrc():
+            store_credentials(credentials)
+            store_preferences(preferences)
+            configrc.remove_credentials(credentials)
+            stored_cred, stored_pref = read_credentials_from_qiskitrc()
+            self.assertEqual(preferences, stored_pref)
+            self.assertFalse(stored_cred)
+
     def _get_pref_dict(
             self,
             hgp: str = 'my-hub/my-group/my-project',

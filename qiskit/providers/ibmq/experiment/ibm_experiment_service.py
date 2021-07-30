@@ -1217,10 +1217,10 @@ class IBMExperimentService:
         Note:
             These are preferences passed to the applications that use this service
             and have no effect on the service itself. It is up to the application,
-            such as ``qiskit-experiments`` to implement the preference.
+            such as ``qiskit-experiments`` to implement the preferences.
 
         Returns:
-            Dict: the experiment preferences
+            Dict: The experiment preferences.
         """
         return self._preferences
 
@@ -1233,7 +1233,7 @@ class IBMExperimentService:
 
             For example, if ``auto_save`` is set to ``True``, it tells the application,
             such as ``qiskit-experiments``, that you prefer changes to be
-            automatically saved. It is up to the application to implement the preference.
+            automatically saved. It is up to the application to implement the preferences.
 
         Args:
             auto_save: Automatically save the experiment.
