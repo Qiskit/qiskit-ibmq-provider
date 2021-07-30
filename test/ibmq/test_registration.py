@@ -234,6 +234,16 @@ class TestPreferences(IBMQTestCase):
             _, stored_pref = read_credentials_from_qiskitrc()
             self.assertEqual({**pref1, **pref2}, stored_pref)
 
+    def test_save_same_value_twice(self):
+        """Test saving same value twice."""
+        pref = self._get_pref_dict(pref_val=True)
+        with custom_qiskitrc():
+            store_preferences(pref)
+            store_preferences(pref)
+
+            _, stored_pref = read_credentials_from_qiskitrc()
+            self.assertEqual(pref, stored_pref)
+
     def test_new_pref_cat(self):
         """Test adding a new preference category."""
         pref1 = self._get_pref_dict()
