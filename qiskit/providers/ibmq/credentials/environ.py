@@ -13,7 +13,6 @@
 """Utilities for reading credentials from environment variables."""
 
 import os
-from collections import OrderedDict
 from typing import Dict
 
 from .credentials import Credentials

@@ -44,7 +44,7 @@ class TestExperimentPreferences(IBMQTestCase):
 
     def test_default_preferences(self):
         """Test getting default preferences."""
-        self.assertFalse(self.service.preferences['auto_save'])
+        self.assertFalse(self.service.preferences()['auto_save'])
 
     def test_set_preferences(self):
         """Test setting preferences."""
