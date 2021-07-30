@@ -59,7 +59,8 @@ def read_credentials_from_qiskitrc(
     """
     filename = filename or DEFAULT_QISKITRC_FILE
     config_parser = ConfigParser()
-    config_parser.optionxform = str  # Preserve case.
+    # Preserve case.
+    config_parser.optionxform = str  # type: ignore
     try:
         config_parser.read(filename)
     except ParsingError as ex:
@@ -189,7 +190,7 @@ def write_qiskit_rc(
     # Write the configuration file.
     with open(filename, 'w') as config_file:
         config_parser = ConfigParser()
-        config_parser.optionxform = str  # Preserve case.
+        config_parser.optionxform = str  # type: ignore
         config_parser.read_dict(unrolled_credentials)
         config_parser.write(config_file)
 
