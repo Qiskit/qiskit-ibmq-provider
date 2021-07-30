@@ -148,13 +148,11 @@ class TestExperimentDataIntegration(IBMQTestCase):
         """Test updating an experiment."""
         exp_data = self._create_experiment_data()
 
-        metadata = {"complex": 2 + 3j, "numpy": np.zeros(2)}
         for _ in range(2):
             job = self._run_circuit()
             exp_data.add_data(job)
-        exp_data.set_tags(["foo", "bar"])
+        exp_data.tags = ["foo", "bar"]
         exp_data.share_level = "hub"
-        exp_data.set_metadata(metadata)
         exp_data.notes = "some notes"
         exp_data.save()
 
@@ -166,10 +164,10 @@ class TestExperimentDataIntegration(IBMQTestCase):
         self.assertEqual(expected.experiment_id, actual.experiment_id)
         self.assertEqual(expected.job_ids, actual.job_ids)
         self.assertEqual(expected.share_level, actual.share_level)
-        self.assertEqual(expected.tags(), actual.tags())
+        self.assertEqual(expected.tags, actual.tags)
         self.assertEqual(expected.notes, actual.notes)
-        self.assertEqual(expected.metadata()['complex'], actual.metadata()['complex'])
-        self.assertEqual(expected.metadata()['numpy'].all(), actual.metadata()['numpy'].all())
+        self.assertEqual(expected.metadata.get('complex', {}),
+                         actual.metadata.get('complex', {}))
         self.assertTrue(actual.creation_datetime)
         self.assertTrue(getattr(actual, 'creation_datetime').tzinfo)
 
@@ -310,7 +308,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
     def test_save_all(self):
         """Test saving all."""
         exp_data = self._create_experiment_data()
-        exp_data.set_tags(["foo", "bar"])
+        exp_data.tags = ["foo", "bar"]
         aresult = AnalysisResult(value={},
                                  name='qiskit_test',
                                  device_components=self.device_components,
@@ -321,7 +319,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         exp_data.save()
 
         rexp = DbExperimentData.load(exp_data.experiment_id, self.experiment)
-        self.assertEqual(["foo", "bar"], rexp.tags())
+        self.assertEqual(["foo", "bar"], rexp.tags)
         self.assertEqual(aresult.result_id, rexp.analysis_results(0).result_id)
         self.assertEqual(hello_bytes, rexp.figure(0))
 
@@ -350,8 +348,7 @@ class TestExperimentDataIntegration(IBMQTestCase):
         exp_data.auto_save = True
 
         subtests = [
-            (exp_data.set_tags, (["foo"],)),
-            (exp_data.set_metadata, ({"foo": "bar"},)),
+            (setattr, (exp_data, "tags", ["foo"],)),
             (setattr, (exp_data, "notes", "foo")),
             (setattr, (exp_data, "share_level", "hub"))
         ]
