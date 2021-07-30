@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2017, 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -16,21 +16,25 @@ import logging
 import os
 import warnings
 from io import StringIO
-from contextlib import contextmanager
 from unittest import skipIf
 from unittest.mock import patch
-from requests_ntlm import HttpNtlmAuth
+from typing import Dict, Any
+import copy
 
+from requests_ntlm import HttpNtlmAuth
 from qiskit.providers.ibmq import IBMQ, IBMQFactory
 from qiskit.providers.ibmq.credentials import (
     Credentials, discover_credentials,
-    read_credentials_from_qiskitrc, store_credentials)
+    read_credentials_from_qiskitrc, store_credentials,
+    store_preferences, HubGroupProject)
 from qiskit.providers.ibmq.credentials.updater import (
     update_credentials, QE2_AUTH_URL, QE2_URL, QE_URL)
+from qiskit.providers.ibmq.credentials import configrc
 from qiskit.providers.ibmq.exceptions import IBMQAccountError
 
 from ..ibmqtestcase import IBMQTestCase
-from ..contextmanagers import custom_envs, no_envs, custom_qiskitrc, CREDENTIAL_ENV_VARS
+from ..contextmanagers import (custom_envs, no_envs, custom_qiskitrc, CREDENTIAL_ENV_VARS,
+                               mock_ibmq_provider)
 
 
 IBMQ_TEMPLATE = 'https://localhost/api/Hubs/{}/Groups/{}/Projects/{}'
@@ -186,6 +190,131 @@ class TestCredentialsKwargs(IBMQTestCase):
 
 
 @skipIf(os.name == 'nt', 'Test not supported in Windows')
+class TestPreferences(IBMQTestCase):
+    """Tests for the preferences."""
+
+    def test_save_preferences(self):
+        """Test saving preferences."""
+        preferences = self._get_pref_dict()
+        with custom_qiskitrc():
+            store_preferences(preferences)
+            _, stored_pref = read_credentials_from_qiskitrc()
+            self.assertEqual(preferences, stored_pref)
+
+    def test_update_preferences(self):
+        """Test updating preferences."""
+        pref1 = self._get_pref_dict()
+        with custom_qiskitrc():
+            store_preferences(pref1)
+            pref2 = self._get_pref_dict(pref_val=False)
+            store_preferences(pref2)
+            _, stored_pref = read_credentials_from_qiskitrc()
+            self.assertEqual(pref2, stored_pref)
+
+    def test_new_provider_pref(self):
+        """Test adding preference for another provider."""
+        pref1 = self._get_pref_dict()
+        with custom_qiskitrc():
+            store_preferences(pref1)
+            pref2 = self._get_pref_dict('hub2/group2/project2', pref_val=False)
+            store_preferences(pref2)
+            _, stored_pref = read_credentials_from_qiskitrc()
+            self.assertEqual({**pref1, **pref2}, stored_pref)
+
+    def test_update_one_of_many_providers(self):
+        """Test updating one of many provider preferences."""
+        pref1 = self._get_pref_dict(pref_val=False)
+        pref2 = self._get_pref_dict('hub2/group2/project2', pref_val=False)
+        with custom_qiskitrc():
+            store_preferences(pref1)
+            store_preferences(pref2)
+            pref1 = self._get_pref_dict(pref_val=True)
+            store_preferences(pref1)
+
+            _, stored_pref = read_credentials_from_qiskitrc()
+            self.assertEqual({**pref1, **pref2}, stored_pref)
+
+    def test_new_pref_cat(self):
+        """Test adding a new preference category."""
+        pref1 = self._get_pref_dict()
+        orig_active_pref = copy.deepcopy(configrc._ACTIVE_PREFERENCES)
+        try:
+            configrc._ACTIVE_PREFERENCES.update(
+                {'foo': {'bar': str}})
+            with custom_qiskitrc():
+                store_preferences(pref1)
+                new_cat = self._get_pref_dict(cat="foo", pref_key="bar", pref_val='foobar')
+                store_preferences(new_cat)
+                _, stored_pref = read_credentials_from_qiskitrc()
+
+                key = list(pref1.keys())[0]
+                pref1[key].update(new_cat[key])
+                self.assertEqual(pref1, stored_pref)
+        finally:
+            configrc._ACTIVE_PREFERENCES = orig_active_pref
+
+    def test_overwrite_category_keys(self):
+        """Test overwriting preference keys in a category."""
+        pref1 = self._get_pref_dict()
+        orig_active_pref = copy.deepcopy(configrc._ACTIVE_PREFERENCES)
+        try:
+            configrc._ACTIVE_PREFERENCES['experiment'].update({'foo': str})
+            with custom_qiskitrc():
+                store_preferences(pref1)
+                new_cat = self._get_pref_dict(pref_key="foo", pref_val='bar')
+                store_preferences(new_cat)
+                _, stored_pref = read_credentials_from_qiskitrc()
+
+                key = list(pref1.keys())[0]
+                pref1[key]['experiment'] = {'foo': 'bar'}
+                self.assertEqual(pref1, stored_pref)
+        finally:
+            configrc._ACTIVE_PREFERENCES = orig_active_pref
+
+    def test_save_preferences_credentials(self):
+        """Test saving both preferences and credentials."""
+        preferences = self._get_pref_dict()
+        credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
+        with custom_qiskitrc():
+            store_preferences(preferences)
+            store_credentials(credentials)
+            stored_cred, stored_pref = read_credentials_from_qiskitrc()
+            self.assertEqual(preferences, stored_pref)
+            self.assertEqual(credentials, stored_cred[credentials.unique_id()])
+
+    def test_update_preferences_with_credentials(self):
+        """Test updating preferences with credentials."""
+        preferences = self._get_pref_dict()
+        pref2 = self._get_pref_dict(pref_val=False)
+        credentials = Credentials('QISKITRC_TOKEN', url=QE2_AUTH_URL)
+        credentials2 = Credentials('QISKITRC_TOKEN_2', url=QE2_AUTH_URL)
+        with custom_qiskitrc():
+            store_preferences(preferences)
+            store_credentials(credentials)
+            # Update preferences.
+            store_preferences(pref2)
+            stored_cred, stored_pref = read_credentials_from_qiskitrc()
+            self.assertEqual(pref2, stored_pref)
+            self.assertEqual(credentials, stored_cred[credentials.unique_id()])
+            # Update credentials.
+            store_credentials(credentials2, overwrite=True)
+            stored_cred, stored_pref = read_credentials_from_qiskitrc()
+            self.assertEqual(pref2, stored_pref)
+            self.assertEqual(credentials2, stored_cred[credentials2.unique_id()])
+
+    def _get_pref_dict(
+            self,
+            hgp: str = 'my-hub/my-group/my-project',
+            cat: str = 'experiment',
+            pref_key: str = 'auto_save',
+            pref_val: Any = True
+    ) -> Dict:
+        """Generate a new preference dictionary."""
+        hub, group, project = hgp.split('/')
+        return {HubGroupProject(hub, group, project): {cat: {pref_key: pref_val}}}
+
+
+@skipIf(os.name == 'nt', 'Test not supported in Windows')
 class TestIBMQAccountUpdater(IBMQTestCase):
     """Tests for the ``update_credentials()`` helper."""
 
@@ -298,25 +427,3 @@ class TestIBMQAccountUpdater(IBMQTestCase):
             loaded_accounts, _ = read_credentials_from_qiskitrc()
             self.assertEqual(list(loaded_accounts.values())[0].url,
                              'UNKNOWN_URL')
-
-
-# Context managers
-
-def _mocked_initialize_provider(self, credentials: Credentials) -> None:
-    """Mock ``_initialize_provider()``, just storing the credentials."""
-    self._credentials = credentials
-
-
-@contextmanager
-def mock_ibmq_provider():
-    """Mock the initialization of ``IBMQFactory``, so it does not query the API."""
-    patcher = patch.object(IBMQFactory, '_initialize_providers',
-                           side_effect=_mocked_initialize_provider,
-                           autospec=True)
-    patcher2 = patch.object(IBMQFactory, '_check_api_version',
-                            return_value={'new_api': True, 'api-auth': '0.1'})
-    patcher.start()
-    patcher2.start()
-    yield
-    patcher2.stop()
-    patcher.stop()

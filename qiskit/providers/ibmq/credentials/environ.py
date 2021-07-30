@@ -38,7 +38,7 @@ def read_credentials_from_environ() -> Dict[HubGroupProject, Credentials]:
     """
     # The token is the only required parameter.
     if not (os.getenv('QE_TOKEN') and os.getenv('QE_URL')):
-        return OrderedDict()
+        return {}
 
     # Build the credentials based on environment variables.
     credentials_dict = {}
@@ -47,4 +47,4 @@ def read_credentials_from_environ() -> Dict[HubGroupProject, Credentials]:
             credentials_dict[credential_key] = os.getenv(envar_name)
 
     credentials = Credentials(**credentials_dict)  # type: ignore[arg-type]
-    return OrderedDict({credentials.unique_id(): credentials})
+    return {credentials.unique_id(): credentials}

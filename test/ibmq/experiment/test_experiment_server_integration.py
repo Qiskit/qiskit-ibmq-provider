@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Experiment Tests."""
+"""Experiment integration test with server."""
 
 import os
 import uuid

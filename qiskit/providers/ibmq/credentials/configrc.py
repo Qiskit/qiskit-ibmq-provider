@@ -15,7 +15,7 @@
 import logging
 import os
 from ast import literal_eval
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from configparser import ConfigParser, ParsingError
 from typing import Dict, Tuple, Optional, Any, Union
 
@@ -32,11 +32,12 @@ DEFAULT_QISKITRC_FILE = os.path.join(os.path.expanduser("~"),
 _ACTIVE_PREFERENCES = {
     'experiment': {'auto_save': lambda val: val.lower() == 'true'}
 }
+_PREFERENCES_SECTION_NAME = 'ibmq.preferences'
 
 
 def read_credentials_from_qiskitrc(
         filename: Optional[str] = None
-) -> Tuple[Dict[HubGroupProject, Credentials], HubGroupProject]:
+) -> Tuple[Dict[HubGroupProject, Credentials], Dict]:
     """Read a configuration file and return a dictionary with its contents.
 
     Args:
@@ -44,10 +45,10 @@ def read_credentials_from_qiskitrc(
             location is used (``$HOME/.qiskit/qiskitrc``).
 
     Returns:
-        A tuple containing the found credentials, if any, and the default
-        provider stored, if specified in the configuration file. The format
+        A tuple containing the found credentials and the stored
+        preferences, if any, in the configuration file. The format
         for the found credentials is ``{credentials_unique_id: Credentials}``,
-        whereas the default provider is represented as a `HubGroupProject` instance.
+        whereas the preferences is ``{credentials_unique_id: {category: {key: val}}}``.
 
     Raises:
         InvalidCredentialsFormatError: If the file cannot be parsed. Note
@@ -65,16 +66,20 @@ def read_credentials_from_qiskitrc(
             'Error parsing file {}: {}'.format(filename, str(ex))) from ex
 
     # Build the credentials dictionary.
-    credentials_dict = OrderedDict()  # type: ignore[var-annotated]
-    default_provider_hgp = None
+    credentials_dict = {}  # type: ignore[var-annotated]
+    preferences = {}
 
     for name in config_parser.sections():
         if not name.startswith('ibmq'):
             continue
 
         single_section = dict(config_parser.items(name))
-        configs: Dict[str, Union[str, bool]] = {}
-        preferences = defaultdict(dict)
+        configs: Dict[str, Union[str, bool, HubGroupProject, Dict]] = {}
+
+        if name == _PREFERENCES_SECTION_NAME:
+            preferences = _parse_preferences(single_section)
+            continue
+
         # Individually convert keys to their right types.
         # TODO: consider generalizing, moving to json configuration or a more
         # robust alternative.
@@ -84,26 +89,47 @@ def read_credentials_from_qiskitrc(
             elif key == 'verify':
                 configs[key] = config_parser[name].getboolean('verify')
             elif key == 'default_provider':
-                default_provider_hgp = HubGroupProject.from_stored_format(val)
-            elif key.startswith('pref'):
-                # Check if preference. Format: pref,category,item=value
-                elems = key.split(',')
-                if len(elems) != 3:
-                    continue
-                _, pref_cat, pref_key = elems
-                if pref_cat not in _ACTIVE_PREFERENCES:
-                    continue
-                preferences[pref_cat][pref_key] = val
+                configs[key] = HubGroupProject.from_stored_format(val)
+            else:
+                configs[key] = val
 
-        new_credentials = Credentials(preferences=preferences, **configs)  # type: ignore[arg-type]
+        new_credentials = Credentials(**configs)  # type: ignore[arg-type]
         credentials_dict[new_credentials.unique_id()] = new_credentials
 
-    return credentials_dict, default_provider_hgp
+    return credentials_dict, preferences
+
+
+def _parse_preferences(pref_section: Dict) -> Dict[HubGroupProject, Dict]:
+    """Parse the preferences section.
+
+    Args:
+        pref_section: Preferences section.
+
+    Returns:
+        Parsed preferences, indexed by hub/group/project.
+    """
+    preferences: Dict[HubGroupProject, Dict] = defaultdict(dict)
+    for key, val in pref_section.items():
+        # Preferences section format is category,hgp,item=value
+        elems = key.split(',')
+        if len(elems) != 3:
+            continue
+        pref_cat, hgp, pref_key = elems
+        try:
+            val_type = _ACTIVE_PREFERENCES[pref_cat][pref_key]
+        except KeyError:
+            continue
+        hgp = HubGroupProject.from_stored_format(hgp)
+        cur_val = preferences[hgp].get(pref_cat, {})
+        cur_val.update({pref_key: val_type(val)})  # type: ignore[no-untyped-call]
+        preferences[hgp].update({pref_cat: cur_val})
+
+    return preferences
 
 
 def write_qiskit_rc(
         credentials: Dict[HubGroupProject, Credentials],
-        default_provider: Optional[HubGroupProject] = None,
+        preferences: Optional[Dict] = None,
         filename: Optional[str] = None
 ) -> None:
     """Write credentials to the configuration file.
@@ -111,28 +137,22 @@ def write_qiskit_rc(
     Args:
         credentials: Dictionary with the credentials, in the
             ``{credentials_unique_id: Credentials}`` format.
-        default_provider: If specified, the provider to store in the configuration
-            file, represented as a ``HubGroupProject`` instance.
+        preferences: Preferences to store.
         filename: Full path to the configuration file. If ``None``, the default
             location is used (``$HOME/.qiskit/qiskitrc``).
     """
     def _credentials_object_to_dict(
             credentials_obj: Credentials,
-            default_provider_to_store: Optional[HubGroupProject]
     ) -> Dict[str, Any]:
         """Convert a ``Credential`` object to a dictionary."""
         credentials_dict = {key: getattr(credentials_obj, key) for key in
                             ['token', 'url', 'proxies', 'verify']
                             if getattr(credentials_obj, key)}
 
-        # Put the credentials' preferences in this format: pref,category,item=value
-        for cat in credentials_obj.preferences.keys():
-            for pref_key, pref_val in credentials_obj.preferences[cat].items():
-                credentials_dict['pref,{},{}'.format(cat, pref_key)] = pref_val
-
         # Save the default provider to disk, if specified.
-        if default_provider_to_store:
-            credentials_dict['default_provider'] = default_provider_to_store.to_stored_format()
+        if credentials_obj.default_provider:
+            credentials_dict['default_provider'] = \
+                credentials_obj.default_provider.to_stored_format()
 
         return credentials_dict
 
@@ -150,9 +170,20 @@ def write_qiskit_rc(
 
     unrolled_credentials = {
         _section_name(credentials_object):
-            _credentials_object_to_dict(credentials_object, default_provider)
+            _credentials_object_to_dict(credentials_object)
         for _, credentials_object in credentials.items()
     }
+
+    if preferences:
+        unrolled_pref = {}
+        # Preferences section format is category,hgp,key=value.
+        # Input preferences format is {hgp: {cat: {pref_key: pref_val}}}.
+        for hgp, packed_val in preferences.items():
+            hgp = hgp.to_stored_format()
+            for cat, cat_val in packed_val.items():
+                for pref, pref_val in cat_val.items():
+                    unrolled_pref[f"{cat},{hgp},{pref}"] = pref_val
+        unrolled_credentials[_PREFERENCES_SECTION_NAME] = unrolled_pref
 
     # Write the configuration file.
     with open(filename, 'w') as config_file:
@@ -163,7 +194,6 @@ def write_qiskit_rc(
 
 def store_credentials(
         credentials: Credentials,
-        default_provider: Optional[HubGroupProject] = None,
         overwrite: bool = False,
         filename: Optional[str] = None
 ) -> None:
@@ -171,15 +201,13 @@ def store_credentials(
 
     Args:
         credentials: Credentials to save.
-        default_provider: If specified, the provider to store in the configuration
-            file, represented as a ``HubGroupProject`` instance.
         overwrite: ``True`` if any existing credentials are to be overwritten.
         filename: Full path to the configuration file. If ``None``, the default
             location is used (``$HOME/.qiskit/qiskitrc``).
     """
     # Read the current providers stored in the configuration file.
     filename = filename or DEFAULT_QISKITRC_FILE
-    stored_credentials, _ = read_credentials_from_qiskitrc(filename)
+    stored_credentials, stored_preferences = read_credentials_from_qiskitrc(filename)
 
     # Check if duplicated credentials are already stored. By convention,
     # we assume (hub, group, project) is always unique.
@@ -190,7 +218,8 @@ def store_credentials(
 
     # Append and write the credentials to file.
     stored_credentials[credentials.unique_id()] = credentials
-    write_qiskit_rc(stored_credentials, default_provider, filename)
+    write_qiskit_rc(credentials=stored_credentials, preferences=stored_preferences,
+                    filename=filename)
 
 
 def remove_credentials(
@@ -209,11 +238,36 @@ def remove_credentials(
             configuration file.
     """
     # Set the name of the Provider from the class.
-    stored_credentials, _ = read_credentials_from_qiskitrc(filename)
+    stored_credentials, stored_preferences = read_credentials_from_qiskitrc(filename)
 
     try:
         del stored_credentials[credentials.unique_id()]
     except KeyError:
         raise CredentialsNotFoundError('The account {} does not exist in the configuration file.'
                                        .format(credentials.unique_id())) from None
-    write_qiskit_rc(stored_credentials, filename)
+    write_qiskit_rc(credentials=stored_credentials, filename=filename)
+
+
+def store_preferences(
+        preferences: Dict[HubGroupProject, Dict],
+        filename: Optional[str] = None
+) -> None:
+    """Store the preferences in the configuration file.
+
+    Args:
+        preferences: Preferences to save.
+        filename: Full path to the configuration file. If ``None``, the default
+            location is used (``$HOME/.qiskit/qiskitrc``).
+    """
+    # Read the current providers stored in the configuration file.
+    filename = filename or DEFAULT_QISKITRC_FILE
+    stored_credentials, stored_preferences = read_credentials_from_qiskitrc(filename)
+
+    # Merge with existing preferences.
+    for hgp, hgp_val in preferences.items():
+        merged_hgp = stored_preferences.get(hgp, {})
+        merged_hgp.update(hgp_val)
+        stored_preferences[hgp] = merged_hgp
+
+    write_qiskit_rc(credentials=stored_credentials, preferences=stored_preferences,
+                    filename=filename)
