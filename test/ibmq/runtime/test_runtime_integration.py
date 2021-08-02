@@ -150,7 +150,7 @@ def main(backend, user_messenger, **kwargs):
         max_execution_time = 3000
         is_public = True
         program_id = self._upload_program(max_execution_time=max_execution_time,
-                                          is_public=True)
+                                          is_public=is_public)
         self.assertTrue(program_id)
         program = self.provider.runtime.program(program_id)
         self.assertTrue(program)
