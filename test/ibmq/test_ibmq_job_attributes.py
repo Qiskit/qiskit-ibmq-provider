@@ -116,8 +116,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
         self.assertEqual(len(retrieved_jobs), 1)
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
-        cancel_job(job)
-
     def test_job_name_update(self):
         """Test changing the name associated with a job."""
         # Use a unique job name
@@ -138,8 +136,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
                 self.assertEqual(job.name(), new_name,
                                  'Updating the name for job {} from "{}" to "{}" '
                                  'was unsuccessful.'.format(job.job_id(), job.name(), new_name))
-
-        cancel_job(job)
 
     def test_duplicate_job_name(self):
         """Test multiple jobs with the same custom job name using a simulator."""
@@ -254,8 +250,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
             db_filter={'id': job.job_id()}, start_datetime=self.last_week)[0]
         self.assertTrue(rjob.time_per_step())
 
-        cancel_job(job)
-
     def test_new_job_attributes(self):
         """Test job with new attributes."""
         def _mocked__api_job_submit(*args, **kwargs):
@@ -302,9 +296,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
         else:
             self.assertIsNone(job.queue_position())
             self.log.warning("Unable to retrieve queue information")
-
-        # Cancel job so it doesn't consume more resources.
-        cancel_job(job)
 
     def test_esp_readout_not_enabled(self):
         """Test that an error is thrown is ESP readout is used and the backend does not support it.
@@ -392,8 +383,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
                 self.assertEqual(rjobs[0].job_id(), job.job_id())
                 self.assertEqual(set(rjobs[0].tags()), set(job_tags))
 
-        cancel_job(job)
-
     def test_job_tags_and(self):
         """Test using job tags with an and operator."""
         # Use a unique tag.
@@ -417,8 +406,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
                 self.assertEqual(rjobs[0].job_id(), job.job_id())
                 self.assertEqual(set(rjobs[0].tags()), set(job_tags))
 
-        cancel_job(job)
-
     def test_job_tags_replace(self):
         """Test updating job tags by replacing a job's existing tags."""
         initial_job_tags = [uuid.uuid4().hex]
@@ -433,8 +420,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
                 update_job_tags_and_verify(job_to_update=job,
                                            tags_after_update=tags_to_replace,
                                            replacement_tags=tags_to_replace)
-
-        cancel_job(job)
 
     def test_job_tags_add(self):
         """Test updating job tags by adding to a job's existing tags."""
@@ -451,8 +436,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
                                        tags_after_update=tags_after_add,
                                        additional_tags=tags_to_add)
 
-        cancel_job(job)
-
     def test_job_tags_remove(self):
         """Test updating job tags by removing from a job's existing tags."""
         initial_job_tags = [uuid.uuid4().hex, uuid.uuid4().hex, uuid.uuid4().hex]
@@ -468,8 +451,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
             update_job_tags_and_verify(job_to_update=job,
                                        tags_after_update=list(tags_after_removal_set),
                                        removal_tags=tags_to_remove)
-
-        cancel_job(job)
 
     def test_job_tags_add_and_remove(self):
         """Test updating job tags by adding and removing the same job tag."""
@@ -494,8 +475,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
                                    replacement_tags=replacement_tags,
                                    removal_tags=removal_tags)
 
-        cancel_job(job)
-
     def test_job_tags_all_parameters(self):
         """Test updating job tags by replacing, adding, and removing tags."""
         job = self._sim_job(job_tags=[uuid.uuid4().hex])
@@ -513,8 +492,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
                                    replacement_tags=replacement_tags,
                                    additional_tags=additional_tags,
                                    removal_tags=removal_tags)
-
-        cancel_job(job)
 
     def test_invalid_job_tags(self):
         """Test using job tags with an and operator."""
@@ -561,7 +538,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
             self.assertEqual(rjob.experiment_id, exp_id,
                              f"Job {rjob.job_id()} has experiment ID {rjob.experiment_id} "
                              f"instead of {exp_id}")
-        cancel_job(job)
 
     def _sim_job(self, backend: Backend = None, max_retries: int = 10,
                  qc: Union[QuantumCircuit, List[QuantumCircuit]] = None, **kwargs) -> Job:

@@ -13,7 +13,6 @@
 """Test serializing and deserializing data sent to the server."""
 
 import logging
-from test.utils import cancel_job
 from typing import Any, Dict, Optional
 from unittest import SkipTest, skipIf
 
@@ -53,9 +52,6 @@ class TestSerialization(IBMQTestCase):
 
         self.assertEqual(_array_to_list(job.qobj().to_dict()), rqobj.to_dict())
 
-        # Cancel the job
-        cancel_job(job)
-
     def test_pulse_qobj(self):
         """Test serializing pulse qobj data."""
         backends = self.provider.backends(operational=True, open_pulse=True)
@@ -77,9 +73,6 @@ class TestSerialization(IBMQTestCase):
         # Convert numpy arrays to lists since they now get converted right
         # before being sent to the server.
         self.assertEqual(_array_to_list(job.qobj().to_dict()), rqobj.to_dict())
-
-        # Cancel the job
-        cancel_job(job)
 
     def test_backend_configuration(self):
         """Test deserializing backend configuration."""
@@ -128,9 +121,6 @@ class TestSerialization(IBMQTestCase):
 
         self._verify_data(result.to_dict(), ())
 
-        # Cancel the job
-        cancel_job(job)
-
     @slow_test
     def test_pulse_job_result(self):
         """Test deserializing a pulse job result."""
@@ -144,9 +134,6 @@ class TestSerialization(IBMQTestCase):
         qc.measure([0], [0])
         sched = schedule(transpile(qc, backend=backend), backend=backend)
         job = backend.run(sched)
-
-        # Cancel the job
-        cancel_job(job)
 
         result = job.result()
 

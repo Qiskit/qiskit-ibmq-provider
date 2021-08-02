@@ -13,7 +13,6 @@
 """Tests for Jupyter tools."""
 
 from datetime import datetime, timedelta
-from test.utils import cancel_job
 from unittest import mock
 import logging
 
@@ -122,14 +121,12 @@ class TestIQXDashboard(IBMQTestCase):
         backend = self.provider.get_backend('ibmq_qasm_simulator')
         job = backend.run(transpile(ReferenceCircuits.bell(), backend))
         create_job_widget(mock.MagicMock(), job, backend=backend.name(), status=job.status().value)
-        cancel_job(job)
 
     def test_watcher_monitor(self):
         """Test job watcher."""
         backend = self.provider.get_backend('ibmq_qasm_simulator')
         job = backend.run(transpile(ReferenceCircuits.bell(), backend))
         _job_checker(job=job, status=job.status(), watcher=mock.MagicMock())
-        cancel_job(job)
 
 
 def _get_backends(provider):
