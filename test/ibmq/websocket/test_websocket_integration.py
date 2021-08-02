@@ -27,7 +27,7 @@ from qiskit.providers import Backend, JobTimeoutError
 from qiskit.providers.ibmq.api.clients import AccountClient, websocket
 from qiskit.providers.ibmq.exceptions import IBMQBackendJobLimitError
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
-from qiskit.providers.job import JobV1
+from qiskit.providers.job import JobV1 as Job
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.test import slow_test
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -232,16 +232,16 @@ class TestWebsocketIntegration(IBMQTestCase):
         self.assertIn("retrying using HTTP", ','.join(log_cm.output))
 
     def _sim_job(self, backend: Backend = None, max_retries: int = 10,
-                 qc: Union[QuantumCircuit, List[QuantumCircuit]] = None, **kwargs) -> JobV1:
+                 qc: Union[QuantumCircuit, List[QuantumCircuit]] = None, **kwargs) -> Job:
         # Default to the bell circuit
         qc = qc or self.bell
         backend = backend or self.sim_backend
         # Simulate circuit
         while max_retries >= 0:
             try:
-                job = backend.run(self.bell, **kwargs)
+                return backend.run(self.bell, **kwargs)
             except IBMQBackendJobLimitError:
                 logger.info('Cannot submit job, trying again.. %d attempts remaining.', max_retries)
-                time.sleep(5)
+            time.sleep(5)
             max_retries -= 1
-        return job
+        return None

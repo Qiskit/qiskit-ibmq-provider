@@ -653,9 +653,9 @@ class TestIBMQJob(IBMQTestCase):
         # Simulate circuit
         while max_retries >= 0:
             try:
-                job = backend.run(self.bell, **kwargs)
+                return backend.run(self.bell, **kwargs)
             except IBMQBackendJobLimitError:
                 logger.info('Cannot submit job, trying again.. %d attempts remaining.', max_retries)
-                time.sleep(5)
+            time.sleep(5)
             max_retries -= 1
-        return job
+        return None
