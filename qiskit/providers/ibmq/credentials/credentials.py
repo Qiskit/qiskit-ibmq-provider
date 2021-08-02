@@ -31,7 +31,7 @@ TEMPLATE_IBMQ_HUBS = '{prefix}/Network/{hub}/Groups/{group}/Projects/{project}'
 
 
 class Credentials:
-    """IBM Quantum Experience account credentials.
+    """IBM Quantum Experience account credentials and preferences.
 
     Note:
         By convention, two credentials that have the same hub, group,
@@ -49,7 +49,9 @@ class Credentials:
             proxies: Optional[Dict] = None,
             verify: bool = True,
             services: Optional[Dict] = None,
-            access_token: Optional[str] = None
+            access_token: Optional[str] = None,
+            preferences: Optional[Dict] = None,
+            default_provider: Optional[HubGroupProject] = None
     ) -> None:
         """Credentials constructor.
 
@@ -64,6 +66,9 @@ class Credentials:
             verify: If ``False``, ignores SSL certificates errors.
             services: Additional services for this account.
             access_token: IBM Quantum access token.
+            preferences: Application preferences. Used for dictating preferred
+                action in services like the `ExperimentService`.
+            default_provider: Default provider to use.
         """
         self.token = token
         self.access_token = access_token
@@ -73,6 +78,8 @@ class Credentials:
         self.websockets_url = websockets_url
         self.proxies = proxies or {}
         self.verify = verify
+        self.preferences = preferences or {}
+        self.default_provider = default_provider
 
         # Initialize additional service URLs.
         services = services or {}

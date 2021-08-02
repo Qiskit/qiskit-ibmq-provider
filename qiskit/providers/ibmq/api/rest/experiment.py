@@ -48,7 +48,7 @@ class Experiment(RestAdapterBase):
         url = self.get_url('self')
         return self.session.get(url).text
 
-    def update(self, experiment: Dict) -> Dict:
+    def update(self, experiment: str) -> Dict:
         """Update the experiment.
 
         Args:
@@ -58,7 +58,7 @@ class Experiment(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('self')
-        return self.session.put(url, json=experiment).json()
+        return self.session.put(url, data=experiment, headers=self._HEADER_JSON_CONTENT).json()
 
     def delete(self) -> Dict:
         """Delete the experiment.

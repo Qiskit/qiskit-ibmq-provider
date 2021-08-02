@@ -14,6 +14,7 @@
 
 import logging
 import json
+import copy
 from typing import Optional, List, Dict, Union, Tuple, Any, Type
 from datetime import datetime
 from collections import defaultdict
@@ -30,6 +31,7 @@ from ..api.clients.experiment import ExperimentClient
 from ..api.exceptions import RequestsApiError
 from ..ibmqbackend import IBMQRetiredBackend
 from ..exceptions import IBMQApiError
+from ..credentials import store_preferences
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +78,8 @@ class IBMExperimentService:
     Similar syntax applies to analysis results and experiment figures.
     """
 
+    _default_preferences = {"auto_save": False}
+
     def __init__(
             self,
             provider: 'accountprovider.AccountProvider'
@@ -89,15 +93,8 @@ class IBMExperimentService:
 
         self._provider = provider
         self._api_client = ExperimentClient(provider.credentials)
-
-    @classmethod
-    def _default_options(cls) -> Dict:
-        """Return the default options
-
-        Returns:
-            A dictionary of default options.
-        """
-        return {"auto_save": False}
+        self._preferences = copy.deepcopy(self._default_preferences)
+        self._preferences.update(provider.credentials.preferences.get('experiments', {}))
 
     def backends(self) -> List[Dict]:
         """Return a list of backends that can be used for experiments.
@@ -118,6 +115,7 @@ class IBMExperimentService:
             notes: Optional[str] = None,
             share_level: Optional[Union[str, ExperimentShareLevel]] = None,
             start_datetime: Optional[Union[str, datetime]] = None,
+            json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
             **kwargs: Any
     ) -> str:
         """Create a new experiment in the database.
@@ -141,6 +139,7 @@ class IBMExperimentService:
                 - hub: The experiment is shared within its hub
                 - public: The experiment is shared publicly regardless of provider
             start_datetime: Timestamp when the experiment started, in local time zone.
+            json_encoder: Custom JSON encoder to use to encode the experiment.
             kwargs: Additional experiment attributes that are not supported and will be ignored.
 
         Returns:
@@ -172,7 +171,7 @@ class IBMExperimentService:
                                                  start_dt=start_datetime))
 
         with map_api_error(f"Experiment {experiment_id} already exists."):
-            response_data = self._api_client.experiment_upload(data)
+            response_data = self._api_client.experiment_upload(json.dumps(data, cls=json_encoder))
         return response_data['uuid']
 
     def update_experiment(
@@ -184,6 +183,7 @@ class IBMExperimentService:
             tags: Optional[List[str]] = None,
             share_level: Optional[Union[str, ExperimentShareLevel]] = None,
             end_datetime: Optional[Union[str, datetime]] = None,
+            json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
             **kwargs: Any,
     ) -> None:
         """Update an existing experiment.
@@ -205,6 +205,7 @@ class IBMExperimentService:
                 - public: The experiment is shared publicly regardless of provider
 
             end_datetime: Timestamp for when the experiment ended, in local time.
+            json_encoder: Custom JSON encoder to use to encode the experiment.
             kwargs: Additional experiment attributes that are not supported and will be ignored.
 
         Raises:
@@ -228,7 +229,7 @@ class IBMExperimentService:
             return
 
         with map_api_error(f"Experiment {experiment_id} not found."):
-            self._api_client.experiment_update(experiment_id, data)
+            self._api_client.experiment_update(experiment_id, json.dumps(data, cls=json_encoder))
 
     def _experiment_data_to_api(
             self,
@@ -572,6 +573,7 @@ class IBMExperimentService:
             verified: bool = False,
             result_id: Optional[str] = None,
             chisq: Optional[float] = None,
+            json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
             **kwargs: Any,
     ) -> str:
         """Create a new analysis result in the database.
@@ -587,6 +589,7 @@ class IBMExperimentService:
             result_id: Analysis result ID. It must be in the ``uuid4`` format.
                 One will be generated if not supplied.
             chisq: chi^2 decimal value of the fit.
+            json_encoder: Custom JSON encoder to use to encode the analysis result.
             kwargs: Additional analysis result attributes that are not supported
                 and will be ignored.
 
@@ -625,7 +628,8 @@ class IBMExperimentService:
             chisq=chisq
         )
         with map_api_error(f"Analysis result {result_id} already exists."):
-            response = self._api_client.analysis_result_upload(request)
+            response = self._api_client.analysis_result_upload(
+                json.dumps(request, cls=json_encoder))
         return response['uuid']
 
     def update_analysis_result(
@@ -636,6 +640,7 @@ class IBMExperimentService:
             quality: Union[ResultQuality, str] = None,
             verified: bool = None,
             chisq: Optional[float] = None,
+            json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
             **kwargs: Any,
     ) -> None:
         """Update an existing analysis result.
@@ -647,6 +652,7 @@ class IBMExperimentService:
             verified: Whether the result quality has been verified.
             tags: Tags to be associated with the analysis result.
             chisq: chi^2 decimal value of the fit.
+            json_encoder: Custom JSON encoder to use to encode the analysis result.
             kwargs: Additional analysis result attributes that are not supported
                 and will be ignored.
 
@@ -669,7 +675,8 @@ class IBMExperimentService:
                                                verified=verified,
                                                chisq=chisq)
         with map_api_error(f"Analysis result {result_id} not found."):
-            self._api_client.analysis_result_update(result_id, request)
+            self._api_client.analysis_result_update(
+                result_id, json.dumps(request, cls=json_encoder))
 
     def _analysis_result_to_api(
             self,
@@ -1203,3 +1210,40 @@ class IBMExperimentService:
             return components[backend_name]
 
         return dict(components)
+
+    @property
+    def preferences(self) -> Dict:
+        """Return saved experiment preferences.
+
+        Note:
+            These are preferences passed to the applications that use this service
+            and have no effect on the service itself. It is up to the application,
+            such as ``qiskit-experiments`` to implement the preferences.
+
+        Returns:
+            Dict: The experiment preferences.
+        """
+        return self._preferences
+
+    def save_preferences(self, auto_save: bool = None) -> None:
+        """Stores experiment preferences on disk.
+
+        Note:
+            These are preferences passed to the applications that use this service
+            and have no effect on the service itself.
+
+            For example, if ``auto_save`` is set to ``True``, it tells the application,
+            such as ``qiskit-experiments``, that you prefer changes to be
+            automatically saved. It is up to the application to implement the preferences.
+
+        Args:
+            auto_save: Automatically save the experiment.
+        """
+        update_cred = False
+        if auto_save is not None and auto_save != self._preferences["auto_save"]:
+            self._preferences['auto_save'] = auto_save
+            update_cred = True
+
+        if update_cred:
+            store_preferences(
+                {self._provider.credentials.unique_id(): {'experiment': self.preferences}})
