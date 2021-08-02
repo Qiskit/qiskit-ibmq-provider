@@ -39,7 +39,7 @@ class AnalysisResult(RestAdapterBase):
         self.url_prefix = '{}/analysis_results/{}'.format(url_prefix, result_uuid)
         super().__init__(session, self.url_prefix)
 
-    def update(self, analysis_result: Dict) -> Dict:
+    def update(self, analysis_result: str) -> Dict:
         """Update the analysis result.
 
         Args:
@@ -49,7 +49,8 @@ class AnalysisResult(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('self')
-        return self.session.put(url, json=analysis_result).json()
+        return self.session.put(url, data=analysis_result,
+                                headers=self._HEADER_JSON_CONTENT).json()
 
     def delete(self) -> Dict:
         """Delete the analysis result.
@@ -60,11 +61,11 @@ class AnalysisResult(RestAdapterBase):
         url = self.get_url('self')
         return self.session.delete(url).json()
 
-    def get(self) -> Dict:
+    def get(self) -> str:
         """Retrieve the analysis result.
 
         Returns:
-            JSON response.
+            Server response.
         """
         url = self.get_url('self')
-        return self.session.get(url).json()
+        return self.session.get(url).text

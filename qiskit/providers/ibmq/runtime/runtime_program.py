@@ -314,10 +314,10 @@ class ParameterNamespace(SimpleNamespace):
 
         Note:
             This method only verifies that required parameters have values. It
-            does not fail the validation if the namepsace has extraneous parameters.
+            does not fail the validation if the namespace has extraneous parameters.
 
         Raises:
-            IBMQInputValueError if validation fails
+            IBMQInputValueError: if validation fails
         """
 
         # Iterate through the user's stored inputs

@@ -13,12 +13,15 @@
 """Context managers for using with IBMQProvider unit tests."""
 
 import os
-from contextlib import ContextDecorator
+from typing import Optional, Dict
+from contextlib import ContextDecorator, contextmanager
 from tempfile import NamedTemporaryFile
 from unittest.mock import patch
 
-from qiskit.providers.ibmq.credentials import configrc
+from qiskit.providers.ibmq.credentials import configrc, Credentials
 from qiskit.providers.ibmq.credentials.environ import VARIABLES_MAP
+from qiskit.providers.ibmq import IBMQFactory
+
 
 CREDENTIAL_ENV_VARS = VARIABLES_MAP.keys()
 
@@ -112,3 +115,29 @@ class no_file(ContextDecorator):
         if filename_ == self.filename:
             return False
         return self.isfile_original(filename_)
+
+
+def _mocked_initialize_provider(
+        self,
+        credentials: Credentials,
+        preferences: Optional[Dict] = None
+) -> None:
+    """Mock ``_initialize_provider()``, just storing the credentials."""
+    self._credentials = credentials
+    if preferences:
+        credentials.preferences = preferences.get(credentials.unique_id(), {})
+
+
+@contextmanager
+def mock_ibmq_provider():
+    """Mock the initialization of ``IBMQFactory``, so it does not query the API."""
+    patcher = patch.object(IBMQFactory, '_initialize_providers',
+                           side_effect=_mocked_initialize_provider,
+                           autospec=True)
+    patcher2 = patch.object(IBMQFactory, '_check_api_version',
+                            return_value={'new_api': True, 'api-auth': '0.1'})
+    patcher.start()
+    patcher2.start()
+    yield
+    patcher2.stop()
+    patcher.stop()

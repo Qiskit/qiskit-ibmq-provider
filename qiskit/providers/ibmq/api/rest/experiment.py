@@ -39,16 +39,16 @@ class Experiment(RestAdapterBase):
         """
         super().__init__(session, '{}/experiments/{}'.format(url_prefix, experiment_uuid))
 
-    def retrieve(self) -> Dict:
+    def retrieve(self) -> str:
         """Retrieve the specific experiment.
 
         Returns:
-            JSON response.
+            Experiment data.
         """
         url = self.get_url('self')
-        return self.session.get(url).json()
+        return self.session.get(url).text
 
-    def update(self, experiment: Dict) -> Dict:
+    def update(self, experiment: str) -> Dict:
         """Update the experiment.
 
         Args:
@@ -58,7 +58,7 @@ class Experiment(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('self')
-        return self.session.put(url, json=experiment).json()
+        return self.session.put(url, data=experiment, headers=self._HEADER_JSON_CONTENT).json()
 
     def delete(self) -> Dict:
         """Delete the experiment.
