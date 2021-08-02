@@ -471,9 +471,7 @@ class TestIBMQJob(IBMQTestCase):
         self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in oldest_jobs])
 
     def test_retrieve_failed_job_simulator_partial(self):
-        """Test retrieving partial results from a simulator backend.
-        NOTE: Can run now! (https://github.com/Qiskit/qiskit-aer/pull/1218)
-        """
+        """Test retrieving partial results from a simulator backend."""
         job = submit_job_one_bad_instr(self.sim_backend)
         result = job.result(partial=True)
 
