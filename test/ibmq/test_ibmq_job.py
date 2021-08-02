@@ -354,10 +354,6 @@ class TestIBMQJob(IBMQTestCase):
             self.assertTrue(rjob._status == JobStatus.RUNNING,
                             "Status for job {} is '{}' but should be RUNNING"
                             .format(rjob.job_id(), rjob._status))
-
-        # Cancel job so it doesn't consume more resources.
-        cancel_job(job)
-
     def test_retrieve_jobs_start_datetime(self):
         """Test retrieving jobs created after a specified datetime."""
         past_month = datetime.now() - timedelta(days=30)
