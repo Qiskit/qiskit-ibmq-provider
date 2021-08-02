@@ -148,11 +148,13 @@ def main(backend, user_messenger, **kwargs):
     def test_upload_program(self):
         """Test uploading a program."""
         max_execution_time = 3000
-        program_id = self._upload_program(max_execution_time=max_execution_time)
+        program_id = self._upload_program(max_execution_time=max_execution_time,
+                                          is_public=True)
         self.assertTrue(program_id)
         program = self.provider.runtime.program(program_id)
         self.assertTrue(program)
         self.assertEqual(max_execution_time, program.max_execution_time)
+        self.assertEqual(program.is_public, True)
 
     def test_set_visibility(self):
         """Test setting the visibility of a program."""
@@ -579,12 +581,14 @@ def main(backend, user_messenger, **kwargs):
         self.assertTrue(program.creation_date)
         self.assertTrue(program.version)
 
-    def _upload_program(self, name=None, max_execution_time=300):
+    def _upload_program(self, name=None, max_execution_time=300,
+                        is_public: bool = False):
         """Upload a new program."""
         name = name or self._get_program_name()
         program_id = self.provider.runtime.upload_program(
             name=name,
             data=self.RUNTIME_PROGRAM.encode(),
+            is_public=is_public,
             metadata=self.RUNTIME_PROGRAM_METADATA,
             max_execution_time=max_execution_time,
             description="Qiskit test program")

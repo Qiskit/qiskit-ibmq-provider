@@ -253,7 +253,7 @@ class IBMRuntimeService:
             data: Union[bytes, str],
             metadata: Optional[Union[Dict, str]] = None,
             name: Optional[str] = None,
-            is_public: Optional[bool] = None,
+            is_public: Optional[bool] = False,
             max_execution_time: Optional[int] = None,
             description: Optional[str] = None,
             version: Optional[float] = None,
@@ -365,7 +365,7 @@ class IBMRuntimeService:
         # TODO validate metadata format
         metadata_keys = ['name', 'max_execution_time', 'description', 'version',
                          'backend_requirements', 'parameters', 'return_values',
-                         'interim_results']
+                         'interim_results', 'is_public']
         return {key: val for key, val in initial.items() if key in metadata_keys}
 
     def _tuple_to_dict(self, metadata: Dict) -> None:

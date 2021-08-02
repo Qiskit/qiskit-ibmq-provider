@@ -54,7 +54,7 @@ class RuntimeProgram:
             version: str = "0",
             backend_requirements: Optional[Dict] = None,
             creation_date: str = "",
-            is_public: bool = False
+            is_public: Optional[bool] = False
     ) -> None:
         """RuntimeProgram constructor.
 
