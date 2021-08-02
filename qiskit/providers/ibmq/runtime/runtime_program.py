@@ -317,7 +317,7 @@ class ParameterNamespace(SimpleNamespace):
             does not fail the validation if the namespace has extraneous parameters.
 
         Raises:
-            IBMQInputValueError if validation fails
+            IBMQInputValueError: if validation fails
         """
 
         # Iterate through the user's stored inputs

@@ -45,7 +45,7 @@ from .credentials import Credentials
 from .hubgroupproject import HubGroupProject
 from .exceptions import (CredentialsError, InvalidCredentialsFormatError,
                          CredentialsNotFoundError, HubGroupProjectInvalidStateError)
-from .configrc import read_credentials_from_qiskitrc, store_credentials
+from .configrc import read_credentials_from_qiskitrc, store_credentials, store_preferences
 from .environ import read_credentials_from_environ
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 def discover_credentials(
         qiskitrc_filename: Optional[str] = None
-) -> Tuple[Dict[HubGroupProject, Credentials], HubGroupProject]:
+) -> Tuple[Dict[HubGroupProject, Credentials], Dict]:
     """Automatically discover credentials for IBM Quantum Experience.
 
     This method looks for credentials in the following places in order and
@@ -71,12 +71,13 @@ def discover_credentials(
             disk could not be parsed.
 
     Returns:
-        A tuple containing the found credentials, if any, and the default
-        provider stored, if specified in the configuration file. The format
+        A tuple containing the found credentials and the stored
+        preferences, if any, in the configuration file. The format
         for the found credentials is ``{credentials_unique_id: Credentials}``,
-        whereas the default provider is represented as a `HubGroupProject` instance.
+        whereas the preferences is ``{credentials_unique_id: {category: {key: val}}}``.
     """
-    credentials = OrderedDict()  # type: OrderedDict[HubGroupProject, Credentials]
+    credentials_: Dict[HubGroupProject, Credentials] = {}
+    preferences: Dict[HubGroupProject, Dict] = {}
 
     # dict[str:function] that defines the different locations for looking for
     # credentials, and their precedence order.
@@ -86,18 +87,16 @@ def discover_credentials(
                       {'filename': qiskitrc_filename}))
     ])  # type: OrderedDict[str, Any]
 
-    # The default provider stored in the `qiskitrc` file.
-    stored_provider_hgp = None
     # Attempt to read the credentials from the different sources.
     for display_name, (reader_function, kwargs) in readers.items():
         try:
             stored_account_info = reader_function(**kwargs)  # type: ignore[arg-type]
             if display_name == 'qiskitrc':
-                # Read from `qiskitrc`, which may have a stored provider.
-                credentials, stored_provider_hgp = stored_account_info
+                # Read from `qiskitrc`, which may have stored preferences.
+                credentials_, preferences = stored_account_info
             else:
-                credentials = stored_account_info
-            if credentials:
+                credentials_ = stored_account_info
+            if credentials_:
                 logger.info('Using credentials from %s', display_name)
                 break
         except CredentialsError as ex:
@@ -105,4 +104,4 @@ def discover_credentials(
                 'Automatic discovery of %s credentials failed: %s',
                 display_name, str(ex))
 
-    return credentials, stored_provider_hgp
+    return credentials_, preferences

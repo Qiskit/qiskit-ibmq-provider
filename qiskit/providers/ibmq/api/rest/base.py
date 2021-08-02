@@ -21,6 +21,8 @@ class RestAdapterBase:
     URL_MAP = {}  # type: ignore[var-annotated]
     """Mapping between the internal name of an endpoint and the actual URL."""
 
+    _HEADER_JSON_CONTENT = {'Content-Type': 'application/json'}
+
     def __init__(self, session: RetrySession, prefix_url: str = '') -> None:
         """RestAdapterBase constructor.
 

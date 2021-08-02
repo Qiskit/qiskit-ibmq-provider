@@ -1,0 +1,14 @@
+---
+features:
+  - |
+    A user can now set and retrieve preferences for
+    :class:`qiskit.providers.ibmq.experiment.IBMExperimentService`.
+    Preferences are saved on disk in the ``$HOME/.qiskit/qiskitrc`` file.
+    Currently the only preference option is ``auto_save``, which tells
+    applications that use this service, such as `qiskit-experiments`,
+    whether you want changes to be automatically saved.
+
+    Usage examples::
+
+      provider.experiment.save_preferences(auto_save=True) # set and save preferences
+      provider.experiment.preferences                      # return all saved preferences

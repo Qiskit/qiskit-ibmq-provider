@@ -231,17 +231,18 @@ class Api(RestAdapterBase):
         raw_data = self.session.get(url).json()
         return raw_data
 
-    def experiment_upload(self, experiment: Dict) -> Dict:
+    def experiment_upload(self, experiment: str) -> Dict:
         """Upload an experiment.
 
         Args:
-            experiment: The experiment to upload.
+            experiment: The experiment data to upload.
 
         Returns:
             JSON response.
         """
         url = self.get_url('experiments')
-        raw_data = self.session.post(url, json=experiment).json()
+        raw_data = self.session.post(url, data=experiment,
+                                     headers=self._HEADER_JSON_CONTENT).json()
         return raw_data
 
     def analysis_results(
@@ -298,7 +299,7 @@ class Api(RestAdapterBase):
             params['sort'] = sort_by
         return self.session.get(url, params=params).text
 
-    def analysis_result_upload(self, result: Dict) -> Dict:
+    def analysis_result_upload(self, result: str) -> Dict:
         """Upload an analysis result.
 
         Args:
@@ -308,7 +309,7 @@ class Api(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('analysis_results')
-        return self.session.post(url, json=result).json()
+        return self.session.post(url, data=result, headers=self._HEADER_JSON_CONTENT).json()
 
     def device_components(self, backend_name: Optional[str] = None) -> Dict:
         """Return a list of device components for the backend.

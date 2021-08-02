@@ -2,9 +2,7 @@
 upgrade:
   - |
     :class:`~qiskit.providers.ibmq.experiment.IBMExperimentService` is
-    updated to use the new :class:`~qiskit.providers.experiment.ExperimentData`,
-    :class:`~qiskit.providers.experiment.AnalysisResult` and
-    :class:`~qiskit.providers.experiment.ExperimentService` classes. As a result,
+    updated to work with the new ``qiskit-experiments``. As a result,
     the syntax of the experiment service is drastically changed. This change,
     however, takes the experiment service out of beta mode, and future changes
     will provide backward compatibility according to Qiskit deprecation policy.
