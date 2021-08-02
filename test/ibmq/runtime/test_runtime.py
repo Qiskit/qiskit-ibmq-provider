@@ -275,6 +275,7 @@ if __name__ == '__main__':
     def test_upload_program(self):
         """Test uploading a program."""
         max_execution_time = 3000
+        is_public = True
         program_id = self._upload_program(max_execution_time=max_execution_time,
                                           is_public=True)
         self.assertTrue(program_id)
