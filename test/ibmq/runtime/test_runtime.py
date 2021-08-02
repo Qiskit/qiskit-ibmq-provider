@@ -282,7 +282,7 @@ if __name__ == '__main__':
         program = self.runtime.program(program_id)
         self.assertTrue(program)
         self.assertEqual(max_execution_time, program.max_execution_time)
-        self.assertEqual(program._is_public, True)
+        self.assertEqual(program.is_public, is_public)
 
     def test_delete_program(self):
         """Test deleting program."""
