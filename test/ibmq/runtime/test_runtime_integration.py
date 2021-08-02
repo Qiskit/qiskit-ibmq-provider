@@ -155,7 +155,7 @@ def main(backend, user_messenger, **kwargs):
         program = self.provider.runtime.program(program_id)
         self.assertTrue(program)
         self.assertEqual(max_execution_time, program.max_execution_time)
-        self.assertEqual(program.is_public, True)
+        self.assertEqual(program.is_public, is_public)
 
     def test_set_visibility(self):
         """Test setting the visibility of a program."""
