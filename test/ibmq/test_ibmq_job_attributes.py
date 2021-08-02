@@ -12,10 +12,10 @@
 
 """Test IBMQJob attributes."""
 
+import logging
 import re
 import time
 import uuid
-import logging
 from datetime import datetime, timedelta
 from typing import List, Union
 from unittest import mock, skip
@@ -26,6 +26,7 @@ from qiskit.compiler import transpile
 from qiskit.providers.backend import Backend
 from qiskit.providers.ibmq.api.clients.account import AccountClient
 from qiskit.providers.ibmq.exceptions import (IBMQBackendApiProtocolError,
+                                              IBMQBackendJobLimitError,
                                               IBMQBackendValueError)
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
 from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
@@ -59,17 +60,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
         cls.sim_job = cls.sim_backend.run(cls.bell)
         cls.sim_job.wait_for_final_state()
         cls.last_week = datetime.now() - timedelta(days=7)
-        # Setup list of jobs to check have been deleted.
-        cls.jobs_to_delete: List[str] = [cls.sim_job.job_id()]
-
-    def tearDown(self) -> None:
-        super().tearDown()
-        # Ensure all jobs are deleted.
-        for job_id in self.jobs_to_delete:
-            try:
-                self.provider.runtime.delete_job(job_id)
-            except RuntimeJobNotFound:
-                logger.info('Could not delete job {%s}', job_id)
 
     def setUp(self):
         """Initial test setup."""
@@ -96,7 +86,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
 
         job_properties = [None]
         large_qx = get_large_circuit(backend=backend)
-        job = self.sim_job(qc=transpile(large_qx, backend=backend), backend=backend)
+        job = self._sim_job(qc=transpile(large_qx, backend=backend), backend=backend)
 
         job.wait_for_final_state(wait=None, callback=_job_callback)
         self.assertIsNotNone(job_properties[0])
@@ -572,13 +562,18 @@ class TestIBMQJobAttributes(IBMQTestCase):
                              f"instead of {exp_id}")
         cancel_job(job)
 
-    def _sim_job(self, backend: Backend = None,
+    def _sim_job(self, backend: Backend = None, max_retries: int = 10,
                  qc: Union[QuantumCircuit, List[QuantumCircuit]] = None, **kwargs) -> Job:
         # Default to the bell circuit
         qc = qc or self.bell
         backend = backend or self.sim_backend
         # Simulate circuit
-        job = backend.run(self.bell, **kwargs)
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
+        while max_retries >= 0:
+            try:
+                job = backend.run(self.bell, **kwargs)
+            except IBMQBackendJobLimitError:
+                logger.info('Cannot submit job, trying again.. {} attempts remaining.'.format(
+                    max_retries))
+                time.sleep(5)
+            max_retries -= 1
         return job

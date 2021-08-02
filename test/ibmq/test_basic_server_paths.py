@@ -14,14 +14,11 @@
 
 import time
 from datetime import datetime, timedelta
-from typing import List, Tuple
 import logging
 
 from qiskit import transpile
 from qiskit.providers.ibmq import least_busy
-from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.exceptions import IBMQBackendJobLimitError
-from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
 from qiskit.providers.job import JobV1 as Job
 from qiskit.test import slow_test
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -43,17 +40,6 @@ class TestBasicServerPaths(IBMQTestCase):
         super().setUpClass()
         cls.providers = providers  # Dict[str, AccountProvider]
         cls.last_week = datetime.now() - timedelta(days=7)
-        # Setup list of jobs to check have been deleted.
-        cls.jobs_to_delete: List[Tuple[AccountProvider, str]] = []
-
-    def tearDown(self) -> None:
-        super().tearDown()
-        # Ensure all jobs are deleted.
-        for provider, job_id in self.jobs_to_delete:
-            try:
-                provider.runtime.delete_job(job_id)
-            except RuntimeJobNotFound:
-                logger.info('Could not delete job {%s}', job_id)
 
     @slow_test
     def test_job_submission(self):
@@ -135,10 +121,7 @@ class TestBasicServerPaths(IBMQTestCase):
         for _ in range(max_retry):
             try:
                 # Execute job
-                job = backend.run(transpiled)
-                # Ensure job is deleted
-                self.jobs_to_delete.append((backend.provider(), job.job_id()))
-                return job
+                return backend.run(transpiled)
             except IBMQBackendJobLimitError as err:
                 limit_error = err
                 time.sleep(1)

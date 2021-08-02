@@ -12,16 +12,18 @@
 
 """Test for the Websocket client integration."""
 
+import logging
+import time
 from queue import Queue
 from threading import Thread
-from typing import List
+from typing import List, Union
 from unittest import mock
-import logging
 
 from qiskit import transpile
 from qiskit.circuit.quantumcircuit import QuantumCircuit
-from qiskit.providers import JobTimeoutError, Backend
+from qiskit.providers import Backend, JobTimeoutError
 from qiskit.providers.ibmq.api.clients import AccountClient, websocket
+from qiskit.providers.ibmq.exceptions import IBMQBackendJobLimitError
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
 from qiskit.providers.job import JobV1
@@ -61,12 +63,6 @@ class TestWebsocketIntegration(IBMQTestCase):
         """Test tear down."""
         super().tearDown()
         self.sim_backend._api_client._job_final_status_polling = self.saved_status_polling
-        # Ensure all jobs are deleted.
-        for job_id in self.jobs_to_delete:
-            try:
-                self.provider.runtime.delete_job(job_id)
-            except RuntimeJobNotFound:
-                logger.info('Could not delete job {%s}', job_id)
 
     def _job_final_status_polling(self, *args, **kwargs):
         """Replaces the actual _job_final_status_polling and fails the test."""
@@ -231,12 +227,18 @@ class TestWebsocketIntegration(IBMQTestCase):
 
         self.assertIn("retrying using HTTP", ','.join(log_cm.output))
 
-    def _sim_job(self, backend: Backend = None, qc: QuantumCircuit = None, **kwargs) -> JobV1:
+    def _sim_job(self, backend: Backend = None, max_retries: int = 10,
+                 qc: Union[QuantumCircuit, List[QuantumCircuit]] = None, **kwargs) -> JobV1:
         # Default to the bell circuit
         qc = qc or self.bell
         backend = backend or self.sim_backend
         # Simulate circuit
-        job = backend.run(self.bell, **kwargs)
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
+        while max_retries >= 0:
+            try:
+                job = backend.run(self.bell, **kwargs)
+            except IBMQBackendJobLimitError:
+                logger.info('Cannot submit job, trying again.. {} attempts remaining.'.format(
+                    max_retries))
+                time.sleep(5)
+            max_retries -= 1
         return job

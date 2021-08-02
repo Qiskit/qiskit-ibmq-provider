@@ -64,7 +64,7 @@ jobs:
         python-version: [3.6, 3.7, 3.8, 3.9]
     env:
       QE_TOKEN: ${{ secrets.QE_TOKEN }}
-      QE_URL: https://auth.quantum-computing.ibm.com/api
+      QE_URL: ${{ secrets.QE_URL }}
       QE_HGP: ${{ secrets.QE_HGP }}
       QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
       LOG_LEVEL: DEBUG

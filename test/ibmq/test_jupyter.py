@@ -109,17 +109,6 @@ class TestIQXDashboard(IBMQTestCase):
         super().setUpClass()
         cls.provider = provider
         cls.backends = _get_backends(provider)
-        # Setup list of jobs to check have been deleted.
-        cls.jobs_to_delete: List[str] = []
-
-    def tearDown(self) -> None:
-        super().tearDown()
-        # Ensure all jobs are deleted.
-        for job_id in self.jobs_to_delete:
-            try:
-                self.provider.runtime.delete_job(job_id)
-            except RuntimeJobNotFound:
-                logger.info('Could not delete job {%s}', job_id)
 
     def test_backend_widget(self):
         """Test devices tab."""
@@ -134,7 +123,6 @@ class TestIQXDashboard(IBMQTestCase):
         """Test jobs tab."""
         backend = self.provider.get_backend('ibmq_qasm_simulator')
         job = backend.run(transpile(ReferenceCircuits.bell(), backend))
-        self.jobs_to_delete.append(job.job_id())
         create_job_widget(mock.MagicMock(), job, backend=backend.name(), status=job.status().value)
         cancel_job(job)
 
@@ -142,7 +130,6 @@ class TestIQXDashboard(IBMQTestCase):
         """Test job watcher."""
         backend = self.provider.get_backend('ibmq_qasm_simulator')
         job = backend.run(transpile(ReferenceCircuits.bell(), backend))
-        self.jobs_to_delete.append(job.job_id())
         _job_checker(job=job, status=job.status(), watcher=mock.MagicMock())
         cancel_job(job)
 

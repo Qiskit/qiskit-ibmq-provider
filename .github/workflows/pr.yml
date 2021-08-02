@@ -22,7 +22,7 @@ jobs:
         os: ["macOS-latest", "ubuntu-latest", "windows-latest"]
     env:
       QE_TOKEN: ${{ secrets.QE_TOKEN }}
-      QE_URL: https://auth.quantum-computing.ibm.com/api
+      QE_URL: ${{ secrets.QE_URL }}
       QE_HGP: ${{ secrets.QE_HGP }}
       QE_PRIVATE_HGP: ${{ secrets.QE_PRIVATE_HGP }}
       LOG_LEVEL: DEBUG

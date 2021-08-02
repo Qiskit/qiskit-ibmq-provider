@@ -46,17 +46,6 @@ class TestSerialization(IBMQTestCase):
         cls.provider = provider
         cls.sim_backend: IBMQBackend = provider.get_backend('ibmq_qasm_simulator')
         cls.bell = transpile(ReferenceCircuits.bell(), backend=cls.sim_backend)
-        # Setup list of jobs to check have been deleted.
-        cls.jobs_to_delete: List[str] = []
-
-    def tearDown(self) -> None:
-        super().tearDown()
-        # Ensure all jobs are deleted.
-        for job_id in self.jobs_to_delete:
-            try:
-                self.provider.runtime.delete_job(job_id)
-            except RuntimeJobNotFound:
-                logger.info('Could not delete job {%s}', job_id)
 
     def test_qasm_qobj(self):
         """Test serializing qasm qobj data."""
@@ -67,8 +56,6 @@ class TestSerialization(IBMQTestCase):
 
         # Cancel the job
         cancel_job(job)
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
 
     def test_pulse_qobj(self):
         """Test serializing pulse qobj data."""
@@ -94,8 +81,6 @@ class TestSerialization(IBMQTestCase):
 
         # Cancel the job
         cancel_job(job)
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
 
     def test_backend_configuration(self):
         """Test deserializing backend configuration."""
@@ -146,8 +131,6 @@ class TestSerialization(IBMQTestCase):
 
         # Cancel the job
         cancel_job(job)
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
 
     @slow_test
     def test_pulse_job_result(self):
@@ -163,8 +146,6 @@ class TestSerialization(IBMQTestCase):
         sched = schedule(transpile(qc, backend=backend), backend=backend)
         job = backend.run(sched)
 
-        # Ensure job is deleted
-        self.jobs_to_delete.append(job.job_id())
         # Cancel the job
         cancel_job(job)
 
