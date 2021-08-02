@@ -12,7 +12,6 @@
 
 """Test serializing and deserializing data sent to the server."""
 
-import logging
 from typing import Any, Dict, Optional
 from unittest import SkipTest, skipIf
 
@@ -28,8 +27,6 @@ from qiskit.version import VERSION as terra_version
 
 from ..decorators import requires_provider
 from ..ibmqtestcase import IBMQTestCase
-
-logger = logging.getLogger(__name__)
 
 
 class TestSerialization(IBMQTestCase):

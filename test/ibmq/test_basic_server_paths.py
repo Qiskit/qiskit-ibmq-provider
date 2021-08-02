@@ -14,7 +14,6 @@
 
 import time
 from datetime import datetime, timedelta
-import logging
 
 from qiskit import transpile
 from qiskit.providers.ibmq import least_busy
@@ -26,8 +25,6 @@ from qiskit.test.reference_circuits import ReferenceCircuits
 from ..decorators import requires_providers
 from ..ibmqtestcase import IBMQTestCase
 from ..utils import cancel_job
-
-logger = logging.getLogger(__name__)
 
 
 class TestBasicServerPaths(IBMQTestCase):
