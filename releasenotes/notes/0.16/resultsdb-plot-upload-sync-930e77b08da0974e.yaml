@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    The methods
+    :meth:`qiskit.providers.ibmq.experiment.IBMExperimentService.create_figure`
+    and
+    :meth:`qiskit.providers.ibmq.experiment.IBMExperimentService.update_figure`
+    now accept the ``sync_upload`` keyword. This controls whether or not the figure
+    will be uploaded asynchronously or synchronously to backend storage. By default
+    ``sync_upload`` is ``True`` for synchronous upload.
