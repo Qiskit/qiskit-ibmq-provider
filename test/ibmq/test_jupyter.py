@@ -14,7 +14,6 @@
 
 from datetime import datetime, timedelta
 from test.utils import cancel_job
-from typing import List
 from unittest import mock
 import logging
 
@@ -30,7 +29,6 @@ from qiskit.providers.ibmq.jupyter.dashboard.watcher_monitor import \
 from qiskit.providers.ibmq.jupyter.gates_widget import gates_tab
 from qiskit.providers.ibmq.jupyter.jobs_widget import jobs_tab
 from qiskit.providers.ibmq.jupyter.qubits_widget import qubits_tab
-from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
 from qiskit.providers.ibmq.visualization.interactive.error_map import \
     iplot_error_map
 from qiskit.test.reference_circuits import ReferenceCircuits

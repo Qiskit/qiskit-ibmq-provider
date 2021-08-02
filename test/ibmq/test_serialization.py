@@ -14,7 +14,7 @@
 
 import logging
 from test.utils import cancel_job
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from unittest import SkipTest, skipIf
 
 import dateutil.parser
@@ -22,7 +22,6 @@ from qiskit import QuantumCircuit, schedule, transpile
 from qiskit.circuit import Parameter
 from qiskit.providers.ibmq import least_busy
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
-from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder
 from qiskit.test import slow_test
 from qiskit.test.reference_circuits import ReferenceCircuits

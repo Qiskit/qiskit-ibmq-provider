@@ -29,7 +29,6 @@ from qiskit.providers.ibmq.exceptions import (IBMQBackendApiProtocolError,
                                               IBMQBackendJobLimitError,
                                               IBMQBackendValueError)
 from qiskit.providers.ibmq.job.exceptions import IBMQJobFailureError
-from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
 from qiskit.providers.job import JobV1 as Job
 from qiskit.providers.jobstatus import JOB_FINAL_STATES, JobStatus
 from qiskit.test import slow_test
@@ -150,6 +149,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
         for _ in range(2):
             job = self._sim_job(job_name=job_name)
             job_ids.add(job.job_id())
+            job.wait_for_final_state()
 
         retrieved_jobs = self.provider.backend.jobs(
             backend_name=self.sim_backend.name(), job_name=job_name,
@@ -211,7 +211,6 @@ class TestIBMQJobAttributes(IBMQTestCase):
 
     def test_refresh(self):
         """Test refreshing job data."""
-        self.sim_job._wait_for_completion()
         if 'COMPLETED' not in self.sim_job.time_per_step():
             self.sim_job.refresh()
 
@@ -348,10 +347,12 @@ class TestIBMQJobAttributes(IBMQTestCase):
             setattr(self.sim_backend._configuration, "measure_esp_enabled", False)
             job = self._sim_job()
             self.assertEqual(job.backend_options()["use_measure_esp"], False)
+            job.wait_for_final_state()
             # ESP readout enabled on backend
             setattr(self.sim_backend._configuration, "measure_esp_enabled", True)
             job = self._sim_job()
             self.assertEqual(job.backend_options()["use_measure_esp"], True)
+            job.wait_for_final_state()
         finally:
             delattr(self.sim_backend._configuration, "measure_esp_enabled")
             self.sim_backend._api_client = saved_api
@@ -572,8 +573,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
             try:
                 job = backend.run(self.bell, **kwargs)
             except IBMQBackendJobLimitError:
-                logger.info('Cannot submit job, trying again.. {} attempts remaining.'.format(
-                    max_retries))
+                logger.info('Cannot submit job, trying again.. %d attempts remaining.', max_retries)
                 time.sleep(5)
             max_retries -= 1
         return job

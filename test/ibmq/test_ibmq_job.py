@@ -14,11 +14,12 @@
 
 import copy
 import logging
+import os
 import time
 from datetime import datetime, timedelta
 from threading import Event, Thread
 from typing import List, Union
-from unittest import SkipTest, mock
+from unittest import SkipTest, mock, skipIf
 
 from dateutil import tz
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
@@ -35,7 +36,6 @@ from qiskit.providers.ibmq.exceptions import (IBMQBackendApiError,
                                               IBMQBackendJobLimitError)
 from qiskit.providers.ibmq.ibmqbackend import IBMQRetiredBackend
 from qiskit.providers.ibmq.job.exceptions import IBMQJobTimeoutError
-from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
 from qiskit.providers.ibmq.utils.converters import local_to_utc
 from qiskit.providers.ibmq.utils.utils import api_status_to_job_status
 from qiskit.providers.job import JobV1 as Job
@@ -86,9 +86,10 @@ class TestIBMQJob(IBMQTestCase):
         # guaranteed to have them.
         self.assertIsNotNone(job.properties())
 
+    @skipIf(os.environ.get('LIMIT_CONCURRENT_JOBS', ''), 'Protects concurrent job limit')
     def test_run_multiple_simulator(self):
         """Test running multiple jobs in a simulator."""
-        num_qubits = 16
+        num_qubits = 8
         qr = QuantumRegister(num_qubits, 'qr')
         cr = ClassicalRegister(num_qubits, 'cr')
         qc = QuantumCircuit(qr, cr)
@@ -216,7 +217,9 @@ class TestIBMQJob(IBMQTestCase):
             raise SkipTest('Skipping test that requires multiple backends')
 
         job_1 = self._sim_job(backend=backend_1, qc=self.bell)
+        job_1.wait_for_final_state()
         job_2 = self._sim_job(backend=backend_2, qc=self.bell)
+        job_2.wait_for_final_state()
 
         # test a retrieved job's backend is the same as the queried backend
         self.assertEqual(backend_1.retrieve_job(job_1.job_id()).backend().name(),
@@ -233,10 +236,6 @@ class TestIBMQJob(IBMQTestCase):
             self.assertRaises(IBMQBackendError,
                               backend_2.retrieve_job, job_1.job_id())
         self.assertIn('belongs to', str(context_manager.warning))
-
-        # Cleanup
-        for job in [job_1, job_2]:
-            cancel_job(job)
 
     def test_retrieve_job_error(self):
         """Test retrieving an invalid job."""
@@ -600,7 +599,7 @@ class TestIBMQJob(IBMQTestCase):
     def test_wait_for_final_state_timeout(self):
         """Test waiting for job to reach final state times out."""
         backend = most_busy_backend(self.provider)
-        job = self.sim_job(backend=backend)
+        job = self._sim_job(backend=backend)
 
         try:
             self.assertRaises(IBMQJobTimeoutError, job.wait_for_final_state, timeout=0.1)
@@ -656,8 +655,7 @@ class TestIBMQJob(IBMQTestCase):
             try:
                 job = backend.run(self.bell, **kwargs)
             except IBMQBackendJobLimitError:
-                logger.info('Cannot submit job, trying again.. {} attempts remaining.'.format(
-                    max_retries))
+                logger.info('Cannot submit job, trying again.. %d attempts remaining.', max_retries)
                 time.sleep(5)
             max_retries -= 1
         return job

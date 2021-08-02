@@ -13,11 +13,13 @@
 """Test for the Websocket client integration."""
 
 import logging
+import os
 import time
 from queue import Queue
 from threading import Thread
 from typing import List, Union
 from unittest import mock
+from unittest.case import skipIf
 
 from qiskit import transpile
 from qiskit.circuit.quantumcircuit import QuantumCircuit
@@ -25,7 +27,6 @@ from qiskit.providers import Backend, JobTimeoutError
 from qiskit.providers.ibmq.api.clients import AccountClient, websocket
 from qiskit.providers.ibmq.exceptions import IBMQBackendJobLimitError
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
-from qiskit.providers.ibmq.runtime.exceptions import RuntimeJobNotFound
 from qiskit.providers.job import JobV1
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.test import slow_test
@@ -76,6 +77,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         # Manually disable the non-websocket polling.
         job._api_client._job_final_status_polling = self._job_final_status_polling
         result = job.result()
+        job.wait_for_final_state()
 
         self.assertEqual(result.status, 'COMPLETED')
 
@@ -89,6 +91,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         job._api_client._job_final_status_polling = self._job_final_status_polling
         job.wait_for_final_state(wait=300, callback=self.simple_job_callback)
         result = job.result()
+        job.wait_for_final_state()
 
         self.assertTrue(result.success)
 
@@ -172,6 +175,7 @@ class TestWebsocketIntegration(IBMQTestCase):
         finally:
             cancel_job(job)
 
+    @skipIf(os.environ.get('LIMIT_CONCURRENT_JOBS', ''), 'Protects concurrent job limit')
     def test_websockets_multi_job(self):
         """Test checking status of multiple jobs in parallel via websockets."""
 
@@ -237,8 +241,7 @@ class TestWebsocketIntegration(IBMQTestCase):
             try:
                 job = backend.run(self.bell, **kwargs)
             except IBMQBackendJobLimitError:
-                logger.info('Cannot submit job, trying again.. {} attempts remaining.'.format(
-                    max_retries))
+                logger.info('Cannot submit job, trying again.. %d attempts remaining.', max_retries)
                 time.sleep(5)
             max_retries -= 1
         return job
