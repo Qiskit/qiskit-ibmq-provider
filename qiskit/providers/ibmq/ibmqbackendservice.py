@@ -25,9 +25,10 @@ from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.providerutils import filter_backends
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
-from .api.exceptions import ApiError
+from .api.exceptions import ApiError, RequestsApiError
 from .apiconstants import ApiJobStatus
-from .exceptions import (IBMQBackendValueError, IBMQBackendApiError, IBMQBackendApiProtocolError)
+from .exceptions import (IBMQBackendValueError, IBMQBackendApiError,
+                         IBMQBackendApiProtocolError, IBMQJobNotFoundError)
 from .ibmqbackend import IBMQBackend, IBMQRetiredBackend
 from .backendreservation import BackendReservation
 from .job import IBMQJob
@@ -501,6 +502,25 @@ class IBMQBackendService:
                 'when retrieving job {}: {}'.format(job_id, str(ex))) from ex
 
         return job
+
+    def delete_job(self, job_id: str) -> None:
+        """Delete a runtime job.
+
+        Note that this operation cannot be reversed.
+
+        Args:
+            job_id: ID of the job to delete.
+
+        Raises:
+            IBMQJobNotFoundError: If the job doesn't exist.
+            IBMQBackendApiError: If the request failed.
+        """
+        try:
+            self._provider._api_client.job_delete(job_id)
+        except RequestsApiError as ex:
+            if ex.status_code == 404:
+                raise IBMQJobNotFoundError(f"Job not found: {ex.message}") from None
+            raise IBMQBackendApiError(f"Failed to delete job: {ex}") from None
 
     def my_reservations(self) -> List[BackendReservation]:
         """Return your upcoming reservations.

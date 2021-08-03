@@ -191,6 +191,12 @@ class TestIBMQJob(IBMQTestCase):
         self.assertEqual(self.sim_job.qobj().to_dict(), retrieved_job.qobj().to_dict())
         self.assertEqual(self.sim_job.result().get_counts(), retrieved_job.result().get_counts())
 
+    def test_delete_job(self):
+        """Test deleting a single job."""
+        job = self.sim_backend.run(self.bell)
+        job.wait_for_final_state()
+        self.provider.backend.delete_job(self.sim_job.job_id())
+
     @requires_device
     def test_retrieve_job_uses_appropriate_backend(self, backend):
         """Test that retrieved jobs come from their appropriate backend."""

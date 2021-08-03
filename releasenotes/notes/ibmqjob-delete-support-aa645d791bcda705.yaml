@@ -1,0 +1,14 @@
+---
+upgrade:
+  - |
+    Circuit jobs can now be deleted from the IBMQ Backend Service using:
+    :meth:`qiskit.providers.ibmq.IBMQBackendService.delete_job`
+    or directly from the job itself:
+    :meth:`qiskit.providers.ibmq.job.IBMQJob.delete`.
+    
+    Example:
+    ```
+    job = backend.run(ReferenceCircuits.bell())
+    provider.backend.delete_job(job.job_id())  # or job.delete()
+    ```
+    

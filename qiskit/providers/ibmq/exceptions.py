@@ -68,6 +68,9 @@ class IBMQBackendApiError(IBMQBackendError):
     """Errors that occur unexpectedly when querying the server."""
     pass
 
+class IBMQJobNotFoundError(IBMQBackendError):
+    """Error that occurs when querying for a IBMQJob that does not exist."""
+    pass
 
 class IBMQBackendApiProtocolError(IBMQBackendApiError):
     """Errors raised when an unexpected value is received from the server."""
