@@ -56,6 +56,11 @@ class TestIBMQJob(IBMQTestCase):
         cls.sim_backend = provider.get_backend('ibmq_qasm_simulator')
         cls.bell = transpile(ReferenceCircuits.bell(), cls.sim_backend)
         cls.sim_job = cls.sim_backend.run(cls.bell)
+        # Create test data, if necessary for bulk testing.
+        if len(provider.backend.jobs(backend_name=cls.sim_backend.name(), limit=10)) < 10:
+            for _ in range(10):
+                job = cls.sim_backend.run(cls.bell)
+                job.wait_for_final_state()
         cls.last_month = datetime.now() - timedelta(days=30)
 
     @slow_test
