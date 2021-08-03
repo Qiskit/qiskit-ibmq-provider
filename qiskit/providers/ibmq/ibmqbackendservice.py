@@ -504,7 +504,7 @@ class IBMQBackendService:
         return job
 
     def delete_job(self, job_id: str) -> None:
-        """Delete a runtime job.
+        """Delete a job.
 
         Note that this operation cannot be reversed.
 

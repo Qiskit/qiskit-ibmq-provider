@@ -11,4 +11,3 @@ upgrade:
     job = backend.run(ReferenceCircuits.bell())
     provider.backend.delete_job(job.job_id())  # or job.delete()
     ```
-    
