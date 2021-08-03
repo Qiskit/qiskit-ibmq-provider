@@ -204,7 +204,11 @@ class Job(RestAdapterBase):
         response = self.session.get(url, bare=True, timeout=600).json()
         return response
 
-    def delete(self) -> None:
-        """Mark job for deletion."""
+    def delete(self) -> Dict[str, Any]:
+        """Mark job for deletion.
+
+        Returns:
+            Job deletion response.
+        """
         url = self.get_url('delete')
-        self.session.delete(url)
+        return self.session.delete(url).json()

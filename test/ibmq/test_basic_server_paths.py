@@ -68,6 +68,16 @@ class TestBasicServerPaths(IBMQTestCase):
                 # Cancel job so it doesn't consume more resources.
                 cancel_job(job, verify=True)
 
+    def test_delete_jobs(self):
+        """Test retrieving jobs."""
+        backend_name = 'ibmq_qasm_simulator'
+        for desc, provider in self.providers.items():
+            backend = provider.get_backend(backend_name)
+            with self.subTest(desc=desc, backend=backend):
+                job = self._submit_job_with_retry(ReferenceCircuits.bell(), backend)
+                job = provider.backend.retrieve_job(job.job_id())
+                self.assertTrue(job.delete(), 'Job should be deleted')
+
     def test_retrieve_jobs(self):
         """Test retrieving jobs."""
         backend_name = 'ibmq_qasm_simulator'

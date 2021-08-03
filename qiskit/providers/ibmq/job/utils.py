@@ -50,6 +50,19 @@ def get_cancel_status(cancel_response: Dict[str, Any]) -> bool:
     return 'error' not in cancel_response and cancel_response.get('cancelled', False)
 
 
+def get_delete_status(delete_response: Dict[str, Any]) -> bool:
+    """Return whether the deletion response represents a successful job deletion.
+
+    Args:
+        delete_response: The response received from the server after
+            deleting a job.
+
+    Returns:
+        Whether the job deletion is successful.
+    """
+    return 'error' not in delete_response and delete_response.get('deleted', False)
+
+
 @contextmanager
 def api_to_job_error() -> Generator[None, None, None]:
     """Convert an ``ApiError`` to an ``IBMQJobApiError``."""

@@ -41,7 +41,7 @@ from ..utils.converters import utc_to_local, utc_to_local_all
 from .exceptions import (IBMQJobApiError, IBMQJobFailureError,
                          IBMQJobTimeoutError, IBMQJobInvalidStateError)
 from .queueinfo import QueueInfo
-from .utils import build_error_report, api_to_job_error, get_cancel_status
+from .utils import build_error_report, api_to_job_error, get_cancel_status, get_delete_status
 
 logger = logging.getLogger(__name__)
 
@@ -318,6 +318,26 @@ class IBMQJob(Job):
         except ApiError as error:
             self._cancelled = False
             raise IBMQJobApiError('Unexpected error when cancelling job {}: {}'
+                                  .format(self.job_id(), str(error))) from error
+
+    def delete(self) -> bool:
+        """Attempt to delete the job.
+
+        Returns:
+            ``True`` if the job is cancelled, else ``False``.
+
+        Raises:
+            IBMQJobApiError: If an unexpected error occurred when communicating
+                with the server.
+        """
+        try:
+            response = self._api_client.job_delete(self.job_id())
+            deleted = get_delete_status(response)
+            logger.debug('Job %s delete status is "%s". Response data: %s.',
+                         self.job_id(), deleted, response)
+            return deleted
+        except ApiError as error:
+            raise IBMQJobApiError('Unexpected error when deleting job {}: {}'
                                   .format(self.job_id(), str(error))) from error
 
     def update_name(self, name: str) -> str:

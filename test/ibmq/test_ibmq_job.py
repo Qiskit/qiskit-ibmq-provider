@@ -619,6 +619,11 @@ class TestIBMQJob(IBMQTestCase):
         """Test job circuits."""
         self.assertEqual(str(self.bell), str(self.sim_job.circuits()[0]))
 
+    def test_job_delete(self):
+        """Test job circuits."""
+        job = self.sim_backend.run(self.bell)
+        self.assertTrue(job.delete(), 'Job should be deleted')
+
     def test_job_backend_options(self):
         """Test job backend options."""
         run_config = {'shots': 2048, 'memory': True}
