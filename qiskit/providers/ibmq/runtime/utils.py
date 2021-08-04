@@ -22,6 +22,7 @@ import zlib
 import inspect
 import importlib
 import warnings
+import dateutil
 from datetime import datetime, date
 
 import numpy as np
@@ -171,7 +172,7 @@ class RuntimeDecoder(json.JSONDecoder):
             obj_val = obj['__value__']
 
             if obj_type == 'datetime':
-                return datetime.fromisoformat(obj_val)
+                return dateutil.parser.parse(obj_val)
             if obj_type == 'complex':
                 return obj_val[0] + 1j * obj_val[1]
             if obj_type == 'ndarray':
