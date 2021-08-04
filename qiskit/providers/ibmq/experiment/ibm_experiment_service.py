@@ -14,6 +14,7 @@
 
 import logging
 import json
+import copy
 from typing import Optional, List, Dict, Union, Tuple, Any, Type
 from datetime import datetime
 from collections import defaultdict
@@ -30,6 +31,7 @@ from ..api.clients.experiment import ExperimentClient
 from ..api.exceptions import RequestsApiError
 from ..ibmqbackend import IBMQRetiredBackend
 from ..exceptions import IBMQApiError
+from ..credentials import store_preferences
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +78,8 @@ class IBMExperimentService:
     Similar syntax applies to analysis results and experiment figures.
     """
 
+    _default_preferences = {"auto_save": False}
+
     def __init__(
             self,
             provider: 'accountprovider.AccountProvider'
@@ -89,15 +93,8 @@ class IBMExperimentService:
 
         self._provider = provider
         self._api_client = ExperimentClient(provider.credentials)
-
-    @classmethod
-    def _default_options(cls) -> Dict:
-        """Return the default options
-
-        Returns:
-            A dictionary of default options.
-        """
-        return {"auto_save": False}
+        self._preferences = copy.deepcopy(self._default_preferences)
+        self._preferences.update(provider.credentials.preferences.get('experiments', {}))
 
     def backends(self) -> List[Dict]:
         """Return a list of backends that can be used for experiments.
@@ -1213,3 +1210,40 @@ class IBMExperimentService:
             return components[backend_name]
 
         return dict(components)
+
+    @property
+    def preferences(self) -> Dict:
+        """Return saved experiment preferences.
+
+        Note:
+            These are preferences passed to the applications that use this service
+            and have no effect on the service itself. It is up to the application,
+            such as ``qiskit-experiments`` to implement the preferences.
+
+        Returns:
+            Dict: The experiment preferences.
+        """
+        return self._preferences
+
+    def save_preferences(self, auto_save: bool = None) -> None:
+        """Stores experiment preferences on disk.
+
+        Note:
+            These are preferences passed to the applications that use this service
+            and have no effect on the service itself.
+
+            For example, if ``auto_save`` is set to ``True``, it tells the application,
+            such as ``qiskit-experiments``, that you prefer changes to be
+            automatically saved. It is up to the application to implement the preferences.
+
+        Args:
+            auto_save: Automatically save the experiment.
+        """
+        update_cred = False
+        if auto_save is not None and auto_save != self._preferences["auto_save"]:
+            self._preferences['auto_save'] = auto_save
+            update_cred = True
+
+        if update_cred:
+            store_preferences(
+                {self._provider.credentials.unique_id(): {'experiment': self.preferences}})

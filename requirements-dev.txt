@@ -25,3 +25,5 @@ qiskit_rng
 qiskit-aer
 websockets>=8
 scikit-quant;platform_system != 'Windows'
+# TODO: Use released qiskit-experiments when it's released
+git+https://github.com/Qiskit/qiskit-experiments.git ; python_version > '3.6'

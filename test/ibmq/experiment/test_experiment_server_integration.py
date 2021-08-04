@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Experiment Tests."""
+"""Experiment integration test with server."""
 
 import os
 import uuid
@@ -28,7 +28,7 @@ from qiskit.providers.ibmq.experiment import (ResultQuality,
                                               IBMExperimentEntryNotFound)
 
 from ...ibmqtestcase import IBMQTestCase
-from ...decorators import requires_provider
+from ...decorators import requires_provider, requires_device
 from .utils import ExperimentEncoder, ExperimentDecoder
 
 
@@ -42,7 +42,7 @@ class TestExperimentServerIntegration(IBMQTestCase):
         # pylint: disable=arguments-differ
         super().setUpClass()
         cls.provider = cls._setup_provider()  # pylint: disable=no-value-for-parameter
-        cls.backend = cls.provider.get_backend('ibmq_qasm_simulator')
+        cls.backend = cls._setup_backend()  # pylint: disable=no-value-for-parameter
         try:
             cls.device_components = cls.provider.experiment.device_components(cls.backend.name())
         except Exception:
@@ -53,6 +53,12 @@ class TestExperimentServerIntegration(IBMQTestCase):
     def _setup_provider(cls, provider):
         """Get the provider for the class."""
         return provider
+
+    @classmethod
+    @requires_device
+    def _setup_backend(cls, backend):
+        """Get a backend for the class."""
+        return backend
 
     def setUp(self) -> None:
         """Test level setup."""
