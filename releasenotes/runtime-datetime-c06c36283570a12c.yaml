@@ -1,0 +1,7 @@
+---
+upgrade:
+  - |
+    :class:`qiskit.providers.ibmq.runtime.utils.RuntimeEncoder` and 
+    :class:`qiskit.providers.ibmq.runtime.utils.RuntimeDecoder`
+    are updated to support Python ``datetime``, which is not 
+    JSON serializable by default

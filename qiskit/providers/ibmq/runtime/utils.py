@@ -22,8 +22,8 @@ import zlib
 import inspect
 import importlib
 import warnings
-import dateutil
-from datetime import datetime, date
+from datetime import date
+import dateutil.parser
 
 import numpy as np
 try:
