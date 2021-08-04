@@ -23,6 +23,7 @@ import random
 import subprocess
 import tempfile
 import warnings
+from datetime import datetime
 
 import numpy as np
 import scipy.sparse
@@ -207,6 +208,19 @@ class TestRuntime(IBMQTestCase):
                 self.assertTrue(isinstance(decoded, opt_cls))
                 for key, value in settings.items():
                     self.assertEqual(decoded.settings[key], value)
+
+    def test_encoder_datetime(self):
+        """Test encoding a datetime."""
+        subtests = (
+            {"datetime": datetime.now()},
+            {"datetime": datetime(2021, 8, 4)},
+            {"datetime": datetime.fromtimestamp(1326244364)}
+        )
+        for obj in subtests:
+            encoded = json.dumps(obj, cls=RuntimeEncoder)
+            self.assertIsInstance(encoded, str)
+            decoded = json.loads(encoded, cls=RuntimeDecoder)
+            self.assertEqual(decoded, obj)
 
     def test_encoder_callable(self):
         """Test encoding a callable."""
