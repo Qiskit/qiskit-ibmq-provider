@@ -52,36 +52,36 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
 
     def test_remote_backends_exist_real_device(self):
         """Test if there are remote backends that are devices."""
-        remotes = self.provider.backends(simulator=False)
+        remotes = self.provider.backend.backends(simulator=False)
         self.assertTrue(remotes)
 
     def test_remote_backends_exist_simulator(self):
         """Test if there are remote backends that are simulators."""
-        remotes = self.provider.backends(simulator=True)
+        remotes = self.provider.backend.backends(simulator=True)
         self.assertTrue(remotes)
 
     def test_remote_backends_instantiate_simulators(self):
         """Test if remote backends that are simulators are an ``IBMQSimulator`` instance."""
-        remotes = self.provider.backends(simulator=True)
+        remotes = self.provider.backend.backends(simulator=True)
         for backend in remotes:
             with self.subTest(backend=backend):
                 self.assertIsInstance(backend, IBMQSimulator)
 
     def test_remote_backend_status(self):
         """Test backend_status."""
-        remotes = self.provider.backends()
+        remotes = self.provider.backend.backends()
         for backend in remotes:
             _ = backend.status()
 
     def test_remote_backend_configuration(self):
         """Test backend configuration."""
-        remotes = self.provider.backends()
+        remotes = self.provider.backend.backends()
         for backend in remotes:
             _ = backend.configuration()
 
     def test_remote_backend_properties(self):
         """Test backend properties."""
-        remotes = self.provider.backends(simulator=False)
+        remotes = self.provider.backend.backends(simulator=False)
         for backend in remotes:
             properties = backend.properties()
             if backend.configuration().simulator:
@@ -142,7 +142,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
 
     def test_remote_backend_properties_filter_date(self):
         """Test backend properties filtered by date."""
-        backends = self.provider.backends(simulator=False)
+        backends = self.provider.backend.backends(simulator=False)
 
         datetime_filter = datetime(2019, 2, 1).replace(tzinfo=None)
         for backend in backends:
@@ -156,8 +156,8 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
 
     def test_provider_backends(self):
         """Test provider_backends have correct attributes."""
-        provider_backends = {back for back in dir(self.provider.backends)
-                             if isinstance(getattr(self.provider.backends, back), IBMQBackend)}
+        provider_backends = {back for back in dir(self.provider.backend)
+                             if isinstance(getattr(self.provider.backend, back), IBMQBackend)}
         backends = {back.name().lower() for back in self.provider._backends.values()}
         self.assertEqual(provider_backends, backends)
 
