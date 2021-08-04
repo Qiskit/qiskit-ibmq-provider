@@ -15,7 +15,7 @@
 """Utility functions for the runtime service."""
 
 import json
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List
 import base64
 import io
 import zlib
@@ -145,7 +145,9 @@ class RuntimeEncoder(json.JSONEncoder):
             return {'__type__': 'settings',
                     '__module__': obj.__class__.__module__,
                     '__class__': obj.__class__.__name__,
-                    '__value__': obj.settings}
+                    '__value__': {
+                        **obj.settings,
+                        'fidelity': obj.fidelity} if hasattr(obj, 'fidelity') else obj.settings}
         if callable(obj):
             warnings.warn(f"Callable {obj} is not JSON serializable and will be set to None.")
             return None
@@ -157,6 +159,9 @@ class RuntimeEncoder(json.JSONEncoder):
 
 class RuntimeDecoder(json.JSONDecoder):
     """JSON Decoder used by runtime service."""
+
+    USE_INT_KEYS = False
+    """Force conversion from int strings to integers"""
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(object_hook=self.object_hook, *args, **kwargs)
@@ -193,4 +198,17 @@ class RuntimeDecoder(json.JSONDecoder):
                 return _decode_and_deserialize(obj_val, scipy.sparse.load_npz, False)
             if obj_type == 'to_json':
                 return obj_val
+        if isinstance(obj, dict) and self.USE_INT_KEYS:
+            keys_to_add: List[int] = []
+            # Cast integer keys disguised as strings back to integer keys
+            for key in obj.keys():
+                try:
+                    keys_to_add.insert(0, int(key))
+                except ValueError:
+                    pass
+            # Remove string keys and replace with int keys
+            while len(keys_to_add) > 0:
+                key = keys_to_add.pop()
+                obj[key] = obj[str(key)]
+                obj.pop(str(key))
         return obj

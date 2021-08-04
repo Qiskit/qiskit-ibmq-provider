@@ -31,6 +31,7 @@ from qiskit.algorithms.optimizers import (
     GSLS,
     IMFIL,
     SPSA,
+    QNSPSA,
     SNOBFIT,
     L_BFGS_B,
     NELDER_MEAD,
@@ -139,6 +140,20 @@ class TestRuntime(IBMQTestCase):
                     decoded = [decoded]
                 self.assertTrue(all(isinstance(item, QuantumCircuit) for item in decoded))
 
+    def test_coder_on_integer_dicts(self):
+        """Test runtime encoder and decoder on integer keys."""
+        subtests = (
+            ({1: 23, 4: 56}, True),
+            ({'1': 23, '4': 56}, False)
+        )
+
+        for obj, use_int_keys in subtests:
+            encoded = json.dumps(obj, cls=RuntimeEncoder)
+            self.assertIsInstance(encoded, str)
+            RuntimeDecoder.USE_INT_KEYS = use_int_keys
+            decoded = json.loads(encoded, cls=RuntimeDecoder)
+            self.assertEqual(decoded, obj)
+
     def test_coder_operators(self):
         """Test runtime encoder and decoder for operators."""
         x = Parameter("x")
@@ -178,6 +193,7 @@ class TestRuntime(IBMQTestCase):
             TensoredOp([(X ^ Y), (Z ^ I)]),
             (Z ^ Z) ^ (I ^ 2),
         )
+        RuntimeDecoder.USE_INT_KEYS = False
         for op in subtests:
             with self.subTest(op=op):
                 encoded = json.dumps(op, cls=RuntimeEncoder)
@@ -187,17 +203,19 @@ class TestRuntime(IBMQTestCase):
 
     @skipIf(os.name == 'nt', 'Test not supported on Windows')
     def test_coder_optimizers(self):
-        """Test runtime encoder and decoder for circuits."""
+        """Test runtime encoder and decoder for optimizers."""
         subtests = (
             (ADAM, {"maxiter": 100, "amsgrad": True}),
             (GSLS, {"maxiter": 50, "min_step_size": 0.01}),
             (IMFIL, {"maxiter": 20}),
             (SPSA, {"maxiter": 10, "learning_rate": 0.01, "perturbation": 0.1}),
             (SNOBFIT, {"maxiter": 200, "maxfail": 20}),
+            (QNSPSA, {"fidelity": lambda: 123, "maxiter": 25, "resamplings": {1: 100, 2: 50}}),
             # some SciPy optimizers only work with default arguments due to Qiskit/qiskit-terra#6682
             (L_BFGS_B, {}),
             (NELDER_MEAD, {}),
         )
+        RuntimeDecoder.USE_INT_KEYS = True
         for opt_cls, settings in subtests:
             with self.subTest(opt_cls=opt_cls):
                 optimizer = opt_cls(**settings)
@@ -205,8 +223,11 @@ class TestRuntime(IBMQTestCase):
                 self.assertIsInstance(encoded, str)
                 decoded = json.loads(encoded, cls=RuntimeDecoder)
                 self.assertTrue(isinstance(decoded, opt_cls))
+                if settings.get('fidelity'):
+                    settings.pop('fidelity')
                 for key, value in settings.items():
                     self.assertEqual(decoded.settings[key], value)
+        RuntimeDecoder.USE_INT_KEYS = False
 
     def test_encoder_callable(self):
         """Test encoding a callable."""
