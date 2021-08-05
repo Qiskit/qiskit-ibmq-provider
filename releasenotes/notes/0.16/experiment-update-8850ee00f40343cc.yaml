@@ -1,0 +1,8 @@
+---
+upgrade:
+  - |
+    :class:`~qiskit.providers.ibmq.experiment.IBMExperimentService` is
+    updated to work with the new ``qiskit-experiments``. As a result,
+    the syntax of the experiment service is drastically changed. This change,
+    however, takes the experiment service out of beta mode, and future changes
+    will provide backward compatibility according to Qiskit deprecation policy.

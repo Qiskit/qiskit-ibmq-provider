@@ -156,11 +156,10 @@ class IBMQFactory:
         """
         # Check for valid credentials.
         try:
-            stored_credentials, stored_provider_hgp = discover_credentials()
+            stored_credentials, preferences = discover_credentials()
         except HubGroupProjectInvalidStateError as ex:
             raise IBMQAccountCredentialsInvalidFormat(
-                'The default provider (hub/group/project) stored on disk could not '
-                'be parsed: {}'.format(str(ex))) from ex
+                'Invalid provider (hub/group/project) data found {}'.format(str(ex))) from ex
 
         credentials_list = list(stored_credentials.values())
 
@@ -189,7 +188,7 @@ class IBMQFactory:
                            'account in the session will be replaced.')
             self.disable_account()
 
-        self._initialize_providers(credentials)
+        self._initialize_providers(credentials, preferences)
 
         # Prevent edge case where no hubs are available.
         providers = self.providers()
@@ -201,8 +200,8 @@ class IBMQFactory:
         default_provider = providers[0]
 
         # If specified, attempt to get the provider stored for the account.
-        if stored_provider_hgp:
-            hub, group, project = stored_provider_hgp.to_tuple()
+        if credentials.default_provider:
+            hub, group, project = credentials.default_provider.to_tuple()
             try:
                 default_provider = self.get_provider(hub=hub, group=group, project=project)
             except IBMQProviderError as ex:
@@ -259,8 +258,6 @@ class IBMQFactory:
                 'Invalid IBM Quantum Experience token '
                 'found: "{}" of type {}.'.format(token, type(token)))
 
-        credentials = Credentials(token, url, **kwargs)
-
         # If any `hub`, `group`, or `project` is specified, make sure all parameters are set.
         if any([hub, group, project]) and not all([hub, group, project]):
             raise IBMQAccountValueError('The hub, group, and project parameters must all be '
@@ -272,8 +269,10 @@ class IBMQFactory:
         default_provider_hgp = HubGroupProject(hub, group, project) \
             if all([hub, group, project]) else None
 
+        credentials = Credentials(token=token, url=url,
+                                  default_provider=default_provider_hgp, **kwargs)
+
         store_credentials(credentials,
-                          default_provider=default_provider_hgp,
                           overwrite=overwrite)
 
     @staticmethod
@@ -444,17 +443,22 @@ class IBMQFactory:
                                        **credentials.connection_parameters())
         return version_finder.version()
 
-    def _initialize_providers(self, credentials: Credentials) -> None:
-        """Authenticate against IBM Quantum Experience and populate the providers.
+    def _initialize_providers(
+            self, credentials: Credentials,
+            preferences: Optional[Dict] = None
+    ) -> None:
+        """Authenticate against IBM Quantum and populate the providers.
 
         Args:
-            credentials: Credentials for IBM Quantum Experience.
+            credentials: Credentials for IBM Quantum.
+            preferences: Account preferences.
         """
         auth_client = AuthClient(credentials.token,
                                  credentials.base_url,
                                  **credentials.connection_parameters())
         service_urls = auth_client.current_service_urls()
         user_hubs = auth_client.user_hubs()
+        preferences = preferences or {}
 
         self._credentials = credentials
         for hub_info in user_hubs:
@@ -467,7 +471,10 @@ class IBMQFactory:
                 proxies=credentials.proxies,
                 verify=credentials.verify,
                 services=service_urls.get('services', {}),
+                default_provider=credentials.default_provider,
                 **hub_info, )
+            provider_credentials.preferences = \
+                preferences.get(provider_credentials.unique_id(), {})
 
             # Build the provider.
             try:

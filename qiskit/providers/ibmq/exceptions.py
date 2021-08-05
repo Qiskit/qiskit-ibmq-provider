@@ -91,3 +91,9 @@ class IBMQInputValueError(IBMQError):
 
 class IBMQNotAuthorizedError(IBMQError):
     """Error raised when a service is invoked from an unauthorized account."""
+    pass
+
+
+class IBMQApiError(IBMQError):
+    """Error raised when a server error encountered."""
+    pass

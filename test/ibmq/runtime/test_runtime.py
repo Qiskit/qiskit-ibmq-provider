@@ -22,6 +22,7 @@ import time
 import random
 import subprocess
 import tempfile
+import warnings
 
 import numpy as np
 import scipy.sparse
@@ -206,6 +207,14 @@ class TestRuntime(IBMQTestCase):
                 self.assertTrue(isinstance(decoded, opt_cls))
                 for key, value in settings.items():
                     self.assertEqual(decoded.settings[key], value)
+
+    def test_encoder_callable(self):
+        """Test encoding a callable."""
+        with warnings.catch_warnings(record=True) as warn_cm:
+            encoded = json.dumps({"fidelity": lambda x: x}, cls=RuntimeEncoder)
+            decoded = json.loads(encoded, cls=RuntimeDecoder)
+            self.assertIsNone(decoded["fidelity"])
+            self.assertEqual(len(warn_cm), 1)
 
     def test_decoder_import(self):
         """Test runtime decoder importing modules."""

@@ -10,19 +10,4 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Exceptions related to IBM Quantum Experience experiments."""
-
-from ..exceptions import IBMQError
-
-
-class IBMExperimentError(IBMQError):
-    """Base class for errors raised by the experiment service modules."""
-    pass
-
-
-class IBMExperimentEntryNotFound(IBMExperimentError):
-    """Errors raised when an experiment entry cannot be found."""
-
-
-class IBMExperimentEntryExists(IBMExperimentError):
-    """Errors raised when an experiment entry already exists."""
+"""Experiment related tests."""

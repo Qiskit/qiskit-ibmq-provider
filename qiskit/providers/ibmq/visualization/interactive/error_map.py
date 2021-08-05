@@ -17,9 +17,9 @@ import math
 from typing import Tuple, Union
 
 import numpy as np
-import matplotlib as mpl
-import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+import matplotlib as mpl
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
 from .plotly_wrapper import PlotlyWidget, PlotlyFigure
