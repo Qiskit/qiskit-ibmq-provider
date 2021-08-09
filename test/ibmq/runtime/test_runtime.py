@@ -290,11 +290,14 @@ if __name__ == '__main__':
     def test_upload_program(self):
         """Test uploading a program."""
         max_execution_time = 3000
-        program_id = self._upload_program(max_execution_time=max_execution_time)
+        is_public = True
+        program_id = self._upload_program(max_execution_time=max_execution_time,
+                                          is_public=is_public)
         self.assertTrue(program_id)
         program = self.runtime.program(program_id)
         self.assertTrue(program)
         self.assertEqual(max_execution_time, program.max_execution_time)
+        self.assertEqual(program.is_public, is_public)
 
     def test_delete_program(self):
         """Test deleting program."""
@@ -613,13 +616,15 @@ if __name__ == '__main__':
         rjob = self.runtime.job(job.job_id())
         self.assertIsNotNone(rjob.backend())
 
-    def _upload_program(self, name=None, max_execution_time=300):
+    def _upload_program(self, name=None, max_execution_time=300,
+                        is_public: bool = False):
         """Upload a new program."""
         name = name or uuid.uuid4().hex
         data = "def main() {}"
         program_id = self.runtime.upload_program(
             name=name,
             data=data.encode(),
+            is_public=is_public,
             max_execution_time=max_execution_time,
             description="A test program")
         return program_id
