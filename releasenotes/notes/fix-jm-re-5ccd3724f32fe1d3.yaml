@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes the issue where
+    :meth:`qiskit.providers.ibmq.managed.IBMQJobManager.retrieve_job_set` only
+    retrieves the first 10 jobs in a :class:`qiskit.providers.ibmq.managed.ManagedJobSet`.
