@@ -202,8 +202,9 @@ class TestIBMQJobManager(IBMQTestCase):
         """Test retrieving a set of jobs."""
         tags = ['test_retrieve_job_set']
 
-        circs_counts = [3, 4]
-        for count in circs_counts:
+        # circuit count, max expr
+        sub_tests = [(3, 2), (4, 2), (11, 1)]
+        for count, max_expr in sub_tests:
             with self.subTest(count=count):
                 circs = []
                 for i in range(count):
@@ -212,7 +213,7 @@ class TestIBMQJobManager(IBMQTestCase):
                     circs.append(new_qc)
 
                 job_set = self._jm.run(circs, backend=self.sim_backend,
-                                       max_experiments_per_job=2, job_tags=tags)
+                                       max_experiments_per_job=max_expr, job_tags=tags)
                 self.assertEqual(job_set.tags(), tags)
                 # Wait for jobs to be submitted.
                 while JobStatus.INITIALIZING in job_set.statuses():
