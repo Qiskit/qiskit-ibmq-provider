@@ -151,7 +151,8 @@ class Account(RestAdapterBase):
 
         payload = {
             'backend': {'name': backend_name},
-            'allowObjectStorage': True
+            'allowObjectStorage': True,
+            'liveDataEnabled': True
         }
 
         if job_name:
