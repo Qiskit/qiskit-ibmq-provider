@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2018.
+# (C) Copyright IBM 2017, 2021.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -38,15 +38,15 @@ JOB_ID = ""
 # PLOTS
 ENABLE_LEVEL_0 = False
 ENABLE_LEVEL_1 = True
-JOB_UPDATE_FREQ = 1 # Time to refresh the jobs list
+JOB_UPDATE_FREQ = 1  # Time to refresh the jobs list
 
 # PLOTS VISUAL STYLE
-left = 0.125  # the left side of the subplots of the figure
-right = 0.9  # the right side of the subplots of the figure
-bottom = 0.1  # the bottom of the subplots of the figure
-top = 0.7  # the top of the subplots of the figure
-wspace = 1.7  # the amount of width reserved for blank space between subplots
-hspace = 0.4  # the amount of height reserved for white space between subplots
+P_LEFT = 0.125  # the left side of the subplots of the figure
+P_RIGHT = 0.9  # the right side of the subplots of the figure
+P_BOTTOM = 0.1  # the bottom of the subplots of the figure
+P_TOP = 0.7  # the top of the subplots of the figure
+P_WSPACE = 1.7  # the amount of width reserved for blank space between subplots
+P_HSPACE = 0.4  # the amount of height reserved for white space between subplots
 DEFAULT_PLOT_LIMIT = 10
 DEFAULT_PLOT_MARGIN = 0.1
 LINEWIDTH = 1
@@ -59,31 +59,37 @@ PROGRESS_WIDTH = 300
 # JOBS
 MAX_LIVEDATA_JOBS = 10
 
+
 class CarbonColors(str, Enum):
     """Carbon Design Colors"""
-    GRAY20   = "#E0E0E0"
-    GRAY60   = "#6F6F6F"
-    GRAY80   = "#393939"
+
+    GRAY20 = "#E0E0E0"
+    GRAY60 = "#6F6F6F"
+    GRAY80 = "#393939"
     PURPLE60 = "#8A3FFC"
     PURPLE70 = "#6929C4"
-    CYAN60   = "#0072C3"
+    CYAN60 = "#0072C3"
     RED60 = "#DA1E28"
     GREEN50 = "#24A148"
-    WHITE    = "#FFFFFF"
+    WHITE = "#FFFFFF"
+
 
 class LiveDataKeys(str, Enum):
     """Live data dictionary keys"""
-    LEVEL_0         = "avgLevel0"
-    LEVEL_1         = "avgLevel1"
-    ROUNDS          = "rounds"
-    TOTAL_ROUNDS    = "total_rounds"
+
+    LEVEL_0 = "avgLevel0"
+    LEVEL_1 = "avgLevel1"
+    ROUNDS = "rounds"
+    TOTAL_ROUNDS = "total_rounds"
+
 
 class LiveDataVisualization:
     """Live Data Visualization
 
-        This class draws the data generated from the Q instruments
+    This class draws the data generated from the Q instruments
 
     """
+
     def __init__(self):
         self.graphs = []
 
@@ -126,7 +132,7 @@ class LiveDataVisualization:
     def get_livedata_jobs(self) -> list:
         """Get the live data jobs for the current backend"""
         total_jobs = self.backend.jobs()
-        livedata_jobs = [job for job in total_jobs if getattr(job, 'live_data_enabled_', True)]
+        livedata_jobs = [job for job in total_jobs if getattr(job, "live_data_enabled_", True)]
         return livedata_jobs[:MAX_LIVEDATA_JOBS]
 
     def update_websocket_connection(self, job_id) -> None:
@@ -140,7 +146,9 @@ class LiveDataVisualization:
     def jobs_dropdown(self) -> widgets.Dropdown:
         """Create the Job Selection Dropdown"""
         job_ids = list(map(lambda x: x.job_id(), self.jobs))
-        layout=widgets.Layout(display="flex", justify_content="flex-start", width=f'{JOBS_DD_WIDTH}px')
+        layout = widgets.Layout(
+            display="flex", justify_content="flex-start", width=f"{JOBS_DD_WIDTH}px"
+        )
         jobs_dropdown = widgets.Dropdown(options=job_ids, description="", layout=layout)
         if len(self.jobs) > 0:
             self.new_selected_job(self.jobs[0])
@@ -172,18 +180,16 @@ class LiveDataVisualization:
             job_title,
             job_info,
             ldata_title,
-            ldata_details
-            ]
+            ldata_details,
+        ]
 
+    # pylint: disable=missing-param-doc,missing-type-doc
     def create_visualization(self, backend, figsize, show_title) -> widgets.VBox:
         """Create the view area with the required elements
 
         Args:
-
             backend (Qiskit object): The used backend
-
             figsize (int, int): size of the area to draw the figures
-
             show_title (bool): Enable the title in the visualiztion
 
         Return:
@@ -213,15 +219,14 @@ class LiveDataVisualization:
 
         return self.widget
 
-    def create_title(self, title, extra_space: bool=False) -> widgets.HTML:
+    def create_title(self, title, extra_space: bool = False) -> widgets.HTML:
         """Create an HTML Ipywidget to be used as a title
 
         Args:
-
             title (str): Text to be used as a title
+            extra_space (bool): Add some vertical space befor the title
 
-        Returns:
-
+        Return:
             (Ipywidget): HTML widget used as title
 
         """
@@ -257,16 +262,22 @@ class LiveDataVisualization:
             job_id (str): id of the selected job
 
         """
-        # uri: str = f"{WS_URL}/jobs/{job_id}/live_data"
         uri: str = f"{self.backend.provider().credentials.websockets_url}jobs/{job_id}/live_data"
-        print(f'🔌 ws@job_id #{job_id} connecting to {uri}')
+        print(f"🔌 ws@job_id #{job_id} connecting to {uri}")
         ssl_context = ssl.SSLContext()
         this_ws = None
         try:
             async with websockets.connect(uri, max_size=70000000, ssl=ssl_context) as ws:
                 self.ws_connection = ws
                 this_ws = ws
-                await ws.send(json.dumps({'type': 'authentication', 'data': self.backend.provider().credentials.access_token}))
+                await ws.send(
+                    json.dumps(
+                        {
+                            "type": "authentication",
+                            "data": self.backend.provider().credentials.access_token,
+                        }
+                    )
+                )
 
                 # Wait until connected
                 await ws.recv()
@@ -274,24 +285,28 @@ class LiveDataVisualization:
                 async for message in ws:
                     print("RECEIVE PACKAGE")
                     compressed_msg = json.loads(message)
-                    if compressed_msg['type'] == 'live-data':
+                    if compressed_msg["type"] == "live-data":
                         print(f"📝 ws@job_id #{job_id} received a message!")
-                        result = self.pako_inflate(bytes(compressed_msg['data']['data']))
+                        result = self.pako_inflate(bytes(compressed_msg["data"]["data"]))
                         # Check result type. In the last package it is a list instead a dict.
                         if self.ldata_details:
                             self.ldata_details.draw_data(result)
                             self.ldata_details.show()
                         if self.job_information_view:
-                            value =result.get(self.ldata_details._selected_channel,
-                                              self.ldata_details._channels[0]).get('rounds', 0)
-                            self.job_information_view.update_progress_bar(max=result.get('total_rounds'),
-                                                                          value=value)
+                            value = result.get(
+                                self.ldata_details._selected_channel,
+                                self.ldata_details._channels[0],
+                            ).get("rounds", 0)
+                            max_value = result.get("total_rounds")
+                            self.job_information_view.update_progress_bar_widget(
+                                max_value=max_value, value=value
+                            )
 
-                        await ws.send(json.dumps({'type': 'client', 'data': 'release'}))
+                        await ws.send(json.dumps({"type": "client", "data": "release"}))
 
         except BaseException as error:
-            print(f'💥 ws@job_id #{job_id} errored: {error}')
-            print(f'🤖 Trying to reconnect ws@job_id #{job_id}...')
+            print(f"💥 ws@job_id #{job_id} errored: {error}")
+            print(f"🤖 Trying to reconnect ws@job_id #{job_id}...")
             if self.ws_connection == this_ws:
                 await self.init_websockets(job_id)
 
@@ -315,8 +330,10 @@ class LiveDataVisualization:
                 self.job_information_view.set_job(self.jobs[self.jobs_dd.index])
             await asyncio.sleep(JOB_UPDATE_FREQ)
 
+
 class LivePlot:
     """Live data details component"""
+
     def __init__(self, figsize) -> None:
         self._channels = []
         self._channels_dd = None
@@ -362,8 +379,7 @@ class LivePlot:
             layout=widgets.Layout(display="flex-inline", align_items="center")
         )
 
-        box_layout = widgets.Layout(display='flex-inline',
-                    margin='0px')
+        box_layout = widgets.Layout(display="flex-inline", margin="0px")
         self.view = widgets.VBox(children=(dd_view, self._plotview), layout=box_layout)
 
         return self.view
@@ -371,22 +387,20 @@ class LivePlot:
     def hide(self) -> None:
         """Hide the LivePlot widget"""
         if self.view:
-            self.view.layout.visibility = 'hidden'
+            self.view.layout.visibility = "hidden"
 
     def show(self) -> None:
         """Show the LivePlot widget"""
         if self.view:
-            self.view.layout.visibility = 'visible'
+            self.view.layout.visibility = "visible"
 
     # Channels Dropdown
     def channels_dropdown(self) -> widgets.Dropdown:
         """Create the dropdown for channel selection"""
-        layout=widgets.Layout(display="flex", justify_content="flex-start", width=f'{CHANNEL_DD_WIDTH}px')
-        channels_dropdown = widgets.Dropdown(
-            options=self._channels,
-            description="",
-            layout=layout
+        layout = widgets.Layout(
+            display="flex", justify_content="flex-start", width=f"{CHANNEL_DD_WIDTH}px"
         )
+        channels_dropdown = widgets.Dropdown(options=self._channels, description="", layout=layout)
         channels_dropdown.observe(self.update_channel_selector)
         return channels_dropdown
 
@@ -402,8 +416,11 @@ class LivePlot:
         self._channels_dd.options = self.get_channels_list(data)
 
     # Draw data
-    def draw_data(self, data=None) -> None:
+    def draw_data(self, data=None) -> bool:
         """Call the draw routines"""
+        if data is None and self._data is None:
+            return False
+
         if data is not None:
             self._data = data
 
@@ -412,6 +429,7 @@ class LivePlot:
         else:
             # print("Generating image")
             self.setup_live_data_plots(self._data)
+        return True
 
     def setup_live_data_plots(self, data) -> None:
         """Plots the error map of a given backend.
@@ -464,12 +482,12 @@ class LivePlot:
         ax_dict = fig.subplot_mosaic(
             mosaic_grid,
             gridspec_kw={
-                "bottom": bottom,
-                "top": top,
-                "left": left,
-                "right": right,
-                "wspace": wspace,
-                "hspace": hspace,
+                "bottom": P_BOTTOM,
+                "top": P_TOP,
+                "left": P_LEFT,
+                "right": P_RIGHT,
+                "wspace": P_WSPACE,
+                "hspace": P_HSPACE,
             },
         )
         n_circuits = self.get_circuits_number(data, self._selected_channel)
@@ -537,8 +555,6 @@ class LivePlot:
             real_list, imag_list = self.get_l1_data(data, self._selected_channel)
 
             # Setup IQ plot scale
-            # self.set_iq_limit(real_list, imag_list)
-
             self.set_view_limits(self._iq_plot, real_list, imag_list, center_origin=False)
             self.set_view_limits(self._signal_plot, None, real_list, center_origin=True)
             self.set_view_limits(self._signal_plot, None, imag_list, center_origin=True)
@@ -567,7 +583,6 @@ class LivePlot:
             clear_output(wait=True)
             display(self.fig)
 
-
     # Views control
     def reset_all_view_limits(self) -> None:
         """Reset the views scale to the default values"""
@@ -578,7 +593,7 @@ class LivePlot:
             self.reset_view_limits(self._signal_plot, reset_x=False)
             self.reset_view_limits(self._oq_plot, reset_x=False)
 
-    def reset_view_limits(self, view, reset_x: bool=True, reset_y: bool=True) -> None:
+    def reset_view_limits(self, view, reset_x: bool = True, reset_y: bool = True) -> None:
         """Reset the view scale
 
         Args:
@@ -596,7 +611,7 @@ class LivePlot:
         if reset_y:
             view.set_ylim(-1 * DEFAULT_PLOT_LIMIT, DEFAULT_PLOT_LIMIT)
 
-    def set_view_limits(self, view, values_x, values_y, center_origin: bool=True) -> None:
+    def set_view_limits(self, view, values_x, values_y, center_origin: bool = True) -> None:
         """Set the view scale
 
         Args:
@@ -609,6 +624,7 @@ class LivePlot:
 
             center_origin (bool): center the plot in 0
         """
+
         def new_limits(new_values, center_origin: bool) -> float:
             """Calculate the new limit to fit all data in the plot
 
@@ -638,7 +654,6 @@ class LivePlot:
             return min_limit, max_limit
 
         if values_x is not None:
-            # current_x_limit = view.get_xlim()
             min_x_lim, max_x_lim = new_limits(values_x, center_origin)
             if values_y is None:
                 margin = DEFAULT_PLOT_MARGIN * abs(max_x_lim - min_x_lim)
@@ -646,7 +661,6 @@ class LivePlot:
                 return
 
         if values_y is not None:
-            # current_y_limit = view.get_ylim()
             min_y_lim, max_y_lim = new_limits(values_y, center_origin)
             if values_x is None:
                 margin = DEFAULT_PLOT_MARGIN * abs(max_y_lim - min_y_lim)
@@ -806,7 +820,9 @@ class LivePlot:
             view.xaxis.set_ticks(range(0, x_max_lim + 1), minor=(n_circuits > 4))
             avg_data_oq = self.get_op_data(real_list, imag_list)
             self.set_view_limits(view, None, avg_data_oq, center_origin=True)
-            (oq_view,) = view.plot(avg_data_oq, color=CarbonColors.CYAN60.value, linewidth=LINEWIDTH)
+            (oq_view,) = view.plot(
+                avg_data_oq, color=CarbonColors.CYAN60.value, linewidth=LINEWIDTH
+            )
         else:
             view.xaxis.set_ticks(range(0, 1), minor=False)
             oq_view = view.scatter(0, 0, color=CarbonColors.CYAN60.value)
@@ -876,7 +892,7 @@ class LivePlot:
         l1a_data = data[channel][LiveDataKeys.LEVEL_1.value]
         complex_data = np.array(l1a_data)
         complex_data = complex_data.astype(float)
-        return complex_data[:,0], complex_data[:,1]
+        return complex_data[:, 0], complex_data[:, 1]
 
     def get_op_data(self, x_values, y_values) -> list:
         """Calculate the Optimal Quadrature values using the Principal component analysis (PCA)
@@ -895,6 +911,7 @@ class LivePlot:
 
 class ProgressBar:
     """Custom progress bar widget"""
+
     def __init__(self):
         self._progress_bar = None
         self._percentage = None
@@ -908,29 +925,37 @@ class ProgressBar:
 
     def create_progress_bar(self) -> widgets.HBox:
         """Create the progress bar component"""
-        self._percentage  = widgets.Label(value="0%")
-        layout=widgets.Layout(display="flex", justify_content="flex-start", width=f'{PROGRESS_WIDTH}px')
+        self._percentage = widgets.Label(value="0%")
+        layout = widgets.Layout(
+            display="flex", justify_content="flex-start", width=f"{PROGRESS_WIDTH}px"
+        )
         self._progress_bar = widgets.IntProgress(
             value=0,
             min=0,
             max=10,
-            description='',
-            bar_style='', # 'success', 'info', 'warning', 'danger' or ''
-            style={'bar_color': CarbonColors.CYAN60.value},
-            orientation='horizontal',
-            layout=layout
+            description="",
+            bar_style="",  # 'success', 'info', 'warning', 'danger' or ''
+            style={"bar_color": CarbonColors.CYAN60.value},
+            orientation="horizontal",
+            layout=layout,
         )
 
         self._widget = widgets.HBox(children=(self._progress_bar, self._percentage))
         return self._widget
 
-    def update_progress_bar(self, _max: int, _value: int, _min: int =0) ->  None:
-        """Update progress bar values"""
+    def update_progress_bar(self, _max: int, _value: int, _min: int = 0) -> None:
+        """Update progress bar values
+
+        Args:
+            _max (int): max value
+            _values (int): current value
+            _min (int): min value
+        """
         self._progress_bar.min = _min
         self._progress_bar.max = _max
         self._progress_bar.value = _value
         self._percentage.value = f"{int((_value/_max)*100)}%"
-        self._progress_bar.style={'bar_color': CarbonColors.CYAN60.value}
+        self._progress_bar.style = {"bar_color": CarbonColors.CYAN60.value}
 
     def reset_progress_bar(self):
         """Reset progress bar"""
@@ -938,12 +963,12 @@ class ProgressBar:
         self._progress_bar.max = 10
         self._progress_bar.value = 0
         self._percentage.value = "0%"
-        self._progress_bar.style={'bar_color': CarbonColors.CYAN60.value}
+        self._progress_bar.style = {"bar_color": CarbonColors.CYAN60.value}
 
     def error_progress_bar(self):
         """Put progress bar in error style"""
         self._percentage.value = "Error"
-        self._progress_bar.style={'bar_color': CarbonColors.RED60.value}
+        self._progress_bar.style = {"bar_color": CarbonColors.RED60.value}
 
     def complete_progress_bar(self):
         """Update progress bar values to complete (valid state)"""
@@ -951,7 +976,8 @@ class ProgressBar:
         self._progress_bar.max = 10
         self._progress_bar.value = 10
         self._percentage.value = "100%"
-        self._progress_bar.style={'bar_color': CarbonColors.GREEN50.value}
+        self._progress_bar.style = {"bar_color": CarbonColors.GREEN50.value}
+
 
 class JobInformationView:
     """Job Information component"""
@@ -964,10 +990,11 @@ class JobInformationView:
 
     def widget(self) -> widgets.VBox:
         """Create the Job Information widgets"""
-        box_layout = widgets.Layout(display='flex-inline',
-                    margin='0px')
+        box_layout = widgets.Layout(display="flex-inline", margin="0px")
 
-        return widgets.VBox(children=(self._progress_bar_widget, self._information_view), layout=box_layout)
+        return widgets.VBox(
+            children=(self._progress_bar_widget, self._information_view), layout=box_layout
+        )
 
     def set_job(self, job) -> None:
         """Fill the job information view
@@ -1026,7 +1053,9 @@ class JobInformationView:
         content += f".livedata-table tr td:nth-child(2) {{ color: {CarbonColors.GRAY80.value};}}"
         content += f".livedata-table tr td:nth-child(4) {{ color: {CarbonColors.GRAY60.value};}}"
         content += f".livedata-table tr td:nth-child(5) {{ color: {CarbonColors.GRAY80.value};}}"
-        content += f".livedata-table:nth-child(even) {{ background-color: {CarbonColors.WHITE.value};}}"
+        content += (
+            f".livedata-table:nth-child(even) {{ background-color: {CarbonColors.WHITE.value};}}"
+        )
         content += "</style>"
 
         content += "<tr class='livedata-table'><td class='livedata-table'>Job status</td>"
@@ -1049,18 +1078,18 @@ class JobInformationView:
         return content
 
     # Progress bar control
-    def update_progress_bar(self, max, value) -> None:
+    def update_progress_bar_widget(self, max_value, value) -> None:
         """Update the progress bar values"""
         if self._progress_bar:
-            self._progress_bar.update_progress_bar(_max=max, _value=value)
+            self._progress_bar.update_progress_bar(_max=max_value, _value=value)
 
     def hide_progress_bar(self) -> None:
         """Hide the progress bar"""
-        self._progress_bar_widget.layout.visibility = 'hidden'
+        self._progress_bar_widget.layout.visibility = "hidden"
 
     def show_progress_bar(self) -> None:
         """Show the progress bar"""
-        self._progress_bar_widget.layout.visibility = 'visible'
+        self._progress_bar_widget.layout.visibility = "visible"
 
     # Data management
 
@@ -1095,7 +1124,7 @@ class JobInformationView:
 
         try:
             completion_time = job.queue_info().estimated_complete_time
-        #pylint disable=bare-except
+        # pylint: disable=bare-except
         except:
             return "..."
 
@@ -1159,7 +1188,7 @@ class JobInformationView:
             (int, int, int): Days, hours and minutes
 
         """
-        return tdelta.days, tdelta.seconds//3600, (tdelta.seconds//60)%60
+        return tdelta.days, tdelta.seconds // 3600, (tdelta.seconds // 60) % 60
 
     def format_timedate(self, date) -> str:
         """Transfrom a date from timedate to a formated string
