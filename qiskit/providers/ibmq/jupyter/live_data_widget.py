@@ -27,13 +27,6 @@ from sklearn.decomposition import PCA
 from qiskit.exceptions import MissingOptionalLibraryError
 from qiskit.providers.jobstatus import JobStatus
 
-# TODO: Fix visualization if list of jobs is empty
-
-# CREDENTIALS
-WS_URL = ""  # backend.provider().credentials.websockets_url
-WS_TOKEN = ""  # backend.provider().credentials.access_token
-JOB_ID = ""
-
 
 # PLOTS
 ENABLE_LEVEL_0 = False
@@ -42,19 +35,20 @@ JOB_UPDATE_FREQ = 1  # Time to refresh the jobs list
 
 # PLOTS VISUAL STYLE
 P_LEFT = 0.125  # the left side of the subplots of the figure
-P_RIGHT = 0.9  # the right side of the subplots of the figure
+P_RIGHT = 0.2  # the right side of the subplots of the figure
 P_BOTTOM = 0.1  # the bottom of the subplots of the figure
 P_TOP = 0.7  # the top of the subplots of the figure
-P_WSPACE = 1.7  # the amount of width reserved for blank space between subplots
+P_WSPACE = 0.2  # the amount of width reserved for blank space between subplots
 P_HSPACE = 0.4  # the amount of height reserved for white space between subplots
 DEFAULT_PLOT_LIMIT = 10
 DEFAULT_PLOT_MARGIN = 0.1
 LINEWIDTH = 1
 
 # WIDGETS STYLE
-JOBS_DD_WIDTH = 210
-CHANNEL_DD_WIDTH = 100
+JOBS_CB_WIDTH = 310
+CHANNEL_DD_WIDTH = 120
 PROGRESS_WIDTH = 300
+CHANNELS_LABEL = "Select channel"
 
 # JOBS
 MAX_LIVEDATA_JOBS = 10
@@ -66,12 +60,14 @@ class CarbonColors(str, Enum):
     GRAY20 = "#E0E0E0"
     GRAY60 = "#6F6F6F"
     GRAY80 = "#393939"
+    GREY400 = "#BDBDBD"
     PURPLE60 = "#8A3FFC"
     PURPLE70 = "#6929C4"
     CYAN60 = "#0072C3"
     RED60 = "#DA1E28"
     GREEN50 = "#24A148"
     WHITE = "#FFFFFF"
+    CLEAR = "#0000"
 
 
 class LiveDataKeys(str, Enum):
@@ -81,6 +77,14 @@ class LiveDataKeys(str, Enum):
     LEVEL_1 = "avgLevel1"
     ROUNDS = "rounds"
     TOTAL_ROUNDS = "total_rounds"
+
+
+def is_qlab_notebook():
+    """Check if running from Quantum Lab"""
+    import os
+
+    client = os.getenv("QE_CUSTOM_CLIENT_APP_HEADER", "")
+    return "quantum-computing.ibm.com" in client
 
 
 class LiveDataVisualization:
@@ -105,35 +109,41 @@ class LiveDataVisualization:
 
         self.jobs = []
         self.selected_job = None
-        self.jobs_dd = None
+        self.jobs_combo = None
 
         self.ws_connection = None
         self.ws_task = None
+
+        self.is_quantumlab = is_qlab_notebook()
 
     # JOB INFO
     def new_selected_job(self, job) -> None:
         """Change the selected job
 
         Args:
-            job (Quiskit Job): Job to be selected
+            job (Qiskit Job): Job to be selected
         """
         self.selected_job = job
         if self.job_information_view is not None:
             self.job_information_view.set_job(job)
 
-    def update_job_selector(self, change) -> None:
-        """Change the selected Job from dropdown widget"""
+    def update_job_selector_combobox(self, change) -> None:
+        """Change the selected Job from combobox widget"""
         if change["type"] == "change" and change["name"] == "value":
-            print("changed to %s" % change["new"])
-            selected_job_idx = change["owner"].index
+            selected_job = change["new"]
+            self.jobs_combo.value = selected_job
+            job_ids = list(map(lambda x: x.job_id(), self.jobs))
+            selected_job_idx = job_ids.index(selected_job)
+            if selected_job not in self.jobs_combo.options:
+                self.jobs_combo.options = job_ids
             self.new_selected_job(self.jobs[selected_job_idx])
             self.update_websocket_connection(change["new"])
 
     def get_livedata_jobs(self) -> list:
         """Get the live data jobs for the current backend"""
-        total_jobs = self.backend.jobs()
+        total_jobs = self.backend.jobs(limit=0)
         livedata_jobs = [job for job in total_jobs if getattr(job, "live_data_enabled_", True)]
-        return livedata_jobs[:MAX_LIVEDATA_JOBS]
+        return livedata_jobs
 
     def update_websocket_connection(self, job_id) -> None:
         """Disconnect websocket from current job and create a new connection"""
@@ -143,17 +153,24 @@ class LiveDataVisualization:
 
     # Viewcomponents
 
-    def jobs_dropdown(self) -> widgets.Dropdown:
-        """Create the Job Selection Dropdown"""
+    def jobs_combobox(self) -> widgets.Combobox:
+        """Create the Job search Combobox"""
         job_ids = list(map(lambda x: x.job_id(), self.jobs))
         layout = widgets.Layout(
-            display="flex", justify_content="flex-start", width=f"{JOBS_DD_WIDTH}px"
+            border=f"0.2px solid {CarbonColors.GREY400.value}",
+            display="flex",
+            justify_content="flex-start",
+            width=f"{JOBS_CB_WIDTH}px"
         )
-        jobs_dropdown = widgets.Dropdown(options=job_ids, description="", layout=layout)
-        if len(self.jobs) > 0:
-            self.new_selected_job(self.jobs[0])
-        jobs_dropdown.observe(self.update_job_selector)
-        return jobs_dropdown
+        jobs_combobox = widgets.Combobox(
+            placeholder="Job ID",
+            options=job_ids,
+            ensure_option=True,
+            disabled=False,
+            layout=layout,
+        )
+        jobs_combobox.observe(self.update_job_selector_combobox)
+        return jobs_combobox
 
     def setup_views(self) -> None:
         """Compose the widgets inside a parent widget"""
@@ -161,8 +178,8 @@ class LiveDataVisualization:
         # Jobs selection
         sjob_title = self.create_title("Job selection")
         label = widgets.Label(value="Job:")
-        self.jobs_dd = self.jobs_dropdown()
-        dd_view = widgets.HBox(children=(label, self.jobs_dd))
+        self.jobs_combo = self.jobs_combobox()
+        combo_view = widgets.HBox(children=(label, self.jobs_combo))
 
         # Jobs info
         job_title = self.create_title("Job information", extra_space=True)
@@ -176,7 +193,7 @@ class LiveDataVisualization:
 
         self.widget.children = [
             sjob_title,
-            dd_view,
+            combo_view,
             job_title,
             job_info,
             ldata_title,
@@ -215,7 +232,8 @@ class LiveDataVisualization:
 
         # Connect to the first job
         if len(self.jobs) > 0:
-            self.update_websocket_connection(self.jobs_dd.value)
+            self.jobs_combo.value = self.jobs_combo.options[0]
+            self.update_websocket_connection(self.jobs_combo.options[0])
 
         return self.widget
 
@@ -230,8 +248,8 @@ class LiveDataVisualization:
             (Ipywidget): HTML widget used as title
 
         """
-        margin = "34px" if extra_space is True else "0px"
-        content = f"<h5 style='margin-top: {margin}'>{title}</h5>"
+        margin = "34px" if extra_space is True and not self.is_quantumlab else "0px"
+        content = f"<h5 style='margin-top: {margin};'><b>{title}</b></h5>"
         return widgets.HTML(value=content)
 
     # Data management
@@ -324,10 +342,24 @@ class LiveDataVisualization:
     async def update_job_loop(self) -> None:
         """Loop to keep the job list and the job information updated"""
         while self.widget:
+            previous_len = len(self.jobs)
             self.jobs = self.get_livedata_jobs()
+            new_len = len(self.jobs)
             if len(self.jobs) > 0:
-                self.jobs_dd.options = list(map(lambda x: x.job_id(), self.jobs))
-                self.job_information_view.set_job(self.jobs[self.jobs_dd.index])
+                job_ids = list(map(lambda x: x.job_id(), self.jobs))
+                self.jobs_combo.options = job_ids
+                if self.jobs_combo.value != "":
+                    if previous_len == new_len:
+                        self.job_information_view.set_job(
+                            self.jobs[job_ids.index(self.jobs_combo.value)]
+                        )
+                    else:
+                        print(f"changing job to the new received: {job_ids[0]}")
+                        self.jobs_combo.value = job_ids[0]
+                        self.job_information_view.set_job(self.jobs[0])  # new job arrived, take it
+                else:
+                    self.jobs_combo.value = job_ids[0]
+                    self.job_information_view.set_job(self.jobs[0])
             await asyncio.sleep(JOB_UPDATE_FREQ)
 
 
@@ -373,20 +405,21 @@ class LivePlot:
         """Create the live plot area widgets"""
         channels_label = widgets.Label(value="Channel:")
         self._channels_dd = self.channels_dropdown()
-        dd_view = widgets.HBox(children=(channels_label, self._channels_dd))
+        combo_view = widgets.HBox(children=(channels_label, self._channels_dd))
 
         self._plotview = widgets.Output(
             layout=widgets.Layout(display="flex-inline", align_items="center")
         )
 
         box_layout = widgets.Layout(display="flex-inline", margin="0px")
-        self.view = widgets.VBox(children=(dd_view, self._plotview), layout=box_layout)
+        self.view = widgets.VBox(children=(combo_view, self._plotview), layout=box_layout)
 
         return self.view
 
     def hide(self) -> None:
         """Hide the LivePlot widget"""
         if self.view:
+            self.hide_plot()
             self.view.layout.visibility = "hidden"
 
     def show(self) -> None:
@@ -394,26 +427,49 @@ class LivePlot:
         if self.view:
             self.view.layout.visibility = "visible"
 
+    def hide_plot(self) -> None:
+        """Hide the LivePlot area"""
+        if self._plotview:
+            self._plotview.layout.visibility = "hidden"
+
+    def show_plot(self) -> None:
+        """Show the LivePlot area"""
+        if self._plotview:
+            self._plotview.layout.visibility = "visible"
+
     # Channels Dropdown
     def channels_dropdown(self) -> widgets.Dropdown:
         """Create the dropdown for channel selection"""
         layout = widgets.Layout(
-            display="flex", justify_content="flex-start", width=f"{CHANNEL_DD_WIDTH}px"
+            border=f"0.2px solid {CarbonColors.GREY400.value}",
+            display="flex",
+            justify_content="flex-start",
+            width=f"{CHANNEL_DD_WIDTH}px"
         )
         channels_dropdown = widgets.Dropdown(options=self._channels, description="", layout=layout)
+        channels_dropdown.options = [CHANNELS_LABEL]
+        channels_dropdown.value = CHANNELS_LABEL
         channels_dropdown.observe(self.update_channel_selector)
         return channels_dropdown
 
     def update_channel_selector(self, change) -> None:
         """Change the selected channel from the dropdown"""
         if change["type"] == "change" and change["name"] == "value":
+            if change["new"] == CHANNELS_LABEL:
+                if change["old"] != CHANNELS_LABEL:
+                    self._channels_dd.value = change["old"]
+                return
             self._selected_channel = change["new"]
             self.reset_all_view_limits()
             self.draw_data()
 
     def update_channel_dd_content(self, data) -> None:
         """Update the channel dropdown with the received data"""
-        self._channels_dd.options = self.get_channels_list(data)
+        channels = self.get_channels_list(data)
+        if self._channels_dd.value in ["", "Select channel"]:
+            channels.insert(0, "Select channel")
+            self.hide_plot()
+        self._channels_dd.options = channels
 
     # Draw data
     def draw_data(self, data=None) -> bool:
@@ -429,6 +485,10 @@ class LivePlot:
         else:
             # print("Generating image")
             self.setup_live_data_plots(self._data)
+
+        if self._channels_dd.value != CHANNELS_LABEL:
+            self.show_plot()
+
         return True
 
     def setup_live_data_plots(self, data) -> None:
@@ -1054,7 +1114,10 @@ class JobInformationView:
         content += f".livedata-table tr td:nth-child(4) {{ color: {CarbonColors.GRAY60.value};}}"
         content += f".livedata-table tr td:nth-child(5) {{ color: {CarbonColors.GRAY80.value};}}"
         content += (
-            f".livedata-table:nth-child(even) {{ background-color: {CarbonColors.WHITE.value};}}"
+            f".livedata-table:nth-child(even) {{ background-color: {CarbonColors.CLEAR.value};}}"
+        )
+        content += (
+            f".livedata-table:nth-child(odd) {{ background-color: {CarbonColors.CLEAR.value};}}"
         )
         content += "</style>"
 
