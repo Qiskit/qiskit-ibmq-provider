@@ -134,7 +134,8 @@ class Account(RestAdapterBase):
             backend_name: str,
             job_name: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
-            experiment_id: Optional[str] = None
+            experiment_id: Optional[str] = None,
+            live_data_enabled: Optional[bool] = None
     ) -> Dict[str, Any]:
         """Create a job instance on the remote server.
 
@@ -152,7 +153,7 @@ class Account(RestAdapterBase):
         payload = {
             'backend': {'name': backend_name},
             'allowObjectStorage': True,
-            'liveDataEnabled': True
+            'liveDataEnabled': live_data_enabled
         }
 
         if job_name:

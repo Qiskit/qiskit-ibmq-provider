@@ -142,7 +142,8 @@ class IBMQBackend(Backend):
                        meas_return=MeasReturnType.AVERAGE,
                        memory_slots=None, memory_slot_size=100,
                        rep_time=None, rep_delay=None,
-                       init_qubits=True, use_measure_esp=None)
+                       init_qubits=True, use_measure_esp=None,
+                       live_data_enabled=None)
 
     @deprecate_arguments({'qobj': 'circuits'})
     def run(
@@ -169,6 +170,7 @@ class IBMQBackend(Backend):
             init_qubits: Optional[bool] = None,
             parameter_binds: Optional[List[Dict[Parameter, float]]] = None,
             use_measure_esp: Optional[bool] = None,
+            live_data_enabled: Optional[bool] = None,
             **run_config: Dict
     ) -> IBMQJob:
         """Run on the backend.
@@ -323,7 +325,7 @@ class IBMQBackend(Backend):
                 run_config_dict['method'] = sim_method
             qobj = assemble(circuits, self, **run_config_dict)
 
-        return self._submit_job(qobj, job_name, job_tags, experiment_id)
+        return self._submit_job(qobj, job_name, job_tags, experiment_id, live_data_enabled)
 
     def _get_run_config(self, **kwargs: Any) -> Dict:
         """Return the consolidated runtime configuration."""
@@ -341,7 +343,8 @@ class IBMQBackend(Backend):
             qobj: Union[QasmQobj, PulseQobj],
             job_name: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
-            experiment_id: Optional[str] = None
+            experiment_id: Optional[str] = None,
+            live_data_enabled: Optional[bool] = None
     ) -> IBMQJob:
         """Submit the Qobj to the backend.
 
@@ -377,7 +380,8 @@ class IBMQBackend(Backend):
                 qobj_dict=qobj_dict,
                 job_name=job_name,
                 job_tags=job_tags,
-                experiment_id=experiment_id)
+                experiment_id=experiment_id,
+                live_data_enabled=live_data_enabled)
         except ApiError as ex:
             if 'Error code: 3458' in str(ex):
                 raise IBMQBackendJobLimitError('Error submitting job: {}'.format(str(ex))) from ex
