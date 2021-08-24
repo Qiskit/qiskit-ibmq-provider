@@ -144,6 +144,7 @@ class Account(RestAdapterBase):
             job_name: Custom name to be assigned to the job.
             job_tags: Tags to be assigned to the job.
             experiment_id: Used to add a job to an experiment.
+            live_data_enabled: Used to activate/deactivate live data on the backend.
 
         Returns:
             JSON response.

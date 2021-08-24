@@ -251,6 +251,8 @@ class IBMQBackend(Backend):
                 Default: ``True`` if backend supports ESP readout, else ``False``. Backend support
                 for ESP readout is determined by the flag ``measure_esp_enabled`` in
                 ``backend.configuration()``.
+            live_data_enabled (bool): Activate the live data in the backend, to receive data
+                from the instruments.
             **run_config: Extra arguments used to configure the run.
 
         Returns:
@@ -356,6 +358,7 @@ class IBMQBackend(Backend):
                 Job names do not need to be unique.
             job_tags: Tags to be assigned to the job.
             experiment_id: Used to add a job to an experiment.
+            live_data_enabled: Used to activate/deactivate live data on the backend.
 
         Returns:
             The job to be executed.
