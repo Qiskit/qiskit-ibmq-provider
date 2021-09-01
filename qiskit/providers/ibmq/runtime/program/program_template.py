@@ -41,7 +41,7 @@ def main(backend: ProgramBackend, user_messenger: UserMessenger, **kwargs):
         kwargs: User inputs.
     
     Returns:
-        any: The final result of the runtime program.
+        The final result of the runtime program.
     """
     # Massage the input if necessary.
     result = program(backend, user_messenger, **kwargs)
