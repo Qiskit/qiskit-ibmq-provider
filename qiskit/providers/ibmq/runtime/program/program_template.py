@@ -42,5 +42,5 @@ def main(backend: ProgramBackend, user_messenger: UserMessenger, **kwargs):
     """
     # Massage the input if necessary.
     result = program(backend, user_messenger, **kwargs)
-    # UserMessenger can be used to publish final results.
-    user_messenger.publish(result, final=True)
+    # final results can be directly returned
+    return result
