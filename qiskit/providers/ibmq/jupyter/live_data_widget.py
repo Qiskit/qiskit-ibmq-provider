@@ -18,10 +18,11 @@ import asyncio
 import json
 import ssl
 import zlib
+from io import BytesIO
+from base64 import b64encode
 import pytz
 import websockets
 import ipywidgets as widgets
-from IPython.display import display, clear_output
 import numpy as np
 from sklearn.decomposition import PCA
 from qiskit.exceptions import MissingOptionalLibraryError
@@ -48,10 +49,6 @@ LINEWIDTH = 1
 JOBS_CB_WIDTH = 310
 CHANNEL_DD_WIDTH = 120
 PROGRESS_WIDTH = 300
-CHANNELS_LABEL = "Select channel"
-
-# JOBS
-MAX_LIVEDATA_JOBS = 10
 
 
 class CarbonColors(str, Enum):
@@ -115,6 +112,7 @@ class LiveDataVisualization:
 
         self.is_quantumlab = is_qlab_notebook()
 
+
     # JOB INFO
     def new_selected_job(self, job) -> None:
         """Change the selected job
@@ -141,16 +139,16 @@ class LiveDataVisualization:
     def get_livedata_jobs(self) -> list:
         """Get the live data jobs for the current backend"""
         total_jobs = self.backend.jobs(limit=0)
-        livedata_jobs = [
-            job for job in total_jobs if getattr(job, "live_data_enabled_", True)
-        ]
+        livedata_jobs = [job for job in total_jobs if getattr(job, "live_data_enabled_", True)]
         return livedata_jobs
 
     def update_websocket_connection(self, job_id) -> None:
         """Disconnect websocket from current job and create a new connection"""
         self.disconnect_ws()
-        self.ws_task = asyncio.ensure_future(self.init_websockets(job_id))
+        loop = asyncio.get_event_loop()
+        self.ws_task = loop.create_task(self.init_websockets(job_id))
         self.ldata_details.clear()
+        self.job_information_view.reset_progress_bar_widget()
 
     # Viewcomponents
 
@@ -158,10 +156,7 @@ class LiveDataVisualization:
         """Create the Job search Combobox"""
         job_ids = list(map(lambda x: x.job_id(), self.jobs))
         layout = widgets.Layout(
-            border_style="solid",
-            display="flex",
-            justify_content="flex-start",
-            width=f"{JOBS_CB_WIDTH}px",
+            display="flex", justify_content="flex-start", width=f"{JOBS_CB_WIDTH}px"
         )
         jobs_combobox = widgets.Combobox(
             placeholder="Job ID",
@@ -184,9 +179,7 @@ class LiveDataVisualization:
 
         # Jobs info
         job_title = self.create_title("Job information", extra_space=True)
-        self.job_information_view = JobInformationView(
-            backend=self.backend, job=self.selected_job
-        )
+        self.job_information_view = JobInformationView(backend=self.backend, job=self.selected_job)
         job_info = self.job_information_view.widget()
 
         # Plots
@@ -224,16 +217,15 @@ class LiveDataVisualization:
         self.jobs = self.get_livedata_jobs()
 
         dropdown_box = widgets.HBox()
-        output = widgets.Output(
-            layout=widgets.Layout(display="flex-inline", align_items="center")
-        )
+        output = widgets.Output(layout=widgets.Layout(display="flex-inline", align_items="center"))
 
         self.widget = widgets.VBox(children=(dropdown_box, output))
 
         self.setup_views()
 
         # Update Jobs
-        asyncio.ensure_future(self.update_job_loop())
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.update_job_loop())
 
         # Connect to the first job
         if len(self.jobs) > 0:
@@ -290,9 +282,7 @@ class LiveDataVisualization:
         ssl_context = ssl.SSLContext()
         this_ws = None
         try:
-            async with websockets.connect(
-                uri, max_size=70000000, ssl=ssl_context
-            ) as ws:
+            async with websockets.connect(uri, max_size=70000000, ssl=ssl_context) as ws:
                 self.ws_connection = ws
                 this_ws = ws
                 await ws.send(
@@ -312,9 +302,7 @@ class LiveDataVisualization:
                     compressed_msg = json.loads(message)
                     if compressed_msg["type"] == "live-data":
                         print(f"📝 ws@job_id #{job_id} received a message!")
-                        result = self.pako_inflate(
-                            bytes(compressed_msg["data"]["data"])
-                        )
+                        result = self.pako_inflate(bytes(compressed_msg["data"]["data"]))
                         # Check result type. In the last package it is a list instead a dict.
                         if self.ldata_details:
                             self.ldata_details.draw_data(result)
@@ -337,15 +325,14 @@ class LiveDataVisualization:
             if self.ws_connection == this_ws:
                 await self.init_websockets(job_id)
 
-        # print(f'❌ ws@job_id #{job_id} done!')
-
     def disconnect_ws(self) -> None:
         """Close the websocket connection"""
         self.ldata_details.hide()
         if self.ws_task:
             self.ws_task.cancel()
         if self.ws_connection:
-            asyncio.ensure_future(self.ws_connection.close())
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.ws_connection.close())
             self.ws_connection = None
 
     async def update_job_loop(self) -> None:
@@ -365,9 +352,7 @@ class LiveDataVisualization:
                     else:
                         print(f"changing job to the new received: {job_ids[0]}")
                         self.jobs_combo.value = job_ids[0]
-                        self.job_information_view.set_job(
-                            self.jobs[0]
-                        )  # new job arrived, take it
+                        self.job_information_view.set_job(self.jobs[0])  # new job arrived, take it
                 else:
                     self.jobs_combo.value = job_ids[0]
                     self.job_information_view.set_job(self.jobs[0])
@@ -412,20 +397,28 @@ class LivePlot:
         self.fig = None
         self.fig_generated = False
 
+    def get_plotview_height(self):
+        """Calculate the required heigth to display the plots properly"""
+        dropdown_height = 60
+        plot_row_height = 300
+        rows = [ENABLE_LEVEL_0, ENABLE_LEVEL_1]
+
+        return dropdown_height + sum(rows) * plot_row_height
+
     def widget(self) -> widgets:
         """Create the live plot area widgets"""
         channels_label = widgets.Label(value="Channel:")
         self._channels_dd = self.channels_dropdown()
         combo_view = widgets.HBox(children=(channels_label, self._channels_dd))
 
-        self._plotview = widgets.Output(
+        self._plotview = widgets.HTML(
             layout=widgets.Layout(display="flex-inline", align_items="center")
         )
-
-        box_layout = widgets.Layout(display="flex-inline", margin="0px")
-        self.view = widgets.VBox(
-            children=(combo_view, self._plotview), layout=box_layout
+        box_height = self.get_plotview_height()
+        box_layout = widgets.Layout(
+            display="flex-inline", margin="0px", min_height=f"{box_height}px"
         )
+        self.view = widgets.VBox(children=(combo_view, self._plotview), layout=box_layout)
 
         return self.view
 
@@ -459,21 +452,13 @@ class LivePlot:
             justify_content="flex-start",
             width=f"{CHANNEL_DD_WIDTH}px",
         )
-        channels_dropdown = widgets.Dropdown(
-            options=self._channels, description="", layout=layout
-        )
-        channels_dropdown.options = [CHANNELS_LABEL]
-        channels_dropdown.value = CHANNELS_LABEL
+        channels_dropdown = widgets.Dropdown(options=self._channels, description="", layout=layout)
         channels_dropdown.observe(self.update_channel_selector)
         return channels_dropdown
 
     def update_channel_selector(self, change) -> None:
         """Change the selected channel from the dropdown"""
         if change["type"] == "change" and change["name"] == "value":
-            if change["new"] == CHANNELS_LABEL:
-                if change["old"] != CHANNELS_LABEL:
-                    self._channels_dd.value = change["old"]
-                return
             self._selected_channel = change["new"]
             self.reset_all_view_limits()
             self.draw_data()
@@ -481,9 +466,6 @@ class LivePlot:
     def update_channel_dd_content(self, data) -> None:
         """Update the channel dropdown with the received data"""
         channels = self.get_channels_list(data)
-        if self._channels_dd.value in ["", "Select channel"]:
-            channels.insert(0, "Select channel")
-            self.hide_plot()
         self._channels_dd.options = channels
 
     # Draw data
@@ -501,10 +483,22 @@ class LivePlot:
             # print("Generating image")
             self.setup_live_data_plots(self._data)
 
-        if self._channels_dd.value != CHANNELS_LABEL:
-            self.show_plot()
+        self.show_plot()
 
         return True
+
+    def fig_to_base64(self, fig):
+        """Transform a Matplotlib fig into its Base64-encoded bytes representation
+
+        Args:
+            fig (~matplotlib.figure.Figure): the Matplotlib figure to transform.
+
+        """
+        img = BytesIO()
+        fig.savefig(img, format="png", bbox_inches="tight")
+        img.seek(0)
+
+        return b64encode(img.getvalue())
 
     def setup_live_data_plots(self, data) -> None:
         """Plots the error map of a given backend.
@@ -576,12 +570,8 @@ class LivePlot:
         if ENABLE_LEVEL_1:
             real_list, imag_list = self.get_l1_data(data, self._selected_channel)
             l1a = self.plot_iq_complex_plane(ax_dict["l1a"], real_list, imag_list)
-            l1b, l1c = self.plot_signal_circuit(
-                ax_dict["l1b"], real_list, imag_list, n_circuits
-            )
-            l1d = self.plot_optimal_quadrature(
-                ax_dict["l1c"], real_list, imag_list, n_circuits
-            )
+            l1b, l1c = self.plot_signal_circuit(ax_dict["l1b"], real_list, imag_list, n_circuits)
+            l1d = self.plot_optimal_quadrature(ax_dict["l1c"], real_list, imag_list, n_circuits)
 
         self._graphs = [l0a, l0b, l1a, l1b, l1c, l1d]
 
@@ -591,9 +581,9 @@ class LivePlot:
         self.fig = fig
         self.fig_generated = True
 
-        with self._plotview:
-            clear_output(wait=True)
-            display(fig)
+        encoded = self.fig_to_base64(fig)
+        html_image = '<img src="data:image/png;base64, {}">'.format(encoded.decode("utf-8"))
+        self._plotview.value = html_image
 
     def update_live_data(self, data) -> None:
         """Update the plots with the received data
@@ -625,22 +615,16 @@ class LivePlot:
             time_value = np.arange(0, total_data, 1)
 
             l0a.set_data(time_value, plot_data_l0a)
-            self.set_view_limits(
-                self._raw_plot, None, plot_data_l0a, center_origin=True
-            )
+            self.set_view_limits(self._raw_plot, None, plot_data_l0a, center_origin=True)
             if l0b is not None:
                 l0b.set_data(time_value, plot_data_l0b)
-                self.set_view_limits(
-                    self._raw_plot, None, plot_data_l0b, center_origin=True
-                )
+                self.set_view_limits(self._raw_plot, None, plot_data_l0b, center_origin=True)
 
         if ENABLE_LEVEL_1:
             real_list, imag_list = self.get_l1_data(data, self._selected_channel)
 
             # Setup IQ plot scale
-            self.set_view_limits(
-                self._iq_plot, real_list, imag_list, center_origin=False
-            )
+            self.set_view_limits(self._iq_plot, real_list, imag_list, center_origin=False)
             self.set_view_limits(self._signal_plot, None, real_list, center_origin=True)
             self.set_view_limits(self._signal_plot, None, imag_list, center_origin=True)
 
@@ -664,9 +648,9 @@ class LivePlot:
                 y = [real_list[0], imag_list[0]]
                 l1b.set_offsets(np.c_[x, y])
 
-        with self._plotview:
-            clear_output(wait=True)
-            display(self.fig)
+        encoded = self.fig_to_base64(self.fig)
+        html_image = '<img src="data:image/png;base64, {}">'.format(encoded.decode("utf-8"))
+        self._plotview.value = html_image
 
     # Views control
     def reset_all_view_limits(self) -> None:
@@ -678,9 +662,7 @@ class LivePlot:
             self.reset_view_limits(self._signal_plot, reset_x=False)
             self.reset_view_limits(self._oq_plot, reset_x=False)
 
-    def reset_view_limits(
-        self, view, reset_x: bool = True, reset_y: bool = True
-    ) -> None:
+    def reset_view_limits(self, view, reset_x: bool = True, reset_y: bool = True) -> None:
         """Reset the view scale
 
         Args:
@@ -698,9 +680,7 @@ class LivePlot:
         if reset_y:
             view.set_ylim(-1 * DEFAULT_PLOT_LIMIT, DEFAULT_PLOT_LIMIT)
 
-    def set_view_limits(
-        self, view, values_x, values_y, center_origin: bool = True
-    ) -> None:
+    def set_view_limits(self, view, values_x, values_y, center_origin: bool = True) -> None:
         """Set the view scale
 
         Args:
@@ -795,10 +775,7 @@ class LivePlot:
         self.set_view_limits(view, None, plot_data_l0a)
 
         (raw_a,) = view.plot(
-            plot_data_l0a,
-            label="Circuit 0",
-            color=CarbonColors.PURPLE60.value,
-            linewidth=LINEWIDTH,
+            plot_data_l0a, label="Circuit 0", color=CarbonColors.PURPLE60.value, linewidth=LINEWIDTH
         )
         raw_b = None
         if n_circuits > 1:
@@ -869,16 +846,10 @@ class LivePlot:
         if n_circuits > 1:
             view.xaxis.set_ticks(range(0, x_max_lim + 1), minor=(n_circuits > 4))
             (sc_a,) = view.plot(
-                real_list,
-                label="I",
-                color=CarbonColors.PURPLE60.value,
-                linewidth=LINEWIDTH,
+                real_list, label="I", color=CarbonColors.PURPLE60.value, linewidth=LINEWIDTH
             )
             (sc_b,) = view.plot(
-                imag_list,
-                label="Q",
-                color=CarbonColors.CYAN60.value,
-                linewidth=LINEWIDTH,
+                imag_list, label="Q", color=CarbonColors.CYAN60.value, linewidth=LINEWIDTH
             )
             view.legend(handles=[sc_a, sc_b], loc="upper right", frameon=True)
         else:
@@ -1091,8 +1062,7 @@ class JobInformationView:
         box_layout = widgets.Layout(display="flex-inline", margin="0px")
 
         return widgets.VBox(
-            children=(self._progress_bar_widget, self._information_view),
-            layout=box_layout,
+            children=(self._progress_bar_widget, self._information_view), layout=box_layout
         )
 
     def set_job(self, job) -> None:
@@ -1152,32 +1122,28 @@ class JobInformationView:
         content += f".livedata-table tr td:nth-child(2) {{ color: {CarbonColors.GRAY80.value};}}"
         content += f".livedata-table tr td:nth-child(4) {{ color: {CarbonColors.GRAY60.value};}}"
         content += f".livedata-table tr td:nth-child(5) {{ color: {CarbonColors.GRAY80.value};}}"
-        content += f".livedata-table:nth-child(even) {{ background-color: {CarbonColors.CLEAR.value};}}"
-        content += f".livedata-table:nth-child(odd) {{ background-color: {CarbonColors.CLEAR.value};}}"
+        content += (
+            f".livedata-table:nth-child(even) {{ background-color: {CarbonColors.CLEAR.value};}}"
+        )
+        content += (
+            f".livedata-table:nth-child(odd) {{ background-color: {CarbonColors.CLEAR.value};}}"
+        )
         content += "</style>"
 
-        content += (
-            "<tr class='livedata-table'><td class='livedata-table'>Job status</td>"
-        )
+        content += "<tr class='livedata-table'><td class='livedata-table'>Job status</td>"
         content += f"<td class='livedata-table'>{self.get_job_status(job)}</td>"
         content += "<td class='livedata-table'></td>"
         content += "<td class='livedata-table'>System</td>"
         content += f"<td class='livedata-table'>{self._backend.name()}</td></tr>"
 
         content += "<tr class='livedata-table'><td class='livedata-table'>Estimated completion</td>"
-        content += (
-            f"<td class='livedata-table'>{self.get_job_completion_time(job)}</td>"
-        )
+        content += f"<td class='livedata-table'>{self.get_job_completion_time(job)}</td>"
         content += "<td class='livedata-table'></td>"
         content += "<td class='livedata-table'>Provider</td>"
         content += f"<td class='livedata-table'>{self.get_provider()}</td></tr>"
 
-        content += (
-            "<tr class='livedata-table'><td class='livedata-table'>Sent to Queue</td>"
-        )
-        content += (
-            f"<td class='livedata-table'>{self.get_job_sent_queue_time(job)}</td>"
-        )
+        content += "<tr class='livedata-table'><td class='livedata-table'>Sent to Queue</td>"
+        content += f"<td class='livedata-table'>{self.get_job_sent_queue_time(job)}</td>"
         content += "<td class='livedata-table'></td>"
         content += "<td class='livedata-table'></td></tr>"
         content += "</table>"
@@ -1188,6 +1154,11 @@ class JobInformationView:
         """Update the progress bar values"""
         if self._progress_bar:
             self._progress_bar.update_progress_bar(_max=max_value, _value=value)
+
+    def reset_progress_bar_widget(self) -> None:
+        """Reset the progress bar values"""
+        if self._progress_bar:
+            self._progress_bar.reset_progress_bar()
 
     def hide_progress_bar(self) -> None:
         """Hide the progress bar"""
@@ -1225,11 +1196,7 @@ class JobInformationView:
         elif job_status == JobStatus.ERROR:
             self._progress_bar.error_progress_bar()
             return "Error running the job"
-        elif job_status in [
-            JobStatus.QUEUED,
-            JobStatus.VALIDATING,
-            JobStatus.INITIALIZING,
-        ]:
+        elif job_status in [JobStatus.QUEUED, JobStatus.VALIDATING, JobStatus.INITIALIZING]:
             self._progress_bar.reset_progress_bar()
 
         try:
