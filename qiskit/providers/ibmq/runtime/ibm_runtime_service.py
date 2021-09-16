@@ -16,6 +16,7 @@ import logging
 from typing import Dict, Callable, Optional, Union, List, Any, Type
 import json
 import copy
+import re
 
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
@@ -199,7 +200,8 @@ class IBMRuntimeService:
             options: Dict,
             inputs: Union[Dict, ParameterNamespace],
             callback: Optional[Callable] = None,
-            result_decoder: Optional[Type[ResultDecoder]] = None
+            result_decoder: Optional[Type[ResultDecoder]] = None,
+            image: Optional[str] = ""
     ) -> RuntimeJob:
         """Execute the runtime program.
 
@@ -217,6 +219,8 @@ class IBMRuntimeService:
 
             result_decoder: A :class:`ResultDecoder` subclass used to decode job results.
                 ``ResultDecoder`` is used if not specified.
+            image: The runtime image used to execute the program, specified in the form
+                of image_name:tag. Not all accounts are authorized to select a different image.
 
         Returns:
             A ``RuntimeJob`` instance representing the execution.
@@ -231,13 +235,19 @@ class IBMRuntimeService:
             inputs.validate()
             inputs = vars(inputs)
 
+        if image and not \
+            re.match("[a-zA-Z0-9]+([/.\\-_][a-zA-Z0-9]+)*:[a-zA-Z0-9]+([.\\-_][a-zA-Z0-9]+)*$",
+                     image):
+            raise IBMInputValueError('"image" needs to be in form of image_name:tag')
+
         backend_name = options['backend_name']
         params_str = json.dumps(inputs, cls=RuntimeEncoder)
         result_decoder = result_decoder or ResultDecoder
         response = self._api_client.program_run(program_id=program_id,
                                                 credentials=self._provider.credentials,
                                                 backend_name=backend_name,
-                                                params=params_str)
+                                                params=params_str,
+                                                image=image)
 
         backend = self._provider.get_backend(backend_name)
         job = RuntimeJob(backend=backend,
@@ -245,7 +255,8 @@ class IBMRuntimeService:
                          credentials=self._provider.credentials,
                          job_id=response['id'], program_id=program_id, params=inputs,
                          user_callback=callback,
-                         result_decoder=result_decoder)
+                         result_decoder=result_decoder,
+                         image=image)
         return job
 
     def upload_program(

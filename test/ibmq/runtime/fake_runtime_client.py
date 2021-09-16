@@ -15,6 +15,7 @@
 import time
 import uuid
 import json
+from typing import Optional
 from concurrent.futures import ThreadPoolExecutor
 
 from qiskit.providers.ibmq.credentials import Credentials
@@ -75,7 +76,7 @@ class BaseFakeRuntimeJob:
     _executor = ThreadPoolExecutor()  # pylint: disable=bad-option-value,consider-using-with
 
     def __init__(self, job_id, program_id, hub, group, project, backend_name, final_status,
-                 params):
+                 params, image):
         """Initialize a fake job."""
         self._job_id = job_id
         self._status = final_status or "QUEUED"
@@ -85,6 +86,7 @@ class BaseFakeRuntimeJob:
         self._project = project
         self._backend_name = backend_name
         self._params = params
+        self._image = image
         if final_status is None:
             self._future = self._executor.submit(self._auto_progress)
             self._result = None
@@ -110,7 +112,8 @@ class BaseFakeRuntimeJob:
                 'backend': self._backend_name,
                 'status': self._status,
                 'params': [self._params],
-                'program': {'id': self._program_id}}
+                'program': {'id': self._program_id},
+                'image': self._image}
 
     def result(self):
         """Return job result."""
@@ -266,7 +269,8 @@ class BaseFakeRuntimeClient:
             program_id: str,
             credentials: Credentials,
             backend_name: str,
-            params: str
+            params: str,
+            image: Optional[str] = ""
     ):
         """Run the specified program."""
         job_id = uuid.uuid4().hex
@@ -274,7 +278,8 @@ class BaseFakeRuntimeClient:
         job = job_cls(job_id=job_id, program_id=program_id,
                       hub=credentials.hub, group=credentials.group,
                       project=credentials.project, backend_name=backend_name,
-                      params=params, final_status=self._final_status, **self._job_kwargs)
+                      params=params, final_status=self._final_status, image=image,
+                      **self._job_kwargs)
         self._jobs[job_id] = job
         return {'id': job_id}
 
