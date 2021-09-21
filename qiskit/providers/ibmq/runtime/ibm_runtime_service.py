@@ -238,7 +238,7 @@ class IBMRuntimeService:
         if image and not \
             re.match("[a-zA-Z0-9]+([/.\\-_][a-zA-Z0-9]+)*:[a-zA-Z0-9]+([.\\-_][a-zA-Z0-9]+)*$",
                      image):
-            raise IBMInputValueError('"image" needs to be in form of image_name:tag')
+            raise IBMQInputValueError('"image" needs to be in form of image_name:tag')
 
         backend_name = options['backend_name']
         params_str = json.dumps(inputs, cls=RuntimeEncoder)
