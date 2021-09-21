@@ -307,6 +307,20 @@ if __name__ == '__main__':
         self.assertEqual(job.status(), JobStatus.DONE)
         self.assertTrue(job.result())
 
+    def test_run_program_with_custom_runtime_image(self):
+        """Test running program."""
+        params = {'param1': 'foo'}
+        image = "name:tag"
+        job = self._run_program(inputs=params, image=image)
+        self.assertTrue(job.job_id())
+        self.assertIsInstance(job, RuntimeJob)
+        self.assertIsInstance(job.status(), JobStatus)
+        self.assertEqual(job.inputs, params)
+        job.wait_for_final_state()
+        self.assertEqual(job.status(), JobStatus.DONE)
+        self.assertTrue(job.result())
+        self.assertEqual(job.image, image)
+
     def test_program_params_validation(self):
         """Test program parameters validation process"""
         program_id = self.runtime.upload_program(
@@ -596,7 +610,7 @@ if __name__ == '__main__':
         return program_id
 
     def _run_program(self, program_id=None, inputs=None, job_classes=None, final_status=None,
-                     decoder=None):
+                     decoder=None, image=""):
         """Run a program."""
         options = {'backend_name': "some_backend"}
         if final_status is not None:
@@ -606,7 +620,8 @@ if __name__ == '__main__':
         if program_id is None:
             program_id = self._upload_program()
         job = self.runtime.run(program_id=program_id, inputs=inputs,
-                               options=options, result_decoder=decoder)
+                               options=options, result_decoder=decoder,
+                               image=image)
         return job
 
     def _populate_jobs_with_all_statuses(self, jobs, program_id):
