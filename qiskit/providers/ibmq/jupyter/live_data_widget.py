@@ -25,8 +25,8 @@ import websockets
 import ipywidgets as widgets
 import numpy as np
 from sklearn.decomposition import PCA
-from qiskit.exceptions import MissingOptionalLibraryError
 from qiskit.providers.jobstatus import JobStatus
+import logging
 
 
 # PLOTS
@@ -50,6 +50,8 @@ JOBS_CB_WIDTH = 310
 CHANNEL_DD_WIDTH = 120
 PROGRESS_WIDTH = 300
 
+
+logger = logging.getLogger(__name__)
 
 class CarbonColors(str, Enum):
     """Carbon Design Colors"""
@@ -104,6 +106,7 @@ class LiveDataVisualization:
         self.job_information_view = None
 
         self.jobs = []
+        self.job_ids = []
         self.selected_job = None
         self.jobs_combo = None
 
@@ -129,24 +132,23 @@ class LiveDataVisualization:
         if change["type"] == "change" and change["name"] == "value":
             selected_job = change["new"]
             self.jobs_combo.value = selected_job
-            job_ids = list(map(lambda x: x.job_id(), self.jobs))
-            selected_job_idx = job_ids.index(selected_job)
+            selected_job_idx = self.job_ids.index(selected_job)
             if selected_job not in self.jobs_combo.options:
-                self.jobs_combo.options = job_ids
+                self.jobs_combo.options = self.job_ids
             self.new_selected_job(self.jobs[selected_job_idx])
-            self.update_websocket_connection(change["new"])
+            self.update_websocket_connection()
 
     def get_livedata_jobs(self) -> list:
         """Get the live data jobs for the current backend"""
         total_jobs = self.backend.jobs(limit=0)
         livedata_jobs = [job for job in total_jobs if getattr(job, "live_data_enabled_", True)]
+        self.job_ids = list(map(lambda x: x.job_id(), livedata_jobs))
         return livedata_jobs
 
-    def update_websocket_connection(self, job_id) -> None:
+    def update_websocket_connection(self) -> None:
         """Disconnect websocket from current job and create a new connection"""
         self.disconnect_ws()
-        loop = asyncio.get_event_loop()
-        self.ws_task = loop.create_task(self.init_websockets(job_id))
+        self.ws_task = asyncio.ensure_future(self.init_websockets())
         self.ldata_details.clear()
         self.job_information_view.reset_progress_bar_widget()
 
@@ -154,13 +156,12 @@ class LiveDataVisualization:
 
     def jobs_combobox(self) -> widgets.Combobox:
         """Create the Job search Combobox"""
-        job_ids = list(map(lambda x: x.job_id(), self.jobs))
         layout = widgets.Layout(
             display="flex", justify_content="flex-start", width=f"{JOBS_CB_WIDTH}px"
         )
         jobs_combobox = widgets.Combobox(
             placeholder="Job ID",
-            options=job_ids,
+            options=self.job_ids,
             ensure_option=True,
             disabled=False,
             layout=layout,
@@ -175,7 +176,8 @@ class LiveDataVisualization:
         sjob_title = self.create_title("Job selection")
         label = widgets.Label(value="Job:")
         self.jobs_combo = self.jobs_combobox()
-        combo_view = widgets.HBox(children=(label, self.jobs_combo))
+        layout = widgets.Layout(overflow_y="hidden", min_height="32px")
+        combo_view = widgets.HBox(children=(label, self.jobs_combo), layout=layout)
 
         # Jobs info
         job_title = self.create_title("Job information", extra_space=True)
@@ -224,13 +226,15 @@ class LiveDataVisualization:
         self.setup_views()
 
         # Update Jobs
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.update_job_loop())
+        asyncio.ensure_future(self.update_job_loop())
 
         # Connect to the first job
         if len(self.jobs) > 0:
-            self.jobs_combo.value = self.jobs_combo.options[0]
-            self.update_websocket_connection(self.jobs_combo.options[0])
+            selected_job = self.jobs_combo.options[0]
+            self.jobs_combo.value = selected_job
+            selected_job_idx = self.job_ids.index(selected_job)
+            self.new_selected_job(self.jobs[selected_job_idx])
+            self.update_websocket_connection()
 
         return self.widget
 
@@ -269,7 +273,7 @@ class LiveDataVisualization:
         return decompressed_data
 
     # Websockets
-    async def init_websockets(self, job_id) -> None:
+    async def init_websockets(self) -> None:
         """Init Websockets using Websockets library
 
         Args:
@@ -277,8 +281,8 @@ class LiveDataVisualization:
             job_id (str): id of the selected job
 
         """
-        uri: str = f"{self.backend.provider().credentials.websockets_url}jobs/{job_id}/live_data"
-        print(f"🔌 ws@job_id #{job_id} connecting to {uri}")
+        uri: str = f"{self.backend.provider().credentials.websockets_url}jobs/{self.selected_job.job_id()}/live_data"
+        logger.debug(f"🔌 ws@job_id #{self.selected_job.job_id()} connecting to {uri}")
         ssl_context = ssl.SSLContext()
         this_ws = None
         try:
@@ -298,10 +302,10 @@ class LiveDataVisualization:
                 await ws.recv()
 
                 async for message in ws:
-                    print("RECEIVE PACKAGE")
+                    logger.debug("RECEIVE PACKAGE")
                     compressed_msg = json.loads(message)
                     if compressed_msg["type"] == "live-data":
-                        print(f"📝 ws@job_id #{job_id} received a message!")
+                        logger.debug(f"📝 ws@job_id #{self.selected_job.job_id()} received a message!")
                         result = self.pako_inflate(bytes(compressed_msg["data"]["data"]))
                         # Check result type. In the last package it is a list instead a dict.
                         if self.ldata_details:
@@ -320,10 +324,10 @@ class LiveDataVisualization:
                         await ws.send(json.dumps({"type": "client", "data": "release"}))
 
         except BaseException as error:
-            print(f"💥 ws@job_id #{job_id} errored: {error}")
-            print(f"🤖 Trying to reconnect ws@job_id #{job_id}...")
+            logger.debug(f"💥 ws@job_id #{self.selected_job.job_id()} errored/closed: {error}")
             if self.ws_connection == this_ws:
-                await self.init_websockets(job_id)
+                logger.debug(f"🤖 Trying to reconnect ws@job_id #{self.selected_job.job_id()}...")
+                await self.init_websockets()
 
     def disconnect_ws(self) -> None:
         """Close the websocket connection"""
@@ -331,8 +335,7 @@ class LiveDataVisualization:
         if self.ws_task:
             self.ws_task.cancel()
         if self.ws_connection:
-            loop = asyncio.get_event_loop()
-            loop.create_task(self.ws_connection.close())
+            asyncio.ensure_future(self.ws_connection.close())
             self.ws_connection = None
 
     async def update_job_loop(self) -> None:
@@ -342,19 +345,18 @@ class LiveDataVisualization:
             self.jobs = self.get_livedata_jobs()
             new_len = len(self.jobs)
             if len(self.jobs) > 0:
-                job_ids = list(map(lambda x: x.job_id(), self.jobs))
-                self.jobs_combo.options = job_ids
+                self.jobs_combo.options = self.job_ids
                 if self.jobs_combo.value != "":
                     if previous_len == new_len:
                         self.job_information_view.set_job(
-                            self.jobs[job_ids.index(self.jobs_combo.value)]
+                            self.jobs[self.job_ids.index(self.jobs_combo.value)]
                         )
                     else:
-                        print(f"changing job to the new received: {job_ids[0]}")
-                        self.jobs_combo.value = job_ids[0]
+                        logger.debug(f"changing job to the new received: {self.job_ids[0]}")
+                        self.jobs_combo.value = self.job_ids[0]
                         self.job_information_view.set_job(self.jobs[0])  # new job arrived, take it
                 else:
-                    self.jobs_combo.value = job_ids[0]
+                    self.jobs_combo.value = self.job_ids[0]
                     self.job_information_view.set_job(self.jobs[0])
             await asyncio.sleep(JOB_UPDATE_FREQ)
 
@@ -385,7 +387,6 @@ class LivePlot:
     def clear(self) -> None:
         """Clean up all the class values"""
         self._channels = []
-        self._selected_channel = 0
 
         self._raw_plot = None
         self._iq_plot = None
@@ -465,8 +466,14 @@ class LivePlot:
 
     def update_channel_dd_content(self, data) -> None:
         """Update the channel dropdown with the received data"""
+        current_selected_channel = self._selected_channel
         channels = self.get_channels_list(data)
         self._channels_dd.options = channels
+        if current_selected_channel in channels:
+            self._selected_channel = current_selected_channel
+            self._channels_dd.value = channels[channels.index(current_selected_channel)]
+        else:
+            self._channels_dd.value = channels[0]
 
     # Draw data
     def draw_data(self, data=None) -> bool:
@@ -480,7 +487,7 @@ class LivePlot:
         if self.fig_generated:
             self.update_live_data(self._data)
         else:
-            # print("Generating image")
+            # logger.debug("Generating image")
             self.setup_live_data_plots(self._data)
 
         self.show_plot()
@@ -625,8 +632,8 @@ class LivePlot:
 
             # Setup IQ plot scale
             self.set_view_limits(self._iq_plot, real_list, imag_list, center_origin=False)
-            self.set_view_limits(self._signal_plot, None, real_list, center_origin=True)
-            self.set_view_limits(self._signal_plot, None, imag_list, center_origin=True)
+            view_data = real_list + imag_list
+            self.set_view_limits(self._signal_plot, None, view_data, center_origin=True)
 
             # Update plots
 
@@ -780,7 +787,8 @@ class LivePlot:
         raw_b = None
         if n_circuits > 1:
             plot_data_l0b = data[-1]
-            self.set_view_limits(view, None, plot_data_l0b, center_origin=True)
+            view_data = plot_data_l0a + plot_data_l0b
+            self.set_view_limits(view, None, view_data, center_origin=True)
             (raw_b,) = view.plot(
                 plot_data_l0b,
                 label=f"Circuit {n_circuits - 1}",
@@ -839,8 +847,8 @@ class LivePlot:
         view.grid(True)
         x_max_lim = max(1, n_circuits - 1)
         view.set_xlim(0, x_max_lim)
-        self.set_view_limits(view, None, real_list, center_origin=True)
-        self.set_view_limits(view, None, imag_list, center_origin=True)
+        values = real_list + imag_list
+        self.set_view_limits(view, None, values, center_origin=True)
         self._signal_plot = view
 
         if n_circuits > 1:
