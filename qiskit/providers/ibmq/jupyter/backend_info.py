@@ -44,6 +44,7 @@ def backend_widget(backend: Union[IBMQBackend, FakeBackend]) -> None:
     Args:
         backend: Display information about this backend.
     """
+    vue.theme.dark = False
     cred = backend._credentials
     last_tab = vue.TabItem(children=[])
     livedata = LiveDataVisualization()
