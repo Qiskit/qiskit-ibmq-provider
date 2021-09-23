@@ -66,6 +66,7 @@ class CarbonColors(str, Enum):
     GREEN50 = "#24A148"
     WHITE = "#FFFFFF"
     CLEAR = "#0000"
+    BLACK = "#000"
 
 
 class LiveDataKeys(str, Enum):
@@ -157,7 +158,8 @@ class LiveDataVisualization:
     def jobs_combobox(self) -> widgets.Combobox:
         """Create the Job search Combobox"""
         layout = widgets.Layout(
-            display="flex", justify_content="flex-start", width=f"{JOBS_CB_WIDTH}px"
+            display="flex", justify_content="flex-start", width=f"{JOBS_CB_WIDTH}px",
+            border=f"solid 1px {CarbonColors.BLACK}"
         )
         jobs_combobox = widgets.Combobox(
             placeholder="Job ID",
@@ -249,7 +251,7 @@ class LiveDataVisualization:
             (Ipywidget): HTML widget used as title
 
         """
-        margin = "34px" if extra_space is True and not self.is_quantumlab else "0px"
+        margin = "34px" if extra_space is True else "0px"
         content = f"<h5 style='margin-top: {margin};'><b>{title}</b></h5>"
         return widgets.HTML(value=content)
 
