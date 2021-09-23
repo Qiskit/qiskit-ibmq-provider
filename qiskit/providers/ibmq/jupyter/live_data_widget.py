@@ -497,12 +497,14 @@ class LivePlot:
 
         return True
 
-    def fig_to_base64(self, fig):
+    def fig_to_base64(self, fig) -> bytes:
         """Transform a Matplotlib fig into its Base64-encoded bytes representation
 
         Args:
             fig (~matplotlib.figure.Figure): the Matplotlib figure to transform.
 
+        Returns:
+            The figure encoded in Base64
         """
         img = BytesIO()
         fig.savefig(img, format="png", bbox_inches="tight")
@@ -1028,7 +1030,7 @@ class ProgressBar:
 
         Args:
             _max (int): max value
-            _values (int): current value
+            _value (int): current value
             _min (int): min value
         """
         self._progress_bar.min = _min
