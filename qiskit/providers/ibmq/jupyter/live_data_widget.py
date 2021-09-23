@@ -289,10 +289,11 @@ class LiveDataVisualization:
         ssl_context = ssl.SSLContext()
         this_ws = None
         try:
-            async with websockets.connect(uri, max_size=70000000, ssl=ssl_context) as ws:
-                self.ws_connection = ws
-                this_ws = ws
-                await ws.send(
+            # pylint: disable=E1101
+            async with websockets.connect(uri, max_size=70000000, ssl=ssl_context) as ws_connection:
+                self.ws_connection = ws_connection
+                this_ws = ws_connection
+                await ws_connection.send(
                     json.dumps(
                         {
                             "type": "authentication",
@@ -302,9 +303,9 @@ class LiveDataVisualization:
                 )
 
                 # Wait until connected
-                await ws.recv()
+                await ws_connection.recv()
 
-                async for message in ws:
+                async for message in ws_connection:
                     logger.debug("RECEIVE PACKAGE")
                     compressed_msg = json.loads(message)
                     if compressed_msg["type"] == "live-data":
@@ -324,7 +325,7 @@ class LiveDataVisualization:
                                 max_value=max_value, value=value
                             )
 
-                        await ws.send(json.dumps({"type": "client", "data": "release"}))
+                        await ws_connection.send(json.dumps({"type": "client", "data": "release"}))
 
         except BaseException as error:
             logger.debug(f"💥 ws@job_id #{self.selected_job.job_id()} errored/closed: {error}")
