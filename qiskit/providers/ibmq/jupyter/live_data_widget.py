@@ -20,13 +20,13 @@ import ssl
 import zlib
 from io import BytesIO
 from base64 import b64encode
+import logging
 import pytz
 import websockets
 import ipywidgets as widgets
 import numpy as np
 from sklearn.decomposition import PCA
 from qiskit.providers.jobstatus import JobStatus
-import logging
 
 
 # PLOTS
@@ -52,6 +52,7 @@ PROGRESS_WIDTH = 300
 
 
 logger = logging.getLogger(__name__)
+
 
 class CarbonColors(str, Enum):
     """Carbon Design Colors"""
@@ -115,7 +116,6 @@ class LiveDataVisualization:
         self.ws_task = None
 
         self.is_quantumlab = is_qlab_notebook()
-
 
     # JOB INFO
     def new_selected_job(self, job) -> None:
@@ -283,7 +283,8 @@ class LiveDataVisualization:
             job_id (str): id of the selected job
 
         """
-        uri: str = f"{self.backend.provider().credentials.websockets_url}jobs/{self.selected_job.job_id()}/live_data"
+        uri: str = (f"{self.backend.provider().credentials.websockets_url}"
+                    "jobs/{self.selected_job.job_id()}/live_data")
         logger.debug(f"🔌 ws@job_id #{self.selected_job.job_id()} connecting to {uri}")
         ssl_context = ssl.SSLContext()
         this_ws = None
@@ -307,7 +308,7 @@ class LiveDataVisualization:
                     logger.debug("RECEIVE PACKAGE")
                     compressed_msg = json.loads(message)
                     if compressed_msg["type"] == "live-data":
-                        logger.debug(f"📝 ws@job_id #{self.selected_job.job_id()} received a message!")
+                        logger.debug(f"📝 ws@job_id #{self.selected_job.job_id()} received a msg!")
                         result = self.pako_inflate(bytes(compressed_msg["data"]["data"]))
                         # Check result type. In the last package it is a list instead a dict.
                         if self.ldata_details:
@@ -1211,8 +1212,7 @@ class JobInformationView:
 
         try:
             completion_time = job.queue_info().estimated_complete_time
-        # pylint: disable=bare-except
-        except:
+        except BaseException:
             return "..."
 
         formated_completion = self.format_timedate(completion_time)

@@ -69,12 +69,20 @@ def backend_widget(backend: Union[IBMQBackend, FakeBackend]) -> None:
                                      vue.TabItem(children=[config_tab(backend)]),
                                      vue.TabItem(children=[qubits_tab(backend)]),
                                      vue.TabItem(children=[gates_tab(backend)]),
-                                     vue.TabItem(children=[iplot_error_map(backend,
-                                                                           figsize=(None, None),
-                                                                           as_widget=True)]),
-                                     vue.TabItem(children=[livedata.create_visualization(backend,
-                                                                                         figsize=(11, 9),
-                                                                                         show_title=False)]),
+                                     vue.TabItem(
+                                         children=[
+                                             iplot_error_map(
+                                                 backend, figsize=(None, None), as_widget=True
+                                             )
+                                         ]
+                                     ),
+                                     vue.TabItem(
+                                         children=[
+                                             livedata.create_visualization(
+                                                 backend, figsize=(11, 9), show_title=False
+                                             )
+                                         ]
+                                     ),
                                      last_tab])
                     ])
 
