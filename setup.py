@@ -23,7 +23,8 @@ REQUIREMENTS = [
     "numpy>=1.13",
     "urllib3>=1.21.1",
     "python-dateutil>=2.8.0",
-    "websocket-client>=1.0.1"
+    "websocket-client>=1.0.1",
+    "websockets>=10.0"
 ]
 
 # Handle version.
