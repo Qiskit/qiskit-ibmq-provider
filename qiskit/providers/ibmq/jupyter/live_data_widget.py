@@ -286,7 +286,7 @@ class LiveDataVisualization:
 
         """
         uri: str = (f"{self.backend.provider().credentials.websockets_url}"
-                    "jobs/{self.selected_job.job_id()}/live_data")
+                    f"jobs/{self.selected_job.job_id()}/live_data")
         logger.debug(f"🔌 ws@job_id #{self.selected_job.job_id()} connecting to {uri}")
         ssl_context = ssl.SSLContext()
         this_ws = None
