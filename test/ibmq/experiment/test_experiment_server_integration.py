@@ -168,7 +168,7 @@ class TestExperimentServerIntegration(IBMQTestCase):
                 experiment_type="foo", experiment_type_operator="bad")
 
     def test_experiments_with_start_time(self):
-        """Test retrieving all experiments for a specific type."""
+        """Test retrieving an experiment by its start_time."""
         ref_start_dt = datetime.now() - timedelta(days=1)
         ref_start_dt = ref_start_dt.replace(tzinfo=tz.tzlocal())
         exp_id = self._create_experiment(start_datetime=ref_start_dt)
