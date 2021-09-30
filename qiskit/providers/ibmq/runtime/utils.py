@@ -22,8 +22,10 @@ import io
 import json
 import warnings
 import zlib
+from datetime import date
 from typing import Any, Callable, Dict, List, Union
 
+import dateutil.parser
 import numpy as np
 
 try:
@@ -156,6 +158,8 @@ class RuntimeEncoder(json.JSONEncoder):
     """JSON Encoder used by runtime service."""
 
     def default(self, obj: Any) -> Any:  # pylint: disable=arguments-differ
+        if isinstance(obj, date):
+            return {'__type__': 'datetime', '__value__': obj.isoformat()}
         if isinstance(obj, complex):
             return {'__type__': 'complex', '__value__': [obj.real, obj.imag]}
         if isinstance(obj, np.ndarray):
@@ -213,6 +217,8 @@ class RuntimeDecoder(json.JSONDecoder):
             obj_type = obj['__type__']
             obj_val = obj['__value__']
 
+            if obj_type == 'datetime':
+                return dateutil.parser.parse(obj_val)
             if obj_type == 'complex':
                 return obj_val[0] + 1j * obj_val[1]
             if obj_type == 'ndarray':
