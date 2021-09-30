@@ -31,6 +31,7 @@ from qiskit.algorithms.optimizers import (
     GSLS,
     IMFIL,
     SPSA,
+    QNSPSA,
     SNOBFIT,
     L_BFGS_B,
     NELDER_MEAD,
@@ -187,13 +188,14 @@ class TestRuntime(IBMQTestCase):
 
     @skipIf(os.name == 'nt', 'Test not supported on Windows')
     def test_coder_optimizers(self):
-        """Test runtime encoder and decoder for circuits."""
+        """Test runtime encoder and decoder for optimizers."""
         subtests = (
             (ADAM, {"maxiter": 100, "amsgrad": True}),
             (GSLS, {"maxiter": 50, "min_step_size": 0.01}),
             (IMFIL, {"maxiter": 20}),
             (SPSA, {"maxiter": 10, "learning_rate": 0.01, "perturbation": 0.1}),
             (SNOBFIT, {"maxiter": 200, "maxfail": 20}),
+            (QNSPSA, {"fidelity": 123, "maxiter": 25, "resamplings": {1: 100, 2: 50}}),
             # some SciPy optimizers only work with default arguments due to Qiskit/qiskit-terra#6682
             (L_BFGS_B, {}),
             (NELDER_MEAD, {}),
