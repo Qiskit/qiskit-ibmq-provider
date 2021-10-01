@@ -396,7 +396,7 @@ class ManagedJobSet:
             if isinstance(experiment, (QuantumCircuit, Schedule)):
                 experiment = experiment.name
             for job in self.jobs():
-                for i, exp in enumerate(job.circuits()):
+                for i, exp in enumerate(job._qobj.experiments):
                     if hasattr(exp.header, 'name') and exp.header.name == experiment:
                         return job, i
 
