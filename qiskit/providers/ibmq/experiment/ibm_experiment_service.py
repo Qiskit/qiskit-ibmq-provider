@@ -110,6 +110,7 @@ class IBMExperimentService:
             backend_name: str,
             metadata: Optional[Dict] = None,
             experiment_id: Optional[str] = None,
+            parent_id: Optional[str] = None,
             job_ids: Optional[List[str]] = None,
             tags: Optional[List[str]] = None,
             notes: Optional[str] = None,
@@ -126,6 +127,9 @@ class IBMExperimentService:
             metadata: Experiment metadata.
             experiment_id: Experiment ID. It must be in the ``uuid4`` format.
                 One will be generated if not supplied.
+            parent_id: The experiment ID of the parent experiment.
+                The parent experiment must exist, must be on the same backend as the child,
+                and an experiment cannot be its own parent.
             job_ids: IDs of experiment jobs.
             tags: Tags to be associated with the experiment.
             notes: Freeform notes about the experiment.
@@ -164,6 +168,7 @@ class IBMExperimentService:
         }
         data.update(self._experiment_data_to_api(metadata=metadata,
                                                  experiment_id=experiment_id,
+                                                 parent_id=parent_id,
                                                  job_ids=job_ids,
                                                  tags=tags,
                                                  notes=notes,
@@ -235,6 +240,7 @@ class IBMExperimentService:
             self,
             metadata: Optional[Dict] = None,
             experiment_id: Optional[str] = None,
+            parent_id: Optional[str] = None,
             job_ids: Optional[List[str]] = None,
             tags: Optional[List[str]] = None,
             notes: Optional[str] = None,
@@ -247,6 +253,7 @@ class IBMExperimentService:
         Args:
             metadata: Experiment metadata.
             experiment_id: Experiment ID.
+            parent_id: Parent experiment ID
             job_ids: IDs of experiment jobs.
             tags: Tags to be associated with the experiment.
             notes: Freeform notes about the experiment.
@@ -262,6 +269,8 @@ class IBMExperimentService:
             data['extra'] = metadata
         if experiment_id:
             data['uuid'] = experiment_id
+        if parent_id:
+            data['parent_experiment_uuid'] = parent_id
         if share_level:
             if isinstance(share_level, str):
                 share_level = ExperimentShareLevel(share_level.lower())
@@ -321,6 +330,7 @@ class IBMExperimentService:
             public_only: Optional[bool] = False,
             exclude_mine: Optional[bool] = False,
             mine_only: Optional[bool] = False,
+            parent_id: Optional[str] = None,
             sort_by: Optional[Union[str, List[str]]] = None,
             **filters: Any
     ) -> List[Dict]:
@@ -385,6 +395,7 @@ class IBMExperimentService:
                 Cannot be ``True`` if `mine_only` is ``True``.
             mine_only: If ``True``, only experiments where I am the owner will be returned.
                 Cannot be ``True`` if `exclude_mine` is ``True``.
+            parent_id: Filter experiments by this parent experiment ID.
             sort_by: Specifies how the output should be sorted. This can be a single sorting
                 option or a list of options. Each option should contain a sort key
                 and a direction, separated by a semicolon. Valid sort keys are
@@ -464,6 +475,7 @@ class IBMExperimentService:
                     public_only=public_only,
                     exclude_mine=exclude_mine,
                     mine_only=mine_only,
+                    parent_id=parent_id,
                     sort_by=converted["sort_by"])
             raw_data = json.loads(response, cls=json_decoder)
             marker = raw_data.get('marker')
@@ -505,6 +517,7 @@ class IBMExperimentService:
             "experiment_type": raw_data['type'],
             "backend": backend,
             "experiment_id": raw_data['uuid'],
+            "parent_id": raw_data.get('parent_experiment_uuid', None),
             "tags": raw_data.get("tags", None),
             "job_ids": raw_data['jobs'],
             "share_level": raw_data.get("visibility", None),

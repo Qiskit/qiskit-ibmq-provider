@@ -56,6 +56,7 @@ class ExperimentClient(BaseClient):
             public_only: Optional[bool] = False,
             exclude_mine: Optional[bool] = False,
             mine_only: Optional[bool] = False,
+            parent_id: Optional[str] = None,
             sort_by: Optional[str] = None
     ) -> str:
         """Retrieve experiments, with optional filtering.
@@ -75,6 +76,7 @@ class ExperimentClient(BaseClient):
             public_only: Whether or not to only return experiments with a public share level.
             exclude_mine: Whether or not to exclude experiments where I am the owner.
             mine_only: Whether or not to only return experiments where I am the owner.
+            parent_id: Filter by parent experiment ID.
             sort_by: Sorting order.
 
         Returns:
@@ -91,6 +93,7 @@ class ExperimentClient(BaseClient):
             hub=hub, group=group, project=project,
             exclude_public=exclude_public, public_only=public_only,
             exclude_mine=exclude_mine, mine_only=mine_only,
+            parent_id=parent_id,
             sort_by=sort_by)
         return resp
 
