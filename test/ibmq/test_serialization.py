@@ -117,7 +117,10 @@ class TestSerialization(IBMQTestCase):
         """Test deserializing a QASM job result."""
         result = self.sim_backend.run(self.bell).result()
 
-        self._verify_data(result.to_dict(), ())
+        # Known keys that look like a serialized complex number.
+        good_keys = ('results.metadata.input_qubit_map', 'results.metadata.active_input_qubits')
+
+        self._verify_data(result.to_dict(), good_keys=good_keys)
 
     @slow_test
     def test_pulse_job_result(self):
