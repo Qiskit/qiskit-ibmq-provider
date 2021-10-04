@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    A runtime program's visibility can now be specified on upload
+    using ``is_public`` parameter in
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.upload_program`.
