@@ -328,7 +328,7 @@ class AccountProvider(Provider):
             state: Union[QuantumCircuit, Statevector],
             observable: Union[BaseOperator, PauliSumOp, List[Tuple[str, float]]],
             parameters: Union[List[Union[float, List[float]]]] = None,
-            evaluator: Union[str] = None,
+            evaluator: Optional[str] = None,
             transpile_options: Optional[dict] = None,
             shots: Optional[int] = None,
             backend: Optional[Union[Backend, BaseBackend, str]] = None,
