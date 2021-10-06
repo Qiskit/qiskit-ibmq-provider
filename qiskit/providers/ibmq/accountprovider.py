@@ -327,11 +327,11 @@ class AccountProvider(Provider):
             self,
             state: Union[QuantumCircuit, Statevector],
             observable: Union[BaseOperator, PauliSumOp, List[Tuple[str, float]]],
-            parameters: Union[List[Union[float, List[float]]]] = None,
-            evaluator: Optional[str] = None,
+            parameters: Union[List[Union[float, List[float]]]],
+            backend: Union[Backend, BaseBackend, str],
+            evaluator: str = "PauliExpectationValue",
             transpile_options: Optional[dict] = None,
             shots: Optional[int] = None,
-            backend: Optional[Union[Backend, BaseBackend, str]] = None,
             **run_config: Dict
     ) -> 'runtime_job.RuntimeJob':
         """Estimate the expectation value.
@@ -343,13 +343,14 @@ class AccountProvider(Provider):
 
             parameters: The parameters to be bound in the circuit.
 
-            evaluator: The name of the evaluator class. Defaults to 'PauliExpectationValue'.
-
             backend: Backend to execute circuits on.
                 Transpiler options are automatically grabbed from backend configuration
                 and properties unless otherwise specified.
 
-            transpile_options: Additional transpiler options. If not specified, default Qiskit transpilation to the backend is used.
+            evaluator: The name of the evaluator class. Defaults to 'PauliExpectationValue'.
+
+            transpile_options: Additional transpiler options.
+                If not specified, default Qiskit transpilation to the backend is used.
 
             shots: Number of repetitions of each circuit, for sampling. If not specified,
                 the backend default is used.
@@ -359,20 +360,12 @@ class AccountProvider(Provider):
         Returns:
             Runtime job.
         """
-        if backend is None:
-            # We can't put a required parameter before an optional one, but it feels weird to
-            # have backend in between inputs to the estimator. So we make it optional and
-            # check here.
-            raise IBMQInputValueError('"backend" is a required parameter.')
-
         inputs = {
             "state": state,
             "observable": observable,
+            "parameters": parameters,
+            "evaluator": evaluator,
         }
-        if parameters:
-            inputs["parameters"] = parameters
-        if evaluator:
-            inputs["evaluator"] = evaluator
         if transpile_options:
             inputs["transpile_options"] = transpile_options
         run_options = copy.deepcopy(run_config)
