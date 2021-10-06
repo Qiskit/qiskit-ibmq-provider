@@ -337,19 +337,19 @@ class AccountProvider(Provider):
         """Estimate the expectation value.
 
         Args:
-            state: Quantum circuit that represents a quantum state.
+            state: A (parameterized) circuit that prepares a quantum state from the zero state.
 
             observable: The Hamiltonian to be evaluated.
 
-            parameters: The parameters to be bound.
+            parameters: The parameters to be bound in the circuit.
 
-            evaluator: The name of the evaluator class.
+            evaluator: The name of the evaluator class. Defaults to 'PauliExpectationValue'.
 
             backend: Backend to execute circuits on.
                 Transpiler options are automatically grabbed from backend configuration
                 and properties unless otherwise specified.
 
-            transpile_options: Additional transpiler options.
+            transpile_options: Additional transpiler options. If not specified, default Qiskit transpilation to the backend is used.
 
             shots: Number of repetitions of each circuit, for sampling. If not specified,
                 the backend default is used.
