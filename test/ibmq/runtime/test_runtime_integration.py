@@ -21,6 +21,8 @@ from contextlib import suppress
 
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
+from qiskit.circuit.library import RealAmplitudes
+from qiskit.opflow import PauliSumOp
 from qiskit.providers.ibmq.runtime.constants import API_TO_JOB_ERROR_MESSAGE
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 from qiskit.providers.ibmq.runtime.runtime_program import RuntimeProgram
@@ -36,7 +38,7 @@ from ...proxy_server import MockProxyServer, use_proxies
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
-@unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
+# @unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
 class TestRuntimeIntegration(IBMQTestCase):
     """Integration tests for runtime modules."""
 
@@ -571,6 +573,22 @@ def main(backend, user_messenger, **kwargs):
         job_logs = job.logs()
         self.assertIn("this is a stdout message", job_logs)
         self.assertIn("this is a stderr message", job_logs)
+
+    def test_estimate(self):
+        """Test the estimate function."""
+        observable = PauliSumOp.from_list([
+            ("II", -1.052373245772859),
+            ("IZ", 0.39793742484318045),
+            ("ZI", -0.39793742484318045),
+            ("ZZ", -0.01128010425623538),
+            ("XX", 0.18093119978423156)
+        ])
+        parameters = [1, 2, 3, 4, 5, 6]
+        ansatz = RealAmplitudes(num_qubits=2, reps=2)
+        job = self.provider.estimate(ansatz, observable, parameters,
+                                     evaluator="PauliExpectationValue",
+                                     shots=1000, backend="ibmq_qasm_simulator")
+        print(job.result())
 
     def _validate_program(self, program):
         """Validate a program."""
