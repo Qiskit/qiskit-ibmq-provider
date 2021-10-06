@@ -38,7 +38,7 @@ from ...proxy_server import MockProxyServer, use_proxies
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
-# @unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
+@unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
 class TestRuntimeIntegration(IBMQTestCase):
     """Integration tests for runtime modules."""
 
