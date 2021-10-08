@@ -23,6 +23,7 @@ from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.circuit.library import RealAmplitudes
 from qiskit.opflow import PauliSumOp
+from qiskit.providers.ibmq import IBMProvider
 from qiskit.providers.ibmq.runtime.constants import API_TO_JOB_ERROR_MESSAGE
 from qiskit.providers.ibmq.exceptions import IBMQNotAuthorizedError
 from qiskit.providers.ibmq.runtime.runtime_program import RuntimeProgram
@@ -38,7 +39,7 @@ from ...proxy_server import MockProxyServer, use_proxies
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
-@unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
+# @unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
 class TestRuntimeIntegration(IBMQTestCase):
     """Integration tests for runtime modules."""
 
@@ -588,7 +589,21 @@ def main(backend, user_messenger, **kwargs):
         job = self.provider.estimate(ansatz, observable, parameters,
                                      evaluator="PauliExpectationValue",
                                      shots=1000, backend="ibmq_qasm_simulator")
-        print(job.result())
+
+    def test_runtime_session(self):
+        """Test runtime session."""
+        circ = ReferenceCircuits.bell()
+        options = {"backend_name": "ibmq_qasm_simulator"}
+        inputs = {"circuits": circ}
+        provider = IBMProvider()
+        with provider.open("circuit-runner", inputs, options) as session:
+            for shots in [100, 200]:
+                session.write(shots=shots)
+                result = session.read()
+                self.assertEqual(result["results"][0]["shots"], shots)
+
+        with self.assertRaises(RuntimeError):
+            session.write(shots=300)
 
     def _validate_program(self, program):
         """Validate a program."""

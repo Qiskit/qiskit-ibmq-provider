@@ -96,6 +96,7 @@ from .ibmqbackendservice import IBMQBackendService
 from .utils.utils import setup_logger
 from .runner_result import RunnerResult
 from .version import __version__
+from .ibmprovider import IBMProvider
 
 # Setup the logger for the IBM Quantum Provider package.
 logger = logging.getLogger(__name__)
