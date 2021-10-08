@@ -586,9 +586,10 @@ def main(backend, user_messenger, **kwargs):
         ])
         parameters = [1, 2, 3, 4, 5, 6]
         ansatz = RealAmplitudes(num_qubits=2, reps=2)
-        job = self.provider.estimate(ansatz, observable, parameters,
-                                     evaluator="PauliExpectationValue",
-                                     shots=1000, backend="ibmq_qasm_simulator")
+        provider = IBMProvider()
+        provider.estimate(ansatz, observable, parameters,
+                          evaluator="PauliExpectationValue",
+                          shots=1000, backend="ibmq_qasm_simulator")
 
     def test_runtime_session(self):
         """Test runtime session."""

@@ -10,9 +10,16 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-from typing import Dict
+from typing import Dict, Union, List, Tuple, Optional
+import copy
 
 from qiskit.providers import ProviderV1 as Provider  # type: ignore[attr-defined]
+from qiskit.providers.backend import BackendV1 as Backend
+from qiskit.circuit import QuantumCircuit
+from qiskit.opflow.primitive_ops.pauli_sum_op import PauliSumOp
+from qiskit.quantum_info import Statevector
+from qiskit.quantum_info.operators.base_operator import BaseOperator
+from qiskit.providers.ibmq.runtime import runtime_job  # pylint: disable=unused-import
 
 from .ibmqfactory import IBMQFactory
 from .runtime.runtime_session import RuntimeSession
@@ -55,6 +62,63 @@ class IBMProvider(Provider):
                 all_backends[backend.name()] = backend
 
         return list(all_backends.values())
+
+    def estimate(
+            self,
+            state: Union[QuantumCircuit, Statevector],
+            observable: Union[BaseOperator, PauliSumOp, List[Tuple[str, float]]],
+            parameters: Union[List[Union[float, List[float]]]],
+            backend: Union[Backend, str],
+            evaluator: str = "PauliExpectationValue",
+            transpile_options: Optional[dict] = None,
+            shots: Optional[int] = None,
+            **run_config: Dict
+    ) -> 'runtime_job.RuntimeJob':
+        """Estimate the expectation value.
+
+        Args:
+            state: A (parameterized) circuit that prepares a quantum state from the zero state.
+
+            observable: The Hamiltonian to be evaluated.
+
+            parameters: The parameters to be bound in the circuit.
+
+            backend: Backend to execute circuits on.
+                Transpiler options are automatically grabbed from backend configuration
+                and properties unless otherwise specified.
+
+            evaluator: The name of the evaluator class. Defaults to 'PauliExpectationValue'.
+
+            transpile_options: Additional transpiler options.
+                If not specified, default Qiskit transpilation to the backend is used.
+
+            shots: Number of repetitions of each circuit, for sampling. If not specified,
+                the backend default is used.
+
+            **run_config: Extra arguments used to configure the circuit execution.
+
+        Returns:
+            Runtime job.
+        """
+        inputs = {
+            "state": state,
+            "observable": observable,
+            "parameters": parameters,
+            "evaluator": evaluator,
+        }
+        if transpile_options:
+            inputs["transpile_options"] = transpile_options
+        run_options = copy.deepcopy(run_config)
+        if shots:
+            run_options["shots"] = shots
+        inputs["run_options"] = run_options
+
+        backend_name = backend.name() if not isinstance(backend, str) else backend
+        options = {'backend_name': backend_name}
+        backend = self.get_backend(name=backend_name)
+        service = backend.provider().runtime
+        return service.run('estimator', options=options, inputs=inputs,
+                           image="expval:latest")
 
     def open(
             self,
