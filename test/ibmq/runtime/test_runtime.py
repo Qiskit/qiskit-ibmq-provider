@@ -342,7 +342,7 @@ if __name__ == '__main__':
     def test_program_params_validation(self):
         """Test program parameters validation process"""
         program_id = self.runtime.upload_program(
-            data="foo".encode(), metadata=self.DEFAULT_METADATA)
+            data="def main() {}", metadata=self.DEFAULT_METADATA)
         program = self.runtime.program(program_id)
         params: ParameterNamespace = program.parameters()
         params.param1 = 'Hello, World'
@@ -360,7 +360,7 @@ if __name__ == '__main__':
     def test_program_params_namespace(self):
         """Test running a program using parameter namespace."""
         program_id = self.runtime.upload_program(
-            data="foo".encode(), metadata=self.DEFAULT_METADATA)
+            data="def main() {}", metadata=self.DEFAULT_METADATA)
         params = self.runtime.program(program_id).parameters()
         params.param1 = "Hello World"
         self._run_program(program_id, inputs=params)
@@ -576,7 +576,7 @@ if __name__ == '__main__':
 
         for metadata in sub_tests:
             with self.subTest(metadata_type=type(metadata)):
-                program_id = self.runtime.upload_program(data="foo".encode(), metadata=metadata)
+                program_id = self.runtime.upload_program(data="def main() {}", metadata=metadata)
                 program = self.runtime.program(program_id)
                 self.runtime.delete_program(program_id)
                 self.assertEqual(self.DEFAULT_METADATA['name'], program.name)
@@ -600,7 +600,7 @@ if __name__ == '__main__':
         """Test combining metadata"""
         update_metadata = {"version": "1.2", "max_execution_time": 600}
         program_id = self.runtime.upload_program(
-            data="foo".encode(), metadata=self.DEFAULT_METADATA, **update_metadata)
+            data="def main() {}", metadata=self.DEFAULT_METADATA, **update_metadata)
         program = self.runtime.program(program_id)
         self.assertEqual(update_metadata['max_execution_time'], program.max_execution_time)
         self.assertEqual(update_metadata["version"], program.version)
@@ -623,7 +623,7 @@ if __name__ == '__main__':
         data = "def main() {}"
         program_id = self.runtime.upload_program(
             name=name,
-            data=data.encode(),
+            data=data,
             is_public=is_public,
             max_execution_time=max_execution_time,
             description="A test program")

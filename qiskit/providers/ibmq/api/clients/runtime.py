@@ -49,7 +49,7 @@ class RuntimeClient:
 
     def program_create(
             self,
-            program_data: Union[bytes, str],
+            program_data: bytes,
             name: str,
             description: str,
             max_execution_time: int,
@@ -154,6 +154,15 @@ class RuntimeClient:
             program_id: Program ID.
         """
         self.api.program(program_id).delete()
+
+    def program_update(self, program_id: str, program_data: str) -> None:
+        """Update a program.
+
+        Args:
+            program_id: Program ID.
+            program_data: Program data.
+        """
+        self.api.program(program_id).update(program_data)
 
     def job_get(self, job_id: str) -> Dict:
         """Get job data.

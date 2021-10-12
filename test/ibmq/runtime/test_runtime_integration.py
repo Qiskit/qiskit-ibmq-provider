@@ -18,6 +18,7 @@ import uuid
 import time
 import random
 from contextlib import suppress
+import tempfile
 
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -84,11 +85,10 @@ def main(backend, user_messenger, **kwargs):
         cls.backend = backend
         cls.poll_time = 1 if backend.configuration().simulator else 5
         cls.provider = backend.provider()
-        cls.program_id = cls.PROGRAM_PREFIX
         try:
             cls.program_id = cls.provider.runtime.upload_program(
-                name=cls.PROGRAM_PREFIX,
-                data=cls.RUNTIME_PROGRAM.encode(),
+                name=cls._get_program_name(),
+                data=cls.RUNTIME_PROGRAM,
                 metadata=cls.RUNTIME_PROGRAM_METADATA)
         except RuntimeDuplicateProgramError:
             pass
@@ -157,6 +157,18 @@ def main(backend, user_messenger, **kwargs):
         self.assertEqual(max_execution_time, program.max_execution_time)
         self.assertEqual(program.is_public, is_public)
 
+    def test_upload_program_file(self):
+        """Test uploading a program using a file."""
+        temp_fp = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        self.addCleanup(os.remove, temp_fp.name)
+        temp_fp.write(self.RUNTIME_PROGRAM)
+        temp_fp.close()
+
+        program_id = self._upload_program(data=temp_fp.name)
+        self.assertTrue(program_id)
+        program = self.provider.runtime.program(program_id)
+        self.assertTrue(program)
+
     def test_set_visibility(self):
         """Test setting the visibility of a program."""
         program_id = self._upload_program()
@@ -191,6 +203,23 @@ def main(backend, user_messenger, **kwargs):
         self.provider.runtime.delete_program(program_id)
         with self.assertRaises(RuntimeProgramNotFound):
             self.provider.runtime.delete_program(program_id)
+
+    def test_update_program(self):
+        """Test updating a program."""
+        program_v1 = """
+def main(backend, user_messenger, **kwargs):
+    return "version 1"
+        """
+        program_v2 = """
+def main(backend, user_messenger, **kwargs):
+    return "version 2"
+        """
+        program_id = self._upload_program(data=program_v1)
+        job = self._run_program(program_id=program_id)
+        self.assertEqual("version 1", job.result())
+        self.provider.runtime.update_program(program_id=program_id, data=program_v2)
+        job = self._run_program(program_id=program_id)
+        self.assertEqual("version 2", job.result())
 
     def test_run_program(self):
         """Test running a program."""
@@ -582,13 +611,18 @@ def main(backend, user_messenger, **kwargs):
         self.assertTrue(program.creation_date)
         self.assertTrue(program.version)
 
-    def _upload_program(self, name=None, max_execution_time=300,
-                        is_public: bool = False):
+    def _upload_program(
+            self,
+            name=None,
+            max_execution_time=300,
+            data=None,
+            is_public: bool = False):
         """Upload a new program."""
         name = name or self._get_program_name()
+        data = data or self.RUNTIME_PROGRAM
         program_id = self.provider.runtime.upload_program(
             name=name,
-            data=self.RUNTIME_PROGRAM.encode(),
+            data=data,
             is_public=is_public,
             metadata=self.RUNTIME_PROGRAM_METADATA,
             max_execution_time=max_execution_time,
@@ -596,9 +630,10 @@ def main(backend, user_messenger, **kwargs):
         self.to_delete.append(program_id)
         return program_id
 
-    def _get_program_name(self):
+    @classmethod
+    def _get_program_name(cls):
         """Return a unique program name."""
-        return self.PROGRAM_PREFIX + "_" + uuid.uuid4().hex
+        return cls.PROGRAM_PREFIX + "_" + uuid.uuid4().hex
 
     def _assert_complex_types_equal(self, expected, received):
         """Verify the received data in complex types is expected."""
