@@ -12,11 +12,13 @@
 
 """Qiskit runtime job."""
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional, Type
 import copy
 from functools import wraps
 
 from .ibm_runtime_service import IBMRuntimeService
+from .runtime_job import RuntimeJob
+from .program.result_decoder import ResultDecoder
 
 
 def _active_session(func):  # type: ignore
@@ -54,7 +56,7 @@ class RuntimeSession:
         self._program_id = program_id
         self._options = options
         self._initial_inputs = inputs
-        self._job = None
+        self._job: Optional[RuntimeJob] = None
         self._active = True
         self._image = image
 
@@ -71,13 +73,23 @@ class RuntimeSession:
         )
 
     @_active_session
-    def read(self) -> Any:
+    def read(
+            self,
+            timeout: Optional[float] = None,
+            wait: float = 5,
+            decoder: Optional[Type[ResultDecoder]] = None
+    ) -> Any:
         """Read from the session.
+
+        Args:
+            timeout: Number of seconds to wait for job.
+            wait: Seconds between queries.
+            decoder: A :class:`ResultDecoder` subclass used to decode job results.
 
         Returns:
             Data returned from the session.
         """
-        return self._job.result()
+        return self._job.result(timeout=timeout, wait=wait, decoder=decoder)
 
     def info(self) -> Dict:
         """Return session information.
