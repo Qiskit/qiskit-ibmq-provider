@@ -24,10 +24,12 @@ from qiskit.providers.ibmq.runtime import runtime_job  # pylint: disable=unused-
 from .ibmqfactory import IBMQFactory
 from .runtime.runtime_session import RuntimeSession
 
+QX_AUTH_URL = 'https://auth.quantum-computing.ibm.com/api'
+
 
 class IBMProvider(Provider):
 
-    def __init__(self, token: str = None, url: str = None):
+    def __init__(self, token: str = None, url: str = QX_AUTH_URL):
         self._factory = IBMQFactory()
         if token is None:
             self._factory.load_account()
