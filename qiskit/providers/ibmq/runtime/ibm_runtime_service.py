@@ -196,7 +196,7 @@ class IBMRuntimeService:
                               max_execution_time=response.get('cost', 0),
                               creation_date=response.get('creationDate', ""),
                               backend_requirements=backend_req,
-                              is_public=response.get('isPublic', False))
+                              is_public=response.get('is_public', False))
 
     def run(
             self,

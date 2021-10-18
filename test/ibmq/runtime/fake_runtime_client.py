@@ -47,7 +47,7 @@ class BaseFakeProgram:
                'name': self._name,
                'cost': self._cost,
                'description': self._description,
-               'isPublic': self._is_public}
+               'is_public': self._is_public}
         if include_data:
             out['data'] = self._data
         if self._backend_requirements:

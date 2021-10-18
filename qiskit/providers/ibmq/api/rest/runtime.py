@@ -96,7 +96,7 @@ class Runtime(RestAdapterBase):
                 'cost': str(max_execution_time),
                 'description': description.encode(),
                 'max_execution_time': max_execution_time,
-                'isPublic': is_public}
+                'is_public': is_public}
         if backend_requirements:
             data['backendRequirements'] = json.dumps(backend_requirements)
         if parameters:
