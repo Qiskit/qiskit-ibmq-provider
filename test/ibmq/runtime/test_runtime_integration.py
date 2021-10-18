@@ -625,7 +625,6 @@ def main(backend, user_messenger, **kwargs):
         self.assertTrue(program.description)
         self.assertTrue(program.max_execution_time)
         self.assertTrue(program.creation_date)
-        self.assertTrue(program.version)
 
     def _upload_program(
             self,

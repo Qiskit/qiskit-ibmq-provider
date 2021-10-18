@@ -70,7 +70,6 @@ class TestRuntime(IBMQTestCase):
         "name": "qiskit-test",
         "description": "Test program.",
         "max_execution_time": 300,
-        "version": "0.1",
         "backend_requirements": {"min_num_qubits":  5},
         "parameters": [
             {'name': 'param1', 'description': 'Desc 1', 'type': 'str', 'required': True},
@@ -286,13 +285,13 @@ if __name__ == '__main__':
             for prog in programs:
                 self.assertIn(prog.program_id, stdout)
                 self.assertIn(prog.name, stdout)
-                self.assertNotIn(prog.version, stdout)
+                self.assertNotIn(str(prog.max_execution_time), stdout)
             self.runtime.pprint_programs(detailed=True)
             stdout_detailed = mock_stdout.getvalue()
             for prog in programs:
                 self.assertIn(prog.program_id, stdout_detailed)
                 self.assertIn(prog.name, stdout_detailed)
-                self.assertIn(prog.version, stdout_detailed)
+                self.assertIn(str(prog.max_execution_time), stdout_detailed)
 
     def test_upload_program(self):
         """Test uploading a program."""
@@ -600,7 +599,6 @@ if __name__ == '__main__':
                 self.assertEqual(self.DEFAULT_METADATA['description'], program.description)
                 self.assertEqual(self.DEFAULT_METADATA['max_execution_time'],
                                  program.max_execution_time)
-                self.assertEqual(self.DEFAULT_METADATA["version"], program.version)
                 self.assertEqual(self.DEFAULT_METADATA['backend_requirements'],
                                  program.backend_requirements)
                 self.assertEqual([ProgramParameter(**param) for param in
@@ -615,12 +613,11 @@ if __name__ == '__main__':
 
     def test_metadata_combined(self):
         """Test combining metadata"""
-        update_metadata = {"version": "1.2", "max_execution_time": 600}
+        update_metadata = {"max_execution_time": 600}
         program_id = self.runtime.upload_program(
             data="def main() {}", metadata=self.DEFAULT_METADATA, **update_metadata)
         program = self.runtime.program(program_id)
         self.assertEqual(update_metadata['max_execution_time'], program.max_execution_time)
-        self.assertEqual(update_metadata["version"], program.version)
 
     def test_different_providers(self):
         """Test retrieving job submitted with different provider."""

@@ -26,7 +26,7 @@ from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder
 class BaseFakeProgram:
     """Base class for faking a program."""
 
-    def __init__(self, program_id, name, data, cost, description, version="1.0",
+    def __init__(self, program_id, name, data, cost, description,
                  backend_requirements=None, parameters=None, return_values=None,
                  interim_results=None, is_public=False):
         """Initialize a fake program."""
@@ -35,7 +35,6 @@ class BaseFakeProgram:
         self._data = data
         self._cost = cost
         self._description = description
-        self._version = version
         self._backend_requirements = backend_requirements
         self._parameters = parameters
         self._return_values = return_values
@@ -48,7 +47,6 @@ class BaseFakeProgram:
                'name': self._name,
                'cost': self._cost,
                'description': self._description,
-               'version': self._version,
                'isPublic': self._is_public}
         if include_data:
             out['data'] = self._data
@@ -237,7 +235,7 @@ class BaseFakeRuntimeClient:
             programs.append(prog.to_dict())
         return programs
 
-    def program_create(self, program_data, name, description, max_execution_time, version="1.0",
+    def program_create(self, program_data, name, description, max_execution_time,
                        backend_requirements=None, parameters=None, return_values=None,
                        interim_results=None, is_public=False):
         """Create a program."""
@@ -249,7 +247,7 @@ class BaseFakeRuntimeClient:
             raise RequestsApiError("Program already exists.", status_code=409)
         self._programs[program_id] = BaseFakeProgram(
             program_id=program_id, name=name, data=program_data, cost=max_execution_time,
-            description=description, version=version, backend_requirements=backend_requirements,
+            description=description, backend_requirements=backend_requirements,
             parameters=parameters, return_values=return_values, interim_results=interim_results,
             is_public=is_public)
         return {'id': program_id}

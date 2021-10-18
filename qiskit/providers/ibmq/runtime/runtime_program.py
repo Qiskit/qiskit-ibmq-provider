@@ -51,7 +51,6 @@ class RuntimeProgram:
             return_values: Optional[List] = None,
             interim_results: Optional[List] = None,
             max_execution_time: int = 0,
-            version: str = "0",
             backend_requirements: Optional[Dict] = None,
             creation_date: str = "",
             is_public: Optional[bool] = False
@@ -66,7 +65,6 @@ class RuntimeProgram:
             return_values: Documentation on program return values.
             interim_results: Documentation on program interim results.
             max_execution_time: Maximum execution time.
-            version: Program version.
             backend_requirements: Backend requirements.
             creation_date: Program creation date.
             is_public: ``True`` if program is visible to all. ``False`` if it's only visible to you.
@@ -75,7 +73,6 @@ class RuntimeProgram:
         self._id = program_id
         self._description = description
         self._max_execution_time = max_execution_time
-        self._version = version
         self._backend_requirements = backend_requirements or {}
         self._parameters: List[ProgramParameter] = []
         self._return_values: List[ProgramResult] = []
@@ -114,7 +111,6 @@ class RuntimeProgram:
         formatted = [f'{self.program_id}:',
                      f"  Name: {self.name}",
                      f"  Description: {self.description}",
-                     f"  Version: {self.version}",
                      f"  Creation date: {self.creation_date}",
                      f"  Max execution time: {self.max_execution_time}",
                      f"  Input parameters:"]
@@ -148,7 +144,6 @@ class RuntimeProgram:
             "name": self.name,
             "description": self.description,
             "max_execution_time": self.max_execution_time,
-            "version": self.version,
             "backend_requirements": self.backend_requirements,
             "parameters": self.parameters(),
             "return_values": self.return_values,
@@ -226,15 +221,6 @@ class RuntimeProgram:
             Maximum execution time.
         """
         return self._max_execution_time
-
-    @property
-    def version(self) -> str:
-        """Program version.
-
-        Returns:
-            Program version.
-        """
-        return self._version
 
     @property
     def backend_requirements(self) -> Dict:

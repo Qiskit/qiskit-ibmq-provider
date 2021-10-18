@@ -2,7 +2,6 @@
   "name": "runtime-simple",
   "description": "Simple runtime program used for testing.",
   "max_execution_time": 300,
-  "version": 1.0,
   "backend_requirements": {"min_num_qubits":  5},
   "parameters": [
     {"name": "iterations", "description": "Number of iterations to run. Each iteration generates a runs a random circuit.", "type": "integer", "required": true}

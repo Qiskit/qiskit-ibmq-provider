@@ -54,7 +54,6 @@ class RuntimeClient:
             description: str,
             max_execution_time: int,
             is_public: Optional[bool] = False,
-            version: Optional[str] = None,
             backend_requirements: Optional[Dict] = None,
             parameters: Optional[Dict] = None,
             return_values: Optional[List] = None,
@@ -68,7 +67,6 @@ class RuntimeClient:
             description: Program description.
             max_execution_time: Maximum execution time.
             is_public: Whether the program should be public.
-            version: Program version.
             backend_requirements: Backend requirements.
             parameters: Program parameters.
             return_values: Program return values.
@@ -81,7 +79,7 @@ class RuntimeClient:
             program_data=program_data,
             name=name,
             description=description, max_execution_time=max_execution_time,
-            is_public=is_public, version=version, backend_requirements=backend_requirements,
+            is_public=is_public, backend_requirements=backend_requirements,
             parameters=parameters, return_values=return_values,
             interim_results=interim_results
         )

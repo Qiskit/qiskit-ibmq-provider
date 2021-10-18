@@ -195,7 +195,6 @@ class IBMRuntimeService:
                               interim_results=interim_results,
                               max_execution_time=response.get('cost', 0),
                               creation_date=response.get('creationDate', ""),
-                              version=response.get('version', "0"),
                               backend_requirements=backend_req,
                               is_public=response.get('isPublic', False))
 
@@ -272,7 +271,6 @@ class IBMRuntimeService:
             is_public: Optional[bool] = False,
             max_execution_time: Optional[int] = None,
             description: Optional[str] = None,
-            version: Optional[float] = None,
             backend_requirements: Optional[str] = None,
             parameters: Optional[List[ProgramParameter]] = None,
             return_values: Optional[List[ProgramResult]] = None,
@@ -306,7 +304,6 @@ class IBMRuntimeService:
                 not specified via `metadata`.
             is_public: Whether the runtime program should be visible to the public.
             description: Program description. Required if not specified via `metadata`.
-            version: Program version. The default is 1.0 if not specified.
             backend_requirements: Backend requirements.
             parameters: A list of program input parameters.
             return_values: A list of program return values.
@@ -326,7 +323,7 @@ class IBMRuntimeService:
             metadata=metadata,
             name=name, max_execution_time=max_execution_time,
             is_public=is_public, description=description,
-            version=version, backend_requirements=backend_requirements,
+            backend_requirements=backend_requirements,
             parameters=parameters,
             return_values=return_values, interim_results=interim_results)
 
@@ -385,7 +382,7 @@ class IBMRuntimeService:
                 initial[key] = val
 
         # TODO validate metadata format
-        metadata_keys = ['name', 'max_execution_time', 'description', 'version',
+        metadata_keys = ['name', 'max_execution_time', 'description',
                          'backend_requirements', 'parameters', 'return_values',
                          'interim_results', 'is_public']
         return {key: val for key, val in initial.items() if key in metadata_keys}
