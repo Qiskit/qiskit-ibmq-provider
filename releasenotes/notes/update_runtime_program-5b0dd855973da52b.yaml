@@ -1,10 +1,10 @@
 ---
 features:
   - |
-    You can now use the :meth:`qiskit_ibm.runtime.IBMRuntimeService.update_program`
+    You can now use the :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.update_program`
     method to update the data of an existing runtime program.
 upgrade:
   - |
-    The `data` parameter to :meth:`qiskit_ibm.runtime.IBMRuntimeService.upload_program`
+    The `data` parameter to :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.upload_program`
     can now only be of type string. It can be either the program data,
     or path to the file that contains program data.
