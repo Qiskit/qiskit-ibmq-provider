@@ -54,7 +54,7 @@ class Runtime(RestAdapterBase):
         """
         return ProgramJob(self.session, job_id)
 
-    def list_programs(self) -> List[Dict]:
+    def list_programs(self) -> Dict[str, Any]:
         """Return a list of runtime programs.
 
         Returns:

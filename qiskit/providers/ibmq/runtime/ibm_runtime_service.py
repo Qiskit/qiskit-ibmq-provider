@@ -140,7 +140,7 @@ class IBMRuntimeService:
         if not self._programs or refresh:
             self._programs = {}
             response = self._api_client.list_programs()
-            for prog_dict in response:
+            for prog_dict in response.get("programs", []):
                 program = self._to_program(prog_dict)
                 self._programs[program.program_id] = program
         return list(self._programs.values())

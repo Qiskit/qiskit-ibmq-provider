@@ -235,7 +235,7 @@ class BaseFakeRuntimeClient:
         programs = []
         for prog in self._programs.values():
             programs.append(prog.to_dict())
-        return programs
+        return {"programs": programs}
 
     def program_create(self, program_data, name, description, max_execution_time,
                        backend_requirements=None, parameters=None, return_values=None,
