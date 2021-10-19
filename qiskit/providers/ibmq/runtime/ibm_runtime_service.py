@@ -12,6 +12,7 @@
 
 """Qiskit runtime service."""
 
+import base64
 import logging
 from typing import Dict, Callable, Optional, Union, List, Any, Type
 import json
@@ -338,7 +339,8 @@ class IBMRuntimeService:
                 data = file.read()
 
         try:
-            response = self._api_client.program_create(program_data=data.encode(),
+            program_data = base64.b64encode(data.encode('utf-8')).decode('utf-8')
+            response = self._api_client.program_create(program_data=program_data,
                                                        **program_metadata)
         except RequestsApiError as ex:
             if ex.status_code == 409:

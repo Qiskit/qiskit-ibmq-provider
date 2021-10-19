@@ -49,7 +49,7 @@ class RuntimeClient:
 
     def program_create(
             self,
-            program_data: bytes,
+            program_data: str,
             name: str,
             description: str,
             max_execution_time: int,
@@ -63,7 +63,7 @@ class RuntimeClient:
 
         Args:
             name: Name of the program.
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
             description: Program description.
             max_execution_time: Maximum execution time.
             is_public: Whether the program should be public.

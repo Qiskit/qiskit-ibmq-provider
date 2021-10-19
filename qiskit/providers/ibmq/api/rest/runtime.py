@@ -65,7 +65,7 @@ class Runtime(RestAdapterBase):
 
     def create_program(
             self,
-            program_data: bytes,
+            program_data: str,
             name: str,
             description: str,
             max_execution_time: int,
@@ -78,7 +78,7 @@ class Runtime(RestAdapterBase):
         """Upload a new program.
 
         Args:
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
             name: Name of the program.
             description: Program description.
             max_execution_time: Maximum execution time.
@@ -93,6 +93,7 @@ class Runtime(RestAdapterBase):
         """
         url = self.get_url('programs')
         data = {'name': name,
+                'data': program_data,
                 'cost': str(max_execution_time),
                 'description': description.encode(),
                 'max_execution_time': max_execution_time,
@@ -105,9 +106,7 @@ class Runtime(RestAdapterBase):
             data['returnValues'] = json.dumps(return_values)
         if interim_results:
             data['interimResults'] = json.dumps(interim_results)
-
-        files = {'program': (name, program_data)}  # type: ignore[dict-item]
-        response = self.session.post(url, data=data, files=files).json()
+        response = self.session.post(url, data=data).json()
         return response
 
     def program_run(

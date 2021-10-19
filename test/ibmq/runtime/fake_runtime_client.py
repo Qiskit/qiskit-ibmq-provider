@@ -241,9 +241,6 @@ class BaseFakeRuntimeClient:
                        backend_requirements=None, parameters=None, return_values=None,
                        interim_results=None, is_public=False):
         """Create a program."""
-        if isinstance(program_data, str):
-            with open(program_data, 'rb') as file:
-                program_data = file.read()
         program_id = name
         if program_id in self._programs:
             raise RequestsApiError("Program already exists.", status_code=409)
