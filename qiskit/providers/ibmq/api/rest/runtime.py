@@ -238,11 +238,11 @@ class Program(RestAdapterBase):
         """Update a program.
 
         Args:
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
         """
         url = self.get_url("data")
         self.session.put(url, data=program_data,
-                         headers={'Content-Type': 'text/plain'})
+                         headers={'Content-Type': 'application/octet-stream'})
 
 
 class ProgramJob(RestAdapterBase):

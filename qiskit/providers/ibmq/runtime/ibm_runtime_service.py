@@ -12,7 +12,6 @@
 
 """Qiskit runtime service."""
 
-import base64
 import logging
 from typing import Dict, Callable, Optional, Union, List, Any, Type
 import json
@@ -24,7 +23,7 @@ from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-impo
 
 from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram, ProgramParameter, ProgramResult, ParameterNamespace
-from .utils import RuntimeEncoder, RuntimeDecoder
+from .utils import RuntimeEncoder, RuntimeDecoder, to_base64_string
 from .exceptions import (QiskitRuntimeError, RuntimeDuplicateProgramError, RuntimeProgramNotFound,
                          RuntimeJobNotFound)
 from .program.result_decoder import ResultDecoder
@@ -339,7 +338,7 @@ class IBMRuntimeService:
                 data = file.read()
 
         try:
-            program_data = base64.b64encode(data.encode('utf-8')).decode('utf-8')
+            program_data = to_base64_string(data)
             response = self._api_client.program_create(program_data=program_data,
                                                        **program_metadata)
         except RequestsApiError as ex:
@@ -412,12 +411,22 @@ class IBMRuntimeService:
         Args:
             program_id: Program ID.
             data: Program data or path of the file containing program data to upload.
+
+        Raises:
+            RuntimeProgramNotFound: If the program doesn't exist.
+            QiskitRuntimeError: If the request failed.
         """
         if "def main(" not in data:
             # This is the program file
             with open(data, "r") as file:
                 data = file.read()
-        self._api_client.program_update(program_id, data)
+        try:
+            program_data = to_base64_string(data)
+            self._api_client.program_update(program_id, program_data)
+        except RequestsApiError as ex:
+            if ex.status_code == 404:
+                raise RuntimeProgramNotFound(f"Program not found: {ex.message}") from None
+            raise QiskitRuntimeError(f"Failed to update program: {ex}") from None
 
     def delete_program(self, program_id: str) -> None:
         """Delete a runtime program.

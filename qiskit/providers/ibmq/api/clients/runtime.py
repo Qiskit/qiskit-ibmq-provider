@@ -158,7 +158,7 @@ class RuntimeClient:
 
         Args:
             program_id: Program ID.
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
         """
         self.api.program(program_id).update(program_data)
 
