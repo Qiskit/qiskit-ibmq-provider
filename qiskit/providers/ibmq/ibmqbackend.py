@@ -56,6 +56,25 @@ from .utils.utils import api_status_to_job_status
 logger = logging.getLogger(__name__)
 
 
+def _convert2json_serializable(param):
+    """Convert dictionary to contain only JSON serializable types. For example,
+    if the key is a Parameter we convert it to a string."""
+    if isinstance(param, dict):
+        param_bind_str = {}
+        for key in param.keys():
+            value = _convert2json_serializable(param[key])
+
+            if type(key) in set([str, int, float, bool]) or key is None:
+                param_bind_str[key] = value
+            else:
+                param_bind_str[str(key)] = value
+        return param_bind_str
+    elif isinstance(param, list):
+        return [_convert2json_serializable(p) for p in param]
+    else:
+        return param
+
+
 class IBMQBackend(Backend):
     """Backend class interfacing with an IBM Quantum Experience device.
 
@@ -372,6 +391,9 @@ class IBMQBackend(Backend):
         """
         try:
             qobj_dict = qobj.to_dict()
+            # Replace all Parameter by string
+            qobj_dict = _convert2json_serializable(qobj_dict)
+
             submit_info = self._api_client.job_submit(
                 backend_name=self.name(),
                 qobj_dict=qobj_dict,
