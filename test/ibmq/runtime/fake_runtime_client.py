@@ -52,14 +52,15 @@ class BaseFakeProgram:
                'update_date': '2021-09-14T19:25:32Z'}
         if include_data:
             out['data'] = self._data
+        out['spec'] = {}
         if self._backend_requirements:
-            out['backendRequirements'] = json.dumps(self._backend_requirements)
+            out['spec']['backend_requirements'] = self._backend_requirements
         if self._parameters:
-            out['parameters'] = json.dumps({"doc": self._parameters})
+            out['spec']['parameters'] = self._parameters
         if self._return_values:
-            out['returnValues'] = json.dumps(self._return_values)
+            out['spec']['return_values'] = self._return_values
         if self._interim_results:
-            out['interimResults'] = json.dumps(self._interim_results)
+            out['spec']['interim_results'] = self._interim_results
 
         return out
 
@@ -231,19 +232,22 @@ class BaseFakeRuntimeClient:
         self._final_status = final_status
 
     def list_programs(self):
-        """List all progrmas."""
+        """List all programs."""
         programs = []
         for prog in self._programs.values():
             programs.append(prog.to_dict())
         return {"programs": programs}
 
     def program_create(self, program_data, name, description, max_execution_time,
-                       backend_requirements=None, parameters=None, return_values=None,
-                       interim_results=None, is_public=False):
+                       spec=None, is_public=False):
         """Create a program."""
         program_id = name
         if program_id in self._programs:
             raise RequestsApiError("Program already exists.", status_code=409)
+        backend_requirements = spec.get('backend_requirements', None)
+        parameters = spec.get('parameters', None)
+        return_values = spec.get('return_values', None)
+        interim_results = spec.get('interim_results', None)
         self._programs[program_id] = BaseFakeProgram(
             program_id=program_id, name=name, data=program_data, cost=max_execution_time,
             description=description, backend_requirements=backend_requirements,

@@ -15,14 +15,13 @@
 import logging
 from typing import Dict, Callable, Optional, Union, List, Any, Type
 import json
-import copy
 import re
 
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 
 from .runtime_job import RuntimeJob
-from .runtime_program import RuntimeProgram, ProgramParameter, ProgramResult, ParameterNamespace
+from .runtime_program import RuntimeProgram, ParameterNamespace
 from .utils import RuntimeEncoder, RuntimeDecoder, to_base64_string
 from .exceptions import (QiskitRuntimeError, RuntimeDuplicateProgramError, RuntimeProgramNotFound,
                          RuntimeJobNotFound)
@@ -182,21 +181,26 @@ class IBMRuntimeService:
         Returns:
             A ``RuntimeProgram`` instance.
         """
-        backend_req = json.loads(response.get('backendRequirements', '{}'))
-        params = json.loads(response.get('parameters', '{}')).get("doc", [])
-        ret_vals = json.loads(response.get('returnValues', '{}'))
-        interim_results = json.loads(response.get('interimResults', '{}'))
+        backend_requirements = {}
+        parameters = {}
+        return_values = {}
+        interim_results = {}
+        if "spec" in response:
+            backend_requirements = response["spec"].get('backend_requirements', {})
+            parameters = response["spec"].get('parameters', {})
+            return_values = response["spec"].get('return_values', {})
+            interim_results = response["spec"].get('interim_results', {})
 
         return RuntimeProgram(program_name=response['name'],
                               program_id=response['id'],
                               description=response.get('description', ""),
-                              parameters=params,
-                              return_values=ret_vals,
+                              parameters=parameters,
+                              return_values=return_values,
                               interim_results=interim_results,
                               max_execution_time=response.get('cost', 0),
                               creation_date=response.get('creation_date', ""),
                               update_date=response.get('update_date', ""),
-                              backend_requirements=backend_req,
+                              backend_requirements=backend_requirements,
                               is_public=response.get('is_public', False))
 
     def run(
@@ -267,15 +271,7 @@ class IBMRuntimeService:
     def upload_program(
             self,
             data: str,
-            metadata: Optional[Union[Dict, str]] = None,
-            name: Optional[str] = None,
-            is_public: Optional[bool] = False,
-            max_execution_time: Optional[int] = None,
-            description: Optional[str] = None,
-            backend_requirements: Optional[str] = None,
-            parameters: Optional[List[ProgramParameter]] = None,
-            return_values: Optional[List[ProgramResult]] = None,
-            interim_results: Optional[List[ProgramResult]] = None
+            metadata: Optional[Union[Dict, str]] = None
     ) -> str:
         """Upload a runtime program.
 
@@ -298,17 +294,23 @@ class IBMRuntimeService:
         Args:
             data: Program data or path of the file containing program data to upload.
             metadata: Name of the program metadata file or metadata dictionary.
-                A metadata file needs to be in the JSON format.
-                See :file:`program/program_metadata_sample.yaml` for an example.
-            name: Name of the program. Required if not specified via `metadata`.
-            max_execution_time: Maximum execution time in seconds. Required if
-                not specified via `metadata`.
-            is_public: Whether the runtime program should be visible to the public.
-            description: Program description. Required if not specified via `metadata`.
-            backend_requirements: Backend requirements.
-            parameters: A list of program input parameters.
-            return_values: A list of program return values.
-            interim_results: A list of program interim results.
+                A metadata file needs to be in the JSON format. The ``parameters``,
+                ``return_values``, and ``interim_results`` should be defined as JSON Schema.
+                See :file:`program/program_metadata_sample.json` for an example. The
+                fields in metadata are explained below.
+
+                * name: Name of the program. Required.
+                * max_execution_time: Maximum execution time in seconds. Required.
+                * description: Program description. Required.
+                * is_public: Whether the runtime program should be visible to the public.
+                                    The default is ``False``.
+                * spec: Specifications for backend characteristics and input parameters
+                    required to run the program, interim results and final result.
+
+                    * backend_requirements: Backend requirements.
+                    * parameters: Program input parameters in JSON schema format.
+                    * return_values: Program return values in JSON schema format.
+                    * interim_results: Program interim results in JSON schema format.
 
         Returns:
             Program ID.
@@ -319,14 +321,7 @@ class IBMRuntimeService:
             IBMQNotAuthorizedError: If you are not authorized to upload programs.
             QiskitRuntimeError: If the upload failed.
         """
-        program_metadata = self._merge_metadata(
-            initial={},
-            metadata=metadata,
-            name=name, max_execution_time=max_execution_time,
-            is_public=is_public, description=description,
-            backend_requirements=backend_requirements,
-            parameters=parameters,
-            return_values=return_values, interim_results=interim_results)
+        program_metadata = self._read_metadata(metadata=metadata)
 
         for req in ['name', 'description', 'max_execution_time']:
             if req not in program_metadata or not program_metadata[req]:
@@ -351,21 +346,17 @@ class IBMRuntimeService:
             raise QiskitRuntimeError(f"Failed to create program: {ex}") from None
         return response['id']
 
-    def _merge_metadata(
+    def _read_metadata(
             self,
-            initial: Dict,
-            metadata: Optional[Union[Dict, str]] = None,
-            **kwargs: Any
+            metadata: Optional[Union[Dict, str]] = None
     ) -> Dict:
-        """Merge multiple copies of metadata.
+        """Read metadata.
 
         Args:
-            initial: The initial metadata. This may be mutated.
             metadata: Name of the program metadata file or metadata dictionary.
-            **kwargs: Additional metadata fields to overwrite.
 
         Returns:
-            Merged metadata.
+            Return metadata.
         """
         upd_metadata: dict = {}
         if metadata is not None:
@@ -373,33 +364,11 @@ class IBMRuntimeService:
                 with open(metadata, 'r') as file:
                     upd_metadata = json.load(file)
             else:
-                upd_metadata = copy.deepcopy(metadata)
-
-        self._tuple_to_dict(initial)
-        initial.update(upd_metadata)
-
-        self._tuple_to_dict(kwargs)
-        for key, val in kwargs.items():
-            if val is not None:
-                initial[key] = val
-
+                upd_metadata = metadata
         # TODO validate metadata format
         metadata_keys = ['name', 'max_execution_time', 'description',
-                         'backend_requirements', 'parameters', 'return_values',
-                         'interim_results', 'is_public']
-        return {key: val for key, val in initial.items() if key in metadata_keys}
-
-    def _tuple_to_dict(self, metadata: Dict) -> None:
-        """Convert fields in metadata from named tuples to dictionaries.
-
-        Args:
-            metadata: Metadata to be converted.
-        """
-        for key in ['parameters', 'return_values', 'interim_results']:
-            doc_list = metadata.pop(key, None)
-            if not doc_list or isinstance(doc_list[0], dict):
-                continue
-            metadata[key] = [dict(elem._asdict()) for elem in doc_list]
+                         'spec', 'is_public']
+        return {key: val for key, val in upd_metadata.items() if key in metadata_keys}
 
     def update_program(
             self,

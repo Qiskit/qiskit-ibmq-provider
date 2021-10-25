@@ -13,7 +13,8 @@
 """Qiskit runtime program."""
 
 import logging
-from typing import Optional, List, NamedTuple, Dict
+import re
+from typing import Optional, List, Dict
 from types import SimpleNamespace
 from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 
@@ -47,9 +48,9 @@ class RuntimeProgram:
             program_name: str,
             program_id: str,
             description: str,
-            parameters: Optional[List] = None,
-            return_values: Optional[List] = None,
-            interim_results: Optional[List] = None,
+            parameters: Optional[Dict] = None,
+            return_values: Optional[Dict] = None,
+            interim_results: Optional[Dict] = None,
             max_execution_time: int = 0,
             backend_requirements: Optional[Dict] = None,
             creation_date: str = "",
@@ -76,49 +77,44 @@ class RuntimeProgram:
         self._description = description
         self._max_execution_time = max_execution_time
         self._backend_requirements = backend_requirements or {}
-        self._parameters: List[ProgramParameter] = []
-        self._return_values: List[ProgramResult] = []
-        self._interim_results: List[ProgramResult] = []
+        self._parameters = parameters or {}
+        self._return_values = return_values or {}
+        self._interim_results = interim_results or {}
         self._creation_date = creation_date
         self._update_date = update_date
         self._is_public = is_public
 
-        if parameters:
-            for param in parameters:
-                self._parameters.append(
-                    ProgramParameter(name=param['name'],
-                                     description=param['description'],
-                                     type=param['type'],
-                                     required=param['required']))
-        if return_values is not None:
-            for ret in return_values:
-                self._return_values.append(ProgramResult(name=ret['name'],
-                                                         description=ret['description'],
-                                                         type=ret['type']))
-        if interim_results is not None:
-            for intret in interim_results:
-                self._interim_results.append(ProgramResult(name=intret['name'],
-                                                           description=intret['description'],
-                                                           type=intret['type']))
-
     def __str__(self) -> str:
-        def _format_common(items: List) -> None:
-            """Add name, description, and type to `formatted`."""
-            for item in items:
-                formatted.append(" "*4 + "- " + item.name + ":")
-                formatted.append(" "*6 + "Description: " + item.description)
-                formatted.append(" "*6 + "Type: " + item.type)
-                if hasattr(item, 'required'):
-                    formatted.append(" "*6 + "Required: " + str(item.required))
+        def _format_common(schema: Dict) -> None:
+            """Add title, description and property details to `formatted`."""
+            if "description" in schema:
+                formatted.append(" "*4 + "Description: {}".format(schema["description"]))
+            if "type" in schema:
+                formatted.append(" "*4 + "Type: {}".format(str(schema["type"])))
+            if "properties" in schema:
+                formatted.append(" "*4 + "Properties:")
+                for property_name, property_value in schema["properties"].items():
+                    formatted.append(" "*8 + "- " + property_name + ":")
+                    for key, value in property_value.items():
+                        formatted.append(" "*12 + "{}: {}".format(sentence_case(key), str(value)))
+                    formatted.append(" "*12 + "Required: " +
+                                     str(property_name in schema.get("required", [])))
+
+        def sentence_case(camel_case_text: str) -> str:
+            """Converts camelCase to Sentence case"""
+            if camel_case_text == '':
+                return camel_case_text
+            sentence_case_text = re.sub('([A-Z])', r' \1', camel_case_text)
+            return sentence_case_text[:1].upper() + sentence_case_text[1:].lower()
 
         formatted = [f'{self.program_id}:',
                      f"  Name: {self.name}",
                      f"  Description: {self.description}",
                      f"  Creation date: {self.creation_date}",
                      f"  Update date: {self.update_date}",
-                     f"  Max execution time: {self.max_execution_time}",
-                     f"  Input parameters:"]
+                     f"  Max execution time: {self.max_execution_time}"]
 
+        formatted.append("  Input parameters:")
         if self._parameters:
             _format_common(self._parameters)
         else:
@@ -198,7 +194,7 @@ class RuntimeProgram:
         return self._description
 
     @property
-    def return_values(self) -> List['ProgramResult']:
+    def return_values(self) -> Dict:
         """Program return value definitions.
 
         Returns:
@@ -207,7 +203,7 @@ class RuntimeProgram:
         return self._return_values
 
     @property
-    def interim_results(self) -> List['ProgramResult']:
+    def interim_results(self) -> Dict:
         """Program interim result definitions.
 
         Returns:
@@ -263,21 +259,6 @@ class RuntimeProgram:
         return self._is_public
 
 
-class ProgramParameter(NamedTuple):
-    """Program parameter."""
-    name: str
-    description: str
-    type: str
-    required: bool
-
-
-class ProgramResult(NamedTuple):
-    """Program result."""
-    name: str
-    description: str
-    type: str
-
-
 class ParameterNamespace(SimpleNamespace):
     """ A namespace for program parameters with validation.
 
@@ -285,26 +266,26 @@ class ParameterNamespace(SimpleNamespace):
     and validation support.
     """
 
-    def __init__(self, params: List[ProgramParameter]):
+    def __init__(self, parameters: Dict):
         """ParameterNamespace constructor.
 
         Args:
-            params: The program's input parameters.
+            parameters: The program's input parameters.
         """
         super().__init__()
-        # Allow access to the raw program parameters list
-        self.__metadata = params
+        # Allow access to the raw program parameters dict
+        self.__metadata = parameters
         # For localized logic, create store of parameters in dictionary
         self.__program_params: dict = {}
 
-        for param in params:
+        for parameter_name, parameter_value in parameters.get("properties", {}).items():
             # (1) Add parameters to a dict by name
-            setattr(self, param.name, None)
+            setattr(self, parameter_name, None)
             # (2) Store the program params for validation
-            self.__program_params[param.name] = param
+            self.__program_params[parameter_name] = parameter_value
 
     @property
-    def metadata(self) -> List[ProgramParameter]:
+    def metadata(self) -> Dict:
         """Returns the parameter metadata"""
         return self.__metadata
 
@@ -320,12 +301,12 @@ class ParameterNamespace(SimpleNamespace):
         """
 
         # Iterate through the user's stored inputs
-        for param_name, program_param in self.__program_params.items():
-            # Set invariants: User-specified parameter value (value) and whether it's required (req)
-            value = getattr(self, param_name, None)
+        for parameter_name, parameter_value in self.__program_params.items():
+            # Set invariants: User-specified parameter value (value) and if it's required (req)
+            value = getattr(self, parameter_name, None)
             # Check there exists a program parameter of that name.
-            if value is None and program_param.required:
-                raise IBMQInputValueError('Param (%s) missing required value!' % param_name)
+            if value is None and parameter_name in self.metadata.get("required", []):
+                raise IBMQInputValueError('Param (%s) missing required value!' % parameter_name)
 
     def __str__(self) -> str:
         """Creates string representation of object"""
@@ -338,15 +319,14 @@ class ParameterNamespace(SimpleNamespace):
                      'Required',
                      'Description'
                      )
-        # List of ProgramParameter objects (str)
         params_str = '\n'.join([
             '| {:10.10} | {:12.12} | {:12.12}| {:8.8} | {:>15} |'.format(
-                param.name,
-                str(getattr(self, param.name, 'None')),
-                param.type,
-                str(param.required),
-                param.description
-            ) for param in self.__program_params.values()])
+                parameter_name,
+                str(getattr(self, parameter_name, "None")),
+                str(parameter_value.get("type", "None")),
+                str(parameter_name in self.metadata.get("required", [])),
+                str(parameter_value.get("description", "None"))
+            ) for parameter_name, parameter_value in self.__program_params.items()])
 
         return "ParameterNamespace (Values):\n%s\n%s\n%s" \
                % (header, '-' * len(header), params_str)

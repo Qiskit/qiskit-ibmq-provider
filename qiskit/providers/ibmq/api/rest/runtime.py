@@ -70,10 +70,7 @@ class Runtime(RestAdapterBase):
             description: str,
             max_execution_time: int,
             is_public: Optional[bool] = False,
-            backend_requirements: Optional[Dict] = None,
-            parameters: Optional[Dict] = None,
-            return_values: Optional[List] = None,
-            interim_results: Optional[List] = None
+            spec: Optional[Dict] = None
     ) -> Dict:
         """Upload a new program.
 
@@ -83,10 +80,7 @@ class Runtime(RestAdapterBase):
             description: Program description.
             max_execution_time: Maximum execution time.
             is_public: Whether the program should be public.
-            backend_requirements: Backend requirements.
-            parameters: Program parameters.
-            return_values: Program return values.
-            interim_results: Program interim results.
+            spec: Backend requirements, parameters, interim results, return values, etc.
 
         Returns:
             JSON response.
@@ -98,14 +92,8 @@ class Runtime(RestAdapterBase):
                 'description': description.encode(),
                 'max_execution_time': max_execution_time,
                 'is_public': is_public}
-        if backend_requirements:
-            data['backendRequirements'] = json.dumps(backend_requirements)
-        if parameters:
-            data['parameters'] = json.dumps({"doc": parameters})
-        if return_values:
-            data['returnValues'] = json.dumps(return_values)
-        if interim_results:
-            data['interimResults'] = json.dumps(interim_results)
+        if spec is not None:
+            data['spec'] = json.dumps(spec)
         response = self.session.post(url, data=data).json()
         return response
 
