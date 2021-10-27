@@ -40,6 +40,18 @@ from qiskit.circuit.library import BlueprintCircuit
 from qiskit.result import Result
 
 
+def to_base64_string(data: str) -> str:
+    """Convert string to base64 string.
+
+    Args:
+        data: string to convert
+
+    Returns:
+        data as base64 string
+    """
+    return base64.b64encode(data.encode('utf-8')).decode('utf-8')
+
+
 def _serialize_and_encode(
         data: Any,
         serializer: Callable,

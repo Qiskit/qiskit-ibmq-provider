@@ -26,7 +26,7 @@ from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder
 class BaseFakeProgram:
     """Base class for faking a program."""
 
-    def __init__(self, program_id, name, data, cost, description, version="1.0",
+    def __init__(self, program_id, name, data, cost, description,
                  backend_requirements=None, parameters=None, return_values=None,
                  interim_results=None, is_public=False):
         """Initialize a fake program."""
@@ -35,7 +35,6 @@ class BaseFakeProgram:
         self._data = data
         self._cost = cost
         self._description = description
-        self._version = version
         self._backend_requirements = backend_requirements
         self._parameters = parameters
         self._return_values = return_values
@@ -48,18 +47,20 @@ class BaseFakeProgram:
                'name': self._name,
                'cost': self._cost,
                'description': self._description,
-               'version': self._version,
-               'isPublic': self._is_public}
+               'is_public': self._is_public,
+               'creation_date': '2021-09-13T17:27:42Z',
+               'update_date': '2021-09-14T19:25:32Z'}
         if include_data:
             out['data'] = self._data
+        out['spec'] = {}
         if self._backend_requirements:
-            out['backendRequirements'] = json.dumps(self._backend_requirements)
+            out['spec']['backend_requirements'] = self._backend_requirements
         if self._parameters:
-            out['parameters'] = json.dumps({"doc": self._parameters})
+            out['spec']['parameters'] = self._parameters
         if self._return_values:
-            out['returnValues'] = json.dumps(self._return_values)
+            out['spec']['return_values'] = self._return_values
         if self._interim_results:
-            out['interimResults'] = json.dumps(self._interim_results)
+            out['spec']['interim_results'] = self._interim_results
 
         return out
 
@@ -231,25 +232,25 @@ class BaseFakeRuntimeClient:
         self._final_status = final_status
 
     def list_programs(self):
-        """List all progrmas."""
+        """List all programs."""
         programs = []
         for prog in self._programs.values():
             programs.append(prog.to_dict())
-        return programs
+        return {"programs": programs}
 
-    def program_create(self, program_data, name, description, max_execution_time, version="1.0",
-                       backend_requirements=None, parameters=None, return_values=None,
-                       interim_results=None, is_public=False):
+    def program_create(self, program_data, name, description, max_execution_time,
+                       spec=None, is_public=False):
         """Create a program."""
-        if isinstance(program_data, str):
-            with open(program_data, 'rb') as file:
-                program_data = file.read()
         program_id = name
         if program_id in self._programs:
             raise RequestsApiError("Program already exists.", status_code=409)
+        backend_requirements = spec.get('backend_requirements', None)
+        parameters = spec.get('parameters', None)
+        return_values = spec.get('return_values', None)
+        interim_results = spec.get('interim_results', None)
         self._programs[program_id] = BaseFakeProgram(
             program_id=program_id, name=name, data=program_data, cost=max_execution_time,
-            description=description, version=version, backend_requirements=backend_requirements,
+            description=description, backend_requirements=backend_requirements,
             parameters=parameters, return_values=return_values, interim_results=interim_results,
             is_public=is_public)
         return {'id': program_id}
