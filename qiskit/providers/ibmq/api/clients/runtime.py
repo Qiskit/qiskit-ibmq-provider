@@ -13,7 +13,7 @@
 """Client for accessing IBM Quantum runtime service."""
 
 import logging
-from typing import List, Dict, Union, Optional
+from typing import Any, List, Dict, Union, Optional
 
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.session import RetrySession
@@ -39,7 +39,7 @@ class RuntimeClient:
                                      **credentials.connection_parameters())
         self.api = Runtime(self._session)
 
-    def list_programs(self) -> List[Dict]:
+    def list_programs(self) -> Dict[str, Any]:
         """Return a list of runtime programs.
 
         Returns:
@@ -49,30 +49,22 @@ class RuntimeClient:
 
     def program_create(
             self,
-            program_data: bytes,
+            program_data: str,
             name: str,
             description: str,
             max_execution_time: int,
             is_public: Optional[bool] = False,
-            version: Optional[str] = None,
-            backend_requirements: Optional[Dict] = None,
-            parameters: Optional[Dict] = None,
-            return_values: Optional[List] = None,
-            interim_results: Optional[List] = None
+            spec: Optional[Dict] = None
     ) -> Dict:
         """Create a new program.
 
         Args:
             name: Name of the program.
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
             description: Program description.
             max_execution_time: Maximum execution time.
             is_public: Whether the program should be public.
-            version: Program version.
-            backend_requirements: Backend requirements.
-            parameters: Program parameters.
-            return_values: Program return values.
-            interim_results: Program interim results.
+            spec: Backend requirements, parameters, interim results, return values, etc.
 
         Returns:
             Server response.
@@ -81,9 +73,7 @@ class RuntimeClient:
             program_data=program_data,
             name=name,
             description=description, max_execution_time=max_execution_time,
-            is_public=is_public, version=version, backend_requirements=backend_requirements,
-            parameters=parameters, return_values=return_values,
-            interim_results=interim_results
+            is_public=is_public, spec=spec
         )
 
     def program_get(self, program_id: str) -> Dict:
@@ -127,7 +117,7 @@ class RuntimeClient:
             program_id: str,
             credentials: Credentials,
             backend_name: str,
-            params: str,
+            params: Dict,
             image: str
     ) -> Dict:
         """Run the specified program.
@@ -160,7 +150,7 @@ class RuntimeClient:
 
         Args:
             program_id: Program ID.
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
         """
         self.api.program(program_id).update(program_data)
 

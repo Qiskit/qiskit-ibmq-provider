@@ -19,6 +19,7 @@ from concurrent import futures
 
 from .base import RestAdapterBase
 from ..session import RetrySession
+from ...runtime.utils import RuntimeEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ class Runtime(RestAdapterBase):
         """
         return ProgramJob(self.session, job_id)
 
-    def list_programs(self) -> List[Dict]:
+    def list_programs(self) -> Dict[str, Any]:
         """Return a list of runtime programs.
 
         Returns:
@@ -65,54 +66,36 @@ class Runtime(RestAdapterBase):
 
     def create_program(
             self,
-            program_data: bytes,
+            program_data: str,
             name: str,
             description: str,
             max_execution_time: int,
             is_public: Optional[bool] = False,
-            version: Optional[str] = None,
-            backend_requirements: Optional[Dict] = None,
-            parameters: Optional[Dict] = None,
-            return_values: Optional[List] = None,
-            interim_results: Optional[List] = None
+            spec: Optional[Dict] = None
     ) -> Dict:
         """Upload a new program.
 
         Args:
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
             name: Name of the program.
             description: Program description.
             max_execution_time: Maximum execution time.
             is_public: Whether the program should be public.
-            version: Program version.
-            backend_requirements: Backend requirements.
-            parameters: Program parameters.
-            return_values: Program return values.
-            interim_results: Program interim results.
+            spec: Backend requirements, parameters, interim results, return values, etc.
 
         Returns:
             JSON response.
         """
         url = self.get_url('programs')
-        data = {'name': name,
-                'cost': str(max_execution_time),
-                'description': description.encode(),
-                'max_execution_time': max_execution_time,
-                'isPublic': is_public}
-        if version is not None:
-            data['version'] = version
-        if backend_requirements:
-            data['backendRequirements'] = json.dumps(backend_requirements)
-        if parameters:
-            data['parameters'] = json.dumps({"doc": parameters})
-        if return_values:
-            data['returnValues'] = json.dumps(return_values)
-        if interim_results:
-            data['interimResults'] = json.dumps(interim_results)
-
-        files = {'program': (name, program_data)}  # type: ignore[dict-item]
-        response = self.session.post(url, data=data, files=files).json()
-        return response
+        payload = {'name': name,
+                   'data': program_data,
+                   'cost': max_execution_time,
+                   'description': description,
+                   'is_public': is_public}
+        if spec is not None:
+            payload['spec'] = spec
+        data = json.dumps(payload)
+        return self.session.post(url, data=data).json()
 
     def program_run(
             self,
@@ -121,7 +104,7 @@ class Runtime(RestAdapterBase):
             group: str,
             project: str,
             backend_name: str,
-            params: str,
+            params: Dict,
             image: str
     ) -> Dict:
         """Execute the program.
@@ -140,15 +123,15 @@ class Runtime(RestAdapterBase):
         """
         url = self.get_url('jobs')
         payload = {
-            'programId': program_id,
+            'program_id': program_id,
             'hub': hub,
             'group': group,
             'project': project,
             'backend': backend_name,
-            'params': [params],
+            'params': params,
             'runtime': image
         }
-        data = json.dumps(payload)
+        data = json.dumps(payload, cls=RuntimeEncoder)
         return self.session.post(url, data=data).json()
 
     def jobs_get(self, limit: int = None, skip: int = None, pending: bool = None) -> Dict:
@@ -243,11 +226,11 @@ class Program(RestAdapterBase):
         """Update a program.
 
         Args:
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
         """
         url = self.get_url("data")
         self.session.put(url, data=program_data,
-                         headers={'Content-Type': 'text/plain'})
+                         headers={'Content-Type': 'application/octet-stream'})
 
 
 class ProgramJob(RestAdapterBase):

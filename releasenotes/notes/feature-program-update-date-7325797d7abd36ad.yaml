@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    You can view the last updated date of a runtime program using
+    :attr:`~qiskit.providers.ibmq.runtime.RuntimeProgram.update_date` property.
