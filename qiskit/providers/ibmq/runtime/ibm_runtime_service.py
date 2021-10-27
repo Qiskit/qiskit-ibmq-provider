@@ -120,8 +120,9 @@ class IBMRuntimeService:
             if detailed:
                 print(str(prog))
             else:
-                print(f"Name: {prog.name}")
-                print(f"Description: {prog.description}")
+                print(f"{prog.program_id}:",)
+                print(f"  Name: {prog.name}")
+                print(f"  Description: {prog.description}")
 
     def programs(self, refresh: bool = False) -> List[RuntimeProgram]:
         """Return available runtime programs.

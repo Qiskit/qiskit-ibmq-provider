@@ -12,6 +12,7 @@
 
 """Tests for runtime service."""
 
+import copy
 import unittest
 import os
 import uuid
@@ -84,11 +85,12 @@ def main(backend, user_messenger, **kwargs):
         cls.backend = backend
         cls.poll_time = 1 if backend.configuration().simulator else 5
         cls.provider = backend.provider()
+        metadata = copy.deepcopy(cls.RUNTIME_PROGRAM_METADATA)
+        metadata['name'] = cls._get_program_name()
         try:
             cls.program_id = cls.provider.runtime.upload_program(
-                name=cls._get_program_name(),
                 data=cls.RUNTIME_PROGRAM,
-                metadata=cls.RUNTIME_PROGRAM_METADATA)
+                metadata=metadata)
         except RuntimeDuplicateProgramError:
             pass
         except IBMQNotAuthorizedError:
@@ -198,13 +200,6 @@ def main(backend, user_messenger, **kwargs):
         end_vis = prog.is_public
         # Verify changed
         self.assertNotEqual(start_vis, end_vis)
-
-    def test_upload_program_conflict(self):
-        """Test uploading a program with conflicting name."""
-        name = self._get_program_name()
-        self._upload_program(name=name)
-        with self.assertRaises(RuntimeDuplicateProgramError):
-            self._upload_program(name=name)
 
     def test_delete_program(self):
         """Test deleting program."""
@@ -625,6 +620,7 @@ def main(backend, user_messenger, **kwargs):
         self.assertTrue(program.description)
         self.assertTrue(program.max_execution_time)
         self.assertTrue(program.creation_date)
+        self.assertTrue(program.update_date)
 
     def _upload_program(
             self,
@@ -635,13 +631,13 @@ def main(backend, user_messenger, **kwargs):
         """Upload a new program."""
         name = name or self._get_program_name()
         data = data or self.RUNTIME_PROGRAM
+        metadata = copy.deepcopy(self.RUNTIME_PROGRAM_METADATA)
+        metadata['name'] = name
+        metadata['max_execution_time'] = max_execution_time
+        metadata['is_public'] = is_public
         program_id = self.provider.runtime.upload_program(
-            name=name,
             data=data,
-            is_public=is_public,
-            metadata=self.RUNTIME_PROGRAM_METADATA,
-            max_execution_time=max_execution_time,
-            description="Qiskit test program")
+            metadata=metadata)
         self.to_delete.append(program_id)
         return program_id
 

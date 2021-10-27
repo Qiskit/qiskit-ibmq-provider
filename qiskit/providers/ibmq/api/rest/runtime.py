@@ -87,16 +87,15 @@ class Runtime(RestAdapterBase):
             JSON response.
         """
         url = self.get_url('programs')
-        data = {'name': name,
-                'data': program_data,
-                'cost': str(max_execution_time),
-                'description': description.encode(),
-                'max_execution_time': max_execution_time,
-                'is_public': is_public}
+        payload = {'name': name,
+                   'data': program_data,
+                   'cost': max_execution_time,
+                   'description': description,
+                   'is_public': is_public}
         if spec is not None:
-            data['spec'] = json.dumps(spec)
-        response = self.session.post(url, data=data).json()
-        return response
+            payload['spec'] = spec
+        data = json.dumps(payload)
+        return self.session.post(url, data=data).json()
 
     def program_run(
             self,
