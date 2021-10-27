@@ -599,6 +599,8 @@ if __name__ == '__main__':
                 self.assertEqual(self.DEFAULT_METADATA['description'], program.description)
                 self.assertEqual(self.DEFAULT_METADATA['max_execution_time'],
                                  program.max_execution_time)
+                self.assertTrue(program.creation_date)
+                self.assertTrue(program.update_date)
                 self.assertEqual(self.DEFAULT_METADATA['backend_requirements'],
                                  program.backend_requirements)
                 self.assertEqual([ProgramParameter(**param) for param in

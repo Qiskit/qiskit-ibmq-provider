@@ -53,6 +53,7 @@ class RuntimeProgram:
             max_execution_time: int = 0,
             backend_requirements: Optional[Dict] = None,
             creation_date: str = "",
+            update_date: str = "",
             is_public: Optional[bool] = False
     ) -> None:
         """RuntimeProgram constructor.
@@ -67,6 +68,7 @@ class RuntimeProgram:
             max_execution_time: Maximum execution time.
             backend_requirements: Backend requirements.
             creation_date: Program creation date.
+            update_date: Program last updated date.
             is_public: ``True`` if program is visible to all. ``False`` if it's only visible to you.
         """
         self._name = program_name
@@ -78,6 +80,7 @@ class RuntimeProgram:
         self._return_values: List[ProgramResult] = []
         self._interim_results: List[ProgramResult] = []
         self._creation_date = creation_date
+        self._update_date = update_date
         self._is_public = is_public
 
         if parameters:
@@ -112,6 +115,7 @@ class RuntimeProgram:
                      f"  Name: {self.name}",
                      f"  Description: {self.description}",
                      f"  Creation date: {self.creation_date}",
+                     f"  Update date: {self.update_date}",
                      f"  Max execution time: {self.max_execution_time}",
                      f"  Input parameters:"]
 
@@ -239,6 +243,15 @@ class RuntimeProgram:
             Program creation date.
         """
         return self._creation_date
+
+    @property
+    def update_date(self) -> str:
+        """Program last updated date.
+
+        Returns:
+            Program last updated date.
+        """
+        return self._update_date
 
     @property
     def is_public(self) -> bool:

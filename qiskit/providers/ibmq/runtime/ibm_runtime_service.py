@@ -194,7 +194,8 @@ class IBMRuntimeService:
                               return_values=ret_vals,
                               interim_results=interim_results,
                               max_execution_time=response.get('cost', 0),
-                              creation_date=response.get('creationDate', ""),
+                              creation_date=response.get('creation_date', ""),
+                              update_date=response.get('update_date', ""),
                               backend_requirements=backend_req,
                               is_public=response.get('is_public', False))
 
