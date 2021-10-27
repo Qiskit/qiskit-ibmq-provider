@@ -565,6 +565,16 @@ if __name__ == '__main__':
                 result = job.result(decoder=decoder)
                 self.assertIsInstance(result['serializable_class'], SerializableClass)
 
+    def test_get_result_twice(self):
+        """Test getting results multiple times."""
+        custom_result = get_complex_types()
+        job_cls = CustomResultRuntimeJob
+        job_cls.custom_result = custom_result
+
+        job = self._run_program(job_classes=job_cls)
+        _ = job.result()
+        _ = job.result()
+
     def test_program_metadata(self):
         """Test program metadata."""
         file_name = "test_metadata.json"
