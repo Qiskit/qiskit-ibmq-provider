@@ -22,8 +22,6 @@ from qiskit.providers import ProviderV1 as Provider  # type: ignore[attr-defined
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
 from qiskit.circuit import QuantumCircuit
-from qiskit.providers.backend import BackendV1 as Backend
-from qiskit.providers.basebackend import BaseBackend
 from qiskit.transpiler import Layout
 from qiskit.providers.ibmq.runtime import runtime_job  # pylint: disable=unused-import
 from qiskit.providers.ibmq import ibmqfactory  # pylint: disable=unused-import
@@ -221,7 +219,7 @@ class AccountProvider(Provider):
     def run_circuits(
             self,
             circuits: Union[QuantumCircuit, List[QuantumCircuit]],
-            backend: Union[Backend, BaseBackend],
+            backend_name: str,
             shots: Optional[int] = None,
             initial_layout: Optional[Union[Layout, Dict, List]] = None,
             layout_method: Optional[str] = None,
@@ -245,7 +243,7 @@ class AccountProvider(Provider):
         Args:
             circuits: Circuit(s) to execute.
 
-            backend: Backend to execute circuits on.
+            backend_name: Name of the backend to execute circuits on.
                 Transpiler options are automatically grabbed from backend configuration
                 and properties unless otherwise specified.
 
@@ -316,7 +314,7 @@ class AccountProvider(Provider):
         if use_measure_esp is not None:
             inputs['use_measure_esp'] = use_measure_esp
 
-        options = {'backend_name': backend.name()}
+        options = {'backend_name': backend_name}
         return self.runtime.run('circuit-runner', options=options, inputs=inputs,
                                 result_decoder=RunnerResult)
 

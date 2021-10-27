@@ -560,9 +560,9 @@ def main(backend, user_messenger, **kwargs):
         _ = self._run_program()
 
     def test_run_circuit(self):
-        """Test run_circuit"""
+        """Test run_circuits"""
         job = self.provider.run_circuits(
-            ReferenceCircuits.bell(), backend=self.backend, shots=100)
+            ReferenceCircuits.bell(), backend_name=self.backend.name(), shots=100)
         counts = job.result().get_counts()
         self.assertEqual(100, sum(counts.values()))
 
