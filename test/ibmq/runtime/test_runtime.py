@@ -286,6 +286,13 @@ if __name__ == '__main__':
             for prog in programs:
                 self.assertIn(prog.program_id, stdout)
                 self.assertIn(prog.name, stdout)
+                self.assertNotIn(prog.version, stdout)
+            self.runtime.pprint_programs(detailed=True)
+            stdout_detailed = mock_stdout.getvalue()
+            for prog in programs:
+                self.assertIn(prog.program_id, stdout_detailed)
+                self.assertIn(prog.name, stdout_detailed)
+                self.assertIn(prog.version, stdout_detailed)
 
     def test_upload_program(self):
         """Test uploading a program."""
