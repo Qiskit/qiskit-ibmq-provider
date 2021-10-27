@@ -1,0 +1,28 @@
+name: Cron-prod
+on:
+  schedule:
+    - cron: '0 4 * * *'
+jobs:
+  runtime-integration:
+    name: runtime-integration
+    runs-on: macOS-latest
+    env:
+      QE_TOKEN: ${{ secrets.QE_TOKEN }}
+      QE_URL: ${{ secrets.QE_URL }}
+      QE_RUNTIME_DEVICE: ${{ secrets.QE_RUNTIME_DEVICE }}
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_IN_PARALLEL: True
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c constraints.txt -e .
+          pip install -U -c constraints.txt -r requirements-dev.txt
+      - name: Run Tests
+        run: make runtime_integration

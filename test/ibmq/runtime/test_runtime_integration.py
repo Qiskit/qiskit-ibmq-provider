@@ -37,7 +37,6 @@ from ...proxy_server import MockProxyServer, use_proxies
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
-@unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
 class TestRuntimeIntegration(IBMQTestCase):
     """Integration tests for runtime modules."""
 
@@ -148,14 +147,11 @@ def main(backend, user_messenger, **kwargs):
     def test_upload_program(self):
         """Test uploading a program."""
         max_execution_time = 3000
-        is_public = True
-        program_id = self._upload_program(max_execution_time=max_execution_time,
-                                          is_public=is_public)
+        program_id = self._upload_program(max_execution_time=max_execution_time)
         self.assertTrue(program_id)
         program = self.provider.runtime.program(program_id)
         self.assertTrue(program)
         self.assertEqual(max_execution_time, program.max_execution_time)
-        self.assertEqual(program.is_public, is_public)
 
     def test_upload_program_file(self):
         """Test uploading a program using a file."""
@@ -169,6 +165,26 @@ def main(backend, user_messenger, **kwargs):
         program = self.provider.runtime.program(program_id)
         self.assertTrue(program)
 
+    @unittest.skipIf(
+        not os.environ.get('USE_STAGING_CREDENTIALS', ''),
+        "Only runs on staging"
+    )
+    def test_upload_public_program(self):
+        """Test uploading a public program."""
+        max_execution_time = 3000
+        is_public = True
+        program_id = self._upload_program(max_execution_time=max_execution_time,
+                                          is_public=is_public)
+        self.assertTrue(program_id)
+        program = self.provider.runtime.program(program_id)
+        self.assertTrue(program)
+        self.assertEqual(max_execution_time, program.max_execution_time)
+        self.assertEqual(program.is_public, is_public)
+
+    @unittest.skipIf(
+        not os.environ.get('USE_STAGING_CREDENTIALS', ''),
+        "Only runs on staging"
+    )
     def test_set_visibility(self):
         """Test setting the visibility of a program."""
         program_id = self._upload_program()
