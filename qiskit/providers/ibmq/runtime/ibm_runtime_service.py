@@ -22,7 +22,7 @@ from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-impo
 
 from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram, ParameterNamespace
-from .utils import RuntimeEncoder, RuntimeDecoder, to_base64_string
+from .utils import RuntimeDecoder, to_base64_string
 from .exceptions import (QiskitRuntimeError, RuntimeDuplicateProgramError, RuntimeProgramNotFound,
                          RuntimeJobNotFound)
 from .program.result_decoder import ResultDecoder
@@ -250,12 +250,11 @@ class IBMRuntimeService:
             raise IBMQInputValueError('"image" needs to be in form of image_name:tag')
 
         backend_name = options['backend_name']
-        params_str = json.dumps(inputs, cls=RuntimeEncoder)
         result_decoder = result_decoder or ResultDecoder
         response = self._api_client.program_run(program_id=program_id,
                                                 credentials=self._provider.credentials,
                                                 backend_name=backend_name,
-                                                params=params_str,
+                                                params=inputs,
                                                 image=image)
 
         backend = self._provider.get_backend(backend_name)

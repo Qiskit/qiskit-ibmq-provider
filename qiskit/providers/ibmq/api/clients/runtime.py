@@ -117,7 +117,7 @@ class RuntimeClient:
             program_id: str,
             credentials: Credentials,
             backend_name: str,
-            params: str,
+            params: Dict,
             image: str
     ) -> Dict:
         """Run the specified program.
