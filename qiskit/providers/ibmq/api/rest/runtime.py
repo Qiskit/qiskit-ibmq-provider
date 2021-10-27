@@ -65,7 +65,7 @@ class Runtime(RestAdapterBase):
 
     def create_program(
             self,
-            program_data: Union[bytes, str],
+            program_data: bytes,
             name: str,
             description: str,
             max_execution_time: int,
@@ -110,13 +110,8 @@ class Runtime(RestAdapterBase):
         if interim_results:
             data['interimResults'] = json.dumps(interim_results)
 
-        if isinstance(program_data, str):
-            with open(program_data, 'rb') as file:
-                files = {'program': (name, file)}
-                response = self.session.post(url, data=data, files=files).json()
-        else:
-            files = {'program': (name, program_data)}  # type: ignore[dict-item]
-            response = self.session.post(url, data=data, files=files).json()
+        files = {'program': (name, program_data)}  # type: ignore[dict-item]
+        response = self.session.post(url, data=data, files=files).json()
         return response
 
     def program_run(
@@ -243,6 +238,16 @@ class Program(RestAdapterBase):
         """
         url = self.get_url('self')
         self.session.delete(url)
+
+    def update(self, program_data: str) -> None:
+        """Update a program.
+
+        Args:
+            program_data: Program data.
+        """
+        url = self.get_url("data")
+        self.session.put(url, data=program_data,
+                         headers={'Content-Type': 'text/plain'})
 
 
 class ProgramJob(RestAdapterBase):

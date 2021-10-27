@@ -261,7 +261,7 @@ class IBMRuntimeService:
 
     def upload_program(
             self,
-            data: Union[bytes, str],
+            data: str,
             metadata: Optional[Union[Dict, str]] = None,
             name: Optional[str] = None,
             is_public: Optional[bool] = False,
@@ -292,7 +292,7 @@ class IBMRuntimeService:
         ``name2`` will be used as the program name.
 
         Args:
-            data: Name of the program file or program data to upload.
+            data: Program data or path of the file containing program data to upload.
             metadata: Name of the program metadata file or metadata dictionary.
                 A metadata file needs to be in the JSON format.
                 See :file:`program/program_metadata_sample.yaml` for an example.
@@ -329,8 +329,14 @@ class IBMRuntimeService:
             if req not in program_metadata or not program_metadata[req]:
                 raise IBMQInputValueError(f"{req} is a required metadata field.")
 
+        if "def main(" not in data:
+            # This is the program file
+            with open(data, "r") as file:
+                data = file.read()
+
         try:
-            response = self._api_client.program_create(program_data=data, **program_metadata)
+            response = self._api_client.program_create(program_data=data.encode(),
+                                                       **program_metadata)
         except RequestsApiError as ex:
             if ex.status_code == 409:
                 raise RuntimeDuplicateProgramError(
@@ -390,6 +396,23 @@ class IBMRuntimeService:
             if not doc_list or isinstance(doc_list[0], dict):
                 continue
             metadata[key] = [dict(elem._asdict()) for elem in doc_list]
+
+    def update_program(
+            self,
+            program_id: str,
+            data: str,
+    ) -> None:
+        """Update a runtime program.
+
+        Args:
+            program_id: Program ID.
+            data: Program data or path of the file containing program data to upload.
+        """
+        if "def main(" not in data:
+            # This is the program file
+            with open(data, "r") as file:
+                data = file.read()
+        self._api_client.program_update(program_id, data)
 
     def delete_program(self, program_id: str) -> None:
         """Delete a runtime program.
@@ -451,11 +474,16 @@ class IBMRuntimeService:
             raise QiskitRuntimeError(f"Failed to delete job: {ex}") from None
         return self._decode_job(response)
 
-    def jobs(self, limit: int = 10, skip: int = 0, pending: bool = None) -> List[RuntimeJob]:
+    def jobs(
+            self,
+            limit: Optional[int] = 10,
+            skip: int = 0,
+            pending: bool = None
+    ) -> List[RuntimeJob]:
         """Retrieve all runtime jobs, subject to optional filtering.
 
         Args:
-            limit: Number of jobs to retrieve.
+            limit: Number of jobs to retrieve. ``None`` means no limit.
             skip: Starting index for the job retrieval.
             pending: Filter by job pending state. If ``True``, 'QUEUED' and 'RUNNING'
                 jobs are included. If ``False``, 'DONE', 'CANCELLED' and 'ERROR' jobs
