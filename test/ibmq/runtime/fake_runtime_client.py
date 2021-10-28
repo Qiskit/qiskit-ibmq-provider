@@ -322,12 +322,14 @@ class BaseFakeRuntimeClient:
         limit = limit or len(self._jobs)
         skip = skip or 0
         jobs = list(self._jobs.values())
+        count = len(self._jobs)
         if pending is not None:
             job_status_list = pending_statuses if pending else returned_statuses
             jobs = [job for job in jobs if job._status in job_status_list]
+            count = len(jobs)
         jobs = jobs[skip:limit+skip]
         return {"jobs": [job.to_dict() for job in jobs],
-                "count": len(self._jobs)}
+                "count": count}
 
     def set_program_visibility(self, program_id: str, public: bool) -> None:
         """Sets a program's visibility.

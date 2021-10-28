@@ -531,17 +531,24 @@ class IBMRuntimeService:
         """
         job_responses = []  # type: List[Dict[str, Any]]
         current_page_limit = limit or 20
+        offset = skip
 
         while True:
-            job_page = self._api_client.jobs_get(
+            jobs_response = self._api_client.jobs_get(
                 limit=current_page_limit,
-                skip=skip,
-                pending=pending)["jobs"]
-            if not job_page:
+                skip=offset,
+                pending=pending)
+            job_page = jobs_response["jobs"]
+            # count is the total number of jobs that would be returned if
+            # there was no limit or skip
+            count = jobs_response["count"]
+
+            job_responses += job_page
+
+            if len(job_responses) == count - skip:
                 # Stop if there are no more jobs returned by the server.
                 break
 
-            job_responses += job_page
             if limit:
                 if len(job_responses) >= limit:
                     # Stop if we have reached the limit.
@@ -550,7 +557,7 @@ class IBMRuntimeService:
             else:
                 current_page_limit = 20
 
-            skip += len(job_page)
+            offset += len(job_page)
 
         return [self._decode_job(job) for job in job_responses]
 
