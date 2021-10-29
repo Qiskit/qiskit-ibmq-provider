@@ -15,7 +15,8 @@
 import time
 import uuid
 import json
-from typing import Optional
+import base64
+from typing import Optional, Dict
 from concurrent.futures import ThreadPoolExecutor
 
 from qiskit.providers.ibmq.credentials import Credentials
@@ -51,7 +52,7 @@ class BaseFakeProgram:
                'creation_date': '2021-09-13T17:27:42Z',
                'update_date': '2021-09-14T19:25:32Z'}
         if include_data:
-            out['data'] = self._data
+            out['data'] = base64.standard_b64decode(self._data).decode()
         out['spec'] = {}
         if self._backend_requirements:
             out['spec']['backend_requirements'] = self._backend_requirements
@@ -255,15 +256,35 @@ class BaseFakeRuntimeClient:
             is_public=is_public)
         return {'id': program_id}
 
+    def program_update(
+            self,
+            program_id: str,
+            program_data: str = None,
+            name: str = None,
+            description: str = None,
+            max_execution_time: int = None,
+            spec: Optional[Dict] = None
+    ) -> None:
+        """Update a program."""
+        if program_id not in self._programs:
+            raise RequestsApiError("Program not found", status_code=404)
+        program = self._programs[program_id]
+        program._data = program_data or program._data
+        program._name = name or program._name
+        program._description = description or program._description
+        program._cost = max_execution_time or program._cost
+        if spec:
+            program._backend_requirements = \
+                spec.get("backend_requirements") or program._backend_requirements
+            program._parameters = spec.get("parameters") or program._parameters
+            program._return_values = spec.get("return_values") or program._return_values
+            program._interim_results = spec.get("interim_results") or program._interim_results
+
     def program_get(self, program_id: str):
         """Return a specific program."""
         if program_id not in self._programs:
             raise RequestsApiError("Program not found", status_code=404)
-        return self._programs[program_id].to_dict()
-
-    def program_get_data(self, program_id: str):
-        """Return a specific program and its data."""
-        return self._programs[program_id].to_dict(iclude_data=True)
+        return self._programs[program_id].to_dict(include_data=True)
 
     def program_run(
             self,
