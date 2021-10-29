@@ -1,7 +1,7 @@
 ---
 features:
   - |
-    You can now use the :meth:`qiskit_ibm.runtime.IBMRuntimeService.update_program`
+    You can now use the :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.update_program`
     method to update the metadata for a Qiskit Runtime program.
     Program metadata can be specified using the ``metadata`` parameter or
     individual parameters, such as ``name`` and ``description``. If the
