@@ -42,7 +42,7 @@ class TestBasicServerPaths(IBMQTestCase):
         """Test running a job against a device."""
         for desc, provider in self.providers.items():
             backend = least_busy(provider.backends(
-                simulator=False, open_pulse=False,
+                simulator=False,
                 filters=lambda b: b.configuration().n_qubits >= 5))
             with self.subTest(desc=desc, backend=backend):
                 job = self._submit_job_with_retry(ReferenceCircuits.bell(), backend)
