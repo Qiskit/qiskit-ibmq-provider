@@ -12,7 +12,9 @@
 
 """IBM Quantum Experience visualization library."""
 
-import sys
+import pkg_resources
+# pylint: disable=not-an-iterable
+INSTALLED_PACKAGES = [package.key for package in pkg_resources.working_set]
 
 try:
     import plotly.graph_objects as go
@@ -20,7 +22,7 @@ try:
 except ImportError:
     HAS_PLOTLY = False
 
-if ('ipykernel' in sys.modules) and ('spyder' not in sys.modules):
+if ('ipykernel' in INSTALLED_PACKAGES) and ('spyder' not in INSTALLED_PACKAGES):
     if HAS_PLOTLY:
         from .error_map import iplot_error_map
         from .gate_map import iplot_gate_map
