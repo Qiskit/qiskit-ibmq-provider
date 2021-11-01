@@ -150,7 +150,7 @@ def setup_logger(logger: logging.Logger) -> None:
 def filter_data(data: Dict[str, Any]) -> Dict[str, Any]:
     """Return the data with certain fields filtered.
 
-    Data to be filtered out includes backend name and hub/group/project information.
+    Data to be filtered out includes hub/group/project information.
 
     Args:
         data: Original data to be filtered.
@@ -162,7 +162,7 @@ def filter_data(data: Dict[str, Any]) -> Dict[str, Any]:
         return data
 
     data_to_filter = copy.deepcopy(data)
-    keys_to_filter = [('backend', 'name'), 'hubInfo', 'backend.name']
+    keys_to_filter = ['hubInfo']
     _filter_value(data_to_filter, keys_to_filter)  # type: ignore[arg-type]
     return data_to_filter
 
