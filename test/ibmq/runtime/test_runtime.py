@@ -339,6 +339,53 @@ if __name__ == '__main__':
         self.assertEqual(max_execution_time, program.max_execution_time)
         self.assertEqual(program.is_public, is_public)
 
+    def test_update_program(self):
+        """Test updating program."""
+        new_data = "def main() {foo=bar}"
+        new_metadata = copy.deepcopy(self.DEFAULT_METADATA)
+        new_metadata["name"] = "test_update_program"
+        new_name = "name2"
+        new_description = "some other description"
+        new_cost = self.DEFAULT_METADATA["max_execution_time"] + 100
+        new_spec = copy.deepcopy(self.DEFAULT_METADATA["spec"])
+        new_spec["backend_requirements"] = {"input_allowed": "runtime"}
+
+        sub_tests = [
+            {"data": new_data},
+            {"metadata": new_metadata},
+            {"data": new_data, "metadata": new_metadata},
+            {"metadata": new_metadata, "name": new_name},
+            {"data": new_data, "metadata": new_metadata, "description": new_description},
+            {"max_execution_time": new_cost, "spec": new_spec}
+        ]
+
+        for new_vals in sub_tests:
+            with self.subTest(new_vals=new_vals.keys()):
+                program_id = self._upload_program()
+                self.runtime.update_program(program_id=program_id, **new_vals)
+                updated = self.runtime.program(program_id, refresh=True)
+                if "data" in new_vals:
+                    raw_program = self.runtime._api_client.program_get(program_id)
+                    self.assertEqual(new_data, raw_program["data"])
+                if "metadata" in new_vals and "name" not in new_vals:
+                    self.assertEqual(new_metadata["name"], updated.name)
+                if "name" in new_vals:
+                    self.assertEqual(new_name, updated.name)
+                if "description" in new_vals:
+                    self.assertEqual(new_description, updated.description)
+                if "max_execution_time" in new_vals:
+                    self.assertEqual(new_cost, updated.max_execution_time)
+                if "spec" in new_vals:
+                    raw_program = self.runtime._api_client.program_get(program_id)
+                    self.assertEqual(new_spec, raw_program["spec"])
+
+    def test_update_program_no_new_fields(self):
+        """Test updating a program without any new data."""
+        program_id = self._upload_program()
+        with warnings.catch_warnings(record=True) as warn_cm:
+            self.runtime.update_program(program_id=program_id)
+            self.assertEqual(len(warn_cm), 1)
+
     def test_delete_program(self):
         """Test deleting program."""
         program_id = self._upload_program()

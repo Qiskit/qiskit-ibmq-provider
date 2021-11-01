@@ -87,17 +87,6 @@ class RuntimeClient:
         """
         return self.api.program(program_id).get()
 
-    def program_get_data(self, program_id: str) -> Dict:
-        """Return a specific program and its data.
-
-        Args:
-            program_id: Program ID.
-
-        Returns:
-            Program information, including data.
-        """
-        return self.api.program(program_id).get_data()
-
     def set_program_visibility(self, program_id: str, public: bool) -> None:
         """Sets a program's visibility.
 
@@ -145,14 +134,32 @@ class RuntimeClient:
         """
         self.api.program(program_id).delete()
 
-    def program_update(self, program_id: str, program_data: str) -> None:
+    def program_update(
+            self,
+            program_id: str,
+            program_data: str = None,
+            name: str = None,
+            description: str = None,
+            max_execution_time: int = None,
+            spec: Optional[Dict] = None
+    ) -> None:
         """Update a program.
 
         Args:
             program_id: Program ID.
             program_data: Program data (base64 encoded).
+            name: Name of the program.
+            description: Program description.
+            max_execution_time: Maximum execution time.
+            spec: Backend requirements, parameters, interim results, return values, etc.
         """
-        self.api.program(program_id).update(program_data)
+        if program_data:
+            self.api.program(program_id).update_data(program_data)
+
+        if any([name, description, max_execution_time, spec]):
+            self.api.program(program_id).update_metadata(
+                name=name, description=description,
+                max_execution_time=max_execution_time, spec=spec)
 
     def job_get(self, job_id: str) -> Dict:
         """Get job data.
