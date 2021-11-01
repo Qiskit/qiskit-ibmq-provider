@@ -215,8 +215,8 @@ def main(backend, user_messenger, **kwargs):
         with self.assertRaises(RuntimeProgramNotFound):
             self.provider.runtime.delete_program(program_id)
 
-    def test_update_program(self):
-        """Test updating a program."""
+    def test_update_program_data(self):
+        """Test updating program data."""
         program_v1 = """
 def main(backend, user_messenger, **kwargs):
     return "version 1"
@@ -225,12 +225,35 @@ def main(backend, user_messenger, **kwargs):
 def main(backend, user_messenger, **kwargs):
     return "version 2"
         """
+        # TODO retrieve program data instead of run program when #66 is merged
         program_id = self._upload_program(data=program_v1)
         job = self._run_program(program_id=program_id)
         self.assertEqual("version 1", job.result())
         self.provider.runtime.update_program(program_id=program_id, data=program_v2)
         job = self._run_program(program_id=program_id)
         self.assertEqual("version 2", job.result())
+
+    def test_update_program_metadata(self):
+        """Test updating program metadata."""
+        program_id = self._upload_program()
+        original = self.provider.runtime.program(program_id)
+        new_metadata = {
+            "name": self._get_program_name(),
+            "description": "test_update_program_metadata",
+            "max_execution_time": original.max_execution_time + 100,
+            "spec": {
+                "return_values": {
+                    "type": "object",
+                    "description": "Some return value"
+                }
+            }
+        }
+        self.provider.runtime.update_program(program_id=program_id, metadata=new_metadata)
+        updated = self.provider.runtime.program(program_id, refresh=True)
+        self.assertEqual(new_metadata["name"], updated.name)
+        self.assertEqual(new_metadata["description"], updated.description)
+        self.assertEqual(new_metadata["max_execution_time"], updated.max_execution_time)
+        self.assertEqual(new_metadata["spec"]["return_values"], updated.return_values)
 
     def test_run_program(self):
         """Test running a program."""

@@ -194,15 +194,6 @@ class Program(RestAdapterBase):
         url = self.get_url('self')
         return self.session.get(url).json()
 
-    def get_data(self) -> Dict[str, Any]:
-        """Return program information, including data.
-
-        Returns:
-            JSON response.
-        """
-        url = self.get_url('data')
-        return self.session.get(url).json()
-
     def make_public(self) -> None:
         """Sets a runtime program's visibility to public."""
         url = self.get_url('public')
@@ -222,8 +213,8 @@ class Program(RestAdapterBase):
         url = self.get_url('self')
         self.session.delete(url)
 
-    def update(self, program_data: str) -> None:
-        """Update a program.
+    def update_data(self, program_data: str) -> None:
+        """Update program data.
 
         Args:
             program_data: Program data (base64 encoded).
@@ -231,6 +222,34 @@ class Program(RestAdapterBase):
         url = self.get_url("data")
         self.session.put(url, data=program_data,
                          headers={'Content-Type': 'application/octet-stream'})
+
+    def update_metadata(
+            self,
+            name: str = None,
+            description: str = None,
+            max_execution_time: int = None,
+            spec: Optional[Dict] = None
+    ) -> None:
+        """Update program metadata.
+
+        Args:
+            name: Name of the program.
+            description: Program description.
+            max_execution_time: Maximum execution time.
+            spec: Backend requirements, parameters, interim results, return values, etc.
+        """
+        url = self.get_url("self")
+        payload: Dict = {}
+        if name:
+            payload["name"] = name
+        if description:
+            payload["description"] = description
+        if max_execution_time:
+            payload["cost"] = max_execution_time
+        if spec:
+            payload["spec"] = spec
+
+        self.session.patch(url, json=payload)
 
 
 class ProgramJob(RestAdapterBase):
