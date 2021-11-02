@@ -34,7 +34,7 @@ from qiskit.providers.models import (BackendStatus, BackendProperties,
 from qiskit.tools.events.pubsub import Publisher
 from qiskit.providers.models import (QasmBackendConfiguration,
                                      PulseBackendConfiguration)
-from qiskit.util import deprecate_arguments
+from qiskit.utils import deprecate_arguments
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from .apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
