@@ -203,7 +203,9 @@ class IBMRuntimeService:
                               creation_date=response.get('creation_date', ""),
                               update_date=response.get('update_date', ""),
                               backend_requirements=backend_requirements,
-                              is_public=response.get('is_public', False))
+                              is_public=response.get('is_public', False),
+                              data=response.get('data', ""),
+                              api_client=self._api_client)
 
     def run(
             self,
