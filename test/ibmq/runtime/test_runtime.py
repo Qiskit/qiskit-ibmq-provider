@@ -600,6 +600,18 @@ if __name__ == '__main__':
         rjobs = self.runtime.jobs(limit=limit, skip=skip, pending=False)
         self.assertEqual(limit, len(rjobs))
 
+    def test_jobs_filter_by_program_id(self):
+        """Test retrieving jobs by Program ID."""
+        program_id = self._upload_program()
+        program_id_1 = self._upload_program()
+        job = self._run_program(program_id=program_id)
+        job_1 = self._run_program(program_id=program_id_1)
+        job.wait_for_final_state()
+        job_1.wait_for_final_state()
+        rjobs = self.runtime.jobs(program_id=program_id)
+        self.assertEqual(program_id, rjobs[0].program_id)
+        self.assertEqual(1, len(rjobs))
+
     def test_cancel_job(self):
         """Test canceling a job."""
         job = self._run_program(job_classes=CancelableRuntimeJob)
