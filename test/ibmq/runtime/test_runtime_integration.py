@@ -146,6 +146,19 @@ def main(backend, user_messenger, **kwargs):
         self.assertEqual(self.program_id, program.program_id)
         self._validate_program(program)
 
+    def test_retrieve_program_data(self):
+        """Test retrieving program data"""
+        program = self.provider.runtime.program(self.program_id)
+        self.assertEqual(self.RUNTIME_PROGRAM, program.data)
+        self._validate_program(program)
+
+    def test_retrieve_unauthorized_program_data(self):
+        """Test retrieving program data when user is not the program author"""
+        program = self.provider.runtime.program('sample-program')
+        self._validate_program(program)
+        with self.assertRaises(IBMQNotAuthorizedError):
+            return program.data
+
     def test_upload_program(self):
         """Test uploading a program."""
         max_execution_time = 3000

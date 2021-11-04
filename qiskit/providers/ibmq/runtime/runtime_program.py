@@ -16,8 +16,8 @@ import logging
 import re
 from typing import Optional, List, Dict
 from types import SimpleNamespace
-from qiskit.providers.ibmq.exceptions import IBMQInputValueError
-
+from qiskit.providers.ibmq.exceptions import IBMQInputValueError, IBMQNotAuthorizedError
+from ..api.clients.runtime import RuntimeClient
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,9 @@ class RuntimeProgram:
             backend_requirements: Optional[Dict] = None,
             creation_date: str = "",
             update_date: str = "",
-            is_public: Optional[bool] = False
+            is_public: Optional[bool] = False,
+            data: str = "",
+            api_client: Optional[RuntimeClient] = None
     ) -> None:
         """RuntimeProgram constructor.
 
@@ -71,6 +73,8 @@ class RuntimeProgram:
             creation_date: Program creation date.
             update_date: Program last updated date.
             is_public: ``True`` if program is visible to all. ``False`` if it's only visible to you.
+            data: Program data.
+            api_client: Runtime api client.
         """
         self._name = program_name
         self._id = program_id
@@ -83,6 +87,8 @@ class RuntimeProgram:
         self._creation_date = creation_date
         self._update_date = update_date
         self._is_public = is_public
+        self._data = data
+        self._api_client = api_client
 
     def __str__(self) -> str:
         def _format_common(schema: Dict) -> None:
@@ -257,6 +263,41 @@ class RuntimeProgram:
             Whether the program is public.
         """
         return self._is_public
+
+    @property
+    def data(self) -> str:
+        """Program data.
+
+        Returns:
+            Program data.
+
+        Raises:
+            IBMQNotAuthorizedError: if user is not the program author.
+        """
+        if not self._data:
+            response = self._api_client.program_get(self._id)
+            self._backend_requirements = {}
+            self._parameters = {}
+            self._return_values = {}
+            self._interim_results = {}
+            if "spec" in response:
+                self._backend_requirements = response["spec"].get('backend_requirements', {})
+                self._parameters = response["spec"].get('parameters', {})
+                self._return_values = response["spec"].get('return_values', {})
+                self._interim_results = response["spec"].get('interim_results', {})
+            self._name = response['name']
+            self._id = response['id']
+            self._description = response.get('description', "")
+            self._max_execution_time = response.get('cost', 0)
+            self._creation_date = response.get('creation_date', "")
+            self._update_date = response.get('update_date', "")
+            self._is_public = response.get('is_public', False)
+            if 'data' in response:
+                self._data = response['data']
+            else:
+                raise IBMQNotAuthorizedError(
+                    'Only program authors are authorized to retrieve program data')
+        return self._data
 
 
 class ParameterNamespace(SimpleNamespace):
