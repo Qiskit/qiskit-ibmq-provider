@@ -375,6 +375,15 @@ def main(backend, user_messenger, **kwargs):
                 break
         self.assertTrue(found, f"Returned job {job.job_id()} not retrieved.")
 
+    def test_retrieve_jobs_by_program_id(self):
+        """Test retrieving jobs by Program ID."""
+        program_id = self._upload_program()
+        job = self._run_program(program_id=program_id)
+        job.wait_for_final_state()
+        rjobs = self.provider.runtime.jobs(program_id=program_id)
+        self.assertEqual(program_id, rjobs[0].program_id)
+        self.assertEqual(1, len(rjobs))
+
     def test_cancel_job_queued(self):
         """Test canceling a queued job."""
         _ = self._run_program(iterations=10)

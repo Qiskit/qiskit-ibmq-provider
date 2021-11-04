@@ -315,7 +315,7 @@ class BaseFakeRuntimeClient:
         """Get the specific job."""
         return self._get_job(job_id).to_dict()
 
-    def jobs_get(self, limit=None, skip=None, pending=None):
+    def jobs_get(self, limit=None, skip=None, pending=None, program_id=None):
         """Get all jobs."""
         pending_statuses = ['QUEUED', 'RUNNING']
         returned_statuses = ['COMPLETED', 'FAILED', 'CANCELLED']
@@ -326,6 +326,9 @@ class BaseFakeRuntimeClient:
         if pending is not None:
             job_status_list = pending_statuses if pending else returned_statuses
             jobs = [job for job in jobs if job._status in job_status_list]
+            count = len(jobs)
+        if program_id:
+            jobs = [job for job in jobs if job._program_id == program_id]
             count = len(jobs)
         jobs = jobs[skip:limit+skip]
         return {"jobs": [job.to_dict() for job in jobs],

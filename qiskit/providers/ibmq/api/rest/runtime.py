@@ -134,7 +134,13 @@ class Runtime(RestAdapterBase):
         data = json.dumps(payload, cls=RuntimeEncoder)
         return self.session.post(url, data=data).json()
 
-    def jobs_get(self, limit: int = None, skip: int = None, pending: bool = None) -> Dict:
+    def jobs_get(
+            self,
+            limit: int = None,
+            skip: int = None,
+            pending: bool = None,
+            program_id: str = None
+    ) -> Dict:
         """Get a list of job data.
 
         Args:
@@ -142,6 +148,7 @@ class Runtime(RestAdapterBase):
             skip: Number of results to skip.
             pending: Returns 'QUEUED' and 'RUNNING' jobs if True,
                 returns 'DONE', 'CANCELLED' and 'ERROR' jobs if False.
+            program_id: Filter by Program ID.
 
         Returns:
             JSON response.
@@ -154,6 +161,8 @@ class Runtime(RestAdapterBase):
             payload['offset'] = skip
         if pending is not None:
             payload['pending'] = 'true' if pending else 'false'
+        if program_id:
+            payload['program'] = program_id
         return self.session.get(url, params=payload).json()
 
     def logout(self) -> None:
