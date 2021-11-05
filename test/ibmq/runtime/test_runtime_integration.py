@@ -238,13 +238,10 @@ def main(backend, user_messenger, **kwargs):
 def main(backend, user_messenger, **kwargs):
     return "version 2"
         """
-        # TODO retrieve program data instead of run program when #66 is merged
         program_id = self._upload_program(data=program_v1)
-        job = self._run_program(program_id=program_id)
-        self.assertEqual("version 1", job.result())
+        self.assertEqual(program_v1, self.provider.runtime.program(program_id).data)
         self.provider.runtime.update_program(program_id=program_id, data=program_v2)
-        job = self._run_program(program_id=program_id)
-        self.assertEqual("version 2", job.result())
+        self.assertEqual(program_v2, self.provider.runtime.program(program_id).data)
 
     def test_update_program_metadata(self):
         """Test updating program metadata."""
