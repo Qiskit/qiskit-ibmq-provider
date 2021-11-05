@@ -431,6 +431,10 @@ class IBMRuntimeService:
                 raise RuntimeProgramNotFound(f"Program not found: {ex.message}") from None
             raise QiskitRuntimeError(f"Failed to update program: {ex}") from None
 
+        if program_id in self._programs:
+            program = self._programs[program_id]
+            program._refresh()
+
     def _merge_metadata(
             self,
             metadata: Optional[Dict] = None,
@@ -491,6 +495,10 @@ class IBMRuntimeService:
             if ex.status_code == 404:
                 raise RuntimeJobNotFound(f"Program not found: {ex.message}") from None
             raise QiskitRuntimeError(f"Failed to set program visibility: {ex}") from None
+
+        if program_id in self._programs:
+            program = self._programs[program_id]
+            program._is_public = public
 
     def job(self, job_id: str) -> RuntimeJob:
         """Retrieve a runtime job.

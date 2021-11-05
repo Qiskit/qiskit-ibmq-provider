@@ -17,7 +17,9 @@ import re
 from typing import Optional, List, Dict
 from types import SimpleNamespace
 from qiskit.providers.ibmq.exceptions import IBMQInputValueError, IBMQNotAuthorizedError
+from .exceptions import QiskitRuntimeError, RuntimeProgramNotFound
 from ..api.clients.runtime import RuntimeClient
+from ..api.exceptions import RequestsApiError
 
 logger = logging.getLogger(__name__)
 
@@ -275,29 +277,42 @@ class RuntimeProgram:
             IBMQNotAuthorizedError: if user is not the program author.
         """
         if not self._data:
-            response = self._api_client.program_get(self._id)
-            self._backend_requirements = {}
-            self._parameters = {}
-            self._return_values = {}
-            self._interim_results = {}
-            if "spec" in response:
-                self._backend_requirements = response["spec"].get('backend_requirements', {})
-                self._parameters = response["spec"].get('parameters', {})
-                self._return_values = response["spec"].get('return_values', {})
-                self._interim_results = response["spec"].get('interim_results', {})
-            self._name = response['name']
-            self._id = response['id']
-            self._description = response.get('description', "")
-            self._max_execution_time = response.get('cost', 0)
-            self._creation_date = response.get('creation_date', "")
-            self._update_date = response.get('update_date', "")
-            self._is_public = response.get('is_public', False)
-            if 'data' in response:
-                self._data = response['data']
-            else:
+            self._refresh()
+            if not self._data:
                 raise IBMQNotAuthorizedError(
                     'Only program authors are authorized to retrieve program data')
         return self._data
+
+    def _refresh(self) -> None:
+        """Refresh program data and metadata
+
+        Raises:
+            RuntimeProgramNotFound: If the program does not exist.
+            QiskitRuntimeError: If the request failed.
+        """
+        try:
+            response = self._api_client.program_get(self._id)
+        except RequestsApiError as ex:
+            if ex.status_code == 404:
+                raise RuntimeProgramNotFound(f"Program not found: {ex.message}") from None
+            raise QiskitRuntimeError(f"Failed to get program: {ex}") from None
+        self._backend_requirements = {}
+        self._parameters = {}
+        self._return_values = {}
+        self._interim_results = {}
+        if "spec" in response:
+            self._backend_requirements = response["spec"].get('backend_requirements', {})
+            self._parameters = response["spec"].get('parameters', {})
+            self._return_values = response["spec"].get('return_values', {})
+            self._interim_results = response["spec"].get('interim_results', {})
+        self._name = response['name']
+        self._id = response['id']
+        self._description = response.get('description', "")
+        self._max_execution_time = response.get('cost', 0)
+        self._creation_date = response.get('creation_date', "")
+        self._update_date = response.get('update_date', "")
+        self._is_public = response.get('is_public', False)
+        self._data = response.get('data', "")
 
 
 class ParameterNamespace(SimpleNamespace):
