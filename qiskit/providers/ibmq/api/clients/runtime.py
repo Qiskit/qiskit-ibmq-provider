@@ -179,7 +179,10 @@ class RuntimeClient:
             limit: int = None,
             skip: int = None,
             pending: bool = None,
-            program_id: str = None
+            program_id: str = None,
+            hub: str = None,
+            group: str = None,
+            project: str = None
     ) -> Dict:
         """Get job data for all jobs.
 
@@ -189,11 +192,15 @@ class RuntimeClient:
             pending: Returns 'QUEUED' and 'RUNNING' jobs if True,
                 returns 'DONE', 'CANCELLED' and 'ERROR' jobs if False.
             program_id: Filter by Program ID.
+            hub: Filter by hub - hub, group, and project must all be specified.
+            group: Filter by group - hub, group, and project must all be specified.
+            project: Filter by project - hub, group, and project must all be specified.
 
         Returns:
             JSON response.
         """
-        return self.api.jobs_get(limit=limit, skip=skip, pending=pending, program_id=program_id)
+        return self.api.jobs_get(limit=limit, skip=skip, pending=pending,
+                                 program_id=program_id, hub=hub, group=group, project=project)
 
     def job_results(self, job_id: str) -> str:
         """Get the results of a program job.

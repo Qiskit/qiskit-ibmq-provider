@@ -139,7 +139,10 @@ class Runtime(RestAdapterBase):
             limit: int = None,
             skip: int = None,
             pending: bool = None,
-            program_id: str = None
+            program_id: str = None,
+            hub: str = None,
+            group: str = None,
+            project: str = None
     ) -> Dict:
         """Get a list of job data.
 
@@ -149,6 +152,9 @@ class Runtime(RestAdapterBase):
             pending: Returns 'QUEUED' and 'RUNNING' jobs if True,
                 returns 'DONE', 'CANCELLED' and 'ERROR' jobs if False.
             program_id: Filter by Program ID.
+            hub: Filter by hub - hub, group, and project must all be specified.
+            group: Filter by group - hub, group, and project must all be specified.
+            project: Filter by project - hub, group, and project must all be specified.
 
         Returns:
             JSON response.
@@ -163,6 +169,8 @@ class Runtime(RestAdapterBase):
             payload['pending'] = 'true' if pending else 'false'
         if program_id:
             payload['program'] = program_id
+        if all([hub, group, project]):
+            payload['provider'] = f"{hub}/{group}/{project}"
         return self.session.get(url, params=payload).json()
 
     def logout(self) -> None:

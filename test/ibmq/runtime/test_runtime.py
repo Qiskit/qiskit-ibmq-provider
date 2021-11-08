@@ -621,6 +621,22 @@ if __name__ == '__main__':
         self.assertEqual(program_id, rjobs[0].program_id)
         self.assertEqual(1, len(rjobs))
 
+    def test_jobs_filter_by_provider(self):
+        """Test retrieving jobs by provider."""
+        program_id = self._upload_program()
+        job = self._run_program(program_id=program_id,
+                                hub="defaultHub", group="defaultGroup", project="defaultProject")
+        job.wait_for_final_state()
+        rjobs = self.runtime.jobs(program_id=program_id,
+                                  hub="defaultHub", group="defaultGroup", project="defaultProject")
+        self.assertEqual(program_id, rjobs[0].program_id)
+        self.assertEqual(1, len(rjobs))
+        rjobs = self.runtime.jobs(program_id=program_id,
+                                  hub="test", group="test", project="test")
+        self.assertFalse(rjobs)
+        with self.assertRaises(IBMQInputValueError):
+            self.runtime.jobs(hub="defaultHub")
+
     def test_cancel_job(self):
         """Test canceling a job."""
         job = self._run_program(job_classes=CancelableRuntimeJob)
@@ -725,13 +741,15 @@ if __name__ == '__main__':
         return program_id
 
     def _run_program(self, program_id=None, inputs=None, job_classes=None, final_status=None,
-                     decoder=None, image=""):
+                     decoder=None, image="", hub=None, group=None, project=None):
         """Run a program."""
         options = {'backend_name': "some_backend"}
         if final_status is not None:
             self.runtime._api_client.set_final_status(final_status)
         elif job_classes:
             self.runtime._api_client.set_job_classes(job_classes)
+        elif all([hub, group, project]):
+            self.runtime._api_client.set_hgp(hub, group, project)
         if program_id is None:
             program_id = self._upload_program()
         job = self.runtime.run(program_id=program_id, inputs=inputs,

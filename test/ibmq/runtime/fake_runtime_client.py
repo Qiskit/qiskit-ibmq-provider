@@ -214,13 +214,23 @@ class TimedRuntimeJob(BaseFakeRuntimeJob):
 class BaseFakeRuntimeClient:
     """Base class for faking the runtime client."""
 
-    def __init__(self, job_classes=None, final_status=None, job_kwargs=None):
+    def __init__(self, job_classes=None, final_status=None, job_kwargs=None,
+                 hub=None, group=None, project=None):
         """Initialize a fake runtime client."""
         self._programs = {}
         self._jobs = {}
         self._job_classes = job_classes or []
         self._final_status = final_status
         self._job_kwargs = job_kwargs or {}
+        self._hub = hub
+        self._group = group
+        self._project = project
+
+    def set_hgp(self, hub, group, project):
+        """Set hub, group and project"""
+        self._hub = hub
+        self._group = group
+        self._project = project
 
     def set_job_classes(self, classes):
         """Set job classes to use."""
@@ -297,9 +307,12 @@ class BaseFakeRuntimeClient:
         """Run the specified program."""
         job_id = uuid.uuid4().hex
         job_cls = self._job_classes.pop(0) if len(self._job_classes) > 0 else BaseFakeRuntimeJob
+        hub = self._hub or credentials.hub
+        group = self._group or credentials.group
+        project = self._project or credentials.project
         job = job_cls(job_id=job_id, program_id=program_id,
-                      hub=credentials.hub, group=credentials.group,
-                      project=credentials.project, backend_name=backend_name,
+                      hub=hub, group=group,
+                      project=project, backend_name=backend_name,
                       params=params, final_status=self._final_status, image=image,
                       **self._job_kwargs)
         self._jobs[job_id] = job
@@ -315,7 +328,8 @@ class BaseFakeRuntimeClient:
         """Get the specific job."""
         return self._get_job(job_id).to_dict()
 
-    def jobs_get(self, limit=None, skip=None, pending=None, program_id=None):
+    def jobs_get(self, limit=None, skip=None, pending=None, program_id=None,
+                 hub=None, group=None, project=None):
         """Get all jobs."""
         pending_statuses = ['QUEUED', 'RUNNING']
         returned_statuses = ['COMPLETED', 'FAILED', 'CANCELLED']
@@ -329,6 +343,10 @@ class BaseFakeRuntimeClient:
             count = len(jobs)
         if program_id:
             jobs = [job for job in jobs if job._program_id == program_id]
+            count = len(jobs)
+        if all([hub, group, project]):
+            jobs = [job for job in jobs if
+                    job._hub == hub and job._group == group and job._project == project]
             count = len(jobs)
         jobs = jobs[skip:limit+skip]
         return {"jobs": [job.to_dict() for job in jobs],

@@ -394,6 +394,22 @@ def main(backend, user_messenger, **kwargs):
         self.assertEqual(program_id, rjobs[0].program_id)
         self.assertEqual(1, len(rjobs))
 
+    def test_jobs_filter_by_provider(self):
+        """Test retrieving jobs by provider."""
+        hub = self.provider.credentials.hub
+        group = self.provider.credentials.group
+        project = self.provider.credentials.project
+        program_id = self._upload_program()
+        job = self._run_program(program_id=program_id)
+        job.wait_for_final_state()
+        rjobs = self.provider.runtime.jobs(program_id=program_id,
+                                           hub=hub, group=group, project=project)
+        self.assertEqual(program_id, rjobs[0].program_id)
+        self.assertEqual(1, len(rjobs))
+        rjobs = self.provider.runtime.jobs(program_id=program_id,
+                                           hub="test", group="test", project="test")
+        self.assertFalse(rjobs)
+
     def test_cancel_job_queued(self):
         """Test canceling a queued job."""
         _ = self._run_program(iterations=10)

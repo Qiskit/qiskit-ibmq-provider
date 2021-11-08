@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    You can now pass ``hub``, ``group``, and ``project`` parameters to
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.jobs` to filter jobs.
