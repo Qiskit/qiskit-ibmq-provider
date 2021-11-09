@@ -19,6 +19,7 @@ from concurrent import futures
 
 from .base import RestAdapterBase
 from ..session import RetrySession
+from ...runtime.utils import RuntimeEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -54,65 +55,56 @@ class Runtime(RestAdapterBase):
         """
         return ProgramJob(self.session, job_id)
 
-    def list_programs(self) -> List[Dict]:
+    def list_programs(self, limit: int = None, skip: int = None) -> Dict[str, Any]:
         """Return a list of runtime programs.
 
+        Args:
+            limit: The number of programs to return.
+            skip: The number of programs to skip.
+
         Returns:
-            JSON response.
+            A list of runtime programs.
         """
         url = self.get_url('programs')
-        return self.session.get(url).json()
+        payload: Dict[str, int] = {}
+        if limit:
+            payload['limit'] = limit
+        if skip:
+            payload['offset'] = skip
+        return self.session.get(url, params=payload).json()
 
     def create_program(
             self,
-            program_data: bytes,
+            program_data: str,
             name: str,
             description: str,
             max_execution_time: int,
             is_public: Optional[bool] = False,
-            version: Optional[str] = None,
-            backend_requirements: Optional[Dict] = None,
-            parameters: Optional[Dict] = None,
-            return_values: Optional[List] = None,
-            interim_results: Optional[List] = None
+            spec: Optional[Dict] = None
     ) -> Dict:
         """Upload a new program.
 
         Args:
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
             name: Name of the program.
             description: Program description.
             max_execution_time: Maximum execution time.
             is_public: Whether the program should be public.
-            version: Program version.
-            backend_requirements: Backend requirements.
-            parameters: Program parameters.
-            return_values: Program return values.
-            interim_results: Program interim results.
+            spec: Backend requirements, parameters, interim results, return values, etc.
 
         Returns:
             JSON response.
         """
         url = self.get_url('programs')
-        data = {'name': name,
-                'cost': str(max_execution_time),
-                'description': description.encode(),
-                'max_execution_time': max_execution_time,
-                'isPublic': is_public}
-        if version is not None:
-            data['version'] = version
-        if backend_requirements:
-            data['backendRequirements'] = json.dumps(backend_requirements)
-        if parameters:
-            data['parameters'] = json.dumps({"doc": parameters})
-        if return_values:
-            data['returnValues'] = json.dumps(return_values)
-        if interim_results:
-            data['interimResults'] = json.dumps(interim_results)
-
-        files = {'program': (name, program_data)}  # type: ignore[dict-item]
-        response = self.session.post(url, data=data, files=files).json()
-        return response
+        payload = {'name': name,
+                   'data': program_data,
+                   'cost': max_execution_time,
+                   'description': description,
+                   'is_public': is_public}
+        if spec is not None:
+            payload['spec'] = spec
+        data = json.dumps(payload)
+        return self.session.post(url, data=data).json()
 
     def program_run(
             self,
@@ -121,7 +113,7 @@ class Runtime(RestAdapterBase):
             group: str,
             project: str,
             backend_name: str,
-            params: str,
+            params: Dict,
             image: str
     ) -> Dict:
         """Execute the program.
@@ -140,18 +132,24 @@ class Runtime(RestAdapterBase):
         """
         url = self.get_url('jobs')
         payload = {
-            'programId': program_id,
+            'program_id': program_id,
             'hub': hub,
             'group': group,
             'project': project,
             'backend': backend_name,
-            'params': [params],
+            'params': params,
             'runtime': image
         }
-        data = json.dumps(payload)
+        data = json.dumps(payload, cls=RuntimeEncoder)
         return self.session.post(url, data=data).json()
 
-    def jobs_get(self, limit: int = None, skip: int = None, pending: bool = None) -> Dict:
+    def jobs_get(
+            self,
+            limit: int = None,
+            skip: int = None,
+            pending: bool = None,
+            program_id: str = None
+    ) -> Dict:
         """Get a list of job data.
 
         Args:
@@ -159,6 +157,7 @@ class Runtime(RestAdapterBase):
             skip: Number of results to skip.
             pending: Returns 'QUEUED' and 'RUNNING' jobs if True,
                 returns 'DONE', 'CANCELLED' and 'ERROR' jobs if False.
+            program_id: Filter by Program ID.
 
         Returns:
             JSON response.
@@ -171,6 +170,8 @@ class Runtime(RestAdapterBase):
             payload['offset'] = skip
         if pending is not None:
             payload['pending'] = 'true' if pending else 'false'
+        if program_id:
+            payload['program'] = program_id
         return self.session.get(url, params=payload).json()
 
     def logout(self) -> None:
@@ -211,15 +212,6 @@ class Program(RestAdapterBase):
         url = self.get_url('self')
         return self.session.get(url).json()
 
-    def get_data(self) -> Dict[str, Any]:
-        """Return program information, including data.
-
-        Returns:
-            JSON response.
-        """
-        url = self.get_url('data')
-        return self.session.get(url).json()
-
     def make_public(self) -> None:
         """Sets a runtime program's visibility to public."""
         url = self.get_url('public')
@@ -239,15 +231,43 @@ class Program(RestAdapterBase):
         url = self.get_url('self')
         self.session.delete(url)
 
-    def update(self, program_data: str) -> None:
-        """Update a program.
+    def update_data(self, program_data: str) -> None:
+        """Update program data.
 
         Args:
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
         """
         url = self.get_url("data")
         self.session.put(url, data=program_data,
-                         headers={'Content-Type': 'text/plain'})
+                         headers={'Content-Type': 'application/octet-stream'})
+
+    def update_metadata(
+            self,
+            name: str = None,
+            description: str = None,
+            max_execution_time: int = None,
+            spec: Optional[Dict] = None
+    ) -> None:
+        """Update program metadata.
+
+        Args:
+            name: Name of the program.
+            description: Program description.
+            max_execution_time: Maximum execution time.
+            spec: Backend requirements, parameters, interim results, return values, etc.
+        """
+        url = self.get_url("self")
+        payload: Dict = {}
+        if name:
+            payload["name"] = name
+        if description:
+            payload["description"] = description
+        if max_execution_time:
+            payload["cost"] = max_execution_time
+        if spec:
+            payload["spec"] = spec
+
+        self.session.patch(url, json=payload)
 
 
 class ProgramJob(RestAdapterBase):

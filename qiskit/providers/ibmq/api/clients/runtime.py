@@ -13,7 +13,7 @@
 """Client for accessing IBM Quantum runtime service."""
 
 import logging
-from typing import List, Dict, Union, Optional
+from typing import Any, List, Dict, Union, Optional
 
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.session import RetrySession
@@ -39,40 +39,36 @@ class RuntimeClient:
                                      **credentials.connection_parameters())
         self.api = Runtime(self._session)
 
-    def list_programs(self) -> List[Dict]:
+    def list_programs(self, limit: int = None, skip: int = None) -> Dict[str, Any]:
         """Return a list of runtime programs.
 
+        Args:
+            limit: The number of programs to return.
+            skip: The number of programs to skip.
+
         Returns:
-            A list of quantum programs.
+            A list of runtime programs.
         """
-        return self.api.list_programs()
+        return self.api.list_programs(limit, skip)
 
     def program_create(
             self,
-            program_data: bytes,
+            program_data: str,
             name: str,
             description: str,
             max_execution_time: int,
             is_public: Optional[bool] = False,
-            version: Optional[str] = None,
-            backend_requirements: Optional[Dict] = None,
-            parameters: Optional[Dict] = None,
-            return_values: Optional[List] = None,
-            interim_results: Optional[List] = None
+            spec: Optional[Dict] = None
     ) -> Dict:
         """Create a new program.
 
         Args:
             name: Name of the program.
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
             description: Program description.
             max_execution_time: Maximum execution time.
             is_public: Whether the program should be public.
-            version: Program version.
-            backend_requirements: Backend requirements.
-            parameters: Program parameters.
-            return_values: Program return values.
-            interim_results: Program interim results.
+            spec: Backend requirements, parameters, interim results, return values, etc.
 
         Returns:
             Server response.
@@ -81,9 +77,7 @@ class RuntimeClient:
             program_data=program_data,
             name=name,
             description=description, max_execution_time=max_execution_time,
-            is_public=is_public, version=version, backend_requirements=backend_requirements,
-            parameters=parameters, return_values=return_values,
-            interim_results=interim_results
+            is_public=is_public, spec=spec
         )
 
     def program_get(self, program_id: str) -> Dict:
@@ -96,17 +90,6 @@ class RuntimeClient:
             Program information.
         """
         return self.api.program(program_id).get()
-
-    def program_get_data(self, program_id: str) -> Dict:
-        """Return a specific program and its data.
-
-        Args:
-            program_id: Program ID.
-
-        Returns:
-            Program information, including data.
-        """
-        return self.api.program(program_id).get_data()
 
     def set_program_visibility(self, program_id: str, public: bool) -> None:
         """Sets a program's visibility.
@@ -127,7 +110,7 @@ class RuntimeClient:
             program_id: str,
             credentials: Credentials,
             backend_name: str,
-            params: str,
+            params: Dict,
             image: str
     ) -> Dict:
         """Run the specified program.
@@ -155,14 +138,32 @@ class RuntimeClient:
         """
         self.api.program(program_id).delete()
 
-    def program_update(self, program_id: str, program_data: str) -> None:
+    def program_update(
+            self,
+            program_id: str,
+            program_data: str = None,
+            name: str = None,
+            description: str = None,
+            max_execution_time: int = None,
+            spec: Optional[Dict] = None
+    ) -> None:
         """Update a program.
 
         Args:
             program_id: Program ID.
-            program_data: Program data.
+            program_data: Program data (base64 encoded).
+            name: Name of the program.
+            description: Program description.
+            max_execution_time: Maximum execution time.
+            spec: Backend requirements, parameters, interim results, return values, etc.
         """
-        self.api.program(program_id).update(program_data)
+        if program_data:
+            self.api.program(program_id).update_data(program_data)
+
+        if any([name, description, max_execution_time, spec]):
+            self.api.program(program_id).update_metadata(
+                name=name, description=description,
+                max_execution_time=max_execution_time, spec=spec)
 
     def job_get(self, job_id: str) -> Dict:
         """Get job data.
@@ -177,7 +178,13 @@ class RuntimeClient:
         logger.debug("Runtime job get response: %s", response)
         return response
 
-    def jobs_get(self, limit: int = None, skip: int = None, pending: bool = None) -> Dict:
+    def jobs_get(
+            self,
+            limit: int = None,
+            skip: int = None,
+            pending: bool = None,
+            program_id: str = None
+    ) -> Dict:
         """Get job data for all jobs.
 
         Args:
@@ -185,11 +192,12 @@ class RuntimeClient:
             skip: Number of results to skip.
             pending: Returns 'QUEUED' and 'RUNNING' jobs if True,
                 returns 'DONE', 'CANCELLED' and 'ERROR' jobs if False.
+            program_id: Filter by Program ID.
 
         Returns:
             JSON response.
         """
-        return self.api.jobs_get(limit=limit, skip=skip, pending=pending)
+        return self.api.jobs_get(limit=limit, skip=skip, pending=pending, program_id=program_id)
 
     def job_results(self, job_id: str) -> str:
         """Get the results of a program job.
