@@ -23,6 +23,28 @@ from qiskit.circuit.parameterexpression import ParameterExpression
 class IQXJsonEncoder(json.JSONEncoder):
     """A json encoder for qobj"""
 
+    def encode(self, o: Any) -> str:
+        """
+        Return a JSON string representation of a Python data structure.
+
+        Convert dictionary to contain only JSON serializable types. For example,
+        if the key is a Parameter we convert it to a string.
+        """
+        if isinstance(o, dict):
+            param_bind_str = {}
+            for key in o.keys():
+                value = self.encode(o[key])
+
+                if type(key) in set([str, int, float, bool]) or key is None:
+                    param_bind_str[key] = value
+                else:
+                    param_bind_str[str(key)] = value
+            return super().encode(param_bind_str)
+        elif isinstance(o, list):
+            return super().encode([self.encode(p) for p in o])
+        else:
+            return super().encode(o)
+
     def default(self, o: Any) -> Any:
         # Convert numpy arrays:
         if hasattr(o, 'tolist'):
