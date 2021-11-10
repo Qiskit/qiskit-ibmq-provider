@@ -145,7 +145,7 @@ def main(backend, user_messenger, **kwargs):
         self._upload_program()
         self._upload_program()
         self._upload_program()
-        programs = self.provider.runtime.programs(limit=3)
+        programs = self.provider.runtime.programs(limit=3, refresh=True)
         all_ids = [prog.program_id for prog in programs]
         self.assertEqual(len(all_ids), 3)
         programs = self.provider.runtime.programs(limit=2, skip=1)
