@@ -35,7 +35,8 @@ class IQXJsonEncoder(json.JSONEncoder):
             for key in o.keys():
                 value = self.encode(o[key])
 
-                if type(key) in set([str, int, float, bool]) or key is None:
+                if isinstance(key, str) or isinstance(key, int) or isinstance(key, float) or isinstance(key, bool)\
+                        or key is None:
                     param_bind_str[key] = value
                 else:
                     param_bind_str[str(key)] = value
