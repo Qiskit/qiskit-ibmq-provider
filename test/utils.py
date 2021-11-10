@@ -160,7 +160,11 @@ def submit_job_one_bad_instr(backend: IBMQBackend) -> IBMQJob:
         Submitted job.
     """
     qc_new = transpile(ReferenceCircuits.bell(), backend)
-    qobj = assemble([qc_new]*2, backend=backend)
+    if backend.configuration().simulator:
+        # Specify method so it doesn't fail at method selection.
+        qobj = assemble([qc_new]*2, backend=backend, method="statevector")
+    else:
+        qobj = assemble([qc_new]*2, backend=backend)
     qobj.experiments[1].instructions[1].name = 'bad_instruction'
     job = backend.run(qobj)
     return job

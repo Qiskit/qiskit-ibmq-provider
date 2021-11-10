@@ -104,7 +104,7 @@ class RuntimeJob:
         self._job_id = job_id
         self._backend = backend
         self._api_client = api_client
-        self._results = None
+        self._results: Optional[Any] = None
         self._params = params or {}
         self._creation_date = creation_date
         self._program_id = program_id
@@ -145,7 +145,7 @@ class RuntimeJob:
             RuntimeJobFailureError: If the job failed.
         """
         _decoder = decoder or self._result_decoder
-        if not self._results or (_decoder != self._result_decoder):  # type: ignore[unreachable]
+        if self._results is None or (_decoder != self._result_decoder):
             self.wait_for_final_state(timeout=timeout, wait=wait)
             if self._status == JobStatus.ERROR:
                 raise RuntimeJobFailureError(f"Unable to retrieve job result. "

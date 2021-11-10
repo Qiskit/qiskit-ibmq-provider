@@ -12,12 +12,14 @@
 
 """Tests for runtime service."""
 
+import copy
 import unittest
 import os
 import uuid
 import time
 import random
 from contextlib import suppress
+import tempfile
 
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 from qiskit.test.reference_circuits import ReferenceCircuits
@@ -36,7 +38,6 @@ from ...proxy_server import MockProxyServer, use_proxies
 from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
 
 
-@unittest.skipIf(not os.environ.get('USE_STAGING_CREDENTIALS', ''), "Only runs on staging")
 class TestRuntimeIntegration(IBMQTestCase):
     """Integration tests for runtime modules."""
 
@@ -84,12 +85,12 @@ def main(backend, user_messenger, **kwargs):
         cls.backend = backend
         cls.poll_time = 1 if backend.configuration().simulator else 5
         cls.provider = backend.provider()
-        cls.program_id = cls.PROGRAM_PREFIX
+        metadata = copy.deepcopy(cls.RUNTIME_PROGRAM_METADATA)
+        metadata['name'] = cls._get_program_name()
         try:
             cls.program_id = cls.provider.runtime.upload_program(
-                name=cls.PROGRAM_PREFIX,
-                data=cls.RUNTIME_PROGRAM.encode(),
-                metadata=cls.RUNTIME_PROGRAM_METADATA)
+                data=cls.RUNTIME_PROGRAM,
+                metadata=metadata)
         except RuntimeDuplicateProgramError:
             pass
         except IBMQNotAuthorizedError:
@@ -139,14 +140,67 @@ def main(backend, user_messenger, **kwargs):
                 found = True
         self.assertTrue(found, f"Program {self.program_id} not found!")
 
+    def test_list_programs_with_limit_skip(self):
+        """Test listing programs with limit and skip."""
+        self._upload_program()
+        self._upload_program()
+        self._upload_program()
+        programs = self.provider.runtime.programs(limit=3)
+        all_ids = [prog.program_id for prog in programs]
+        self.assertEqual(len(all_ids), 3)
+        programs = self.provider.runtime.programs(limit=2, skip=1)
+        some_ids = [prog.program_id for prog in programs]
+        self.assertEqual(len(some_ids), 2)
+        self.assertNotIn(all_ids[0], some_ids)
+        self.assertIn(all_ids[1], some_ids)
+        self.assertIn(all_ids[2], some_ids)
+
     def test_list_program(self):
         """Test listing a single program."""
         program = self.provider.runtime.program(self.program_id)
         self.assertEqual(self.program_id, program.program_id)
         self._validate_program(program)
 
+    def test_retrieve_program_data(self):
+        """Test retrieving program data"""
+        program = self.provider.runtime.program(self.program_id)
+        self.assertEqual(self.RUNTIME_PROGRAM, program.data)
+        self._validate_program(program)
+
+    def test_retrieve_unauthorized_program_data(self):
+        """Test retrieving program data when user is not the program author"""
+        program = self.provider.runtime.program('sample-program')
+        self._validate_program(program)
+        with self.assertRaises(IBMQNotAuthorizedError):
+            return program.data
+
     def test_upload_program(self):
         """Test uploading a program."""
+        max_execution_time = 3000
+        program_id = self._upload_program(max_execution_time=max_execution_time)
+        self.assertTrue(program_id)
+        program = self.provider.runtime.program(program_id)
+        self.assertTrue(program)
+        self.assertEqual(max_execution_time, program.max_execution_time)
+
+    def test_upload_program_file(self):
+        """Test uploading a program using a file."""
+        temp_fp = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        self.addCleanup(os.remove, temp_fp.name)
+        temp_fp.write(self.RUNTIME_PROGRAM)
+        temp_fp.close()
+
+        program_id = self._upload_program(data=temp_fp.name)
+        self.assertTrue(program_id)
+        program = self.provider.runtime.program(program_id)
+        self.assertTrue(program)
+
+    @unittest.skipIf(
+        not os.environ.get('USE_STAGING_CREDENTIALS', ''),
+        "Only runs on staging"
+    )
+    def test_upload_public_program(self):
+        """Test uploading a public program."""
         max_execution_time = 3000
         is_public = True
         program_id = self._upload_program(max_execution_time=max_execution_time,
@@ -157,6 +211,10 @@ def main(backend, user_messenger, **kwargs):
         self.assertEqual(max_execution_time, program.max_execution_time)
         self.assertEqual(program.is_public, is_public)
 
+    @unittest.skipIf(
+        not os.environ.get('USE_STAGING_CREDENTIALS', ''),
+        "Only runs on staging"
+    )
     def test_set_visibility(self):
         """Test setting the visibility of a program."""
         program_id = self._upload_program()
@@ -171,13 +229,6 @@ def main(backend, user_messenger, **kwargs):
         # Verify changed
         self.assertNotEqual(start_vis, end_vis)
 
-    def test_upload_program_conflict(self):
-        """Test uploading a program with conflicting name."""
-        name = self._get_program_name()
-        self._upload_program(name=name)
-        with self.assertRaises(RuntimeDuplicateProgramError):
-            self._upload_program(name=name)
-
     def test_delete_program(self):
         """Test deleting program."""
         program_id = self._upload_program()
@@ -191,6 +242,43 @@ def main(backend, user_messenger, **kwargs):
         self.provider.runtime.delete_program(program_id)
         with self.assertRaises(RuntimeProgramNotFound):
             self.provider.runtime.delete_program(program_id)
+
+    def test_update_program_data(self):
+        """Test updating program data."""
+        program_v1 = """
+def main(backend, user_messenger, **kwargs):
+    return "version 1"
+        """
+        program_v2 = """
+def main(backend, user_messenger, **kwargs):
+    return "version 2"
+        """
+        program_id = self._upload_program(data=program_v1)
+        self.assertEqual(program_v1, self.provider.runtime.program(program_id).data)
+        self.provider.runtime.update_program(program_id=program_id, data=program_v2)
+        self.assertEqual(program_v2, self.provider.runtime.program(program_id).data)
+
+    def test_update_program_metadata(self):
+        """Test updating program metadata."""
+        program_id = self._upload_program()
+        original = self.provider.runtime.program(program_id)
+        new_metadata = {
+            "name": self._get_program_name(),
+            "description": "test_update_program_metadata",
+            "max_execution_time": original.max_execution_time + 100,
+            "spec": {
+                "return_values": {
+                    "type": "object",
+                    "description": "Some return value"
+                }
+            }
+        }
+        self.provider.runtime.update_program(program_id=program_id, metadata=new_metadata)
+        updated = self.provider.runtime.program(program_id, refresh=True)
+        self.assertEqual(new_metadata["name"], updated.name)
+        self.assertEqual(new_metadata["description"], updated.description)
+        self.assertEqual(new_metadata["max_execution_time"], updated.max_execution_time)
+        self.assertEqual(new_metadata["spec"]["return_values"], updated.return_values)
 
     def test_run_program(self):
         """Test running a program."""
@@ -311,6 +399,15 @@ def main(backend, user_messenger, **kwargs):
                 found = True
                 break
         self.assertTrue(found, f"Returned job {job.job_id()} not retrieved.")
+
+    def test_retrieve_jobs_by_program_id(self):
+        """Test retrieving jobs by Program ID."""
+        program_id = self._upload_program()
+        job = self._run_program(program_id=program_id)
+        job.wait_for_final_state()
+        rjobs = self.provider.runtime.jobs(program_id=program_id)
+        self.assertEqual(program_id, rjobs[0].program_id)
+        self.assertEqual(1, len(rjobs))
 
     def test_cancel_job_queued(self):
         """Test canceling a queued job."""
@@ -515,9 +612,9 @@ def main(backend, user_messenger, **kwargs):
         _ = self._run_program()
 
     def test_run_circuit(self):
-        """Test run_circuit"""
+        """Test run_circuits"""
         job = self.provider.run_circuits(
-            ReferenceCircuits.bell(), backend=self.backend, shots=100)
+            ReferenceCircuits.bell(), backend_name=self.backend.name(), shots=100)
         counts = job.result().get_counts()
         self.assertEqual(100, sum(counts.values()))
 
@@ -580,25 +677,31 @@ def main(backend, user_messenger, **kwargs):
         self.assertTrue(program.description)
         self.assertTrue(program.max_execution_time)
         self.assertTrue(program.creation_date)
-        self.assertTrue(program.version)
+        self.assertTrue(program.update_date)
 
-    def _upload_program(self, name=None, max_execution_time=300,
-                        is_public: bool = False):
+    def _upload_program(
+            self,
+            name=None,
+            max_execution_time=300,
+            data=None,
+            is_public: bool = False):
         """Upload a new program."""
         name = name or self._get_program_name()
+        data = data or self.RUNTIME_PROGRAM
+        metadata = copy.deepcopy(self.RUNTIME_PROGRAM_METADATA)
+        metadata['name'] = name
+        metadata['max_execution_time'] = max_execution_time
+        metadata['is_public'] = is_public
         program_id = self.provider.runtime.upload_program(
-            name=name,
-            data=self.RUNTIME_PROGRAM.encode(),
-            is_public=is_public,
-            metadata=self.RUNTIME_PROGRAM_METADATA,
-            max_execution_time=max_execution_time,
-            description="Qiskit test program")
+            data=data,
+            metadata=metadata)
         self.to_delete.append(program_id)
         return program_id
 
-    def _get_program_name(self):
+    @classmethod
+    def _get_program_name(cls):
         """Return a unique program name."""
-        return self.PROGRAM_PREFIX + "_" + uuid.uuid4().hex
+        return cls.PROGRAM_PREFIX + "_" + uuid.uuid4().hex
 
     def _assert_complex_types_equal(self, expected, received):
         """Verify the received data in complex types is expected."""

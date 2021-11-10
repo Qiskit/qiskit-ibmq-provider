@@ -1,0 +1,4 @@
+---
+upgrade:
+  - |
+    Runtime programs will no longer have a ``version`` field.
