@@ -18,6 +18,7 @@ import json
 from typing import Any
 
 from qiskit.circuit.parameterexpression import ParameterExpression
+from qiskit.circuit import Parameter
 
 
 class IQXJsonEncoder(json.JSONEncoder):
@@ -33,10 +34,10 @@ class IQXJsonEncoder(json.JSONEncoder):
             for key in param.keys():
                 value = self.__encode(param[key])
 
-                if isinstance(key, (bool, float, int, str)) or key is None:
-                    param_bind_str[key] = value
-                else:
+                if isinstance(key, Parameter):
                     param_bind_str[str(key)] = value
+                else:
+                    param_bind_str[key] = value
             return param_bind_str
         elif isinstance(param, list):
             return [self.__encode(p) for p in param]
