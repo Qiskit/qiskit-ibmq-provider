@@ -1,9 +1,23 @@
+# This code is part of Qiskit.
+#
+# (C) Copyright IBM 2021.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+"""Tests for the IQXJsonEncoder class."""
+
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+from qiskit.circuit import Parameter
+
 from ...ibmqtestcase import IBMQTestCase
 from ...decorators import requires_provider
-
-from qiskit import Aer, QuantumCircuit, QuantumRegister, ClassicalRegister
-from qiskit.circuit import Parameter
 
 
 class TestJsonEncoder(IBMQTestCase):
@@ -24,18 +38,18 @@ class TestJsonEncoder(IBMQTestCase):
 
     def test_encode_no_replace(self):
         """Test encode where there is no invalid key to replace."""
-        dir = {
+        o = {
             't1': 1,
             None: None,
             'list': [1, 2, {'ld': 1, 2: 3}]
         }
 
         self.assertEqual('{"t1": 1, "null": null, "list": [1, 2, {"ld": 1, "2": 3}]}',
-                         IQXJsonEncoder().encode(dir))
+                         IQXJsonEncoder().encode(o))
 
     def test_encode_replace(self):
         """Test encode where there is no invalid key to replace."""
-        dir = {
+        o = {
             't1': 1,
             None: None,
             Parameter('a'): 0.2,
@@ -44,4 +58,4 @@ class TestJsonEncoder(IBMQTestCase):
 
         self.assertEqual(
             '{"t1": 1, "null": null, "a": 0.2, "list": [1, 2, {"ld": 1, "2": 3, "alfa": 0.1}]}',
-            IQXJsonEncoder().encode(dir))
+            IQXJsonEncoder().encode(o))
