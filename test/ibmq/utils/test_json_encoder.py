@@ -38,18 +38,18 @@ class TestJsonEncoder(IBMQTestCase):
 
     def test_encode_no_replace(self):
         """Test encode where there is no invalid key to replace."""
-        o = {
+        test_dir = {
             't1': 1,
             None: None,
             'list': [1, 2, {'ld': 1, 2: 3}]
         }
 
         self.assertEqual('{"t1": 1, "null": null, "list": [1, 2, {"ld": 1, "2": 3}]}',
-                         IQXJsonEncoder().encode(o))
+                         IQXJsonEncoder().encode(test_dir))
 
     def test_encode_replace(self):
         """Test encode where there is no invalid key to replace."""
-        o = {
+        test_dir = {
             't1': 1,
             None: None,
             Parameter('a'): 0.2,
@@ -58,4 +58,4 @@ class TestJsonEncoder(IBMQTestCase):
 
         self.assertEqual(
             '{"t1": 1, "null": null, "a": 0.2, "list": [1, 2, {"ld": 1, "2": 3, "alfa": 0.1}]}',
-            IQXJsonEncoder().encode(o))
+            IQXJsonEncoder().encode(test_dir))
