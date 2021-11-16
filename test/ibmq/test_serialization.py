@@ -15,6 +15,7 @@
 from unittest import SkipTest, skipIf
 from typing import Any, Dict, Optional
 
+import json
 import dateutil.parser
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.test import slow_test
@@ -24,7 +25,6 @@ from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder
 from qiskit.circuit import Parameter
 from qiskit.version import VERSION as terra_version
-import json
 
 from ..decorators import requires_provider
 from ..utils import cancel_job
