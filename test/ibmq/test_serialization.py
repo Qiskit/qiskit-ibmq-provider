@@ -218,7 +218,6 @@ class TestSerialization(IBMQTestCase):
             IQXJsonEncoder().encode(test_dir))
 
 
-
 def _find_potential_encoded(data: Any, c_key: str, tally: set) -> None:
     """Find data that may be in JSON serialized format.
 
