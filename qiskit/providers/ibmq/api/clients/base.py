@@ -91,6 +91,7 @@ class BaseWebsocketClient(BaseClient, ABC):
         """
         logger.debug("Websocket connection established for job %s", self._job_id)
         self.connected = True
+        self._current_retry = 0
         if self._cancelled:
             # Immediately disconnect if pre-cancelled.
             self.disconnect(WebsocketClientCloseCode.CANCEL)
@@ -175,7 +176,7 @@ class BaseWebsocketClient(BaseClient, ABC):
                 logger.debug('Starting new websocket connection: %s using proxy %s',
                              url, self._proxy_params)
                 self._reset_state()
-                self._ws.run_forever(**self._proxy_params)
+                self._ws.run_forever(ping_interval=60, ping_timeout=10, **self._proxy_params)
                 self.connected = False
 
                 logger.debug("Websocket run_forever finished.")
