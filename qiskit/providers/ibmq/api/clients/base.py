@@ -91,7 +91,6 @@ class BaseWebsocketClient(BaseClient, ABC):
         """
         logger.debug("Websocket connection established for job %s", self._job_id)
         self.connected = True
-        self._current_retry = 0
         if self._cancelled:
             # Immediately disconnect if pre-cancelled.
             self.disconnect(WebsocketClientCloseCode.CANCEL)
