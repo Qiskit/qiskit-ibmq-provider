@@ -489,8 +489,6 @@ def main(backend, user_messenger, **kwargs):
         callback_err = []
         iterations = 3
         job = self._run_program(iterations=iterations, interim_results=int_res)
-
-        self._wait_for_status(job, JobStatus.RUNNING)
         job.stream_results(result_callback)
         job.wait_for_final_state()
         self.assertEqual(iterations-1, final_it)
