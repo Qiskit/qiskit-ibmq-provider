@@ -30,15 +30,15 @@ Once the package is installed, you can access the provider from Qiskit.
 > `qiskit-ibmq-provider` package / version `0.14` of the `qiskit` package)
 > legacy Quantum Experience or QConsole (v1) accounts are no longer supported.
 > If you are still using a v1 account, please follow the steps described in
-> [update instructions](#updating-to-the-new-IBM-Q-Experience) to update your account.
+> [update instructions](#updating-to-the-new-IBM-Quantum) to update your account.
 
-### Configure your IBM Quantum Experience credentials
+### Configure your IBM Quantum credentials
 
-1. Create an IBM Quantum Experience account or log in to your existing account by visiting
-   the [IBM Quantum Experience login page].
+1. Create an IBM Quantum account or log in to your existing account by visiting
+   the [IBM Quantum login page].
 
 2. Copy (and/or optionally regenerate) your API token from your
-   [IBM Quantum Experience account page].
+   [IBM Quantum account page].
 
 3. Take your token from step 2, here called `MY_API_TOKEN`, and run:
 
@@ -46,12 +46,12 @@ Once the package is installed, you can access the provider from Qiskit.
    from qiskit import IBMQ
    IBMQ.save_account('MY_API_TOKEN')
    ```
-   
-   The command above stores your credentials locally in a configuration file called `qiskitrc`. 
-   By default, this file is located in `$HOME/.qiskit`, where `$HOME` is your home directory. If 
-   you are still using `Qconfig.py`, please delete that file and run the command above.  
 
-### Accessing your IBM Quantum Experience backends
+   The command above stores your credentials locally in a configuration file called `qiskitrc`.
+   By default, this file is located in `$HOME/.qiskit`, where `$HOME` is your home directory. If
+   you are still using `Qconfig.py`, please delete that file and run the command above.
+
+### Accessing your IBM Quantum backends
 
 After calling `IBMQ.save_account()`, your credentials will be stored on disk.
 Once they are stored, at any point in the future you can load and use them
@@ -74,7 +74,7 @@ provider = IBMQ.enable_account('MY_API_TOKEN')
 backend = provider.get_backend('ibmq_qasm_simulator')
 ```
 
-By default, all IBM Quantum Experience accounts have access to the same, open project
+By default, all IBM Quantum accounts have access to the same, open project
 (hub: `ibm-q`, group: `open`, project: `main`). For convenience, the
 `IBMQ.load_account()` and `IBMQ.enable_account()` methods will return a provider
 for that project. If you have access to other projects, you can use:
@@ -83,12 +83,11 @@ for that project. If you have access to other projects, you can use:
 provider_2 = IBMQ.get_provider(hub='MY_HUB', group='MY_GROUP', project='MY_PROJECT')
 ```
 
-## Updating to the new IBM Quantum Experience
+## Updating to the new IBM Quantum
 
 Since November 2019 (and with version `0.4` of this `qiskit-ibmq-provider`
-package), the IBM Quantum Provider only supports the new [IBM Quantum Experience], dropping
-support for the legacy Quantum Experience and Qconsole accounts. The new IBM Quantum
-Experience is also referred as `v2`, whereas the legacy one and Qconsole as `v1`.
+package), the IBM Quantum Provider only supports the new [IBM Quantum], dropping
+support for the legacy Quantum Experience and Qconsole accounts. The new IBM Quantum is also referred as `v2`, whereas the legacy one and Qconsole as `v1`.
 
 This section includes instructions for updating your accounts and programs.
 Please note that:
@@ -96,11 +95,11 @@ Please note that:
     versions will still be working during the `0.3.x` series. From 0.4 onwards,
     only `v2` credentials are supported, and it is recommended to upgrade
     in order to take advantage of the new features.
-  * updating your credentials to the IBM Quantum Experience `v2` implies that you
+  * updating your credentials to the IBM Quantum `v2` implies that you
     will need to update your programs. The sections below contain instructions
     on how to perform the transition.
 
-### Updating your IBM Quantum Experience credentials
+### Updating your IBM Quantum credentials
 
 If you have credentials for the legacy Quantum Experience or Qconsole stored in
 disk, you can make use of `IBMQ.update_account()` helper. This helper will read
@@ -115,7 +114,7 @@ IBMQ.update_account()
 ```
 Found 2 credentials.
 The credentials stored will be replaced with a single entry with token "MYTOKEN"
-and the new IBM Quantum Experience v2 URL (https://auth.quantum-computing.ibm.com/api).
+and the new IBM Quantum v2 URL (https://auth.quantum-computing.ibm.com/api).
 
 In order to access the provider, please use the new "IBMQ.get_provider()" methods:
 
@@ -132,13 +131,13 @@ Update the credentials? [y/N]
 ```
 
 Upon confirmation, your credentials will be overwritten with a valid IBM Quantum
-Experience v2 set of credentials. For more complex cases, consider deleting your
+v2 set of credentials. For more complex cases, consider deleting your
 previous credentials via `IBMQ.delete_accounts()` and follow the instructions
-in the [IBM Quantum Experience account page].
+in the [IBM Quantum account page].
 
 ### Updating your programs
 
-The new IBM Quantum Experience support also introduces a more structured approach for accessing backends.
+The new IBM Quantum support also introduces a more structured approach for accessing backends.
 Previously, access to all backends was centralized through:
 
 ```python
@@ -162,11 +161,11 @@ In a similar spirit, you can check the providers that you have access to via:
 IBMQ.providers()
 ```
 
-In addition, since the new IBM Quantum Experience provides only one set of
+In addition, since the new IBM Quantum provides only one set of
 credentials, the account management methods in IBMQ are now in singular form.
 For example, you should use `IBMQ.load_account()` instead of
 `IBMQ.load_accounts()`. An `IBMQAccountError` exception is raised if you
-attempt to use the legacy methods with an IBM Quantum Experience v2 account.
+attempt to use the legacy methods with an IBM Quantum v2 account.
 
 The following tables contains a quick reference for the differences between the
 two versions. Please refer to the documentation of each method for more in
@@ -223,10 +222,9 @@ project at different levels. If you use Qiskit, please cite as per the included
 [Apache License 2.0].
 
 
-[IBM Quantum]: https://www.research.ibm.com/ibm-q/
-[IBM Quantum Experience]: https://quantum-computing.ibm.com
-[IBM Quantum Experience login page]:  https://quantum-computing.ibm.com/login
-[IBM Quantum Experience account page]: https://quantum-computing.ibm.com/account
+[IBM Quantum]: https://quantum-computing.ibm.com
+[IBM Quantum login page]:  https://quantum-computing.ibm.com/login
+[IBM Quantum account page]: https://quantum-computing.ibm.com/account
 [contribution guidelines]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/CONTRIBUTING.md
 [code of conduct]: https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/CODE_OF_CONDUCT.md
 [GitHub issues]: https://github.com/Qiskit/qiskit-ibmq-provider/issues
