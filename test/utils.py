@@ -145,7 +145,8 @@ def submit_job_bad_shots(backend: IBMQBackend) -> IBMQJob:
         Submitted job.
     """
     qobj = bell_in_qobj(backend=backend)
-    qobj.config.shots = 10000  # Modify the number of shots to be an invalid amount.
+    # Modify the number of shots to be an invalid amount.
+    qobj.config.shots = backend.configuration().max_shots + 10000
     job_to_fail = backend.run(qobj)
     return job_to_fail
 
