@@ -15,11 +15,13 @@
 from unittest import SkipTest, skipIf
 from typing import Any, Dict, Optional
 
+import json
 import dateutil.parser
 from qiskit.test.reference_circuits import ReferenceCircuits
 from qiskit.test import slow_test
 from qiskit.providers.ibmq import least_busy
-from qiskit import transpile, schedule, QuantumCircuit
+from qiskit import transpile, schedule, assemble
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder
 from qiskit.circuit import Parameter
 from qiskit.version import VERSION as terra_version
@@ -177,6 +179,43 @@ class TestSerialization(IBMQTestCase):
         val = IQXJsonEncoder().default(param.bind({param: 0.2+0.1j}))
         self.assertEqual(val[0], 0.2)
         self.assertEqual(val[1], 0.1)
+
+    def test_exception_message(self):
+        """Test executing job with Parameter in methadata."""
+        qr = QuantumRegister(1)
+        cr = ClassicalRegister(1)
+        my_circ_str = 'test_metadata'
+        my_circ = QuantumCircuit(qr, cr, name=my_circ_str, metadata={Parameter('φ'): 0.2})
+        qobj = assemble(my_circ)
+        qobj_dict = qobj.to_dict()
+        json.dumps(qobj_dict, cls=IQXJsonEncoder)
+        # There is no self.assert method because if we cannot pass Parameter as metadata
+        # the last line throw:
+        # "TypeError: keys must be str, int, float, bool or None, not Parameter"
+
+    def test_encode_no_replace(self):
+        """Test encode where there is no invalid key to replace."""
+        test_dir = {
+            't1': 1,
+            None: None,
+            'list': [1, 2, {'ld': 1, 2: 3}]
+        }
+
+        self.assertEqual('{"t1": 1, "null": null, "list": [1, 2, {"ld": 1, "2": 3}]}',
+                         IQXJsonEncoder().encode(test_dir))
+
+    def test_encode_replace(self):
+        """Test encode where there is no invalid key to replace."""
+        test_dir = {
+            't1': 1,
+            None: None,
+            Parameter('a'): 0.2,
+            'list': [1, 2, {'ld': 1, 2: 3, Parameter('alfa'): 0.1}]
+        }
+
+        self.assertEqual(
+            '{"t1": 1, "null": null, "a": 0.2, "list": [1, 2, {"ld": 1, "2": 3, "alfa": 0.1}]}',
+            IQXJsonEncoder().encode(test_dir))
 
 
 def _find_potential_encoded(data: Any, c_key: str, tally: set) -> None:
