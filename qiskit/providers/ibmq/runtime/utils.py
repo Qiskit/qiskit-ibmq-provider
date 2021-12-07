@@ -36,7 +36,6 @@ except ImportError:
 
 from qiskit.circuit import (Instruction, ParameterExpression, QuantumCircuit,
                             qpy_serialization)
-from qiskit.circuit.library import BlueprintCircuit
 from qiskit.result import Result
 
 
