@@ -184,9 +184,6 @@ class RuntimeEncoder(json.JSONEncoder):
         if hasattr(obj, 'to_json'):
             return {'__type__': 'to_json', '__value__': obj.to_json()}
         if isinstance(obj, QuantumCircuit):
-            # TODO Remove the decompose when terra 6713 is released.
-            if isinstance(obj, BlueprintCircuit):
-                obj = obj.decompose()
             value = _serialize_and_encode(
                 data=obj,
                 serializer=lambda buff, data: qpy_serialization.dump(data, buff)
