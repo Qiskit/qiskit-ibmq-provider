@@ -1,5 +1,6 @@
 ---
 fixes:
   - |
-    Fixes the issue wherein :class:`qiskit.providers.ibmq.runtime.RuntimeEncoder`
+    Fix delivered in `#1094 <https://github.com/Qiskit/qiskit-ibmq-provider/pull/1094>`__ for
+    the issue wherein :class:`qiskit.providers.ibmq.runtime.RuntimeEncoder`
     does an extra `decompose()` if the circuit being serialized is a ``BlueprintCircuit``.
