@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fix delivered in `#1065 <https://github.com/Qiskit/qiskit-ibmq-provider/pull/1065>`__ for the
+    issue where job kept crashing when ``Parameter`` was passed in circuit metadata.
+
