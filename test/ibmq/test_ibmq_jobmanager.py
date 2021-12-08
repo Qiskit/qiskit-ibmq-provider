@@ -143,7 +143,7 @@ class TestIBMQJobManager(IBMQTestCase):
         job_set.results()
         for i, qobj in enumerate(job_set.qobjs()):
             rjob = self.fake_api_provider.backend.retrieve_job(jobs[i].job_id())
-            self.maxDiff = None  # pylint: disable=attribute-defined-outside-init
+            self.maxDiff = None  # pylint: disable=attribute-defined-outside-init,invalid-name
             self.assertDictEqual(qobj.to_dict(), rjob.qobj().to_dict())
 
     def test_error_message(self):
