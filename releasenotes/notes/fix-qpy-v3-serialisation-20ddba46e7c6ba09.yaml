@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    Fixed an issue with JSON encoding and decoding when using
+    ``ParameterExpression``\ s in conjunction with Qiskit Terra 0.19.1 and
+    above.  Previously, the ``Parameter`` instances reconstructed from the JSON
+    output would have different unique identifiers, causing them to seem unequal
+    to the input.  They will now have the correct backing identities.
