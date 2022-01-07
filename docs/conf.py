@@ -87,6 +87,7 @@ autosummary_generate = True
 
 autodoc_default_options = {
     'inherited-members': None,
+    'exclude-members': 'with_traceback'
 }
 
 
