@@ -220,11 +220,13 @@ Classes
    RuntimeEncoder
    RuntimeDecoder
    ParameterNamespace
+   RuntimeOptions
 """
 
 from .ibm_runtime_service import IBMRuntimeService
 from .runtime_job import RuntimeJob
 from .runtime_program import RuntimeProgram, ParameterNamespace
+from .runtime_options import RuntimeOptions
 from .program.user_messenger import UserMessenger
 from .program.program_backend import ProgramBackend
 from .program.result_decoder import ResultDecoder
