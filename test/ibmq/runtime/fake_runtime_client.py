@@ -15,6 +15,8 @@
 import time
 import uuid
 import json
+import base64
+from typing import Optional, Dict
 from concurrent.futures import ThreadPoolExecutor
 
 from qiskit.providers.ibmq.credentials import Credentials
@@ -25,7 +27,7 @@ from qiskit.providers.ibmq.runtime.utils import RuntimeEncoder
 class BaseFakeProgram:
     """Base class for faking a program."""
 
-    def __init__(self, program_id, name, data, cost, description, version="1.0",
+    def __init__(self, program_id, name, data, cost, description,
                  backend_requirements=None, parameters=None, return_values=None,
                  interim_results=None, is_public=False):
         """Initialize a fake program."""
@@ -34,7 +36,6 @@ class BaseFakeProgram:
         self._data = data
         self._cost = cost
         self._description = description
-        self._version = version
         self._backend_requirements = backend_requirements
         self._parameters = parameters
         self._return_values = return_values
@@ -47,18 +48,20 @@ class BaseFakeProgram:
                'name': self._name,
                'cost': self._cost,
                'description': self._description,
-               'version': self._version,
-               'is_public': self._is_public}
+               'is_public': self._is_public,
+               'creation_date': '2021-09-13T17:27:42Z',
+               'update_date': '2021-09-14T19:25:32Z'}
         if include_data:
-            out['data'] = self._data
+            out['data'] = base64.standard_b64decode(self._data).decode()
+        out['spec'] = {}
         if self._backend_requirements:
-            out['backendRequirements'] = json.dumps(self._backend_requirements)
+            out['spec']['backend_requirements'] = self._backend_requirements
         if self._parameters:
-            out['parameters'] = json.dumps({"doc": self._parameters})
+            out['spec']['parameters'] = self._parameters
         if self._return_values:
-            out['returnValues'] = json.dumps(self._return_values)
+            out['spec']['return_values'] = self._return_values
         if self._interim_results:
-            out['interimResults'] = json.dumps(self._interim_results)
+            out['spec']['interim_results'] = self._interim_results
 
         return out
 
@@ -75,7 +78,7 @@ class BaseFakeRuntimeJob:
     _executor = ThreadPoolExecutor()  # pylint: disable=bad-option-value,consider-using-with
 
     def __init__(self, job_id, program_id, hub, group, project, backend_name, final_status,
-                 params):
+                 params, image):
         """Initialize a fake job."""
         self._job_id = job_id
         self._status = final_status or "QUEUED"
@@ -85,6 +88,7 @@ class BaseFakeRuntimeJob:
         self._project = project
         self._backend_name = backend_name
         self._params = params
+        self._image = image
         if final_status is None:
             self._future = self._executor.submit(self._auto_progress)
             self._result = None
@@ -110,7 +114,8 @@ class BaseFakeRuntimeJob:
                 'backend': self._backend_name,
                 'status': self._status,
                 'params': [self._params],
-                'program': {'id': self._program_id}}
+                'program': {'id': self._program_id},
+                'image': self._image}
 
     def result(self):
         """Return job result."""
@@ -227,46 +232,67 @@ class BaseFakeRuntimeClient:
         """Set job status to passed in final status instantly."""
         self._final_status = final_status
 
-    def list_programs(self):
-        """List all progrmas."""
+    def list_programs(self, limit, skip):
+        """List all programs."""
         programs = []
         for prog in self._programs.values():
             programs.append(prog.to_dict())
-        return programs
+        return {"programs": programs[skip:limit+skip], "count": len(self._programs)}
 
-    def program_create(self, program_data, name, description, max_execution_time, version="1.0",
-                       backend_requirements=None, parameters=None, return_values=None,
-                       interim_results=None, is_public=False):
+    def program_create(self, program_data, name, description, max_execution_time,
+                       spec=None, is_public=False):
         """Create a program."""
-        if isinstance(program_data, str):
-            with open(program_data, 'rb') as file:
-                program_data = file.read()
         program_id = name
         if program_id in self._programs:
             raise RequestsApiError("Program already exists.", status_code=409)
+        backend_requirements = spec.get('backend_requirements', None)
+        parameters = spec.get('parameters', None)
+        return_values = spec.get('return_values', None)
+        interim_results = spec.get('interim_results', None)
         self._programs[program_id] = BaseFakeProgram(
             program_id=program_id, name=name, data=program_data, cost=max_execution_time,
-            description=description, version=version, backend_requirements=backend_requirements,
+            description=description, backend_requirements=backend_requirements,
             parameters=parameters, return_values=return_values, interim_results=interim_results,
             is_public=is_public)
         return {'id': program_id}
+
+    def program_update(
+            self,
+            program_id: str,
+            program_data: str = None,
+            name: str = None,
+            description: str = None,
+            max_execution_time: int = None,
+            spec: Optional[Dict] = None
+    ) -> None:
+        """Update a program."""
+        if program_id not in self._programs:
+            raise RequestsApiError("Program not found", status_code=404)
+        program = self._programs[program_id]
+        program._data = program_data or program._data
+        program._name = name or program._name
+        program._description = description or program._description
+        program._cost = max_execution_time or program._cost
+        if spec:
+            program._backend_requirements = \
+                spec.get("backend_requirements") or program._backend_requirements
+            program._parameters = spec.get("parameters") or program._parameters
+            program._return_values = spec.get("return_values") or program._return_values
+            program._interim_results = spec.get("interim_results") or program._interim_results
 
     def program_get(self, program_id: str):
         """Return a specific program."""
         if program_id not in self._programs:
             raise RequestsApiError("Program not found", status_code=404)
-        return self._programs[program_id].to_dict()
-
-    def program_get_data(self, program_id: str):
-        """Return a specific program and its data."""
-        return self._programs[program_id].to_dict(iclude_data=True)
+        return self._programs[program_id].to_dict(include_data=True)
 
     def program_run(
             self,
             program_id: str,
             credentials: Credentials,
             backend_name: str,
-            params: str
+            params: str,
+            image: Optional[str] = ""
     ):
         """Run the specified program."""
         job_id = uuid.uuid4().hex
@@ -274,7 +300,8 @@ class BaseFakeRuntimeClient:
         job = job_cls(job_id=job_id, program_id=program_id,
                       hub=credentials.hub, group=credentials.group,
                       project=credentials.project, backend_name=backend_name,
-                      params=params, final_status=self._final_status, **self._job_kwargs)
+                      params=params, final_status=self._final_status, image=image,
+                      **self._job_kwargs)
         self._jobs[job_id] = job
         return {'id': job_id}
 
@@ -288,19 +315,24 @@ class BaseFakeRuntimeClient:
         """Get the specific job."""
         return self._get_job(job_id).to_dict()
 
-    def jobs_get(self, limit=None, skip=None, pending=None):
+    def jobs_get(self, limit=None, skip=None, pending=None, program_id=None):
         """Get all jobs."""
         pending_statuses = ['QUEUED', 'RUNNING']
         returned_statuses = ['COMPLETED', 'FAILED', 'CANCELLED']
         limit = limit or len(self._jobs)
         skip = skip or 0
         jobs = list(self._jobs.values())
+        count = len(self._jobs)
         if pending is not None:
             job_status_list = pending_statuses if pending else returned_statuses
             jobs = [job for job in jobs if job._status in job_status_list]
+            count = len(jobs)
+        if program_id:
+            jobs = [job for job in jobs if job._program_id == program_id]
+            count = len(jobs)
         jobs = jobs[skip:limit+skip]
         return {"jobs": [job.to_dict() for job in jobs],
-                "count": len(self._jobs)}
+                "count": count}
 
     def set_program_visibility(self, program_id: str, public: bool) -> None:
         """Sets a program's visibility.

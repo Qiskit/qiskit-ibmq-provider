@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    You can now specify a parent experiment ID when creating an experiment
+    with :meth:`qiskit.providers.ibmq.experiment.IBMExperimentService.create_experiment`.
+    Experiments can also be filtered by their parent experiment ID in
+    :meth:`qiskit.providers.ibmq.experiment.IBMExperimentService.experiments`.

@@ -193,14 +193,11 @@ For example::
     provider = IBMQ.load_account()
     program_id = provider.runtime.upload_program(
                     data="my_vqe.py",
-                    metadata="my_vqe_metadata.json",
-                    version="1.2"
+                    metadata="my_vqe_metadata.json"
                 )
 
 In the example above, the file ``my_vqe.py`` contains the program data, and
-``my_vqe_metadata.json`` contains the program metadata. An additional
-parameter ``version`` is also specified, which takes precedence over any
-``version`` value specified in ``my_vqe_metadata.json``.
+``my_vqe_metadata.json`` contains the program metadata.
 
 Method :meth:`IBMRuntimeService.delete_program` allows you to delete a
 program.

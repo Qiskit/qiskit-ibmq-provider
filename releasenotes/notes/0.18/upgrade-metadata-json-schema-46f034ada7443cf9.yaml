@@ -1,0 +1,10 @@
+---
+upgrade:
+  - |
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.upload_program` now takes only two
+    parameters, ``data``, which is the program passed as a string or the path to the program
+    file and the ``metadata``, which is passed as a dictionary or path to the metadata JSON file.
+    In ``metadata`` the ``backend_requirements``, ``parameters``, ``return_values`` and
+    ``interim_results`` are now grouped under a specifications ``spec`` section.
+    ``parameters``, ``return_values`` and ``interim_results`` should now be specified as
+    JSON Schema.

@@ -270,7 +270,7 @@ def iplot_error_map(
                     x_mid = (x_end - x_start) / 2 + x_start
                     y_mid = (y_end - y_start) / 2 + y_start
 
-            fig.append_trace(
+            fig.add_trace(
                 go.Scatter(x=[x_start, x_mid, x_end],
                            y=[-y_start, -y_mid, -y_end],
                            mode="lines",
@@ -310,7 +310,7 @@ def iplot_error_map(
         else:
             qtext_color.append('white')
 
-    fig.append_trace(go.Scatter(
+    fig.add_trace(go.Scatter(
         x=[d[1] for d in grid_data],
         y=[-d[0]-offset for d in grid_data],
         mode="markers+text",
@@ -336,13 +336,13 @@ def iplot_error_map(
     min_1q_err = min(single_gate_errors)
     max_1q_err = max(single_gate_errors)
     if n_qubits > 1:
-        fig.append_trace(go.Heatmap(z=[np.linspace(min_1q_err,
-                                                   max_1q_err, 100),
-                                       np.linspace(min_1q_err,
-                                                   max_1q_err, 100)],
-                                    colorscale=plotly_cmap,
-                                    showscale=False,
-                                    hoverinfo='none'), row=2, col=1)
+        fig.add_trace(go.Heatmap(z=[np.linspace(min_1q_err,
+                                                max_1q_err, 100),
+                                    np.linspace(min_1q_err,
+                                                max_1q_err, 100)],
+                                 colorscale=plotly_cmap,
+                                 showscale=False,
+                                 hoverinfo='none'), row=2, col=1)
 
         fig.update_yaxes(row=2,
                          col=1,
@@ -362,13 +362,13 @@ def iplot_error_map(
         if min_cx_err == max_cx_err:
             min_cx_err = 0  # Force more than 1 color.
 
-        fig.append_trace(go.Heatmap(z=[np.linspace(min_cx_err,
-                                                   max_cx_err, 100),
-                                       np.linspace(min_cx_err,
-                                                   max_cx_err, 100)],
-                                    colorscale=plotly_cmap,
-                                    showscale=False,
-                                    hoverinfo='none'), row=2, col=7)
+        fig.add_trace(go.Heatmap(z=[np.linspace(min_cx_err,
+                                                max_cx_err, 100),
+                                    np.linspace(min_cx_err,
+                                                max_cx_err, 100)],
+                                 colorscale=plotly_cmap,
+                                 showscale=False,
+                                 hoverinfo='none'), row=2, col=7)
 
         fig.update_yaxes(row=2, col=7, visible=False)
 
@@ -383,24 +383,24 @@ def iplot_error_map(
     hover_text = "<b>Qubit {}</b><br>M<sub>err</sub> = {} %"
     # Add the left side meas errors
     for kk in range(num_left-1, -1, -1):
-        fig.append_trace(go.Bar(x=[read_err[kk]], y=[kk],
-                                orientation='h',
-                                marker=dict(color='#eedccb'),
-                                hoverinfo="text",
-                                hoverlabel=dict(font=dict(color=meas_text_color)),
-                                hovertext=[hover_text.format(kk,
-                                                             np.round(read_err[kk], 3)
-                                                             )]
-                                ),
-                         row=1, col=1)
+        fig.add_trace(go.Bar(x=[read_err[kk]], y=[kk],
+                             orientation='h',
+                             marker=dict(color='#eedccb'),
+                             hoverinfo="text",
+                             hoverlabel=dict(font=dict(color=meas_text_color)),
+                             hovertext=[hover_text.format(kk,
+                                                          np.round(read_err[kk], 3)
+                                                          )]
+                             ),
+                      row=1, col=1)
 
-    fig.append_trace(go.Scatter(x=[avg_read_err, avg_read_err],
-                                y=[-0.25, num_left-1+0.25],
-                                mode='lines',
-                                hoverinfo='none',
-                                line=dict(color=text_color,
-                                          width=2,
-                                          dash='dot')), row=1, col=1)
+    fig.add_trace(go.Scatter(x=[avg_read_err, avg_read_err],
+                             y=[-0.25, num_left-1+0.25],
+                             mode='lines',
+                             hoverinfo='none',
+                             line=dict(color=text_color,
+                                       width=2,
+                                       dash='dot')), row=1, col=1)
 
     fig.update_yaxes(row=1, col=1,
                      tickvals=list(range(num_left)),
@@ -419,25 +419,25 @@ def iplot_error_map(
     # Add the right side meas errors, if any
     if num_right:
         for kk in range(n_qubits-1, num_left-1, -1):
-            fig.append_trace(go.Bar(x=[-read_err[kk]],
-                                    y=[kk],
-                                    orientation='h',
-                                    marker=dict(color='#eedccb'),
-                                    hoverinfo="text",
-                                    hoverlabel=dict(font=dict(color=meas_text_color)),
-                                    hovertext=[hover_text.format(kk,
-                                                                 np.round(read_err[kk], 3))]
-                                    ),
-                             row=1, col=9)
+            fig.add_trace(go.Bar(x=[-read_err[kk]],
+                                 y=[kk],
+                                 orientation='h',
+                                 marker=dict(color='#eedccb'),
+                                 hoverinfo="text",
+                                 hoverlabel=dict(font=dict(color=meas_text_color)),
+                                 hovertext=[hover_text.format(kk,
+                                                              np.round(read_err[kk], 3))]
+                                 ),
+                          row=1, col=9)
 
-        fig.append_trace(go.Scatter(x=[-avg_read_err, -avg_read_err],
-                                    y=[num_left-0.25, n_qubits-1+0.25],
-                                    mode='lines',
-                                    hoverinfo='none',
-                                    line=dict(color=text_color,
-                                              width=2,
-                                              dash='dot')
-                                    ), row=1, col=9)
+        fig.add_trace(go.Scatter(x=[-avg_read_err, -avg_read_err],
+                                 y=[num_left-0.25, n_qubits-1+0.25],
+                                 mode='lines',
+                                 hoverinfo='none',
+                                 line=dict(color=text_color,
+                                           width=2,
+                                           dash='dot')
+                                 ), row=1, col=9)
 
         fig.update_yaxes(row=1,
                          col=9,

@@ -2,16 +2,38 @@
   "name": "runtime-simple",
   "description": "Simple runtime program used for testing.",
   "max_execution_time": 300,
-  "version": 1.0,
-  "backend_requirements": {"min_num_qubits":  5},
-  "parameters": [
-    {"name": "iterations", "description": "Number of iterations to run. Each iteration generates a runs a random circuit.", "type": "integer", "required": true}
-  ],
-  "return_values": [
-    {"name": "-", "description": "A string that says 'All done!'.", "type": "string"}
-  ],
-  "interim_results": [
-    {"name": "iteration", "description": "Iteration number.", "type": "int"},
-    {"name": "counts", "description": "Histogram data of the circuit result.", "type": "dict"}
-  ]
+  "spec": {
+    "backend_requirements": {
+      "min_num_qubits": 5
+    },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "iterations": {
+          "description": "Number of iterations to run. Each iteration generates and runs a random circuit.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "iterations"
+      ]
+    },
+    "return_values": {
+      "type": "string",
+      "description": "A string that says 'All done!'."
+    },
+    "interim_results": {
+      "type": "object",
+      "properties": {
+        "iteration": {
+          "description": "Iteration number.",
+          "type": "integer"
+        },
+        "counts": {
+          "description": "Histogram data of the circuit result.",
+          "type": "object"
+        }
+      }
+    }
+  }
 }

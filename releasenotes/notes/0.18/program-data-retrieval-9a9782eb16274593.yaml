@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    If you are the author of a runtime program,
+    you can now use :attr:`qiskit.providers.ibmq.runtime.RuntimeProgram.data`
+    property to retrieve the program data as a string.

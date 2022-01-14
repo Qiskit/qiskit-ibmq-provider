@@ -84,7 +84,8 @@ class RuntimeJob:
             params: Optional[Dict] = None,
             creation_date: Optional[str] = None,
             user_callback: Optional[Callable] = None,
-            result_decoder: Type[ResultDecoder] = ResultDecoder
+            result_decoder: Type[ResultDecoder] = ResultDecoder,
+            image: Optional[str] = ""
     ) -> None:
         """RuntimeJob constructor.
 
@@ -98,17 +99,19 @@ class RuntimeJob:
             creation_date: Job creation date, in UTC.
             user_callback: User callback function.
             result_decoder: A :class:`ResultDecoder` subclass used to decode job results.
+            image: Runtime image used for this job: image_name:tag.
         """
         self._job_id = job_id
         self._backend = backend
         self._api_client = api_client
-        self._results = None
+        self._results: Optional[Any] = None
         self._params = params or {}
         self._creation_date = creation_date
         self._program_id = program_id
         self._status = JobStatus.INITIALIZING
         self._error_message = None  # type: Optional[str]
         self._result_decoder = result_decoder
+        self._image = image
 
         # Used for streaming
         self._ws_client_future = None  # type: Optional[futures.Future]
@@ -142,7 +145,7 @@ class RuntimeJob:
             RuntimeJobFailureError: If the job failed.
         """
         _decoder = decoder or self._result_decoder
-        if not self._results or (_decoder != self._result_decoder):  # type: ignore[unreachable]
+        if self._results is None or (_decoder != self._result_decoder):
             self.wait_for_final_state(timeout=timeout, wait=wait)
             if self._status == JobStatus.ERROR:
                 raise RuntimeJobFailureError(f"Unable to retrieve job result. "
@@ -384,6 +387,16 @@ class RuntimeJob:
             Backend used for the job.
         """
         return self._backend
+
+    @property
+    def image(self) -> str:
+        """Return the runtime image used for the job.
+
+        Returns:
+            Runtime image: image_name:tag or "" if the default
+            image is used.
+        """
+        return self._image
 
     @property
     def inputs(self) -> Dict:

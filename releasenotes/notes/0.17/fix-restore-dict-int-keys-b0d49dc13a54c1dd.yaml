@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    :class:`qiskit.providers.ibmq.runtime.RuntimeDecoder` can now restore dictionary integer keys
+    in optimizer settings from a JSON string representation dumped by the
+    :class:`qiskit.providers.ibmq.runtime.RuntimeEncoder`.

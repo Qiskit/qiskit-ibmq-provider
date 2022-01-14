@@ -1,0 +1,5 @@
+---
+upgrade:
+  - |
+    :meth:`qiskit.providers.ibmq.AccountProvider.run_circuits` method now takes a `backend_name`
+    parameter, which is a string, instead of `backend`, which is a ``Backend`` object.

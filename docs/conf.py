@@ -46,7 +46,7 @@ author = 'Qiskit Development Team'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '0.17.0'
+release = '0.19.0'
 
 # -- General configuration ---------------------------------------------------
 
@@ -87,6 +87,7 @@ autosummary_generate = True
 
 autodoc_default_options = {
     'inherited-members': None,
+    'exclude-members': 'with_traceback'
 }
 
 

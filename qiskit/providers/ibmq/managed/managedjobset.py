@@ -192,7 +192,7 @@ class ManagedJobSet:
             job = jobs_dict[job_index]
             mjob = ManagedJob(
                 start_index=experiment_index,
-                experiments_count=len(job.qobj().experiments),
+                experiments_count=len(job.circuits()),
                 job=job
             )
             self._managed_jobs.append(mjob)
@@ -396,8 +396,8 @@ class ManagedJobSet:
             if isinstance(experiment, (QuantumCircuit, Schedule)):
                 experiment = experiment.name
             for job in self.jobs():
-                for i, exp in enumerate(job.qobj().experiments):
-                    if hasattr(exp.header, 'name') and exp.header.name == experiment:
+                for i, exp in enumerate(job.circuits()):
+                    if hasattr(exp, 'name') and exp.name == experiment:
                         return job, i
 
         raise IBMQJobManagerJobNotFound(

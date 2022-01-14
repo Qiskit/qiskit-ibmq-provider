@@ -14,26 +14,51 @@
 
 """Utility functions for the runtime service."""
 
-import json
-from typing import Any, Callable, Dict
 import base64
-import io
-import zlib
-import inspect
+import copy
+import functools
 import importlib
+import inspect
+import io
+import json
 import warnings
+import zlib
+from datetime import date
+from typing import Any, Callable, Dict, List, Union, Tuple
 
+import dateutil.parser
 import numpy as np
+
 try:
     import scipy.sparse
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
 
+from qiskit.circuit import (
+    Instruction,
+    ParameterExpression,
+    ParameterVector,
+    QuantumCircuit,
+    qpy_serialization,
+)
 from qiskit.result import Result
-from qiskit.circuit import QuantumCircuit, qpy_serialization
-from qiskit.circuit import ParameterExpression, Instruction
-from qiskit.circuit.library import BlueprintCircuit
+
+from qiskit.version import __version__ as _terra_version_string
+
+_TERRA_VERSION = tuple(int(x) for x in _terra_version_string.split(".")[:3])
+
+
+def to_base64_string(data: str) -> str:
+    """Convert string to base64 string.
+
+    Args:
+        data: string to convert
+
+    Returns:
+        data as base64 string
+    """
+    return base64.b64encode(data.encode('utf-8')).decode('utf-8')
 
 
 def _serialize_and_encode(
@@ -106,10 +131,56 @@ def deserialize_from_settings(mod_name: str, class_name: str, settings: Dict) ->
     raise ValueError(f"Unable to find class {class_name} in module {mod_name}")
 
 
+def _set_int_keys_flag(obj: Dict) -> Union[Dict, List]:
+    """Recursively sets '__int_keys__' flag if dictionary uses integer keys
+
+    Args:
+        obj: dictionary
+
+    Returns:
+        obj with the '__int_keys__' flag set if dictionary uses integer key
+    """
+    if isinstance(obj, dict):
+        for k, v in list(obj.items()):
+            if isinstance(k, int):
+                obj['__int_keys__'] = True
+            _set_int_keys_flag(v)
+    return obj
+
+
+def _cast_strings_keys_to_int(obj: Dict) -> Dict:
+    """Casts string to int keys in dictionary when '__int_keys__' flag is set
+
+    Args:
+        obj: dictionary
+
+    Returns:
+        obj with string keys cast to int keys and '__int_keys__' flags removed
+    """
+    if isinstance(obj, dict):
+        int_keys: List[int] = []
+        for k, v in list(obj.items()):
+            if '__int_keys__' in obj:
+                try:
+                    int_keys.append(int(k))
+                except ValueError:
+                    pass
+            _cast_strings_keys_to_int(v)
+        while len(int_keys) > 0:
+            key = int_keys.pop()
+            obj[key] = obj[str(key)]
+            obj.pop(str(key))
+        if '__int_keys__' in obj:
+            del obj['__int_keys__']
+    return obj
+
+
 class RuntimeEncoder(json.JSONEncoder):
     """JSON Encoder used by runtime service."""
 
     def default(self, obj: Any) -> Any:  # pylint: disable=arguments-differ
+        if isinstance(obj, date):
+            return {'__type__': 'datetime', '__value__': obj.isoformat()}
         if isinstance(obj, complex):
             return {'__type__': 'complex', '__value__': [obj.real, obj.imag]}
         if isinstance(obj, np.ndarray):
@@ -122,9 +193,6 @@ class RuntimeEncoder(json.JSONEncoder):
         if hasattr(obj, 'to_json'):
             return {'__type__': 'to_json', '__value__': obj.to_json()}
         if isinstance(obj, QuantumCircuit):
-            # TODO Remove the decompose when terra 6713 is released.
-            if isinstance(obj, BlueprintCircuit):
-                obj = obj.decompose()
             value = _serialize_and_encode(
                 data=obj,
                 serializer=lambda buff, data: qpy_serialization.dump(data, buff)
@@ -145,7 +213,7 @@ class RuntimeEncoder(json.JSONEncoder):
             return {'__type__': 'settings',
                     '__module__': obj.__class__.__module__,
                     '__class__': obj.__class__.__name__,
-                    '__value__': obj.settings}
+                    '__value__': _set_int_keys_flag(copy.deepcopy(obj.settings))}
         if callable(obj):
             warnings.warn(f"Callable {obj} is not JSON serializable and will be set to None.")
             return None
@@ -160,6 +228,15 @@ class RuntimeDecoder(json.JSONDecoder):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(object_hook=self.object_hook, *args, **kwargs)
+        self.__parameter_vectors: Dict[str, Tuple[ParameterVector, set]] = {}
+        self.__read_parameter_expression = (
+            functools.partial(
+                qpy_serialization._read_parameter_expression_v3,
+                vectors=self.__parameter_vectors,
+            )
+            if _TERRA_VERSION >= (0, 19, 1)
+            else qpy_serialization._read_parameter_expression
+        )
 
     def object_hook(self, obj: Any) -> Any:
         """Called to decode object."""
@@ -167,6 +244,8 @@ class RuntimeDecoder(json.JSONDecoder):
             obj_type = obj['__type__']
             obj_val = obj['__value__']
 
+            if obj_type == 'datetime':
+                return dateutil.parser.parse(obj_val)
             if obj_type == 'complex':
                 return obj_val[0] + 1j * obj_val[1]
             if obj_type == 'ndarray':
@@ -177,15 +256,16 @@ class RuntimeDecoder(json.JSONDecoder):
                 return _decode_and_deserialize(obj_val, qpy_serialization.load)[0]
             if obj_type == 'ParameterExpression':
                 return _decode_and_deserialize(
-                    obj_val, qpy_serialization._read_parameter_expression, False)
-            if obj_type == 'Instruction':
+                    obj_val, self.__read_parameter_expression, False
+                )
+            if obj_type == "Instruction":
                 return _decode_and_deserialize(
                     obj_val, qpy_serialization._read_instruction, False)
             if obj_type == 'settings':
                 return deserialize_from_settings(
                     mod_name=obj['__module__'],
                     class_name=obj['__class__'],
-                    settings=obj_val
+                    settings=_cast_strings_keys_to_int(obj_val)
                 )
             if obj_type == 'Result':
                 return Result.from_dict(obj_val)

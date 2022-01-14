@@ -15,6 +15,8 @@
 import urllib
 import subprocess
 
+from unittest import skipIf
+from requests import __version__ as requests_version
 from requests.exceptions import ProxyError
 
 from qiskit.providers.ibmq import IBMQFactory
@@ -139,8 +141,22 @@ class TestProxies(IBMQTestCase):
         test_urls = [
             'http://{}:{}'.format(ADDRESS, PORT),
             '//{}:{}'.format(ADDRESS, PORT),
-            'http:{}:{}'.format(ADDRESS, PORT),
             'http://user:123@{}:{}'.format(ADDRESS, PORT)
+        ]
+        for proxy_url in test_urls:
+            with self.subTest(proxy_url=proxy_url):
+                credentials = Credentials(
+                    qe_token, qe_url, proxies={'urls': {'https': proxy_url}})
+                version_finder = VersionClient(credentials.base_url,
+                                               **credentials.connection_parameters())
+                version_finder.version()
+
+    @skipIf(requests_version > '2.26', "Need requests <= 2.26")
+    @requires_qe_access
+    def test_proxy_urls_2(self, qe_token, qe_url):
+        """Test proxy urls only supported by requests <= 2.26"""
+        test_urls = [
+            'http:{}:{}'.format(ADDRESS, PORT)
         ]
         for proxy_url in test_urls:
             with self.subTest(proxy_url=proxy_url):

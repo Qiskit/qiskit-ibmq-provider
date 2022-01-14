@@ -145,7 +145,8 @@ def submit_job_bad_shots(backend: IBMQBackend) -> IBMQJob:
         Submitted job.
     """
     qobj = bell_in_qobj(backend=backend)
-    qobj.config.shots = 10000  # Modify the number of shots to be an invalid amount.
+    # Modify the number of shots to be an invalid amount.
+    qobj.config.shots = backend.configuration().max_shots + 10000
     job_to_fail = backend.run(qobj)
     return job_to_fail
 
@@ -160,7 +161,11 @@ def submit_job_one_bad_instr(backend: IBMQBackend) -> IBMQJob:
         Submitted job.
     """
     qc_new = transpile(ReferenceCircuits.bell(), backend)
-    qobj = assemble([qc_new]*2, backend=backend)
+    if backend.configuration().simulator:
+        # Specify method so it doesn't fail at method selection.
+        qobj = assemble([qc_new]*2, backend=backend, method="statevector")
+    else:
+        qobj = assemble([qc_new]*2, backend=backend)
     qobj.experiments[1].instructions[1].name = 'bad_instruction'
     job = backend.run(qobj)
     return job
