@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2018, 2020.
+# (C) Copyright IBM 2018, 2020, 2022.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -34,6 +34,7 @@ class Account(RestAdapterBase):
         'backends': '/devices/v/1',
         'jobs': '/Jobs',
         'jobs_status': '/Jobs/status/v/1',
+        'jobs_id': '/Jobs/v/1',
     }
 
     TEMPLATE_IBMQ_HUBS = '/Network/{hub}/Groups/{group}/Projects/{project}'
@@ -127,6 +128,45 @@ class Account(RestAdapterBase):
         data = self.session.get(url, params={'filter': json.dumps(query)}).json()
         for job_data in data:
             map_job_response(job_data)
+        return data
+
+    def jobs_ids(
+            self,
+            limit: int = 10,
+            skip: int = 0,
+            descending: bool = True,
+            extra_filter: Dict[str, Any] = None
+    ) -> List[Dict[str, Any]]:
+        """Return a list of job ids plus their liveDataEnabled flag and their creationDate field.
+
+        Args:
+            limit: Maximum number of items to return.
+            skip: Offset for the items to return.
+            descending: Whether the jobs should be in descending order.
+            extra_filter: Additional filtering passed to the query.
+
+        Returns:
+            JSON response.
+        """
+        url = self.get_url('jobs_id')
+
+        order = 'DESC' if descending else 'ASC'
+
+        query = {
+            'order': 'creationDate ' + order,
+            'limit': limit,
+            'skip': skip,
+            'fields': {'id': True, 'liveDataEnabled': True, 'creationDate': True}
+        }
+        if extra_filter:
+            query['where'] = extra_filter
+
+        if logger.getEffectiveLevel() is logging.DEBUG:
+            logger.debug("Endpoint: %s. Method: GET. Request Data: {'filter': %s}",
+                         url, filter_data(query))
+
+        data = self.session.get(url, params={'filter': json.dumps(query)}).json()
+
         return data
 
     def create_remote_job(
