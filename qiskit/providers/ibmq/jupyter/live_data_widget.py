@@ -578,6 +578,9 @@ class LivePlot:
             }
         )
 
+        # Prevents that matplotlib drawing figures in the cell's execution output
+        plt.ioff()
+
         fig = plt.figure(constrained_layout=True, figsize=fig_size)
 
         mosaic_grid = []
