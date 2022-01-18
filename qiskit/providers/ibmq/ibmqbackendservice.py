@@ -461,7 +461,7 @@ class IBMQBackendService:
                 limit=current_page_limit, skip=skip, descending=descending,
                 extra_filter=api_filter)
             if logger.getEffectiveLevel() is logging.DEBUG:
-                filtered_data = [job for job in job_page]
+                filtered_data = list(job_page)
                 logger.debug("jobs_id() response data is %s", filtered_data)
 
             if not job_page:
@@ -503,7 +503,6 @@ class IBMQBackendService:
                 self._merge_logical_filters(api_filter, new_id_filter)
 
         return job_responses
-
 
     def _merge_logical_filters(self, cur_filter: Dict, new_filter: Dict) -> None:
         """Merge the logical operators in the input filters.

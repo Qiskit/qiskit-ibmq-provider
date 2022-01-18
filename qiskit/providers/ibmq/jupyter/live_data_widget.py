@@ -25,8 +25,8 @@ import pytz
 from websocket import WebSocketApp
 import ipywidgets as widgets
 import numpy as np
-from qiskit.providers.jobstatus import JobStatus
 from sklearn.decomposition import PCA
+from qiskit.providers.jobstatus import JobStatus
 
 # PLOTS
 ENABLE_LEVEL_0 = False
