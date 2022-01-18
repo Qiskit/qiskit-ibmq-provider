@@ -309,7 +309,7 @@ class LiveDataVisualization:
         logger.debug("RECEIVE PACKAGE")
         compressed_msg = json.loads(message)
         if compressed_msg["type"] == "live-data":
-            logger.debug(f"📝 ws@job_id #{self.selected_job['id']} received a msg!")
+            logger.debug("📝 ws@job_id #%s received a msg!", self.selected_job['id'])
             result = self.pako_inflate(bytes(compressed_msg["data"]["data"]))
             # Check result type. In the last package it is a list instead a dict.
             if self.ldata_details:
@@ -340,7 +340,7 @@ class LiveDataVisualization:
         """
         uri: str = (f"{self.backend.provider().credentials.websockets_url}"
                     f"jobs/{self.selected_job['id']}/live_data")
-        logger.debug(f"🔌 ws@job_id #{self.selected_job['id']} connecting to {uri}")
+        logger.debug("🔌 ws@job_id #%s connecting to %s", self.selected_job['id'], uri)
         this_ws = None
         try:
             # pylint: disable=E1101
@@ -355,9 +355,9 @@ class LiveDataVisualization:
             logger.debug("Running forever")
 
         except BaseException as error:
-            logger.debug(f"💥 ws@job_id #{self.selected_job['id']} errored/closed: {error}")
+            logger.debug("💥 ws@job_id #%s errored/closed: %s", self.selected_job['id'], error)
             if self.ws_connection == this_ws:
-                logger.debug(f"🤖 Trying to reconnect ws@job_id #{self.selected_job['id']}...")
+                logger.debug("🤖 Trying to reconnect ws@job_id #%s...", self.selected_job['id'])
                 await self.init_websockets()
 
     def disconnect_ws(self) -> None:
@@ -383,7 +383,7 @@ class LiveDataVisualization:
                             self.jobs[self.job_ids.index(self.jobs_combo.value)]
                         )
                     else:
-                        logger.debug(f"changing job to the new received: {self.job_ids[0]}")
+                        logger.debug("changing job to the new received: %s", self.job_ids[0])
                         self.jobs_combo.value = self.job_ids[0]
                         self.job_information_view.set_job(self.jobs[0])  # new job arrived, take it
                 else:
