@@ -22,7 +22,6 @@ from io import BytesIO
 from base64 import b64encode
 import logging
 import pytz
-from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.test.mock.fake_backend import FakeBackend
 from websocket import WebSocketApp
 import ipywidgets as widgets
