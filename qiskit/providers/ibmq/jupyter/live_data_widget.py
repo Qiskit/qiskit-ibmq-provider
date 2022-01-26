@@ -22,6 +22,8 @@ from io import BytesIO
 from base64 import b64encode
 import logging
 import pytz
+from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
+from qiskit.test.mock.fake_backend import FakeBackend
 from websocket import WebSocketApp
 import ipywidgets as widgets
 import numpy as np
@@ -143,9 +145,13 @@ class LiveDataVisualization:
         The list received includes objects with the jobs' info is a dict composed
         by the fields: 'id', 'liveDataEnabled', 'creationDate'.
         The objects included in the list are not same as a Qiskit Job"""
-        total_jobs = self.backend.provider().backend.job_ids(limit=0)
-        livedata_jobs = [job for job in total_jobs if getattr(job, "liveDataEnabled", True)]
-        self.job_ids = list(map(lambda x: x["id"], livedata_jobs))
+        provider = self.backend.provider()
+        livedata_jobs = []
+
+        if provider is not None and not isinstance(provider.backend, FakeBackend):
+            total_jobs = provider.backend.job_ids(limit=0)
+            livedata_jobs = [job for job in total_jobs if getattr(job, "liveDataEnabled", True)]
+            self.job_ids = list(map(lambda x: x["id"], livedata_jobs))
         return livedata_jobs
 
     def update_websocket_connection(self) -> None:
@@ -227,7 +233,8 @@ class LiveDataVisualization:
 
         self.widget = widgets.VBox(children=(dropdown_box, output))
 
-        self.setup_views()
+        if not isinstance(self.backend, FakeBackend):
+            self.setup_views()
 
         # Update Jobs
         asyncio.ensure_future(self.update_job_loop())
