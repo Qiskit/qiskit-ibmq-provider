@@ -15,8 +15,57 @@
 from typing import Dict, Union, List
 
 import dateutil.parser
+from qiskit.providers.models import (
+    PulseDefaults,
+    BackendProperties,
+)
 
-from .converters import utc_to_local
+from .converters import utc_to_local, utc_to_local_all
+
+
+def defaults_from_server_data(defaults: Dict) -> PulseDefaults:
+    """Decode pulse defaults data.
+
+    Args:
+        defaults: Raw pulse defaults data.
+
+    Returns:
+        A ``PulseDefaults`` instance.
+    """
+    for item in defaults["pulse_library"]:
+        _decode_pulse_library_item(item)
+
+    for cmd in defaults["cmd_def"]:
+        if "sequence" in cmd:
+            for instr in cmd["sequence"]:
+                _decode_pulse_qobj_instr(instr)
+
+    return PulseDefaults.from_dict(defaults)
+
+
+def properties_from_server_data(properties: Dict) -> BackendProperties:
+    """Decode backend properties.
+
+    Args:
+        properties: Raw properties data.
+
+    Returns:
+        A ``BackendProperties`` instance.
+    """
+    properties["last_update_date"] = dateutil.parser.isoparse(
+        properties["last_update_date"]
+    )
+    for qubit in properties["qubits"]:
+        for nduv in qubit:
+            nduv["date"] = dateutil.parser.isoparse(nduv["date"])
+    for gate in properties["gates"]:
+        for param in gate["parameters"]:
+            param["date"] = dateutil.parser.isoparse(param["date"])
+    for gen in properties["general"]:
+        gen["date"] = dateutil.parser.isoparse(gen["date"])
+
+    properties = utc_to_local_all(properties)
+    return BackendProperties.from_dict(properties)
 
 
 def decode_pulse_qobj(pulse_qobj: Dict) -> None:
@@ -31,38 +80,6 @@ def decode_pulse_qobj(pulse_qobj: Dict) -> None:
     for exp in pulse_qobj['experiments']:
         for instr in exp['instructions']:
             _decode_pulse_qobj_instr(instr)
-
-
-def decode_pulse_defaults(defaults: Dict) -> None:
-    """Decode pulse defaults data.
-
-    Args:
-        defaults: A ``PulseDefaults`` in dictionary format.
-    """
-    for item in defaults['pulse_library']:
-        _decode_pulse_library_item(item)
-
-    for cmd in defaults['cmd_def']:
-        if 'sequence' in cmd:
-            for instr in cmd['sequence']:
-                _decode_pulse_qobj_instr(instr)
-
-
-def decode_backend_properties(properties: Dict) -> None:
-    """Decode backend properties.
-
-    Args:
-        properties: A ``BackendProperties`` in dictionary format.
-    """
-    properties['last_update_date'] = dateutil.parser.isoparse(properties['last_update_date'])
-    for qubit in properties['qubits']:
-        for nduv in qubit:
-            nduv['date'] = dateutil.parser.isoparse(nduv['date'])
-    for gate in properties['gates']:
-        for param in gate['parameters']:
-            param['date'] = dateutil.parser.isoparse(param['date'])
-    for gen in properties['general']:
-        gen['date'] = dateutil.parser.isoparse(gen['date'])
 
 
 def decode_backend_configuration(config: Dict) -> None:

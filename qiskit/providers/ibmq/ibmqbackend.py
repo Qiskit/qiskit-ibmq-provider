@@ -26,15 +26,20 @@ from qiskit.pulse import Schedule, LoConfig
 from qiskit.pulse.channels import PulseChannel
 from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.qobj.utils import MeasLevel, MeasReturnType
-from qiskit.providers.backend import BackendV1 as Backend
+from qiskit.providers.backend import BackendV2 as Backend, QubitProperties
 from qiskit.providers.options import Options
 from qiskit.providers.jobstatus import JobStatus
-from qiskit.providers.models import (BackendStatus, BackendProperties,
-                                     PulseDefaults, GateConfig)
+from qiskit.providers.models import (
+    BackendStatus,
+    BackendProperties,
+    PulseDefaults,
+    GateConfig,
+    QasmBackendConfiguration,
+    PulseBackendConfiguration
+)
 from qiskit.tools.events.pubsub import Publisher
-from qiskit.providers.models import (QasmBackendConfiguration,
-                                     PulseBackendConfiguration)
 from qiskit.utils import deprecate_arguments
+from qiskit.transpiler.target import Target
 
 from qiskit.providers.ibmq import accountprovider  # pylint: disable=unused-import
 from .apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
@@ -48,8 +53,15 @@ from .exceptions import (IBMQBackendError, IBMQBackendValueError,
                          IBMQBackendJobLimitError)
 from .job import IBMQJob
 from .utils import validate_job_tags
-from .utils.converters import utc_to_local_all, local_to_utc
-from .utils.json_decoder import decode_pulse_defaults, decode_backend_properties
+from .utils.backend_converter import (
+    convert_to_target,
+    qubit_props_dict_from_props,
+)
+from .utils.converters import local_to_utc
+from .utils.json_decoder import (
+    defaults_from_server_data,
+    properties_from_server_data
+)
 from .utils.backend import convert_reservation_data
 from .utils.utils import api_status_to_job_status
 
@@ -120,17 +132,74 @@ class IBMQBackend(Backend):
             credentials: IBM Quantum Experience credentials.
             api_client: IBM Quantum Experience client used to communicate with the server.
         """
-        super().__init__(provider=provider, configuration=configuration)
+        super().__init__(
+            name=configuration.backend_name,
+            online_date=configuration.online_date,
+            backend_version=configuration.backend_version,
+        )
 
+        self._provider = provider
         self._api_client = api_client
         self._credentials = credentials
         self.hub = credentials.hub
         self.group = credentials.group
         self.project = credentials.project
-
-        # Attributes used by caching functions.
         self._properties = None
+        self._qubit_properties = None
         self._defaults = None
+        self._target = None
+        self._max_circuits = configuration.max_experiments
+
+    def __getattr__(self, name: str) -> Any:
+        """Gets attribute from self or configuration
+        This magic method executes when user accesses an attribute that
+        does not yet exist on IBMBackend class.
+        """
+        # Lazy load properties and pulse defaults and construct the target object.
+        self._get_properties()
+        self._get_defaults()
+        self._convert_to_target()
+        # Check if the attribute now is available on IBMBackend class due to above steps
+        try:
+            return super().__getattribute__(name)
+        except AttributeError:
+            pass
+        # If attribute is still not available on IBMBackend class,
+        # fallback to check if the attribute is available in configuration
+        try:
+            return self._configuration.__getattribute__(name)
+        except AttributeError:
+            raise AttributeError(
+                "'{}' object has no attribute '{}'".format(
+                    self.__class__.__name__, name
+                )
+            )
+
+    def _get_properties(self) -> None:
+        """Gets backend properties and decodes it"""
+        if not self._properties:
+            api_properties = self._api_client.backend_properties(self.name())
+            if api_properties:
+                backend_properties = properties_from_server_data(api_properties)
+                self._properties = backend_properties
+
+    def _get_defaults(self) -> None:
+        """Gets defaults if pulse backend and decodes it"""
+        if not self._defaults and isinstance(
+                self._configuration, PulseBackendConfiguration
+        ):
+            api_defaults = self._api_client.backend_pulse_defaults(self.name())
+            if api_defaults:
+                self._defaults = defaults_from_server_data(api_defaults)
+
+    def _convert_to_target(self) -> None:
+        """Converts backend configuration, properties and defaults to Target object"""
+        if not self._target:
+            self._target = convert_to_target(
+                configuration=self._configuration.to_dict(),
+                properties=self._properties.to_dict() if self._properties else None,
+                defaults=self._defaults.to_dict() if self._defaults else None,
+            )
 
     @classmethod
     def _default_options(cls) -> Options:
@@ -144,6 +213,49 @@ class IBMQBackend(Backend):
                        rep_time=None, rep_delay=None,
                        init_qubits=True, use_measure_esp=None,
                        live_data_enabled=None)
+
+    @property
+    def target(self) -> Target:
+        """A :class:`qiskit.transpiler.Target` object for the backend.
+        Returns:
+            Target
+        """
+        self._get_properties()
+        self._get_defaults()
+        self._convert_to_target()
+        return self._target
+
+    @property
+    def max_circuits(self) -> int:
+        """The maximum number of circuits
+        The maximum number of circuits (or Pulse schedules) that can be
+        run in a single job. If there is no limit this will return None
+        """
+        return self._max_circuits
+
+    def qubit_properties(
+            self, qubit: Union[int, List[int]]
+    ) -> Union[QubitProperties, List[QubitProperties]]:
+        """Return QubitProperties for a given qubit.
+        Args:
+            qubit: The qubit to get the
+                :class:`~qiskit.provider.QubitProperties` object for. This can
+                be a single integer for 1 qubit or a list of qubits and a list
+                of :class:`~qiskit.provider.QubitProperties` objects will be
+                returned in the same order
+        Returns:
+            QubitProperties or a list of QubitProperties
+        """
+        self._get_properties()
+        if not self._qubit_properties:
+            self._qubit_properties = qubit_props_dict_from_props(
+                self._properties.to_dict()
+            )
+        if isinstance(qubit, int):  # type: ignore[unreachable]
+            return self._qubit_properties.get(qubit)
+        if isinstance(qubit, List):
+            return [self._qubit_properties.get(q) for q in qubit]
+        return None
 
     @deprecate_arguments({'qobj': 'circuits'})
     def run(
@@ -407,6 +519,14 @@ class IBMQBackend(Backend):
         Publisher().publish("ibmq.job.start", job)
         return job
 
+    def name(self) -> str:
+        """Return the backend name.
+
+        Returns:
+            str: the name of the backend.
+        """
+        return self._configuration.backend_name
+
     def properties(
             self,
             refresh: bool = False,
@@ -450,9 +570,7 @@ class IBMQBackend(Backend):
             api_properties = self._api_client.backend_properties(self.name(), datetime=datetime)
             if not api_properties:
                 return None
-            decode_backend_properties(api_properties)
-            api_properties = utc_to_local_all(api_properties)
-            backend_properties = BackendProperties.from_dict(api_properties)
+            backend_properties = properties_from_server_data(api_properties)
             if datetime:    # Don't cache result.
                 return backend_properties
             self._properties = backend_properties
@@ -498,8 +616,7 @@ class IBMQBackend(Backend):
         if refresh or self._defaults is None:
             api_defaults = self._api_client.backend_pulse_defaults(self.name())
             if api_defaults:
-                decode_pulse_defaults(api_defaults)
-                self._defaults = PulseDefaults.from_dict(api_defaults)
+                self._defaults = defaults_from_server_data(api_defaults)
             else:
                 self._defaults = None
 
