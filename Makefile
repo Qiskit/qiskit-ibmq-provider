@@ -30,7 +30,7 @@ test1:
 	python -m unittest -v test/ibmq/test_ibmq_backend.py test/ibmq/test_account_client.py test/ibmq/test_ibmq_job_states.py test/ibmq/test_tutorials.py test/ibmq/test_basic_server_paths.py test/ibmq/test_ibmq_factory.py test/ibmq/test_proxies.py test/ibmq/test_ibmq_integration.py test/ibmq/test_ibmq_logger.py test/ibmq/test_filter_backends.py test/ibmq/test_registration.py
 
 test2:
-	python -m unittest -v test/ibmq/test_ibmq_qasm_simulator.py test/ibmq/test_serialization.py test/ibmq/test_jupyter.py test/ibmq/test_ibmq_jobmanager.py test/ibmq/test_random.py test/ibmq/test_ibmq_provider.py
+	python -m unittest -v test/ibmq/test_ibmq_qasm_simulator.py test/ibmq/test_serialization.py test/ibmq/test_jupyter.py test/ibmq/test_ibmq_jobmanager.py test/ibmq/test_ibmq_provider.py
 
 test3:
 	python -m unittest -v test/ibmq/test_ibmq_job_attributes.py test/ibmq/test_ibmq_job.py test/ibmq/websocket/test_websocket.py test/ibmq/websocket/test_websocket_integration.py

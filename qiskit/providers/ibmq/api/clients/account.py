@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2018, 2020.
+# (C) Copyright IBM 2018, 2020, 2022.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -174,13 +174,36 @@ class AccountClient(BaseClient):
         return self.account_api.jobs(limit=limit, skip=skip, descending=descending,
                                      extra_filter=extra_filter)
 
+    def list_jobs_ids(
+            self,
+            limit: int = 10,
+            skip: int = 0,
+            descending: bool = True,
+            extra_filter: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
+        """Return a list including job ids and other information, with filtering and pagination.
+
+        Args:
+            limit: Maximum number of items to return.
+            skip: Offset for the items to return.
+            descending: Whether the jobs should be in descending order.
+            extra_filter: Additional filtering passed to the query.
+
+        Returns:
+            A list of job data.
+        """
+        return self.account_api.jobs_ids(
+            limit=limit, skip=skip, descending=descending, extra_filter=extra_filter
+        )
+
     def job_submit(
             self,
             backend_name: str,
             qobj_dict: Dict[str, Any],
             job_name: Optional[str] = None,
             job_tags: Optional[List[str]] = None,
-            experiment_id: Optional[str] = None
+            experiment_id: Optional[str] = None,
+            live_data_enabled: Optional[bool] = None
     ) -> Dict[str, Any]:
         """Submit a ``Qobj`` to the backend.
 
@@ -190,6 +213,7 @@ class AccountClient(BaseClient):
             job_name: Custom name to be assigned to the job.
             job_tags: Tags to be assigned to the job.
             experiment_id: Used to add a job to an experiment.
+            live_data_enabled: Used to activate/deactivate live data on the backend.
 
         Returns:
             Job data.
@@ -204,7 +228,8 @@ class AccountClient(BaseClient):
             backend_name,
             job_name=job_name,
             job_tags=job_tags,
-            experiment_id=experiment_id)
+            experiment_id=experiment_id,
+            live_data_enabled=live_data_enabled)
 
         # Get the upload URL.
         job_id = job_info['id']

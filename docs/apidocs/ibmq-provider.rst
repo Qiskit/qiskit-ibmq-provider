@@ -12,6 +12,5 @@ Qiskit IBM Quantum Provider API Reference
    ibmq_visualization
    ibmq_jupyter
    ibmq_utils
-   ibmq_random
    ibmq_experiment
    ibmq_runtime
