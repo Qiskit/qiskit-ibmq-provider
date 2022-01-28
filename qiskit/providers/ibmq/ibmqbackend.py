@@ -261,12 +261,14 @@ class IBMQBackend(Backend):
             self, qubit: Union[int, List[int]]
     ) -> Union[QubitProperties, List[QubitProperties]]:
         """Return QubitProperties for a given qubit.
+
         Args:
             qubit: The qubit to get the
                 :class:`~qiskit.provider.QubitProperties` object for. This can
                 be a single integer for 1 qubit or a list of qubits and a list
                 of :class:`~qiskit.provider.QubitProperties` objects will be
                 returned in the same order
+
         Returns:
             QubitProperties or a list of QubitProperties
         """
@@ -903,12 +905,15 @@ class IBMQBackend(Backend):
         return self._configuration.acquire(qubit=qubit)
 
     def control_channel(self, qubits: Iterable[int]) -> List[ControlChannel]:
-        """Return the secondary drive channel for the given qubit
+        """Return the secondary drive channel for the given qubit.
+
         This is typically utilized for controlling multiqubit interactions.
         This channel is derived from other channels.
+
         Args:
             qubits: Tuple or list of qubits of the form
                 ``(control_qubit, target_qubit)``.
+
         Returns:
             List[ControlChannel]: The Qubit measurement acquisition line.
         """
