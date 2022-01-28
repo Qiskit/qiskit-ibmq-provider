@@ -103,7 +103,7 @@ def convert_to_target(
     # parse global configuration properties
     dtime = configuration.get("dt")
     if dtime:
-        target.dt = dtime ** 1e-6
+        target.dt = dtime * 1e-9
     if "timing_constraints" in configuration:
         target.granularity = configuration["timing_constraints"].get("granularity")
         target.min_length = configuration["timing_constraints"].get("min_length")

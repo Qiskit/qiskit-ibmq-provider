@@ -16,14 +16,20 @@ import logging
 import warnings
 import copy
 
-from typing import Dict, List, Union, Optional, Any
+from typing import Iterable, Dict, List, Union, Optional, Any
 from datetime import datetime as python_datetime
 
 from qiskit.compiler import assemble
 from qiskit.circuit import QuantumCircuit, Parameter, Delay
 from qiskit.circuit.duration import duration_in_dt
 from qiskit.pulse import Schedule, LoConfig
-from qiskit.pulse.channels import PulseChannel
+from qiskit.pulse.channels import (
+    PulseChannel,
+    AcquireChannel,
+    ControlChannel,
+    DriveChannel,
+    MeasureChannel,
+)
 from qiskit.qobj import QasmQobj, PulseQobj
 from qiskit.qobj.utils import MeasLevel, MeasReturnType
 from qiskit.providers.backend import BackendV2 as Backend, QubitProperties
@@ -215,6 +221,32 @@ class IBMQBackend(Backend):
                        live_data_enabled=None)
 
     @property
+    def dtm(self) -> float:
+        """Return the system time resolution of output signals
+        Returns:
+            dtm: The output signal timestep in seconds.
+        """
+        return self._configuration.dtm
+
+    @property
+    def max_circuits(self) -> int:
+        """The maximum number of circuits
+        The maximum number of circuits (or Pulse schedules) that can be
+        run in a single job. If there is no limit this will return None.
+        """
+        return self._max_circuits
+
+    @property
+    def meas_map(self) -> List[List[int]]:
+        """Return the grouping of measurements which are multiplexed
+        This is required to be implemented if the backend supports Pulse
+        scheduling.
+        Returns:
+            meas_map: The grouping of measurements which are multiplexed
+        """
+        return self._configuration.meas_map
+
+    @property
     def target(self) -> Target:
         """A :class:`qiskit.transpiler.Target` object for the backend.
         Returns:
@@ -224,14 +256,6 @@ class IBMQBackend(Backend):
         self._get_defaults()
         self._convert_to_target()
         return self._target
-
-    @property
-    def max_circuits(self) -> int:
-        """The maximum number of circuits
-        The maximum number of circuits (or Pulse schedules) that can be
-        run in a single job. If there is no limit this will return None
-        """
-        return self._max_circuits
 
     def qubit_properties(
             self, qubit: Union[int, List[int]]
@@ -519,6 +543,7 @@ class IBMQBackend(Backend):
         Publisher().publish("ibmq.job.start", job)
         return job
 
+    # pylint: disable=method-hidden
     def name(self) -> str:
         """Return the backend name.
 
@@ -855,6 +880,39 @@ class IBMQBackend(Backend):
             The configuration for the backend.
         """
         return self._configuration
+
+    def drive_channel(self, qubit: int) -> DriveChannel:
+        """Return the drive channel for the given qubit.
+        Returns:
+            DriveChannel: The Qubit drive channel
+        """
+        return self._configuration.drive(qubit=qubit)
+
+    def measure_channel(self, qubit: int) -> MeasureChannel:
+        """Return the measure stimulus channel for the given qubit.
+        Returns:
+            MeasureChannel: The Qubit measurement stimulus line
+        """
+        return self._configuration.measure(qubit=qubit)
+
+    def acquire_channel(self, qubit: int) -> AcquireChannel:
+        """Return the acquisition channel for the given qubit.
+        Returns:
+            AcquireChannel: The Qubit measurement acquisition line.
+        """
+        return self._configuration.acquire(qubit=qubit)
+
+    def control_channel(self, qubits: Iterable[int]) -> List[ControlChannel]:
+        """Return the secondary drive channel for the given qubit
+        This is typically utilized for controlling multiqubit interactions.
+        This channel is derived from other channels.
+        Args:
+            qubits: Tuple or list of qubits of the form
+                ``(control_qubit, target_qubit)``.
+        Returns:
+            List[ControlChannel]: The Qubit measurement acquisition line.
+        """
+        return self._configuration.control(qubits=qubits)
 
     def __repr__(self) -> str:
         credentials_info = ''
