@@ -83,7 +83,6 @@ setup(
               'qiskit.providers.ibmq.visualization.interactive',
               'qiskit.providers.ibmq.jupyter',
               'qiskit.providers.ibmq.jupyter.dashboard',
-              'qiskit.providers.ibmq.random',
               'qiskit.providers.ibmq.experiment',
               'qiskit.providers.ibmq.runtime',
               'qiskit.providers.ibmq.runtime.program'],

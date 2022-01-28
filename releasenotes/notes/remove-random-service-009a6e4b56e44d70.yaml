@@ -1,0 +1,5 @@
+---
+upgrade:
+  - |
+    `qiskit.providers.ibmq.random`, the random number service which was used to access the CQC
+    randomness extractor is no longer supported and has been removed.
