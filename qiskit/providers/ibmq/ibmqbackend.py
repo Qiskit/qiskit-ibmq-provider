@@ -143,10 +143,10 @@ class IBMQBackend(Backend):
             online_date=configuration.online_date,
             backend_version=configuration.backend_version,
         )
-
+        self._configuration = configuration
         self._provider = provider
-        self._api_client = api_client
         self._credentials = credentials
+        self._api_client = api_client
         self.hub = credentials.hub
         self.group = credentials.group
         self.project = credentials.project
@@ -191,9 +191,7 @@ class IBMQBackend(Backend):
 
     def _get_defaults(self) -> None:
         """Gets defaults if pulse backend and decodes it"""
-        if not self._defaults and isinstance(
-                self._configuration, PulseBackendConfiguration
-        ):
+        if not self._defaults:
             api_defaults = self._api_client.backend_pulse_defaults(self.name())
             if api_defaults:
                 self._defaults = defaults_from_server_data(api_defaults)
