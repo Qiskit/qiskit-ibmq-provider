@@ -30,7 +30,7 @@ class RuntimeClient:
             self,
             credentials: Credentials,
     ) -> None:
-        """RandomClient constructor.
+        """RuntimeClient constructor.
 
         Args:
             credentials: Account credentials.

@@ -23,7 +23,6 @@ from qiskit.providers.ibmq.accountprovider import AccountProvider
 from qiskit.providers.ibmq.ibmqbackend import IBMQSimulator, IBMQBackend
 from qiskit.providers.ibmq.ibmqbackendservice import IBMQBackendService
 from qiskit.providers.ibmq.experiment import IBMExperimentService
-from qiskit.providers.ibmq.random.ibmqrandomservice import IBMQRandomService
 
 from ..decorators import requires_provider, requires_device
 from ..ibmqtestcase import IBMQTestCase
@@ -172,6 +171,3 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
         if 'experiment' in services:
             self.assertIsInstance(self.provider.service('experiment'), IBMExperimentService)
             self.assertIsInstance(self.provider.experiment, IBMExperimentService)
-        if 'random' in services:
-            self.assertIsInstance(self.provider.service('random'), IBMQRandomService)
-            self.assertIsInstance(self.provider.random, IBMQRandomService)
