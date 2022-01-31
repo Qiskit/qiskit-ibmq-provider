@@ -118,6 +118,78 @@ class IBMQBackend(Backend):
     :class:`BackendJobLimit<qiskit.providers.ibmq.BackendJobLimit>` instance::
 
         job_limit = backend.job_limit()
+
+    Here is list of attributes available on the ``IBMQBackend`` class:
+
+        * name: backend name.
+        * backend_version: backend version in the form X.Y.Z.
+        * num_qubits: number of qubits.
+        * target: A :class:`qiskit.transpiler.Target` object for the backend.
+        * basis_gates: list of basis gates names on the backend.
+        * gates: list of basis gates on the backend.
+        * local: backend is local or remote.
+        * simulator: backend is a simulator.
+        * conditional: backend supports conditional operations.
+        * open_pulse: backend supports open pulse.
+        * memory: backend supports memory.
+        * max_shots: maximum number of shots supported.
+        * coupling_map (list): The coupling map for the device
+        * supported_instructions (List[str]): Instructions supported by the backend.
+        * dynamic_reprate_enabled (bool): whether delay between programs can be set dynamically
+          (ie via ``rep_delay``). Defaults to False.
+        * rep_delay_range (List[float]): 2d list defining supported range of repetition
+          delays for backend in μs. First entry is lower end of the range, second entry is
+          higher end of the range. Optional, but will be specified when
+          ``dynamic_reprate_enabled=True``.
+        * default_rep_delay (float): Value of ``rep_delay`` if not specified by user and
+          ``dynamic_reprate_enabled=True``.
+        * n_uchannels: Number of u-channels.
+        * u_channel_lo: U-channel relationship on device los.
+        * meas_levels: Supported measurement levels.
+        * qubit_lo_range: Qubit lo ranges for each qubit with form (min, max) in GHz.
+        * meas_lo_range: Measurement lo ranges for each qubit with form (min, max) in GHz.
+        * dt: Qubit drive channel timestep in nanoseconds.
+        * dtm: Measurement drive channel timestep in nanoseconds.
+        * rep_times: Supported repetition times (program execution time) for backend in μs.
+        * meas_kernels: Supported measurement kernels.
+        * discriminators: Supported discriminators.
+        * hamiltonian: An optional dictionary with fields characterizing the system hamiltonian.
+        * channel_bandwidth (list): Bandwidth of all channels
+          (qubit, measurement, and U)
+        * acquisition_latency (list): Array of dimension
+          n_qubits x n_registers. Latency (in units of dt) to write a
+          measurement result from qubit n into register slot m.
+        * conditional_latency (list): Array of dimension n_channels
+          [d->u->m] x n_registers. Latency (in units of dt) to do a
+          conditional operation on channel n from register slot m
+        * meas_map (list): Grouping of measurement which are multiplexed
+        * max_circuits (int): The maximum number of experiments per job
+        * sample_name (str): Sample name for the backend
+        * n_registers (int): Number of register slots available for feedback
+          (if conditional is True)
+        * register_map (list): An array of dimension n_qubits X
+          n_registers that specifies whether a qubit can store a
+          measurement in a certain register slot.
+        * configurable (bool): True if the backend is configurable, if the
+          backend is a simulator
+        * credits_required (bool): True if backend requires credits to run a
+          job.
+        * online_date (datetime): The date that the device went online
+        * display_name (str): Alternate name field for the backend
+        * description (str): A description for the backend
+        * tags (list): A list of string tags to describe the backend
+        * version: version of ``Backend`` class (Ex: 1, 2)
+        * channels: An optional dictionary containing information of each channel -- their
+          purpose, type, and qubits operated on.
+        * parametric_pulses (list): A list of pulse shapes which are supported on the backend.
+          For example: ``['gaussian', 'constant']``
+        * processor_type (dict): Processor type for this backend. A dictionary of the
+          form ``{"family": <str>, "revision": <str>, segment: <str>}`` such as
+          ``{"family": "Canary", "revision": "1.0", segment: "A"}``.
+
+            * family: Processor family of this backend.
+            * revision: Revision version of this processor.
+            * segment: Segment this processor belongs to within a larger chip.
     """
 
     qobj_warning_issued = False
