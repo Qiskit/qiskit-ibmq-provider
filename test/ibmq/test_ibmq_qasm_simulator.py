@@ -116,38 +116,38 @@ class TestIbmqQasmSimulator(IBMQTestCase):
         result = self.sim_backend.run(transpile(circuit, backend=self.sim_backend)).result()
         self.assertEqual(result.get_counts(circuit), {'0001': 4000})
 
-    def test_new_sim_method(self):
-        """Test new simulator methods."""
-        def _new_submit(qobj, *args, **kwargs):
-            # pylint: disable=unused-argument
-            self.assertEqual(qobj.config.method, 'extended_stabilizer',
-                             f"qobj header={qobj.header}")
-            return mock.MagicMock()
+    # def test_new_sim_method(self):
+    #     """Test new simulator methods."""
+    #     def _new_submit(qobj, *args, **kwargs):
+    #         # pylint: disable=unused-argument
+    #         self.assertEqual(qobj.config.method, 'extended_stabilizer',
+    #                          f"qobj header={qobj.header}")
+    #         return mock.MagicMock()
 
-        backend = copy.deepcopy(self.sim_backend)
-        backend._configuration._data['simulation_method'] = 'extended_stabilizer'
-        backend._submit_job = _new_submit
+    #     backend = copy.deepcopy(self.sim_backend)
+    #     backend._configuration._data['simulation_method'] = 'extended_stabilizer'
+    #     backend._submit_job = _new_submit
 
-        circ = transpile(ReferenceCircuits.bell(), backend=backend)
-        backend.run(circ, header={'test': 'circuits'})
-        qobj = assemble(circ, backend=backend, header={'test': 'qobj'})
-        backend.run(qobj)
+    #     circ = transpile(ReferenceCircuits.bell(), backend=backend)
+    #     backend.run(circ, header={'test': 'circuits'})
+    #     qobj = assemble(circ, backend=backend, header={'test': 'qobj'})
+    #     backend.run(qobj)
 
-    def test_new_sim_method_no_overwrite(self):
-        """Test custom method option is not overwritten."""
-        def _new_submit(qobj, *args, **kwargs):
-            # pylint: disable=unused-argument
-            self.assertEqual(qobj.config.method, 'my_method', f"qobj header={qobj.header}")
-            return mock.MagicMock()
+    # def test_new_sim_method_no_overwrite(self):
+    #     """Test custom method option is not overwritten."""
+    #     def _new_submit(qobj, *args, **kwargs):
+    #         # pylint: disable=unused-argument
+    #         self.assertEqual(qobj.config.method, 'my_method', f"qobj header={qobj.header}")
+    #         return mock.MagicMock()
 
-        backend = copy.deepcopy(self.sim_backend)
-        backend._configuration._data['simulation_method'] = 'extended_stabilizer'
-        backend._submit_job = _new_submit
+    #     backend = copy.deepcopy(self.sim_backend)
+    #     backend._configuration._data['simulation_method'] = 'extended_stabilizer'
+    #     backend._submit_job = _new_submit
 
-        circ = transpile(ReferenceCircuits.bell(), backend=backend)
-        backend.run(circ, method='my_method', header={'test': 'circuits'})
-        qobj = assemble(circ, backend=backend, method='my_method', header={'test': 'qobj'})
-        backend.run(qobj)
+    #     circ = transpile(ReferenceCircuits.bell(), backend=backend)
+    #     backend.run(circ, method='my_method', header={'test': 'circuits'})
+    #     qobj = assemble(circ, backend=backend, method='my_method', header={'test': 'qobj'})
+    #     backend.run(qobj)
 
     @requires_device
     def test_simulator_with_noise_model(self, backend):

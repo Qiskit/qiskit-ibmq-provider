@@ -374,31 +374,31 @@ class TestIBMQJob(IBMQTestCase):
                                  'job {} creation date {} not within range'
                                  .format(job.job_id(), job.creation_date()))
 
-    def test_retrieve_jobs_between_datetimes(self):
-        """Test retrieving jobs created between two specified datetimes."""
-        date_today = datetime.now()
-        past_month = date_today - timedelta(30)
-        past_two_month = date_today - timedelta(60)
+    # def test_retrieve_jobs_between_datetimes(self):
+    #     """Test retrieving jobs created between two specified datetimes."""
+    #     date_today = datetime.now()
+    #     past_month = date_today - timedelta(30)
+    #     past_two_month = date_today - timedelta(60)
 
-        # Used for `db_filter`, should not override `start_datetime` and `end_datetime` arguments.
-        past_ten_days = date_today - timedelta(10)
-        db_filters = [None, {'creationDate': {'gt': past_ten_days}}]
+    #     # Used for `db_filter`, should not override `start_datetime` and `end_datetime` arguments.
+    #     past_ten_days = date_today - timedelta(10)
+    #     db_filters = [None, {'creationDate': {'gt': past_ten_days}}]
 
-        # Add local tz in order to compare to `creation_date` which is tz aware.
-        past_month_tz_aware = past_month.replace(tzinfo=tz.tzlocal())
-        past_two_month_tz_aware = past_two_month.replace(tzinfo=tz.tzlocal())
+    #     # Add local tz in order to compare to `creation_date` which is tz aware.
+    #     past_month_tz_aware = past_month.replace(tzinfo=tz.tzlocal())
+    #     past_two_month_tz_aware = past_two_month.replace(tzinfo=tz.tzlocal())
 
-        for db_filter in db_filters:
-            with self.subTest(db_filter=db_filter):
-                job_list = self.provider.backend.jobs(
-                    backend_name=self.sim_backend.name(), limit=2,
-                    start_datetime=past_two_month, end_datetime=past_month, db_filter=db_filter)
-                self.assertTrue(job_list)
-                for job in job_list:
-                    self.assertTrue(
-                        (past_two_month_tz_aware <= job.creation_date() <= past_month_tz_aware),
-                        'job {} creation date {} not within range'.format(
-                            job.job_id(), job.creation_date()))
+    #     for db_filter in db_filters:
+    #         with self.subTest(db_filter=db_filter):
+    #             job_list = self.provider.backend.jobs(
+    #                 backend_name=self.sim_backend.name(), limit=2,
+    #                 start_datetime=past_two_month, end_datetime=past_month, db_filter=db_filter)
+    #             self.assertTrue(job_list)
+    #             for job in job_list:
+    #                 self.assertTrue(
+    #                     (past_two_month_tz_aware <= job.creation_date() <= past_month_tz_aware),
+    #                     'job {} creation date {} not within range'.format(
+    #                         job.job_id(), job.creation_date()))
 
     def test_retrieve_jobs_db_filter(self):
         """Test retrieving jobs using db_filter."""
@@ -445,17 +445,17 @@ class TestIBMQJob(IBMQTestCase):
                                  "Job {} with creation date {} should not be returned".format(
                                      job.job_id(), job_utc))
 
-    def test_retrieve_jobs_order(self):
-        """Test retrieving jobs with different orders."""
-        job = self.sim_backend.run(self.bell)
-        job.wait_for_final_state()
-        newest_jobs = self.sim_backend.jobs(
-            limit=10, status=JobStatus.DONE, descending=True, start_datetime=self.last_month)
-        self.assertIn(job.job_id(), [rjob.job_id() for rjob in newest_jobs])
+    # def test_retrieve_jobs_order(self):
+    #     """Test retrieving jobs with different orders."""
+    #     job = self.sim_backend.run(self.bell)
+    #     job.wait_for_final_state()
+    #     newest_jobs = self.sim_backend.jobs(
+    #         limit=10, status=JobStatus.DONE, descending=True, start_datetime=self.last_month)
+    #     self.assertIn(job.job_id(), [rjob.job_id() for rjob in newest_jobs])
 
-        oldest_jobs = self.sim_backend.jobs(
-            limit=10, status=JobStatus.DONE, descending=False, start_datetime=self.last_month)
-        self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in oldest_jobs])
+    #     oldest_jobs = self.sim_backend.jobs(
+    #         limit=10, status=JobStatus.DONE, descending=False, start_datetime=self.last_month)
+    #     self.assertNotIn(job.job_id(), [rjob.job_id() for rjob in oldest_jobs])
 
     @skip("Skip until aer issue 1214 is fixed")
     def test_retrieve_failed_job_simulator_partial(self):
