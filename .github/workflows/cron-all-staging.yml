@@ -1,0 +1,102 @@
+# This code is part of Qiskit.
+#
+# (C) Copyright IBM 2020.
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+name: Cron-all-staging
+on:
+  schedule:
+    - cron: '0 5 * * *'
+jobs:
+  test1:
+    name: tests1-python${{ matrix.python-version }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+        os: ["windows-latest", "ubuntu-latest"]
+    env:
+      QE_STAGING_TOKEN: ${{ secrets.QE_STAGING_TOKEN }}
+      QE_STAGING_URL: ${{ secrets.QE_STAGING_URL }}
+      QE_STAGING_RUNTIME_DEVICE: ${{ secrets.QE_STAGING_RUNTIME_DEVICE }}
+      USE_STAGING_CREDENTIALS: True
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_IN_PARALLEL: True
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U git+https://github.com/Qiskit/qiskit-aer.git
+          pip install -c constraints.txt -e .
+          pip install -U -c constraints.txt -r requirements-dev.txt
+      - name: Run Tests
+        run: make test1
+  test2:
+    name: tests2-python${{ matrix.python-version }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+        os: ["windows-latest", "ubuntu-latest"]
+    env:
+      QE_STAGING_TOKEN: ${{ secrets.QE_STAGING_TOKEN }}
+      QE_STAGING_URL: ${{ secrets.QE_STAGING_URL }}
+      QE_STAGING_RUNTIME_DEVICE: ${{ secrets.QE_STAGING_RUNTIME_DEVICE }}
+      USE_STAGING_CREDENTIALS: True
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_IN_PARALLEL: True
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c constraints.txt -e .
+          pip install -U -c constraints.txt -r requirements-dev.txt
+      - name: Run Tests
+        run: make test2
+  test3:
+    name: tests3-python${{ matrix.python-version }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+        os: ["windows-latest", "ubuntu-latest"]
+    env:
+      QE_STAGING_TOKEN: ${{ secrets.QE_STAGING_TOKEN }}
+      QE_STAGING_URL: ${{ secrets.QE_STAGING_URL }}
+      QE_STAGING_RUNTIME_DEVICE: ${{ secrets.QE_STAGING_RUNTIME_DEVICE }}
+      USE_STAGING_CREDENTIALS: True
+      LOG_LEVEL: DEBUG
+      STREAM_LOG: True
+      QISKIT_IN_PARALLEL: True
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c constraints.txt -e .
+          pip install -U -c constraints.txt -r requirements-dev.txt
+      - name: Run Tests
+        run: make test3
