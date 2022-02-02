@@ -211,12 +211,12 @@ class IBMQBackend(Backend):
             api_client: IBM Quantum Experience client used to communicate with the server.
         """
         super().__init__(
+            provider=provider,
             name=configuration.backend_name,
             online_date=configuration.online_date,
             backend_version=configuration.backend_version,
         )
         self._configuration = configuration
-        self._provider = provider
         self._credentials = credentials
         self._api_client = api_client
         self.hub = credentials.hub
@@ -850,7 +850,7 @@ class IBMQBackend(Backend):
         Raises:
             IBMQBackendValueError: If a keyword value is not recognized.
         """
-        return self._provider.backend.jobs(
+        return self.provider.backend.jobs(
             limit=limit, skip=skip, backend_name=self.name, status=status,
             job_name=job_name, start_datetime=start_datetime, end_datetime=end_datetime,
             job_tags=job_tags, job_tags_operator=job_tags_operator,
@@ -889,7 +889,7 @@ class IBMQBackend(Backend):
         Raises:
             IBMQBackendError: If job retrieval failed.
         """
-        job = self._provider.backend.retrieve_job(job_id)
+        job = self.provider.backend.retrieve_job(job_id)
         job_backend = job.backend()
 
         if self.name != job_backend.name:
