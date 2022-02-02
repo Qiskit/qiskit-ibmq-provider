@@ -110,11 +110,11 @@ class IQXDashboard(Subscriber):
                                                         project=pro.credentials.project)
             for back in pro.backends():
                 if not back.configuration().simulator:
-                    if back.name() not in ibmq_backends.keys():
-                        ibmq_backends[back.name()] = \
+                    if back.name not in ibmq_backends.keys():
+                        ibmq_backends[back.name] = \
                             BackendWithProviders(backend=back, providers=[pro_name])
                     else:
-                        ibmq_backends[back.name()].providers.append(pro_name)
+                        ibmq_backends[back.name].providers.append(pro_name)
 
         self.backend_dict = ibmq_backends
 
@@ -251,7 +251,7 @@ class IQXDashboard(Subscriber):
             position = queue_info.position if queue_info else None
             est_time = queue_info.estimated_start_time if queue_info else None
             job_widget = create_job_widget(self, job,
-                                           job.backend().name(),
+                                           job.backend().name,
                                            status.name,
                                            position,
                                            est_time)

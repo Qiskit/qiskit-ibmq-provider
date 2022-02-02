@@ -256,7 +256,7 @@ class IBMQBackend(Backend):
     def _get_properties(self) -> None:
         """Gets backend properties and decodes it"""
         if not self._properties:
-            api_properties = self._api_client.backend_properties(self.name())
+            api_properties = self._api_client.backend_properties(self.name)
             if api_properties:
                 backend_properties = properties_from_server_data(api_properties)
                 self._properties = backend_properties
@@ -264,7 +264,7 @@ class IBMQBackend(Backend):
     def _get_defaults(self) -> None:
         """Gets defaults if pulse backend and decodes it"""
         if not self._defaults:
-            api_defaults = self._api_client.backend_pulse_defaults(self.name())
+            api_defaults = self._api_client.backend_pulse_defaults(self.name)
             if api_defaults:
                 self._defaults = defaults_from_server_data(api_defaults)
 
@@ -587,7 +587,7 @@ class IBMQBackend(Backend):
         try:
             qobj_dict = qobj.to_dict()
             submit_info = self._api_client.job_submit(
-                backend_name=self.name(),
+                backend_name=self.name,
                 qobj_dict=qobj_dict,
                 job_name=job_name,
                 job_tags=job_tags,
@@ -614,15 +614,6 @@ class IBMQBackend(Backend):
                                               'when submitting job: {}'.format(str(err))) from err
         Publisher().publish("ibmq.job.start", job)
         return job
-
-    # pylint: disable=method-hidden
-    def name(self) -> str:
-        """Return the backend name.
-
-        Returns:
-            str: the name of the backend.
-        """
-        return self._configuration.backend_name
 
     def properties(
             self,
@@ -664,7 +655,7 @@ class IBMQBackend(Backend):
             datetime = local_to_utc(datetime)
 
         if datetime or refresh or self._properties is None:
-            api_properties = self._api_client.backend_properties(self.name(), datetime=datetime)
+            api_properties = self._api_client.backend_properties(self.name, datetime=datetime)
             if not api_properties:
                 return None
             backend_properties = properties_from_server_data(api_properties)
@@ -687,7 +678,7 @@ class IBMQBackend(Backend):
         Raises:
             IBMQBackendApiProtocolError: If the status for the backend cannot be formatted properly.
         """
-        api_status = self._api_client.backend_status(self.name())
+        api_status = self._api_client.backend_status(self.name)
 
         try:
             return BackendStatus.from_dict(api_status)
@@ -711,7 +702,7 @@ class IBMQBackend(Backend):
             The backend pulse defaults or ``None`` if the backend does not support pulse.
         """
         if refresh or self._defaults is None:
-            api_defaults = self._api_client.backend_pulse_defaults(self.name())
+            api_defaults = self._api_client.backend_pulse_defaults(self.name)
             if api_defaults:
                 self._defaults = defaults_from_server_data(api_defaults)
             else:
@@ -750,7 +741,7 @@ class IBMQBackend(Backend):
         Raises:
             IBMQBackendApiProtocolError: If an unexpected value is received from the server.
         """
-        api_job_limit = self._api_client.backend_job_limit(self.name())
+        api_job_limit = self._api_client.backend_job_limit(self.name)
 
         try:
             job_limit = BackendJobLimit(**api_job_limit)
@@ -860,7 +851,7 @@ class IBMQBackend(Backend):
             IBMQBackendValueError: If a keyword value is not recognized.
         """
         return self._provider.backend.jobs(
-            limit=limit, skip=skip, backend_name=self.name(), status=status,
+            limit=limit, skip=skip, backend_name=self.name, status=status,
             job_name=job_name, start_datetime=start_datetime, end_datetime=end_datetime,
             job_tags=job_tags, job_tags_operator=job_tags_operator,
             experiment_id=experiment_id, descending=descending, db_filter=db_filter)
@@ -901,14 +892,14 @@ class IBMQBackend(Backend):
         job = self._provider.backend.retrieve_job(job_id)
         job_backend = job.backend()
 
-        if self.name() != job_backend.name():
+        if self.name != job_backend.name:
             warnings.warn('Job {} belongs to another backend than the one queried. '
                           'The query was made on backend {}, '
                           'but the job actually belongs to backend {}.'
-                          .format(job_id, self.name(), job_backend.name()))
+                          .format(job_id, self.name, job_backend.name))
             raise IBMQBackendError('Failed to get job {}: '
                                    'job does not belong to backend {}.'
-                                   .format(job_id, self.name()))
+                                   .format(job_id, self.name))
 
         return job
 
@@ -935,8 +926,8 @@ class IBMQBackend(Backend):
         start_datetime = local_to_utc(start_datetime) if start_datetime else None
         end_datetime = local_to_utc(end_datetime) if end_datetime else None
         raw_response = self._api_client.backend_reservations(
-            self.name(), start_datetime, end_datetime)
-        return convert_reservation_data(raw_response, self.name())
+            self.name, start_datetime, end_datetime)
+        return convert_reservation_data(raw_response, self.name)
 
     def configuration(self) -> Union[QasmBackendConfiguration, PulseBackendConfiguration]:
         """Return the backend configuration.
@@ -995,7 +986,7 @@ class IBMQBackend(Backend):
             credentials_info = "hub='{}', group='{}', project='{}'".format(
                 self.hub, self.group, self.project)
         return "<{}('{}') from IBMQ({})>".format(
-            self.__class__.__name__, self.name(), credentials_info)
+            self.__class__.__name__, self.name, credentials_info)
 
     def _deprecate_id_instruction(
             self,
@@ -1185,7 +1176,7 @@ class IBMQRetiredBackend(IBMQBackend):
         """
         super().__init__(configuration, provider, credentials, api_client)
         self._status = BackendStatus(
-            backend_name=self.name(),
+            backend_name=self.name,
             backend_version=self.configuration().backend_version,
             operational=False,
             pending_jobs=0,
@@ -1238,7 +1229,7 @@ class IBMQRetiredBackend(IBMQBackend):
     ) -> None:
         """Run a Qobj."""
         # pylint: disable=arguments-differ
-        raise IBMQBackendError('This backend ({}) is no longer available.'.format(self.name()))
+        raise IBMQBackendError('This backend ({}) is no longer available.'.format(self.name))
 
     @classmethod
     def from_name(

@@ -137,7 +137,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
                         display_name)
                     self.assertEqual(backend_by_name, backend_by_display_name)
                     self.assertEqual(
-                        backend_by_display_name.name(), backend_name)
+                        backend_by_display_name.name, backend_name)
 
     def test_remote_backend_properties_filter_date(self):
         """Test backend properties filtered by date."""
@@ -157,7 +157,7 @@ class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
         """Test provider backend has correct attributes."""
         backend_attributes = {back for back in dir(self.provider.backend)
                               if isinstance(getattr(self.provider.backend, back), IBMQBackend)}
-        backends = {back.name().lower() for back in self.provider._backends.values()}
+        backends = {back.name.lower() for back in self.provider._backends.values()}
         self.assertEqual(backend_attributes, backends)
 
     def test_provider_services(self):

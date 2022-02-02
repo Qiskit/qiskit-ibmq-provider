@@ -293,7 +293,7 @@ def main(backend, user_messenger, **kwargs):
 
     def test_run_program_failed(self):
         """Test a failed program execution."""
-        options = {'backend_name': self.backend.name()}
+        options = {'backend_name': self.backend.name}
         job = self.provider.runtime.run(program_id=self.program_id, inputs={}, options=options)
         self.log.info("Runtime job %s submitted.", job.job_id())
 
@@ -314,7 +314,7 @@ def main(backend, user_messenger, **kwargs):
             'sleep_per_iteration': 60
         }
         program_id = self._upload_program(max_execution_time=max_execution_time)
-        options = {'backend_name': self.backend.name()}
+        options = {'backend_name': self.backend.name}
         job = self.provider.runtime.run(program_id=program_id, inputs=inputs, options=options)
         self.log.info("Runtime job %s submitted.", job.job_id())
 
@@ -580,7 +580,7 @@ def main(backend, user_messenger, **kwargs):
         interim_results = get_complex_types()
         inputs = {'iterations': 1,
                   'interim_results': interim_results}
-        options = {'backend_name': self.backend.name()}
+        options = {'backend_name': self.backend.name}
         job = self.provider.runtime.run(program_id=self.program_id, inputs=inputs,
                                         options=options)
         self.log.info("Runtime job %s submitted.", job.job_id())
@@ -616,7 +616,7 @@ def main(backend, user_messenger, **kwargs):
     def test_run_circuit(self):
         """Test run_circuits"""
         job = self.provider.run_circuits(
-            ReferenceCircuits.bell(), backend_name=self.backend.name(), shots=100)
+            ReferenceCircuits.bell(), backend_name=self.backend.name, shots=100)
         counts = job.result().get_counts()
         self.assertEqual(100, sum(counts.values()))
 
@@ -734,7 +734,7 @@ def main(backend, user_messenger, **kwargs):
                   'interim_results': interim_results or {},
                   'final_result': final_result or {}}
         pid = program_id or self.program_id
-        options = {'backend_name': self.backend.name()}
+        options = {'backend_name': self.backend.name}
         if log_level:
             options["log_level"] = log_level
         job = self.provider.runtime.run(program_id=pid, inputs=inputs,

@@ -104,7 +104,7 @@ class TestBackendFilters(IBMQTestCase):
         backs = [backend]
         for back in self.provider.backends(simulator=False, operational=True,
                                            status_msg='active'):
-            if back.name() != backend.name():
+            if back.name != backend.name:
                 backs.append(back)
                 break
         self.assertTrue(least_busy(backs, window))
@@ -122,7 +122,7 @@ class TestBackendFilters(IBMQTestCase):
 
         least_busy_backend = least_busy(backends)
         self.assertTrue(least_busy_backend)
-        self.assertNotEqual(least_busy_backend.name(), paused_backend.name())
+        self.assertNotEqual(least_busy_backend.name, paused_backend.name)
         self.assertEqual(least_busy_backend.status().status_msg, 'active')
 
     def test_filter_min_num_qubits(self):

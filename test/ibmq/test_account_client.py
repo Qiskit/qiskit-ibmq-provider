@@ -116,7 +116,7 @@ class TestAccountClient(IBMQTestCase):
                     'urlopen',
                     side_effect=MaxRetryError(
                         HTTPConnectionPool('host'), 'url', reason=exception_message)):
-                _ = client.job_submit(backend.name(), qobj.to_dict())
+                _ = client.job_submit(backend.name, qobj.to_dict())
         except RequestsApiError:
             exception_traceback_str = traceback.format_exc()
 

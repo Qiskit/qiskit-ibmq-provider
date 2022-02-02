@@ -75,7 +75,7 @@ class IBMQBackendService:
     def _discover_backends(self) -> None:
         """Discovers the remote backends for this provider, if not already known."""
         for backend in self._provider._backends.values():
-            backend_name = to_python_identifier(backend.name())
+            backend_name = to_python_identifier(backend.name)
 
             # Append _ if duplicate
             while backend_name in self.__dict__:

@@ -113,7 +113,7 @@ class TestIQXDashboard(IBMQTestCase):
         """Test jobs tab."""
         backend = self.provider.get_backend('ibmq_qasm_simulator')
         job = backend.run(transpile(ReferenceCircuits.bell(), backend))
-        create_job_widget(mock.MagicMock(), job, backend=backend.name(), status=job.status().value)
+        create_job_widget(mock.MagicMock(), job, backend=backend.name, status=job.status().value)
 
     def test_watcher_monitor(self):
         """Test job watcher."""

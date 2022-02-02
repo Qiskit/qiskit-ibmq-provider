@@ -461,7 +461,7 @@ def iplot_error_map(
     for ann in fig['layout']['annotations']:
         ann['font'] = dict(size=13)
 
-    title_text = "{} Error Map".format(backend.name()) if show_title else ''
+    title_text = "{} Error Map".format(backend.name) if show_title else ''
     fig.update_layout(showlegend=False,
                       plot_bgcolor=background_color,
                       paper_bgcolor=background_color,

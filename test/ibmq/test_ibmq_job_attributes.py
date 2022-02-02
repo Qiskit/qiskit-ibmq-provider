@@ -62,7 +62,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
 
     def test_get_backend_name(self):
         """Test getting a backend name."""
-        self.assertTrue(self.sim_job.backend().name() == self.sim_backend.name())
+        self.assertTrue(self.sim_job.backend().name == self.sim_backend.name)
 
     @slow_test
     @requires_device
@@ -92,7 +92,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
         # Check using partial matching.
         job_name_partial = job_name[8:]
         retrieved_jobs = self.provider.backend.jobs(
-            backend_name=self.sim_backend.name(), job_name=job_name_partial,
+            backend_name=self.sim_backend.name, job_name=job_name_partial,
             start_datetime=self.last_week)
         self.assertGreaterEqual(len(retrieved_jobs), 1)
         retrieved_job_ids = {job.job_id() for job in retrieved_jobs}
@@ -101,7 +101,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
         # Check using regular expressions.
         job_name_regex = '^{}$'.format(job_name)
         retrieved_jobs = self.provider.backend.jobs(
-            backend_name=self.sim_backend.name(), job_name=job_name_regex,
+            backend_name=self.sim_backend.name, job_name=job_name_regex,
             start_datetime=self.last_week)
         self.assertEqual(len(retrieved_jobs), 1)
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
@@ -137,7 +137,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
             job_ids.add(job.job_id())
 
         retrieved_jobs = self.provider.backend.jobs(
-            backend_name=self.sim_backend.name(), job_name=job_name,
+            backend_name=self.sim_backend.name, job_name=job_name,
             start_datetime=self.last_week)
 
         self.assertEqual(len(retrieved_jobs), 2,

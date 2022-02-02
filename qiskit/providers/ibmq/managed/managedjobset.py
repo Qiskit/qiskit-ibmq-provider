@@ -174,7 +174,7 @@ class ManagedJobSet:
         for job in jobs:
             # Verify the job is proper.
             job_set_name, job_index = self._parse_job_name(job)
-            if job_set_name != self._name or job.backend().name() != self._backend.name():
+            if job_set_name != self._name or job.backend().name != self._backend.name:
                 raise IBMQJobManagerInvalidStateError(
                     'Job {} is tagged for the job set {} but does not appear '
                     'to belong to the set.'.format(job.job_id(), self.job_set_id()))
@@ -312,7 +312,7 @@ class ManagedJobSet:
                         'Timeout while waiting for the results for experiments {}-{}.'.format(
                             mjob.start_index, self._managed_jobs[-1].end_index))
 
-        self._managed_results = ManagedResults(self, self._backend.name(), success)
+        self._managed_results = ManagedResults(self, self._backend.name, success)
 
         return self._managed_results
 

@@ -87,7 +87,7 @@ class TestIBMQBackend(IBMQTestCase):
         """Check the backend pulse defaults of each backend."""
         provider = self.backend.provider()
         for backend in provider.backends():
-            with self.subTest(backend_name=backend.name()):
+            with self.subTest(backend_name=backend.name):
                 defaults = backend.defaults()
                 if backend.configuration().open_pulse:
                     self.assertIsNotNone(defaults)

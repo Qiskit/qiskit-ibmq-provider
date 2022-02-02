@@ -108,7 +108,7 @@ For example::
     params.measurement_error_mitigation = True
 
     # Configure backend options
-    options = {'backend_name': backend.name()}
+    options = {'backend_name': backend.name}
 
     # Execute the circuit using the "circuit-runner" program.
     job = provider.runtime.run(program_id="circuit-runner",

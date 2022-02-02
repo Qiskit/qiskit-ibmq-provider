@@ -52,7 +52,7 @@ class TestIBMQIntegration(IBMQTestCase):
         """Test components of a result from a remote simulator."""
         remote_result = execute(self._qc1, self.sim_backend).result()
         self.assertIsInstance(remote_result, Result)
-        self.assertEqual(remote_result.backend_name, self.sim_backend.name())
+        self.assertEqual(remote_result.backend_name, self.sim_backend.name)
         self.assertIsInstance(remote_result.job_id, str)
         self.assertEqual(remote_result.status, 'COMPLETED')
         self.assertEqual(remote_result.results[0].status, 'DONE')

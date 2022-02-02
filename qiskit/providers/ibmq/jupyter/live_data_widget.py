@@ -1187,7 +1187,7 @@ class JobInformationView:
         content += f"<td class='livedata-table'>{self.get_job_status(job)}</td>"
         content += "<td class='livedata-table'></td>"
         content += "<td class='livedata-table'>System</td>"
-        content += f"<td class='livedata-table'>{self._backend.name()}</td></tr>"
+        content += f"<td class='livedata-table'>{self._backend.name}</td></tr>"
 
         content += "<tr class='livedata-table'><td class='livedata-table'>Estimated completion</td>"
         content += f"<td class='livedata-table'>{self.get_job_completion_time(job)}</td>"

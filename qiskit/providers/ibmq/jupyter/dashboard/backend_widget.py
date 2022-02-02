@@ -43,7 +43,7 @@ def make_backend_widget(backend_item: BackendWithProviders) -> wid.HBox:
     next_resrv = get_next_reservation(backend)
 
     name_str = "<font size='5' face='monospace'>%s</font>"
-    backend_name = wid.HTML(value=name_str % backend.name())
+    backend_name = wid.HTML(value=name_str % backend.name)
 
     qubits_wid = wid.HTML(value=STAT_FONT_TITLE.format("Qubits:"))
     qubits_val_wid = wid.HTML(value=STAT_FONT_VALUE.format(config.n_qubits))

@@ -53,7 +53,7 @@ def backend_widget(backend: Union[IBMQBackend, FakeBackend]) -> None:
                         vue.Toolbar(flat=True, color="#002d9c",
                                     children=[
                                         vue.ToolbarTitle(children=['{} @ ({}/{}/{})'.format(
-                                            backend.name(),
+                                            backend.name,
                                             cred.hub,
                                             cred.group,
                                             cred.project)],
