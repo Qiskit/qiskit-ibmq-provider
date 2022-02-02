@@ -45,9 +45,12 @@ class TestRuntimeIntegration(IBMQTestCase):
 import random
 import time
 import warnings
+import logging
 
 from qiskit import transpile
 from qiskit.circuit.random import random_circuit
+
+logger = logging.getLogger("qiskit-test")
 
 def prepare_circuits(backend):
     circuit = random_circuit(num_qubits=5, depth=4, measure=True,
@@ -68,6 +71,7 @@ def main(backend, user_messenger, **kwargs):
     user_messenger.publish(final_result, final=True)
     print("this is a stdout message")
     warnings.warn("this is a stderr message")
+    logger.info("this is an info log")
     """
 
     RUNTIME_PROGRAM_METADATA = {
@@ -667,6 +671,20 @@ def main(backend, user_messenger, **kwargs):
         self.assertIn("this is a stdout message", job_logs)
         self.assertIn("this is a stderr message", job_logs)
 
+    def test_run_program_log_level(self):
+        """Test running with a custom log level."""
+        levels = ["INFO", "ERROR"]
+        for level in levels:
+            with self.subTest(level=level):
+                job = self._run_program(log_level=level)
+                job.wait_for_final_state()
+                expect_info_msg = level == "INFO"
+                self.assertEqual(
+                    "info log" in job.logs(),
+                    expect_info_msg,
+                    f"Job log is {job.logs()}",
+                    )
+
     def _validate_program(self, program):
         """Validate a program."""
         self.assertTrue(program)
@@ -710,13 +728,15 @@ def main(backend, user_messenger, **kwargs):
 
     def _run_program(self, program_id=None, iterations=1,
                      interim_results=None, final_result=None,
-                     callback=None):
+                     callback=None, log_level=None):
         """Run a program."""
         inputs = {'iterations': iterations,
                   'interim_results': interim_results or {},
                   'final_result': final_result or {}}
         pid = program_id or self.program_id
         options = {'backend_name': self.backend.name()}
+        if log_level:
+            options["log_level"] = log_level
         job = self.provider.runtime.run(program_id=pid, inputs=inputs,
                                         options=options, callback=callback)
         self.log.info("Runtime job %s submitted.", job.job_id())

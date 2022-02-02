@@ -13,7 +13,7 @@
 """Client for accessing IBM Quantum runtime service."""
 
 import logging
-from typing import Any, List, Dict, Union, Optional
+from typing import Any, Dict, Optional
 
 from qiskit.providers.ibmq.credentials import Credentials
 from qiskit.providers.ibmq.api.session import RetrySession
@@ -111,7 +111,8 @@ class RuntimeClient:
             credentials: Credentials,
             backend_name: str,
             params: Dict,
-            image: str
+            image: str,
+            log_level: Optional[str] = None
     ) -> Dict:
         """Run the specified program.
 
@@ -121,6 +122,7 @@ class RuntimeClient:
             backend_name: Name of the backend to run the program.
             params: Parameters to use.
             image: The runtime image to use.
+            log_level: Log level to use.
 
         Returns:
             JSON response.
@@ -128,7 +130,7 @@ class RuntimeClient:
         return self.api.program_run(program_id=program_id, hub=credentials.hub,
                                     group=credentials.group, project=credentials.project,
                                     backend_name=backend_name, params=params,
-                                    image=image)
+                                    image=image, log_level=log_level)
 
     def program_delete(self, program_id: str) -> None:
         """Delete the specified program.

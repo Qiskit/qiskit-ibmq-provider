@@ -77,19 +77,8 @@ class BaseFakeRuntimeJob:
 
     _executor = ThreadPoolExecutor()  # pylint: disable=bad-option-value,consider-using-with
 
-    def __init__(
-        self,
-        job_id,
-        program_id,
-        hub,
-        group,
-        project,
-        backend_name,
-        final_status,
-        params,
-        image,
-        log_level=None,
-    ):
+    def __init__(self, job_id, program_id, hub, group, project, backend_name, final_status,
+                 params, image, log_level=None):
         """Initialize a fake job."""
         self._job_id = job_id
         self._status = final_status or "QUEUED"

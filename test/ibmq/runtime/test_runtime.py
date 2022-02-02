@@ -441,6 +441,12 @@ if __name__ == '__main__':
         self.assertTrue(job.result())
         self.assertEqual(job.image, image)
 
+    def test_run_program_with_custom_log_level(self):
+        """Test running program with a custom log level."""
+        job = self._run_program(log_level="DEBUG")
+        job_raw = self.runtime._api_client._get_job(job.job_id())
+        self.assertEqual(job_raw.log_level, "DEBUG")
+
     def test_retrieve_program_data(self):
         """Test retrieving program data"""
         program_id = self._upload_program(name="qiskit-test")
@@ -739,9 +745,11 @@ if __name__ == '__main__':
         return program_id
 
     def _run_program(self, program_id=None, inputs=None, job_classes=None, final_status=None,
-                     decoder=None, image=""):
+                     decoder=None, image="", log_level=None):
         """Run a program."""
         options = {'backend_name': "some_backend"}
+        if log_level:
+            options["log_level"] = log_level
         if final_status is not None:
             self.runtime._api_client.set_final_status(final_status)
         elif job_classes:
