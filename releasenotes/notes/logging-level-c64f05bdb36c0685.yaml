@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    You can now specify a different logging level in the ``options`` keyword
+    when submitting a Qiskit Runtime job with the
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.run` method.
+deprecations:
+  - |
+    The ``image`` keyword in the
+    :meth:`qiskit.providers.ibmq.runtime.IBMRuntimeService.run` method is
+    deprecated. You should instead specify the image to use in the ``options``
+    keyword.
