@@ -1128,7 +1128,7 @@ class JobInformationView:
 
         # To get all the information needed, we request the job details to the API
         # The information returned is the type of QiskitJob
-        qiskit_job = self._backend.provider.backend.retrieve_job(job_id=job['id'])
+        qiskit_job = self._backend.retrieve_job(job_id=job['id'])
         status = qiskit_job.status()
         if status in [JobStatus.RUNNING, JobStatus.DONE]:
             self.show_progress_bar()
