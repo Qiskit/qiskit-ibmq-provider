@@ -88,7 +88,7 @@ def main(backend, user_messenger, **kwargs):
         super().setUpClass()
         cls.backend = backend
         cls.poll_time = 1 if backend.configuration().simulator else 5
-        cls.provider = backend.provider()
+        cls.provider = backend.provider
         metadata = copy.deepcopy(cls.RUNTIME_PROGRAM_METADATA)
         metadata['name'] = cls._get_program_name()
         try:

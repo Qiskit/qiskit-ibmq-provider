@@ -144,7 +144,7 @@ class LiveDataVisualization:
         The list received includes objects with the jobs' info is a dict composed
         by the fields: 'id', 'liveDataEnabled', 'creationDate'.
         The objects included in the list are not same as a Qiskit Job"""
-        provider = self.backend.provider()
+        provider = self.backend.provider
         livedata_jobs = []
 
         if provider is not None and not isinstance(provider.backend, FakeBackend):
@@ -296,7 +296,7 @@ class LiveDataVisualization:
             json.dumps(
                 {
                     "type": "authentication",
-                    "data": self.backend.provider().credentials.access_token,
+                    "data": self.backend.provider.credentials.access_token,
                 }
             )
         )
@@ -344,7 +344,7 @@ class LiveDataVisualization:
         """Init Websockets using Websockets library
 
         """
-        uri: str = (f"{self.backend.provider().credentials.websockets_url}"
+        uri: str = (f"{self.backend.provider.credentials.websockets_url}"
                     f"jobs/{self.selected_job['id']}/live_data")
         logger.debug("🔌 ws@job_id #%s connecting to %s", self.selected_job['id'], uri)
         this_ws = None
@@ -1128,7 +1128,7 @@ class JobInformationView:
 
         # To get all the information needed, we request the job details to the API
         # The information returned is the type of QiskitJob
-        qiskit_job = self._backend.provider().backend.retrieve_job(job_id=job['id'])
+        qiskit_job = self._backend.provider.backend.retrieve_job(job_id=job['id'])
         status = qiskit_job.status()
         if status in [JobStatus.RUNNING, JobStatus.DONE]:
             self.show_progress_bar()

@@ -197,7 +197,7 @@ class TestIBMQJob(IBMQTestCase):
         backend_1 = backend
         # Get a second backend.
         backend_2 = None
-        provider = backend.provider()
+        provider = backend.provider
         for my_backend in provider.backends():
             if my_backend.status().operational and my_backend.name != backend_1.name:
                 backend_2 = my_backend
