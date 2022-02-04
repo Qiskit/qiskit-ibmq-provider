@@ -234,16 +234,6 @@ class IBMQBackend(Backend):
                 "rep_delay",
                 (configuration.rep_delay_range[0], configuration.rep_delay_range[1]),
             )
-        if hasattr(configuration, "qubit_lo_range"):
-            self.options.set_validator(
-                "qubit_lo_freq",
-                (configuration.qubit_lo_range[0], configuration.qubit_lo_range[1]),
-            )
-        if hasattr(configuration, "meas_lo_range"):
-            self.options.set_validator(
-                "meas_lo_freq",
-                (configuration.meas_lo_range[0], configuration.meas_lo_range[1]),
-            )
 
     def __getattr__(self, name: str) -> Any:
         """Gets attribute from self or configuration
