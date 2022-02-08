@@ -27,7 +27,8 @@ REQUIREMENTS = [
     "python-dateutil>=2.8.0",
     "websocket-client>=1.0.1",
     "websockets>=10.0 ; python_version>='3.7'",
-    "websockets>=9.1 ; python_version<'3.7'"
+    "websockets>=9.1 ; python_version<'3.7'",
+    "dataclasses>=0.8 ; python_version<'3.7'"
 ]
 
 # Handle version.
