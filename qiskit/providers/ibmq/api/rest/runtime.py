@@ -13,7 +13,7 @@
 """Runtime REST adapter."""
 
 import logging
-from typing import Dict, List, Any, Union, Optional
+from typing import Dict, Any, Union, Optional
 import json
 from concurrent import futures
 
@@ -114,7 +114,8 @@ class Runtime(RestAdapterBase):
             project: str,
             backend_name: str,
             params: Dict,
-            image: str
+            image: str,
+            log_level: Optional[str] = None
     ) -> Dict:
         """Execute the program.
 
@@ -126,6 +127,7 @@ class Runtime(RestAdapterBase):
             backend_name: Name of the backend.
             params: Program parameters.
             image: Runtime image.
+            log_level: Log level to use.
 
         Returns:
             JSON response.
@@ -140,6 +142,8 @@ class Runtime(RestAdapterBase):
             'params': params,
             'runtime': image
         }
+        if log_level:
+            payload["log_level"] = log_level
         data = json.dumps(payload, cls=RuntimeEncoder)
         return self.session.post(url, data=data).json()
 

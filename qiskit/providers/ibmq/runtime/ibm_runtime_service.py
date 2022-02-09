@@ -15,7 +15,6 @@
 import logging
 from typing import Dict, Callable, Optional, Union, List, Any, Type
 import json
-import re
 import warnings
 
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
@@ -27,6 +26,7 @@ from .utils import RuntimeDecoder, to_base64_string
 from .exceptions import (QiskitRuntimeError, RuntimeDuplicateProgramError, RuntimeProgramNotFound,
                          RuntimeJobNotFound)
 from .program.result_decoder import ResultDecoder
+from .runtime_options import RuntimeOptions
 from ..api.clients.runtime import RuntimeClient
 
 from ..api.exceptions import RequestsApiError
@@ -232,7 +232,7 @@ class IBMRuntimeService:
     def run(
             self,
             program_id: str,
-            options: Dict,
+            options: Union[RuntimeOptions, Dict],
             inputs: Union[Dict, ParameterNamespace],
             callback: Optional[Callable] = None,
             result_decoder: Optional[Type[ResultDecoder]] = None,
@@ -242,8 +242,9 @@ class IBMRuntimeService:
 
         Args:
             program_id: Program ID.
-            options: Runtime options that control the execution environment.
-                Currently the only available option is ``backend_name``, which is required.
+            options: Runtime options that control the execution environment. See
+                :class:`RuntimeOptions` for all available options.
+                Currently the only required option is ``backend_name``.
             inputs: Program input parameters. These input values are passed
                 to the runtime program.
             callback: Callback function to be invoked for any interim results.
@@ -263,25 +264,31 @@ class IBMRuntimeService:
         Raises:
             IBMQInputValueError: If input is invalid.
         """
-        if 'backend_name' not in options:
-            raise IBMQInputValueError('"backend_name" is required field in "options"')
+        if isinstance(options, dict):
+            options = RuntimeOptions(**options)
+
+        if image:
+            warnings.warn("Passing the 'image' keyword to IBMRuntimeService.run is "
+                          "deprecated and will be removed in a future release. "
+                          "Please pass it in as part of 'options'.",
+                          DeprecationWarning, stacklevel=2)
+            options.image = image
+
+        options.validate()
+
         # If using params object, extract as dictionary
         if isinstance(inputs, ParameterNamespace):
             inputs.validate()
             inputs = vars(inputs)
 
-        if image and not \
-            re.match("[a-zA-Z0-9]+([/.\\-_][a-zA-Z0-9]+)*:[a-zA-Z0-9]+([.\\-_][a-zA-Z0-9]+)*$",
-                     image):
-            raise IBMQInputValueError('"image" needs to be in form of image_name:tag')
-
-        backend_name = options['backend_name']
+        backend_name = options.backend_name
         result_decoder = result_decoder or ResultDecoder
         response = self._api_client.program_run(program_id=program_id,
                                                 credentials=self._provider.credentials,
                                                 backend_name=backend_name,
                                                 params=inputs,
-                                                image=image)
+                                                image=options.image,
+                                                log_level=options.log_level)
 
         backend = self._provider.get_backend(backend_name)
         job = RuntimeJob(backend=backend,
@@ -290,7 +297,7 @@ class IBMRuntimeService:
                          job_id=response['id'], program_id=program_id, params=inputs,
                          user_callback=callback,
                          result_decoder=result_decoder,
-                         image=image)
+                         image=options.image)
         return job
 
     def upload_program(
