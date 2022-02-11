@@ -240,6 +240,13 @@ class IBMQBackend(Backend):
         This magic method executes when user accesses an attribute that
         does not yet exist on IBMBackend class.
         """
+        # Prevent recursion since these properties are accessed within __getattr__
+        if name in ["_properties", "_defaults", "_target"]:
+            raise AttributeError(
+                "'{}' object has no attribute '{}'".format(
+                    self.__class__.__name__, name
+                )
+            )
         # Lazy load properties and pulse defaults and construct the target object.
         self._get_properties()
         self._get_defaults()
