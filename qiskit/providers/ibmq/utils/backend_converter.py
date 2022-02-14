@@ -22,15 +22,16 @@ from qiskit.circuit.parameter import Parameter
 from qiskit.circuit.gate import Gate
 from qiskit.circuit.measure import Measure
 from qiskit.circuit.reset import Reset
-from qiskit.providers.models.pulsedefaults import PulseDefaults
-from qiskit.test.mock.utils.json_decoder import decode_pulse_defaults
+from qiskit.providers.models import BackendConfiguration, BackendProperties, PulseDefaults
 
 
 def convert_to_target(
-        configuration: Dict, properties: Dict = None, defaults: Dict = None
+        configuration: BackendConfiguration,
+        properties: BackendProperties = None,
+        defaults: PulseDefaults = None
 ) -> Target:
     """Uses configuration, properties and pulse defaults
-    dictionaries to construct and return Target class.
+    to construct and return Target class.
     """
     name_mapping = {
         "id": IGate(),
@@ -46,23 +47,23 @@ def convert_to_target(
     if properties is not None:
         # Parse instructions
         gates: Dict[str, Any] = {}
-        for gate in properties["gates"]:
-            name = gate["gate"]
+        for gate in properties.gates:
+            name = gate.gate
             if name in name_mapping:
                 if name not in gates:
                     gates[name] = {}
             elif name not in custom_gates:
-                custom_gate = Gate(name, len(gate["qubits"]), [])
+                custom_gate = Gate(name, len(gate.qubits), [])
                 custom_gates[name] = custom_gate
                 gates[name] = {}
 
-            qubits = tuple(gate["qubits"])
+            qubits = tuple(gate.qubits)
             gate_props = {}
-            for param in gate["parameters"]:
-                if param["name"] == "gate_error":
-                    gate_props["error"] = param["value"]
-                if param["name"] == "gate_length":
-                    gate_props["duration"] = apply_prefix(param["value"], param["unit"])
+            for param in gate.parameters:
+                if param.name == "gate_error":
+                    gate_props["error"] = param.value
+                if param.name == "gate_length":
+                    gate_props["duration"] = apply_prefix(param.value, param.unit)
             gates[name][qubits] = InstructionProperties(**gate_props)
         for gate, props in gates.items():
             if gate in name_mapping:
@@ -72,53 +73,43 @@ def convert_to_target(
             target.add_instruction(inst, props)
         # Create measurement instructions:
         measure_props = {}
-        count = 0
-        for qubit in properties["qubits"]:
-            qubit_prop = {}
-            for prop in qubit:
-                if prop["name"] == "readout_length":
-                    qubit_prop["duration"] = apply_prefix(prop["value"], prop["unit"])
-                if prop["name"] == "readout_error":
-                    qubit_prop["error"] = prop["value"]
-            measure_props[(count,)] = InstructionProperties(**qubit_prop)
-            count += 1
+        for qubit, _ in enumerate(properties.qubits):
+            measure_props[(qubit,)] = InstructionProperties(
+                duration=properties.readout_length(qubit),
+                error=properties.readout_error(qubit))
         target.add_instruction(Measure(), measure_props)
     # Parse from configuration because properties doesn't exist
     else:
-        for gate in configuration["gates"]:
-            name = gate["name"]
+        for gate in configuration.gates:
+            name = gate.name
             gate_props = (
-                {tuple(x): None for x in gate["coupling_map"]}  # type: ignore[misc]
-                if "coupling_map" in gate
+                {tuple(x): None for x in gate.coupling_map}  # type: ignore[misc]
+                if hasattr(gate, "coupling_map")
                 else {}
             )
-            gate_len = len(gate["coupling_map"][0]) if "coupling_map" in gate else 0
+            gate_len = len(gate.coupling_map[0]) if hasattr(gate, "coupling_map") else 0
             if name in name_mapping:
                 target.add_instruction(name_mapping[name], gate_props)
             else:
                 custom_gate = Gate(name, gate_len, [])
                 target.add_instruction(custom_gate, gate_props)
-        measure_props = {(n,): None for n in range(configuration["n_qubits"])}
+        measure_props = {(n,): None for n in range(configuration.num_qubits)}
         target.add_instruction(Measure(), measure_props)
     # parse global configuration properties
-    dtime = configuration.get("dt")
-    if dtime:
-        target.dt = dtime * 1e-9
-    if "timing_constraints" in configuration:
-        target.granularity = configuration["timing_constraints"].get("granularity")
-        target.min_length = configuration["timing_constraints"].get("min_length")
-        target.pulse_alignment = configuration["timing_constraints"].get(
+    if hasattr(configuration, "dt"):
+        target.dt = configuration.dt
+    if hasattr(configuration, "timing_constraints"):
+        target.granularity = configuration.timing_constraints.get("granularity")
+        target.min_length = configuration.timing_constraints.get("min_length")
+        target.pulse_alignment = configuration.timing_constraints.get(
             "pulse_alignment"
         )
-        target.aquire_alignment = configuration["timing_constraints"].get(
+        target.aquire_alignment = configuration.timing_constraints.get(
             "acquire_alignment"
         )
     # If a pulse defaults exists use that as the source of truth
-    # TODO: uncomment when measurement qargs fix is applied
     if defaults is not None:
-        decode_pulse_defaults(defaults)
-        pulse_defs = PulseDefaults.from_dict(defaults)
-        inst_map = pulse_defs.instruction_schedule_map
+        inst_map = defaults.instruction_schedule_map
         for inst in inst_map.instructions:
             for qarg in inst_map.qubits_with_instruction(inst):
                 sched = inst_map.get(inst, qarg)
@@ -135,27 +126,14 @@ def convert_to_target(
     return target
 
 
-def qubit_props_dict_from_props(properties: Dict) -> QubitProperties:
-    """Uses properties dictionary to construct
+def qubit_props_dict_from_props(properties: BackendProperties) -> QubitProperties:
+    """Uses BackendProperties to construct
     and return QubitProperties class.
     """
-    count = 0
     qubit_props = {}
-    for qubit in properties["qubits"]:
-        qubit_properties = {}
-        for prop_dict in qubit:
-            if prop_dict["name"] == "T1":
-                qubit_properties["t1"] = apply_prefix(
-                    prop_dict["value"], prop_dict["unit"]
-                )
-            elif prop_dict["name"] == "T2":
-                qubit_properties["t2"] = apply_prefix(
-                    prop_dict["value"], prop_dict["unit"]
-                )
-            elif prop_dict["name"] == "frequency":
-                qubit_properties["frequency"] = apply_prefix(
-                    prop_dict["value"], prop_dict["unit"]
-                )
-        qubit_props[count] = QubitProperties(**qubit_properties)
-        count += 1
+    for qubit, _ in enumerate(properties.qubits):
+        qubit_props[qubit] = QubitProperties(
+            t1=properties.t1(qubit),
+            t2=properties.t2(qubit),
+            frequency=properties.frequency(qubit))
     return qubit_props
