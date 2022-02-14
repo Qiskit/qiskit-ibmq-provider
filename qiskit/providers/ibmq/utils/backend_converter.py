@@ -85,7 +85,7 @@ def convert_to_target(
             gate_props = (
                 {tuple(x): None for x in gate.coupling_map}  # type: ignore[misc]
                 if hasattr(gate, "coupling_map")
-                else {}
+                else {None: None}
             )
             gate_len = len(gate.coupling_map[0]) if hasattr(gate, "coupling_map") else 0
             if name in name_mapping:
@@ -93,8 +93,7 @@ def convert_to_target(
             else:
                 custom_gate = Gate(name, gate_len, [])
                 target.add_instruction(custom_gate, gate_props)
-        measure_props = {(n,): None for n in range(configuration.num_qubits)}
-        target.add_instruction(Measure(), measure_props)
+        target.add_instruction(Measure())
     # parse global configuration properties
     if hasattr(configuration, "dt"):
         target.dt = configuration.dt
