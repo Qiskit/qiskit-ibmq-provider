@@ -111,7 +111,7 @@ def convert_to_target(
             "pulse_alignment"
         )
         target.aquire_alignment = configuration["timing_constraints"].get(
-            "aquire_alignment"
+            "acquire_alignment"
         )
     # If a pulse defaults exists use that as the source of truth
     # TODO: uncomment when measurement qargs fix is applied
