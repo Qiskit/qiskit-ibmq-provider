@@ -40,7 +40,7 @@ from qiskit.algorithms.optimizers import (
 from qiskit.result import Result
 from qiskit.circuit import Parameter, QuantumCircuit
 from qiskit.test.reference_circuits import ReferenceCircuits
-from qiskit.circuit.library import EfficientSU2
+from qiskit.circuit.library import EfficientSU2, CXGate, PhaseGate, U2Gate
 from qiskit.opflow import (PauliSumOp, MatrixOp, PauliOp, CircuitOp, EvolvedOp,
                            TaperedPauliSumOp, Z2Symmetries, I, X, Y, Z,
                            StateFn, CircuitStateFn, DictStateFn, VectorStateFn, OperatorStateFn,
@@ -250,6 +250,20 @@ class TestRuntime(IBMQTestCase):
             {"datetime": datetime.now()},
             {"datetime": datetime(2021, 8, 4)},
             {"datetime": datetime.fromtimestamp(1326244364)}
+        )
+        for obj in subtests:
+            encoded = json.dumps(obj, cls=RuntimeEncoder)
+            self.assertIsInstance(encoded, str)
+            decoded = json.loads(encoded, cls=RuntimeDecoder)
+            self.assertEqual(decoded, obj)
+
+    def test_encoder_instruction(self):
+        """Test encoding and decoding instructions"""
+        subtests = (
+            {"instruction": CXGate()},
+            {"instruction": PhaseGate(theta=1)},
+            {"instruction": U2Gate(phi=1, lam=1)},
+            {"instruction": U2Gate(phi=Parameter("phi"), lam=Parameter("lambda"))},
         )
         for obj in subtests:
             encoded = json.dumps(obj, cls=RuntimeEncoder)
