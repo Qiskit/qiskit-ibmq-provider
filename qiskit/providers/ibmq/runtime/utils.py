@@ -212,8 +212,8 @@ class RuntimeEncoder(json.JSONEncoder):
             quantum_circuit = QuantumCircuit(quantum_register)
             quantum_circuit.append(obj, quantum_register)
             value = _serialize_and_encode(
-                                data=quantum_circuit,
-                serializer=lambda buff, data: qpy_serialization.dump(data, buff),)
+                data=quantum_circuit,
+                serializer=lambda buff, data: qpy_serialization.dump(data, buff))
             return {'__type__': 'Instruction', '__value__': value}
         if hasattr(obj, "settings"):
             return {'__type__': 'settings',
