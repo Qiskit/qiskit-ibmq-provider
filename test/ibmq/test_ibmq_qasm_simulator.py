@@ -12,7 +12,7 @@
 
 """Test IBM Quantum online QASM simulator."""
 
-# from unittest import mock
+from unittest import skipIf  # , mock
 # import copy
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
@@ -149,6 +149,8 @@ class TestIbmqQasmSimulator(IBMQTestCase):
     #     qobj = assemble(circ, backend=backend, method='my_method', header={'test': 'qobj'})
     #     backend.run(qobj)
 
+    @skipIf(True, "NoiseModel.from_backend does not currently support V2 Backends. \
+        Skip test until it's fixed in aer.")
     @requires_device
     def test_simulator_with_noise_model(self, backend):
         """Test using simulator with a noise model."""
