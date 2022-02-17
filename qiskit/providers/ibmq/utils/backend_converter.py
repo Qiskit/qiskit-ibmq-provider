@@ -42,7 +42,7 @@ def convert_to_target(
         "reset": Reset(),
     }
     custom_gates = {}
-    target = Target()
+    target = Target(num_qubits=configuration.n_qubits)
     # Parse from properties if it exsits
     if properties is not None:
         # Parse instructions
