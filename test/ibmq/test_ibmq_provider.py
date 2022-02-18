@@ -15,7 +15,7 @@
 from datetime import datetime
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.test import providers, slow_test
+from qiskit.test import slow_test
 from qiskit.compiler import transpile
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.models.backendproperties import BackendProperties
@@ -28,26 +28,33 @@ from ..decorators import requires_provider, requires_device
 from ..ibmqtestcase import IBMQTestCase
 
 
-class TestAccountProvider(IBMQTestCase, providers.ProviderTestCase):
+class TestAccountProvider(IBMQTestCase):
     """Tests for the AccountProvider class."""
 
     provider_cls = AccountProvider
     backend_name = 'ibmq_qasm_simulator'
 
-    def setUp(self):
+    @requires_provider
+    def setUp(self, provider):
         """Initial test setup."""
+        # pylint: disable=arguments-differ
         super().setUp()
+        self.provider = provider
         qr = QuantumRegister(1)
         cr = ClassicalRegister(1)
         self.qc1 = QuantumCircuit(qr, cr, name='circuit0')
         self.qc1.h(qr[0])
         self.qc1.measure(qr, cr)
 
-    @requires_provider
-    def _get_provider(self, provider):
-        """Return an instance of a provider."""
-        # pylint: disable=arguments-differ
-        return provider
+    def test_backends(self):
+        """Test the provider has backends."""
+        backends = self.provider.backends()
+        self.assertTrue(len(backends) > 0)
+
+    def test_get_backend(self):
+        """Test getting a backend from the provider."""
+        backend = self.provider.get_backend(name=self.backend_name)
+        self.assertEqual(backend.name, self.backend_name)
 
     def test_remote_backends_exist_real_device(self):
         """Test if there are remote backends that are devices."""

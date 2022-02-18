@@ -624,6 +624,3 @@ class TestIBMQJob(IBMQTestCase):
         run_config = {'shots': 2048, 'memory': True}
         job = self.sim_backend.run(self.bell, **run_config)
         self.assertLessEqual(run_config.items(), job.backend_options().items())
-
-    def test_job_header(self):
-        """Test job header."""
