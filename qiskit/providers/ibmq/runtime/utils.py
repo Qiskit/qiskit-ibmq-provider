@@ -40,6 +40,7 @@ from qiskit.circuit import (
     ParameterExpression,
     ParameterVector,
     QuantumCircuit,
+    QuantumRegister,
     qpy_serialization,
 )
 from qiskit.result import Result
@@ -206,8 +207,13 @@ class RuntimeEncoder(json.JSONEncoder):
             )
             return {'__type__': 'ParameterExpression', '__value__': value}
         if isinstance(obj, Instruction):
+            # Append instruction to empty circuit
+            quantum_register = QuantumRegister(obj.num_qubits)
+            quantum_circuit = QuantumCircuit(quantum_register)
+            quantum_circuit.append(obj, quantum_register)
             value = _serialize_and_encode(
-                data=obj, serializer=qpy_serialization._write_instruction, compress=False)
+                data=quantum_circuit,
+                serializer=lambda buff, data: qpy_serialization.dump(data, buff))
             return {'__type__': 'Instruction', '__value__': value}
         if hasattr(obj, "settings"):
             return {'__type__': 'settings',
@@ -259,8 +265,11 @@ class RuntimeDecoder(json.JSONDecoder):
                     obj_val, self.__read_parameter_expression, False
                 )
             if obj_type == "Instruction":
-                return _decode_and_deserialize(
-                    obj_val, qpy_serialization._read_instruction, False)
+                # Standalone instructions are encoded as the sole
+                # instruction in a QPY serialized circuit to deserialize
+                # load qpy circuit and return first instruction object in that circuit.
+                circuit = _decode_and_deserialize(obj_val, qpy_serialization.load)[0]
+                return circuit.data[0][0]
             if obj_type == 'settings':
                 return deserialize_from_settings(
                     mod_name=obj['__module__'],
