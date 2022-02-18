@@ -3,5 +3,5 @@ fixes:
   - |
     Fixed an issue where numpy ndarrays with object types could not be 
     serialized. :class:`qiskit.providers.ibmq.runtime.RuntimeEncoder` and 
-    :class:`qiskit_ibm_runtime.utils.RuntimeDecoder` have been updated 
+    :class:`qiskit.providers.ibmq.runtime.RuntimeDecoder` have been updated 
     to handle these ndarrays.
