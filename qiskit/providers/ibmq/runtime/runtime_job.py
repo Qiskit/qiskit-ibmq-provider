@@ -13,14 +13,12 @@
 """Qiskit runtime job."""
 
 from typing import Any, Optional, Callable, Dict, Type
-import time
 import logging
 from concurrent import futures
 import traceback
 import queue
 from datetime import datetime
 
-from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.backend import Backend
 from qiskit.providers.jobstatus import JobStatus, JOB_FINAL_STATES
 
@@ -128,14 +126,12 @@ class RuntimeJob:
     def result(
             self,
             timeout: Optional[float] = None,
-            wait: float = 5,
             decoder: Optional[Type[ResultDecoder]] = None
     ) -> Any:
         """Return the results of the job.
 
         Args:
             timeout: Number of seconds to wait for job.
-            wait: Seconds between queries.
             decoder: A :class:`ResultDecoder` subclass used to decode job results.
 
         Returns:
@@ -146,7 +142,7 @@ class RuntimeJob:
         """
         _decoder = decoder or self._result_decoder
         if self._results is None or (_decoder != self._result_decoder):
-            self.wait_for_final_state(timeout=timeout, wait=wait)
+            self.wait_for_final_state(timeout=timeout)
             if self._status == JobStatus.ERROR:
                 raise RuntimeJobFailureError(f"Unable to retrieve job result. "
                                              f"{self.error_message()}")
@@ -190,28 +186,19 @@ class RuntimeJob:
 
     def wait_for_final_state(
             self,
-            timeout: Optional[float] = None,
-            wait: float = 5
+            timeout: Optional[float] = None
     ) -> None:
-        """Poll the job status until it progresses to a final state such as ``DONE`` or ``ERROR``.
+        """Use the websocket server to wait for the final the state of a job. The server
+            will remain open if the job is still running and the connection will be terminated
+            once the job completes. Then update and return the status of the job.
 
         Args:
             timeout: Seconds to wait for the job. If ``None``, wait indefinitely.
-            wait: Seconds between queries.
-
-        Raises:
-            JobTimeoutError: If the job does not reach a final state before the
-                specified timeout.
         """
-        start_time = time.time()
-        status = self.status()
-        while status not in JOB_FINAL_STATES:
-            elapsed_time = time.time() - start_time
-            if timeout is not None and elapsed_time >= timeout:
-                raise JobTimeoutError(
-                    'Timeout while waiting for job {}.'.format(self.job_id()))
-            time.sleep(wait)
-            status = self.status()
+        if self._status not in JOB_FINAL_STATES:
+            self._ws_client_future = self._executor.submit(self._start_websocket_client)
+        self._ws_client_future.result(timeout)
+        self.status()
 
     def stream_results(
             self,

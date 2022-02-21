@@ -60,8 +60,8 @@ from qiskit.providers.ibmq.runtime.runtime_program import ParameterNamespace
 from ...ibmqtestcase import IBMQTestCase
 from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRanTooLongRuntimeJob,
                                   FailedRuntimeJob, CancelableRuntimeJob, CustomResultRuntimeJob)
-from .utils import SerializableClass, SerializableClassDecoder, get_complex_types
-
+from .utils import (SerializableClass, SerializableClassDecoder, 
+                    get_complex_types, mock_wait_for_final_state)
 
 class TestRuntime(IBMQTestCase):
     """Class for testing runtime modules."""
@@ -437,9 +437,10 @@ if __name__ == '__main__':
         self.assertIsInstance(job, RuntimeJob)
         self.assertIsInstance(job.status(), JobStatus)
         self.assertEqual(job.inputs, params)
-        job.wait_for_final_state()
-        self.assertEqual(job.status(), JobStatus.DONE)
-        self.assertTrue(job.result())
+        with mock_wait_for_final_state(self, job):
+            job.wait_for_final_state()
+            self.assertEqual(job.status(), JobStatus.DONE)
+            self.assertTrue(job.result())
 
     def test_run_program_with_custom_runtime_image(self):
         """Test running program."""
@@ -450,9 +451,10 @@ if __name__ == '__main__':
         self.assertIsInstance(job, RuntimeJob)
         self.assertIsInstance(job.status(), JobStatus)
         self.assertEqual(job.inputs, params)
-        job.wait_for_final_state()
+        with mock_wait_for_final_state(self, job):
+            job.wait_for_final_state()
+            self.assertTrue(job.result())
         self.assertEqual(job.status(), JobStatus.DONE)
-        self.assertTrue(job.result())
         self.assertEqual(job.image, image)
 
     def test_run_program_with_custom_log_level(self):
@@ -498,24 +500,26 @@ if __name__ == '__main__':
     def test_run_program_failed(self):
         """Test a failed program execution."""
         job = self._run_program(job_classes=FailedRuntimeJob)
-        job.wait_for_final_state()
-        job_result_raw = self.runtime._api_client.job_results(job.job_id())
-        self.assertEqual(JobStatus.ERROR, job.status())
-        self.assertEqual(API_TO_JOB_ERROR_MESSAGE['FAILED'].format(
-            job.job_id(), job_result_raw), job.error_message())
-        with self.assertRaises(RuntimeJobFailureError):
-            job.result()
+        with mock_wait_for_final_state(self, job):
+            job.wait_for_final_state()
+            job_result_raw = self.runtime._api_client.job_results(job.job_id())
+            self.assertEqual(JobStatus.ERROR, job.status())
+            self.assertEqual(API_TO_JOB_ERROR_MESSAGE['FAILED'].format(
+                job.job_id(), job_result_raw), job.error_message())
+            with self.assertRaises(RuntimeJobFailureError):
+                job.result()
 
     def test_run_program_failed_ran_too_long(self):
         """Test a program that failed since it ran longer than maxiumum execution time."""
         job = self._run_program(job_classes=FailedRanTooLongRuntimeJob)
-        job.wait_for_final_state()
-        job_result_raw = self.runtime._api_client.job_results(job.job_id())
-        self.assertEqual(JobStatus.ERROR, job.status())
-        self.assertEqual(API_TO_JOB_ERROR_MESSAGE['CANCELLED - RAN TOO LONG'].format(
-            job.job_id(), job_result_raw), job.error_message())
-        with self.assertRaises(RuntimeJobFailureError):
-            job.result()
+        with mock_wait_for_final_state(self, job):
+            job.wait_for_final_state()
+            job_result_raw = self.runtime._api_client.job_results(job.job_id())
+            self.assertEqual(JobStatus.ERROR, job.status())
+            self.assertEqual(API_TO_JOB_ERROR_MESSAGE['CANCELLED - RAN TOO LONG'].format(
+                job.job_id(), job_result_raw), job.error_message())
+            with self.assertRaises(RuntimeJobFailureError):
+                job.result()
 
     def test_retrieve_job(self):
         """Test retrieving a job."""
@@ -649,8 +653,9 @@ if __name__ == '__main__':
         program_id_1 = self._upload_program()
         job = self._run_program(program_id=program_id)
         job_1 = self._run_program(program_id=program_id_1)
-        job.wait_for_final_state()
-        job_1.wait_for_final_state()
+        with mock_wait_for_final_state(self, job):
+            job.wait_for_final_state()
+            job_1.wait_for_final_state()
         rjobs = self.runtime.jobs(program_id=program_id)
         self.assertEqual(program_id, rjobs[0].program_id)
         self.assertEqual(1, len(rjobs))
@@ -691,7 +696,8 @@ if __name__ == '__main__':
     def test_wait_for_final_state(self):
         """Test wait for final state."""
         job = self._run_program()
-        job.wait_for_final_state()
+        with mock_wait_for_final_state(self, job):
+            job.wait_for_final_state()
         self.assertEqual(JobStatus.DONE, job.status())
 
     def test_result_decoder(self):
