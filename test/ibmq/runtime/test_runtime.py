@@ -257,6 +257,19 @@ class TestRuntime(IBMQTestCase):
             decoded = json.loads(encoded, cls=RuntimeDecoder)
             self.assertEqual(decoded, obj)
 
+    def test_encoder_ndarray(self):
+        """Test encoding and decoding a numpy ndarray."""
+        subtests = (
+            {"ndarray": np.array([[1, 2, 3], [{"obj": 123}, 5, 6]], dtype=object)},
+            {"ndarray": np.array([[1, 2, 3], [{"obj": 123}, 5, 6]])},
+            {"ndarray": np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=int)},
+        )
+        for obj in subtests:
+            encoded = json.dumps(obj, cls=RuntimeEncoder)
+            self.assertIsInstance(encoded, str)
+            decoded = json.loads(encoded, cls=RuntimeDecoder)
+            self.assertTrue(np.array_equal(decoded["ndarray"], obj["ndarray"]))
+
     def test_encoder_instruction(self):
         """Test encoding and decoding instructions"""
         subtests = (
