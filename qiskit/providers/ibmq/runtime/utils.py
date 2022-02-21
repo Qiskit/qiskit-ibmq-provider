@@ -185,6 +185,8 @@ class RuntimeEncoder(json.JSONEncoder):
         if isinstance(obj, complex):
             return {'__type__': 'complex', '__value__': [obj.real, obj.imag]}
         if isinstance(obj, np.ndarray):
+            if obj.dtype == object:
+                return {"__type__": "ndarray", "__value__": obj.tolist()}
             value = _serialize_and_encode(obj, np.save, allow_pickle=False)
             return {'__type__': 'ndarray', '__value__': value}
         if isinstance(obj, set):
@@ -255,6 +257,8 @@ class RuntimeDecoder(json.JSONDecoder):
             if obj_type == 'complex':
                 return obj_val[0] + 1j * obj_val[1]
             if obj_type == 'ndarray':
+                if isinstance(obj_val, list):
+                    return np.array(obj_val)
                 return _decode_and_deserialize(obj_val, np.load)
             if obj_type == 'set':
                 return set(obj_val)
