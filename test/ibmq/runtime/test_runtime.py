@@ -60,8 +60,9 @@ from qiskit.providers.ibmq.runtime.runtime_program import ParameterNamespace
 from ...ibmqtestcase import IBMQTestCase
 from .fake_runtime_client import (BaseFakeRuntimeClient, FailedRanTooLongRuntimeJob,
                                   FailedRuntimeJob, CancelableRuntimeJob, CustomResultRuntimeJob)
-from .utils import (SerializableClass, SerializableClassDecoder, 
+from .utils import (SerializableClass, SerializableClassDecoder,
                     get_complex_types, mock_wait_for_final_state)
+
 
 class TestRuntime(IBMQTestCase):
     """Class for testing runtime modules."""

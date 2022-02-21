@@ -24,6 +24,7 @@ def get_complex_types():
             "complex": 2+3j,
             "serializable_class": SerializableClass("foo")}
 
+
 def mock_wait_for_final_state(self, job):
     """replace `wait_for_final_state` with a mock function"""
     return mock.patch.object(
@@ -31,6 +32,8 @@ def mock_wait_for_final_state(self, job):
         "wait_for_final_state",
         side_effect=self.runtime._api_client.wait_for_final_state(job.job_id()),
     )
+
+
 class SerializableClass:
     """Custom class with serialization methods."""
 

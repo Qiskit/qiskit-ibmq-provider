@@ -126,6 +126,7 @@ class BaseFakeRuntimeJob:
         """Return job status."""
         return self._status
 
+
 class FailedRuntimeJob(BaseFakeRuntimeJob):
     """Class for faking a failed runtime job."""
 
