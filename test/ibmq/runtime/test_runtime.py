@@ -724,7 +724,8 @@ if __name__ == '__main__':
         for result_decoder, decoder in sub_tests:
             with self.subTest(decoder=decoder):
                 job = self._run_program(job_classes=job_cls, decoder=result_decoder)
-                result = job.result(decoder=decoder)
+                with mock_wait_for_final_state(self, job):
+                    result = job.result(decoder=decoder)
                 self.assertIsInstance(result['serializable_class'], SerializableClass)
 
     def test_get_result_twice(self):
