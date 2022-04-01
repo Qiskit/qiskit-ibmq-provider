@@ -14,6 +14,7 @@ name: Cron-test
 on:
   schedule:
     - cron: '0 5 * * *'
+  workflow_dispatch:
 jobs:
   test1:
     name: tests1-python${{ matrix.python-version }}-${{ matrix.os }}
