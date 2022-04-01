@@ -1,0 +1,4 @@
+---
+upgrade:
+  - |
+    Python 3.6 support has been dropped since it has reached end of life in Dec 2021.

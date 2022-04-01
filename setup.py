@@ -89,7 +89,7 @@ setup(
               'qiskit.providers.ibmq.runtime.program'],
     install_requires=REQUIREMENTS,
     include_package_data=True,
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     zip_safe=False,
     extras_require={'visualization': ['matplotlib>=2.1', 'ipywidgets>=7.3.0',
                                       "seaborn>=0.9.0", "plotly>=4.4",
