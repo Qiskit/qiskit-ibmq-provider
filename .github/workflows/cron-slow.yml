@@ -14,6 +14,7 @@ name: Slow-test
 on:
   schedule:
     - cron: '0 7 * * *'
+  workflow_dispatch:
 jobs:
   slow-test:
     name: slow-test
