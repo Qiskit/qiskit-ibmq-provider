@@ -8,3 +8,4 @@ websocket-client>=1.0.1
 websockets>=10.0; python_version >= '3.7'
 websockets>=9.1; python_version < '3.7'
 dataclasses>=0.8; python_version < '3.7'
+orjson>=3.6 ; platform_machine == 'x86_64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64'

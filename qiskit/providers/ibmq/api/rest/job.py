@@ -25,6 +25,12 @@ from ..session import RetrySession
 from ..exceptions import ApiIBMQProtocolError
 from .utils.data_mapper import map_job_response, map_job_status_response
 
+try:
+    import orjson
+    HAS_ORJSON = True
+except ImportError:
+    HAS_ORJSON = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -185,7 +191,10 @@ class Job(RestAdapterBase):
         Returns:
             Text response, which is empty if the request was successful.
         """
-        data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEncoder)
+        if HAS_ORJSON:
+            data = orjson.dumps(qobj_dict, default=_orjson_default, option=orjson.OPT_SERIALIZE_NUMPY)
+        else:
+            data = json.dumps(qobj_dict, cls=json_encoder.IQXJsonEncoder)
         logger.debug('Uploading to object storage.')
         response = self.session.put(url, data=data, bare=True, timeout=600,
                                     headers={'Content-Type': 'application/json'})
@@ -208,3 +217,15 @@ class Job(RestAdapterBase):
         """Mark job for deletion."""
         url = self.get_url('delete')
         self.session.delete(url)
+
+
+def _orjson_default(o):
+    if isinstance(o, complex):
+        return (o.real, o.imag)
+    if isinstance(o, ParameterExpression):
+        try:
+            return float(o)
+        except (TypeError, RuntimeError):
+            val = complex(o)
+            return val.real, val.imag
+    raise TypeError

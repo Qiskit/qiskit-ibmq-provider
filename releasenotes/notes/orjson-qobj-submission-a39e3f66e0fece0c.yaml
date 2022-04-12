@@ -1,0 +1,8 @@
+---
+upgrade:
+  - |
+    `orjson <https://github.com/ijl/orjson>`__ is now a dependency for
+    installing ``qiskit-ibmq-provider`` on x86_64 and arm64/aarch64 systems;
+    on other platforms its an optional dependency. Using orjson enables
+    significantly faster JSON serialization which improves the performance
+    of the provider.
