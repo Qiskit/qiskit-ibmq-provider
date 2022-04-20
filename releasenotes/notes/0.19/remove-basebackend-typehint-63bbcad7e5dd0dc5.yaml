@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    PR `#1129 <https://github.com/Qiskit/qiskit-ibmq-provider/pull/1129>__` updates
+    :meth:`~qiskit.providers.ibmq.least_busy` method to no longer support `BaseBackend` as a valid
+    input or output type since it has been long deprecated in qiskit-terra and has recently
+    been removed.
