@@ -240,8 +240,8 @@ class IBMQBackend(Backend):
                 Default: ``True``.
             parameter_binds: List of Parameter bindings over which the set of experiments will be
                 executed. Each list element (bind) should be of the form
-                {Parameter1: value1, Parameter2: value2, ...}. All binds will be
-                executed across all experiments; e.g., if parameter_binds is a
+                {Parameter1: [value1_1, value1_2, ...], Parameter2: [value2_1, value2_2, ...], ...}. 
+                All binds will be executed across all experiments; e.g., if parameter_binds is a
                 length-n list, and there are m experiments, a total of m x n
                 experiments will be run (one for each experiment/bind pair).
             use_measure_esp: Whether to use excited state promoted (ESP) readout for measurements
