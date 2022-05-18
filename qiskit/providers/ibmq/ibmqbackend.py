@@ -1,6 +1,6 @@
 # This code is part of Qiskit.
 #
-# (C) Copyright IBM 2017, 2020.
+# (C) Copyright IBM 2017, 2020, 2022.
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -168,7 +168,7 @@ class IBMQBackend(Backend):
             rep_time: Optional[int] = None,
             rep_delay: Optional[float] = None,
             init_qubits: Optional[bool] = None,
-            parameter_binds: Optional[List[Dict[Parameter, float]]] = None,
+            parameter_binds: Optional[List[Dict[Parameter, List[float]]]] = None,
             use_measure_esp: Optional[bool] = None,
             live_data_enabled: Optional[bool] = None,
             **run_config: Dict
