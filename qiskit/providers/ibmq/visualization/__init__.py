@@ -33,4 +33,4 @@ Interactive Visualizations
    iplot_error_map
 """
 
-from .interactive import iplot_error_map, iplot_gate_map
+from .interactive import error_map, gate_map
