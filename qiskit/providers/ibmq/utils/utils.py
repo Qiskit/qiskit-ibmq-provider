@@ -245,4 +245,4 @@ class RefreshQueue(Queue):
     def notify_all(self) -> None:
         """Wake up all threads waiting for items on the queued."""
         with self.condition:
-            self.condition.notifyAll()
+            self.condition.notify_all()
