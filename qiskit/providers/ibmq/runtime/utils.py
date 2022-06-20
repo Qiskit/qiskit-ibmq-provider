@@ -21,6 +21,7 @@ import importlib
 import inspect
 import io
 import json
+import re
 import warnings
 import zlib
 from datetime import date
@@ -47,7 +48,52 @@ from qiskit.result import Result
 
 from qiskit.version import __version__ as _terra_version_string
 
-_TERRA_VERSION = tuple(int(x) for x in _terra_version_string.split(".")[:3])
+
+# This version pattern is taken from the pypa packaging project:
+# https://github.com/pypa/packaging/blob/21.3/packaging/version.py#L223-L254
+# which is dual licensed Apache 2.0 and BSD see the source for the original
+# authors and other details
+VERSION_PATTERN = (
+    "^"
+    + r"""
+    v?
+    (?:
+        (?:(?P<epoch>[0-9]+)!)?                           # epoch
+        (?P<release>[0-9]+(?:\.[0-9]+)*)                  # release segment
+        (?P<pre>                                          # pre-release
+            [-_\.]?
+            (?P<pre_l>(a|b|c|rc|alpha|beta|pre|preview))
+            [-_\.]?
+            (?P<pre_n>[0-9]+)?
+        )?
+        (?P<post>                                         # post release
+            (?:-(?P<post_n1>[0-9]+))
+            |
+            (?:
+                [-_\.]?
+                (?P<post_l>post|rev|r)
+                [-_\.]?
+                (?P<post_n2>[0-9]+)?
+            )
+        )?
+        (?P<dev>                                          # dev release
+            [-_\.]?
+            (?P<dev_l>dev)
+            [-_\.]?
+            (?P<dev_n>[0-9]+)?
+        )?
+    )
+    (?:\+(?P<local>[a-z0-9]+(?:[-_\.][a-z0-9]+)*))?       # local version
+"""
+    + "$"
+)
+_TERRA_VERSION = tuple(
+    int(x) for x in re.search(
+        VERSION_PATTERN,
+        _terra_version_string,
+        re.VERBOSE | re.IGNORECASE
+    ).group("release").split(".")
+)
 
 
 def to_base64_string(data: str) -> str:
