@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    ``threading.currentThread`` and ``notifyAll`` were deprecated in Python 3.10 (October 2021)
+    and will be removed in Python 3.12 (October 2023).
+    PR `#1133 <https://github.com/Qiskit/qiskit-ibmq-provider/pull/1133>`__ replaces them
+    with ``threading.current_thread``, ``notify_all`` added in Python 2.6 (October 2008).
