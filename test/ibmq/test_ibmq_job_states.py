@@ -20,7 +20,7 @@ from contextlib import suppress
 from unittest import mock
 
 from qiskit.providers.ibmq.apiconstants import API_JOB_FINAL_STATES, ApiJobStatus
-from qiskit.test.mock import FakeQobj
+from qiskit.providers.fake_provider import FakeQobj
 from qiskit.providers import JobTimeoutError
 from qiskit.providers.ibmq.job.exceptions import IBMQJobApiError, IBMQJobInvalidStateError
 from qiskit.providers.ibmq.api.exceptions import (ApiError, UserTimeoutExceededError,
