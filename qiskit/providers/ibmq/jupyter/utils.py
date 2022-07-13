@@ -15,7 +15,7 @@
 from typing import Optional, Union
 from datetime import datetime, timedelta
 
-from qiskit.test.mock.fake_backend import FakeBackend
+from qiskit.providers.fake_provider.fake_backend import FakeBackend
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 from qiskit.providers.ibmq.backendreservation import BackendReservation
 

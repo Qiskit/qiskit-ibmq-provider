@@ -73,7 +73,7 @@ if ('ipykernel' in sys.modules) and ('spyder' not in sys.modules):
 
     from IPython import get_ipython          # pylint: disable=import-error
     from .dashboard.dashboard import IQXDashboardMagic
-    from qiskit.test.mock import FakeBackend
+    from qiskit.providers.fake_provider.fake_backend import FakeBackend
     from ..ibmqbackend import IBMQBackend
     from .backend_info import backend_widget
 

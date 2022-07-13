@@ -16,7 +16,7 @@
 from typing import Union
 
 import ipywidgets as wid
-from qiskit.test.mock.fake_backend import FakeBackend
+from qiskit.providers.fake_provider.fake_backend import FakeBackend
 from qiskit.providers.ibmq.ibmqbackend import IBMQBackend
 
 

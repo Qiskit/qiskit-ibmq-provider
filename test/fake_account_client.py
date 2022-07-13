@@ -19,7 +19,7 @@ from random import randrange
 import uuid
 from concurrent.futures import ThreadPoolExecutor, wait
 
-from qiskit.test.mock.backends.poughkeepsie.fake_poughkeepsie import FakePoughkeepsie
+from qiskit.providers.fake_provider.backends.poughkeepsie.fake_poughkeepsie import FakePoughkeepsie
 from qiskit.providers.ibmq.apiconstants import ApiJobStatus, API_JOB_FINAL_STATES
 from qiskit.providers.ibmq.api.exceptions import RequestsApiError, UserTimeoutExceededError
 

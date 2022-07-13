@@ -105,10 +105,6 @@ class Backend(RestAdapterBase):
         else:
             ret['pending_jobs'] = 0
 
-        # Not part of the schema.
-        if 'busy' in response:
-            ret['dedicated'] = response['busy']
-
         return ret
 
     def job_limit(self) -> Dict[str, Any]:
