@@ -113,7 +113,6 @@ QISKIT_IBMQ_PROVIDER_LOG_LEVEL = 'QISKIT_IBMQ_PROVIDER_LOG_LEVEL'
 QISKIT_IBMQ_PROVIDER_LOG_FILE = 'QISKIT_IBMQ_PROVIDER_LOG_FILE'
 """The environment variable name that is used to set the file for the IBM Quantum logger."""
 
-warnings.simplefilter("always", category=DeprecationWarning)
 warnings.warn(
     f"The package {__name__} is being deprecated. There will only be critical security fixes "
     "for the next 3 months and then this package will no longer be supported. Please begin to use "
