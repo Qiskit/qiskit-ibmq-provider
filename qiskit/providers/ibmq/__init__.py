@@ -116,6 +116,7 @@ QISKIT_IBMQ_PROVIDER_LOG_FILE = 'QISKIT_IBMQ_PROVIDER_LOG_FILE'
 warnings.warn(
     f"The package {__name__} is being deprecated. There will only be critical security fixes "
     "for the next 3 months and then this package will no longer be supported. Please begin to use "
+    "qiskit-ibm-provider (https://github.com/Qiskit/qiskit-ibm-provider) and "
     "qiskit-ibm-runtime (https://github.com/Qiskit/qiskit-ibm-runtime) instead.",
     DeprecationWarning,
 )

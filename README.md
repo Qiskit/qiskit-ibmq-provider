@@ -6,6 +6,7 @@
 
 **_PLEASE NOTE:_** _qiskit-ibmq-provider is being deprecated. There will only be critical secruity fixes
 for the next three months and then this package will no longer be supported. Please begin to use 
+[qiskit-ibm-provider](https://github.com/Qiskit/qiskit-ibm-provider) and 
 [qiskit-ibm-runtime](https://github.com/Qiskit/qiskit-ibm-runtime) instead._
 
 ---
