@@ -91,7 +91,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.7",
     zip_safe=False,
-    extras_require={'visualization': ['matplotlib>=2.1', 'ipywidgets>=7.3.0',
+    extras_require={'visualization': ['matplotlib>=2.1', 'ipywidgets<=7.7.2',
                                       "seaborn>=0.9.0", "plotly>=4.4",
                                       "ipyvuetify>=1.1", "pyperclip>=1.7",
                                       "ipython>=5.0.0", "traitlets!=5.0.5",
