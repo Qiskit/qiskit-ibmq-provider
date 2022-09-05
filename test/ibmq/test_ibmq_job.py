@@ -362,6 +362,8 @@ class TestIBMQJob(IBMQTestCase):
 
     def test_retrieve_jobs_end_datetime(self):
         """Test retrieving jobs created before a specified datetime."""
+        if not self.provider.backend.jobs():
+            raise SkipTest('Skipping test since there are no jobs in this provider.')
         past_month = datetime.now() - timedelta(days=30)
         # Add local tz in order to compare to `creation_date` which is tz aware.
         past_month_tz_aware = past_month.replace(tzinfo=tz.tzlocal())
