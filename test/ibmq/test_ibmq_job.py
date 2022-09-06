@@ -370,9 +370,13 @@ class TestIBMQJob(IBMQTestCase):
                                               limit=2, end_datetime=past_month)
         if job_list:
             for job in job_list:
-                self.assertLessEqual(job.creation_date(), past_month_tz_aware,
-                                    'job {} creation date {} not within range'
-                                    .format(job.job_id(), job.creation_date()))
+                self.assertLessEqual(
+                    job.creation_date(),
+                    past_month_tz_aware,
+                    "job {} creation date {} not within range".format(
+                        job.job_id(), job.creation_date()
+                    ),
+                )
 
     # def test_retrieve_jobs_between_datetimes(self):
     #     """Test retrieving jobs created between two specified datetimes."""
