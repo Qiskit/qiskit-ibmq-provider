@@ -10,6 +10,7 @@ sphinx-automodapi
 sphinx-autodoc-typehints
 matplotlib>=2.1
 jupyter
+ipywidgets<=7.7.2
 plotly>=4.4
 ipyvuetify>=1.1
 ipyvue>=1.4.1
