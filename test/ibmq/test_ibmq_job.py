@@ -362,19 +362,21 @@ class TestIBMQJob(IBMQTestCase):
 
     def test_retrieve_jobs_end_datetime(self):
         """Test retrieving jobs created before a specified datetime."""
-        if not self.provider.backend.jobs():
-            raise SkipTest('Skipping test since there are no jobs in this provider.')
         past_month = datetime.now() - timedelta(days=30)
         # Add local tz in order to compare to `creation_date` which is tz aware.
         past_month_tz_aware = past_month.replace(tzinfo=tz.tzlocal())
 
         job_list = self.provider.backend.jobs(backend_name=self.sim_backend.name(),
                                               limit=2, end_datetime=past_month)
-        self.assertTrue(job_list)
-        for job in job_list:
-            self.assertLessEqual(job.creation_date(), past_month_tz_aware,
-                                 'job {} creation date {} not within range'
-                                 .format(job.job_id(), job.creation_date()))
+        if job_list:
+            for job in job_list:
+                self.assertLessEqual(
+                    job.creation_date(),
+                    past_month_tz_aware,
+                    "job {} creation date {} not within range".format(
+                        job.job_id(), job.creation_date()
+                    ),
+                )
 
     # def test_retrieve_jobs_between_datetimes(self):
     #     """Test retrieving jobs created between two specified datetimes."""
