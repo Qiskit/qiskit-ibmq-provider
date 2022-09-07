@@ -2,15 +2,6 @@
 
 [![License](https://img.shields.io/github/license/Qiskit/qiskit-ibmq-provider.svg?style=popout-square)](https://opensource.org/licenses/Apache-2.0)[![Build Status](https://img.shields.io/travis/com/Qiskit/qiskit-ibmq-provider/master.svg?style=popout-square)](https://travis-ci.com/Qiskit/qiskit-ibmq-provider)[![](https://img.shields.io/github/release/Qiskit/qiskit-ibmq-provider.svg?style=popout-square)](https://github.com/Qiskit/qiskit-ibmq-provider/releases)[![](https://img.shields.io/pypi/dm/qiskit-ibmq-provider.svg?style=popout-square)](https://pypi.org/project/qiskit-ibmq-provider/)
 
----
-
-**_PLEASE NOTE:_** _qiskit-ibmq-provider is being deprecated. There will only be critical secruity fixes
-for the next three months and then this package will no longer be supported. Please begin to use 
-[qiskit-ibm-provider](https://github.com/Qiskit/qiskit-ibm-provider) and 
-[qiskit-ibm-runtime](https://github.com/Qiskit/qiskit-ibm-runtime) instead._
-
----
-
 **Qiskit** is an open-source SDK for working with quantum computers at the level of circuits, algorithms, and application modules.
 
 This module contains a provider that allows accessing the **[IBM Quantum]**
