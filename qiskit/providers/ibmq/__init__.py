@@ -119,6 +119,7 @@ warnings.warn(
     "qiskit-ibm-provider (https://github.com/Qiskit/qiskit-ibm-provider) and "
     "qiskit-ibm-runtime (https://github.com/Qiskit/qiskit-ibm-runtime) instead.",
     DeprecationWarning,
+    stacklevel=3
 )
 
 
