@@ -107,7 +107,8 @@ class TestBackendFilters(IBMQTestCase):
             if back.name() != backend.name():
                 backs.append(back)
                 break
-        self.assertTrue(least_busy(backs, window))
+        if backs:
+            self.assertTrue(least_busy(backs, window))
 
     def test_filter_least_busy_paused(self):
         """Test filtering by least busy function, with paused backend."""
