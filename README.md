@@ -7,7 +7,7 @@
 **_PLEASE NOTE:_** _As of version 0.20.0, released on Xth September 2022, `qiskit-ibmq-provider` has been deprecated
 with its support ending and eventual archival being no sooner than 3 months from that date. The
 function provided by `qiskit-ibmq-provider` is not going away rather it has being split out to separate repositories.
-Please see the [Migration Guide](#migration-guide) section below for more detail. We encourage you
+Please see the [Migration Guides](#migration-guides) section below for more detail. We encourage you
 to migrate over at your earliest convenience._
 
 ---
@@ -17,44 +17,21 @@ to migrate over at your earliest convenience._
 This module contains a provider that allows accessing the **[IBM Quantum]**
 systems and simulators.
 
-## Migration Guide
+## Migration Guides
 
-As of version 0.20.0, released on Xth September 2022, `qiskit-ibmq-provider` has been deprecated
-with its support ending and eventual archival being no sooner than 3 months from that date.
+As of version 0.20.0, released on January 2023, `qiskit-ibmq-provider` has been deprecated
+with its support ending and eventual archival being no sooner than 6 months from that date.
 
 All the functionality that `qiskit-ibmq-provider` provides has been migrated to other packages:
 
-* [qiskit-ibm-provider](https://github.com/Qiskit/qiskit-ibm-provider/)
-  
-  Handles most of the features provided by `qiskit-ibmq-provider`.
+| Formally | Current package | Details | Migration Guide | 
+| :---: | :---: | :---: | :---: |
+| [`qiskit.providers.ibmq.experiment`](https://qiskit.org/documentation/apidoc/ibmq_experiment.html) | [`qiskit_ibm_experiment`](https://qiskit.org/documentation/experiments/) |  For the features related with the IBM Quantum experiment database service. |
+| [`qiskit.providers.ibmq.runtime`](https://qiskit.org/documentation/apidoc/ibmq_runtime.html) | [`qiskit_ibm_runtime`](https://qiskit.org/documentation/partners/qiskit_ibm_runtime/) | For features related with IBM Client for Qiskit Runtime |
+| Rest of [`qiskit.providers.ibmq`](https://qiskit.org/documentation/apidoc/ibmq_provider.html) | [`qiskit-ibm-provider`](https://qiskit.org/documentation/partners/qiskit_ibm_provider/) | For access to IBM Quantum compute resources (aka backends) | [guide](https://qiskit.org/documentation/partners/qiskit_ibm_provider/tutorials/Migration_Guide_from_qiskit-ibmq-provider.html) |
 
-* [qiskit-ibm-experiment](https://github.com/Qiskit/qiskit-ibm-experiment/)
 
- For the features related with the IBM Quantum experiment database service.
- 
-* [qiskit-ibm-runtime](https://github.com/Qiskit/qiskit-ibm-runtime/)
-
-  For features related with IBM Client for Qiskit Runtime.
-
-These new packages can be installed by themselves (via the standard pip install command, e.g. ``pip install qiskit-ibm-provider``).
-
-A [Qiskit IBM Provider Migration Guide](https://github.com/Qiskit/qiskit-ibmq-provider/blob/master/docs/tutorials/migration_guide.ipynb)
-  has been created to inform and assist the migration.
-
-#### Migration by package/class
-
-The following table gives a more detailed breakdown that relates the function, 
-as it existed in ``pip install qiskit-ibmq-provider``, to where it now lives after this move.
-
-| Old | New | Library |
-| :---: | :---: | :---: |
-| [`qiskit.providers.ibmq`](https://qiskit.org/documentation/apidoc/ibmq_provider.html) | TBA | `qiskit-ibm-provider` |
-| [`qiskit.providers.ibmq.job`](https://qiskit.org/documentation/apidoc/ibmq_job.html) | TBA | `qiskit-ibm-provider` |
-| [`qiskit.providers.ibmq.managed`](https://qiskit.org/documentation/apidoc/ibmq_managed.html)  | TBA | `qiskit-ibm-provider` |
-| [`qiskit.providers.ibmq.credentials`](https://qiskit.org/documentation/apidoc/ibmq_credentials.html)  | TBA | `qiskit-ibm-provider` |
-| [`qiskit.providers.ibmq.utils`](https://qiskit.org/documentation/apidoc/ibmq_utils.html)  | TBA | `qiskit-ibm-provider` |
-| [`qiskit.providers.ibmq.experiment`](https://qiskit.org/documentation/apidoc/ibmq_experiment.html) | [`qiskit_ibm_experiment`](https://qiskit.org/documentation/partners/qiskit_ibm_experiment/apidocs/main.html) | `qiskit-ibm-experiment` |
-| [`qiskit.providers.ibmq.runtime`](https://qiskit.org/documentation/apidoc/ibmq_runtime.html) | [`qiskit_ibm_runtime`](https://qiskit.org/documentation/partners/qiskit_ibm_runtime/apidocs/ibm-runtime.html) | `qiskit-ibm-runtime` |
+These packages can be installed by themselves (via the standard pip install command, e.g. ``pip install qiskit-ibm-provider``) and are not part of the Qiskit metapackage.
 
   
 ## Installation
