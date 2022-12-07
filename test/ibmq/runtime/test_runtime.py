@@ -45,7 +45,7 @@ from qiskit.opflow import (PauliSumOp, MatrixOp, PauliOp, CircuitOp, EvolvedOp,
                            TaperedPauliSumOp, Z2Symmetries, I, X, Y, Z,
                            StateFn, CircuitStateFn, DictStateFn, VectorStateFn, OperatorStateFn,
                            SparseVectorStateFn, CVaRMeasurement, ComposedOp, SummedOp, TensoredOp)
-from qiskit.quantum_info import SparsePauliOp, Pauli, PauliTable, Statevector
+from qiskit.quantum_info import SparsePauliOp, Pauli, Statevector
 from qiskit.providers.jobstatus import JobStatus
 from qiskit.providers.ibmq.exceptions import IBMQInputValueError
 from qiskit.providers.ibmq.accountprovider import AccountProvider
@@ -180,8 +180,6 @@ class TestRuntime(IBMQTestCase):
         y = x + 1
         qc = QuantumCircuit(1)
         qc.h(0)
-        coeffs = np.array([1, 2, 3, 4, 5, 6])
-        table = PauliTable.from_labels(["III", "IXI", "IYY", "YIZ", "XYZ", "III"])
         op = (2.0 * I ^ I)
         z2_symmetries = Z2Symmetries(
             [Pauli("IIZI"), Pauli("ZIII")], [Pauli("IIXI"), Pauli("XIII")], [1, 3], [-1, 1]
@@ -194,7 +192,6 @@ class TestRuntime(IBMQTestCase):
             PauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[1]), coeff=y),
             PauliSumOp(SparsePauliOp(Pauli("XYZX"), coeffs=[1 + 2j]), coeff=3 - 2j),
             PauliSumOp.from_list([("II", -1.052373245772859), ("IZ", 0.39793742484318045)]),
-            PauliSumOp(SparsePauliOp(table, coeffs), coeff=10),
             MatrixOp(primitive=np.array([[0, -1j], [1j, 0]]), coeff=x),
             PauliOp(primitive=Pauli("Y"), coeff=x),
             CircuitOp(qc, coeff=x),
