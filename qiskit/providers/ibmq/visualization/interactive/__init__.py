@@ -22,7 +22,7 @@ try:
 except ImportError:
     HAS_PLOTLY = False
 
-if ('ipykernel' in INSTALLED_PACKAGES) and HAS_PLOTLY:
+if ('ipykernel' in INSTALLED_PACKAGES) and ('spyder' not in INSTALLED_PACKAGES):
     if HAS_PLOTLY:
         from .error_map import iplot_error_map
         from .gate_map import iplot_gate_map

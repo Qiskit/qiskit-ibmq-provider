@@ -19,7 +19,7 @@ Dashboard (:mod:`qiskit.providers.ibmq.dashboard`)
 
 The dashboard can be instantiated using
 
-
+.. jupyter-execute::
     from qiskit import IBMQ
     import qiskit.providers.ibmq.jupyter
 
