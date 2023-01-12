@@ -29,14 +29,12 @@ Note:
 Detailed information on a single backend
 ========================================
 
-.. jupyter-execute::
     :hide-code:
     :hide-output:
 
     from qiskit.test.ibmq_mock import mock_get_backend
     mock_get_backend('FakeVigo')
 
-.. jupyter-execute::
 
     from qiskit import IBMQ
     import qiskit.providers.ibmq.jupyter
@@ -45,13 +43,11 @@ Detailed information on a single backend
     provider = IBMQ.get_provider(hub='ibm-q')
     backend = provider.get_backend('ibmq_vigo')
 
-.. jupyter-execute::
     :hide-code:
     :hide-output:
 
     backend.jobs = lambda *args, **kwargs: []
 
-.. jupyter-execute::
 
     backend
 

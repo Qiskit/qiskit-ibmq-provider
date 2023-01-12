@@ -113,6 +113,7 @@ QISKIT_IBMQ_PROVIDER_LOG_LEVEL = 'QISKIT_IBMQ_PROVIDER_LOG_LEVEL'
 QISKIT_IBMQ_PROVIDER_LOG_FILE = 'QISKIT_IBMQ_PROVIDER_LOG_FILE'
 """The environment variable name that is used to set the file for the IBM Quantum logger."""
 
+#pylint: disable=line-too-long
 warnings.warn(
     f"The package {__name__} is being deprecated. "
     "Please see "

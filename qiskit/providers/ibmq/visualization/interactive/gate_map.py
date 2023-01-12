@@ -59,7 +59,6 @@ def iplot_gate_map(
 
     Example:
 
-        .. jupyter-execute::
             :hide-code:
             :hide-output:
 
@@ -67,7 +66,6 @@ def iplot_gate_map(
             mock_get_backend('FakeVigo')
 
 
-        .. jupyter-execute::
 
            from qiskit import IBMQ
            from qiskit.providers.ibmq.visualization import iplot_gate_map
