@@ -65,6 +65,7 @@ def iplot_error_map(
 
 
         .. jupyter-execute::
+
            from qiskit import IBMQ
            from qiskit.providers.ibmq.visualization import iplot_error_map
 

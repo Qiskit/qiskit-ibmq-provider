@@ -68,6 +68,7 @@ def iplot_gate_map(
 
 
         .. jupyter-execute::
+
            from qiskit import IBMQ
            from qiskit.providers.ibmq.visualization import iplot_gate_map
 

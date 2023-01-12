@@ -37,6 +37,7 @@ Detailed information on a single backend
     mock_get_backend('FakeVigo')
 
 .. jupyter-execute::
+
     from qiskit import IBMQ
     import qiskit.providers.ibmq.jupyter
 
@@ -51,6 +52,7 @@ Detailed information on a single backend
     backend.jobs = lambda *args, **kwargs: []
 
 .. jupyter-execute::
+
     backend
 
 
