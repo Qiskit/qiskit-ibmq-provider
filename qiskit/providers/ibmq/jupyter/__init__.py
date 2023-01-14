@@ -10,11 +10,66 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 """
+================================================================
+Jupyter Tools (:mod:`qiskit.providers.ibmq.jupyter`)
+================================================================
+
+.. currentmodule:: qiskit.providers.ibmq.jupyter
+
+A Collection of Jupyter magic functions and tools
+that extend the functionality of Qiskit for the IBM
+Quantum devices.
+
+Note:
+    To use these tools locally, you'll need to install the
+    additional dependencies for the visualization functions::
+
+        pip install qiskit-ibmq-provider[visualization]
+
+Detailed information on a single backend
+========================================
+
+.. jupyter-execute::
+    :hide-code:
+    :hide-output:
+
+    from qiskit.test.ibmq_mock import mock_get_backend
+    mock_get_backend('FakeVigo')
+
+.. jupyter-execute::
+
+    from qiskit import IBMQ
+    import qiskit.providers.ibmq.jupyter
+
+    IBMQ.load_account()
+    provider = IBMQ.get_provider(hub='ibm-q')
+    backend = provider.get_backend('ibmq_vigo')
+
+.. jupyter-execute::
+    :hide-code:
+    :hide-output:
+
+    backend.jobs = lambda *args, **kwargs: []
+
+.. jupyter-execute::
+
+    backend
+
+
+IBM Quantum Experience (IQX) dashboard
+======================================
+
+.. code-block:: python
+
+    from qiskit import IBMQ
+    import qiskit.providers.ibmq.jupyter
+
+    %iqx_dashboard
 
 """
 import sys
 
-if ('ipykernel' in sys.modules) and ('spyder' not in sys.modules):
+if ('ipykernel' in sys.modules):
 
     from IPython import get_ipython          # pylint: disable=import-error
     from .dashboard.dashboard import IQXDashboardMagic
