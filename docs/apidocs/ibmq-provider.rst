@@ -10,7 +10,6 @@ Qiskit IBM Quantum Provider API Reference
    ibmq_managed
    ibmq_credentials
    ibmq_visualization
-   ibmq_jupyter
    ibmq_utils
    ibmq_experiment
    ibmq_runtime
