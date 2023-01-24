@@ -19,7 +19,7 @@ import os
 from setuptools import setup
 
 REQUIREMENTS = [
-    "qiskit-terra<0.22.4",
+    "qiskit-terra>=0.18.0",
     "requests>=2.19",
     "requests-ntlm>=1.1.0",
     "numpy>=1.13",
