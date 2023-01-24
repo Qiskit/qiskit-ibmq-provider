@@ -98,6 +98,18 @@ from .utils.utils import setup_logger
 from .runner_result import RunnerResult
 from .version import __version__
 
+# pylint: disable=line-too-long
+warnings.warn(
+    f"The package {__name__} is being deprecated. "
+    "Please see "
+    "https://qiskit.org/documentation/partners/qiskit_ibm_provider/tutorials/Migration_Guide_from_qiskit-ibmq-provider.html"
+    " to get instructions on how to migrate to "
+    "qiskit-ibm-provider (https://github.com/Qiskit/qiskit-ibm-provider) and "
+    "qiskit-ibm-runtime (https://github.com/Qiskit/qiskit-ibm-runtime).",
+    DeprecationWarning,
+    stacklevel=3
+)
+
 # Setup the logger for the IBM Quantum Provider package.
 logger = logging.getLogger(__name__)
 setup_logger(logger)
@@ -112,18 +124,6 @@ QISKIT_IBMQ_PROVIDER_LOG_LEVEL = 'QISKIT_IBMQ_PROVIDER_LOG_LEVEL'
 """The environment variable name that is used to set the level for the IBM Quantum logger."""
 QISKIT_IBMQ_PROVIDER_LOG_FILE = 'QISKIT_IBMQ_PROVIDER_LOG_FILE'
 """The environment variable name that is used to set the file for the IBM Quantum logger."""
-
-# pylint: disable=line-too-long
-warnings.warn(
-    f"The package {__name__} is being deprecated. "
-    "Please see "
-    "https://qiskit.org/documentation/partners/qiskit_ibm_provider/tutorials/Migration_Guide_from_qiskit-ibmq-provider.html"
-    " to get instructions on how to migrate to "
-    "qiskit-ibm-provider (https://github.com/Qiskit/qiskit-ibm-provider) and "
-    "qiskit-ibm-runtime (https://github.com/Qiskit/qiskit-ibm-runtime).",
-    FutureWarning,
-    stacklevel=3
-)
 
 
 def least_busy(
