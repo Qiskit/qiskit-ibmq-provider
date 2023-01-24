@@ -69,11 +69,11 @@ IBM Quantum Experience (IQX) dashboard
 """
 import sys
 
-if ('ipykernel' in sys.modules):
+if ('ipykernel' in sys.modules) and ('spyder' not in sys.modules):
 
     from IPython import get_ipython          # pylint: disable=import-error
     from .dashboard.dashboard import IQXDashboardMagic
-    from qiskit.providers.fake_provider.fake_backend import FakeBackendV2 as FakeBackend
+    from qiskit.providers.fake_provider.fake_backend import FakeBackend
     from ..ibmqbackend import IBMQBackend
     from .backend_info import backend_widget
 
