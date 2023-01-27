@@ -98,11 +98,10 @@ from .utils.utils import setup_logger
 from .runner_result import RunnerResult
 from .version import __version__
 
-# pylint: disable=line-too-long
 warnings.warn(
     f"The package {__name__} is being deprecated. "
     "Please see "
-    "https://qiskit.org/documentation/partners/qiskit_ibm_provider/tutorials/Migration_Guide_from_qiskit-ibmq-provider.html"
+    "https://ibm.biz/provider_migration_guide"
     " to get instructions on how to migrate to "
     "qiskit-ibm-provider (https://github.com/Qiskit/qiskit-ibm-provider) and "
     "qiskit-ibm-runtime (https://github.com/Qiskit/qiskit-ibm-runtime).",
