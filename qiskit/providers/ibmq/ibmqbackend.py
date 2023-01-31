@@ -294,7 +294,7 @@ class IBMQBackend(Backend):
                 "The IBMQ provider is being deprecated and does not support dynamic circuits. "
                 "Please use the qiskit-ibm-provider instead. "
                 "See the documentation for more information on usage - "
-                "https://qiskit.org/documentation/partners/qiskit_ibm_provider/#qiskit-ibm-quantum-provider-documentation. "
+                "https://qiskit.org/documentation/partners/qiskit_ibm_provider/#qiskit-ibm-quantum-provider-documentation. " # noqa: E501
             )
 
         if not self.configuration().simulator:
