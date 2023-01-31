@@ -289,7 +289,7 @@ class IBMQBackend(Backend):
                 "'use_measure_esp' is unset or set to 'False'."
             )
 
-        if run_config.get("dynamic", None):
+        if run_config.get("dynamic", None) is not None:
             raise IBMQBackendValueError(
                 "The IBMQ provider is being deprecated and does not support dynamic circuits. "
                 "Please use the qiskit-ibm-provider instead. "
