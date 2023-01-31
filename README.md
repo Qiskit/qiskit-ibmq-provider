@@ -1,12 +1,37 @@
-# Qiskit IBM Quantum Provider
+# Qiskit IBM Quantum Provider (_NOW DEPRECATED_)
 
 [![License](https://img.shields.io/github/license/Qiskit/qiskit-ibmq-provider.svg?style=popout-square)](https://opensource.org/licenses/Apache-2.0)[![Build Status](https://img.shields.io/travis/com/Qiskit/qiskit-ibmq-provider/master.svg?style=popout-square)](https://travis-ci.com/Qiskit/qiskit-ibmq-provider)[![](https://img.shields.io/github/release/Qiskit/qiskit-ibmq-provider.svg?style=popout-square)](https://github.com/Qiskit/qiskit-ibmq-provider/releases)[![](https://img.shields.io/pypi/dm/qiskit-ibmq-provider.svg?style=popout-square)](https://pypi.org/project/qiskit-ibmq-provider/)
+
+---
+
+**_PLEASE NOTE:_** _As of version 0.20.0, released in January 2023, `qiskit-ibmq-provider` has been deprecated
+with its support ending and eventual archival being no sooner than 3 months from that date. The
+function provided by `qiskit-ibmq-provider` is not going away rather it has being split out to separate repositories.
+Please see the [Migration Guides](#migration-guides) section below for more detail. We encourage you
+to migrate over at your earliest convenience._
+
+---
 
 **Qiskit** is an open-source SDK for working with quantum computers at the level of circuits, algorithms, and application modules.
 
 This module contains a provider that allows accessing the **[IBM Quantum]**
 systems and simulators.
 
+## Migration Guides
+
+
+All the functionality that `qiskit-ibmq-provider` provides has been migrated to other packages:
+
+| Formally | Current package | Details | Migration Guide | 
+| :---: | :---: | :---: | :---: |
+| [`qiskit.providers.ibmq.experiment`](https://qiskit.org/documentation/apidoc/ibmq_experiment.html) | [`qiskit_ibm_experiment`](https://qiskit.org/documentation/experiments/) |  For the features related with the IBM Quantum experiment database service. |
+| [`qiskit.providers.ibmq.runtime`](https://qiskit.org/documentation/apidoc/ibmq_runtime.html) | [`qiskit_ibm_runtime`](https://qiskit.org/documentation/partners/qiskit_ibm_runtime/) | For features related with IBM Client for Qiskit Runtime |
+| Rest of [`qiskit.providers.ibmq`](https://qiskit.org/documentation/apidoc/ibmq_provider.html) | [`qiskit-ibm-provider`](https://qiskit.org/documentation/partners/qiskit_ibm_provider/) | For access to IBM Quantum compute resources (aka backends) | [guide](https://qiskit.org/documentation/partners/qiskit_ibm_provider/tutorials/Migration_Guide_from_qiskit-ibmq-provider.html) |
+
+
+These packages can be installed by themselves (via the standard pip install command, e.g. ``pip install qiskit-ibm-provider``) and are not part of the Qiskit metapackage.
+
+  
 ## Installation
 
 We encourage installing Qiskit via the PIP tool (a python package manager),
