@@ -4,7 +4,7 @@
 
 ---
 
-**_PLEASE NOTE:_** _As of version 0.20.0, released on Xth September 2022, `qiskit-ibmq-provider` has been deprecated
+**_PLEASE NOTE:_** _As of version 0.20.0, released in January 2023, `qiskit-ibmq-provider` has been deprecated
 with its support ending and eventual archival being no sooner than 3 months from that date. The
 function provided by `qiskit-ibmq-provider` is not going away rather it has being split out to separate repositories.
 Please see the [Migration Guides](#migration-guides) section below for more detail. We encourage you
