@@ -80,6 +80,7 @@ Exceptions
 """
 
 import logging
+import warnings
 from typing import List, Optional, Union
 from datetime import datetime, timedelta
 
@@ -96,6 +97,17 @@ from .ibmqbackendservice import IBMQBackendService
 from .utils.utils import setup_logger
 from .runner_result import RunnerResult
 from .version import __version__
+
+warnings.warn(
+    f"The package {__name__} is being deprecated. "
+    "Please see "
+    "https://ibm.biz/provider_migration_guide"
+    " to get instructions on how to migrate to "
+    "qiskit-ibm-provider (https://github.com/Qiskit/qiskit-ibm-provider) and "
+    "qiskit-ibm-runtime (https://github.com/Qiskit/qiskit-ibm-runtime).",
+    DeprecationWarning,
+    stacklevel=3
+)
 
 # Setup the logger for the IBM Quantum Provider package.
 logger = logging.getLogger(__name__)

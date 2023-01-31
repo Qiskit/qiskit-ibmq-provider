@@ -17,6 +17,8 @@ from typing import Tuple, Optional, Any
 
 import plotly.graph_objects as go
 
+# pylint: disable=abstract-method
+
 
 class PlotlyFigure:
     """A simple wrapper around ``plotly.graph_objects.Figure`` class.
