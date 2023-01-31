@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Calls to run a quantum circuit with ``dynamic=True`` now raise an error
+    that asks the user to install the new ``qiskit-ibm-provider``.
