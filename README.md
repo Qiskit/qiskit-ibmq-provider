@@ -19,8 +19,6 @@ systems and simulators.
 
 ## Migration Guides
 
-As of version 0.20.0, released on January 2023, `qiskit-ibmq-provider` has been deprecated
-with its support ending and eventual archival being no sooner than 6 months from that date.
 
 All the functionality that `qiskit-ibmq-provider` provides has been migrated to other packages:
 
