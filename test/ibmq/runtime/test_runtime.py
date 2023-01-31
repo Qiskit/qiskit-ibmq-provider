@@ -287,7 +287,7 @@ class TestRuntime(IBMQTestCase):
             encoded = json.dumps({"fidelity": lambda x: x}, cls=RuntimeEncoder)
             decoded = json.loads(encoded, cls=RuntimeDecoder)
             self.assertIsNone(decoded["fidelity"])
-            self.assertEqual(len(warn_cm), 1)
+            self.assertEqual(len(warn_cm), 2)
 
     def test_decoder_import(self):
         """Test runtime decoder importing modules."""
