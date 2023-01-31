@@ -289,6 +289,14 @@ class IBMQBackend(Backend):
                 "'use_measure_esp' is unset or set to 'False'."
             )
 
+        if run_config.get("dynamic", None):
+            raise IBMQBackendValueError(
+                "The IBMQ provider is being deprecated and does not support dynamic circuits. "
+                "Please use the qiskit-ibm-provider instead. "
+                "See the documentation for more information on usage - "
+                "https://qiskit.org/documentation/partners/qiskit_ibm_provider/#qiskit-ibm-quantum-provider-documentation. "
+            )
+
         if not self.configuration().simulator:
             self._deprecate_id_instruction(circuits)
 
@@ -910,6 +918,7 @@ class IBMQSimulator(IBMQBackend):
             except AttributeError:
                 pass
         run_config.update(kwargs)
+
         return super().run(circuits, job_name=job_name,
                            job_tags=job_tags, experiment_id=experiment_id,
                            noise_model=noise_model, **run_config)
