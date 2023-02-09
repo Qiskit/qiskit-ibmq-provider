@@ -2,10 +2,6 @@
 Qiskit IBM Quantum Provider API Reference
 *****************************************
 
-.. warning::
-    The package ``qiskit-ibmq-provider`` is being deprecated and its repo is going to be archived soon.
-    Please transition to the new packages. More information in https://ibm.biz/provider_migration_guide
-
 .. toctree::
    :maxdepth: 1
 

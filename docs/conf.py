@@ -150,4 +150,9 @@ html_theme_options = {
     'style_nav_header_background': '#212121',
 }
 
+rst_prolog = """.. warning::
+   The package ``qiskit-ibmq-provider`` is being deprecated and its repo is going to be archived soon.
+   Please transition to the new packages. More information in https://ibm.biz/provider_migration_guide
+"""
+
 autoclass_content = 'both'
