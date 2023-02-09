@@ -25,7 +25,7 @@ All the functionality that `qiskit-ibmq-provider` provides has been migrated to 
 | Formally | Current package | Details | Migration Guide | 
 | :---: | :---: | :---: | :---: |
 | [`qiskit.providers.ibmq.experiment`](https://qiskit.org/documentation/apidoc/ibmq_experiment.html) | [`qiskit_ibm_experiment`](https://qiskit.org/documentation/experiments/) |  For the features related with the IBM Quantum experiment database service. |
-| [`qiskit.providers.ibmq.runtime`](https://qiskit.org/documentation/apidoc/ibmq_runtime.html) | [`qiskit_ibm_runtime`](https://qiskit.org/documentation/partners/qiskit_ibm_runtime/) | For features related with IBM Client for Qiskit Runtime |
+| [`qiskit.providers.ibmq.runtime`](https://qiskit.org/documentation/apidoc/ibmq_runtime.html) | [`qiskit_ibm_runtime`](https://qiskit.org/documentation/partners/qiskit_ibm_runtime/) | For features related with IBM Client for Qiskit Runtime | [guide](https://qiskit.org/documentation/partners/qiskit_ibm_runtime/migrate_from_ibmq.html) |
 | Rest of [`qiskit.providers.ibmq`](https://qiskit.org/documentation/apidoc/ibmq_provider.html) | [`qiskit-ibm-provider`](https://qiskit.org/documentation/partners/qiskit_ibm_provider/) | For access to IBM Quantum compute resources (aka backends) | [guide](https://qiskit.org/documentation/partners/qiskit_ibm_provider/tutorials/Migration_Guide_from_qiskit-ibmq-provider.html) |
 
 
