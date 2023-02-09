@@ -105,7 +105,7 @@ warnings.warn(
     " to get instructions on how to migrate to "
     "qiskit-ibm-provider (https://github.com/Qiskit/qiskit-ibm-provider) and "
     "qiskit-ibm-runtime (https://github.com/Qiskit/qiskit-ibm-runtime).",
-    DeprecationWarning,
+    FutureWarning,
     stacklevel=3
 )
 
