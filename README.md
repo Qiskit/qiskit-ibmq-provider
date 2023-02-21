@@ -22,7 +22,7 @@ systems and simulators.
 
 All the functionality that `qiskit-ibmq-provider` provides has been migrated to other packages:
 
-| Formally | Current package | Details | Migration Guide | 
+| Formerly | Current package | Details | Migration Guide | 
 | :---: | :---: | :---: | :---: |
 | [`qiskit.providers.ibmq.experiment`](https://qiskit.org/documentation/apidoc/ibmq_experiment.html) | [`qiskit_ibm_experiment`](https://qiskit.org/documentation/experiments/) |  For the features related with the IBM Quantum experiment database service. |
 | [`qiskit.providers.ibmq.runtime`](https://qiskit.org/documentation/apidoc/ibmq_runtime.html) | [`qiskit_ibm_runtime`](https://qiskit.org/documentation/partners/qiskit_ibm_runtime/) | For features related with IBM Client for Qiskit Runtime | [guide](https://qiskit.org/documentation/partners/qiskit_ibm_runtime/migrate_from_ibmq.html) |
