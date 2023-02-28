@@ -20,8 +20,7 @@ systems and simulators.
 ## Migration Guides
 
 
-All the functionality that `qiskit-ibmq-provider` provides has been migrated to other packages.
-
+All the functionality that `qiskit-ibmq-provider` provides has been migrated to other packages:
 
 | Formerly | Current package | Details | Migration Guide |
 | :---: | :---: | :---: | :---: |
