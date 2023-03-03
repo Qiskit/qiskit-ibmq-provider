@@ -19,16 +19,16 @@ import os
 from setuptools import setup
 
 REQUIREMENTS = [
-    "qiskit-terra~=0.23.0",
-    "requests~=2.28.0",
-    "requests-ntlm~=1.1.0",
+    "qiskit-terra>=0.18.0",
+    "requests>=2.19",
+    "requests-ntlm>=1.1.0",
     "numpy<1.24",
-    "urllib3~=1.26.0",
-    "python-dateutil~=2.8.0",
-    "websocket-client~=1.5.1",
-    "websockets~=10.0 ; python_version>='3.7'",
-    "websockets~=9.1 ; python_version<'3.7'",
-    "dataclasses~=0.8 ; python_version<'3.7'"
+    "urllib3>=1.21.1",
+    "python-dateutil>=2.8.0",
+    "websocket-client<=1.3.3",
+    "websockets>=10.0 ; python_version>='3.7'",
+    "websockets>=9.1 ; python_version<'3.7'",
+    "dataclasses>=0.8 ; python_version<'3.7'"
 ]
 
 # Handle version.
