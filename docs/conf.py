@@ -68,12 +68,34 @@ extensions = [
     'jupyter_sphinx',
     'sphinx_autodoc_typehints',
     'reno.sphinxext',
+    'nbsphinx'
 ]
 html_static_path = ['_static']
 templates_path = ['_templates']
 html_css_files = [
     'style.css',
 ]
+
+nbsphinx_timeout = 300
+nbsphinx_execute = "never"
+nbsphinx_widgets_path = ''
+
+nbsphinx_prolog = """
+{% set docname = env.doc2path(env.docname, base=None) %}
+.. only:: html
+
+    .. role:: raw-html(raw)
+        :format: html
+
+    .. note::
+        This page was generated from `docs/{{ docname }}`__.
+
+        __"""
+
+
+vers = release.split(".")
+link_str = f" https://github.com/Qiskit/qiskit-ibmq-provider/blob/stable/{vers[0]}.{vers[1]}/docs/"
+nbsphinx_prolog += link_str + "{{ docname }}"
 
 # -----------------------------------------------------------------------------
 # Autosummary
@@ -111,7 +133,7 @@ language = 'en'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = ["_build", "**.ipynb_checkpoints"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'colorful'

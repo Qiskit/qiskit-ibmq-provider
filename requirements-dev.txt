@@ -20,6 +20,7 @@ pyperclip>=1.7
 jupyter-sphinx
 reno>=2.11.0
 scipy>=1.0
+nbsphinx
 nbformat>=4.4.0
 nbconvert>=5.3.1
 qiskit_rng
