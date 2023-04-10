@@ -25,9 +25,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('.'))
 
 """
 Sphinx documentation builder
@@ -77,7 +77,7 @@ html_css_files = [
 ]
 
 nbsphinx_timeout = 300
-nbsphinx_execute = "never"
+nbsphinx_execute = os.getenv('QISKIT_DOCS_BUILD_TUTORIALS', 'never')
 nbsphinx_widgets_path = ''
 
 nbsphinx_prolog = """
