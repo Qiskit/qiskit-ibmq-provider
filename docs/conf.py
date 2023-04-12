@@ -177,18 +177,3 @@ rst_prolog = """.. warning::
 """
 
 autoclass_content = 'both'
-
-# -- Extension configuration -------------------------------------------------
-
-def deprecate_ibmq_provider(app, docname, source):
-    """Adds a deprecation message to the top of every qiskit-ibmq-provider page."""
-    message = """.. warning::
-       The package ``qiskit-ibmq-provider`` is being deprecated and its repo is going to be
-       archived soon. Please transition to the new packages. More information in
-       https://ibm.biz/provider_migration_guide\n\n"""
-    if 'apidocs/ibmq' in docname or 'qiskit.providers.ibmq' in docname:
-        source[0] = message + source[0]
-
-
-def setup(app):
-    app.connect('source-read', deprecate_ibmq_provider)
