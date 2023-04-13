@@ -37,18 +37,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Dependencies
         run: |
-            python -m pip install --upgrade pip
-            pip install -U virtualenv setuptools wheel tox
-            sudo apt-get install -y graphviz pandoc
-          shell: bash
+          python -m pip install --upgrade pip
+          pip install -U virtualenv setuptools wheel tox
+          sudo apt-get install -y graphviz pandoc
+        shell: bash
       - name: Build and publish
         env:
-            encrypted_rclone_key: ${{ secrets.encrypted_rclone_key }}
-            encrypted_rclone_iv: ${{ secrets.encrypted_rclone_iv }}
-            QISKIT_PARALLEL: False
-            QISKIT_DOCS_BUILD_TUTORIALS: 'always'
+          encrypted_rclone_key: ${{ secrets.encrypted_rclone_key }}
+          encrypted_rclone_iv: ${{ secrets.encrypted_rclone_iv }}
+          QISKIT_PARALLEL: False
+          QISKIT_DOCS_BUILD_TUTORIALS: 'always'
         run: |
-            echo "earliest_version: 0.1.0" >> releasenotes/config.yaml
-            tox -edocs
-            tools/deploy_documentation.sh
+          echo "earliest_version: 0.1.0" >> releasenotes/config.yaml
+          tox -edocs
+          tools/deploy_documentation.sh
         shell: bash
