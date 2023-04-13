@@ -49,6 +49,5 @@ jobs:
           QISKIT_DOCS_BUILD_TUTORIALS: 'always'
         run: |
           echo "earliest_version: 0.1.0" >> releasenotes/config.yaml
-          tox -edocs
           tools/deploy_documentation.sh
         shell: bash
