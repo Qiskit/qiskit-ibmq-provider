@@ -7,9 +7,3 @@ Qiskit IBM Provider Tutorials
 
    1_the_ibmq_account
    2_jupyter_tools
-
-
-.. Hiding - Indices and tables
-   :ref:`genindex`
-   :ref:`modindex`
-   :ref:`search`
