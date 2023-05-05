@@ -4,7 +4,7 @@ pylint==2.4.4
 vcrpy
 pproxy==2.1.8
 Sphinx>=1.8.3
-qiskit_sphinx_theme>=1.8.0
+qiskit_sphinx_theme~=1.11.1
 sphinx-tabs>=1.1.11
 sphinx-automodapi
 sphinx-autodoc-typehints

@@ -160,7 +160,7 @@ modindex_common_prefix = ['qiskit.']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'qiskit_sphinx_theme'  # use the theme in subdir 'theme'
+html_theme = 'qiskit_sphinx_theme'
 
 html_logo = 'images/logo.png'
 #html_sidebars = {'**': ['globaltoc.html']}
