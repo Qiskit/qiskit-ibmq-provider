@@ -70,6 +70,7 @@ extensions = [
     'jupyter_sphinx',
     'sphinx_autodoc_typehints',
     'reno.sphinxext',
+    "sphinxcontrib.jquery",  # Remove when changing html_theme to qiskit_ecosystem.
     'nbsphinx'
 ]
 html_static_path = ['_static']
