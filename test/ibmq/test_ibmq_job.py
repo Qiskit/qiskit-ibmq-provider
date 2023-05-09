@@ -503,6 +503,7 @@ class TestIBMQJob(IBMQTestCase):
         self.assertTrue(job.done(), "Job {} didn't complete successfully.".format(job.job_id()))
         self.assertIsNotNone(job.result(), "Job {} has no result.".format(job.job_id()))
 
+    @skip('outdated')
     def test_retrieve_from_retired_backend(self):
         """Test retrieving a job from a retired backend."""
         saved_backends = copy.copy(self.provider._backends)
