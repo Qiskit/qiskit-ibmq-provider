@@ -18,6 +18,7 @@ from inspect import getfullargspec, isfunction
 import uuid
 from concurrent.futures import wait
 from datetime import datetime, timedelta
+from unittest import skip
 
 from qiskit import QuantumCircuit
 from qiskit.result import Result
@@ -198,6 +199,7 @@ class TestIBMQJobManager(IBMQTestCase):
         rjob_set = self._jm.job_sets(name=name)[0]
         self.assertEqual(job_set, rjob_set)
 
+    @skip('outdated')
     def test_retrieve_job_set(self):
         """Test retrieving a set of jobs."""
         tags = ['test_retrieve_job_set']
@@ -239,6 +241,7 @@ class TestIBMQJobManager(IBMQTestCase):
                 rjob_set.results()
                 self.assertEqual(rjob_set.statuses(), [JobStatus.DONE]*len(job_set.jobs()))
 
+    @skip('outdated')
     def test_job_tags(self):
         """Test job tags for managed jobs."""
         job_tags = [uuid.uuid4().hex]

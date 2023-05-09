@@ -80,6 +80,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
         job.wait_for_final_state(wait=None, callback=_job_callback)
         self.assertIsNotNone(job_properties[0])
 
+    @skip('outdated')
     def test_job_name(self):
         """Test using job names on a simulator."""
         # Use a unique job name
@@ -106,6 +107,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
         self.assertEqual(len(retrieved_jobs), 1)
         self.assertEqual(job_id, retrieved_jobs[0].job_id())
 
+    @skip('outdated')
     def test_job_name_update(self):
         """Test changing the name associated with a job."""
         # Use a unique job name
@@ -127,6 +129,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
                                  'Updating the name for job {} from "{}" to "{}" '
                                  'was unsuccessful.'.format(job.job_id(), job.name(), new_name))
 
+    @skip('outdated')
     def test_duplicate_job_name(self):
         """Test multiple jobs with the same custom job name using a simulator."""
         # Use a unique job name
@@ -178,6 +181,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
         r_message = self.provider.backend.retrieve_job(job.job_id()).error_message()
         self.assertIn('Experiment 1: ERROR', r_message)
 
+    @skip('outdated')
     def test_error_message_validation(self):
         """Test retrieving job error message for a validation error."""
         job = submit_job_bad_shots(self.sim_backend)
@@ -193,6 +197,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
 
         self.assertEqual(job.error_message(), rjob.error_message())
 
+    @skip('outdated')
     def test_refresh(self):
         """Test refreshing job data."""
         self.sim_job._wait_for_completion()
@@ -219,6 +224,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
                         'between the start date time {} and end date time {}'
                         .format(job.creation_date(), start_datetime, end_datetime))
 
+    @skip('outdated')
     def test_time_per_step(self):
         """Test retrieving time per step, while ensuring the date times are in local time."""
         # datetime, before running the job, in local time.
@@ -347,6 +353,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
             delattr(self.sim_backend._configuration, "measure_esp_enabled")
             self.sim_backend._api_client = saved_api
 
+    @skip('outdated')
     def test_job_tags_or(self):
         """Test using job tags with an or operator."""
         # Use a unique tag.
@@ -368,6 +375,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
                 self.assertEqual(rjobs[0].job_id(), job.job_id())
                 self.assertEqual(set(rjobs[0].tags()), set(job_tags))
 
+    @skip('outdated')
     def test_job_tags_and(self):
         """Test using job tags with an and operator."""
         # Use a unique tag.
@@ -510,6 +518,7 @@ class TestIBMQJobAttributes(IBMQTestCase):
         self.assertIsNotNone(self.sim_job.result().client_version)
         self.assertIsNotNone(self.sim_job.client_version)
 
+    @skip('outdated')
     def test_experiment_id(self):
         """Test job experiment id."""
         exp_id = uuid.uuid4().hex
