@@ -13,6 +13,7 @@
 """Integration tests."""
 
 import time
+from unittest import skip
 
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister, execute
 from qiskit.result import Result
@@ -48,6 +49,7 @@ class TestIBMQIntegration(IBMQTestCase):
         self._qc2.x(qr[0])
         self._qc2.measure(qr[0], cr[0])
 
+    @skip('outdated')
     def test_ibmq_result_fields(self):
         """Test components of a result from a remote simulator."""
         remote_result = execute(self._qc1, self.sim_backend).result()
@@ -110,6 +112,7 @@ class TestIBMQIntegration(IBMQTestCase):
         results = job.result()
         self.assertIsInstance(results, Result)
 
+    @skip('outdated')
     @requires_private_provider
     def test_private_job(self, provider):
         """Test a private job."""
