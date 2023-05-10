@@ -27,6 +27,7 @@
 #
 import os
 import sys
+import datetime
 sys.path.insert(0, os.path.abspath('.'))
 
 """
@@ -38,7 +39,6 @@ Sphinx documentation builder
 os.environ['QISKIT_DOCS'] = 'TRUE'
 
 # -- Project information -----------------------------------------------------
-import datetime
 
 project = 'Qiskit IBM Q Provider'
 copyright = f'2019-{datetime.date.today().year}, Qiskit Development Team'  # pylint: disable=redefined-builtin
