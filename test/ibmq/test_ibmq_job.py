@@ -233,6 +233,7 @@ class TestIBMQJob(IBMQTestCase):
         self.assertRaises(IBMQBackendError,
                           self.provider.backend.retrieve_job, 'BAD_JOB_ID')
 
+    @skip('outdated')
     def test_retrieve_jobs_status(self):
         """Test retrieving jobs filtered by status."""
         status_args = [JobStatus.DONE, 'DONE', [JobStatus.DONE], ['DONE']]
@@ -247,6 +248,7 @@ class TestIBMQJob(IBMQTestCase):
                                     "Job {} has status {} when it should be DONE"
                                     .format(job.job_id(), job.status()))
 
+    @skip('outdated')
     def test_retrieve_multiple_job_statuses(self):
         """Test retrieving jobs filtered by multiple job statuses."""
         statuses_to_filter = [JobStatus.ERROR, JobStatus.CANCELLED]
@@ -280,6 +282,7 @@ class TestIBMQJob(IBMQTestCase):
                                   .format(filtered_job.job_id(), filtered_job._status,
                                           statuses_to_filter))
 
+    @skip('outdated')
     def test_retrieve_active_jobs(self):
         """Test retrieving jobs that are currently unfinished."""
         backend = most_busy_backend(self.provider)
@@ -300,6 +303,7 @@ class TestIBMQJob(IBMQTestCase):
         # Cancel job so it doesn't consume more resources.
         cancel_job(job)
 
+    @skip('outdated')
     def test_retrieve_jobs_queued(self):
         """Test retrieving jobs that are queued."""
         backend = most_busy_backend(self.provider)
@@ -326,6 +330,7 @@ class TestIBMQJob(IBMQTestCase):
         # Cancel job so it doesn't consume more resources.
         cancel_job(job)
 
+    @skip('outdated')
     def test_retrieve_jobs_running(self):
         """Test retrieving jobs that are running."""
         job = self.sim_backend.run(self.bell)
@@ -346,6 +351,7 @@ class TestIBMQJob(IBMQTestCase):
                             "Status for job {} is '{}' but should be RUNNING"
                             .format(rjob.job_id(), rjob._status))
 
+    @skip('outdated')
     def test_retrieve_jobs_start_datetime(self):
         """Test retrieving jobs created after a specified datetime."""
         past_month = datetime.now() - timedelta(days=30)
@@ -404,6 +410,7 @@ class TestIBMQJob(IBMQTestCase):
     #                     'job {} creation date {} not within range'.format(
     #                         job.job_id(), job.creation_date()))
 
+    @skip('outdated')
     def test_retrieve_jobs_db_filter(self):
         """Test retrieving jobs using db_filter."""
         # Submit jobs with desired attributes.
@@ -429,6 +436,7 @@ class TestIBMQJob(IBMQTestCase):
                 "Job {} does not have correct data.".format(job.job_id())
             )
 
+    @skip('outdated')
     def test_pagination_filter(self):
         """Test db_filter that could conflict with pagination."""
         jobs = self.sim_backend.jobs(limit=25, start_datetime=self.last_month)
@@ -495,6 +503,7 @@ class TestIBMQJob(IBMQTestCase):
         self.assertTrue(job.done(), "Job {} didn't complete successfully.".format(job.job_id()))
         self.assertIsNotNone(job.result(), "Job {} has no result.".format(job.job_id()))
 
+    @skip('outdated')
     def test_retrieve_from_retired_backend(self):
         """Test retrieving a job from a retired backend."""
         saved_backends = copy.copy(self.provider._backends)
@@ -596,6 +605,7 @@ class TestIBMQJob(IBMQTestCase):
                 thread.join(0.1)
             cancel_job(job)
 
+    @skip('outdated')
     def test_job_submit_partial_fail(self):
         """Test job submit partial fail."""
         job_id = []

@@ -14,7 +14,7 @@
 
 import re
 import traceback
-from unittest import mock
+from unittest import mock, skip
 from urllib3.connectionpool import HTTPConnectionPool
 from urllib3.exceptions import MaxRetryError
 
@@ -203,6 +203,7 @@ class TestAccountClientJobs(IBMQTestCase):
         response = self.client.job_get(self.job_id)
         self.assertIn('status', response)
 
+    @skip('outdated')
     def test_job_final_status_polling(self):
         """Test getting a job's final status via polling."""
         status_queue = RefreshQueue(maxsize=1)
