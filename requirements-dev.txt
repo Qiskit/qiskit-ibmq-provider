@@ -27,4 +27,3 @@ qiskit_rng
 qiskit-aer
 websockets>=8
 scikit-learn>=0.20.0
-scikit-quant;platform_system != 'Windows'
