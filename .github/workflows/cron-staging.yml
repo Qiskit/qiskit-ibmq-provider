@@ -17,6 +17,7 @@ on:
   workflow_dispatch:
 jobs:
   runtime-integration:
+    if: github.repository_owner == 'Qiskit'
     name: runtime-integration
     runs-on: macOS-latest
     env:
@@ -41,6 +42,7 @@ jobs:
       - name: Run Tests
         run: make runtime_integration
   experiment-integration:
+    if: github.repository_owner == 'Qiskit'
     name: experiment-integration
     runs-on: macOS-latest
     env:

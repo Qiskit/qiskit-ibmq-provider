@@ -14,6 +14,7 @@ name: Push-Test
 on: push
 jobs:
   lint:
+    if: github.repository_owner == 'Qiskit'
     name: lint & mypy
     runs-on: ubuntu-latest
     steps:
@@ -33,6 +34,7 @@ jobs:
         run: make mypy
         if: ${{ !cancelled() }}
   doc:
+    if: github.repository_owner == 'Qiskit'
     name: doc
     runs-on: ubuntu-latest
     steps:
@@ -57,6 +59,7 @@ jobs:
           name: html_docs
           path: docs/_build/html
   tests-mac:
+    if: github.repository_owner == 'Qiskit'
     name: push-tests-mac-python${{ matrix.python-version }}
     runs-on: macOS-latest
     strategy:

@@ -17,6 +17,7 @@ on:
   workflow_dispatch:
 jobs:
   test1:
+    if: github.repository_owner == 'Qiskit'
     name: tests1-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -46,6 +47,7 @@ jobs:
       - name: Run Tests
         run: make test1
   test2:
+    if: github.repository_owner == 'Qiskit'
     name: tests2-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -74,6 +76,7 @@ jobs:
       - name: Run Tests
         run: make test2
   test3:
+    if: github.repository_owner == 'Qiskit'
     name: tests3-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
