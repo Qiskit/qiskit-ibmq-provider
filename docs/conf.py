@@ -51,13 +51,6 @@ release = '0.20.2'
 
 # -- General configuration ---------------------------------------------------
 
-# If your documentation needs a minimal Sphinx version, state it here.
-#
-# needs_sphinx = '1.0'
-
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
 extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
@@ -69,14 +62,10 @@ extensions = [
     'jupyter_sphinx',
     'sphinx_autodoc_typehints',
     'reno.sphinxext',
-    "sphinxcontrib.jquery",  # Remove when changing html_theme to qiskit_ecosystem.
+    "qiskit_sphinx_theme",
     'nbsphinx'
 ]
-html_static_path = ['_static']
 templates_path = ['_templates']
-html_css_files = [
-    'style.css',
-]
 
 nbsphinx_timeout = 300
 nbsphinx_execute = os.getenv('QISKIT_DOCS_BUILD_TUTORIALS', 'never')
@@ -157,13 +146,9 @@ modindex_common_prefix = ['qiskit.']
 
 # -- Options for HTML output -------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
 html_theme = 'qiskit_sphinx_theme'
 
 html_logo = 'images/logo.png'
-#html_sidebars = {'**': ['globaltoc.html']}
 html_last_updated_fmt = '%Y/%m/%d'
 
 html_theme_options = {
