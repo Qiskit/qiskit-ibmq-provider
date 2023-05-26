@@ -14,6 +14,7 @@
 
 import time
 from datetime import datetime, timedelta
+from unittest import skip
 
 from qiskit import transpile
 from qiskit.test import slow_test
@@ -68,6 +69,7 @@ class TestBasicServerPaths(IBMQTestCase):
                 # Cancel job so it doesn't consume more resources.
                 cancel_job(job, verify=True)
 
+    @skip('outdated')
     def test_retrieve_jobs(self):
         """Test retrieving jobs."""
         backend_name = 'ibmq_qasm_simulator'

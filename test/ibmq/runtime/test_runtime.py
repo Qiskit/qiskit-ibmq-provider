@@ -17,7 +17,7 @@ import json
 import os
 from io import StringIO
 from unittest.mock import patch
-from unittest import mock, skipIf
+from unittest import mock
 import uuid
 import time
 import random
@@ -30,10 +30,8 @@ import scipy.sparse
 from qiskit.algorithms.optimizers import (
     ADAM,
     GSLS,
-    IMFIL,
     SPSA,
     QNSPSA,
-    SNOBFIT,
     L_BFGS_B,
     NELDER_MEAD,
 )
@@ -217,19 +215,19 @@ class TestRuntime(IBMQTestCase):
                 decoded = json.loads(encoded, cls=RuntimeDecoder)
                 self.assertEqual(op, decoded)
 
-    @skipIf(os.name == 'nt', 'Test not supported on Windows')
     def test_coder_optimizers(self):
         """Test runtime encoder and decoder for optimizers."""
         subtests = (
             (ADAM, {"maxiter": 100, "amsgrad": True}),
             (GSLS, {"maxiter": 50, "min_step_size": 0.01}),
-            (IMFIL, {"maxiter": 20}),
             (SPSA, {"maxiter": 10, "learning_rate": 0.01, "perturbation": 0.1}),
-            (SNOBFIT, {"maxiter": 200, "maxfail": 20}),
             (QNSPSA, {"fidelity": 123, "maxiter": 25, "resamplings": {1: 100, 2: 50}}),
             # some SciPy optimizers only work with default arguments due to Qiskit/qiskit-terra#6682
             (L_BFGS_B, {}),
             (NELDER_MEAD, {}),
+            # Enable when https://github.com/scikit-quant/scikit-quant/issues/24 is fixed
+            # (IMFIL, {"maxiter": 20}),
+            # (SNOBFIT, {"maxiter": 200, "maxfail": 20}),
         )
         for opt_cls, settings in subtests:
             with self.subTest(opt_cls=opt_cls):

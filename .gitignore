@@ -106,3 +106,4 @@ Qconfig.py
 .DS_Store
 
 /docs/stubs/
+/docs/.doctrees/

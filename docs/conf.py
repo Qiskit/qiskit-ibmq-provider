@@ -25,22 +25,23 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+import datetime
+sys.path.insert(0, os.path.abspath('.'))
 
 """
 Sphinx documentation builder
 """
 
-import os
 # Set env flag so that we can doc functions that may otherwise not be loaded
 # see for example interactive visualizations in qiskit.visualization.
 os.environ['QISKIT_DOCS'] = 'TRUE'
 
 # -- Project information -----------------------------------------------------
+
 project = 'Qiskit IBM Q Provider'
-copyright = '2019, Qiskit Development Team'  # pylint: disable=redefined-builtin
+copyright = f'2019-{datetime.date.today().year}, Qiskit Development Team'  # pylint: disable=redefined-builtin
 author = 'Qiskit Development Team'
 
 # The short X.Y version
@@ -68,12 +69,35 @@ extensions = [
     'jupyter_sphinx',
     'sphinx_autodoc_typehints',
     'reno.sphinxext',
+    "sphinxcontrib.jquery",  # Remove when changing html_theme to qiskit_ecosystem.
+    'nbsphinx'
 ]
 html_static_path = ['_static']
 templates_path = ['_templates']
 html_css_files = [
     'style.css',
 ]
+
+nbsphinx_timeout = 300
+nbsphinx_execute = os.getenv('QISKIT_DOCS_BUILD_TUTORIALS', 'never')
+nbsphinx_widgets_path = ''
+
+nbsphinx_prolog = """
+{% set docname = env.doc2path(env.docname, base=None) %}
+.. only:: html
+
+    .. role:: raw-html(raw)
+        :format: html
+
+    .. note::
+        This page was generated from `docs/{{ docname }}`__.
+
+        __"""
+
+
+vers = release.split(".")
+link_str = f" https://github.com/Qiskit/qiskit-ibmq-provider/blob/stable/{vers[0]}.{vers[1]}/docs/"
+nbsphinx_prolog += link_str + "{{ docname }}"
 
 # -----------------------------------------------------------------------------
 # Autosummary
@@ -111,7 +135,7 @@ language = 'en'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = ["_build", "**.ipynb_checkpoints"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'colorful'
@@ -136,7 +160,7 @@ modindex_common_prefix = ['qiskit.']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'  # use the theme in subdir 'theme'
+html_theme = 'qiskit_sphinx_theme'
 
 html_logo = 'images/logo.png'
 #html_sidebars = {'**': ['globaltoc.html']}
@@ -147,7 +171,6 @@ html_theme_options = {
     'display_version': True,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': True,
-    'style_nav_header_background': '#212121',
 }
 
 rst_prolog = """.. warning::
