@@ -14,6 +14,7 @@ name: PR-Test
 on: pull_request
 jobs:
   tests:
+    if: github.repository_owner == 'Qiskit'
     name: pr-tests-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -43,6 +44,7 @@ jobs:
       - name: Run Tests
         run: make test
   lint:
+    if: github.repository_owner == 'Qiskit'
     name: lint & mypy
     runs-on: ubuntu-latest
     steps:
@@ -62,6 +64,7 @@ jobs:
         run: make mypy
         if: ${{ !cancelled() }}
   doc:
+    if: github.repository_owner == 'Qiskit'
     name: doc
     runs-on: ubuntu-latest
     steps:
